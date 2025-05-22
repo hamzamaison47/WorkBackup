@@ -70,6 +70,37 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Modal Styles
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalContentImage: {
+    backgroundColor: 'white',
+    // padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: width * 0.8,
+    height: height * 0.6,
+    borderRadius: 10,
+    // marginBottom: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  profilePicture: {
+    width: hp(10),
+    height: hp(10),
+    borderRadius: hp(9),
+    // marginRight: wp(3),
+  },
   //   buttonContainer: {
   //  //   flexDirection: 'row',
   //     justifyContent: 'space-between',

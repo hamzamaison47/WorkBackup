@@ -2,14 +2,12 @@ import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
 
 const CreateAdvanceRequest = async advanceData => {
-  // Define the request body
   const requestBody = {
     contract: advanceData,
   };
 
   try {
     const accessToken = await getToken();
-    // Make the POST request
     const response = await fetch(
       `${BASE_URL}/PREmployeeAdvanceRequestSvcGroup/PREmployeeAdvanceRequestSvc/create`,
       {
@@ -18,13 +16,12 @@ const CreateAdvanceRequest = async advanceData => {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody), // Convert the request body to JSON string
+        body: JSON.stringify(requestBody),
       },
     );
 
-    // Check if the response is successful
     if (!response.ok) {
-      const errorText = await response.text(); // Fetch error details
+      const errorText = await response.text();
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
 
@@ -32,10 +29,9 @@ const CreateAdvanceRequest = async advanceData => {
     const result = await response.json();
     console.log('Advance Request Created:', result);
 
-    // Return the response data
     return result;
   } catch (error) {
-    //console.error('Failed to create EOS request:', error);
+    console.error('Failed to create Advance request:', error);
     throw error;
   }
 };

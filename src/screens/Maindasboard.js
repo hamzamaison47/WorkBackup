@@ -1,4 +1,5 @@
-import React, {useState, useEffect, useContext} from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, {useState, useEffect, useContext, useCallback} from 'react';
 import {
   FlatList,
   Image,
@@ -7,20 +8,26 @@ import {
   TouchableOpacity,
   View,
   Modal,
+  Dimensions,
   BackHandler,
   ActivityIndicator,
   TouchableWithoutFeedback,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+
 import {wp, hp} from '../constants/Size';
-import {useNavigation} from '@react-navigation/native';
 import {UserContext} from '../context/UserContext';
-import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
+
 import {ProfilePicture} from '../API/ProfilePicture/ProfilePicture';
-import MainPageHeader from '../components/PageHeader/MainPageHeader';
 import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
+
+import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
+import MainPageHeader from '../components/PageHeader/MainPageHeader';
 import NotificationDropdown from '../components/NotificationDropdown';
+
+const {height, width} = Dimensions.get('window');
 
 const MainDashboard = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -35,34 +42,35 @@ const MainDashboard = () => {
   const navigation = useNavigation();
   const {userData} = useContext(UserContext);
 
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleLogout();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      };
+    }, [handleLogout]),
+  );
+
   useEffect(() => {
     fetchProfilePicture();
-
-    const backAction = () => {
-      handleLogout();
-      return true;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      backAction,
-    );
-
-    return () => backHandler.remove();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     const interval = setInterval(fetchNotifications, 30000);
     fetchNotifications(); // Initial fetch
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData.email]);
 
   useEffect(() => {
     const headerOptions = MainPageHeader({
       onToggleDrawer: toggleDrawer,
-      onShowNotify: showNotification,
+      onShowNotify: toggleNotification,
       onCount: notificationCount,
       onLogout: handleLogout,
     });
@@ -75,10 +83,9 @@ const MainDashboard = () => {
     toggleDrawer,
   ]);
 
-  const showNotification = () => setNotificationVisible(true);
   const closeNotification = () => setNotificationVisible(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const toggleDrawer = () => navigation.toggleDrawer();
+  const toggleNotification = () => setNotificationVisible(!notificationVisible);
 
   const handleLogout = () => setModalVisible(true);
   const confirmLogout = () => {
@@ -128,7 +135,7 @@ const MainDashboard = () => {
     {
       text: 'Resignation Request',
       colors: ['orange', 'orange'],
-      icon: 'file-text',
+      icon: 'flag',
       onPress: () =>
         navigation.navigate('EndOfService', {employeeId: userData.employeeId}),
     },
@@ -153,7 +160,16 @@ const MainDashboard = () => {
       colors: ['orange', 'orange'],
       icon: 'handshake-o',
       onPress: () =>
-        navigation.navigate('AdvanceSalarySlip', {
+        navigation.navigate('LoanRequest', {
+          employeeId: userData.employeeId,
+        }),
+    },
+    {
+      text: 'Advance Salary',
+      colors: ['orange', 'orange'],
+      icon: 'credit-card',
+      onPress: () =>
+        navigation.navigate('AdvanceSalary', {
           employeeId: userData.employeeId,
         }),
     },
@@ -163,6 +179,42 @@ const MainDashboard = () => {
       icon: 'balance-scale',
       onPress: () =>
         navigation.navigate('EntitlementBalance', {
+          employeeId: userData.employeeId,
+        }),
+    },
+    {
+      text: 'My Team',
+      colors: ['orange', 'orange'],
+      icon: 'users',
+      onPress: () =>
+        navigation.navigate('WorkerAssignedToMe', {
+          employeeId: userData.employeeId,
+        }),
+    },
+    {
+      text: 'Employee Certificates',
+      colors: ['orange', 'orange'],
+      icon: 'file-text',
+      onPress: () =>
+        navigation.navigate('EmployeeCertificates', {
+          employeeId: userData.employeeId,
+        }),
+    },
+    {
+      text: 'Employee Bank Account',
+      colors: ['orange', 'orange'],
+      icon: 'bank',
+      onPress: () =>
+        navigation.navigate('EmployeeBankAccount', {
+          employeeId: userData.employeeId,
+        }),
+    },
+    {
+      text: 'Help Desk',
+      colors: ['orange', 'orange'],
+      icon: 'heart-o',
+      onPress: () =>
+        navigation.navigate('HelpDesk', {
           employeeId: userData.employeeId,
         }),
     },
@@ -339,28 +391,7 @@ const styles = StyleSheet.create({
     color: '#888888',
     textAlign: 'center',
   },
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: hp(2),
-    right: wp(4),
-    zIndex: 1,
-  },
-  closeButtonText: {
-    fontSize: hp(3),
-    color: 'black',
-    fontWeight: 'bold',
-  },
-  enlargedImage: {
-    width: wp(70),
-    height: wp(70),
-    borderRadius: 10,
-  },
+  // Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -374,8 +405,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalImage: {
-    width: wp(80),
-    height: hp(60),
+    width: width * 0.8,
+    height: height * 0.6,
     borderRadius: 10,
     // marginBottom: 20,
   },

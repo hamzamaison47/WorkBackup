@@ -1,17 +1,22 @@
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable eqeqeq */
+/* eslint-disable no-shadow */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useContext} from 'react';
 import {View, Text, StyleSheet, FlatList} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {UserContext} from '../../context/UserContext';
 
-import {createLeaveRequest} from '../../API/CreateLeaveRequest/CreateLeaveRequest';
-import {submit} from '../../API/Leaves/submit';
-import {update} from '../../API/Leaves/update';
-import {deleteLeaveRequest} from '../../API/Leaves/deleteLeaveRequest';
 import {AlertModal} from '../../components/Leaves/AlertModal';
 import PageHeader from '../../components/PageHeader/PageHeader';
 import LeaveCard from '../../components/Leaves/LeaveCard';
 import LeaveModal from '../../components/Leaves/LeaveModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+
+import {createLeaveRequest} from '../../API/CreateLeaveRequest/CreateLeaveRequest';
+import {submit} from '../../API/Leaves/submit';
+import {update} from '../../API/Leaves/update';
+import {deleteLeaveRequest} from '../../API/Leaves/deleteLeaveRequest';
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
 
 const LeaveRequest = () => {
@@ -63,7 +68,6 @@ const LeaveRequest = () => {
       OnNewRecord: () => handleOpenModal('create'),
     });
     navigation.setOptions(headerOptions);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation]);
 
   const handleGoBack = () => {
@@ -141,7 +145,6 @@ const LeaveRequest = () => {
   const handleDeleteLeave = async recId => {
     try {
       const response = await deleteLeaveRequest({recordsRecId: [recId]});
-      // eslint-disable-next-line eqeqeq
       if (response[0].IsSuccess == true) {
         setAlertMessage('Leave Request Deleted Successfully.');
         setAlertModal(true);
@@ -179,7 +182,7 @@ const LeaveRequest = () => {
     <LeaveCard
       recId={item.recId}
       leaveReqId={item.leaveReqId}
-      employeeId={item.employeeId}
+      employeeId={userData.employeeId}
       employeeName={item.employeeName}
       leaveCode={item.leaveCode}
       leaveCategory={getLeaveCategory(item.leaveCategory)}
@@ -193,7 +196,7 @@ const LeaveRequest = () => {
       onPress={() =>
         handleOpenModal('edit', {
           recId: item.recId,
-          employeeId: item.employeeId,
+          employeeId: userData.employeeId,
           employeeName: item.employeeName,
           leaveCode: item.leaveCode,
           leaveCategory: getLeaveCategory(item.leaveCategory),
@@ -221,7 +224,6 @@ const LeaveRequest = () => {
     return `${year}-${month}-${day}T12:00:00`;
   };
 
-  // eslint-disable-next-line no-shadow
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
       const formattedLeaveReqDate = `${
@@ -232,7 +234,7 @@ const LeaveRequest = () => {
       if (!data.leaveCode && !data.selectedEditLeaveCode) {
         setAlertMessage('Leave Code is Required');
         setAlertModal(true);
-        return;
+        return false; // Indicate failure
       }
 
       if (
@@ -244,7 +246,7 @@ const LeaveRequest = () => {
       ) {
         setAlertMessage('Invalid or missing date');
         setAlertModal(true);
-        return;
+        return false; // Indicate failure
       }
 
       const leaveData = {
@@ -276,7 +278,7 @@ const LeaveRequest = () => {
           if (!submitResponse) {
             setAlertMessage('Failed to Submit Leave Request.');
             setAlertModal(true);
-            return;
+            return false; // Indicate failure
           }
         }
       } else {
@@ -289,7 +291,7 @@ const LeaveRequest = () => {
           if (!submitResponse) {
             setAlertMessage('Failed to Submit Leave Request.');
             setAlertModal(true);
-            return;
+            return false; // Indicate failure
           }
         }
       }
@@ -305,15 +307,17 @@ const LeaveRequest = () => {
             ? 'Leave Request Updated Successfully.'
             : 'Leave Request Updated and Submitted Successfully.';
         setAlertMessage(successMessage);
+        return true; // Indicate success
       } else {
         setAlertMessage(response.Message || 'Operation Failed.');
+        return false; // Indicate failure
       }
     } catch (error) {
       setAlertMessage('An error occurred while processing the request.');
       console.error(error);
+      return false; // Indicate failure
     } finally {
       setAlertModal(true);
-      setIsModalVisible(false);
       handleRefresh();
     }
   };
@@ -327,7 +331,6 @@ const LeaveRequest = () => {
           data={leavesData}
           renderItem={renderLeavesCard}
           keyExtractor={(item, index) => index.toString()}
-          // eslint-disable-next-line react-native/no-inline-styles
           contentContainerStyle={{flexGrow: 1}}
         />
       ) : (

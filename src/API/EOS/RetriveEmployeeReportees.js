@@ -18,7 +18,7 @@ const RetriveEmployeeReportees = async ({employeeId}) => {
         body: JSON.stringify(requestBody),
       },
     );
-    // console.log("Request Body ============:", JSON.stringify(requestBody));
+    console.log('Request Body ============:', JSON.stringify(requestBody));
     if (!response.ok) {
       const errorText = await response.text(); // Fetch error details
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);

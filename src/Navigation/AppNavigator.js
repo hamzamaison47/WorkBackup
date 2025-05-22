@@ -3,7 +3,6 @@ import {createStackNavigator} from '@react-navigation/stack';
 import SplashScreens from '../screens/SplashScreen/SplashScreens';
 import LoginScreen from '../screens/LoginScreen';
 import DrawerNavigator from './DrawerNavigator';
-import EditPersonalInfo from '../screens/PersonalInformation/EditPersonalInfo';
 
 const Stack = createStackNavigator();
 
@@ -24,11 +23,6 @@ const AppNavigator = () => {
         name="DrawerNavigator"
         component={DrawerNavigator}
         options={{headerShown: false}}
-      />
-      <Stack.Screen
-        name="EditPersonalInfo"
-        component={EditPersonalInfo}
-        initialParams={{hidden: true}}
       />
     </Stack.Navigator>
   );

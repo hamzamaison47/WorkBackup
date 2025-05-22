@@ -21,7 +21,7 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import CalendarIcon from 'react-native-vector-icons/FontAwesome5';
 import {hp, wp} from '../../constants/Size';
 import {Dropdown} from 'react-native-element-dropdown';
-import {AdvanceCard} from '../../components/Advance/AdvanceCard';
+import {AdvanceCard} from '../../components/Advance/LoanCard';
 import {AlertModal, AlertDeleteModal} from '../../components/Leaves/AlertModal';
 import {
   fetchAdvances,

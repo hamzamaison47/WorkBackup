@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
 import {
@@ -86,7 +87,6 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
     setFormData(prev => ({
       ...prev,
       leaveStartDate: formatToISOWithTime(date),
-      // leaveStartDate: date,
     }));
 
     try {
@@ -111,8 +111,6 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
         balance: '0.00',
       }));
     }
-
-    // setShowCalendar(false);
   };
 
   //Leave End Date
@@ -128,21 +126,14 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
 
       handleInputChange('leaveDays', leaveDays.toString());
       handleInputChange('leaveEndDate', endDate); // Format and set the end date
-      // handleInputChange('leaveEndDate', formatDate(endDate)); // Format and set the end date
     } else {
-      // eslint-disable-next-line no-alert
       alert('Leave Days cannot exceed the available balance.');
     }
   };
 
   // Format date
   const today = new Date().toISOString().split('T')[0];
-  // const formatDate = date =>
-  //   new Date(date).toLocaleDateString('en-US', {
-  //     year: 'numeric',
-  //     month: '2-digit',
-  //     day: '2-digit',
-  //   });
+
   const formatDate = date =>
     date
       ? new Date(date).toLocaleDateString('en-US', {
@@ -243,13 +234,6 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
               onDateSelected={handleDateChange}
               onClose={() => setShowCalendar(false)}
             />
-            {/* <CalendarModal
-              visible={showCalendar}
-              current={formData.leaveStartDate}
-              selectedDate={formData.leaveStartDate}
-              onDateSelected={handleDateChange}
-              onClose={() => setShowCalendar(false)}
-            /> */}
 
             <Text style={styles.label}>Leave Days</Text>
             <TextInput
@@ -265,7 +249,7 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
             <Text style={[styles.input, styles.disable]}>
               {formData.leaveEndDate
                 ? formatDate(formData.leaveEndDate)
-                : 'End Date'}
+                : 'Select End Date'}
             </Text>
 
             <Text style={styles.label}>Reason</Text>
@@ -287,8 +271,11 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
                   'save',
                   mode === 'edit' ? 'Update' : 'Create',
                   formData,
-                );
-                handleClose();
+                ).then(success => {
+                  if (success) {
+                    handleClose(); // Close the modal only on success
+                  }
+                });
               }}>
               <Text style={styles.buttonText}>
                 {mode === 'edit' ? 'Update' : 'Create'}
@@ -296,13 +283,24 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.submitButton]}
+              // onPress={() => {
+              //   onAction(
+              //     'submit',
+              //     mode === 'edit' ? 'Update' : 'Create',
+              //     formData,
+              //   );
+              //   handleClose();
+              // }}>
               onPress={() => {
                 onAction(
                   'submit',
                   mode === 'edit' ? 'Update' : 'Create',
                   formData,
-                );
-                handleClose();
+                ).then(success => {
+                  if (success) {
+                    handleClose(); // Close the modal only on success
+                  }
+                });
               }}>
               <Text style={styles.buttonText}>
                 {mode === 'edit' ? 'Update & Submit' : 'Create & Submit'}

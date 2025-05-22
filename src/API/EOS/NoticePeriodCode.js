@@ -21,7 +21,7 @@ const NoticePeriodCode = async () => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const esoData = await response.json();
-    console.log('Notice Period Code API Data ==========:', esoData);
+    // console.log('Notice Period Code API Data ==========:', esoData);
     return esoData;
   } catch (error) {
     console.error('Failed to fetch Notice Period Code:', error);

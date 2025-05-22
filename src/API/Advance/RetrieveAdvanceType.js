@@ -20,10 +20,10 @@ const RetrieveAdvanceType = async () => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const leaveCodes = await response.json();
-    console.log(
-      'Advance Type Code Request Data =================:',
-      leaveCodes,
-    );
+    // console.log(
+    //   'Advance Type Code Request Data =================:',
+    //   leaveCodes,
+    // );
 
     return leaveCodes;
   } catch (error) {

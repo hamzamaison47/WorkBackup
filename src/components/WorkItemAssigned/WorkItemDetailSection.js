@@ -154,6 +154,7 @@ const WorkItemDetailSection = ({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formattedId = correlationId.toUpperCase();
+  // console.log('Colleration ID================', formattedId);
   // const formattedId = correlationId.replace(/-/g, '').toUpperCase();
   // const formattedIdsss = correlationId.replace(/-/g, '');
   // var formattedId = formattedIdsss.replace(
@@ -279,8 +280,8 @@ const WorkItemDetailSection = ({
 
   const mapping = dataMappings[dataType] || [];
   const detail = detailData && detailData.length > 0 ? detailData[0] : {};
-  console.log('correlationId-0-0-0-0-0-0-0-0-', correlationId);
-  console.log('formattedId-0-0-0-0-0-0-0-0-0-', formattedId);
+  // console.log('correlationId-0-0-0-0-0-0-0-0-', correlationId);
+  // console.log('formattedId-0-0-0-0-0-0-0-0-0-', formattedId);
 
   return (
     <View style={styles.detailsContainer}>

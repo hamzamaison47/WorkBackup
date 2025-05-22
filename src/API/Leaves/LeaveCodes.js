@@ -23,7 +23,7 @@ const RetrieveLeaveCodes = async ({dataAreaId}) => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const leaveCodes = await response.json();
-    console.log('Leave Codes Data =================:', leaveCodes);
+    // console.log('Leave Codes Data =================:', leaveCodes);
 
     return leaveCodes;
   } catch (error) {

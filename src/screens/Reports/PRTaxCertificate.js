@@ -96,7 +96,7 @@ const PRTaxCertificate = () => {
         </View>
       ),
       headerStyle: {
-        backgroundColor: '#FF6B00',
+        backgroundColor: '#FFA500',
         height: Platform.OS === 'ios' ? height * 0.13 : height * 0.09,
       },
       headerTintColor: '#fff',
@@ -168,7 +168,7 @@ const PRTaxCertificate = () => {
         // <ActivityIndicator size="large" color="#FF6B00" />
         <CustomIndicator />
       ) : (
-        <LinearGradient colors={['#FF6B00', '#FF8C00']} style={styles.button}>
+        <LinearGradient colors={['#FFA500', '#FF8C00']} style={styles.button}>
           <TouchableOpacity
             onPress={onPressButton}
             style={styles.buttonContent}>

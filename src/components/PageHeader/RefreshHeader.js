@@ -12,7 +12,7 @@ const RefreshHeader = ({onGoBack, onRefresh}) => {
     headerLeft: () => (
       <View style={styles.rightSideView}>
         <TouchableOpacity onPress={onGoBack} style={styles.leftSide}>
-          <Icon name="arrow-left" size={24} color="white" />
+          <Icon name="arrow-left" size={hp(6)} color="white" />
         </TouchableOpacity>
         <Image source={logo} style={styles.headerImage} />
       </View>
@@ -20,18 +20,18 @@ const RefreshHeader = ({onGoBack, onRefresh}) => {
     headerRight: () => (
       <View style={styles.rightSideView}>
         <TouchableOpacity onPress={onRefresh} style={styles.rightSide}>
-          <Icon name="refresh" size={24} color="white" />
+          <Icon name="refresh" size={hp(6)} color="white" />
         </TouchableOpacity>
       </View>
     ),
     headerStyle: {
       backgroundColor: '#FFA500',
-      height: 70,
+      height: hp(18),
     },
     headerTintColor: '#fff',
     headerTitleAlign: 'center',
     headerTitleStyle: {
-      fontSize: hp(2.3),
+      fontSize: hp(4.6),
       color: 'white',
     },
   };
@@ -63,8 +63,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   headerImage: {
-    width: 100,
-    height: 40,
+    width: wp(25),
+    height: hp(7),
   },
 });
 

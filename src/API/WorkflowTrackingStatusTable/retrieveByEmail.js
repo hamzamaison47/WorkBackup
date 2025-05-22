@@ -23,10 +23,10 @@ const retrieveByEmail = async ({email}) => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const employmentInformation = await response.json();
-    console.log(
-      'Work Flow Data by Email ================:',
-      employmentInformation,
-    );
+    // console.log(
+    //   'Work Flow Data by Email ================:',
+    //   employmentInformation,
+    // );
 
     return employmentInformation;
   } catch (error) {

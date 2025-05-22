@@ -12,19 +12,19 @@ import {
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import CalendarModal from '../Leaves/CalendarModal';
 
-import {NoticePeriodCode} from '../../API//EOS/NoticePeriodCode';
+import {NoticePeriodCode} from '../../API/EOS/NoticePeriodCode';
 import {ResonCode} from '../../API/EOS/ResonCode';
 import {WorkerDetails} from '../../API/EOS/WorkerDetails';
 import {RetriveEmployeeReportees} from '../../API/EOS/RetriveEmployeeReportees';
+
 import {AlertModal} from '../Leaves/AlertModal';
+import CalendarModal from '../Leaves/CalendarModal';
 
 const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
-  const [noticePeriodCodeOptions, setNoticePeriodCodeOptions] = useState([]);
   const [lastWorkingDatePlanned, setLastWorkingDatePlanned] = useState('');
   const [reasonOptions, setReasonOptions] = useState([]);
-  const [hiringDateOptions, setHiringDateOptions] = useState([]);
+  const [hiringDateOptions, setHiringDateOptions] = useState('');
   const [activePayperiod, setactivePayperiod] = useState('');
   const [serviceDuration, setServiceDuration] = useState('');
   const [currentField, setCurrentField] = useState('');
@@ -37,8 +37,8 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
     recId: serviceData?.recId,
     employeeId: serviceData?.employeeId,
     employeeName: serviceData?.employeeName,
-    EOSType: serviceData?.EOSType || '',
-    NoticePeriodCode: serviceData?.NoticePeriodCode || '',
+    EOSType: serviceData?.EOSType || 0,
+    NoticePeriodCode: '',
     EOSReasonCode: serviceData?.EOSReasonCode || '',
     EOSNotificationDate: serviceData?.EOSNotificationDate || '',
     LastWorkingDate_Calculated: serviceData?.LastWorkingDate_Calculated || '',
@@ -81,7 +81,29 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
               period: item.Period,
             }));
 
-          setNoticePeriodCodeOptions(filteredNoticeCodes);
+          if (filteredNoticeCodes.length > 0) {
+            const firstNoticePeriodCode = filteredNoticeCodes[0].value;
+            setFormData(prev => ({
+              ...prev,
+              NoticePeriodCode: firstNoticePeriodCode,
+            }));
+
+            const calculatedDate = calculateLastWorkingDate(
+              new Date().toISOString().split('T')[0],
+              filteredNoticeCodes[0].intervalType,
+              filteredNoticeCodes[0].period,
+            );
+
+            setLastWorkingDatePlanned(formatDate(calculatedDate));
+
+            const joiningDate = new Date(hiringData.JoiningDate)
+              .toISOString()
+              .split('T')[0];
+            setHiringDateOptions(joiningDate);
+
+            // Calculate initial service duration
+            calculateServiceDuration(joiningDate, calculatedDate);
+          }
 
           setReasonOptions(
             reasonCodes.map(item => ({
@@ -90,16 +112,11 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
             })),
           );
 
-          const joiningDate = new Date(hiringData.JoiningDate)
-            .toISOString()
-            .split('T')[0];
-          setHiringDateOptions(joiningDate);
-
           const filteredReportees = reportees.find(
             item => item.EmployeeId === formData.employeeId,
           );
           setactivePayperiod(filteredReportees?.ActivePayPeriodCode || '');
-          setServiceDuration(filteredReportees?.ServiceDuration || '');
+          // setServiceDuration(filteredReportees?.ServiceDuration || '');
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -109,12 +126,25 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
     fetchData();
   }, [formData.employeeId, formData.EOSType]);
 
+  useEffect(() => {
+    if (lastWorkingDatePlanned && !formData.LastWorkingDate_Actual) {
+      setFormData(prev => ({
+        ...prev,
+        LastWorkingDate_Actual: lastWorkingDatePlanned,
+      }));
+    }
+  }, [lastWorkingDatePlanned, formData.LastWorkingDate_Actual]);
+
   // Methods
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
+
+    if (field === 'LastWorkingDate_Actual') {
+      calculateServiceDuration(hiringDateOptions, value);
+    }
   };
 
   const handleDateChange = date => {
@@ -127,11 +157,14 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
       return; // Prevent further updates
     }
 
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [currentField]: formatToISOWithTime(date),
-    });
+    }));
     setShowCalendar(false);
+
+    // Calculate service duration when Last Working Date Requested changes
+    calculateServiceDuration(hiringDateOptions, formatToISOWithTime(date));
   };
 
   const calculateLastWorkingDate = (notificationDate, intervalType, period) => {
@@ -145,38 +178,26 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
       date.setDate(date.getDate() + period);
     }
 
-    return formatDate(date); // Return date in YYYY-MM-DD format
+    return date; // Return date in YYYY-MM-DD format
+    // return formatDate(date); // Return date in YYYY-MM-DD format
   };
 
-  const handleEOSTypeChange = value => {
-    // setSelectedEOSType(value);
-    handleInputChange('EOSType', value);
-    setNoticePeriodCodeOptions([]);
-    setLastWorkingDatePlanned('');
-  };
+  const calculateServiceDuration = (hiringDate, lastWorkingDate) => {
+    const startDate = new Date(hiringDate);
+    const endDate = new Date(lastWorkingDate);
+    const differenceInTime = endDate.getTime() - startDate.getTime();
+    const differenceInDays = differenceInTime / (1000 * 3600 * 24);
+    const years = Math.floor(differenceInDays / 365);
+    const months = Math.floor((differenceInDays % 365) / 30);
+    const days = Math.floor((differenceInDays % 365) % 30);
 
-  const handleNoticePeriodCodeChange = (
-    selectedNoticePeriod,
-    notificationDate,
-  ) => {
-    const {intervalType, period} = noticePeriodCodeOptions.find(
-      item => item.value === selectedNoticePeriod,
-    );
-
-    const calculatedDate = calculateLastWorkingDate(
-      notificationDate,
-      intervalType,
-      period,
-    );
-
-    setLastWorkingDatePlanned(calculatedDate);
-    handleInputChange('NoticePeriodCode', selectedNoticePeriod);
+    setServiceDuration(`${years} years, ${months} months, ${days} days`);
   };
 
   const formatToISOWithTime = date => {
-    const baseDate = new Date(date); // Convert input date to Date object
+    const baseDate = new Date(date);
     const year = baseDate.getFullYear();
-    const month = String(baseDate.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
     const day = String(baseDate.getDate()).padStart(2, '0');
 
     // Construct the desired format with fixed time
@@ -194,19 +215,17 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
         })
       : '';
 
-  const getEOSType = [
-    {label: 'Resignation', value: 0},
-    {label: 'Termination', value: 1},
-    {label: 'Retirement', value: 2},
-    {label: 'Death', value: 3},
-  ];
+  const isValidDate = dateString => {
+    const date = new Date(dateString);
+    return date.toString() !== 'Invalid Date' && !isNaN(date);
+  };
 
   const handleClose = () => {
     setFormData({
       recId: '',
       employeeId: '',
       employeeName: '',
-      EOSType: '',
+      EOSType: 0,
       NoticePeriodCode: '',
       EOSReasonCode: '',
       LastWorkingDate_Actual: '',
@@ -239,33 +258,12 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
             </Text>
 
             <Text style={styles.label}>EOS Type</Text>
-            <Dropdown
-              style={styles.input}
-              data={getEOSType}
-              labelField="label"
-              valueField="value"
-              placeholder="Select EOS Type"
-              placeholderStyle={{color: '#555555'}}
-              selectedTextStyle={{color: '#000'}}
-              itemTextStyle={{color: '#000'}}
-              value={formData.EOSType}
-              // onChange={handleEOSTypeChange}
-              onChange={item => handleEOSTypeChange(item.value)}
-            />
+            <Text style={[styles.input, styles.disable]}>Resignation</Text>
 
             <Text style={styles.label}>Notice Period Code</Text>
-            <Dropdown
-              style={styles.input}
-              data={noticePeriodCodeOptions}
-              labelField="label"
-              valueField="value"
-              placeholder="Select Notice Period Code"
-              placeholderStyle={{color: '#555555'}}
-              selectedTextStyle={{color: '#000'}}
-              itemTextStyle={{color: '#000'}}
-              value={formData.NoticePeriodCode}
-              onChange={item => handleNoticePeriodCodeChange(item.value, today)}
-            />
+            <Text style={[styles.input, styles.disable]}>
+              {formData.NoticePeriodCode}
+            </Text>
 
             <Text style={styles.label}>Reason Code</Text>
             <Dropdown
@@ -310,9 +308,9 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
               }}>
               <View style={{flex: 1}}>
                 <Text style={styles.dateText}>
-                  {formData.LastWorkingDate_Actual
+                  {isValidDate(formData.LastWorkingDate_Actual)
                     ? formatDate(formData.LastWorkingDate_Actual)
-                    : 'Select Request Date'}
+                    : formData.LastWorkingDate_Actual}
                 </Text>
               </View>
               <Icon name="calendar" size={24} color="#555" />
@@ -344,7 +342,7 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
                   formData,
                 );
                 handleClose();
-                console.log('formData-0-0-0-0-0-0-0-', formData);
+                // console.log('formData-0-0-0-0-0-0-0-', formData);
               }}>
               <Text style={styles.buttonText}>
                 {mode === 'edit' ? 'Update' : 'Create'}
@@ -367,8 +365,8 @@ const EOSModal = ({visible, onClose, mode, onAction, serviceData = {}}) => {
           </View>
           <CalendarModal
             visible={showCalendar}
-            current={formData[currentField]}
-            selectedDate={formData[currentField]}
+            current={formData[formatToISOWithTime(currentField)]}
+            selectedDate={formData[formatToISOWithTime(currentField)]}
             onDateSelected={handleDateChange}
             onClose={() => setShowCalendar(false)}
           />
@@ -413,7 +411,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     marginTop: 10,
-
     fontWeight: 'bold',
     color: '#8a8a8a',
   },
@@ -423,7 +420,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginTop: 5,
-
     fontSize: 16,
     fontWeight: '500',
     color: '#707070',

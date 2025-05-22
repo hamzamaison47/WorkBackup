@@ -2,9 +2,9 @@ import React from 'react';
 import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-const NotificationButton = ({onPress, notificationCount}) => {
+const NotificationButton = ({onPress, notificationCount, onClose}) => {
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
+    <TouchableOpacity style={styles.button} onPress={() => onPress(onClose)}>
       <View style={styles.iconContainer}>
         <Icon name="bell" size={24} color="#FFFFFF" />
         {notificationCount > 0 && (

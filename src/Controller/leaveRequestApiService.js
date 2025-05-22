@@ -5,7 +5,7 @@ import {GetLeaveBalance} from '../API/Leaves/LeaveBalance';
 export const fetchLeaves = async employeeId => {
   try {
     const data = await RetrieveAll({employeeId});
-    console.log('main Data of Leave REquest', data);
+    // console.log('main Data of Leave REquest', data);
     return data.map(item => ({
       recId: item.RecId,
       leaveReqId: item.LeaveReqId,
@@ -39,7 +39,7 @@ export const fetchLeaves = async employeeId => {
 
 export const fetchLeaveCodes = async () => {
   try {
-    const data = await RetrieveLeaveCodes({dataAreaId: 'dat'});
+    const data = await RetrieveLeaveCodes({dataAreaId: 'DAT'});
     return data.map(item => ({
       label: item?.LeaveCode,
       value: item?.LeaveCode,

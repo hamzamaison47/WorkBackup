@@ -33,7 +33,7 @@ import {CreateContactDetails} from '../../API/ProfilePicture/CreateContactDetail
 import {DeleteIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/DeleteIdentityRequest';
 import {CreateIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/CreateIdentityRequest';
 import {UpdateIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/UpdateIdentityRequest';
-import {SubmitIdentificationRequest} from '../../API/ProfilePicture/IdentificationRequests/SubmitIdentificationRequest';
+// import {SubmitIdentificationRequest} from '../../API/ProfilePicture/IdentificationRequests/SubmitIdentificationRequest';
 
 const DisplayPersonalInfo = () => {
   const [expandedSections, setExpandedSections] = useState({
@@ -88,7 +88,7 @@ const DisplayPersonalInfo = () => {
     const headerOptions = SimpleHeader({
       onToggleDrawer: toggleDrawer,
       onRefresh: handleRefresh,
-      onShowNotify: showNotification,
+      onShowNotify: toggleNotification,
       onCount: notificationCount,
     });
     navigation.setOptions(headerOptions);
@@ -101,7 +101,7 @@ const DisplayPersonalInfo = () => {
     toggleDrawer,
   ]);
 
-  const showNotification = () => setNotificationVisible(true);
+  const toggleNotification = () => setNotificationVisible(!notificationVisible);
   const closeNotification = () => setNotificationVisible(false);
   const toggleDrawer = () => navigation.toggleDrawer();
 
@@ -491,9 +491,10 @@ const DisplayPersonalInfo = () => {
           )}
         </View>
 
+        {/* Identification Details Section */}
         <View style={styles.sectionHeader}>
           <SectionHeader
-            title="My Identification Details"
+            title="Identification Numbers"
             expanded={expandedSections.identificationSection}
             onToggle={() => toggleSection('identificationSection')}
           />
