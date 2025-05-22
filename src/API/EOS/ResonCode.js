@@ -20,7 +20,7 @@ const ResonCode = async () => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const esoData = await response.json();
-    console.log('Retrieve Reason Code ==========:', esoData);
+    // console.log('Retrieve Reason Code ==========:', esoData);
     return esoData;
   } catch (error) {
     console.error('Failed to fetch reason codes:', error);

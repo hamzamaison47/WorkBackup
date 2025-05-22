@@ -7,7 +7,7 @@ const WorkerDetails = async ({employeeId, lastWorkingDateActual}) => {
     _lastWorkingDateActual: lastWorkingDateActual,
   };
   try {
-    console.log('request Body', requestBody);
+    // console.log('request Body', requestBody);
 
     const accessToken = await getToken();
     const response = await fetch(
@@ -27,7 +27,7 @@ const WorkerDetails = async ({employeeId, lastWorkingDateActual}) => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const data = await response.json();
-    console.log('Retrieve Worker Details ==========:', data);
+    // console.log('Retrieve Worker Details ==========:', data);
     return data;
   } catch (error) {
     console.error('Failed to fetch worker details:', error);

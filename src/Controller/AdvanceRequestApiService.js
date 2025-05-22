@@ -1,6 +1,6 @@
 import {FindByEmployee} from '../API/Advance/FindByEmployee';
-import {RetriveEmployeeReportees} from '../API/EOS/RetriveEmployeeReportees';
-import {RetrieveAdvancesRequest} from '../API/Advance/RetrieveAdvancesRequest';
+// import {RetriveEmployeeReportees} from '../API/EOS/RetriveEmployeeReportees';
+// import {RetrieveAdvancesRequest} from '../API/Advance/RetrieveAdvancesRequest';
 import {RetrieveAdvanceType} from '../API/Advance/RetrieveAdvanceType';
 import {PayGroupPayPeriod} from '../API/Advance/PayGroupPayPeriod';
 

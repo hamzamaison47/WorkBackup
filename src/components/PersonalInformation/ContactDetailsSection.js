@@ -153,6 +153,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
   },
   cardTextHeading: {
     fontSize: 16,
@@ -163,16 +164,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#333333',
-    // marginVertical: 5,
+    flexShrink: 1,
   },
   cardSideTextHeading: {
     fontSize: 14,
     fontWeight: '700',
     color: '#808080',
+    flexShrink: 0,
+    width: '30%',
   },
   cardText: {
     fontSize: 14,
     color: '#808080',
+    flexShrink: 1,
   },
   iconsContainer: {
     flexDirection: 'row',

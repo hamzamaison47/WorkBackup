@@ -1,20 +1,13 @@
 import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
 
-//Ensure that the createLeaveRequest function correctly uses the leaveData passed to it:
-
 const SubmitAdvanceRecord = async ({recId}) => {
-  // Define the request body
   const requestBody = {
     _recId: recId,
   };
 
-  console.log('requestBody  Delete  dekhooo  =================', requestBody);
-
   try {
-    // Get the token from the separate token file
     const accessToken = await getToken();
-    // Make the POST request
     const response = await fetch(
       `${BASE_URL}EssWorkflowSvcGroup/ESSWorkflowSvc/submitAdvanceRequestByRecId`,
       {
@@ -23,21 +16,19 @@ const SubmitAdvanceRecord = async ({recId}) => {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody), // Convert the request body to JSON string
+        body: JSON.stringify(requestBody),
       },
     );
 
-    // Check if the response is successful
     if (!response.ok) {
-      const errorText = await response.text(); // Fetch error details
+      const errorText = await response.text();
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
 
     // Parse the JSON response
     const result = await response.json();
-    console.log('Advance request submitted successfully:', result);
+    // console.log('Advance request submitted successfully:', result);
 
-    // Return the response data
     return result;
   } catch (error) {
     console.error('Failed to submit Advance Request:', error);

@@ -35,7 +35,7 @@ const IdentificationInfoModal = ({
   const [formData, setFormData] = useState({
     RecId: serviceData?.RecId || 0,
     Description: serviceData?.Description || '',
-    Classification: serviceData?.Classification || '',
+    // Classification: serviceData?.Classification || '',
     IdentificationNumber: serviceData?.IdentificationNumber || '',
     IdentificationType: serviceData?.IdentificationType || null,
     IdentificationTypeId: serviceData?.IdentificationTypeId || '',
@@ -179,7 +179,7 @@ const IdentificationInfoModal = ({
     setFormData({
       RecId: '',
       Description: '',
-      Classification: '',
+      // Classification: '',
       IdentificationNumber: '',
       IdentificationTypeId: '',
       IdentificationType: '',
@@ -251,14 +251,14 @@ const IdentificationInfoModal = ({
               placeholderTextColor="grey"
             />
 
-            <Text style={styles.label}>Entry Type</Text>
+            {/* <Text style={styles.label}>Entry Type</Text>
             <TextInput
               style={styles.input}
               value={formData.Classification}
               onChangeText={value => handleInputChange('Classification', value)}
               placeholder="Enter Classification"
               placeholderTextColor="grey"
-            />
+            /> */}
 
             <Text style={styles.label}>Primary</Text>
             <Dropdown

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useContext} from 'react';
 import {View, Text, StyleSheet, ScrollView} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
@@ -48,7 +49,7 @@ const WorkItemAssigned = () => {
     const headerOptions = SimpleHeader({
       onToggleDrawer: toggleDrawer,
       onRefresh: handleRefresh,
-      onShowNotify: showNotification,
+      onShowNotify: toggleNotification,
       onCount: notificationCount,
     });
     navigation.setOptions(headerOptions);
@@ -61,7 +62,7 @@ const WorkItemAssigned = () => {
     toggleDrawer,
   ]);
 
-  const showNotification = () => setNotificationVisible(true);
+  const toggleNotification = () => setNotificationVisible(!notificationVisible);
   const closeNotification = () => setNotificationVisible(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const toggleDrawer = () => navigation.toggleDrawer();
@@ -110,6 +111,9 @@ const WorkItemAssigned = () => {
         correlationId: item.CorrelationId,
         additionalDetails: `Additional details for ${item.Document}`,
       }));
+
+      // console.log('Work Item Data============', formattedData);
+
       setWorkItemData(formattedData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -153,10 +157,6 @@ const WorkItemAssigned = () => {
       const detailAdvanceResponse = await FindAdvanceRequest({
         requestId: documentId,
       });
-      console.log(
-        'detailAdvanceResponse-0-00-0-0-0-0-0-',
-        detailAdvanceResponse,
-      );
       setAdvanceDetailData(prevState => ({
         ...prevState,
         [id]: detailAdvanceResponse,

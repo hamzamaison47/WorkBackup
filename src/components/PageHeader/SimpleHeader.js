@@ -12,7 +12,7 @@ const SimpleHeader = ({onToggleDrawer, onRefresh, onShowNotify, onCount}) => ({
   headerLeft: () => (
     <View style={styles.rightSideView}>
       <TouchableOpacity onPress={onToggleDrawer} style={styles.leftSide}>
-        <Icon name="bars" size={24} color="white" />
+        <Icon name="bars" size={hp(6)} color="white" />
       </TouchableOpacity>
       <Image source={logo} style={styles.headerImage} />
     </View>
@@ -20,7 +20,7 @@ const SimpleHeader = ({onToggleDrawer, onRefresh, onShowNotify, onCount}) => ({
   headerRight: () => (
     <View style={styles.rightSideView}>
       <TouchableOpacity onPress={onRefresh} style={styles.rightSide}>
-        <Icon name="refresh" size={24} color="white" />
+        <Icon name="refresh" size={hp(6)} color="white" />
       </TouchableOpacity>
 
       <NotificationButton onPress={onShowNotify} notificationCount={onCount} />
@@ -28,12 +28,12 @@ const SimpleHeader = ({onToggleDrawer, onRefresh, onShowNotify, onCount}) => ({
   ),
   headerStyle: {
     backgroundColor: '#FFA500',
-    height: 70,
+    height: hp(18),
   },
   headerTintColor: '#fff',
   headerTitleAlign: 'center',
   headerTitleStyle: {
-    fontSize: hp(2.3),
+    fontSize: hp(4.6),
     color: 'white',
   },
 });
@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   headerImage: {
-    width: 100,
-    height: 40,
+    width: wp(25),
+    height: hp(7),
   },
 });
 

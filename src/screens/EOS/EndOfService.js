@@ -1,3 +1,5 @@
+/* eslint-disable no-shadow */
+/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect, useContext} from 'react';
 import {View, Text, StyleSheet, FlatList} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
@@ -79,7 +81,6 @@ const EndOfService = () => {
     setIsLoading(true);
     try {
       const service = await fetchAllServices(userData.employeeId);
-      console.log('userData-0-0-0-0-0-0-0-0-', userData);
       setServiceData(service);
     } catch (error) {
       setAlertMessage('Failed in Fetch Data.', error);
@@ -167,7 +168,6 @@ const EndOfService = () => {
     }
   };
 
-  // eslint-disable-next-line no-shadow
   const handleOpenModal = (mode, serviceData = null) => {
     if (mode === 'create') {
       serviceData = {
@@ -195,8 +195,6 @@ const EndOfService = () => {
           recId: item.RecId,
           employeeId: userData.employeeId,
           employeeName: userData.employeeName,
-          // employeeId: item.EmployeeId,
-          // employeeName: item.EmployeeName,
           EOSType: item.EOSType,
           NoticePeriodCode: item.NoticePeriodCode,
           EOSReasonCode: item.EOSReasonCode,
@@ -210,12 +208,11 @@ const EndOfService = () => {
     />
   );
 
-  // eslint-disable-next-line no-shadow
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
-      console.log('actionType-0-0-0-0-0-0-0-0-0-0-', actionType);
-      console.log('modalMode-0-0-0-0-0-0-0-0-0-0-', modalMode);
-      console.log('data-0-0-0-0-0-0-0-0-0-0-', data);
+      // console.log('actionType-0-0-0-0-0-0-0-0-0-0-', actionType);
+      // console.log('modalMode-0-0-0-0-0-0-0-0-0-0-', modalMode);
+      // console.log('data-0-0-0-0-0-0-0-0-0-0-', data);
       const formattedNotificationDate = `${
         new Date().toISOString().split('T')[0]
       }T12:00:00`;
@@ -248,13 +245,11 @@ const EndOfService = () => {
         LastWorkingDate_Actual: data.LastWorkingDate_Actual,
         Remarks: data.Remarks,
         EOSNotificationDate: formattedNotificationDate,
-
         EmployeeId: userData.WorkerRecId,
-        // EmployeeId: data.employeeId,
         RecId: data.recId,
       };
 
-      console.log('eosData-0-0-0-0-0-0-0-0-', eosData);
+      // console.log('eosData-0-0-0-0-0-0-0-0-', eosData);
       let response;
 
       // API Call Logic
@@ -319,7 +314,6 @@ const EndOfService = () => {
           data={serviceData}
           renderItem={renderLeavesCard}
           keyExtractor={(item, index) => index.toString()}
-          // eslint-disable-next-line react-native/no-inline-styles
           contentContainerStyle={{flexGrow: 1}}
         />
       ) : (
@@ -353,7 +347,6 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     textAlignVertical: 'center',
-    // fontSize: 16,
 
     fontSize: 18,
     fontWeight: 'bold',

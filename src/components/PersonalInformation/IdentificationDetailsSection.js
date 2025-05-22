@@ -13,13 +13,15 @@ const IdentificationDetailsSection = ({
   const [identificationRows, setIdentificationRows] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [selectedRecId, setSelectedRecId] = useState(null); // State to store the selected RecId
+  const [selectedIdentificationType, setSelectedIdentificationType] =
+    useState(null); // State to store the selected RecId
 
   useEffect(() => {
     if (IdentityrRows) {
       const formattedRows = IdentityrRows.map(item => ({
         RecId: item.RecId || 0,
         Description: item.Description || 'N/A',
-        Classification: item.Classification || 'N/A',
+        // Classification: item.Classification || 'N/A',
         IdentificationNumber: item.IdentificationNumber || 'N/A',
         IdentificationTypeId: item.IdentificationTypeId || 'N/A',
         IssuedDate: item.IssuedDate || 'N/A',
@@ -33,8 +35,9 @@ const IdentificationDetailsSection = ({
     }
   }, [IdentityrRows]);
 
-  const confirmDeleteLeave = RecId => {
+  const confirmDeleteLeave = (RecId, Type) => {
     setSelectedRecId(RecId); // Store the RecId of the row to be deleted
+    setSelectedIdentificationType(Type);
     setAlertModal(true);
   };
 
@@ -69,7 +72,9 @@ const IdentificationDetailsSection = ({
                 </Text>
                 <View style={styles.iconsContainer}>
                   <TouchableOpacity
-                    onPress={() => confirmDeleteLeave(row.RecId)}
+                    onPress={() =>
+                      confirmDeleteLeave(row.RecId, row.IdentificationTypeId)
+                    }
                     style={styles.deleteIconContainer}>
                     <Icon name="trash" size={16} color="#fff" />
                   </TouchableOpacity>
@@ -94,10 +99,10 @@ const IdentificationDetailsSection = ({
                 <Text style={styles.cardText}>{row.Description}</Text>
               </View>
 
-              <View style={styles.textContainers}>
+              {/* <View style={styles.textContainers}>
                 <Text style={styles.cardSideTextHeading}>Entry type</Text>
                 <Text style={styles.cardText}>{row.Classification}</Text>
-              </View>
+              </View> */}
 
               <View style={styles.textContainers}>
                 <Text style={styles.cardSideTextHeading}>Primary</Text>
@@ -151,7 +156,15 @@ const IdentificationDetailsSection = ({
       <AlertDeleteModal
         visible={alertModal}
         heading="Confirm Deletion"
-        text="Are you sure you want to Delete this Record?"
+        text={
+          <>
+            Are you sure you want to Delete this{' '}
+            <Text style={{fontWeight: 'bold'}}>
+              {selectedIdentificationType}
+            </Text>{' '}
+            Record?
+          </>
+        }
         onPress={() => {
           onDelete(selectedRecId);
           setAlertModal(false);
@@ -181,6 +194,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
   },
   cardTextHeading: {
     fontSize: 16,
@@ -191,16 +205,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#333333',
-    marginVertical: 5,
+    // marginVertical: 5,
+    flexShrink: 1,
   },
   cardSideTextHeading: {
     fontSize: 14,
     fontWeight: '700',
     color: '#808080',
+    flexShrink: 0,
+    width: '30%',
   },
   cardText: {
     fontSize: 14,
     color: '#808080',
+    flexShrink: 1,
   },
   iconsContainer: {
     flexDirection: 'row',

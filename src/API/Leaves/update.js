@@ -1,23 +1,13 @@
 import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
 
-//Ensure that the createLeaveRequest function correctly uses the leaveData passed to it:
-
 const update = async leaveData => {
-  // Define the request body
   const requestBody = {
     contract: leaveData,
   };
 
-  console.log(
-    'requestBody  update Leave Request =================',
-    requestBody,
-  );
-
   try {
-    // Get the token from the separate token file
     const accessToken = await getToken();
-    // Make the POST request
     const response = await fetch(
       `${BASE_URL}PREmployeeLeavesSvcGroup/PREmployeeLeavesSvc/Update`,
       {
@@ -26,21 +16,19 @@ const update = async leaveData => {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody), // Convert the request body to JSON string
+        body: JSON.stringify(requestBody),
       },
     );
 
-    // Check if the response is successful
     if (!response.ok) {
-      const errorText = await response.text(); // Fetch error details
+      const errorText = await response.text();
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
 
     // Parse the JSON response
     const result = await response.json();
-    console.log('Leave Request Updated:', result);
+    // console.log('Leave Request Updated:', result);
 
-    // Return the response data
     return result;
   } catch (error) {
     console.error('Failed to update leave request:', error);

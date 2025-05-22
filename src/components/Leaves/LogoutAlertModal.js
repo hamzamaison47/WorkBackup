@@ -57,16 +57,17 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   headingText: {
-    fontSize: hp(4.5),
+    fontSize: 20,
+    fontWeight: 'bold',
     textAlign: 'center',
-    color: 'black',
+    color: '#525252',
   },
   modalText: {
     marginTop: hp(0.5),
     marginBottom: hp(3),
     textAlign: 'center',
-    color: 'black',
-    fontSize: hp(2.8),
+    color: 'grey',
+    fontSize: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     textAlign: 'center',
-    fontSize: hp(3),
+    fontSize: 16,
   },
 });
 

@@ -17,7 +17,7 @@ const TabNavigator = () => {
           let iconName;
 
           if (route.name === 'MainDashboard') {
-            iconName = focused ? 'home' : 'home-outline';
+            iconName = focused ? 'speedometer' : 'speedometer-outline';
           } else if (route.name === 'WorkItemAssigned') {
             iconName = focused ? 'library' : 'library-outline';
           } else if (route.name === 'DisplayPersonalInfo') {

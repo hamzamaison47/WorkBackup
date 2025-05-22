@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveByEmail} from '../API/PREmploymentInformation/RetrieveByEmail';
 
 const config = {
-  // issuer: 'https://mcs-payroll-016b0b233774105bf1aos.ax cloud.dynamics.com',
+  // issuer: 'https://mcs-payroll-016b0b233774105bf1aos.axcloud.dynamics.com/',
   issuer: 'https://maison-uat.sandbox.operations.dynamics.com',
   clientId: '44c7cff3-bed3-4644-bed9-36c7c0a13dbe',
   redirectUrl: 'authentication://callback',
@@ -88,6 +88,74 @@ export const handleLogin = async (
   }
 };
 
+// export const handleSuccessfulLogin = async (
+//   accessToken,
+//   setUserData,
+//   navigation,
+//   setDialogVisible,
+//   setDialogMessage,
+// ) => {
+//   const decodedAccessToken = jwtDecode(accessToken);
+//   console.log('Decoded Access Token:', decodedAccessToken);
+
+//   await AsyncStorage.setItem('accessToken', accessToken);
+
+//   const employeeInfo = await fetchEmpInfo(decodedAccessToken.upn);
+
+//   if (
+//     !employeeInfo.length ||
+//     !employeeInfo[0].value ||
+//     !employeeInfo[0].label ||
+//     employeeInfo[0].WorkerRecId === 0
+//   ) {
+//     setDialogMessage(
+//       'Incorrect Login Details.\n Please verify your Username and Password, or contact support if you are having trouble accessing your account.',
+//     );
+//     setDialogVisible(true);
+//     return;
+//   }
+
+//   const {label: employeeName, value: employeeId, WorkerRecId} = employeeInfo[0];
+
+//   setUserData({
+//     userName: decodedAccessToken.name,
+//     employeeName,
+//     employeeId,
+//     WorkerRecId,
+//     email: decodedAccessToken.upn,
+//   });
+
+//   navigation.navigate('DrawerNavigator', {userName: decodedAccessToken.name});
+// };
+
+// export const fetchEmpInfo = async email => {
+//   try {
+//     if (!email) {
+//       console.error('Invalid email input:', email);
+//       return [];
+//     }
+
+//     console.log('Fetching employee info for:', email);
+
+//     const data = await RetrieveByEmail({dataAreaId: 'usmf', email});
+//     console.log('Raw response from RetrieveByEmail:', data); // Debugging log
+
+//     if (!data || !Array.isArray(data)) {
+//       console.error('Unexpected data format:', data);
+//       return []; // Always return an empty array if data is invalid
+//     }
+
+//     return data.map(item => ({
+//       label: item.EmployeeName?.toString() ?? '',
+//       value: item.EmployeeId?.toString() ?? '',
+//       WorkerRecId: item.WorkerRecId,
+//     }));
+//   } catch (error) {
+//     console.error('Error in fetchEmpInfo:', error);
+//     return []; // Always return an empty array in case of error
+//   }
+// };
+
 export const handleSuccessfulLogin = async (
   accessToken,
   setUserData,
@@ -96,38 +164,44 @@ export const handleSuccessfulLogin = async (
   setDialogMessage,
 ) => {
   const decodedAccessToken = jwtDecode(accessToken);
-  console.log('Decoded Access Token:', decodedAccessToken);
+  // console.log('Decoded Access Token:', decodedAccessToken);
 
-  // Store access token in AsyncStorage
   await AsyncStorage.setItem('accessToken', accessToken);
 
-  // Fetch employee info
   const employeeInfo = await fetchEmpInfo(decodedAccessToken.upn);
-  if (employeeInfo.length > 0) {
-    const {
-      label: employeeName,
-      value: employeeId,
-      WorkerRecId,
-    } = employeeInfo[0];
 
-    // Update user context
-    setUserData({
-      userName: decodedAccessToken.name,
-      employeeName,
-      employeeId,
-      WorkerRecId,
-      email: decodedAccessToken.upn,
-    });
-
-    // Navigate to the main dashboard
-    navigation.navigate('DrawerNavigator', {userName: decodedAccessToken.name});
-  } else {
+  if (
+    !employeeInfo.length ||
+    !employeeInfo[0].value ||
+    !employeeInfo[0].label ||
+    employeeInfo[0].WorkerRecId === 0
+  ) {
     setDialogMessage(
-      'No employee information found. Please check your account.',
+      'Incorrect Login Details.\n Please verify your Username and Password, or contact support if you are having trouble accessing your account.',
     );
     setDialogVisible(true);
     return;
   }
+
+  const {
+    label: employeeName,
+    value: employeeId,
+    WorkerRecId,
+    JobId,
+    Department,
+  } = employeeInfo[0];
+
+  setUserData({
+    userName: decodedAccessToken.name,
+    employeeName,
+    employeeId,
+    WorkerRecId,
+    email: decodedAccessToken.upn,
+    jobId: JobId, // Add JobId to user data
+    department: Department, // Add Department to user data
+  });
+
+  navigation.navigate('DrawerNavigator', {userName: decodedAccessToken.name});
 };
 
 export const fetchEmpInfo = async email => {
@@ -137,38 +211,25 @@ export const fetchEmpInfo = async email => {
       return [];
     }
 
-    console.log('Fetching employee info for:', email);
+    // console.log('Fetching employee info for:', email);
 
-    const data = await RetrieveByEmail({dataAreaId: 'dat', email});
+    const data = await RetrieveByEmail({dataAreaId: 'DAT', email});
+    // console.log('Raw response from RetrieveByEmail:', data); // Debugging log
 
-    if (!Array.isArray(data)) {
+    if (!data || !Array.isArray(data)) {
       console.error('Unexpected data format:', data);
-      return [];
+      return []; // Always return an empty array if data is invalid
     }
 
     return data.map(item => ({
       label: item.EmployeeName?.toString() ?? '',
       value: item.EmployeeId?.toString() ?? '',
       WorkerRecId: item.WorkerRecId,
+      JobId: item.JobId?.toString() ?? '', // Extract JobId
+      Department: item.Department?.toString() ?? '', // Extract Department
     }));
   } catch (error) {
     console.error('Error in fetchEmpInfo:', error);
-    return [];
+    return []; // Always return an empty array in case of error
   }
 };
-
-// export const fetchEmpInfo = async email => {
-//   try {
-//     console.log('Fetching employee info for:', email);
-//     const data = await RetrieveByEmail({dataAreaId: 'dat', email});
-//     console.log('Employee data:', data);
-
-//     return data.map(item => ({
-//       label: item.EmployeeName.toString(),
-//       value: item.EmployeeId.toString(),
-//       WorkerRecId: item.WorkerRecId,
-//     }));
-//   } catch (error) {
-//     return [];
-//   }
-// };

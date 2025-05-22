@@ -1,18 +1,9 @@
 import React, {useState, useEffect, useContext} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  FlatList,
-  Button,
-} from 'react-native';
+import {View, Text, StyleSheet, FlatList} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {UserContext} from '../../context/UserContext';
 import {AlertModal} from '../../components/Leaves/AlertModal';
 import {getEntitlementBalances} from '../../Controller/EntitlementRequestApiService';
-// import HeaderComponent from '../../components/Entitlement/HeaderComponent';
-import SimpleHeader from '../../components/PageHeader/SimpleHeader';
 import EntitlementCards from '../../components/Entitlement/EntitlementCards';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import RefreshHeader from '../../components/PageHeader/RefreshHeader';
@@ -151,6 +142,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textAlignVertical: 'center',
     fontSize: 16,
+
+    fontWeight: 'bold',
+    color: '#cccccc',
   },
 });
 
