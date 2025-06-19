@@ -11,7 +11,7 @@ const RetrieveByEmail = async ({dataAreaId, email}) => {
     const accessToken = await getToken();
 
     const response = await fetch(
-      `${BASE_URL}PREmploymentInformationSvcGroup/PREmploymentInformationSvc/retrieveByEmail`,
+      `${BASE_URL}PREmploymentInformationSvcGroup/PREmploymentInformationSvc/retrieveByEmailAddress`,
       {
         method: 'POST',
         headers: {
@@ -23,8 +23,6 @@ const RetrieveByEmail = async ({dataAreaId, email}) => {
     );
 
     const responseBody = await response.text();
-    // console.log('Request Body=================', requestBody);
-    // console.log('Employment Information Body=================', responseBody);
 
     if (!response.ok) {
       throw new Error(

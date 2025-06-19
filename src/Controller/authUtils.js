@@ -1,64 +1,33 @@
-// authUtils.js
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveByEmail} from '../API/PREmploymentInformation/RetrieveByEmail';
+import {
+  getAzureConfigurationV2,
+  getGoogleConfiguration,
+} from './config/configuration';
 
-const config = {
-  // issuer: 'https://mcs-payroll-016b0b233774105bf1aos.axcloud.dynamics.com/',
-  issuer: 'https://maison-uat.sandbox.operations.dynamics.com',
-  clientId: '44c7cff3-bed3-4644-bed9-36c7c0a13dbe',
-  redirectUrl: 'authentication://callback',
-  scopes: ['openid', 'profile', 'email'],
-  serviceConfiguration: {
-    authorizationEndpoint:
-      'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/v2.0/authorize',
-    tokenEndpoint:
-      'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/v2.0/token',
-  },
+export const handleLogoutauth = async Provider => {
+  if (Provider === 'Azure') {
+    try {
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('idToken');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // eslint-disable-next-line no-alert
+      alert('Logout failed. Please try again.');
+    }
+  } else if (Provider === 'Google') {
+    try {
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('idToken');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // eslint-disable-next-line no-alert
+      alert('Logout failed. Please try again.');
+    }
+  }
 };
-
-// const config = {
-//   //???? why issuer is Dynamics
-//   // issuer: process.env.resource,
-//   issuer: 'https://mcs-payroll-016b0b233774105bf1aos.axcloud.dynamics.com',
-//   // issuer: 'https://maison-uat.sandbox.operations.dynamics.com',
-//   //????
-
-//   clientId: '44c7cff3-bed3-4644-bed9-36c7c0a13dbe',
-//   // clientId: process.env.client_id,
-//   redirectUrl: 'authentication://callback',
-//   scopes: ['openid', 'profile', 'email'],
-//   serviceConfiguration: {
-//     authorizationEndpoint:
-//       'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/v2.0/authorize',
-//     tokenEndpoint:
-//       'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/v2.0/token',
-//   },
-// };
-
-// const config = {
-//   // Azure AD issuer (identity provider)
-//   issuer:
-//     'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/v2.0',
-
-//   // Client ID from Azure App Registration
-//   clientId: '33d55aaf-fb09-4f76-bede-4346965e74b6',
-
-//   // Redirect URL defined in Azure AD
-//   redirectUrl: 'authentication://callback',
-
-//   // Required scopes
-//   scopes: ['openid', 'profile', 'email'],
-
-//   // Azure endpoints for authorization and token
-//   serviceConfiguration: {
-//     authorizationEndpoint:
-//       'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/v2.0/authorize',
-//     tokenEndpoint:
-//       'https://login.microsoftonline.com/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/v2.0/token',
-//   },
-// };
 
 export const handleLogin = async (
   setLoading,
@@ -66,123 +35,95 @@ export const handleLogin = async (
   navigation,
   setDialogVisible,
   setDialogMessage,
+  provider,
 ) => {
   setLoading(true);
-  try {
-    const result = await authorize(config);
-    if (result) {
-      await handleSuccessfulLogin(
-        result.accessToken,
-        setUserData,
-        navigation,
-        setDialogVisible,
-        setDialogMessage,
-      );
+
+  //Hnadling User Authentication for App(Interface not for D365)
+  //Conditions based on the Providers
+  if (provider === 'Azure') {
+    try {
+      const result = await authorize(getAzureConfigurationV2());
+      console.log('Result (Azure) <===========>', result);
+      if (result) {
+        await handleSuccessfulLogin(
+          result.accessToken,
+          setUserData,
+          navigation,
+          setDialogVisible,
+          setDialogMessage,
+          'Azure',
+        );
+      }
+    } catch (error) {
+      if (error.code === 'access_denied') {
+        // eslint-disable-next-line no-alert
+        alert('Login Process Cancelled');
+      } else if (error.error === 'User cancelled flow') {
+        //do Nothing As User Himself has Cancelled the Process
+      }
+      console.error('Login error:', error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Login error:', error);
-    // eslint-disable-next-line no-alert
-    alert('Login failed. Please try again.');
-  } finally {
-    setLoading(false);
+  } else if (provider === 'Google') {
+    try {
+      const result = await authorize(getGoogleConfiguration());
+      console.log('Result (Google) <===========>', result);
+
+      if (result) {
+        await AsyncStorage.setItem('idToken', result.idToken);
+        await handleSuccessfulLogin(
+          result.idToken,
+          setUserData,
+          navigation,
+          setDialogVisible,
+          setDialogMessage,
+          'Google',
+        );
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      // eslint-disable-next-line no-alert
+      alert('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 };
 
-// export const handleSuccessfulLogin = async (
-//   accessToken,
-//   setUserData,
-//   navigation,
-//   setDialogVisible,
-//   setDialogMessage,
-// ) => {
-//   const decodedAccessToken = jwtDecode(accessToken);
-//   console.log('Decoded Access Token:', decodedAccessToken);
-
-//   await AsyncStorage.setItem('accessToken', accessToken);
-
-//   const employeeInfo = await fetchEmpInfo(decodedAccessToken.upn);
-
-//   if (
-//     !employeeInfo.length ||
-//     !employeeInfo[0].value ||
-//     !employeeInfo[0].label ||
-//     employeeInfo[0].WorkerRecId === 0
-//   ) {
-//     setDialogMessage(
-//       'Incorrect Login Details.\n Please verify your Username and Password, or contact support if you are having trouble accessing your account.',
-//     );
-//     setDialogVisible(true);
-//     return;
-//   }
-
-//   const {label: employeeName, value: employeeId, WorkerRecId} = employeeInfo[0];
-
-//   setUserData({
-//     userName: decodedAccessToken.name,
-//     employeeName,
-//     employeeId,
-//     WorkerRecId,
-//     email: decodedAccessToken.upn,
-//   });
-
-//   navigation.navigate('DrawerNavigator', {userName: decodedAccessToken.name});
-// };
-
-// export const fetchEmpInfo = async email => {
-//   try {
-//     if (!email) {
-//       console.error('Invalid email input:', email);
-//       return [];
-//     }
-
-//     console.log('Fetching employee info for:', email);
-
-//     const data = await RetrieveByEmail({dataAreaId: 'usmf', email});
-//     console.log('Raw response from RetrieveByEmail:', data); // Debugging log
-
-//     if (!data || !Array.isArray(data)) {
-//       console.error('Unexpected data format:', data);
-//       return []; // Always return an empty array if data is invalid
-//     }
-
-//     return data.map(item => ({
-//       label: item.EmployeeName?.toString() ?? '',
-//       value: item.EmployeeId?.toString() ?? '',
-//       WorkerRecId: item.WorkerRecId,
-//     }));
-//   } catch (error) {
-//     console.error('Error in fetchEmpInfo:', error);
-//     return []; // Always return an empty array in case of error
-//   }
-// };
-
+//Checking If user Exists in D365FO
 export const handleSuccessfulLogin = async (
   accessToken,
   setUserData,
   navigation,
   setDialogVisible,
   setDialogMessage,
+  provider,
 ) => {
   const decodedAccessToken = jwtDecode(accessToken);
-  // console.log('Decoded Access Token:', decodedAccessToken);
 
   await AsyncStorage.setItem('accessToken', accessToken);
 
-  const employeeInfo = await fetchEmpInfo(decodedAccessToken.upn);
+  let userEmailOrUPN;
 
+  if (provider === 'Azure') {
+    userEmailOrUPN = decodedAccessToken.upn;
+  } else if (provider === 'Google') {
+    userEmailOrUPN = decodedAccessToken.email;
+  }
+  //API call to get UserData from D365FO
+  const employeeInfo = await fetchEmpInfo(userEmailOrUPN);
   if (
     !employeeInfo.length ||
     !employeeInfo[0].value ||
     !employeeInfo[0].label ||
     employeeInfo[0].WorkerRecId === 0
   ) {
-    setDialogMessage(
-      'Incorrect Login Details.\n Please verify your Username and Password, or contact support if you are having trouble accessing your account.',
-    );
-    setDialogVisible(true);
-    return;
+    //If User Data is not Found in Dynamics then to do here
   }
 
+  //Assigning Data needed in cache to an Object
   const {
     label: employeeName,
     value: employeeId,
@@ -191,14 +132,16 @@ export const handleSuccessfulLogin = async (
     Department,
   } = employeeInfo[0];
 
+  //setting User Data in Cache
   setUserData({
     userName: decodedAccessToken.name,
     employeeName,
     employeeId,
     WorkerRecId,
-    email: decodedAccessToken.upn,
+    email: userEmailOrUPN,
     jobId: JobId, // Add JobId to user data
     department: Department, // Add Department to user data
+    Provider: provider,
   });
 
   navigation.navigate('DrawerNavigator', {userName: decodedAccessToken.name});
@@ -211,10 +154,7 @@ export const fetchEmpInfo = async email => {
       return [];
     }
 
-    // console.log('Fetching employee info for:', email);
-
     const data = await RetrieveByEmail({dataAreaId: 'DAT', email});
-    // console.log('Raw response from RetrieveByEmail:', data); // Debugging log
 
     if (!data || !Array.isArray(data)) {
       console.error('Unexpected data format:', data);

@@ -6,6 +6,26 @@
 <action android:name="android.intent.action.MAIN"/>
 <category android:name="android.intent.category.LAUNCHER"/>
 </intent-filter>
+ <intent-filter android:autoVerify="true">
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data
+      android:scheme="com.googleusercontent.apps.127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl"
+      android:host="oauth2redirect"
+      android:pathPrefix="/google" />
+  </intent-filter>
+</activity>
+<activity android:name="net.openid.appauth.RedirectUriReceiverActivity">
+   <intent-filter>
+    <action android:name="android.intent.action.VIEW" />
+    <category android:name="android.intent.category.DEFAULT" />
+    <category android:name="android.intent.category.BROWSABLE" />
+    <data
+      android:scheme="authentication"
+      android:host="callback"
+      android:pathPrefix="/" />
+  </intent-filter>
 </activity>
 </application>
 </manifest>

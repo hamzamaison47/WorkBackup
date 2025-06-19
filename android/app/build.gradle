@@ -123,6 +123,12 @@ manifestPlaceholders = [appAuthRedirectScheme: 'com.authentication.callback',
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+
+    defaultConfig {
+    manifestPlaceholders = [
+      appAuthRedirectScheme: 'com.googleusercontent.apps.127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl'
+    ]
+  }
 }
 
 dependencies {

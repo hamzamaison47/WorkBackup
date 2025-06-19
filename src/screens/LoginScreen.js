@@ -33,15 +33,31 @@ const LoginScreen = () => {
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
+                'Azure',
               )
             }
             disabled={loading}>
             <Icon name="windows" size={24} color="#fff" style={styles.icon} />
             <Text style={styles.buttonText}>Sign in with Microsoft</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() =>
+              handleLogin(
+                setLoading,
+                setUserData,
+                navigation,
+                setDialogVisible,
+                setDialogMessage,
+                'Google',
+              )
+            }
+            disabled={loading}>
+            <Icon name="google" size={24} color="#fff" style={styles.icon} />
+            <Text style={styles.buttonText}>Sign in with Google</Text>
+          </TouchableOpacity>
         </>
       )}
-
       {loading && (
         <View style={styles.loadingContainer}>
           <CustomIndicator />
@@ -102,6 +118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // To align the icon and text side by side
     alignItems: 'center', // Align vertically centered
     backgroundColor: '#FFA500',
+    marginVertical: 15,
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,

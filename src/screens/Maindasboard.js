@@ -26,6 +26,7 @@ import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmai
 import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
 import MainPageHeader from '../components/PageHeader/MainPageHeader';
 import NotificationDropdown from '../components/NotificationDropdown';
+import {handleLogoutauth} from '../Controller/authUtils';
 
 const {height, width} = Dimensions.get('window');
 
@@ -90,6 +91,7 @@ const MainDashboard = () => {
   const handleLogout = () => setModalVisible(true);
   const confirmLogout = () => {
     setModalVisible(false);
+    handleLogoutauth(userData.Provider);
     navigation.navigate('Login');
   };
   const cancelLogout = () => setModalVisible(false);
