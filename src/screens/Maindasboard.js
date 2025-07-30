@@ -12,13 +12,14 @@ import {
   BackHandler,
   ActivityIndicator,
   TouchableWithoutFeedback,
+  SafeAreaView,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
 import {wp, hp} from '../constants/Size';
 import {UserContext} from '../context/UserContext';
+import {CompanyContext} from '../context/CompanyContext';
 
 import {ProfilePicture} from '../API/ProfilePicture/ProfilePicture';
 import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
@@ -26,9 +27,12 @@ import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmai
 import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
 import MainPageHeader from '../components/PageHeader/MainPageHeader';
 import NotificationDropdown from '../components/NotificationDropdown';
+import CompanyDropdown from '../components/PageHeader/CompanyDropdown';
+import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import {handleLogoutauth} from '../Controller/authUtils';
 
 const {height, width} = Dimensions.get('window');
+const cardWidth = (width - 56) / 2;
 
 const MainDashboard = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -40,8 +44,24 @@ const MainDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [notificationVisible, setNotificationVisible] = useState(false);
 
+  const [isCompanySwitching, setIsCompanySwitching] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
   const navigation = useNavigation();
   const {userData} = useContext(UserContext);
+  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
+    useContext(CompanyContext);
+
+  // Initialize selectedLegalEntity with user's defaultLegalEntity if not already set
+  useEffect(() => {
+    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
+      setSelectedLegalEntity(userData.defaultLegalEntity);
+    }
+  }, [
+    userData?.defaultLegalEntity,
+    selectedLegalEntity,
+    setSelectedLegalEntity,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -58,6 +78,31 @@ const MainDashboard = () => {
     }, [handleLogout]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      // Close everything on focus
+      closeAllOverlays();
+
+      const onBackPress = () => {
+        handleLogout();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => {
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      };
+    }, []),
+  );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      closeAllOverlays();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   useEffect(() => {
     fetchProfilePicture();
   }, []);
@@ -68,12 +113,40 @@ const MainDashboard = () => {
     return () => clearInterval(interval);
   }, [userData.email]);
 
+  const handleCompanySelect = async newLegalEntity => {
+    setIsCompanySwitching(true);
+    setSelectedLegalEntity(newLegalEntity);
+
+    // Optional: simulate delay if needed for effect (or await any refresh logic)
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Optional but Refresh any data that depends on the selected company
+
+    setIsCompanySwitching(false);
+  };
+
+  useEffect(() => {
+    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
+      setSelectedLegalEntity(userData.defaultLegalEntity);
+    }
+  }, [
+    userData?.defaultLegalEntity,
+    selectedLegalEntity,
+    setSelectedLegalEntity,
+  ]);
+
+  // Update the header configuration to show the current selected company:
   useEffect(() => {
     const headerOptions = MainPageHeader({
       onToggleDrawer: toggleDrawer,
+      onTitle: 'Employee Self Service',
       onShowNotify: toggleNotification,
       onCount: notificationCount,
       onLogout: handleLogout,
+      isBack: false,
+      onDatPress: toggleCompanyDropdown,
+      selectedDat:
+        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
+      defaultDat: userData?.defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
   }, [
@@ -82,13 +155,35 @@ const MainDashboard = () => {
     notificationVisible,
     notifications,
     toggleDrawer,
+    selectedLegalEntity,
+    userData?.defaultLegalEntity,
   ]);
 
-  const closeNotification = () => setNotificationVisible(false);
-  const toggleDrawer = () => navigation.toggleDrawer();
-  const toggleNotification = () => setNotificationVisible(!notificationVisible);
+  const closeAllOverlays = () => {
+    setDropdownVisible(false);
+    setNotificationVisible(false);
+    setModalVisible(false);
+    setImageModalVisible(false);
+    navigation.closeDrawer?.(); // Optional, if using Drawer Navigator
+  };
 
-  const handleLogout = () => setModalVisible(true);
+  const toggleNotification = () => {
+    closeAllOverlays();
+    setNotificationVisible(prev => !notificationVisible);
+  };
+  const toggleDrawer = () => {
+    closeAllOverlays();
+    navigation.toggleDrawer();
+  };
+  const handleLogout = () => {
+    closeAllOverlays();
+    setModalVisible(true);
+  };
+  const toggleCompanyDropdown = () => {
+    closeAllOverlays();
+    setDropdownVisible(prev => !dropdownVisible);
+  };
+  const closeNotification = () => setNotificationVisible(false);
   const confirmLogout = () => {
     setModalVisible(false);
     handleLogoutauth(userData.Provider);
@@ -116,7 +211,10 @@ const MainDashboard = () => {
   const fetchProfilePicture = async () => {
     setIsLoading(true);
     try {
-      const data = await ProfilePicture({employeeId: userData.employeeId});
+      const data = await ProfilePicture({
+        employeeId: userData.employeeId,
+        defaultCompany: selectedLegalEntity,
+      });
       const base64Image = `data:image/png;base64,${data.StringImage}`;
       setProfilePictureUrl(base64Image);
     } catch (error) {
@@ -128,143 +226,87 @@ const MainDashboard = () => {
 
   const cards = [
     {
-      text: 'Leave Request',
-      colors: ['orange', 'orange'],
-      icon: 'calendar',
+      id: '1',
+      title: 'Leave Request',
+      description: 'Apply for time off',
+      icon: 'calendar-outline',
       onPress: () =>
-        navigation.navigate('Leaves', {employeeId: userData.employeeId}),
-    },
-    {
-      text: 'Resignation Request',
-      colors: ['orange', 'orange'],
-      icon: 'flag',
-      onPress: () =>
-        navigation.navigate('EndOfService', {employeeId: userData.employeeId}),
-    },
-    {
-      text: 'Salary Slip',
-      colors: ['orange', 'orange'],
-      icon: 'money',
-      onPress: () =>
-        navigation.navigate('PRSalarySlip', {employeeId: userData.employeeId}),
-    },
-    {
-      text: 'Tax Certificate',
-      colors: ['orange', 'orange'],
-      icon: 'certificate',
-      onPress: () =>
-        navigation.navigate('PRTaxCertificate', {
+        navigation.navigate('LeaveSaveRecord', {
+          mode: 'create',
           employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'MainDashboard',
+          selectedLegalEntity: selectedLegalEntity,
         }),
     },
     {
-      text: 'Loan Request',
-      colors: ['orange', 'orange'],
-      icon: 'handshake-o',
+      id: '2',
+      title: 'Salary Slip',
+      description: 'View monthly payslip',
+      icon: 'card-outline',
       onPress: () =>
-        navigation.navigate('LoanRequest', {
+        navigation.navigate('PRSalarySlip', {
           employeeId: userData.employeeId,
-        }),
-    },
-    {
-      text: 'Advance Salary',
-      colors: ['orange', 'orange'],
-      icon: 'credit-card',
-      onPress: () =>
-        navigation.navigate('AdvanceSalary', {
-          employeeId: userData.employeeId,
-        }),
-    },
-    {
-      text: 'Entitlement Balances',
-      colors: ['orange', 'orange'],
-      icon: 'balance-scale',
-      onPress: () =>
-        navigation.navigate('EntitlementBalance', {
-          employeeId: userData.employeeId,
-        }),
-    },
-    {
-      text: 'My Team',
-      colors: ['orange', 'orange'],
-      icon: 'users',
-      onPress: () =>
-        navigation.navigate('WorkerAssignedToMe', {
-          employeeId: userData.employeeId,
-        }),
-    },
-    {
-      text: 'Employee Certificates',
-      colors: ['orange', 'orange'],
-      icon: 'file-text',
-      onPress: () =>
-        navigation.navigate('EmployeeCertificates', {
-          employeeId: userData.employeeId,
-        }),
-    },
-    {
-      text: 'Employee Bank Account',
-      colors: ['orange', 'orange'],
-      icon: 'bank',
-      onPress: () =>
-        navigation.navigate('EmployeeBankAccount', {
-          employeeId: userData.employeeId,
-        }),
-    },
-    {
-      text: 'Help Desk',
-      colors: ['orange', 'orange'],
-      icon: 'heart-o',
-      onPress: () =>
-        navigation.navigate('HelpDesk', {
-          employeeId: userData.employeeId,
+          selectedLegalEntity: selectedLegalEntity,
         }),
     },
   ];
 
   const renderCard = ({item}) => (
-    <TouchableOpacity onPress={item.onPress} style={styles.cardContainer}>
-      <LinearGradient colors={item.colors} style={styles.card}>
-        <View style={styles.iconContainer}>
-          <Icon name={item.icon} size={hp(5)} color="#FFFFFF" />
-        </View>
-        <Text style={styles.cardText}>{item.text}</Text>
-      </LinearGradient>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={item.onPress}
+      activeOpacity={0.85}>
+      <View style={styles.iconWrapper}>
+        <Ionicons name={item.icon} size={30} color="#fff" />
+      </View>
+      <Text style={styles.cardTitle}>{item.title}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.headerContainer}>
-        <View style={styles.headerRow}>
-          {isLoading ? (
-            <ActivityIndicator size="large" color="orange" />
-          ) : (
-            <TouchableOpacity onPress={() => setImageModalVisible(true)}>
-              <Image
-                source={{
-                  uri: profilePictureUrl || 'https://via.placeholder.com/150',
-                }}
-                style={styles.profilePicture}
-              />
-            </TouchableOpacity>
-          )}
-          <View style={styles.textColumn}>
-            <Text style={styles.welcomeText}>Maison Payroll Dashboard</Text>
-            <Text style={styles.nameText}>Hello, {userData.employeeName}</Text>
+        <View style={styles.welcomeCard}>
+          <View style={styles.headerRow}>
+            {isLoading ? (
+              <ActivityIndicator size="large" color="#FFA500" />
+            ) : (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('DisplayPersonalInfo')}>
+                {/* <TouchableOpacity onPress={() => setImageModalVisible(true)}> */}
+                <Image
+                  source={{
+                    uri: profilePictureUrl || 'https://via.placeholder.com/150',
+                  }}
+                  style={styles.profilePicture}
+                />
+              </TouchableOpacity>
+            )}
+            <View style={styles.textColumn}>
+              <Text style={styles.welcomeText}>Welcome Back!</Text>
+              <Text style={styles.nameText}>{userData.employeeName}</Text>
+              <Text style={styles.emailText}>{userData.email}</Text>
+              {/* {selectedLegalEntity && (
+                <Text style={styles.companyText}>
+                  Company: {selectedLegalEntity}
+                </Text>
+              )} */}
+            </View>
           </View>
-        </View>
-        <View style={styles.summaryTextContainer}>
-          <Text style={styles.sectionTitle}>Your Quick Links</Text>
         </View>
       </View>
 
       <FlatList
+        key={'2-cols'}
+        numColumns={2}
         data={cards}
         renderItem={renderCard}
-        keyExtractor={(item, index) => index.toString()}
-        contentContainerStyle={styles.cardList}
-        numColumns={2}
+        keyExtractor={item => item.id}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.grid}
+        showsVerticalScrollIndicator={false}
       />
 
       <LogoutAlertModal
@@ -294,9 +336,12 @@ const MainDashboard = () => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      <View style={styles.footerContainer}>
-        <Text style={styles.footerText}>Maison Consulting and Solutions</Text>
-      </View>
+      {isCompanySwitching && (
+        <View style={styles.loadingOverlay}>
+          <CustomIndicator size="large" color="#007AFF" />
+        </View>
+      )}
+
       {notificationVisible && (
         <NotificationDropdown
           visible={notificationVisible}
@@ -304,20 +349,41 @@ const MainDashboard = () => {
           onClose={closeNotification}
         />
       )}
-    </View>
+
+      {dropdownVisible && (
+        <CompanyDropdown
+          visible={dropdownVisible}
+          onClose={() => setDropdownVisible(false)}
+          legalEntities={legalEntities}
+          selectedLegalEntity={selectedLegalEntity}
+          onSelect={handleCompanySelect}
+        />
+      )}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F9FC',
   },
   headerContainer: {
     width: wp(90),
     alignSelf: 'center',
-    marginTop: hp(5),
+    marginTop: hp(3),
+    marginBottom: hp(2),
+  },
+  welcomeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: {width: 0, height: 6},
+    shadowRadius: 8,
+    elevation: 8,
+    marginBottom: hp(3),
   },
   headerRow: {
     flexDirection: 'row',
@@ -325,72 +391,84 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   profilePicture: {
-    width: hp(18),
-    height: hp(18),
-    borderRadius: hp(9),
-    marginRight: wp(3),
+    width: hp(20),
+    height: hp(20),
+    borderRadius: hp(12.5),
+    marginRight: wp(2),
+    borderWidth: 4,
+    borderColor: '#FFA500',
   },
   textColumn: {
     flexDirection: 'column',
+    flex: 1,
   },
   welcomeText: {
-    fontSize: hp(4.5),
+    fontSize: hp(5),
     fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: hp(1),
+    color: '#1A1A1A',
+    marginBottom: hp(0.8),
     textAlign: 'left',
   },
   nameText: {
-    fontSize: hp(3.5),
-    color: '#555555',
+    fontSize: hp(4.5),
+    color: '#FFA500',
+    fontWeight: '600',
+    textAlign: 'left',
+    marginBottom: hp(0.5),
+  },
+  emailText: {
+    fontSize: hp(2.8),
+    color: '#5A5A5A',
     textAlign: 'left',
   },
-  summaryTextContainer: {
-    marginTop: hp(2),
-    marginBottom: hp(2),
+  companyText: {
+    fontSize: hp(2.5),
+    color: '#FFA500',
+    textAlign: 'left',
+    marginTop: hp(0.5),
+    fontWeight: '500',
   },
-  sectionTitle: {
-    fontSize: hp(3.8),
-    fontWeight: '600',
-    color: '#333333',
-    textAlign: 'center',
+  grid: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 40,
   },
-  cardList: {
-    alignSelf: 'center',
-    paddingBottom: hp(8),
-  },
-  cardContainer: {
-    margin: wp(3),
-    elevation: 3,
-    borderRadius: 15,
-    overflow: 'hidden',
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
   card: {
-    borderRadius: 15,
-    justifyContent: 'center',
+    width: cardWidth,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
     alignItems: 'center',
-    height: hp(25),
-    width: wp(42),
-    padding: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: {width: 0, height: 4},
+    shadowRadius: 6,
+    elevation: 5,
   },
-  cardText: {
-    fontSize: hp(3.5),
-    color: '#FFFFFF',
+  iconWrapper: {
+    backgroundColor: '#FFA500',
+    padding: 12,
+    borderRadius: 50,
+    marginBottom: 12,
+    shadowColor: '#FFA500',
+    shadowOpacity: 0.2,
+    shadowOffset: {width: 0, height: 2},
+    shadowRadius: 4,
+  },
+  cardTitle: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#1A1A1A',
     textAlign: 'center',
+    marginBottom: 4,
   },
-  iconContainer: {
-    marginBottom: hp(1),
-    alignItems: 'center',
-  },
-  footerContainer: {
-    padding: hp(1),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  footerText: {
-    fontSize: hp(2.5),
-    color: '#888888',
+  cardSubtitle: {
+    fontSize: 13,
+    color: '#5A5A5A',
     textAlign: 'center',
   },
   // Modal Styles
@@ -402,7 +480,6 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    // padding: 20,
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -410,7 +487,17 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: height * 0.6,
     borderRadius: 10,
-    // marginBottom: 20,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 9999,
   },
 });
 

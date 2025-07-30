@@ -23,11 +23,6 @@ const retrieveByEmail = async ({email}) => {
       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
     }
     const employmentInformation = await response.json();
-    // console.log(
-    //   'Work Flow Data by Email ================:',
-    //   employmentInformation,
-    // );
-
     return employmentInformation;
   } catch (error) {
     console.error('Failed to fetch Work Flow Data:', error);

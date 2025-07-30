@@ -1,5 +1,12 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, Modal, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  TouchableWithoutFeedback,
+} from 'react-native';
 import {hp, wp} from '../../constants/Size';
 
 const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
@@ -10,26 +17,28 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
       visible={visible}
       onRequestClose={onCancel} // Handle back button action
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.headingText}>{heading}</Text>
-          <Text style={styles.modalText}>{text}</Text>
+      <TouchableWithoutFeedback onPress={onCancel}>
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.headingText}>{heading}</Text>
+            <Text style={styles.modalText}>{text}</Text>
 
-          {/* Cancel and Confirm Buttons */}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}>
-              <Text style={styles.buttonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
-              onPress={onConfirm}>
-              <Text style={styles.buttonText}>Yes</Text>
-            </TouchableOpacity>
+            {/* Cancel and Confirm Buttons */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={onCancel}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.confirmButton]}
+                onPress={onConfirm}>
+                <Text style={styles.buttonText}>Yes</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };

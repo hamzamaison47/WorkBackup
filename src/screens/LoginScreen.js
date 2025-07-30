@@ -3,6 +3,7 @@ import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import {UserContext} from '../context/UserContext';
+import {CompanyContext} from '../context/CompanyContext';
 import PopupDialog from 'react-native-popup-dialog';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {handleLogin} from '../Controller/authUtils';
@@ -10,8 +11,10 @@ import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(false);
   const {setUserData} = useContext(UserContext);
+  const {initializeLegalEntity, setLegalEntities} = useContext(CompanyContext);
+
+  const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
 
@@ -33,6 +36,8 @@ const LoginScreen = () => {
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
+                initializeLegalEntity,
+                setLegalEntities,
                 'Azure',
               )
             }
@@ -49,6 +54,8 @@ const LoginScreen = () => {
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
+                initializeLegalEntity,
+                setLegalEntities,
                 'Google',
               )
             }
@@ -58,6 +65,7 @@ const LoginScreen = () => {
           </TouchableOpacity>
         </>
       )}
+
       {loading && (
         <View style={styles.loadingContainer}>
           <CustomIndicator />
@@ -118,7 +126,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // To align the icon and text side by side
     alignItems: 'center', // Align vertically centered
     backgroundColor: '#FFA500',
-    marginVertical: 15,
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 10,
@@ -127,6 +134,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
+    marginVertical: 5,
   },
   buttonText: {
     color: '#ffffff',

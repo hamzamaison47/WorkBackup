@@ -6,7 +6,7 @@ const NotificationButton = ({onPress, notificationCount, onClose}) => {
   return (
     <TouchableOpacity style={styles.button} onPress={() => onPress(onClose)}>
       <View style={styles.iconContainer}>
-        <Icon name="bell" size={24} color="#FFFFFF" />
+        <Icon name="bell" size={20} color="#FFFFFF" />
         {notificationCount > 0 && (
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>{notificationCount}</Text>
@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
     right: -5, // Adjust horizontal position of the badge
     backgroundColor: '#FF4500', // Badge background color
     borderRadius: 10, // Makes the badge circular
-    width: 20, // Set width of the badge
-    height: 20, // Set height of the badge
+    width: 18, // Set width of the badge
+    height: 18, // Set height of the badge
     justifyContent: 'center', // Center align text in the badge
     alignItems: 'center', // Center align text in the badge
     borderWidth: 1, // Optional: Add border to improve visibility

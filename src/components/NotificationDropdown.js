@@ -9,10 +9,10 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+// import {useNavigation} from '@react-navigation/native';
 
 const NotificationDropdown = ({visible, notifications, onClose}) => {
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   console.log('Notifications:', notifications); // For debugging
 
   if (!visible) return null;
@@ -37,9 +37,9 @@ const NotificationDropdown = ({visible, notifications, onClose}) => {
                     key={index}
                     onPress={() => {
                       onClose();
-                      navigation.navigate('WorkItemAssigned', {
-                        notification: notifications[index],
-                      });
+                      // navigation.navigate('WorkItemAssigned', {
+                      //   notification: notifications[index],
+                      // });
                     }}>
                     <Text style={styles.dropdownText}>{message}</Text>
                   </TouchableOpacity>

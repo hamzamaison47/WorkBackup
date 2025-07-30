@@ -1,35 +1,81 @@
 import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
+import {resource} from '@env';
+import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
 
-const UpdateByEmployeeId = async ({employeeId, stringImage}) => {
-  const requestBody = {
-    _employeeId: employeeId,
-    _stringImage: stringImage,
-  };
+const UpdateByEmployeeId = async ({
+  employeeId,
+  stringImage,
+  defaultCompany,
+}) => {
   try {
     const accessToken = await getToken();
-    const response = await fetch(
-      `${BASE_URL}HcmPersonImageSvcGroup/HcmPersonImageSvc/updateByEmployeeId`,
+    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+      <soapenv:Header>
+        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
+          <dat:Company>${defaultCompany}</dat:Company>
+          <dat:Language>en-us</dat:Language>
+        </dat:CallContext>
+      </soapenv:Header>
+      <soapenv:Body>
+        <updateByEmployeeId xmlns = "http://tempuri.org">
+            <_employeeId>${employeeId}</_employeeId>
+            <_stringImage>${stringImage}</_stringImage>
+        </updateByEmployeeId>
+    </soapenv:Body>
+</soapenv:Envelope>`;
+    console.log(
+      'Update Image Requet XML--------------------------\n',
+      soapEnvelope,
+    );
+    const {data: xml} = await axios.post(
+      `${resource}soap/services/HcmPersonImageSvcGroup`,
+      soapEnvelope,
       {
-        method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/xml;charset=utf-8',
+          SOAPAction: 'http://tempuri.org/HcmPersonImageSvc/updateByEmployeeId',
         },
-        body: JSON.stringify(requestBody),
+        responseType: 'text',
       },
     );
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-    }
-    const updateProfilePicture = await response.json();
-    // console.log(
-    //   'Profile Picture Update=================:',
-    //   updateProfilePicture,
-    // );
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      attributeNamePrefix: '',
+      isArray: () => false,
+      parseTagValue: false,
+    });
 
-    return updateProfilePicture;
+    const parsed = parser.parse(xml);
+
+    const rawData =
+      parsed?.['s:Envelope']?.['s:Body']?.['updateByEmployeeIdResponse']?.[
+        'result'
+      ];
+
+    if (!rawData) {
+      console.warn('No data found');
+      return [];
+    }
+
+    // Normalize and remove "a:" prefix from keys
+    const cleanObject = obj =>
+      Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [
+          key.replace(/^a:/, ''),
+          value,
+        ]),
+      );
+
+    const cleanedData = Array.isArray(rawData)
+      ? rawData.map(cleanObject)
+      : [cleanObject(rawData)];
+
+    return cleanedData;
   } catch (error) {
     console.error('Failed to update Profile Picture:', error);
     throw error;

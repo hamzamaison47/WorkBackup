@@ -26,30 +26,6 @@ export const fetchAdvances = async employeeId => {
   }
 };
 
-// export const retrieveEmployeeIds = async employeeId => {
-//   try {
-//     const data = await RetriveEmployeeReportees({employeeId});
-//     return data.map(item => ({
-//       label: item.EmployeeId.toString(),
-//       value: item.EmployeeId.toString(),
-//     }));
-//   } catch (error) {
-//     throw new Error('Error fetching employee IDs');
-//   }
-// };
-
-// export const retrieveAllAdvances = async () => {
-//   try {
-//     const data = await RetrieveAdvancesRequest();
-//     return data.map(item => ({
-//       label: item?.EmployeeId.toString(),
-//       value: item?.EmployeeId.toString(),
-//     }));
-//   } catch (error) {
-//     throw new Error('Error fetching Advace Request');
-//   }
-// };
-
 export const retrieveAdvanceTypeCode = async () => {
   try {
     const data = await RetrieveAdvanceType();

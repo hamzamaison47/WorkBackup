@@ -1,6 +1,7 @@
 import React from 'react';
 import {createStackNavigator} from '@react-navigation/stack';
-import SplashScreens from '../screens/SplashScreen/SplashScreens';
+
+import SplashScreens from '../screens/SplashScreens';
 import LoginScreen from '../screens/LoginScreen';
 import DrawerNavigator from './DrawerNavigator';
 

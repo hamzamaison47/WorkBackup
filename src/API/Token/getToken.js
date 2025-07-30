@@ -1,6 +1,5 @@
 import {tokenUrl, client_id, client_secret, grant_type, resource} from '@env';
 
-//Get Token based on the credentials from .env to Access D365fo
 export const getToken = async () => {
   const url = tokenUrl;
 

@@ -1,134 +1,99 @@
-import React from 'react';
-import {TouchableOpacity, View, StyleSheet, Image} from 'react-native';
+/* eslint-disable react/react-in-jsx-scope */
+import {TouchableOpacity, View, StyleSheet, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+
 import {hp, wp} from '../../constants/Size';
+
 import NotificationButton from '../NotificationButton';
-import logo from '../../assets/cloud.png';
 import LogoutButton from '../LogoutButton';
 
-const MainPageHeader = ({onToggleDrawer, onShowNotify, onCount, onLogout}) => ({
-  headerTitle: () => {
-    '';
-  },
+const MainPageHeader = ({
+  onToggleDrawer,
+  onTitle,
+  onShowNotify,
+  onCount,
+  onLogout,
+  isBack = false,
+  onDatPress,
+  selectedDat,
+  defaultDat,
+}) => ({
+  headerTitle: () => null,
   headerLeft: () => (
-    <View style={styles.rightSideView}>
+    <View style={styles.leftContainer}>
       <TouchableOpacity onPress={onToggleDrawer} style={styles.leftSide}>
-        <Icon name="bars" size={hp(6)} color="white" />
+        <Icon
+          name={isBack ? 'arrow-left' : 'bars'}
+          size={hp(6)}
+          color="white"
+        />
       </TouchableOpacity>
-      <Image source={logo} style={styles.headerImage} />
+      <Text style={styles.title}>{onTitle}</Text>
     </View>
   ),
   headerRight: () => (
     <View style={styles.rightSideView}>
+      <TouchableOpacity style={styles.dropdownContainer} onPress={onDatPress}>
+        <Text style={styles.dropdownText}>{selectedDat}</Text>
+        <Icon
+          name="chevron-down"
+          size={hp(2.5)}
+          color="#ffffff"
+          style={styles.dropdownIcon}
+        />
+      </TouchableOpacity>
       <NotificationButton onPress={onShowNotify} notificationCount={onCount} />
       <LogoutButton onPress={onLogout} />
     </View>
   ),
   headerStyle: {
     backgroundColor: '#FFA500',
-    // height: 70,
-    height: hp(18),
+    height: hp(14),
   },
   headerTintColor: '#fff',
   headerTitleAlign: 'center',
-  headerTitleStyle: {
-    fontSize: hp(2.3),
-    color: 'white',
-  },
 });
 
 const styles = StyleSheet.create({
-  rightSideView: {
+  leftContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: wp(3), // Adjusted margin
+    marginLeft: wp(2),
   },
   leftSide: {
     width: wp(9),
     alignItems: 'center',
     height: hp(6),
     justifyContent: 'center',
-    marginRight: 9,
-    marginLeft: 5,
+    marginRight: wp(2),
   },
-  headerRightContainer: {
+  title: {
+    color: '#ffffff',
+    fontSize: hp(4),
+    fontWeight: 'bold',
+  },
+  rightSideView: {
     flexDirection: 'row',
     alignItems: 'center',
-    // marginHorizontal: 8,
-    marginHorizontal: wp(1.5),
+    marginRight: wp(3),
   },
-  headerImage: {
-    // width: 100,
-    // height: 40,
-    width: wp(25),
-    height: hp(7),
+  dropdownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: wp(2.5),
+    paddingVertical: hp(2.2),
+    borderRadius: wp(1.8),
+    marginRight: wp(2),
+  },
+  dropdownText: {
+    color: '#ffffff',
+    fontSize: hp(3),
+    fontWeight: '600',
+  },
+  dropdownIcon: {
+    marginLeft: wp(1),
   },
 });
 
 export default MainPageHeader;
-
-// import React, {useEffect} from 'react';
-// import {TouchableOpacity, View, StyleSheet, Image} from 'react-native';
-// import Icon from 'react-native-vector-icons/FontAwesome';
-// import {hp, wp} from '../../constants/Size';
-// import NotificationButton from '../NotificationButton';
-// import logo from '../../assets/cloud.png';
-
-// const MainPageHeader = ({onToggleDrawer, onShowNotify, onCount}) => {
-//   return {
-//     headerTitle: () => null, // You can customize the title here if needed
-//     headerLeft: () => (
-//       <View style={styles.rightSideView}>
-//         <TouchableOpacity onPress={onToggleDrawer} style={styles.leftSide}>
-//           <Icon name="bars" size={24} color="white" />
-//         </TouchableOpacity>
-//         <Image source={logo} style={styles.headerImage} />
-//       </View>
-//     ),
-//     headerRight: () => (
-//       <View style={styles.rightSideView}>
-//         <NotificationButton
-//           onPress={onShowNotify}
-//           notificationCount={onCount}
-//         />
-//       </View>
-//     ),
-//     headerStyle: {
-//       backgroundColor: '#FFA500',
-//       height: 70,
-//     },
-//     headerTintColor: '#fff',
-//     headerTitleAlign: 'center',
-//     headerTitleStyle: {
-//       fontSize: hp(2.3),
-//       color: 'white',
-//     },
-//   };
-// };
-
-// const styles = StyleSheet.create({
-//   rightSideView: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginRight: wp(3),
-//   },
-//   leftSide: {
-//     width: wp(9),
-//     alignItems: 'center',
-//     height: hp(6),
-//     justifyContent: 'center',
-//     marginRight: 9,
-//     marginLeft: 5,
-//   },
-//   headerRightContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginHorizontal: 8,
-//   },
-//   headerImage: {
-//     width: 100,
-//     height: 40,
-//   },
-// });
-
-// export default MainPageHeader;

@@ -2,10 +2,7 @@ import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveByEmail} from '../API/PREmploymentInformation/RetrieveByEmail';
-import {
-  getAzureConfigurationV2,
-  getGoogleConfiguration,
-} from './config/configuration';
+import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 
 export const handleLogoutauth = async Provider => {
   if (Provider === 'Azure') {
@@ -35,16 +32,14 @@ export const handleLogin = async (
   navigation,
   setDialogVisible,
   setDialogMessage,
+  initializeLegalEntity,
+  setLegalEntities,
   provider,
 ) => {
   setLoading(true);
-
-  //Hnadling User Authentication for App(Interface not for D365)
-  //Conditions based on the Providers
   if (provider === 'Azure') {
     try {
       const result = await authorize(getAzureConfigurationV2());
-      console.log('Result (Azure) <===========>', result);
       if (result) {
         await handleSuccessfulLogin(
           result.accessToken,
@@ -52,17 +47,15 @@ export const handleLogin = async (
           navigation,
           setDialogVisible,
           setDialogMessage,
-          'Azure',
+          initializeLegalEntity,
+          setLegalEntities,
+          provider,
         );
       }
     } catch (error) {
-      if (error.code === 'access_denied') {
-        // eslint-disable-next-line no-alert
-        alert('Login Process Cancelled');
-      } else if (error.error === 'User cancelled flow') {
-        //do Nothing As User Himself has Cancelled the Process
-      }
       console.error('Login error:', error);
+      // eslint-disable-next-line no-alert
+      alert('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -79,7 +72,9 @@ export const handleLogin = async (
           navigation,
           setDialogVisible,
           setDialogMessage,
-          'Google',
+          setDialogMessage,
+          initializeLegalEntity,
+          provider,
         );
       }
     } catch (error) {
@@ -92,13 +87,14 @@ export const handleLogin = async (
   }
 };
 
-//Checking If user Exists in D365FO
 export const handleSuccessfulLogin = async (
   accessToken,
   setUserData,
   navigation,
   setDialogVisible,
   setDialogMessage,
+  initializeLegalEntity,
+  setLegalEntities,
   provider,
 ) => {
   const decodedAccessToken = jwtDecode(accessToken);
@@ -106,7 +102,6 @@ export const handleSuccessfulLogin = async (
   await AsyncStorage.setItem('accessToken', accessToken);
 
   let userEmailOrUPN;
-
   if (provider === 'Azure') {
     userEmailOrUPN = decodedAccessToken.upn;
   } else if (provider === 'Google') {
@@ -114,34 +109,51 @@ export const handleSuccessfulLogin = async (
   }
   //API call to get UserData from D365FO
   const employeeInfo = await fetchEmpInfo(userEmailOrUPN);
+  console.log('Mapped DATA\n', employeeInfo);
+  console.log(
+    'Available Legal Entity\n',
+    employeeInfo[0].EmployeeLegalEntities,
+  );
   if (
     !employeeInfo.length ||
     !employeeInfo[0].value ||
     !employeeInfo[0].label ||
     employeeInfo[0].WorkerRecId === 0
   ) {
-    //If User Data is not Found in Dynamics then to do here
+    setDialogMessage(
+      'Incorrect Login Details.\n Please verify your Username and Password, or contact support if you are having trouble accessing your account.',
+    );
+    setDialogVisible(true);
+    return;
   }
 
-  //Assigning Data needed in cache to an Object
+  // Set the available legal entities (from EmployeeLegalEntities array)
+  const availableLegalEntities = employeeInfo[0].EmployeeLegalEntities || [];
+  console.log('Available Legal Entity\n', availableLegalEntities);
+  setLegalEntities(availableLegalEntities);
+
+  // Initialize the legal entity (will check for previous user selection)
+  await initializeLegalEntity(employeeInfo[0]?.DefaultLegalEntity);
+
   const {
     label: employeeName,
     value: employeeId,
     WorkerRecId,
     JobId,
     Department,
+    DefaultLegalEntity,
   } = employeeInfo[0];
 
-  //setting User Data in Cache
   setUserData({
     userName: decodedAccessToken.name,
     employeeName,
     employeeId,
     WorkerRecId,
     email: userEmailOrUPN,
-    jobId: JobId, // Add JobId to user data
-    department: Department, // Add Department to user data
-    Provider: provider,
+    jobId: JobId,
+    department: Department,
+    defaultLegalEntity: DefaultLegalEntity,
+    employeeFullInfo: employeeInfo[0], // Store complete employee info
   });
 
   navigation.navigate('DrawerNavigator', {userName: decodedAccessToken.name});
@@ -154,22 +166,36 @@ export const fetchEmpInfo = async email => {
       return [];
     }
 
-    const data = await RetrieveByEmail({dataAreaId: 'DAT', email});
+    const data = await RetrieveByEmail({email});
+    console.log('Raw response from RetrieveByEmail:', data); // Debugging log
 
     if (!data || !Array.isArray(data)) {
       console.error('Unexpected data format:', data);
-      return []; // Always return an empty array if data is invalid
+      return [];
     }
 
-    return data.map(item => ({
-      label: item.EmployeeName?.toString() ?? '',
-      value: item.EmployeeId?.toString() ?? '',
-      WorkerRecId: item.WorkerRecId,
-      JobId: item.JobId?.toString() ?? '', // Extract JobId
-      Department: item.Department?.toString() ?? '', // Extract Department
-    }));
+    // Process the employee info with legal entities
+    return data.map(item => {
+      const employeeLegalEntities =
+        item.EmployeeLegalEntities?.['a:PREmployeeLegalEntitiesContract'] ?? [];
+
+      return {
+        label: item.EmployeeName?.toString() ?? '',
+        value: item.EmployeeId?.toString() ?? '',
+        WorkerRecId: item.WorkerRecId,
+        JobId: item.JobId?.toString() ?? '',
+        Department: item.Department?.toString() ?? '',
+        DefaultLegalEntity: item.DefaultLegalEntity?.toString() ?? '',
+        EmployeeLegalEntities: employeeLegalEntities.map(entity => ({
+          LegalEntity: entity['a:LegalEntity']?.toString() ?? '', // FIX HERE
+        })),
+        BasicSalary: item.BasicSalary,
+        Currency: item.Currency,
+        PayGroupCode: item.PayGroupCode,
+      };
+    });
   } catch (error) {
     console.error('Error in fetchEmpInfo:', error);
-    return []; // Always return an empty array in case of error
+    return [];
   }
 };

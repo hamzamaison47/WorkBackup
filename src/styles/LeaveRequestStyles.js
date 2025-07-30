@@ -101,21 +101,23 @@ export const styles = StyleSheet.create({
     borderRadius: hp(9),
     // marginRight: wp(3),
   },
-  //   buttonContainer: {
-  //  //   flexDirection: 'row',
-  //     justifyContent: 'space-between',
-  //     width: wp(70),
-  //   },
+  navigateButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 25, // rounded border
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 2, // use borderWidth instead of 'border'
+    borderColor: '#FFA726',
+    // backgroundColor: '#FFA726', // optional: restore if you want a background
+  },
 
-  // button: {
-  //   borderRadius: 10,
-  //   padding: 10,
-  //   elevation: 2,
-  //   width: wp(30),
-  //   marginTop:'10%',
-  //   marginLeft:'30%',
-  //   marginHorizontal: wp(2),
-  // },
+  navigateButtonText: {
+    color: '#000000', // white text
+    fontSize: 16,
+    fontWeight: 'bold', // bold text
+  },
+
   cancelButton: {
     backgroundColor: '#F4E1E4', // Light pink for cancel button
     borderRadius: 20,
@@ -237,12 +239,6 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff', // White text for button
   },
-  // buttonText: {
-  //   color: '#fff',
-  //   fontWeight: '600',
-  //   textAlign: 'center',
-  //   fontSize: hp(4.5),
-  // },
   calendarContainer: {
     marginBottom: hp(1.5),
   },
@@ -283,9 +279,6 @@ export const styles = StyleSheet.create({
     fontSize: hp(4.5),
     color: '#333', // Dark gray for text
   },
-  // confirmButton: {
-  //   backgroundColor: 'orange', // Green for confirm button
-  // },
   cardContainer: {
     marginVertical: 8,
     paddingHorizontal: 12,
@@ -297,11 +290,6 @@ export const styles = StyleSheet.create({
     elevation: 4,
   },
   cardHeader: {
-    // flexDirection: 'row',
-    // justifyContent: 'space-between',
-    // alignItems: 'center',
-    // marginBottom: 12,
-
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

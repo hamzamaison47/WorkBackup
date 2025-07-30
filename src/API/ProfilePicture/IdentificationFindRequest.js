@@ -1,34 +1,74 @@
 import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
+import {resource} from '@env';
+import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
 
-const IdentificationFindRequest = async ({employeeId}) => {
-  const requestBody = {
-    _employeeId: employeeId,
-  };
+const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
   try {
     const accessToken = await getToken();
-    const response = await fetch(
-      `${BASE_URL}/HcmPersonIdentificationNumberSvcGroup/HcmPersonIdentificationNumberSvc/findByEmployee`,
+    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+      <soapenv:Header>
+        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
+          <dat:Company>${defaultCompany}</dat:Company>
+          <dat:Language>en-us</dat:Language>
+        </dat:CallContext>
+      </soapenv:Header>
+      <soapenv:Body>
+        <findByEmployee xmlns = "http://tempuri.org">
+        <_employeeId>${employeeId}</_employeeId>
+        </findByEmployee>
+      </soapenv:Body>
+    </soapenv:Envelope>`;
+    console.log('Identification Request XML:', soapEnvelope);
+    const {data: xml} = await axios.post(
+      `${resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
+      soapEnvelope,
       {
-        method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/xml;charset=utf-8',
+          SOAPAction:
+            'http://tempuri.org/HcmPersonIdentificationNumberSvc/findByEmployee',
         },
-        body: JSON.stringify(requestBody),
+        responseType: 'text',
       },
     );
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-    }
-    const employeeData = await response.json();
-    console.log(
-      'Contact Identification Find Request: =================:',
-      employeeData,
-    );
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      attributeNamePrefix: '',
+      isArray: () => false,
+      parseTagValue: false,
+    });
 
-    return employeeData;
+    const parsed = parser.parse(xml);
+
+    const rawData =
+      parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[
+        'result'
+      ]?.['a:HcmPersonIdentificationNumberSvcContract'];
+
+    if (!rawData) {
+      console.warn('No data found');
+      return [];
+    }
+
+    // Normalize and remove "a:" prefix from keys
+    const cleanObject = obj =>
+      Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [
+          key.replace(/^a:/, ''),
+          value,
+        ]),
+      );
+
+    const cleanedData = Array.isArray(rawData)
+      ? rawData.map(cleanObject)
+      : [cleanObject(rawData)];
+
+    return cleanedData;
   } catch (error) {
     console.error(
       'Failed to fetch Identification Find Request Details:',

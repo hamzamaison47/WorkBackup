@@ -283,14 +283,6 @@ const LeaveModal = ({visible, onClose, mode, onAction, leaveData = {}}) => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.submitButton]}
-              // onPress={() => {
-              //   onAction(
-              //     'submit',
-              //     mode === 'edit' ? 'Update' : 'Create',
-              //     formData,
-              //   );
-              //   handleClose();
-              // }}>
               onPress={() => {
                 onAction(
                   'submit',

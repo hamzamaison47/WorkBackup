@@ -10,17 +10,19 @@ import {
 import * as ImagePicker from 'react-native-image-picker';
 import {useNavigation} from '@react-navigation/native';
 import {UserContext} from '../../context/UserContext';
+import {CompanyContext} from '../../context/CompanyContext';
 
-import NotificationDropdown from '../../components/NotificationDropdown';
 import SectionHeader from '../../components/PersonalInformation/SectionHeader';
 import ContactDetailsSection from '../../components/PersonalInformation/ContactDetailsSection';
 import IdentificationDetailsSection from '../../components/PersonalInformation/IdentificationDetailsSection';
-import SimpleHeader from '../../components/PageHeader/SimpleHeader';
 import ProfilePictureEditor from '../../components/PersonalInformation/ProfilePictureEditor';
 import SaveButton from '../../components/PersonalInformation/SaveButton';
 import ContactInfoModal from '../../components/PersonalInformation/ContactInfoModal';
 import IdentificationInfoModal from '../../components/PersonalInformation/IdentificationInfoModal';
 import {AlertModal} from '../../components/Leaves/AlertModal';
+import MainPageHeader from '../../components/PageHeader/MainPageHeader';
+import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
+import NotificationDropdown from '../../components/NotificationDropdown';
 
 import {ProfilePicture} from '../../API/ProfilePicture/ProfilePicture';
 import {ContactDetails} from '../../API/ProfilePicture/ContactDetails';
@@ -33,7 +35,8 @@ import {CreateContactDetails} from '../../API/ProfilePicture/CreateContactDetail
 import {DeleteIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/DeleteIdentityRequest';
 import {CreateIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/CreateIdentityRequest';
 import {UpdateIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/UpdateIdentityRequest';
-// import {SubmitIdentificationRequest} from '../../API/ProfilePicture/IdentificationRequests/SubmitIdentificationRequest';
+import {handleLogoutauth} from '../../Controller/authUtils';
+import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 
 const DisplayPersonalInfo = () => {
   const [expandedSections, setExpandedSections] = useState({
@@ -48,10 +51,6 @@ const DisplayPersonalInfo = () => {
   const [profilePictureUrl, setProfilePictureUrl] = useState(null);
   const [isImageChanged, setIsImageChanged] = useState(false);
 
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [selectedLeave, setSelectedLeave] = useState(null);
@@ -63,9 +62,19 @@ const DisplayPersonalInfo = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
-  const {userData} = useContext(UserContext);
-  const navigation = useNavigation();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationVisible, setNotificationVisible] = useState(false);
 
+  const [isCompanySwitching, setIsCompanySwitching] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  const navigation = useNavigation();
+  const {userData} = useContext(UserContext);
+  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
+    useContext(CompanyContext);
+  const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
   useEffect(() => {
     fetchData();
   }, []);
@@ -75,21 +84,48 @@ const DisplayPersonalInfo = () => {
   }, []);
 
   useEffect(() => {
-    handleRefresh();
+    handleRefresh(companyToUse);
   }, []);
 
   useEffect(() => {
     const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications();
+    fetchNotifications(); // Initial fetch
     return () => clearInterval(interval);
   }, [userData.email]);
 
+  const handleCompanySelect = async newLegalEntity => {
+    setIsCompanySwitching(true);
+    setSelectedLegalEntity(newLegalEntity);
+
+    // Optional but Refresh any data that depends on the selected company
+    handleRefresh(newLegalEntity);
+
+    setIsCompanySwitching(false);
+  };
+
   useEffect(() => {
-    const headerOptions = SimpleHeader({
+    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
+      setSelectedLegalEntity(userData.defaultLegalEntity);
+    }
+  }, [
+    userData?.defaultLegalEntity,
+    selectedLegalEntity,
+    setSelectedLegalEntity,
+  ]);
+
+  // Update the header configuration to show the current selected company:
+  useEffect(() => {
+    const headerOptions = MainPageHeader({
       onToggleDrawer: toggleDrawer,
-      onRefresh: handleRefresh,
+      onTitle: 'Employee Self Service',
       onShowNotify: toggleNotification,
       onCount: notificationCount,
+      onLogout: handleLogout,
+      isBack: false,
+      onDatPress: toggleCompanyDropdown,
+      selectedDat:
+        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
+      defaultDat: userData?.defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
   }, [
@@ -97,42 +133,42 @@ const DisplayPersonalInfo = () => {
     notificationCount,
     notificationVisible,
     notifications,
-    handleRefresh,
     toggleDrawer,
+    selectedLegalEntity,
+    userData?.defaultLegalEntity,
   ]);
 
-  const toggleNotification = () => setNotificationVisible(!notificationVisible);
+  const closeAllOverlays = () => {
+    setDropdownVisible(false);
+    setNotificationVisible(false);
+    setModalVisible(false);
+    navigation.closeDrawer?.();
+  };
+
+  const toggleNotification = () => {
+    closeAllOverlays();
+    setNotificationVisible(prev => !notificationVisible);
+  };
+  const toggleDrawer = () => {
+    closeAllOverlays();
+    navigation.toggleDrawer();
+  };
+  const handleLogout = () => {
+    closeAllOverlays();
+    setModalVisible(true);
+  };
+  const toggleCompanyDropdown = () => {
+    closeAllOverlays();
+    setDropdownVisible(prev => !dropdownVisible);
+  };
   const closeNotification = () => setNotificationVisible(false);
-  const toggleDrawer = () => navigation.toggleDrawer();
-
-  const fetchData = async () => {
-    await fetchProfilePicture();
-    await fetchContactDetails();
-    await fetchIndentificationtDetails();
+  const confirmLogout = () => {
+    setModalVisible(false);
+    handleLogoutauth(userData.Provider);
+    navigation.navigate('Login');
   };
+  const cancelLogout = () => setModalVisible(false);
 
-  const handleRefresh = async () => {
-    setIsLoading(true);
-    setIsImageChanged(false);
-    await fetchData();
-  };
-
-  const toggleSection = section => {
-    setExpandedSections(prevState => ({
-      ...prevState,
-      [section]: !prevState[section],
-    }));
-  };
-
-  const handleCloseModal = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleCloseOpenedModal = () => {
-    setIsModalOpen(false);
-  };
-
-  // Get All Notifications Method
   const fetchNotifications = async () => {
     try {
       const data = await retrieveByEmail({email: userData.email});
@@ -150,10 +186,40 @@ const DisplayPersonalInfo = () => {
     }
   };
 
+  const fetchData = async defaultCompany => {
+    await fetchProfilePicture(defaultCompany);
+    await fetchContactDetails();
+    await fetchIndentificationtDetails();
+  };
+
+  const handleRefresh = async defaultCompany => {
+    setIsLoading(true);
+    setIsImageChanged(false);
+    await fetchData(defaultCompany);
+  };
+
+  const toggleSection = section => {
+    setExpandedSections(prevState => ({
+      ...prevState,
+      [section]: !prevState[section],
+    }));
+  };
+
+  const handleCloseModal = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleCloseOpenedModal = () => {
+    setIsModalOpen(false);
+  };
+
   // Fetch profile picture
-  const fetchProfilePicture = async () => {
+  const fetchProfilePicture = async defaultCompany => {
     try {
-      const data = await ProfilePicture({employeeId: userData.employeeId});
+      const data = await ProfilePicture({
+        employeeId: userData.employeeId,
+        defaultCompany: defaultCompany,
+      });
       const base64Image = `data:image/png;base64,${data.StringImage}`;
       setProfilePictureUrl(base64Image);
     } catch (error) {
@@ -192,6 +258,7 @@ const DisplayPersonalInfo = () => {
       await UpdateByEmployeeId({
         employeeId: userData.employeeId,
         stringImage: base64Image,
+        defaultCompany: companyToUse,
       });
       // Reset state flags after successful save
       setIsImageChanged(false); // Hide the save button
@@ -230,6 +297,7 @@ const DisplayPersonalInfo = () => {
     try {
       const data = await IdentificationFindRequest({
         employeeId: userData.employeeId,
+        defaultCompany: companyToUse,
       });
 
       const formattedData = data.map(item => {
@@ -285,7 +353,7 @@ const DisplayPersonalInfo = () => {
       setAlertMessage('Failed to Delete Contact Detail Request');
       setAlertModal(true);
     } finally {
-      handleRefresh();
+      handleRefresh(companyToUse);
     }
   };
 
@@ -310,7 +378,7 @@ const DisplayPersonalInfo = () => {
       setAlertMessage('Failed to Delete Identification Detail Request');
       setAlertModal(true);
     } finally {
-      handleRefresh();
+      handleRefresh(companyToUse);
     }
   };
 
@@ -402,7 +470,7 @@ const DisplayPersonalInfo = () => {
     } finally {
       setAlertModal(true);
       setIsModalVisible(false);
-      handleRefresh();
+      handleRefresh(companyToUse);
     }
   };
 
@@ -431,9 +499,9 @@ const DisplayPersonalInfo = () => {
 
       // API Call Logic
       if (modalMode.toLowerCase() === 'create') {
-        response = await CreateIdentityRequest(identityData);
+        response = await CreateIdentityRequest(identityData, companyToUse);
       } else if (modalMode.toLowerCase() === 'update') {
-        response = await UpdateIdentityRequest(identityData);
+        response = await UpdateIdentityRequest(identityData, companyToUse);
       }
 
       // Success or Error Messages
@@ -456,7 +524,7 @@ const DisplayPersonalInfo = () => {
     } finally {
       setAlertModal(true);
       setIsModalVisible(false);
-      handleRefresh();
+      handleRefresh(companyToUse);
     }
   };
 
@@ -464,7 +532,7 @@ const DisplayPersonalInfo = () => {
     <KeyboardAvoidingView style={styles.TopContainer}>
       <View style={styles.imageContainer}>
         <ProfilePictureEditor
-          isLoading={isLoading}
+          isLoading={isLoading || isCompanySwitching}
           profilePictureUrl={profilePictureUrl}
           onEdit={handleProfileImageEdit}
           userData={userData}
@@ -511,11 +579,29 @@ const DisplayPersonalInfo = () => {
         </View>
       </ScrollView>
 
+      <LogoutAlertModal
+        visible={modalVisible}
+        heading="Are you sure?"
+        text="Do you really want to logout?"
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
+
       {notificationVisible && (
         <NotificationDropdown
           visible={notificationVisible}
           notifications={notifications}
           onClose={closeNotification}
+        />
+      )}
+
+      {dropdownVisible && (
+        <CompanyDropdown
+          visible={dropdownVisible}
+          onClose={() => setDropdownVisible(false)}
+          legalEntities={legalEntities}
+          selectedLegalEntity={selectedLegalEntity}
+          onSelect={handleCompanySelect}
         />
       )}
 
@@ -584,6 +670,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 9999,
   },
 });
 

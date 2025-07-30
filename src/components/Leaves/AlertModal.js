@@ -1,8 +1,20 @@
-// AlertModal.js
 import React from 'react';
-import {View, Text, TouchableOpacity, Modal, StyleSheet} from 'react-native';
-import {hp, wp} from '../../constants/Size';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
 
+// Get screen width and height for responsive design
+const {width, height} = Dimensions.get('window');
+
+/**
+ * AlertModal: A simple modal with a heading, message, and OK button.
+ * Typically used for informational or confirmation alerts.
+ */
 export const AlertModal = ({visible, heading, text, onPress}) => {
   return (
     <Modal
@@ -10,12 +22,17 @@ export const AlertModal = ({visible, heading, text, onPress}) => {
       transparent={true}
       visible={visible}
       onRequestClose={onPress}>
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.headingText}>{heading}</Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          {/* Modal Heading */}
+          <Text style={styles.modalHeading}>{heading}</Text>
+
+          {/* Modal Description Text */}
           <Text style={styles.modalText}>{text}</Text>
-          <TouchableOpacity style={styles.button} onPress={onPress}>
-            <Text style={styles.buttonText}>OK</Text>
+
+          {/* OK Button */}
+          <TouchableOpacity style={styles.okButton} onPress={onPress}>
+            <Text style={styles.okButtonText}>OK</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -23,6 +40,10 @@ export const AlertModal = ({visible, heading, text, onPress}) => {
   );
 };
 
+/**
+ * AlertDeleteModal: A confirmation modal used for delete actions.
+ * It includes Cancel and Delete buttons.
+ */
 export const AlertDeleteModal = ({
   visible,
   heading,
@@ -35,17 +56,23 @@ export const AlertDeleteModal = ({
       animationType="slide"
       transparent={true}
       visible={visible}
-      onRequestClose={onPress}>
-      <View style={styles.modalBackground}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.heading}>{heading}</Text>
-          <Text style={styles.text}>{text}</Text>
-          <View style={styles.buttonContainer}>
+      onRequestClose={onCancel}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalBox}>
+          {/* Modal Heading */}
+          <Text style={styles.modalHeading}>{heading}</Text>
+
+          {/* Modal Description Text */}
+          <Text style={styles.modalText}>{text}</Text>
+
+          {/* Two buttons: Cancel and Delete */}
+          <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-              <Text style={styles.buttonDeleteText}>Cancel</Text>
+              <Text style={styles.buttonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.confirmButton} onPress={onPress}>
-              <Text style={styles.buttonDeleteText}>Delete</Text>
+
+            <TouchableOpacity style={styles.deleteButton} onPress={onPress}>
+              <Text style={styles.buttonText}>Delete</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -54,118 +81,78 @@ export const AlertDeleteModal = ({
   );
 };
 
+// Shared styles for both modals
 const styles = StyleSheet.create({
-  centeredView: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalView: {
-    margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
+  modalBox: {
+    width: width * 0.85,
+    paddingVertical: height * 0.035,
+    paddingHorizontal: width * 0.06,
+    backgroundColor: '#fff',
+    borderRadius: width * 0.04,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowOffset: {width: 0, height: 3},
+    shadowRadius: 6,
+    alignItems: 'center',
   },
-  headingText: {
-    fontSize: 20,
-    // fontSize: hp(3.5),
-    // fontFamily: 'HelveticaNowMicro-Bold',
+  modalHeading: {
+    fontSize: width * 0.05,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: height * 0.015,
     textAlign: 'center',
-    color: 'black',
-    fontWeight: 'bold',
   },
   modalText: {
-    marginVertical: 10,
-    // marginTop: hp(0.5),
-    // marginBottom: hp(0.5),
+    fontSize: width * 0.038,
+    color: '#555',
     textAlign: 'center',
-    color: 'black',
-    // fontFamily: 'HelveticaNowMicro-Regular',
-    fontSize: hp(2.8),
+    marginBottom: height * 0.02,
+    lineHeight: 22,
   },
-  button: {
-    backgroundColor: 'orange',
-    borderRadius: 10,
-    padding: 10,
-    elevation: 2,
-    width: wp(70),
-  },
-  buttonText: {
-    color: '#000',
-    fontWeight: '600',
-    textAlign: 'center',
-    fontSize: 16,
-    // fontFamily: 'HelveticaNowMicro-Bold',
-  },
-
-  //
-
-  modalBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContainer: {
-    width: '80%',
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  heading: {
-    fontSize: 20,
-    // fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#707070',
-  },
-  text: {
-    fontSize: 18,
-    // fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#707070',
-  },
-  buttonContainer: {
+  buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
   },
   cancelButton: {
     flex: 1,
-    padding: 10,
-    backgroundColor: '#a3a3a3',
+    paddingVertical: height * 0.014,
+    backgroundColor: '#ccc',
+    borderRadius: width * 0.025,
     alignItems: 'center',
-    borderRadius: 5,
-    marginRight: 5,
+    marginRight: width * 0.025,
   },
-  confirmButton: {
+  deleteButton: {
     flex: 1,
-    padding: 10,
-    backgroundColor: '#ff4547',
+    paddingVertical: height * 0.014,
+    backgroundColor: '#FF5252',
+    borderRadius: width * 0.025,
     alignItems: 'center',
-    borderRadius: 5,
-    marginLeft: 5,
+    marginLeft: width * 0.025,
   },
-  buttonDeleteText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: hp(4),
-    // fontFamily: 'HelveticaNowMicro-Bold',
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: width * 0.04,
+  },
+  okButton: {
+    marginTop: height * 0.001,
+    backgroundColor: 'orange',
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.3,
+    borderRadius: width * 0.03,
+    alignItems: 'center',
+  },
+  okButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: width * 0.04,
   },
 });
-
-// export AlertModal;
-// export AlertDeleteModal;

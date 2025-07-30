@@ -1,10 +1,10 @@
-import {RetrieveAll} from '../API/RetrieveAllApi/RetrieveAll';
+import {RetrieveAll} from '../API/Leaves/RetrieveAll';
 import {RetrieveLeaveCodes} from '../API/Leaves/LeaveCodes';
 import {GetLeaveBalance} from '../API/Leaves/LeaveBalance';
 
-export const fetchLeaves = async employeeId => {
+export const fetchLeaves = async (employeeId, defaultCompany) => {
   try {
-    const data = await RetrieveAll({employeeId});
+    const data = await RetrieveAll({employeeId, defaultCompany});
     // console.log('main Data of Leave REquest', data);
     return data.map(item => ({
       recId: item.RecId,
@@ -25,21 +25,9 @@ export const fetchLeaves = async employeeId => {
   }
 };
 
-// export const fetchEmployeeIds = async employeeId => {
-//   try {
-//     const data = await RetrieveEmployeeIds({employeeId});
-//     return data.map(item => ({
-//       label: item.EmployeeId.toString(),
-//       value: item.EmployeeId.toString(),
-//     }));
-//   } catch (error) {
-//     throw new Error('Error fetching employee IDs');
-//   }
-// };
-
-export const fetchLeaveCodes = async () => {
+export const fetchLeaveCodes = async (employeeId, defaultCompany) => {
   try {
-    const data = await RetrieveLeaveCodes({dataAreaId: 'DAT'});
+    const data = await RetrieveLeaveCodes({employeeId, defaultCompany});
     return data.map(item => ({
       label: item?.LeaveCode,
       value: item?.LeaveCode,
@@ -53,12 +41,14 @@ export const fetchLeaveBalance = async (
   employeeId,
   leaveCode,
   leaveStartDate,
+  defaultCompany,
 ) => {
   try {
     const balanceData = await GetLeaveBalance({
       employeeId,
       leaveCode,
       leaveStartDate,
+      defaultCompany,
     });
     return balanceData || '0';
   } catch (error) {

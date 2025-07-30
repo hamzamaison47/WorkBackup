@@ -1,38 +1,77 @@
-import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
+import {XMLParser} from 'fast-xml-parser';
+import {resource} from '@env';
+import axios from 'axios';
 
-const RetrieveByEmail = async ({dataAreaId, email}) => {
-  const requestBody = {
-    _dataAreaId: dataAreaId,
-    _email: email,
-  };
-
+const RetrieveByEmail = async ({email}) => {
   try {
     const accessToken = await getToken();
-
-    const response = await fetch(
-      `${BASE_URL}PREmploymentInformationSvcGroup/PREmploymentInformationSvc/retrieveByEmailAddress`,
+    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
+    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+      <soapenv:Header>
+        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
+            <dat:Company>USMF</dat:Company>
+            <dat:Language>en-us</dat:Language>
+        </dat:CallContext>
+      </soapenv:Header>
+      <soapenv:Body>
+        <retrieveByEmail xmlns = "http://tempuri.org">
+          <_dataAreaId>USMF</_dataAreaId>
+          <_email>${email}</_email>
+        </retrieveByEmail>
+      </soapenv:Body>
+    </soapenv:Envelope>`;
+    console.log(
+      '-=-=-=-=-=-=-=-=-=-=-=-Login Request XML--=-=-=-=-=-=-=-\n',
+      soapEnvelope,
+    );
+    const {data: xml} = await axios.post(
+      `${resource}soap/services/PREmploymentInformationSvcGroup`,
+      soapEnvelope,
       {
-        method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'text/xml;charset=utf-8',
+          SOAPAction:
+            'http://tempuri.org/PREmploymentInformationSvc/retrieveByEmail',
         },
-        body: JSON.stringify(requestBody),
+        responseType: 'text',
       },
     );
 
-    const responseBody = await response.text();
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      attributeNamePrefix: '',
+      isArray: () => false,
+      parseTagValue: false,
+    });
 
-    if (!response.ok) {
-      throw new Error(
-        `HTTP error! Status: ${response.status} - ${responseBody}`,
-      );
+    const parsed = parser.parse(xml);
+
+    const rawData =
+      parsed?.['s:Envelope']?.['s:Body']?.['retrieveByEmailResponse']?.[
+        'result'
+      ]?.['a:PREmploymentInformationSvcContract'];
+
+    if (!rawData) {
+      console.warn('No leave data found');
+      return [];
     }
 
-    const employmentInformation = JSON.parse(responseBody);
+    const cleanObject = obj =>
+      Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [
+          key.replace(/^a:/, ''),
+          value,
+        ]),
+      );
 
-    return employmentInformation;
+    const cleanedData = Array.isArray(rawData)
+      ? rawData.map(cleanObject)
+      : [cleanObject(rawData)];
+
+    return cleanedData;
   } catch (error) {
     console.error('Failed to fetch Employment Information Data:', error);
     throw error;
