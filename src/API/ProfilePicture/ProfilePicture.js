@@ -1,3 +1,5 @@
+/* eslint-disable dot-notation */
+/* eslint-disable curly */
 import {getToken} from '../Token/getToken';
 import {resource} from '@env';
 import axios from 'axios';
@@ -6,6 +8,7 @@ import {XMLParser} from 'fast-xml-parser';
 const ProfilePicture = async ({employeeId, defaultCompany}) => {
   try {
     const accessToken = await getToken();
+
     const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
       <soapenv:Header>
@@ -15,13 +18,13 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
         </dat:CallContext>
       </soapenv:Header>
       <soapenv:Body>
-        <findByEmployee xmlns = "http://tempuri.org">
-            <_employeeId>${employeeId}</_employeeId>
-        </findByEmployee>
+        <tem:findByEmployee xmlns:tem="http://tempuri.org">
+          <tem:_employeeId>${employeeId}</tem:_employeeId>
+        </tem:findByEmployee>
       </soapenv:Body>
     </soapenv:Envelope>`;
 
-    console.log('soapEnvelope response in Profile Picture', soapEnvelope);
+    console.log('SOAP Request Body (ProfilePicture):', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/HcmPersonImageSvcGroup`,
@@ -46,32 +49,46 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
 
     const parsed = parser.parse(xml);
 
-    const rawData =
+    console.log('Raw SOAP Response (ProfilePicture):', xml);
+    console.log('Parsed SOAP Response (ProfilePicture):', parsed);
+
+    const result =
       parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[
+        'result'
+      ] ||
+      parsed?.['soap:Envelope']?.['soap:Body']?.['findByEmployeeResponse']?.[
         'result'
       ];
 
-    if (!rawData) {
-      console.warn('No data found');
-      return [];
+    if (!result) {
+      console.warn('No profile picture result found');
+      return null;
     }
 
-    // Normalize and remove "a:" prefix from keys
-    const cleanObject = obj =>
-      Object.fromEntries(
+    const cleanObject = obj => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(cleanObject);
+
+      return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
-          key.replace(/^a:/, ''),
-          value,
+          key.replace(/^[a-zA-Z0-9]+:/, ''),
+          typeof value === 'object' ? cleanObject(value) : value,
         ]),
       );
+    };
 
-    const cleanedData = Array.isArray(rawData)
-      ? rawData.map(cleanObject)
-      : [cleanObject(rawData)];
+    const cleanedResult = Array.isArray(result)
+      ? result.map(cleanObject)
+      : [cleanObject(result)];
 
-    return cleanedData;
+    console.log('Cleaned Profile Picture Data:', cleanedResult);
+    return cleanedResult;
   } catch (error) {
-    console.error('Failed to fetch employee IDs:', error);
+    console.error(
+      'Failed to fetch profile picture:',
+      error.response?.data || error.message,
+    );
     throw error;
   }
 };

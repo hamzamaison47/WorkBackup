@@ -74,18 +74,25 @@ const DisplayPersonalInfo = () => {
   const {userData} = useContext(UserContext);
   const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
     useContext(CompanyContext);
-  const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
+
+  // Initialize selectedLegalEntity with user's defaultLegalEntity if not already set
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
+      setSelectedLegalEntity(userData.defaultLegalEntity);
+    }
+  }, [
+    userData?.defaultLegalEntity,
+    selectedLegalEntity,
+    setSelectedLegalEntity,
+  ]);
+
+  const companyToUse = selectedLegalEntity || userData?.defaultLegalEntity;
 
   useEffect(() => {
-    fetchProfilePicture(); // Fetch image on component mount
-  }, []);
-
-  useEffect(() => {
-    handleRefresh(companyToUse);
-  }, []);
+    if (companyToUse) {
+      fetchData(companyToUse);
+    }
+  }, [companyToUse]);
 
   useEffect(() => {
     const interval = setInterval(fetchNotifications, 30000);
@@ -97,21 +104,11 @@ const DisplayPersonalInfo = () => {
     setIsCompanySwitching(true);
     setSelectedLegalEntity(newLegalEntity);
 
-    // Optional but Refresh any data that depends on the selected company
-    handleRefresh(newLegalEntity);
+    // Refresh data with new company
+    await handleRefresh(newLegalEntity);
 
     setIsCompanySwitching(false);
   };
-
-  useEffect(() => {
-    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
-      setSelectedLegalEntity(userData.defaultLegalEntity);
-    }
-  }, [
-    userData?.defaultLegalEntity,
-    selectedLegalEntity,
-    setSelectedLegalEntity,
-  ]);
 
   // Update the header configuration to show the current selected company:
   useEffect(() => {
@@ -131,9 +128,6 @@ const DisplayPersonalInfo = () => {
   }, [
     navigation,
     notificationCount,
-    notificationVisible,
-    notifications,
-    toggleDrawer,
     selectedLegalEntity,
     userData?.defaultLegalEntity,
   ]);
@@ -147,7 +141,7 @@ const DisplayPersonalInfo = () => {
 
   const toggleNotification = () => {
     closeAllOverlays();
-    setNotificationVisible(prev => !notificationVisible);
+    setNotificationVisible(prev => !prev);
   };
   const toggleDrawer = () => {
     closeAllOverlays();
@@ -159,7 +153,7 @@ const DisplayPersonalInfo = () => {
   };
   const toggleCompanyDropdown = () => {
     closeAllOverlays();
-    setDropdownVisible(prev => !dropdownVisible);
+    setDropdownVisible(prev => !prev);
   };
   const closeNotification = () => setNotificationVisible(false);
   const confirmLogout = () => {
@@ -186,16 +180,16 @@ const DisplayPersonalInfo = () => {
     }
   };
 
-  const fetchData = async defaultCompany => {
-    await fetchProfilePicture(defaultCompany);
+  const fetchData = async company => {
+    await fetchProfilePicture(company);
     await fetchContactDetails();
-    await fetchIndentificationtDetails();
+    await fetchIndentificationtDetails(company);
   };
 
-  const handleRefresh = async defaultCompany => {
+  const handleRefresh = async company => {
     setIsLoading(true);
     setIsImageChanged(false);
-    await fetchData(defaultCompany);
+    await fetchData(company);
   };
 
   const toggleSection = section => {
@@ -214,16 +208,24 @@ const DisplayPersonalInfo = () => {
   };
 
   // Fetch profile picture
-  const fetchProfilePicture = async defaultCompany => {
+  const fetchProfilePicture = async company => {
+    setIsLoading(true);
     try {
       const data = await ProfilePicture({
         employeeId: userData.employeeId,
-        defaultCompany: defaultCompany,
+        defaultCompany: company,
       });
-      const base64Image = `data:image/png;base64,${data.StringImage}`;
-      setProfilePictureUrl(base64Image);
+
+      if (data && data.length > 0 && data[0].StringImage) {
+        const base64Image = `data:image/png;base64,${data[0].StringImage}`;
+        setProfilePictureUrl(base64Image);
+      } else {
+        console.warn('No profile picture data found.');
+        setProfilePictureUrl(null);
+      }
     } catch (error) {
       console.error('Failed to fetch Image data:', error);
+      setProfilePictureUrl(null);
     } finally {
       setIsLoading(false);
     }
@@ -293,18 +295,14 @@ const DisplayPersonalInfo = () => {
   };
 
   // Contact Identification Methods
-  const fetchIndentificationtDetails = async () => {
+  const fetchIndentificationtDetails = async company => {
     try {
       const data = await IdentificationFindRequest({
         employeeId: userData.employeeId,
-        defaultCompany: companyToUse,
+        defaultCompany: company,
       });
 
       const formattedData = data.map(item => {
-        // Enforcing the condition that IdentificationTypeId should be 'CNIC'
-        // const identificationType =
-        //   item.IdentificationTypeId === 'CNIC' ? 'CNIC' : 'Invalid Type';
-
         return {
           RecId: item.RecId,
           IdentificationType: item.IdentificationType || 'N/A',
@@ -507,11 +505,11 @@ const DisplayPersonalInfo = () => {
       // Success or Error Messages
       if (response.IsSuccess) {
         const successMessage =
-          modalMode.toLowerCase() === 'create'.toLowerCase()
-            ? actionType.toLowerCase() === 'save'.toLowerCase()
+          modalMode.toLowerCase() === 'create'
+            ? actionType.toLowerCase() === 'save'
               ? 'Registeration Request Created Successfully.'
               : 'Registeration Request Created and Submitted Successfully.'
-            : actionType.toLowerCase() === 'save'.toLowerCase()
+            : actionType.toLowerCase() === 'save'
             ? 'Registeration Request Updated Successfully.'
             : 'Registeration Request Updated and Submitted Successfully.';
         setAlertMessage(successMessage);
@@ -523,7 +521,7 @@ const DisplayPersonalInfo = () => {
       console.error('Error in handleAction:', error);
     } finally {
       setAlertModal(true);
-      setIsModalVisible(false);
+      setIsModalOpen(false);
       handleRefresh(companyToUse);
     }
   };
@@ -570,9 +568,6 @@ const DisplayPersonalInfo = () => {
             <IdentificationDetailsSection
               IdentityrRows={identityRows}
               onCreate={() => handleOpenIdentityModal('create')}
-              // onEdit={selectedRow =>
-              //   handleOpenIdentityModal('edit', selectedRow)
-              // }
               onDelete={handleDeleteIdentity}
             />
           )}

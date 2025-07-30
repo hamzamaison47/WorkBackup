@@ -215,10 +215,17 @@ const MainDashboard = () => {
         employeeId: userData.employeeId,
         defaultCompany: selectedLegalEntity,
       });
-      const base64Image = `data:image/png;base64,${data.StringImage}`;
-      setProfilePictureUrl(base64Image);
+
+      if (data && data.length > 0 && data[0].StringImage) {
+        const base64Image = `data:image/png;base64,${data[0].StringImage}`;
+        setProfilePictureUrl(base64Image);
+      } else {
+        console.warn('No profile picture data found.');
+        setProfilePictureUrl(null);
+      }
     } catch (error) {
       console.error('Failed to fetch Image data:', error);
+      setProfilePictureUrl(null);
     } finally {
       setIsLoading(false);
     }

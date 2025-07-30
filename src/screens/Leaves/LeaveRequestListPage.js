@@ -220,9 +220,6 @@ const LeaveRequestListPage = () => {
   };
 
   const handleRefresh = () => {
-    console.log('userdata=-=-=-=-==-=-=-=-=-', userData);
-    console.log('userdata=-=-=-=-==-=-===-=-', userData);
-    console.log('userdata=-=-=-=-==-=-===-=-', userData);
     fetchLeavesData();
   };
 

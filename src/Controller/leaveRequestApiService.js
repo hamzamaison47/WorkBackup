@@ -4,7 +4,7 @@ import {GetLeaveBalance} from '../API/Leaves/LeaveBalance';
 
 export const fetchLeaves = async (employeeId, defaultCompany) => {
   try {
-    const data = await RetrieveAll({employeeId, defaultCompany});
+    const data = await RetrieveAll({employeeId});
     // console.log('main Data of Leave REquest', data);
     return data.map(item => ({
       recId: item.RecId,
