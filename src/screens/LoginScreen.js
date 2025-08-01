@@ -1,18 +1,22 @@
-import React, {useState, useContext} from 'react';
+import React, {useState} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import {UserContext} from '../context/UserContext';
-import {CompanyContext} from '../context/CompanyContext';
-import PopupDialog from 'react-native-popup-dialog';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import PopupDialog from 'react-native-popup-dialog';
+import {useDispatch} from 'react-redux';
+
 import {handleLogin} from '../Controller/authUtils';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
+import {setUserData} from '../store/slices/userSlice';
+import {
+  setLegalEntities,
+  initializeLegalEntity,
+} from '../store/slices/companySlice';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
-  const {setUserData} = useContext(UserContext);
-  const {initializeLegalEntity, setLegalEntities} = useContext(CompanyContext);
+  const dispatch = useDispatch();
 
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
@@ -27,17 +31,18 @@ const LoginScreen = () => {
           <Text style={styles.subtitle}>
             Manage your employee services with ease and security.
           </Text>
+
           <TouchableOpacity
             style={styles.loginButton}
             onPress={() =>
               handleLogin(
                 setLoading,
-                setUserData,
+                data => dispatch(setUserData(data)),
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
-                initializeLegalEntity,
-                setLegalEntities,
+                legalEntity => dispatch(initializeLegalEntity(legalEntity)),
+                list => dispatch(setLegalEntities(list)),
                 'Azure',
               )
             }
@@ -45,17 +50,18 @@ const LoginScreen = () => {
             <Icon name="windows" size={24} color="#fff" style={styles.icon} />
             <Text style={styles.buttonText}>Sign in with Microsoft</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.loginButton}
             onPress={() =>
               handleLogin(
                 setLoading,
-                setUserData,
+                data => dispatch(setUserData(data)),
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
-                initializeLegalEntity,
-                setLegalEntities,
+                legalEntity => dispatch(initializeLegalEntity(legalEntity)),
+                list => dispatch(setLegalEntities(list)),
                 'Google',
               )
             }
@@ -123,8 +129,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   loginButton: {
-    flexDirection: 'row', // To align the icon and text side by side
-    alignItems: 'center', // Align vertically centered
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFA500',
     paddingVertical: 15,
     paddingHorizontal: 40,
@@ -140,10 +146,21 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10, // Adds space between the icon and the text
+    marginLeft: 10,
   },
-  loader: {
-    marginTop: 20,
+  icon: {
+    marginRight: 10,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
   },
   dialogContainer: {
     borderRadius: 10,
@@ -177,21 +194,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  icon: {
-    marginRight: 10,
-  },
-
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
   },
 });
 

@@ -10,7 +10,7 @@ export const getToken = async () => {
     resource: resource,
   };
 
-  console.log('ENV Token details ===========', details);
+  // console.log('ENV Token details ===========', details);
 
   let formBody = [];
   for (const property in details) {
@@ -38,7 +38,7 @@ export const getToken = async () => {
     const accessToken = data.access_token;
 
     // Log the access token
-    console.log('Access Token ============:', accessToken);
+    // console.log('Access Token ============:', accessToken);
 
     return accessToken; // Return the access token
   } catch (error) {

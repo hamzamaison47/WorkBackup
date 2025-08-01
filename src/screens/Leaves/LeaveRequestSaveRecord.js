@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useContext, useCallback} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
@@ -19,23 +19,23 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
-import {UserContext} from './../../context/UserContext';
-import {CompanyContext} from '../../context/CompanyContext';
+import {useSelector, useDispatch} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-import CalendarModal from '../../components/Leaves/CalendarModal';
-import {AlertModal} from '../../components/Leaves/AlertModal';
 import {
   fetchLeaveBalance,
   fetchLeaveCodes,
 } from '../../Controller/leaveRequestApiService';
+import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
 import {submit} from '../../API/Leaves/submit';
 import {update} from '../../API/Leaves/update';
-
 import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
+
+import {AlertModal} from '../../components/Leaves/AlertModal';
+import CalendarModal from '../../components/Leaves/CalendarModal';
 import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
 import MainPageHeader from '../../components/PageHeader/MainPageHeader';
 import NotificationDropdown from '../../components/NotificationDropdown';
@@ -43,12 +43,15 @@ import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 
 const LeaveRequestSaveRecord = () => {
-  const navigation = useNavigation();
   const route = useRoute();
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
-  const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
+  const {userData} = useSelector(state => state.user);
+  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   // Navigation params with safe defaults
   const {
@@ -57,11 +60,12 @@ const LeaveRequestSaveRecord = () => {
     employeeId = leaveData.employeeId || userData?.employeeId || '',
     employeeName = leaveData.employeeName || userData?.employeeName || '',
     WorkerRecId = leaveData.WorkerRecId || userData?.WorkerRecId || '',
-    cameFrom = 'MainDashboard', // Fixed: use consistent parameter name
+    cameFrom = 'MainDashboard',
   } = route.params || {};
 
+  console.log('Leave Data Via Parms', leaveData);
+
   // State declarations
-  // const [leaveCodeDropDown, setLeaveCodeDropDown] = useState([]);
   const [LeaveCodesForEmployee, setLeaveCodesForEmployee] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
@@ -70,7 +74,7 @@ const LeaveRequestSaveRecord = () => {
 
   // Create initial form data function
   const createInitialFormData = () => ({
-    recId: '',
+    recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
     employeeId: employeeId,
     employeeName: employeeName,
     WorkerRecId: WorkerRecId,
@@ -100,18 +104,15 @@ const LeaveRequestSaveRecord = () => {
   // Fixed goBack function with proper navigation logic
   const goBack = useCallback(() => {
     if (cameFrom === 'MainDashboard') {
-      // Navigate back to MainDashboard
       navigation.navigate('MainDashboard');
     } else if (cameFrom === 'LeavesListPage') {
-      // Navigate back to LeavesListPage with required params
       navigation.navigate('LeavesListPage', {
         employeeId: formData.employeeId || employeeId,
         employeeName: formData.employeeName || employeeName,
         WorkerRecId: formData.WorkerRecId || WorkerRecId,
-        cameFrom: 'LeaveRequestSaveRecord', // Track where we came from
+        cameFrom: 'LeaveRequestSaveRecord',
       });
     } else {
-      // Default fallback - just go back
       navigation.goBack();
     }
   }, [
@@ -125,6 +126,29 @@ const LeaveRequestSaveRecord = () => {
     navigation,
   ]);
 
+  // Function to normalize leave category for display
+  const normalizeLeaveCategoryForDisplay = category => {
+    if (!category) return '';
+
+    // Handle different formats from API
+    switch (category.toLowerCase()) {
+      case 'fullleave':
+      case 'full leave':
+        return 'Full Leave';
+      case 'halfleave':
+      case 'half leave':
+        return 'Half Leave';
+      default:
+        return category;
+    }
+  };
+
+  // Function to clear form data
+  const clearFormData = useCallback(() => {
+    const clearedForm = createInitialFormData();
+    setFormData(clearedForm);
+  }, []);
+
   // Reset form data when screen comes into focus and mode changes
   useFocusEffect(
     React.useCallback(() => {
@@ -134,14 +158,24 @@ const LeaveRequestSaveRecord = () => {
         setFormData(freshFormData);
         setIsFormInitialized(true);
       } else if (mode === 'edit' && leaveData?.recId) {
+        // Normalize the leave category from API
+        const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
+          leaveData.leaveCategory,
+        );
+
         const editFormData = {
           ...createInitialFormData(),
           ...leaveData,
           employeeId: leaveData.employeeId || employeeId,
           employeeName: leaveData.employeeName || employeeName,
           WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
+          leaveCategory: normalizedLeaveCategory, // Use normalized category
         };
 
+        console.log(
+          'Setting edit form data with normalized category:',
+          normalizedLeaveCategory,
+        );
         setFormData(editFormData);
         setIsFormInitialized(true);
 
@@ -174,7 +208,14 @@ const LeaveRequestSaveRecord = () => {
       } else {
         setIsFormInitialized(true);
       }
-    }, [mode, leaveData?.recId, employeeId, employeeName, WorkerRecId]),
+    }, [
+      mode,
+      leaveData?.recId,
+      employeeId,
+      employeeName,
+      WorkerRecId,
+      leaveData?.leaveCategory,
+    ]),
   );
 
   useFocusEffect(
@@ -214,8 +255,8 @@ const LeaveRequestSaveRecord = () => {
       isBack: true,
       onDatPress: toggleCompanyDropdown,
       selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
+        selectedLegalEntity || defaultLegalEntity || 'Select Company',
+      defaultDat: defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
   }, [
@@ -225,7 +266,7 @@ const LeaveRequestSaveRecord = () => {
     notifications,
     goBack,
     selectedLegalEntity,
-    userData?.defaultLegalEntity,
+    defaultLegalEntity,
     mode,
     isFormInitialized,
   ]);
@@ -264,14 +305,13 @@ const LeaveRequestSaveRecord = () => {
 
   const handleCompanySelect = async newLegalEntity => {
     setIsCompanySwitching(true);
-    setSelectedLegalEntity(newLegalEntity);
-    console.log('Company changed to:', newLegalEntity);
+    dispatch(setSelectedLegalEntity(newLegalEntity));
 
     try {
       await fetchNotifications();
+      await clearFormData();
 
       const codes = await fetchLeaveCodes(formData.employeeId, newLegalEntity);
-      // setLeaveCodeDropDown(codes);
       setLeaveCodesForEmployee(codes);
     } catch (error) {
       console.error('Error updating data after company change:', error);
@@ -339,12 +379,15 @@ const LeaveRequestSaveRecord = () => {
         const newBalance = balanceData || '0.00';
         const numericBalance = parseFloat(newBalance);
 
+        const effectiveLeaveDays =
+          formData.leaveCategory === 'Half Leave' ? '0.5' : formData.leaveDays;
+
         setFormData(prev => ({
           ...prev,
           balance: newBalance,
-          ...(numericBalance > 0 && prev.leaveDays
+          ...(numericBalance > 0 && effectiveLeaveDays
             ? {
-                leaveEndDate: calculateEndDate(formatted, prev.leaveDays),
+                leaveEndDate: calculateEndDate(formatted, effectiveLeaveDays),
               }
             : {}),
         }));
@@ -369,12 +412,20 @@ const LeaveRequestSaveRecord = () => {
 
     const start = new Date(startDate);
     const endDate = new Date(start);
-    endDate.setDate(start.getDate() + daysNum - 1);
 
-    return formatToISOWithTime(endDate);
+    if (daysNum === 0.5) {
+      return formatToISOWithTime(start);
+    } else {
+      endDate.setDate(start.getDate() + daysNum - 1);
+      return formatToISOWithTime(endDate);
+    }
   };
 
   const handleLeaveDaysChange = value => {
+    if (formData.leaveCategory === 'Half Leave') {
+      return;
+    }
+
     const leaveDays = parseFloat(value) || 0;
     const balance = parseFloat(formData.balance) || 0;
 
@@ -394,6 +445,25 @@ const LeaveRequestSaveRecord = () => {
     }
   };
 
+  // Updated function to handle leave category change
+  const handleLeaveCategoryChange = async item => {
+    const newLeaveCategory = item.value;
+
+    console.log('Leave category changed to:', newLeaveCategory);
+
+    // Reset form to default state but keep employee info and selected category
+    const resetForm = {
+      ...createInitialFormData(),
+      employeeId: formData.employeeId,
+      employeeName: formData.employeeName,
+      WorkerRecId: formData.WorkerRecId,
+      leaveCategory: newLeaveCategory,
+      leaveDays: newLeaveCategory === 'Half Leave' ? '0.5' : '',
+    };
+
+    setFormData(resetForm);
+  };
+
   const handleLeaveCodeChange = async item => {
     const newLeaveCode = item.value;
 
@@ -404,6 +474,8 @@ const LeaveRequestSaveRecord = () => {
       WorkerRecId: formData.WorkerRecId,
       leaveCode: newLeaveCode,
       leaveCategory: formData.leaveCategory,
+      leaveDays:
+        formData.leaveCategory === 'Half Leave' ? '0.5' : formData.leaveDays,
     };
 
     setFormData(resetForm);
@@ -484,7 +556,7 @@ const LeaveRequestSaveRecord = () => {
         LeaveReqDate: formattedLeaveReqDate,
         Reason: data.reason,
         EmployeeId: data.employeeId,
-        RecId: data.recId === '' ? '0' : data.recId.toString(),
+        RecId: data.recId === '' ? '0' : data.recId,
       };
 
       if (!leavesData.LeaveCode || !leavesData.LeaveEndDate) {
@@ -580,14 +652,19 @@ const LeaveRequestSaveRecord = () => {
       );
 
       if (result.success) {
+        // Clear form data after successful operation
         setTimeout(() => {
           setAlertModal(false);
-          // Always navigate to LeavesListPage after successful create/update
+
+          // Clear the form data
+          clearFormData();
+
+          // Navigate to LeavesListPage after successful create/update
           navigation.navigate('LeavesListPage', {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
             WorkerRecId: formData.WorkerRecId,
-            highlightRecId: result.recId, // Pass the record ID for highlighting
+            highlightRecId: result.recId,
             cameFrom: mode === 'create' ? 'CreateSuccess' : 'UpdateSuccess',
           });
         }, 2000);
@@ -602,6 +679,7 @@ const LeaveRequestSaveRecord = () => {
   };
 
   const today = new Date().toISOString().split('T')[0];
+  const isLeaveDaysDisabled = formData.leaveCategory === 'Half Leave';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -624,7 +702,7 @@ const LeaveRequestSaveRecord = () => {
             placeholder="Select Leave Category"
             value={formData.leaveCategory}
             itemTextStyle={{color: '#707070ff', fontSize: 16}}
-            onChange={item => handleInputChange('leaveCategory', item.value)}
+            onChange={handleLeaveCategoryChange}
           />
           <Text style={styles.label}>Leave Code *</Text>
           <Dropdown
@@ -635,19 +713,9 @@ const LeaveRequestSaveRecord = () => {
             placeholder="Select Leave Code"
             value={formData.leaveCode}
             itemTextStyle={{color: '#707070ff', fontSize: 16}}
-            onFocus={fetchLeaveCodesForEmployee} // 👈 call the method here
+            onFocus={fetchLeaveCodesForEmployee}
             onChange={handleLeaveCodeChange}
           />
-          {/* <Dropdown
-            style={styles.input}
-            data={leaveCodeDropDown}
-            labelField="label"
-            valueField="value"
-            placeholder="Select Leave Code"
-            value={formData.leaveCode}
-            itemTextStyle={{color: '#707070ff', fontSize: 16}}
-            onChange={handleLeaveCodeChange}
-          /> */}
           <Text style={styles.label}>Balance</Text>
           <Text style={[styles.input, styles.disabled]}>
             {formData.balance}
@@ -673,11 +741,12 @@ const LeaveRequestSaveRecord = () => {
           />
           <Text style={styles.label}>Leave Days *</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isLeaveDaysDisabled && styles.disabled]}
             value={formData.leaveDays.toString()}
             onChangeText={handleLeaveDaysChange}
             keyboardType="numeric"
             placeholder="Enter number of days"
+            editable={!isLeaveDaysDisabled}
           />
           <Text style={styles.label}>End Date</Text>
           <Text style={[styles.input, styles.disabled]}>
@@ -754,7 +823,6 @@ const LeaveRequestSaveRecord = () => {
         text={alertMessage}
         onPress={() => {
           setAlertModal(false);
-          // Navigation is handled in handleSave for success cases
         }}
       />
 

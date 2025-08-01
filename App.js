@@ -1,18 +1,16 @@
 import React from 'react';
-import {UserProvider} from './src/context/UserContext';
+import {Provider} from 'react-redux';
 import {NavigationContainer} from '@react-navigation/native';
+import {store} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
-import {CompanyProvider} from './src/context/CompanyContext';
 
 const App = () => {
   return (
-    <UserProvider>
-      <CompanyProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </CompanyProvider>
-    </UserProvider>
+    <Provider store={store}>
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </Provider>
   );
 };
 

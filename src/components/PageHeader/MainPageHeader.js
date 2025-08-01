@@ -34,7 +34,7 @@ const MainPageHeader = ({
   headerRight: () => (
     <View style={styles.rightSideView}>
       <TouchableOpacity style={styles.dropdownContainer} onPress={onDatPress}>
-        <Text style={styles.dropdownText}>{selectedDat}</Text>
+        <Text style={styles.dropdownText}>{selectedDat.toUpperCase()}</Text>
         <Icon
           name="chevron-down"
           size={hp(2.5)}

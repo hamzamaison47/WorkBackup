@@ -7,7 +7,7 @@ const CreateContactDetails = async contactData => {
   };
 
   try {
-    console.log('requestBody-0-0-0-0-0-0-0-0-0--0-', requestBody);
+    // console.log('requestBody-0-0-0-0-0-0-0-0-0--0-', requestBody);
     const accessToken = await getToken();
     // Make the POST request
     const response = await fetch(

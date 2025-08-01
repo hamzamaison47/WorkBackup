@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useContext} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   KeyboardAvoidingView,
@@ -7,10 +7,12 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import {useSelector, useDispatch} from 'react-redux';
 import * as ImagePicker from 'react-native-image-picker';
 import {useNavigation} from '@react-navigation/native';
-import {UserContext} from '../../context/UserContext';
-import {CompanyContext} from '../../context/CompanyContext';
+
+import {handleLogoutauth} from '../../Controller/authUtils';
+import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 import SectionHeader from '../../components/PersonalInformation/SectionHeader';
 import ContactDetailsSection from '../../components/PersonalInformation/ContactDetailsSection';
@@ -23,6 +25,7 @@ import {AlertModal} from '../../components/Leaves/AlertModal';
 import MainPageHeader from '../../components/PageHeader/MainPageHeader';
 import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
 import NotificationDropdown from '../../components/NotificationDropdown';
+import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 
 import {ProfilePicture} from '../../API/ProfilePicture/ProfilePicture';
 import {ContactDetails} from '../../API/ProfilePicture/ContactDetails';
@@ -35,8 +38,6 @@ import {CreateContactDetails} from '../../API/ProfilePicture/CreateContactDetail
 import {DeleteIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/DeleteIdentityRequest';
 import {CreateIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/CreateIdentityRequest';
 import {UpdateIdentityRequest} from '../../API/ProfilePicture/IdentificationRequests/UpdateIdentityRequest';
-import {handleLogoutauth} from '../../Controller/authUtils';
-import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 
 const DisplayPersonalInfo = () => {
   const [expandedSections, setExpandedSections] = useState({
@@ -71,22 +72,21 @@ const DisplayPersonalInfo = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const navigation = useNavigation();
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
+  const dispatch = useDispatch();
+
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
+  const {userData} = useSelector(state => state.user);
 
   // Initialize selectedLegalEntity with user's defaultLegalEntity if not already set
   useEffect(() => {
-    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
-      setSelectedLegalEntity(userData.defaultLegalEntity);
+    if (defaultLegalEntity && !selectedLegalEntity) {
+      dispatch(setSelectedLegalEntity(defaultLegalEntity));
     }
-  }, [
-    userData?.defaultLegalEntity,
-    selectedLegalEntity,
-    setSelectedLegalEntity,
-  ]);
+  }, [defaultLegalEntity, selectedLegalEntity, setSelectedLegalEntity]);
 
-  const companyToUse = selectedLegalEntity || userData?.defaultLegalEntity;
+  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   useEffect(() => {
     if (companyToUse) {
@@ -102,7 +102,7 @@ const DisplayPersonalInfo = () => {
 
   const handleCompanySelect = async newLegalEntity => {
     setIsCompanySwitching(true);
-    setSelectedLegalEntity(newLegalEntity);
+    dispatch(setSelectedLegalEntity(newLegalEntity));
 
     // Refresh data with new company
     await handleRefresh(newLegalEntity);
@@ -121,16 +121,11 @@ const DisplayPersonalInfo = () => {
       isBack: false,
       onDatPress: toggleCompanyDropdown,
       selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
+        selectedLegalEntity || defaultLegalEntity || 'Select Company',
+      defaultDat: defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
-  }, [
-    navigation,
-    notificationCount,
-    selectedLegalEntity,
-    userData?.defaultLegalEntity,
-  ]);
+  }, [navigation, notificationCount, selectedLegalEntity, defaultLegalEntity]);
 
   const closeAllOverlays = () => {
     setDropdownVisible(false);

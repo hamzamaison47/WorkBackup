@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useContext, useCallback} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   FlatList,
   Image,
@@ -16,11 +16,9 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useSelector, useDispatch} from 'react-redux';
 
 import {wp, hp} from '../constants/Size';
-import {UserContext} from '../context/UserContext';
-import {CompanyContext} from '../context/CompanyContext';
-
 import {ProfilePicture} from '../API/ProfilePicture/ProfilePicture';
 import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
 
@@ -30,11 +28,21 @@ import NotificationDropdown from '../components/NotificationDropdown';
 import CompanyDropdown from '../components/PageHeader/CompanyDropdown';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import {handleLogoutauth} from '../Controller/authUtils';
+import {setSelectedLegalEntity} from '../store/slices/companySlice';
 
 const {height, width} = Dimensions.get('window');
 const cardWidth = (width - 56) / 2;
 
 const MainDashboard = () => {
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+
+  const userData = useSelector(state => state.user.userData);
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
+  const legalEntities = useSelector(state => state.company.legalEntities);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -47,21 +55,11 @@ const MainDashboard = () => {
   const [isCompanySwitching, setIsCompanySwitching] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  const navigation = useNavigation();
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
-
-  // Initialize selectedLegalEntity with user's defaultLegalEntity if not already set
   useEffect(() => {
     if (userData?.defaultLegalEntity && !selectedLegalEntity) {
-      setSelectedLegalEntity(userData.defaultLegalEntity);
+      dispatch(setSelectedLegalEntity(userData.defaultLegalEntity));
     }
-  }, [
-    userData?.defaultLegalEntity,
-    selectedLegalEntity,
-    setSelectedLegalEntity,
-  ]);
+  }, [userData?.defaultLegalEntity, selectedLegalEntity]);
 
   useFocusEffect(
     useCallback(() => {
@@ -71,27 +69,8 @@ const MainDashboard = () => {
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-      return () => {
+      return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
-    }, [handleLogout]),
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      // Close everything on focus
-      closeAllOverlays();
-
-      const onBackPress = () => {
-        handleLogout();
-        return true;
-      };
-
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
     }, []),
   );
 
@@ -109,32 +88,17 @@ const MainDashboard = () => {
 
   useEffect(() => {
     const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications(); // Initial fetch
+    fetchNotifications();
     return () => clearInterval(interval);
-  }, [userData.email]);
+  }, [userData?.email]);
 
   const handleCompanySelect = async newLegalEntity => {
     setIsCompanySwitching(true);
-    setSelectedLegalEntity(newLegalEntity);
-
-    // Optional: simulate delay if needed for effect (or await any refresh logic)
+    dispatch(setSelectedLegalEntity(newLegalEntity));
     await new Promise(resolve => setTimeout(resolve, 2000));
-    // Optional but Refresh any data that depends on the selected company
-
     setIsCompanySwitching(false);
   };
 
-  useEffect(() => {
-    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
-      setSelectedLegalEntity(userData.defaultLegalEntity);
-    }
-  }, [
-    userData?.defaultLegalEntity,
-    selectedLegalEntity,
-    setSelectedLegalEntity,
-  ]);
-
-  // Update the header configuration to show the current selected company:
   useEffect(() => {
     const headerOptions = MainPageHeader({
       onToggleDrawer: toggleDrawer,
@@ -154,7 +118,6 @@ const MainDashboard = () => {
     notificationCount,
     notificationVisible,
     notifications,
-    toggleDrawer,
     selectedLegalEntity,
     userData?.defaultLegalEntity,
   ]);
@@ -164,12 +127,12 @@ const MainDashboard = () => {
     setNotificationVisible(false);
     setModalVisible(false);
     setImageModalVisible(false);
-    navigation.closeDrawer?.(); // Optional, if using Drawer Navigator
+    navigation.closeDrawer?.();
   };
 
   const toggleNotification = () => {
     closeAllOverlays();
-    setNotificationVisible(prev => !notificationVisible);
+    setNotificationVisible(prev => !prev);
   };
   const toggleDrawer = () => {
     closeAllOverlays();
@@ -181,7 +144,7 @@ const MainDashboard = () => {
   };
   const toggleCompanyDropdown = () => {
     closeAllOverlays();
-    setDropdownVisible(prev => !dropdownVisible);
+    setDropdownVisible(prev => !prev);
   };
   const closeNotification = () => setNotificationVisible(false);
   const confirmLogout = () => {
@@ -195,13 +158,13 @@ const MainDashboard = () => {
     try {
       const data = await retrieveByEmail({email: userData.email});
       if (Array.isArray(data)) {
-        const formattedNotifications = data.map(notification => ({
-          document: notification.Document,
-          documentType: notification.DocumentType,
-          correlationId: notification.CorrelationId,
+        const formatted = data.map(item => ({
+          document: item.Document,
+          documentType: item.DocumentType,
+          correlationId: item.CorrelationId,
         }));
-        setNotifications(formattedNotifications);
-        setNotificationCount(formattedNotifications.length);
+        setNotifications(formatted);
+        setNotificationCount(formatted.length);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -215,16 +178,13 @@ const MainDashboard = () => {
         employeeId: userData.employeeId,
         defaultCompany: selectedLegalEntity,
       });
-
-      if (data && data.length > 0 && data[0].StringImage) {
-        const base64Image = `data:image/png;base64,${data[0].StringImage}`;
-        setProfilePictureUrl(base64Image);
+      if (data?.[0]?.StringImage) {
+        setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
       } else {
-        console.warn('No profile picture data found.');
         setProfilePictureUrl(null);
       }
     } catch (error) {
-      console.error('Failed to fetch Image data:', error);
+      console.error('Failed to fetch profile image:', error);
       setProfilePictureUrl(null);
     } finally {
       setIsLoading(false);
@@ -244,7 +204,7 @@ const MainDashboard = () => {
           employeeName: userData.employeeName,
           WorkerRecId: userData.WorkerRecId,
           cameFrom: 'MainDashboard',
-          selectedLegalEntity: selectedLegalEntity,
+          selectedLegalEntity,
         }),
     },
     {
@@ -255,7 +215,7 @@ const MainDashboard = () => {
       onPress: () =>
         navigation.navigate('PRSalarySlip', {
           employeeId: userData.employeeId,
-          selectedLegalEntity: selectedLegalEntity,
+          selectedLegalEntity,
         }),
     },
   ];
@@ -282,7 +242,6 @@ const MainDashboard = () => {
             ) : (
               <TouchableOpacity
                 onPress={() => navigation.navigate('DisplayPersonalInfo')}>
-                {/* <TouchableOpacity onPress={() => setImageModalVisible(true)}> */}
                 <Image
                   source={{
                     uri: profilePictureUrl || 'https://via.placeholder.com/150',
@@ -295,11 +254,6 @@ const MainDashboard = () => {
               <Text style={styles.welcomeText}>Welcome Back!</Text>
               <Text style={styles.nameText}>{userData.employeeName}</Text>
               <Text style={styles.emailText}>{userData.email}</Text>
-              {/* {selectedLegalEntity && (
-                <Text style={styles.companyText}>
-                  Company: {selectedLegalEntity}
-                </Text>
-              )} */}
             </View>
           </View>
         </View>

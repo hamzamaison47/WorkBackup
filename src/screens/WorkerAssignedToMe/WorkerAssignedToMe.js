@@ -1,10 +1,10 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useContext} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Text, StyleSheet, FlatList} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {UserContext} from '../../context/UserContext';
-import {CompanyContext} from '../../context/CompanyContext';
+import {useSelector, useDispatch} from 'react-redux';
+import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
 import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
@@ -34,10 +34,13 @@ const WorkerAssignedToMe = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const navigation = useNavigation();
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
-  const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
+  const dispatch = useDispatch();
+
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
+  const {userData} = useSelector(state => state.user);
+  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   useEffect(() => {
     const fetchEmployeeReportToMe = async () => {
@@ -70,7 +73,7 @@ const WorkerAssignedToMe = () => {
 
   const handleCompanySelect = async newLegalEntity => {
     setIsCompanySwitching(true);
-    setSelectedLegalEntity(newLegalEntity);
+    dispatch(setSelectedLegalEntity(newLegalEntity));
 
     // Optional: simulate delay if needed for effect (or await any refresh logic)
     await RetrieveEmployeeReportToMe({
@@ -83,14 +86,10 @@ const WorkerAssignedToMe = () => {
   };
 
   useEffect(() => {
-    if (userData?.defaultLegalEntity && !selectedLegalEntity) {
-      setSelectedLegalEntity(userData.defaultLegalEntity);
+    if (defaultLegalEntity && !selectedLegalEntity) {
+      dispatch(setSelectedLegalEntity(defaultLegalEntity));
     }
-  }, [
-    userData?.defaultLegalEntity,
-    selectedLegalEntity,
-    setSelectedLegalEntity,
-  ]);
+  }, [defaultLegalEntity, selectedLegalEntity, setSelectedLegalEntity]);
 
   // Update the header configuration to show the current selected company:
   useEffect(() => {
@@ -103,8 +102,8 @@ const WorkerAssignedToMe = () => {
       isBack: false,
       onDatPress: toggleCompanyDropdown,
       selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
+        selectedLegalEntity || defaultLegalEntity || 'Select Company',
+      defaultDat: defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
   }, [
@@ -114,7 +113,7 @@ const WorkerAssignedToMe = () => {
     notifications,
     toggleDrawer,
     selectedLegalEntity,
-    userData?.defaultLegalEntity,
+    defaultLegalEntity,
   ]);
 
   const closeAllOverlays = () => {
@@ -169,6 +168,7 @@ const WorkerAssignedToMe = () => {
     <AssignedWorkerCard
       employeeId={item.EmployeId}
       employeeName={item.Name}
+      defaultCompany={companyToUse}
       departmentName={item.DepartmentName}
       email={item.Email}
       positionId={item.PositionId}
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'black',
+    color: '#9f9f9fff',
   },
 });
 

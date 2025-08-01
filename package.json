@@ -21,6 +21,7 @@
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
     "@react-navigation/stack": "^6.4.1",
+    "@reduxjs/toolkit": "^2.8.2",
     "@types/react-native-extra-dimensions-android": "^1.2.3",
     "axios": "^1.10.0",
     "expo-font": "^12.0.10",
@@ -53,7 +54,8 @@
     "react-native-tab-view": "^3.5.2",
     "react-native-table-component": "^1.2.2",
     "react-native-vector-icons": "^10.1.0",
-    "react-navigation": "^5.0.0"
+    "react-navigation": "^5.0.0",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

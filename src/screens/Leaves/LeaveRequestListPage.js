@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useEffect, useContext, useCallback} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
+import {useSelector, useDispatch} from 'react-redux';
 import {
   View,
   Text,
@@ -17,8 +18,7 @@ import {
 } from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-import {UserContext} from '../../context/UserContext';
-import {CompanyContext} from '../../context/CompanyContext';
+import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 import {AlertModal} from '../../components/Leaves/AlertModal';
 import LeaveRequestCard from '../../components/Leaves/LeaveRequestCard';
@@ -49,11 +49,14 @@ const LeaveRequestListPage = () => {
   const [highlightedRecId, setHighlightedRecId] = useState(null);
 
   const navigation = useNavigation();
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
+  const dispatch = useDispatch();
 
-  // const navigation = useNavigation();
+  // Redux selectors
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
+  const {userData} = useSelector(state => state.user);
+
   const route = useRoute();
   const {employeeId, employeeName, WorkerRecId, cameFrom, highlightRecId} =
     route.params || {};
@@ -64,8 +67,7 @@ const LeaveRequestListPage = () => {
 
     setIsLoading(true);
     try {
-      const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
-      const LeaveData = await fetchLeaves(employeeId, companyToUse);
+      const LeaveData = await fetchLeaves(employeeId);
       setLeavesData(LeaveData);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
@@ -73,7 +75,7 @@ const LeaveRequestListPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [employeeId, selectedLegalEntity, userData.defaultLegalEntity]);
+  }, [employeeId]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -100,8 +102,14 @@ const LeaveRequestListPage = () => {
   );
 
   useEffect(() => {
-    if (highlightRecId && cameFrom === 'CreateSuccess') {
+    if (
+      highlightRecId &&
+      (cameFrom === 'CreateSuccess' || cameFrom === 'UpdateSuccess')
+    ) {
       setHighlightedRecId(highlightRecId);
+
+      // Refresh the data to ensure we have the latest records
+      fetchLeavesData();
 
       // Remove highlight after 3 seconds
       const timer = setTimeout(() => {
@@ -110,7 +118,7 @@ const LeaveRequestListPage = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [highlightRecId, cameFrom]);
+  }, [highlightRecId, cameFrom, fetchLeavesData]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('blur', () => {
@@ -129,11 +137,11 @@ const LeaveRequestListPage = () => {
     const interval = setInterval(fetchNotifications, 30000);
     fetchNotifications(); // Initial fetch
     return () => clearInterval(interval);
-  }, [userData.email]);
+  }, [userData?.email]);
 
   const handleCompanySelect = newLegalEntity => {
-    setSelectedLegalEntity(newLegalEntity);
-    console.log('Company changed to:', newLegalEntity);
+    dispatch(setSelectedLegalEntity(newLegalEntity));
+    // console.log('Company changed to:', newLegalEntity);
 
     // Refresh leaves data with new company
     fetchLeavesData();
@@ -149,8 +157,8 @@ const LeaveRequestListPage = () => {
       isBack: false,
       onDatPress: toggleCompanyDropdown,
       selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
+        selectedLegalEntity || defaultLegalEntity || 'Select Company',
+      defaultDat: defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
   }, [
@@ -160,7 +168,7 @@ const LeaveRequestListPage = () => {
     notifications,
     toggleDrawer,
     selectedLegalEntity,
-    userData?.defaultLegalEntity,
+    defaultLegalEntity,
   ]);
 
   const closeAllOverlays = () => {
@@ -174,28 +182,34 @@ const LeaveRequestListPage = () => {
     closeAllOverlays();
     setNotificationVisible(prev => !notificationVisible);
   };
+
   const toggleDrawer = () => {
     closeAllOverlays();
     navigation.toggleDrawer();
   };
+
   const handleLogout = () => {
     closeAllOverlays();
     setModalVisible(true);
   };
+
   const toggleCompanyDropdown = () => {
     closeAllOverlays();
     setDropdownVisible(prev => !dropdownVisible);
   };
+
   const closeNotification = () => setNotificationVisible(false);
+
   const confirmLogout = () => {
     setModalVisible(false);
     navigation.navigate('Login');
   };
+
   const cancelLogout = () => setModalVisible(false);
 
   const fetchNotifications = async () => {
     try {
-      const data = await retrieveByEmail({email: userData.email});
+      const data = await retrieveByEmail({email: userData?.email});
       if (Array.isArray(data)) {
         const formattedNotifications = data.map(notification => ({
           document: notification.Document,
@@ -209,6 +223,7 @@ const LeaveRequestListPage = () => {
       console.error('Error fetching notifications:', error);
     }
   };
+
   const handleGoBack = () => {
     if (cameFrom === 'DisplayListPage') {
       navigation.navigate('DisplayListPage');
@@ -252,7 +267,7 @@ const LeaveRequestListPage = () => {
 
   const handleDeleteLeave = async recId => {
     try {
-      const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
+      const companyToUse = selectedLegalEntity || defaultLegalEntity;
       const response = await deleteLeaveRequest({
         recordsRecId: [recId],
         defaultCompany: companyToUse,
@@ -280,11 +295,11 @@ const LeaveRequestListPage = () => {
       employeeId,
       employeeName,
       WorkerRecId,
-      cameFrom: 'LeavesListPage', // Fixed: use consistent parameter name
+      cameFrom: 'LeavesListPage',
       leaveData: {
         employeeId,
         employeeName,
-        WorkerRecId, // Fixed: include WorkerRecId
+        WorkerRecId,
         recId: '',
         leaveCode: '',
         leaveCategory: '',
@@ -316,7 +331,7 @@ const LeaveRequestListPage = () => {
         balance={item.balance}
         wfStatus={getStatusLabel(item.wfStatus)}
         onDelete={() => handleDeleteLeave(item.recId)}
-        isHighlighted={isHighlighted} // Pass highlight state to card
+        isHighlighted={isHighlighted}
       />
     );
   };

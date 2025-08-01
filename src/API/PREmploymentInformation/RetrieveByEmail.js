@@ -1,3 +1,4 @@
+/* eslint-disable dot-notation */
 import {getToken} from '../Token/getToken';
 import {XMLParser} from 'fast-xml-parser';
 import {resource} from '@env';
@@ -21,10 +22,7 @@ const RetrieveByEmail = async ({email}) => {
         </retrieveByEmail>
       </soapenv:Body>
     </soapenv:Envelope>`;
-    console.log(
-      '-=-=-=-=-=-=-=-=-=-=-=-Login Request XML--=-=-=-=-=-=-=-\n',
-      soapEnvelope,
-    );
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/PREmploymentInformationSvcGroup`,
       soapEnvelope,

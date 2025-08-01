@@ -21,7 +21,7 @@ const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
         </findByEmployee>
       </soapenv:Body>
     </soapenv:Envelope>`;
-    console.log('Identification Request XML:', soapEnvelope);
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
       soapEnvelope,
@@ -35,6 +35,7 @@ const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
         responseType: 'text',
       },
     );
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,

@@ -1,8 +1,6 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unstable-nested-components */
-import React, {useContext, useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {Image, View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import {
   createDrawerNavigator,
@@ -10,17 +8,11 @@ import {
   DrawerItem,
 } from '@react-navigation/drawer';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {UserContext} from '../context/UserContext';
-
+import {useSelector} from 'react-redux';
 import logo from '../assets/cloud.png';
+
 import TabNavigator from './TabNavigator';
-import NotificationDropdown from '../components/NotificationDropdown';
 import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
-import NotificationButton from '../components/NotificationButton';
-import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
-
-// import LeaveRequest from '../screens/Leaves/LeaveRequest';
-
 import PRSalarySlip from '../screens/Reports/PRSalarySlip';
 import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';
@@ -30,7 +22,7 @@ const Drawer = createDrawerNavigator();
 
 const CustomDrawerContent = props => {
   const [modalVisible, setModalVisible] = useState(false);
-  const {userData} = useContext(UserContext);
+  const userData = useSelector(state => state.user.userData);
 
   const handleLogout = () => setModalVisible(true);
   const confirmLogout = () => {
@@ -52,11 +44,7 @@ const CustomDrawerContent = props => {
           </Text>
           <Text style={styles.drawerHeaderEmail}>{userData?.email || ''}</Text>
         </View>
-        {/* <DrawerItem
-          label="Home"
-          onPress={() => props.navigation.navigate('TabNavigator')}
-          icon={() => <Icon name="tachometer" size={24} color="#FFA500" />}
-        /> */}
+
         <DrawerItem
           label="Leave Requests"
           onPress={() =>
@@ -74,12 +62,8 @@ const CustomDrawerContent = props => {
           onPress={() => props.navigation.navigate('PRSalarySlip')}
           icon={() => <Icon name="money" size={24} color="#FFA500" />}
         />
-        <DrawerItem
-          label="My Team"
-          onPress={() => props.navigation.navigate('WorkerAssignedToMe')}
-          icon={() => <Icon name="users" size={18} color="#FFA500" />}
-        />
       </DrawerContentScrollView>
+
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Log out</Text>
       </TouchableOpacity>
@@ -96,35 +80,7 @@ const CustomDrawerContent = props => {
 };
 
 const DrawerNavigator = () => {
-  const {userData} = useContext(UserContext);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-
-  const toggleNotification = () => setNotificationVisible(!notificationVisible);
-
-  const fetchNotifications = async () => {
-    try {
-      const data = await retrieveByEmail({email: userData.email});
-      if (Array.isArray(data)) {
-        const formattedNotifications = data.map(notification => ({
-          document: notification.Document,
-          documentType: notification.DocumentType,
-          correlationId: notification.CorrelationId,
-        }));
-        setNotifications(formattedNotifications);
-        setNotificationCount(formattedNotifications.length);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
-
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications(); // Initial fetch
-    return () => clearInterval(interval);
-  }, [userData.email]);
+  const userData = useSelector(state => state.user.userData);
 
   return (
     <>
@@ -148,18 +104,6 @@ const DrawerNavigator = () => {
             ),
           }}
         />
-        {/* <Drawer.Screen
-          name="Leaves"
-          component={LeaveRequest}
-          initialParams={{userData}}
-          options={{
-            title: 'Leave Requests',
-            drawerIcon: () => (
-              <Icon name="calendar" size={24} color="#FFA500" />
-            ),
-            headerShown: true,
-          }}
-        /> */}
         <Drawer.Screen
           name="LeavesListPage"
           component={LeaveRequestListPage}
@@ -195,12 +139,6 @@ const DrawerNavigator = () => {
           }}
         />
       </Drawer.Navigator>
-
-      <NotificationDropdown
-        visible={notificationVisible}
-        notifications={notifications}
-        onClose={() => setNotificationVisible(false)}
-      />
     </>
   );
 };
@@ -237,15 +175,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  headerRightContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 8,
-  },
-  headerImage: {
-    width: 100,
-    height: 40,
   },
 });
 

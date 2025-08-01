@@ -59,7 +59,7 @@ const CompanyDropdown = ({
                               styles.companyName,
                               isSelected && styles.selectedCompanyName,
                             ]}>
-                            {entity.LegalEntity}
+                            {entity.LegalEntity.toUpperCase()}
                           </Text>
                         </View>
                         {isSelected && (

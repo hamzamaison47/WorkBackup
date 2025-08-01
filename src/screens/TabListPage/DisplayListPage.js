@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useContext, useCallback} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {UserContext} from '../../context/UserContext';
-import {CompanyContext} from '../../context/CompanyContext';
+import {useDispatch, useSelector} from 'react-redux';
 import {
   View,
   Text,
@@ -21,14 +20,19 @@ import MainPageHeader from '../../components/PageHeader/MainPageHeader';
 import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
 import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 const {width, height} = Dimensions.get('window');
 
 const DisplayListPage = () => {
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
+  const dispatch = useDispatch();
   const navigation = useNavigation();
+
+  const userData = useSelector(state => state.user.userData);
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
+  const legalEntities = useSelector(state => state.company.legalEntities);
 
   const pages = [
     {
@@ -43,7 +47,7 @@ const DisplayListPage = () => {
           employeeId: userData.employeeId,
           employeeName: userData.employeeName,
           WorkerRecId: userData.WorkerRecId,
-          cameFrom: 'DisplayListPage', // Add this to track origin
+          cameFrom: 'DisplayListPage',
         }),
     },
     {
@@ -71,14 +75,11 @@ const DisplayListPage = () => {
 
   useFocusEffect(
     useCallback(() => {
-      // Close everything on focus
       closeAllOverlays();
-
       const onBackPress = () => {
         handleLogout();
         return true;
       };
-
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
@@ -87,10 +88,7 @@ const DisplayListPage = () => {
   );
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
-      closeAllOverlays();
-    });
-
+    const unsubscribe = navigation.addListener('blur', closeAllOverlays);
     return unsubscribe;
   }, [navigation]);
 
@@ -130,12 +128,8 @@ const DisplayListPage = () => {
 
   const handleCompanySelect = async newLegalEntity => {
     setIsCompanySwitching(true);
-    setSelectedLegalEntity(newLegalEntity);
-
-    // Optional: simulate delay if needed for effect (or await any refresh logic)
+    dispatch(setSelectedLegalEntity(newLegalEntity));
     await new Promise(resolve => setTimeout(resolve, 2000));
-    // Optional but Refresh any data that depends on the selected company
-
     setIsCompanySwitching(false);
   };
 
@@ -143,12 +137,12 @@ const DisplayListPage = () => {
     setDropdownVisible(false);
     setNotificationVisible(false);
     setModalVisible(false);
-    navigation.closeDrawer?.(); // Optional, if using Drawer Navigator
+    navigation.closeDrawer?.();
   };
 
   const toggleNotification = () => {
     closeAllOverlays();
-    setNotificationVisible(prev => !notificationVisible);
+    setNotificationVisible(prev => !prev);
   };
   const toggleDrawer = () => {
     closeAllOverlays();
@@ -160,7 +154,7 @@ const DisplayListPage = () => {
   };
   const toggleCompanyDropdown = () => {
     closeAllOverlays();
-    setDropdownVisible(prev => !dropdownVisible);
+    setDropdownVisible(prev => !prev);
   };
   const closeNotification = () => setNotificationVisible(false);
   const confirmLogout = () => {
@@ -170,17 +164,14 @@ const DisplayListPage = () => {
   const cancelLogout = () => setModalVisible(false);
 
   const filterPages = category => {
-    if (category === 'All') {
-      setFilteredPages(pages);
-    } else {
-      const filtered = pages.filter(page => page.category === category);
-      setFilteredPages(filtered);
-    }
+    setFilteredPages(
+      category === 'All'
+        ? pages
+        : pages.filter(page => page.category === category),
+    );
   };
 
-  const handleFilterPress = filter => {
-    setActiveFilter(filter);
-  };
+  const handleFilterPress = filter => setActiveFilter(filter);
 
   const fetchNotifications = async () => {
     try {
@@ -200,8 +191,7 @@ const DisplayListPage = () => {
   };
 
   const handlePagePress = page => {
-    console.log(`Navigating to: ${page.screen}`);
-    // Execute the page's onPress function which contains the proper navigation
+    // console.log(`Navigating to: ${page.screen}`);
     if (page.onPress) {
       page.onPress();
     }
@@ -239,7 +229,7 @@ const DisplayListPage = () => {
     </TouchableOpacity>
   );
 
-  const renderMenuItem = (item, index) => (
+  const renderMenuItem = item => (
     <TouchableOpacity
       key={item.id}
       style={styles.menuItem}
@@ -264,22 +254,21 @@ const DisplayListPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Filter Buttons Section */}
       <View style={styles.filterContainer}>
         <View style={styles.filterScrollContent}>
           {['All', 'PR', 'HR', 'TAS'].map(filter => renderFilterButton(filter))}
         </View>
       </View>
+
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
         <View style={styles.menuContainer}>
           {filteredPages.length > 0
-            ? filteredPages.map((item, index) => renderMenuItem(item, index))
+            ? filteredPages.map(renderMenuItem)
             : renderNoMenuMessage()}
         </View>
-
         <View style={styles.bottomPadding} />
       </ScrollView>
 

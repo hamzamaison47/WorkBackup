@@ -13,7 +13,7 @@ import {
 
 const NotificationDropdown = ({visible, notifications, onClose}) => {
   // const navigation = useNavigation();
-  console.log('Notifications:', notifications); // For debugging
+  // console.log('Notifications:', notifications); // For debugging
 
   if (!visible) return null;
 

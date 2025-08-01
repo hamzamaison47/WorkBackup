@@ -1,41 +1,16 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unstable-nested-components */
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
+import {StyleSheet} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-import {useNotifications} from '../context/NotificationContext';
 import MainDashboard from '../screens/Maindasboard';
-// import WorkItemAssigned from '../screens/WorkItemsAssignedToMe/WorkItemAssigned';
 import DisplayPersonalInfo from '../screens/PersonalInformation/DisplayPersonalInfo';
 import DisplayListPage from '../screens/TabListPage/DisplayListPage';
-// import NotificationPage from '../screens/Notifications/NotificationPage';
 import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
 
 const Tab = createBottomTabNavigator();
-
-const NotificationIcon = ({focused, color, size}) => {
-  const {unreadCount} = useNotifications();
-
-  return (
-    <View style={styles.iconContainer}>
-      <Ionicons
-        name={focused ? 'notifications' : 'notifications-outline'}
-        size={size}
-        color={color}
-      />
-      {unreadCount > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-};
 
 const TabNavigator = () => {
   return (
@@ -47,14 +22,8 @@ const TabNavigator = () => {
 
           if (route.name === 'MainDashboard') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'WorkItemAssigned') {
-            iconName = focused ? 'list' : 'list-outline';
           } else if (route.name === 'DisplayListPage') {
             iconName = focused ? 'grid' : 'grid-outline';
-          } else if (route.name === 'NotificationPage') {
-            return (
-              <NotificationIcon focused={focused} color={color} size={size} />
-            );
           } else if (route.name === 'DisplayPersonalInfo') {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'WorkerAssignedToMe') {

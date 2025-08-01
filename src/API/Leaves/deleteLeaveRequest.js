@@ -1,29 +1,22 @@
 /* eslint-disable dot-notation */
 import {resource} from '@env';
-import {getToken} from '../Token/getToken';
-import {XMLParser} from 'fast-xml-parser';
 import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../Token/getToken';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const deleteLeaveRequest = async ({recordsRecId, defaultCompany}) => {
+const deleteLeaveRequest = async ({recordsRecId}) => {
   try {
     const token = await getToken();
 
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${defaultCompany}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <Delete xmlns="http://tempuri.org">
-          <_recordsRecId xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
-            ${recordsRecId.map(id => `<a:long>${id}</a:long>`).join('')}
-          </_recordsRecId>
-        </Delete>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+    const soapBody = `
+      <Delete xmlns="http://tempuri.org">
+        <_recordsRecId xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+          ${recordsRecId.map(id => `<a:long>${id}</a:long>`).join('')}
+        </_recordsRecId>
+      </Delete>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/PREmployeeLeavesSvcGroup`,

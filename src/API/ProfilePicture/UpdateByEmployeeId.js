@@ -26,10 +26,7 @@ const UpdateByEmployeeId = async ({
         </updateByEmployeeId>
     </soapenv:Body>
 </soapenv:Envelope>`;
-    console.log(
-      'Update Image Requet XML--------------------------\n',
-      soapEnvelope,
-    );
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/HcmPersonImageSvcGroup`,
       soapEnvelope,

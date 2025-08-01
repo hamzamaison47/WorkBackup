@@ -7,7 +7,7 @@ const UpdateIdentityRequest = async identityData => {
   };
 
   try {
-    console.log('Update Identity Request', identityData);
+    // console.log('Update Identity Request', identityData);
     const accessToken = await getToken();
     // Make the POST request
     const response = await fetch(

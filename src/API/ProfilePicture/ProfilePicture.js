@@ -24,7 +24,7 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
       </soapenv:Body>
     </soapenv:Envelope>`;
 
-    console.log('SOAP Request Body (ProfilePicture):', soapEnvelope);
+    // console.log('SOAP Request Body (ProfilePicture):', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/HcmPersonImageSvcGroup`,
@@ -49,8 +49,8 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
 
     const parsed = parser.parse(xml);
 
-    console.log('Raw SOAP Response (ProfilePicture):', xml);
-    console.log('Parsed SOAP Response (ProfilePicture):', parsed);
+    // console.log('Raw SOAP Response (ProfilePicture):', xml);
+    // console.log('Parsed SOAP Response (ProfilePicture):', parsed);
 
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[

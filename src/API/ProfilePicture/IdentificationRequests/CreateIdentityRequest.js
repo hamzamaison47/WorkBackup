@@ -31,10 +31,7 @@ const CreateIdentityRequest = async ({identityData, defaultCompany}) => {
         </create>
       </soapenv:Body>
     </soapenv:Envelope>`;
-    console.log(
-      'Create Identity Request--------------------------------------------------\n',
-      soapEnvelope,
-    );
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
       soapEnvelope,
@@ -48,6 +45,7 @@ const CreateIdentityRequest = async ({identityData, defaultCompany}) => {
         responseType: 'text',
       },
     );
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,

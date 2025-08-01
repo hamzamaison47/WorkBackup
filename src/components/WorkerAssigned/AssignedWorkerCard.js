@@ -17,6 +17,7 @@ import {ProfilePicture} from '../../API/ProfilePicture/ProfilePicture';
 const AssignedWorkerCard = ({
   employeeId,
   employeeName,
+  defaultCompany,
   departmentName,
   email,
   positionId,
@@ -36,9 +37,14 @@ const AssignedWorkerCard = ({
   const fetchProfilePicture = async () => {
     setIsLoading(true);
     try {
-      const data = await ProfilePicture({employeeId});
-      const base64Image = `data:image/png;base64,${data.StringImage}`;
-      setProfilePictureUrl(base64Image);
+      const data = await ProfilePicture({employeeId, defaultCompany});
+      // const base64Image = `data:image/png;base64,${data.StringImage}`;
+      // setProfilePictureUrl(base64Image);
+      if (data?.[0]?.StringImage) {
+        setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
+      } else {
+        setProfilePictureUrl(null);
+      }
     } catch (error) {
       console.error('Failed to fetch image data:', error);
     } finally {
@@ -66,12 +72,9 @@ const AssignedWorkerCard = ({
             ) : (
               <TouchableOpacity>
                 <Image
-                  source={
-                    profilePictureUrl &&
-                    profilePictureUrl !== 'data:image/png;base64,'
-                      ? {uri: profilePictureUrl}
-                      : require('../../assets/userLogo.jpg')
-                  }
+                  source={{
+                    uri: profilePictureUrl || 'https://via.placeholder.com/150',
+                  }}
                   style={styles.profilePicture}
                 />
               </TouchableOpacity>

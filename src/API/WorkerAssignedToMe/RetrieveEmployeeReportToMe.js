@@ -1,3 +1,4 @@
+/* eslint-disable dot-notation */
 import {getToken} from '../Token/getToken';
 import {resource} from '@env';
 import axios from 'axios';
@@ -18,12 +19,14 @@ const RetrieveEmployeeReportToMe = async ({employeeId, defaultCompany}) => {
         <retrieve xmlns = "http://tempuri.org">
             <_employeeId>${employeeId}</_employeeId>
         </retrieve>
-    </soapenv:Body>
-</soapenv:Envelope>`;
-    console.log(
-      '-=-=-=-=-=-=-=-=-=wWorker Request XML-=-=-=-=-=-=-=-=-=-=\n',
-      soapEnvelope,
-    );
+      </soapenv:Body>
+    </soapenv:Envelope>`;
+
+    // console.log(
+    //   '-=-=-=-=-=-=-=-=-=Worker Request XML-=-=-=-=-=-=-=-=-=-=\n',
+    //   soapEnvelope,
+    // );
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/HREmployeesListReportToMeSvcGroup`,
       soapEnvelope,
@@ -37,6 +40,7 @@ const RetrieveEmployeeReportToMe = async ({employeeId, defaultCompany}) => {
         responseType: 'text',
       },
     );
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -46,14 +50,13 @@ const RetrieveEmployeeReportToMe = async ({employeeId, defaultCompany}) => {
     });
 
     const parsed = parser.parse(xml);
-
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveResponse']?.['result']?.[
-        'HREmployeesListReportToMeSvcContract'
+        'a:HREmployeesListReportToMeSvcContract'
       ];
 
     if (!rawData) {
-      console.warn('No data found');
+      console.log('No leave data found');
       return [];
     }
 

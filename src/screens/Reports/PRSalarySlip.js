@@ -1,42 +1,39 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/no-unstable-nested-components */
-import React, {useState, useContext, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Platform,
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Image,
   BackHandler,
 } from 'react-native';
-import {PREmailSalarySlip} from '../../API/Reports/PREmailSalarySlip';
-import {Dropdown} from 'react-native-element-dropdown';
-import Modal from 'react-native-modal';
 import {
-  useTheme,
   useRoute,
   useNavigation,
   useFocusEffect,
 } from '@react-navigation/native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {UserContext} from '../../context/UserContext';
-import {CompanyContext} from '../../context/CompanyContext';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import {PayGroupPayperiodByEmployeeId} from '../../API/PayGroupPayPeriod/PayGroupPayperiodByEmployeeId';
-import {hp, wp} from '../../constants/Size';
+import {useSelector, useDispatch} from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
-import logo from '../../assets/cloud.png';
+import {Dropdown} from 'react-native-element-dropdown';
+import Modal from 'react-native-modal';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Icon from 'react-native-vector-icons/FontAwesome';
+
 import MainPageHeader from '../../components/PageHeader/MainPageHeader';
 import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
 import NotificationDropdown from '../../components/NotificationDropdown';
 import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
+
+import {PREmailSalarySlip} from '../../API/Reports/PREmailSalarySlip';
 import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
-import {reporter} from '../../../metro.config';
+import {PayGroupPayperiodByEmployeeId} from '../../API/PayGroupPayPeriod/PayGroupPayperiodByEmployeeId';
+
+import {hp, wp} from '../../constants/Size';
+import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 const {height, width} = Dimensions.get('window');
 
@@ -52,14 +49,16 @@ const PRSalarySlip = () => {
   const [notificationVisible, setNotificationVisible] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
-  const {colors} = useTheme();
   const route = useRoute();
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+
   const {employeeId} = route.params || {};
-  const {userData} = useContext(UserContext);
-  const {selectedLegalEntity, setSelectedLegalEntity, legalEntities} =
-    useContext(CompanyContext);
-  const companyToUse = selectedLegalEntity || userData.defaultLegalEntity;
+  const {userData} = useSelector(state => state.user);
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
+  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -89,8 +88,8 @@ const PRSalarySlip = () => {
   }, [userData.email]);
 
   const handleCompanySelect = newLegalEntity => {
-    setSelectedLegalEntity(newLegalEntity);
-    console.log('Company changed to:', newLegalEntity);
+    dispatch(setSelectedLegalEntity(newLegalEntity));
+    // console.log('Company changed to:', newLegalEntity);
 
     // Refresh leaves data with new company
     fetchPayPeriods(newLegalEntity);
@@ -106,8 +105,8 @@ const PRSalarySlip = () => {
       isBack: false,
       onDatPress: toggleCompanyDropdown,
       selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
+        selectedLegalEntity || defaultLegalEntity || 'Select Company',
+      defaultDat: defaultLegalEntity,
     });
     navigation.setOptions(headerOptions);
   }, [
@@ -117,7 +116,7 @@ const PRSalarySlip = () => {
     notifications,
     toggleDrawer,
     selectedLegalEntity,
-    userData?.defaultLegalEntity,
+    defaultLegalEntity,
   ]);
 
   const closeAllOverlays = () => {

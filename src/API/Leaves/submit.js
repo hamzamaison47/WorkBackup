@@ -1,11 +1,12 @@
 /* eslint-disable curly */
 /* eslint-disable dot-notation */
 import {resource} from '@env';
-import {getToken} from '../Token/getToken';
-import {XMLParser} from 'fast-xml-parser';
 import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../Token/getToken';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const submit = async ({recId, companyToUse}) => {
+const submit = async ({recId}) => {
   try {
     if (typeof recId === 'object') {
       if ('recId' in recId) {
@@ -16,20 +17,14 @@ const submit = async ({recId, companyToUse}) => {
     }
 
     const token = await getToken();
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${companyToUse}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <submitLeaveRequestByRecId xmlns="http://tempuri.org">
-          <_recId>${recId}</_recId>
-        </submitLeaveRequestByRecId>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+
+    const soapBody = `
+      <submitLeaveRequestByRecId xmlns="http://tempuri.org">
+        <_recId>${recId}</_recId>
+      </submitLeaveRequestByRecId>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,

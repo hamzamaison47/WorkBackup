@@ -1,32 +1,23 @@
 /* eslint-disable curly */
 /* eslint-disable dot-notation */
 import {resource} from '@env';
-import {getToken} from '../Token/getToken';
-import {XMLParser} from 'fast-xml-parser';
 import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../Token/getToken';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const createLeaveRequest = async ({leaveData, companyToUse}) => {
+const createLeaveRequest = async ({leaveData}) => {
   try {
     const token = await getToken();
 
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${companyToUse}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <create xmlns = "http://tempuri.org">
-          <contract xmlns:tem = "http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
-            ${buildContractXml(leaveData)}
-          </contract>
-        </create>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+    const soapBody = `
+      <create xmlns="http://tempuri.org">
+        <contract xmlns:tem = "http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
+          ${buildContractXml(leaveData)}
+        </contract>
+      </create>`;
 
-    console.log('SOAP Request Body:', soapEnvelope);
+    const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/PREmployeeLeavesSvcGroup`,
