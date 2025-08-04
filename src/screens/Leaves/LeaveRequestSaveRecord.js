@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,14 @@ import {
   ScrollView,
   SafeAreaView,
   Pressable,
-  BackHandler,
+  Dimensions,
 } from 'react-native';
 import {
   useNavigation,
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
-import {useSelector, useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -27,27 +27,23 @@ import {
   fetchLeaveBalance,
   fetchLeaveCodes,
 } from '../../Controller/leaveRequestApiService';
-import {setSelectedLegalEntity} from '../../store/slices/companySlice';
 
 import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
-import {submit} from '../../API/Leaves/submit';
-import {update} from '../../API/Leaves/update';
-import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
+import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
+import {UpdateLeaveRequest} from '../../API/Leaves/UpdateLeaveRequest';
 
-import {AlertModal} from '../../components/Leaves/AlertModal';
+import {AlertModal} from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
-import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
-import MainPageHeader from '../../components/PageHeader/MainPageHeader';
-import NotificationDropdown from '../../components/NotificationDropdown';
-import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+import ActionPaneContainer from '../../components/ActionPaneContainer';
+
+const {width, height} = Dimensions.get('window');
 
 const LeaveRequestSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const dispatch = useDispatch();
 
-  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+  const {selectedLegalEntity, defaultLegalEntity} = useSelector(
     state => state.company,
   );
   const {userData} = useSelector(state => state.user);
@@ -63,14 +59,13 @@ const LeaveRequestSaveRecord = () => {
     cameFrom = 'MainDashboard',
   } = route.params || {};
 
-  console.log('Leave Data Via Parms', leaveData);
-
   // State declarations
   const [LeaveCodesForEmployee, setLeaveCodesForEmployee] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Create initial form data function
   const createInitialFormData = () => ({
@@ -89,17 +84,6 @@ const LeaveRequestSaveRecord = () => {
 
   // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
-
-  // Add state to track when form data is properly initialized
-  const [isFormInitialized, setIsFormInitialized] = useState(false);
-
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [isCompanySwitching, setIsCompanySwitching] = useState(false);
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
 
   // Fixed goBack function with proper navigation logic
   const goBack = useCallback(() => {
@@ -156,7 +140,6 @@ const LeaveRequestSaveRecord = () => {
         // Always reset form data for create mode
         const freshFormData = createInitialFormData();
         setFormData(freshFormData);
-        setIsFormInitialized(true);
       } else if (mode === 'edit' && leaveData?.recId) {
         // Normalize the leave category from API
         const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
@@ -177,7 +160,6 @@ const LeaveRequestSaveRecord = () => {
           normalizedLeaveCategory,
         );
         setFormData(editFormData);
-        setIsFormInitialized(true);
 
         // Fetch balance for the existing record
         if (
@@ -206,7 +188,6 @@ const LeaveRequestSaveRecord = () => {
             });
         }
       } else {
-        setIsFormInitialized(true);
       }
     }, [
       mode,
@@ -218,124 +199,18 @@ const LeaveRequestSaveRecord = () => {
     ]),
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      closeAllOverlays();
-
-      const onBackPress = () => {
-        goBack();
-        return true;
-      };
-
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
-    }, [goBack]),
-  );
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
-      closeAllOverlays();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
-  // Update the header configuration ONLY after form is initialized
-  useEffect(() => {
-    if (!isFormInitialized) return;
-
-    const headerOptions = MainPageHeader({
-      onToggleDrawer: goBack,
-      onTitle: mode === 'edit' ? 'Edit' : 'Create',
-      onShowNotify: toggleNotification,
-      onCount: notificationCount,
-      onLogout: handleLogout,
-      isBack: true,
-      onDatPress: toggleCompanyDropdown,
-      selectedDat:
-        selectedLegalEntity || defaultLegalEntity || 'Select Company',
-      defaultDat: defaultLegalEntity,
-    });
-    navigation.setOptions(headerOptions);
-  }, [
-    navigation,
-    notificationCount,
-    notificationVisible,
-    notifications,
-    goBack,
-    selectedLegalEntity,
-    defaultLegalEntity,
-    mode,
-    isFormInitialized,
-  ]);
-
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications();
-    return () => clearInterval(interval);
-  }, [userData.email]);
-
-  const closeAllOverlays = () => {
-    setDropdownVisible(false);
-    setNotificationVisible(false);
-    setModalVisible(false);
-    navigation.closeDrawer?.();
-  };
-
-  const toggleNotification = () => {
-    closeAllOverlays();
-    setNotificationVisible(prev => !notificationVisible);
-  };
-  const handleLogout = () => {
-    closeAllOverlays();
-    setModalVisible(true);
-  };
-  const toggleCompanyDropdown = () => {
-    closeAllOverlays();
-    setDropdownVisible(prev => !dropdownVisible);
-  };
-  const closeNotification = () => setNotificationVisible(false);
-  const confirmLogout = () => {
-    setModalVisible(false);
-    navigation.navigate('Login');
-  };
-  const cancelLogout = () => setModalVisible(false);
-
-  const handleCompanySelect = async newLegalEntity => {
-    setIsCompanySwitching(true);
-    dispatch(setSelectedLegalEntity(newLegalEntity));
+  const handleRefresh = async () => {
+    setIsLoading(true);
 
     try {
-      await fetchNotifications();
-      await clearFormData();
+      clearFormData();
 
-      const codes = await fetchLeaveCodes(formData.employeeId, newLegalEntity);
+      const codes = await fetchLeaveCodes(formData.employeeId, companyToUse);
       setLeaveCodesForEmployee(codes);
     } catch (error) {
-      console.error('Error updating data after company change:', error);
-      setAlertMessage('Failed to refresh data after company change.');
-      setAlertModal(true);
+      console.error('Error in Save Record Screen', error);
     } finally {
-      setIsCompanySwitching(false);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    try {
-      const data = await retrieveByEmail({email: userData.email});
-      if (Array.isArray(data)) {
-        const formattedNotifications = data.map(notification => ({
-          document: notification.Document,
-          documentType: notification.DocumentType,
-          correlationId: notification.CorrelationId,
-        }));
-        setNotifications(formattedNotifications);
-        setNotificationCount(formattedNotifications.length);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+      setIsLoading(false);
     }
   };
 
@@ -572,18 +447,18 @@ const LeaveRequestSaveRecord = () => {
           companyToUse: companyToUse,
         });
         if (actionType === 'submit') {
-          await submit({
+          await SubmitLeaveRequest({
             recId: response.RecId,
             companyToUse: companyToUse,
           });
         }
       } else {
-        response = await update({
+        response = await UpdateLeaveRequest({
           leaveData: leavesData,
           companyToUse: companyToUse,
         });
         if (actionType === 'submit') {
-          await submit({
+          await SubmitLeaveRequest({
             recId: response.RecId,
             companyToUse: companyToUse,
           });
@@ -682,176 +557,161 @@ const LeaveRequestSaveRecord = () => {
   const isLeaveDaysDisabled = formData.leaveCategory === 'Half Leave';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView behavior="padding" style={styles.contentWrapper}>
-        <ScrollView contentContainerStyle={styles.formContainer}>
-          <Text style={styles.label}>Employee Name</Text>
-          <Text style={[styles.input, styles.disabled]}>
-            {formData.employeeName}
-          </Text>
-          <Text style={styles.label}>Request Date</Text>
-          <Text style={[styles.input, styles.disabled]}>
-            {formatDate(today)}
-          </Text>
-          <Text style={styles.label}>Leave Category *</Text>
-          <Dropdown
-            style={styles.input}
-            data={leaveCategoryOptions}
-            labelField="label"
-            valueField="value"
-            placeholder="Select Leave Category"
-            value={formData.leaveCategory}
-            itemTextStyle={{color: '#707070ff', fontSize: 16}}
-            onChange={handleLeaveCategoryChange}
-          />
-          <Text style={styles.label}>Leave Code *</Text>
-          <Dropdown
-            style={styles.input}
-            data={LeaveCodesForEmployee}
-            labelField="label"
-            valueField="value"
-            placeholder="Select Leave Code"
-            value={formData.leaveCode}
-            itemTextStyle={{color: '#707070ff', fontSize: 16}}
-            onFocus={fetchLeaveCodesForEmployee}
-            onChange={handleLeaveCodeChange}
-          />
-          <Text style={styles.label}>Balance</Text>
-          <Text style={[styles.input, styles.disabled]}>
-            {formData.balance}
-          </Text>
-          <Text style={styles.label}>Leave Start Date *</Text>
-          <TouchableOpacity
-            style={styles.dateSelector}
-            onPress={() => setShowCalendar(true)}>
-            <View style={{flex: 1}}>
-              <Text style={styles.dateText}>
-                {formData.leaveStartDate
-                  ? formatDate(formData.leaveStartDate)
-                  : 'Select Start Date'}
+    <ActionPaneContainer
+      pageTitle={mode === 'edit' ? 'Edit' : 'Create'}
+      isBackButton={true} // Use drawer instead of back button
+      showFooter={false}
+      showFloatingButton={false}
+      onBackPress={goBack}
+      onRefresh={handleRefresh}
+      onFloatingButtonPress={{}}>
+      {/* Show loading indicator when isLoading is true */}
+      {isLoading ? (
+        <CustomIndicator />
+      ) : (
+        <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView
+            behavior="padding"
+            style={styles.contentWrapper}>
+            <ScrollView contentContainerStyle={styles.formContainer}>
+              <Text style={styles.label}>Employee Name</Text>
+              <Text style={[styles.input, styles.disabled]}>
+                {formData.employeeName}
               </Text>
+              <Text style={styles.label}>Request Date</Text>
+              <Text style={[styles.input, styles.disabled]}>
+                {formatDate(today)}
+              </Text>
+              <Text style={styles.label}>Leave Category *</Text>
+              <Dropdown
+                style={styles.input}
+                data={leaveCategoryOptions}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Leave Category"
+                value={formData.leaveCategory}
+                itemTextStyle={{color: '#707070ff', fontSize: 16}}
+                onChange={handleLeaveCategoryChange}
+              />
+              <Text style={styles.label}>Leave Code *</Text>
+              <Dropdown
+                style={styles.input}
+                data={LeaveCodesForEmployee}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Leave Code"
+                value={formData.leaveCode}
+                itemTextStyle={{color: '#707070ff', fontSize: 16}}
+                onFocus={fetchLeaveCodesForEmployee}
+                onChange={handleLeaveCodeChange}
+              />
+              <Text style={styles.label}>Balance</Text>
+              <Text style={[styles.input, styles.disabled]}>
+                {formData.balance}
+              </Text>
+              <Text style={styles.label}>Leave Start Date *</Text>
+              <TouchableOpacity
+                style={styles.dateSelector}
+                onPress={() => setShowCalendar(true)}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.dateText}>
+                    {formData.leaveStartDate
+                      ? formatDate(formData.leaveStartDate)
+                      : 'Select Start Date'}
+                  </Text>
+                </View>
+                <Icon name="calendar" size={20} color="#ff7f00" />
+              </TouchableOpacity>
+              <CalendarModal
+                visible={showCalendar}
+                current={formData.leaveStartDate}
+                onDateSelected={handleDateChange}
+                onClose={() => setShowCalendar(false)}
+              />
+              <Text style={styles.label}>Leave Days *</Text>
+              <TextInput
+                style={[styles.input, isLeaveDaysDisabled && styles.disabled]}
+                value={formData.leaveDays.toString()}
+                onChangeText={handleLeaveDaysChange}
+                keyboardType="numeric"
+                placeholder="Enter number of days"
+                editable={!isLeaveDaysDisabled}
+              />
+              <Text style={styles.label}>End Date</Text>
+              <Text style={[styles.input, styles.disabled]}>
+                {formData.leaveEndDate
+                  ? formatDate(formData.leaveEndDate)
+                  : 'End date will be calculated'}
+              </Text>
+              <Text style={styles.label}>Reason</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.reason}
+                onChangeText={value => handleInputChange('reason', value)}
+                placeholder="Enter reason for leave"
+                multiline
+                numberOfLines={6}
+              />
+            </ScrollView>
+
+            <View style={styles.footer}>
+              <Pressable
+                style={({pressed}) => [
+                  styles.button,
+                  pressed && styles.pressedButton,
+                  isSubmitting && styles.disabledButton,
+                ]}
+                onPress={() => handleSave('save')}
+                disabled={isSubmitting}>
+                {({pressed}) => (
+                  <Text
+                    style={[styles.buttonText, pressed && styles.pressedText]}>
+                    {isSubmitting
+                      ? 'Processing...'
+                      : mode === 'edit'
+                      ? 'Update'
+                      : 'Create'}
+                  </Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({pressed}) => [
+                  styles.button,
+                  styles.submitButton,
+                  pressed && styles.pressedSubmitButton,
+                  isSubmitting && styles.disabledButton,
+                ]}
+                onPress={() => handleSave('submit')}
+                disabled={isSubmitting}>
+                {({pressed}) => (
+                  <Text
+                    style={[
+                      styles.submitButtonText,
+                      pressed && styles.pressedText,
+                    ]}>
+                    {isSubmitting
+                      ? 'Processing...'
+                      : mode === 'edit'
+                      ? 'Update & Submit'
+                      : 'Create & Submit'}
+                  </Text>
+                )}
+              </Pressable>
             </View>
-            <Icon name="calendar" size={20} color="#ff7f00" />
-          </TouchableOpacity>
-          <CalendarModal
-            visible={showCalendar}
-            current={formData.leaveStartDate}
-            onDateSelected={handleDateChange}
-            onClose={() => setShowCalendar(false)}
+          </KeyboardAvoidingView>
+
+          <AlertModal
+            visible={alertModal}
+            heading="Alert"
+            text={alertMessage}
+            onPress={() => {
+              setAlertModal(false);
+            }}
           />
-          <Text style={styles.label}>Leave Days *</Text>
-          <TextInput
-            style={[styles.input, isLeaveDaysDisabled && styles.disabled]}
-            value={formData.leaveDays.toString()}
-            onChangeText={handleLeaveDaysChange}
-            keyboardType="numeric"
-            placeholder="Enter number of days"
-            editable={!isLeaveDaysDisabled}
-          />
-          <Text style={styles.label}>End Date</Text>
-          <Text style={[styles.input, styles.disabled]}>
-            {formData.leaveEndDate
-              ? formatDate(formData.leaveEndDate)
-              : 'End date will be calculated'}
-          </Text>
-          <Text style={styles.label}>Reason</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={formData.reason}
-            onChangeText={value => handleInputChange('reason', value)}
-            placeholder="Enter reason for leave"
-            multiline
-            numberOfLines={6}
-          />
-        </ScrollView>
-
-        <View style={styles.footer}>
-          <Pressable
-            style={({pressed}) => [
-              styles.button,
-              pressed && styles.pressedButton,
-              isSubmitting && styles.disabledButton,
-            ]}
-            onPress={() => handleSave('save')}
-            disabled={isSubmitting}>
-            {({pressed}) => (
-              <Text style={[styles.buttonText, pressed && styles.pressedText]}>
-                {isSubmitting
-                  ? 'Processing...'
-                  : mode === 'edit'
-                  ? 'Update'
-                  : 'Create'}
-              </Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            style={({pressed}) => [
-              styles.button,
-              styles.submitButton,
-              pressed && styles.pressedSubmitButton,
-              isSubmitting && styles.disabledButton,
-            ]}
-            onPress={() => handleSave('submit')}
-            disabled={isSubmitting}>
-            {({pressed}) => (
-              <Text
-                style={[
-                  styles.submitButtonText,
-                  pressed && styles.pressedText,
-                ]}>
-                {isSubmitting
-                  ? 'Processing...'
-                  : mode === 'edit'
-                  ? 'Update & Submit'
-                  : 'Create & Submit'}
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-
-      {isCompanySwitching && (
-        <View style={styles.loadingOverlay}>
-          <CustomIndicator size="large" color="#007AFF" />
-        </View>
+        </SafeAreaView>
       )}
-
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => {
-          setAlertModal(false);
-        }}
-      />
-
-      <LogoutAlertModal
-        visible={modalVisible}
-        heading="Are you sure?"
-        text="Do you really want to logout?"
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
-      />
-
-      {notificationVisible && (
-        <NotificationDropdown
-          visible={notificationVisible}
-          notifications={notifications}
-          onClose={closeNotification}
-        />
-      )}
-
-      {dropdownVisible && (
-        <CompanyDropdown
-          visible={dropdownVisible}
-          onClose={() => setDropdownVisible(false)}
-          legalEntities={legalEntities}
-          selectedLegalEntity={selectedLegalEntity}
-          onSelect={handleCompanySelect}
-        />
-      )}
-    </SafeAreaView>
+    </ActionPaneContainer>
   );
 };
 
@@ -860,26 +720,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fefefe',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFA500',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    elevation: 4,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 18,
-    marginLeft: 10,
-    fontWeight: '600',
-  },
   contentWrapper: {
     flex: 1,
     justifyContent: 'space-between',
+    paddingHorizontal: width * 0.03,
+    paddingTop: height * 0.01,
   },
   formContainer: {
-    padding: 16,
+    padding: 5,
     paddingBottom: 100,
   },
   label: {
@@ -964,17 +812,6 @@ const styles = StyleSheet.create({
   },
   pressedText: {
     color: '#fff',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 9999,
   },
 });
 

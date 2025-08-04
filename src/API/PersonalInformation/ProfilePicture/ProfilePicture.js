@@ -1,6 +1,6 @@
 /* eslint-disable dot-notation */
 /* eslint-disable curly */
-import {getToken} from '../Token/getToken';
+import {getToken} from '../../Token/getToken';
 import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
@@ -82,7 +82,7 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
       ? result.map(cleanObject)
       : [cleanObject(result)];
 
-    console.log('Cleaned Profile Picture Data:', cleanedResult);
+    // console.log('Cleaned Profile Picture Data:', cleanedResult);
     return cleanedResult;
   } catch (error) {
     console.error(

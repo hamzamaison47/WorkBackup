@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import {AlertDeleteModal} from '../../components/Leaves/AlertModal';
+import {AlertDeleteModal} from '../Alert/AlertModal';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useCallback} from 'react';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import {useDispatch, useSelector} from 'react-redux';
+import React, {useState, useEffect} from 'react';
+import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 import {
   View,
   Text,
@@ -10,29 +10,18 @@ import {
   StyleSheet,
   SafeAreaView,
   Dimensions,
-  BackHandler,
+  Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import NotificationDropdown from '../../components/NotificationDropdown';
-import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
-import MainPageHeader from '../../components/PageHeader/MainPageHeader';
-import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
-import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import {setSelectedLegalEntity} from '../../store/slices/companySlice';
+import ActionPaneContainer from '../../components/ActionPaneContainer';
 
 const {width, height} = Dimensions.get('window');
 
 const DisplayListPage = () => {
-  const dispatch = useDispatch();
   const navigation = useNavigation();
-
   const userData = useSelector(state => state.user.userData);
-  const selectedLegalEntity = useSelector(
-    state => state.company.selectedLegalEntity,
-  );
-  const legalEntities = useSelector(state => state.company.legalEntities);
 
   const pages = [
     {
@@ -64,134 +53,57 @@ const DisplayListPage = () => {
     },
   ];
 
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [filteredPages, setFilteredPages] = useState(pages);
+  const [animatedValues, setAnimatedValues] = useState([]);
   const [isCompanySwitching, setIsCompanySwitching] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      closeAllOverlays();
-      const onBackPress = () => {
-        handleLogout();
-        return true;
-      };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
-    }, []),
-  );
+  // Filtering logic
+  const filterPages = category => {
+    const updatedPages =
+      category === 'All'
+        ? pages
+        : pages.filter(page => page.category === category);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', closeAllOverlays);
-    return unsubscribe;
-  }, [navigation]);
-
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications();
-    return () => clearInterval(interval);
-  }, [userData.email]);
-
-  useEffect(() => {
-    const headerOptions = MainPageHeader({
-      onToggleDrawer: toggleDrawer,
-      onTitle: 'Employee History',
-      onShowNotify: toggleNotification,
-      onCount: notificationCount,
-      onLogout: handleLogout,
-      isBack: false,
-      onDatPress: toggleCompanyDropdown,
-      selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
-    });
-    navigation.setOptions(headerOptions);
-  }, [
-    navigation,
-    notificationCount,
-    notificationVisible,
-    notifications,
-    toggleDrawer,
-    selectedLegalEntity,
-    userData?.defaultLegalEntity,
-  ]);
+    setFilteredPages(updatedPages);
+  };
 
   useEffect(() => {
     filterPages(activeFilter);
   }, [activeFilter]);
 
-  const handleCompanySelect = async newLegalEntity => {
+  // Animate menu items whenever filteredPages changes
+  useEffect(() => {
+    if (!isCompanySwitching && filteredPages.length > 0) {
+      const newAnimatedValues = filteredPages.map(
+        () => new Animated.Value(-width),
+      );
+      setAnimatedValues(newAnimatedValues);
+
+      setTimeout(() => {
+        const animations = newAnimatedValues.map((animValue, index) =>
+          Animated.timing(animValue, {
+            toValue: 0,
+            duration: 300,
+            delay: index * 100,
+            useNativeDriver: true,
+          }),
+        );
+        Animated.stagger(100, animations).start();
+      }, 50); // slight delay to ensure values are initialized
+    }
+  }, [filteredPages, isCompanySwitching]);
+
+  const handleRefresh = () => {
     setIsCompanySwitching(true);
-    dispatch(setSelectedLegalEntity(newLegalEntity));
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsCompanySwitching(false);
-  };
-
-  const closeAllOverlays = () => {
-    setDropdownVisible(false);
-    setNotificationVisible(false);
-    setModalVisible(false);
-    navigation.closeDrawer?.();
-  };
-
-  const toggleNotification = () => {
-    closeAllOverlays();
-    setNotificationVisible(prev => !prev);
-  };
-  const toggleDrawer = () => {
-    closeAllOverlays();
-    navigation.toggleDrawer();
-  };
-  const handleLogout = () => {
-    closeAllOverlays();
-    setModalVisible(true);
-  };
-  const toggleCompanyDropdown = () => {
-    closeAllOverlays();
-    setDropdownVisible(prev => !prev);
-  };
-  const closeNotification = () => setNotificationVisible(false);
-  const confirmLogout = () => {
-    setModalVisible(false);
-    navigation.navigate('Login');
-  };
-  const cancelLogout = () => setModalVisible(false);
-
-  const filterPages = category => {
-    setFilteredPages(
-      category === 'All'
-        ? pages
-        : pages.filter(page => page.category === category),
-    );
+    setTimeout(() => {
+      setIsCompanySwitching(false);
+    }, 1500);
   };
 
   const handleFilterPress = filter => setActiveFilter(filter);
 
-  const fetchNotifications = async () => {
-    try {
-      const data = await retrieveByEmail({email: userData.email});
-      if (Array.isArray(data)) {
-        const formattedNotifications = data.map(notification => ({
-          document: notification.Document,
-          documentType: notification.DocumentType,
-          correlationId: notification.CorrelationId,
-        }));
-        setNotifications(formattedNotifications);
-        setNotificationCount(formattedNotifications.length);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
-
   const handlePagePress = page => {
-    // console.log(`Navigating to: ${page.screen}`);
     if (page.onPress) {
       page.onPress();
     }
@@ -229,18 +141,30 @@ const DisplayListPage = () => {
     </TouchableOpacity>
   );
 
-  const renderMenuItem = item => (
-    <TouchableOpacity
+  const renderMenuItem = (item, index) => (
+    <Animated.View
       key={item.id}
-      style={styles.menuItem}
-      onPress={() => handlePagePress(item)}
-      activeOpacity={0.7}>
-      <View style={[styles.iconWrapper, {backgroundColor: item.color}]}>
-        <Ionicons name={item.icon} size={width * 0.06} color="#ffffff" />
-      </View>
-      <Text style={styles.menuTitle}>{item.title}</Text>
-      <Ionicons name="chevron-forward" size={width * 0.04} color="#9ca3af" />
-    </TouchableOpacity>
+      style={{
+        transform: [
+          {
+            translateX:
+              animatedValues[index] instanceof Animated.Value
+                ? animatedValues[index]
+                : new Animated.Value(0),
+          },
+        ],
+      }}>
+      <TouchableOpacity
+        style={styles.menuItem}
+        onPress={() => handlePagePress(item)}
+        activeOpacity={0.7}>
+        <View style={[styles.iconWrapper, {backgroundColor: item.color}]}>
+          <Ionicons name={item.icon} size={width * 0.06} color="#ffffff" />
+        </View>
+        <Text style={styles.menuTitle}>{item.title}</Text>
+        <Ionicons name="chevron-forward" size={width * 0.04} color="#9ca3af" />
+      </TouchableOpacity>
+    </Animated.View>
   );
 
   const renderNoMenuMessage = () => (
@@ -253,57 +177,38 @@ const DisplayListPage = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.filterContainer}>
-        <View style={styles.filterScrollContent}>
-          {['All', 'PR', 'HR', 'TAS'].map(filter => renderFilterButton(filter))}
-        </View>
-      </View>
+    <ActionPaneContainer
+      pageTitle="Employee History"
+      isBackButton={false}
+      showFooter={false}
+      showFloatingButton={false}
+      onRefresh={handleRefresh}>
+      {isCompanySwitching ? (
+        <CustomIndicator />
+      ) : (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.filterContainer}>
+            <View style={styles.filterScrollContent}>
+              {['All', 'PR', 'HR', 'TAS'].map(filter =>
+                renderFilterButton(filter),
+              )}
+            </View>
+          </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-        <View style={styles.menuContainer}>
-          {filteredPages.length > 0
-            ? filteredPages.map(renderMenuItem)
-            : renderNoMenuMessage()}
-        </View>
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      {isCompanySwitching && (
-        <View style={styles.loadingOverlay}>
-          <CustomIndicator size="large" color="#007AFF" />
-        </View>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}>
+            <View style={styles.menuContainer}>
+              {filteredPages.length > 0
+                ? filteredPages.map(renderMenuItem)
+                : renderNoMenuMessage()}
+            </View>
+            <View style={styles.bottomPadding} />
+          </ScrollView>
+        </SafeAreaView>
       )}
-
-      {notificationVisible && (
-        <NotificationDropdown
-          visible={notificationVisible}
-          notifications={notifications}
-          onClose={closeNotification}
-        />
-      )}
-
-      <LogoutAlertModal
-        visible={modalVisible}
-        heading="Are you sure?"
-        text="Do you really want to logout?"
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
-      />
-
-      {dropdownVisible && (
-        <CompanyDropdown
-          visible={dropdownVisible}
-          onClose={() => setDropdownVisible(false)}
-          legalEntities={legalEntities}
-          selectedLegalEntity={selectedLegalEntity}
-          onSelect={handleCompanySelect}
-        />
-      )}
-    </SafeAreaView>
+    </ActionPaneContainer>
   );
 };
 
@@ -409,17 +314,6 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: height * 0.05,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 9999,
   },
 });
 

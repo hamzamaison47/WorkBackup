@@ -1,16 +1,17 @@
 import {BASE_URL} from '@env';
-import {getToken} from '../Token/getToken';
+import {getToken} from '../../Token/getToken';
 
-const UpdateContactDetails = async contactData => {
+const CreateContactDetails = async contactData => {
   const requestBody = {
     contract: contactData,
   };
 
   try {
+    // console.log('requestBody-0-0-0-0-0-0-0-0-0--0-', requestBody);
     const accessToken = await getToken();
     // Make the POST request
     const response = await fetch(
-      `${BASE_URL}LogisticsElectronicAddressSvcGroup/LogisticsElectronicAddressSvc/update`,
+      `${BASE_URL}LogisticsElectronicAddressSvcGroup/LogisticsElectronicAddressSvc/create`,
       {
         method: 'POST',
         headers: {
@@ -29,14 +30,14 @@ const UpdateContactDetails = async contactData => {
 
     // Parse the JSON response
     const result = await response.json();
-    console.log('Contact Details Updated:-------------------------', result);
+    console.log('Contact Details Created:-------------------------', result);
 
     // Return the response data
     return result;
   } catch (error) {
-    console.error('Failed to Update Contact Details:', error);
+    console.error('Failed to create Contact Details:', error);
     throw error;
   }
 };
 
-export {UpdateContactDetails};
+export {CreateContactDetails};

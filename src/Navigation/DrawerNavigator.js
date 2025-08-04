@@ -12,7 +12,7 @@ import {useSelector} from 'react-redux';
 import logo from '../assets/cloud.png';
 
 import TabNavigator from './TabNavigator';
-import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
+import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import PRSalarySlip from '../screens/Reports/PRSalarySlip';
 import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';

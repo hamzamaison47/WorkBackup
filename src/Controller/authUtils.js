@@ -2,7 +2,7 @@
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {RetrieveByEmail} from '../API/PREmploymentInformation/RetrieveByEmail';
+import {RetrieveByEmail} from '../API/Authentication/RetrieveByEmail';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 
 export const handleLogoutauth = async Provider => {

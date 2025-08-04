@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {hp, wp} from '../../constants/Size';
 
-import NotificationButton from '../NotificationButton';
-import LogoutButton from '../LogoutButton';
+import NotificationButton from './NotificationButton';
+import LogoutButton from './LogoutButton';
 
 const MainPageHeader = ({
   onToggleDrawer,

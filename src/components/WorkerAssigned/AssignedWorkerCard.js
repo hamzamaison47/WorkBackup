@@ -6,13 +6,16 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  StyleSheet,
+  Dimensions,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-import {styles} from '../../styles/LeaveRequestStyles';
-import {ProfilePicture} from '../../API/ProfilePicture/ProfilePicture';
+import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
+
+const {width, height} = Dimensions.get('window');
 
 const AssignedWorkerCard = ({
   employeeId,
@@ -38,12 +41,9 @@ const AssignedWorkerCard = ({
     setIsLoading(true);
     try {
       const data = await ProfilePicture({employeeId, defaultCompany});
-      // const base64Image = `data:image/png;base64,${data.StringImage}`;
-      // setProfilePictureUrl(base64Image);
+
       if (data?.[0]?.StringImage) {
         setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
-      } else {
-        setProfilePictureUrl(null);
       }
     } catch (error) {
       console.error('Failed to fetch image data:', error);
@@ -72,9 +72,11 @@ const AssignedWorkerCard = ({
             ) : (
               <TouchableOpacity>
                 <Image
-                  source={{
-                    uri: profilePictureUrl || 'https://via.placeholder.com/150',
-                  }}
+                  source={
+                    profilePictureUrl
+                      ? {uri: profilePictureUrl}
+                      : require('../../assets/userLogo.jpg')
+                  }
                   style={styles.profilePicture}
                 />
               </TouchableOpacity>
@@ -148,5 +150,98 @@ const AssignedWorkerCard = ({
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  cardContainer: {
+    marginVertical: height * 0.01,
+    marginHorizontal: width * 0.03,
+  },
+
+  card: {
+    borderRadius: width * 0.04,
+    padding: width * 0.045,
+    elevation: 3,
+  },
+
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: height * 0.015,
+  },
+
+  cardHeaderText: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    color: '#37474F',
+    flex: 1,
+  },
+
+  profilePicture: {
+    width: width * 0.14,
+    height: width * 0.14,
+    borderRadius: width * 0.07,
+    resizeMode: 'cover',
+    borderWidth: 2,
+    borderColor: '#FFA726',
+  },
+
+  cardContent: {
+    marginTop: height * 0.01,
+  },
+
+  textContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: height * 0.008,
+    flexWrap: 'wrap',
+  },
+
+  cardTextHeading: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: width * 0.035,
+    flex: 1,
+  },
+
+  cardText: {
+    color: '#263238',
+    fontSize: width * 0.035,
+    flex: 1,
+    textAlign: 'right',
+  },
+
+  sectionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#BDBDBD',
+    marginVertical: height * 0.012,
+  },
+
+  navigateButton: {
+    borderColor: '#FFA726',
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingVertical: height * 0.012,
+    paddingHorizontal: width * 0.04,
+    marginVertical: height * 0.008,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+
+  navigateButtonText: {
+    color: '#000000ff',
+    fontWeight: 'bold',
+    fontSize: width * 0.038,
+  },
+
+  expandButton: {
+    alignItems: 'center',
+    marginTop: height * 0.015,
+    padding: 6,
+    backgroundColor: 'orange',
+    borderRadius: 50,
+    alignSelf: 'center',
+  },
+});
 
 export default AssignedWorkerCard;

@@ -1,10 +1,10 @@
-import {RetrieveAll} from '../API/Leaves/RetrieveAll';
+import {RetrieveAllLeaves} from '../API/Leaves/RetrieveAllLeaves';
 import {RetrieveLeaveCodes} from '../API/Leaves/LeaveCodes';
 import {GetLeaveBalance} from '../API/Leaves/LeaveBalance';
 
 export const fetchLeaves = async employeeId => {
   try {
-    const data = await RetrieveAll({employeeId});
+    const data = await RetrieveAllLeaves({employeeId});
 
     return data.map(item => ({
       recId: item.RecId,

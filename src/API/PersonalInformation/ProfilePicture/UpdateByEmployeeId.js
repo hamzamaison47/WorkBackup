@@ -1,5 +1,5 @@
 import {BASE_URL} from '@env';
-import {getToken} from '../Token/getToken';
+import {getToken} from '../../Token/getToken';
 import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';

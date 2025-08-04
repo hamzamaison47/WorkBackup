@@ -5,7 +5,7 @@ import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const RetrieveAll = async ({employeeId}) => {
+const RetrieveAllLeaves = async ({employeeId}) => {
   try {
     const token = await getToken();
 
@@ -67,4 +67,4 @@ const RetrieveAll = async ({employeeId}) => {
   }
 };
 
-export {RetrieveAll};
+export {RetrieveAllLeaves};

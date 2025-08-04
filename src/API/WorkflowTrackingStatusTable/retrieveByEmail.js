@@ -1,7 +1,7 @@
 import {BASE_URL} from '@env';
 import {getToken} from '../Token/getToken';
 
-const retrieveByEmail = async ({email}) => {
+export const retrieveByEmail = async ({email}) => {
   const requestBody = {
     _email: email,
   };
@@ -29,5 +29,3 @@ const retrieveByEmail = async ({email}) => {
     throw error;
   }
 };
-
-export {retrieveByEmail};

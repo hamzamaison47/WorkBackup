@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   FlatList,
   Image,
@@ -9,26 +9,20 @@ import {
   View,
   Modal,
   Dimensions,
-  BackHandler,
   ActivityIndicator,
   TouchableWithoutFeedback,
   SafeAreaView,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {wp, hp} from '../constants/Size';
-import {ProfilePicture} from '../API/ProfilePicture/ProfilePicture';
-import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
-
-import LogoutAlertModal from '../components/Leaves/LogoutAlertModal';
-import MainPageHeader from '../components/PageHeader/MainPageHeader';
-import NotificationDropdown from '../components/NotificationDropdown';
-import CompanyDropdown from '../components/PageHeader/CompanyDropdown';
-import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
-import {handleLogoutauth} from '../Controller/authUtils';
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
+import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfilePicture';
+
+import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
+import ActionPaneContainer from '../components/ActionPaneContainer';
 
 const {height, width} = Dimensions.get('window');
 const cardWidth = (width - 56) / 2;
@@ -41,38 +35,16 @@ const MainDashboard = () => {
   const selectedLegalEntity = useSelector(
     state => state.company.selectedLegalEntity,
   );
-  const legalEntities = useSelector(state => state.company.legalEntities);
 
-  const [modalVisible, setModalVisible] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [imageModalVisible, setImageModalVisible] = useState(false);
-
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-
-  const [isCompanySwitching, setIsCompanySwitching] = useState(false);
-  const [dropdownVisible, setDropdownVisible] = useState(false);
 
   useEffect(() => {
     if (userData?.defaultLegalEntity && !selectedLegalEntity) {
       dispatch(setSelectedLegalEntity(userData.defaultLegalEntity));
     }
   }, [userData?.defaultLegalEntity, selectedLegalEntity]);
-
-  useFocusEffect(
-    useCallback(() => {
-      const onBackPress = () => {
-        handleLogout();
-        return true;
-      };
-
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, []),
-  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('blur', () => {
@@ -86,89 +58,9 @@ const MainDashboard = () => {
     fetchProfilePicture();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications();
-    return () => clearInterval(interval);
-  }, [userData?.email]);
-
-  const handleCompanySelect = async newLegalEntity => {
-    setIsCompanySwitching(true);
-    dispatch(setSelectedLegalEntity(newLegalEntity));
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsCompanySwitching(false);
-  };
-
-  useEffect(() => {
-    const headerOptions = MainPageHeader({
-      onToggleDrawer: toggleDrawer,
-      onTitle: 'Employee Self Service',
-      onShowNotify: toggleNotification,
-      onCount: notificationCount,
-      onLogout: handleLogout,
-      isBack: false,
-      onDatPress: toggleCompanyDropdown,
-      selectedDat:
-        selectedLegalEntity || userData?.defaultLegalEntity || 'Select Company',
-      defaultDat: userData?.defaultLegalEntity,
-    });
-    navigation.setOptions(headerOptions);
-  }, [
-    navigation,
-    notificationCount,
-    notificationVisible,
-    notifications,
-    selectedLegalEntity,
-    userData?.defaultLegalEntity,
-  ]);
-
   const closeAllOverlays = () => {
-    setDropdownVisible(false);
-    setNotificationVisible(false);
-    setModalVisible(false);
     setImageModalVisible(false);
     navigation.closeDrawer?.();
-  };
-
-  const toggleNotification = () => {
-    closeAllOverlays();
-    setNotificationVisible(prev => !prev);
-  };
-  const toggleDrawer = () => {
-    closeAllOverlays();
-    navigation.toggleDrawer();
-  };
-  const handleLogout = () => {
-    closeAllOverlays();
-    setModalVisible(true);
-  };
-  const toggleCompanyDropdown = () => {
-    closeAllOverlays();
-    setDropdownVisible(prev => !prev);
-  };
-  const closeNotification = () => setNotificationVisible(false);
-  const confirmLogout = () => {
-    setModalVisible(false);
-    handleLogoutauth(userData.Provider);
-    navigation.navigate('Login');
-  };
-  const cancelLogout = () => setModalVisible(false);
-
-  const fetchNotifications = async () => {
-    try {
-      const data = await retrieveByEmail({email: userData.email});
-      if (Array.isArray(data)) {
-        const formatted = data.map(item => ({
-          document: item.Document,
-          documentType: item.DocumentType,
-          correlationId: item.CorrelationId,
-        }));
-        setNotifications(formatted);
-        setNotificationCount(formatted.length);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
   };
 
   const fetchProfilePicture = async () => {
@@ -189,6 +81,14 @@ const MainDashboard = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle refresh
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
   };
 
   const cards = [
@@ -233,94 +133,78 @@ const MainDashboard = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <View style={styles.welcomeCard}>
-          <View style={styles.headerRow}>
-            {isLoading ? (
-              <ActivityIndicator size="large" color="#FFA500" />
-            ) : (
-              <TouchableOpacity
-                onPress={() => navigation.navigate('DisplayPersonalInfo')}>
-                <Image
-                  source={{
-                    uri: profilePictureUrl || 'https://via.placeholder.com/150',
-                  }}
-                  style={styles.profilePicture}
-                />
-              </TouchableOpacity>
-            )}
-            <View style={styles.textColumn}>
-              <Text style={styles.welcomeText}>Welcome Back!</Text>
-              <Text style={styles.nameText}>{userData.employeeName}</Text>
-              <Text style={styles.emailText}>{userData.email}</Text>
+    <ActionPaneContainer
+      pageTitle="Employee Self Service"
+      isBackButton={false}
+      showFooter={false}
+      showFloatingButton={false}
+      onRefresh={handleRefresh}>
+      {/* Show loading indicator when isLoading is true */}
+      {isLoading ? (
+        <CustomIndicator />
+      ) : (
+        <SafeAreaView style={styles.container}>
+          <View style={styles.headerContainer}>
+            <View style={styles.welcomeCard}>
+              <View style={styles.headerRow}>
+                {isLoading ? (
+                  <ActivityIndicator size="large" color="#FFA500" />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('DisplayPersonalInfo')}>
+                    <Image
+                      source={{
+                        uri:
+                          profilePictureUrl ||
+                          'https://via.placeholder.com/150',
+                      }}
+                      style={styles.profilePicture}
+                    />
+                  </TouchableOpacity>
+                )}
+                <View style={styles.textColumn}>
+                  <Text style={styles.welcomeText}>Welcome Back!</Text>
+                  <Text style={styles.nameText}>{userData.employeeName}</Text>
+                  <Text style={styles.emailText}>{userData.email}</Text>
+                </View>
+              </View>
             </View>
           </View>
-        </View>
-      </View>
 
-      <FlatList
-        key={'2-cols'}
-        numColumns={2}
-        data={cards}
-        renderItem={renderCard}
-        keyExtractor={item => item.id}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.grid}
-        showsVerticalScrollIndicator={false}
-      />
+          <FlatList
+            key={'2-cols'}
+            numColumns={2}
+            data={cards}
+            renderItem={renderCard}
+            keyExtractor={item => item.id}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={styles.grid}
+            showsVerticalScrollIndicator={false}
+          />
 
-      <LogoutAlertModal
-        visible={modalVisible}
-        heading="Are you sure?"
-        text="Do you really want to logout?"
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
-      />
-
-      <Modal
-        transparent={true}
-        visible={imageModalVisible}
-        animationType="fade"
-        onRequestClose={() => setImageModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setImageModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Image
-                source={{
-                  uri: profilePictureUrl || 'https://via.placeholder.com/150',
-                }}
-                style={styles.modalImage}
-              />
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      {isCompanySwitching && (
-        <View style={styles.loadingOverlay}>
-          <CustomIndicator size="large" color="#007AFF" />
-        </View>
+          <Modal
+            transparent={true}
+            visible={imageModalVisible}
+            animationType="fade"
+            onRequestClose={() => setImageModalVisible(false)}>
+            <TouchableWithoutFeedback
+              onPress={() => setImageModalVisible(false)}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <Image
+                    source={{
+                      uri:
+                        profilePictureUrl || 'https://via.placeholder.com/150',
+                    }}
+                    style={styles.modalImage}
+                  />
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+        </SafeAreaView>
       )}
-
-      {notificationVisible && (
-        <NotificationDropdown
-          visible={notificationVisible}
-          notifications={notifications}
-          onClose={closeNotification}
-        />
-      )}
-
-      {dropdownVisible && (
-        <CompanyDropdown
-          visible={dropdownVisible}
-          onClose={() => setDropdownVisible(false)}
-          legalEntities={legalEntities}
-          selectedLegalEntity={selectedLegalEntity}
-          onSelect={handleCompanySelect}
-        />
-      )}
-    </SafeAreaView>
+    </ActionPaneContainer>
   );
 };
 
@@ -382,13 +266,6 @@ const styles = StyleSheet.create({
     color: '#5A5A5A',
     textAlign: 'left',
   },
-  companyText: {
-    fontSize: hp(2.5),
-    color: '#FFA500',
-    textAlign: 'left',
-    marginTop: hp(0.5),
-    fontWeight: '500',
-  },
   grid: {
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -427,12 +304,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 4,
   },
-  cardSubtitle: {
-    fontSize: 13,
-    color: '#5A5A5A',
-    textAlign: 'center',
-  },
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -448,17 +319,6 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: height * 0.6,
     borderRadius: 10,
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 9999,
   },
 });
 

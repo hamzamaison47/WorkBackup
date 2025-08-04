@@ -1,18 +1,17 @@
 import {BASE_URL} from '@env';
-import {getToken} from '../Token/getToken';
+import {getToken} from '../../Token/getToken';
 
-const DeleteContactDetails = async ({recordsRecId}) => {
+const SaveContactDetails = async advanceData => {
   // Define the request body
   const requestBody = {
-    _recordsRecId: recordsRecId,
+    contract: advanceData,
   };
 
   try {
-    // Get the token from the separate token file
     const accessToken = await getToken();
     // Make the POST request
     const response = await fetch(
-      `${BASE_URL}LogisticsElectronicAddressSvcGroup/LogisticsElectronicAddressSvc/delete`,
+      `${BASE_URL}LogisticsElectronicAddressSvcGroup/LogisticsElectronicAddressSvc/createOrUpdate`,
       {
         method: 'POST',
         headers: {
@@ -31,14 +30,14 @@ const DeleteContactDetails = async ({recordsRecId}) => {
 
     // Parse the JSON response
     const result = await response.json();
-    console.log('Contact Details Deleted:', result);
+    console.log('Contact Details Created:-------------------------', result);
 
     // Return the response data
     return result;
   } catch (error) {
-    console.error('Failed to delete Contact Details:', error);
+    console.error('Failed to create Contact Details:', error);
     throw error;
   }
 };
 
-export {DeleteContactDetails};
+export {SaveContactDetails};

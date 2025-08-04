@@ -1,5 +1,5 @@
 import {BASE_URL} from '@env';
-import {getToken} from '../Token/getToken';
+import {getToken} from '../../Token/getToken';
 
 const ContactDetails = async ({employeeId}) => {
   const requestBody = {

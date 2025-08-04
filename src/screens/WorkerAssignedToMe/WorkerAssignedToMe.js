@@ -1,22 +1,15 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect} from 'react';
-import {View, Text, StyleSheet, FlatList} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {useSelector, useDispatch} from 'react-redux';
-import {setSelectedLegalEntity} from '../../store/slices/companySlice';
+import {Text, StyleSheet, FlatList} from 'react-native';
+import {useSelector} from 'react-redux';
 
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
-import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 
-import {AlertModal} from '../../components/Leaves/AlertModal';
+import {AlertModal} from '../../components/Alert/AlertModal';
 import AssignedWorkerCard from '../../components/WorkerAssigned/AssignedWorkerCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import MainPageHeader from '../../components/PageHeader/MainPageHeader';
-import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
-import NotificationDropdown from '../../components/NotificationDropdown';
-import {handleLogoutauth} from '../../Controller/authUtils';
-import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
+import ActionPaneContainer from '../../components/ActionPaneContainer';
 
 const WorkerAssignedToMe = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,18 +18,7 @@ const WorkerAssignedToMe = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-
-  const [isCompanySwitching, setIsCompanySwitching] = useState(false);
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-
-  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+  const {selectedLegalEntity, defaultLegalEntity} = useSelector(
     state => state.company,
   );
   const {userData} = useSelector(state => state.user);
@@ -65,102 +47,22 @@ const WorkerAssignedToMe = () => {
     fetchEmployeeReportToMe();
   }, [userData.employeeId]);
 
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications(); // Initial fetch
-    return () => clearInterval(interval);
-  }, [userData.email]);
+  const handleRefresh = async () => {
+    setIsLoading(true);
 
-  const handleCompanySelect = async newLegalEntity => {
-    setIsCompanySwitching(true);
-    dispatch(setSelectedLegalEntity(newLegalEntity));
-
-    // Optional: simulate delay if needed for effect (or await any refresh logic)
-    await RetrieveEmployeeReportToMe({
-      employeeId: userData.employeeId,
-      defaultCompany: newLegalEntity,
-    });
-    // Optional but Refresh any data that depends on the selected company
-
-    setIsCompanySwitching(false);
-  };
-
-  useEffect(() => {
-    if (defaultLegalEntity && !selectedLegalEntity) {
-      dispatch(setSelectedLegalEntity(defaultLegalEntity));
-    }
-  }, [defaultLegalEntity, selectedLegalEntity, setSelectedLegalEntity]);
-
-  // Update the header configuration to show the current selected company:
-  useEffect(() => {
-    const headerOptions = MainPageHeader({
-      onToggleDrawer: toggleDrawer,
-      onTitle: 'My Team',
-      onShowNotify: toggleNotification,
-      onCount: notificationCount,
-      onLogout: handleLogout,
-      isBack: false,
-      onDatPress: toggleCompanyDropdown,
-      selectedDat:
-        selectedLegalEntity || defaultLegalEntity || 'Select Company',
-      defaultDat: defaultLegalEntity,
-    });
-    navigation.setOptions(headerOptions);
-  }, [
-    navigation,
-    notificationCount,
-    notificationVisible,
-    notifications,
-    toggleDrawer,
-    selectedLegalEntity,
-    defaultLegalEntity,
-  ]);
-
-  const closeAllOverlays = () => {
-    setDropdownVisible(false);
-    setNotificationVisible(false);
-    setModalVisible(false);
-    navigation.closeDrawer?.(); // Optional, if using Drawer Navigator
-  };
-
-  const toggleNotification = () => {
-    closeAllOverlays();
-    setNotificationVisible(prev => !notificationVisible);
-  };
-  const toggleDrawer = () => {
-    closeAllOverlays();
-    navigation.toggleDrawer();
-  };
-  const handleLogout = () => {
-    closeAllOverlays();
-    setModalVisible(true);
-  };
-  const toggleCompanyDropdown = () => {
-    closeAllOverlays();
-    setDropdownVisible(prev => !dropdownVisible);
-  };
-  const closeNotification = () => setNotificationVisible(false);
-  const confirmLogout = () => {
-    setModalVisible(false);
-    handleLogoutauth(userData.Provider);
-    navigation.navigate('Login');
-  };
-  const cancelLogout = () => setModalVisible(false);
-
-  const fetchNotifications = async () => {
     try {
-      const data = await retrieveByEmail({email: userData.email});
-      if (Array.isArray(data)) {
-        const formattedNotifications = data.map(notification => ({
-          document: notification.Document,
-          documentType: notification.DocumentType,
-          correlationId: notification.CorrelationId,
-        }));
-        setNotifications(formattedNotifications);
-        setNotificationCount(formattedNotifications.length);
-      }
+      // clearFormData();
+
+      const myTeamData = await RetrieveEmployeeReportToMe({
+        employeeId: userData.employeeId,
+        defaultCompany: companyToUse,
+      });
+
+      setTeamData(myTeamData);
     } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.error('Error in My Team Record Screen', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -178,8 +80,14 @@ const WorkerAssignedToMe = () => {
   );
 
   return (
-    <View style={styles.container}>
-      {isLoading || isCompanySwitching ? (
+    <ActionPaneContainer
+      pageTitle="My Team"
+      isBackButton={false}
+      showFooter={false}
+      showFloatingButton={false}
+      onRefresh={handleRefresh}>
+      {/* Show loading indicator when isLoading is true */}
+      {isLoading ? (
         <CustomIndicator />
       ) : teamData.length > 0 ? (
         <FlatList
@@ -198,33 +106,7 @@ const WorkerAssignedToMe = () => {
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
-
-      <LogoutAlertModal
-        visible={modalVisible}
-        heading="Are you sure?"
-        text="Do you really want to logout?"
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
-      />
-
-      {notificationVisible && (
-        <NotificationDropdown
-          visible={notificationVisible}
-          notifications={notifications}
-          onClose={closeNotification}
-        />
-      )}
-
-      {dropdownVisible && (
-        <CompanyDropdown
-          visible={dropdownVisible}
-          onClose={() => setDropdownVisible(false)}
-          legalEntities={legalEntities}
-          selectedLegalEntity={selectedLegalEntity}
-          onSelect={handleCompanySelect}
-        />
-      )}
-    </View>
+    </ActionPaneContainer>
   );
 };
 

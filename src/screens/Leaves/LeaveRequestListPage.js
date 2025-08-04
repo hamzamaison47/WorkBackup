@@ -1,35 +1,19 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useEffect, useCallback} from 'react';
-import {useSelector, useDispatch} from 'react-redux';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Dimensions,
-  BackHandler,
-} from 'react-native';
+import React, {useState, useCallback} from 'react';
+import {useSelector} from 'react-redux';
+import {Text, StyleSheet, FlatList, Dimensions} from 'react-native';
 import {
   useNavigation,
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-import {setSelectedLegalEntity} from '../../store/slices/companySlice';
-
-import {AlertModal} from '../../components/Leaves/AlertModal';
+import {AlertModal} from '../../components/Alert/AlertModal';
 import LeaveRequestCard from '../../components/Leaves/LeaveRequestCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import LogoutAlertModal from '../../components/Leaves/LogoutAlertModal';
-import MainPageHeader from '../../components/PageHeader/MainPageHeader';
-import NotificationDropdown from '../../components/NotificationDropdown';
-import CompanyDropdown from '../../components/PageHeader/CompanyDropdown';
+import ActionPaneContainer from '../../components/ActionPaneContainer';
 
-import {deleteLeaveRequest} from '../../API/Leaves/deleteLeaveRequest';
-import {retrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
+import {DeleteLeaveRequest} from '../../API/Leaves/DeleteLeaveRequest';
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
 
 const {width, height} = Dimensions.get('window');
@@ -39,23 +23,14 @@ const LeaveRequestListPage = () => {
   const [leavesData, setLeavesData] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const [notificationCount, setNotificationCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-
-  const [dropdownVisible, setDropdownVisible] = useState(false);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
 
   const navigation = useNavigation();
-  const dispatch = useDispatch();
 
   // Redux selectors
-  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+  const {selectedLegalEntity, defaultLegalEntity} = useSelector(
     state => state.company,
   );
-  const {userData} = useSelector(state => state.user);
 
   const route = useRoute();
   const {employeeId, employeeName, WorkerRecId, cameFrom, highlightRecId} =
@@ -84,160 +59,66 @@ const LeaveRequestListPage = () => {
     }, [fetchLeavesData]),
   );
 
+  // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
-      // Close everything on focus
-      closeAllOverlays();
+      if (
+        highlightRecId &&
+        (cameFrom === 'CreateSuccess' || cameFrom === 'UpdateSuccess')
+      ) {
+        setHighlightedRecId(highlightRecId);
+        fetchLeavesData();
 
-      const onBackPress = () => {
-        handleGoBack();
-        return true;
-      };
+        const timer = setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
 
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
-    }, []),
+        return () => clearTimeout(timer);
+      }
+    }, [highlightRecId, cameFrom, fetchLeavesData]),
   );
 
-  useEffect(() => {
-    if (
-      highlightRecId &&
-      (cameFrom === 'CreateSuccess' || cameFrom === 'UpdateSuccess')
-    ) {
-      setHighlightedRecId(highlightRecId);
-
-      // Refresh the data to ensure we have the latest records
-      fetchLeavesData();
-
-      // Remove highlight after 3 seconds
-      const timer = setTimeout(() => {
-        setHighlightedRecId(null);
-      }, 3000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [highlightRecId, cameFrom, fetchLeavesData]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('blur', () => {
-      closeAllOverlays();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
-  // Initial data fetch
-  useEffect(() => {
-    fetchLeavesData();
-  }, [fetchLeavesData]);
-
-  useEffect(() => {
-    const interval = setInterval(fetchNotifications, 30000);
-    fetchNotifications(); // Initial fetch
-    return () => clearInterval(interval);
-  }, [userData?.email]);
-
-  const handleCompanySelect = newLegalEntity => {
-    dispatch(setSelectedLegalEntity(newLegalEntity));
-    // console.log('Company changed to:', newLegalEntity);
-
-    // Refresh leaves data with new company
-    fetchLeavesData();
-  };
-
-  useEffect(() => {
-    const headerOptions = MainPageHeader({
-      onToggleDrawer: toggleDrawer,
-      onTitle: 'Leaves',
-      onShowNotify: toggleNotification,
-      onCount: notificationCount,
-      onLogout: handleLogout,
-      isBack: false,
-      onDatPress: toggleCompanyDropdown,
-      selectedDat:
-        selectedLegalEntity || defaultLegalEntity || 'Select Company',
-      defaultDat: defaultLegalEntity,
-    });
-    navigation.setOptions(headerOptions);
-  }, [
-    navigation,
-    notificationCount,
-    notificationVisible,
-    notifications,
-    toggleDrawer,
-    selectedLegalEntity,
-    defaultLegalEntity,
-  ]);
-
-  const closeAllOverlays = () => {
-    setDropdownVisible(false);
-    setNotificationVisible(false);
-    setModalVisible(false);
-    navigation.closeDrawer?.(); // Optional, if using Drawer Navigator
-  };
-
-  const toggleNotification = () => {
-    closeAllOverlays();
-    setNotificationVisible(prev => !notificationVisible);
-  };
-
-  const toggleDrawer = () => {
-    closeAllOverlays();
-    navigation.toggleDrawer();
-  };
-
-  const handleLogout = () => {
-    closeAllOverlays();
-    setModalVisible(true);
-  };
-
-  const toggleCompanyDropdown = () => {
-    closeAllOverlays();
-    setDropdownVisible(prev => !dropdownVisible);
-  };
-
-  const closeNotification = () => setNotificationVisible(false);
-
-  const confirmLogout = () => {
-    setModalVisible(false);
-    navigation.navigate('Login');
-  };
-
-  const cancelLogout = () => setModalVisible(false);
-
-  const fetchNotifications = async () => {
-    try {
-      const data = await retrieveByEmail({email: userData?.email});
-      if (Array.isArray(data)) {
-        const formattedNotifications = data.map(notification => ({
-          document: notification.Document,
-          documentType: notification.DocumentType,
-          correlationId: notification.CorrelationId,
-        }));
-        setNotifications(formattedNotifications);
-        setNotificationCount(formattedNotifications.length);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
-
+  // Handle back navigation
   const handleGoBack = () => {
     if (cameFrom === 'DisplayListPage') {
       navigation.navigate('DisplayListPage');
     } else if (cameFrom === 'WorkerAssignedToMe') {
       navigation.navigate('WorkerAssignedToMe');
     } else {
-      navigation.navigate('MainDashboard');
+      navigation.navigate('DisplayListPage');
     }
   };
 
+  // Handle refresh
   const handleRefresh = () => {
     fetchLeavesData();
   };
 
+  // Handle create leave
+  const handleCreateLeave = () => {
+    navigation.navigate('LeaveSaveRecord', {
+      mode: 'create',
+      employeeId,
+      employeeName,
+      WorkerRecId,
+      cameFrom: 'LeavesListPage',
+      leaveData: {
+        employeeId,
+        employeeName,
+        WorkerRecId,
+        recId: '',
+        leaveCode: '',
+        leaveCategory: '',
+        balance: '0.00',
+        leaveStartDate: '',
+        leaveEndDate: '',
+        leaveDays: '',
+        reason: '',
+      },
+    });
+  };
+
+  // Utility functions
   const getLeaveCategory = category => {
     return category === 'FullLeave'
       ? 'Full Leave'
@@ -265,10 +146,11 @@ const LeaveRequestListPage = () => {
     return statusMap[status] || 'Draft';
   };
 
+  // Handle delete leave
   const handleDeleteLeave = async recId => {
     try {
       const companyToUse = selectedLegalEntity || defaultLegalEntity;
-      const response = await deleteLeaveRequest({
+      const response = await DeleteLeaveRequest({
         recordsRecId: [recId],
         defaultCompany: companyToUse,
       });
@@ -282,36 +164,13 @@ const LeaveRequestListPage = () => {
       setAlertMessage('Failed to Delete Leave Request');
     } finally {
       setAlertModal(true);
-      // Refresh data after delete operation
       setTimeout(() => {
         fetchLeavesData();
       }, 1000);
     }
   };
 
-  const handleCreateLeave = () => {
-    navigation.navigate('LeaveSaveRecord', {
-      mode: 'create',
-      employeeId,
-      employeeName,
-      WorkerRecId,
-      cameFrom: 'LeavesListPage',
-      leaveData: {
-        employeeId,
-        employeeName,
-        WorkerRecId,
-        recId: '',
-        leaveCode: '',
-        leaveCategory: '',
-        balance: '0.00',
-        leaveStartDate: '',
-        leaveEndDate: '',
-        leaveDays: '',
-        reason: '',
-      },
-    });
-  };
-
+  // Render leave card
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.recId;
 
@@ -337,102 +196,45 @@ const LeaveRequestListPage = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {isLoading ? (
-          <CustomIndicator />
-        ) : leavesData.length > 0 ? (
-          <FlatList
-            data={leavesData}
-            renderItem={renderLeavesCard}
-            keyExtractor={(item, index) => index.toString()}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          <Text style={styles.noDataText}>No Data Found</Text>
-        )}
-      </View>
+    <ActionPaneContainer
+      pageTitle="Leaves"
+      isBackButton={false} // Use drawer instead of back button
+      showFooter={true}
+      showFloatingButton={true}
+      onBackPress={handleGoBack}
+      onRefresh={handleRefresh}
+      onFloatingButtonPress={handleCreateLeave}>
+      {/* Main content */}
+      {isLoading ? (
+        <CustomIndicator />
+      ) : leavesData.length > 0 ? (
+        <FlatList
+          data={leavesData}
+          renderItem={renderLeavesCard}
+          keyExtractor={(item, index) => index.toString()}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      ) : (
+        <Text style={styles.noDataText}>No Data Found</Text>
+      )}
 
-      <View style={styles.bottomTabBar}>
-        <TouchableOpacity style={styles.tabButton} onPress={handleGoBack}>
-          <FontAwesome name="arrow-left" size={24} color="#ffffff" />
-          <Text style={styles.tabButtonText}>Back</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabButton} onPress={handleRefresh}>
-          <FontAwesome name="refresh" size={24} color="#ffffff" />
-          <Text style={styles.tabButtonText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.floatingPlusButtonContainer}>
-        <TouchableOpacity
-          style={styles.floatingPlusButton}
-          onPress={handleCreateLeave}>
-          <FontAwesome name="plus" style={styles.plusIcon} />
-        </TouchableOpacity>
-      </View>
-
+      {/* Alert Modal */}
       <AlertModal
         visible={alertModal}
         heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
-
-      <LogoutAlertModal
-        visible={modalVisible}
-        heading="Are you sure?"
-        text="Do you really want to logout?"
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
-      />
-
-      {notificationVisible && (
-        <NotificationDropdown
-          visible={notificationVisible}
-          notifications={notifications}
-          onClose={closeNotification}
-        />
-      )}
-
-      {dropdownVisible && (
-        <CompanyDropdown
-          visible={dropdownVisible}
-          onClose={() => setDropdownVisible(false)}
-          legalEntities={legalEntities}
-          selectedLegalEntity={selectedLegalEntity}
-          onSelect={handleCompanySelect}
-        />
-      )}
-    </View>
+    </ActionPaneContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  header: {
-    width: '100%',
-    paddingVertical: height * 0.02,
-    paddingHorizontal: width * 0.04,
-    backgroundColor: '#FFA500',
-  },
-  headerTitle: {
-    fontSize: width * 0.05,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
+  listContainer: {
+    paddingBottom: height * 0.05,
     paddingHorizontal: width * 0.03,
     paddingTop: height * 0.01,
-  },
-  listContainer: {
-    paddingBottom: height * 0.1,
   },
   noDataText: {
     flex: 1,
@@ -441,48 +243,6 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     fontWeight: 'bold',
     color: '#999999',
-  },
-  tabButton: {
-    alignItems: 'center',
-  },
-  bottomTabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#FFA500',
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.18,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: height * 0.075,
-  },
-  tabButtonText: {
-    fontSize: width * 0.032,
-    color: '#ffffff',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  floatingPlusButtonContainer: {
-    position: 'absolute',
-    bottom: height * 0.035,
-    left: width / 2 - 28,
-  },
-  floatingPlusButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 3,
-    borderColor: '#FFA500',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  plusIcon: {
-    fontSize: 24,
-    color: '#FFA500',
   },
 });
 

@@ -6,7 +6,7 @@ import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const submit = async ({recId}) => {
+const SubmitLeaveRequest = async ({recId}) => {
   try {
     if (typeof recId === 'object') {
       if ('recId' in recId) {
@@ -85,4 +85,4 @@ const submit = async ({recId}) => {
   }
 };
 
-export {submit};
+export {SubmitLeaveRequest};

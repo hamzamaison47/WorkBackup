@@ -5,7 +5,7 @@ import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const deleteLeaveRequest = async ({recordsRecId}) => {
+const DeleteLeaveRequest = async ({recordsRecId}) => {
   try {
     const token = await getToken();
 
@@ -69,4 +69,4 @@ const deleteLeaveRequest = async ({recordsRecId}) => {
   }
 };
 
-export {deleteLeaveRequest};
+export {DeleteLeaveRequest};
