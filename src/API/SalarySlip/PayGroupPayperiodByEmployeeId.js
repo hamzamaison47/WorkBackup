@@ -21,6 +21,9 @@ const PayGroupPayperiodByEmployeeId = async ({employeeId, defaultCompany}) => {
         </findByEmployee>
       </soapenv:Body>
     </soapenv:Envelope>`;
+
+    console.log('Soap Envelope Body In Pay Group Pay Period ', soapEnvelope);
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/PRPayGroupPayPeriodSvcGroup`,
       soapEnvelope,
@@ -49,6 +52,9 @@ const PayGroupPayperiodByEmployeeId = async ({employeeId, defaultCompany}) => {
       parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[
         'result'
       ]?.['a:PRPayGroupPayPeriodSvcContract'];
+
+    console.log('Parsed In Email Salary Slip', parsed);
+    console.log('Raw Data In Email Salary Slip', rawData);
 
     if (!rawData) {
       console.warn('No Pay Periods found');

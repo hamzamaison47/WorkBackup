@@ -57,6 +57,9 @@ const PRSalarySlip = () => {
         employeeId: userData.employeeId,
         defaultCompany: defaultCompany,
       });
+
+      console.log('Fetching Pay Periods', data);
+
       setPayPeriods(
         data.map(item => ({
           label: item.PayPeriodCode.toString(),
@@ -85,6 +88,9 @@ const PRSalarySlip = () => {
         employeeId: userData.employeeId,
         dataAreaId: companyToUse,
       });
+
+      console.log('Send Salary Slip by Email', response);
+
       showMessage(
         response === 'Email sent Successfully'
           ? 'Your salary slip has been emailed.'
