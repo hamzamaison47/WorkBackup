@@ -13,7 +13,6 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
 import {Dropdown} from 'react-native-element-dropdown';
-import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {PREmailSalarySlip} from '../../API/SalarySlip/PREmailSalarySlip';
@@ -21,13 +20,15 @@ import {PayGroupPayperiodByEmployeeId} from '../../API/SalarySlip/PayGroupPayper
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+import {AlertModal} from '../../components/Alert/AlertModal';
 
 const {height, width} = Dimensions.get('window');
 
 const PRSalarySlip = () => {
   const [loading, setLoading] = useState(false);
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState('');
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertHeading, setAlertHeading] = useState('');
+  const [alertMessage, setAlertMessage] = useState('');
   const [payPeriods, setPayPeriods] = useState([]);
   const [selectedPayPeriod, setSelectedPayPeriod] = useState('');
 
@@ -52,6 +53,9 @@ const PRSalarySlip = () => {
 
   const fetchPayPeriods = async defaultCompany => {
     setLoading(true);
+    // Reset form when starting to fetch
+    resetForm();
+
     try {
       const data = await PayGroupPayperiodByEmployeeId({
         employeeId: userData.employeeId,
@@ -60,28 +64,39 @@ const PRSalarySlip = () => {
 
       console.log('Fetching Pay Periods', data);
 
-      setPayPeriods(
-        data.map(item => ({
-          label: item.PayPeriodCode.toString(),
-          value: item.PayPeriodCode.toString(),
-        })),
-      );
+      if (data && data.length > 0) {
+        setPayPeriods(
+          data.map(item => ({
+            label: item.PayPeriodCode.toString(),
+            value: item.PayPeriodCode.toString(),
+          })),
+        );
+      } else {
+        setPayPeriods([]);
+        showMessage('Info', 'No pay periods found for the selected company.');
+      }
     } catch (error) {
       console.error('Failed to fetch pay periods:', error);
+      setPayPeriods([]);
+      showMessage('Error', 'Failed to fetch pay periods. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const resetForm = () => setSelectedPayPeriod('');
+  const resetForm = () => {
+    setSelectedPayPeriod('');
+  };
 
   const sendSalarySlip = async () => {
     if (!selectedPayPeriod) {
-      showMessage('Please select a pay period before proceeding.');
+      showMessage('Warning', 'Please select a pay period before proceeding.');
       return;
     }
 
     setLoading(true);
+    resetForm();
+
     try {
       const response = await PREmailSalarySlip({
         payPeriodCode: selectedPayPeriod,
@@ -91,22 +106,40 @@ const PRSalarySlip = () => {
 
       console.log('Send Salary Slip by Email', response);
 
-      showMessage(
-        response === 'Email sent Successfully'
-          ? 'Your salary slip has been emailed.'
-          : 'Something went wrong.',
-      );
+      // Show the actual response message from API
+      if (response === 'Email sent Successfully') {
+        showMessage(
+          'Success',
+          'Your salary slip has been emailed successfully.',
+        );
+      } else {
+        // Show the actual response from API if it's not the success message
+        showMessage('Info', response?.data?.message || 'Something went wrong.');
+      }
     } catch (error) {
       console.error('Error sending salary slip:', error);
-      showMessage('There was an error sending the salary slip.');
+
+      // Show more detailed error message if available
+      const errorMessage = error?.message || error?.response?.data?.message;
+      showMessage(
+        'Error',
+        `There was an error sending the salary slip.\n${errorMessage}`,
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const showMessage = message => {
-    setDialogMessage(message);
-    setDialogVisible(true);
+  const showMessage = (heading, message) => {
+    setAlertHeading(heading);
+    setAlertMessage(message);
+    setAlertVisible(true);
+  };
+
+  const handleAlertClose = () => {
+    setAlertVisible(false);
+    setAlertHeading('');
+    setAlertMessage('');
   };
 
   const handleGoBack = () => {
@@ -156,6 +189,7 @@ const PRSalarySlip = () => {
               placeholderStyle={styles.dropdownPlaceholder}
               selectedTextStyle={styles.dropdownSelected}
             />
+
             {loading ? (
               <ActivityIndicator size="large" color="orange" />
             ) : (
@@ -164,24 +198,21 @@ const PRSalarySlip = () => {
                 style={styles.button}>
                 <TouchableOpacity
                   onPress={sendSalarySlip}
-                  style={styles.buttonContent}>
+                  style={styles.buttonContent}
+                  activeOpacity={0.7}
+                  disabled={loading}>
                   <Text style={styles.buttonText}>Email Salary Slip</Text>
                 </TouchableOpacity>
               </LinearGradient>
             )}
 
-            <Modal
-              isVisible={dialogVisible}
-              onBackdropPress={() => setDialogVisible(false)}>
-              <View style={styles.dialogContainer}>
-                <Text style={styles.dialogMessage}>{dialogMessage}</Text>
-                <TouchableOpacity
-                  style={styles.dialogButton}
-                  onPress={() => setDialogVisible(false)}>
-                  <Text style={styles.dialogButtonText}>OK</Text>
-                </TouchableOpacity>
-              </View>
-            </Modal>
+            {/* Custom Alert Modal */}
+            <AlertModal
+              visible={alertVisible}
+              heading={alertHeading}
+              text={alertMessage}
+              onPress={handleAlertClose}
+            />
           </ScrollView>
         </View>
       )}
@@ -198,6 +229,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: width * 0.05,
+    marginTop: width * 0.1,
   },
   icon: {
     marginBottom: height * 0.03,
@@ -258,29 +290,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-  },
-  dialogContainer: {
-    borderRadius: 10,
-    padding: width * 0.05,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  dialogMessage: {
-    fontSize: width * 0.045,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: height * 0.025,
-  },
-  dialogButton: {
-    backgroundColor: '#FF6B00',
-    borderRadius: 5,
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.05,
-  },
-  dialogButtonText: {
-    color: '#fff',
     fontSize: width * 0.045,
     fontWeight: 'bold',
   },

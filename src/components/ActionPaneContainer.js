@@ -12,7 +12,10 @@ import {
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
-import {setSelectedLegalEntity} from '../store/slices/companySlice';
+import {
+  setSelectedLegalEntity,
+  resetCompanyState,
+} from '../store/slices/companySlice';
 
 import LogoutAlertModal from './Alert/LogoutAlertModal';
 import MainPageHeader from './PageHeader/MainPageHeader';
@@ -191,6 +194,7 @@ const ActionPaneContainer = ({
   const closeNotification = () => setNotificationVisible(false);
 
   const confirmLogout = () => {
+    dispatch(resetCompanyState());
     setModalVisible(false);
     navigation.navigate('Login');
   };
