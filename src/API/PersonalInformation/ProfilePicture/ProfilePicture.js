@@ -49,7 +49,6 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
 
     const parsed = parser.parse(xml);
 
-    // console.log('Raw SOAP Response (ProfilePicture):', xml);
     // console.log('Parsed SOAP Response (ProfilePicture):', parsed);
 
     const result =
@@ -83,6 +82,12 @@ const ProfilePicture = async ({employeeId, defaultCompany}) => {
       : [cleanObject(result)];
 
     // console.log('Cleaned Profile Picture Data:', cleanedResult);
+
+    // Return the first item if it's an array, or the object itself
+    if (Array.isArray(cleanedResult) && cleanedResult.length > 0) {
+      return cleanedResult[0];
+    }
+
     return cleanedResult;
   } catch (error) {
     console.error(

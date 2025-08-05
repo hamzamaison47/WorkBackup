@@ -63,25 +63,63 @@ const MainDashboard = () => {
     navigation.closeDrawer?.();
   };
 
+  // Fetch profile picture with error handling
   const fetchProfilePicture = async () => {
-    setIsLoading(true);
     try {
+      if (!userData?.employeeId) {
+        console.warn('Employee ID not available');
+        return;
+      }
+
       const data = await ProfilePicture({
         employeeId: userData.employeeId,
         defaultCompany: selectedLegalEntity,
       });
-      if (data?.[0]?.StringImage) {
-        setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
+
+      // Handle both array and object responses
+      let imageData = null;
+      if (Array.isArray(data) && data.length > 0) {
+        imageData = data[0]; // Get first element if it's an array
+      } else if (data && typeof data === 'object') {
+        imageData = data; // Use directly if it's an object
+      }
+
+      if (imageData?.StringImage) {
+        // Clean up the base64 string if it contains line breaks or extra spaces
+        const cleanBase64 = imageData.StringImage.replace(/\s/g, '');
+        const base64Image = `data:image/png;base64,${cleanBase64}`;
+        setProfilePictureUrl(base64Image);
       } else {
+        console.warn('No StringImage found in profile picture data');
         setProfilePictureUrl(null);
       }
     } catch (error) {
-      console.error('Failed to fetch profile image:', error);
+      console.error('Failed to fetch profile picture:', error);
       setProfilePictureUrl(null);
+      // Don't show error modal for missing profile picture as it's optional
     } finally {
       setIsLoading(false);
     }
   };
+  // const fetchProfilePicture = async () => {
+  //   setIsLoading(true);
+  //   try {
+  //     const data = await ProfilePicture({
+  //       employeeId: userData.employeeId,
+  //       defaultCompany: selectedLegalEntity,
+  //     });
+  //     if (data?.[0]?.StringImage) {
+  //       setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
+  //     } else {
+  //       setProfilePictureUrl(null);
+  //     }
+  //   } catch (error) {
+  //     console.error('Failed to fetch profile image:', error);
+  //     setProfilePictureUrl(null);
+  // } finally {
+  //   setIsLoading(false);
+  // }
+  // };
 
   // Handle refresh
   const handleRefresh = () => {

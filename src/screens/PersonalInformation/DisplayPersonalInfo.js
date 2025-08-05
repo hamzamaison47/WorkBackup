@@ -1,18 +1,21 @@
+/* eslint-disable no-shadow */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useCallback, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Platform,
+  Dimensions,
 } from 'react-native';
-import {useSelector, useDispatch} from 'react-redux';
 import * as ImagePicker from 'react-native-image-picker';
+// import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 
-import {setSelectedLegalEntity} from '../../store/slices/companySlice';
-
+// Components
 import SectionHeader from '../../components/PersonalInformation/SectionHeader';
 import ContactDetailsSection from '../../components/PersonalInformation/ContactDetailsSection';
 import IdentificationDetailsSection from '../../components/PersonalInformation/IdentificationDetailsSection';
@@ -24,16 +27,19 @@ import {AlertModal} from '../../components/Alert/AlertModal';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 
+// API imports
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
+import {UpdateByEmployeeId} from '../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
 import {ContactDetails} from '../../API/PersonalInformation/ContactDetails/ContactDetails';
 import {IdentificationFindRequest} from '../../API/PersonalInformation/Identification/IdentificationFindRequest';
-import {UpdateByEmployeeId} from '../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
 import {DeleteContactDetails} from '../../API/PersonalInformation/ContactDetails/DeleteContactDetails';
-import {UpdateContactDetails} from '../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
-import {CreateContactDetails} from '../../API/PersonalInformation/ContactDetails/CreateContactDetails';
 import {DeleteIdentityRequest} from '../../API/PersonalInformation/Identification/DeleteIdentityRequest';
+import {CreateContactDetails} from '../../API/PersonalInformation/ContactDetails/CreateContactDetails';
+import {UpdateContactDetails} from '../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
 import {CreateIdentityRequest} from '../../API/PersonalInformation/Identification/CreateIdentityRequest';
 import {UpdateIdentityRequest} from '../../API/PersonalInformation/Identification/UpdateIdentityRequest';
+
+const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
 const DisplayPersonalInfo = () => {
   // State management
@@ -41,226 +47,169 @@ const DisplayPersonalInfo = () => {
     nameSection: false,
     identificationSection: false,
   });
+
   const [nameRows, setNameRows] = useState([]);
   const [identityRows, setIdentityRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
   const [profilePictureUrl, setProfilePictureUrl] = useState(null);
   const [isImageChanged, setIsImageChanged] = useState(false);
-  const [modalState, setModalState] = useState({
-    contact: {visible: false, mode: 'create', selected: null},
-    identity: {visible: false, mode: 'create', selected: null},
-    alert: {visible: false, message: ''},
-  });
 
-  const dispatch = useDispatch();
+  // Contact modal states
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState('create');
+  const [selectedLeave, setSelectedLeave] = useState(null);
+
+  // Identity modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalModeType, setModalModeType] = useState('create');
+  const [selectedIdentity, setSelectedIdentity] = useState(null);
+
+  // Alert modal states
+  const [alertModal, setAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+
+  // const navigation = useNavigation();
+
+  // Redux selectors
   const {selectedLegalEntity, defaultLegalEntity} = useSelector(
     state => state.company,
   );
   const {userData} = useSelector(state => state.user);
-  const abortControllers = useRef([]);
-
-  // Get current company to use
   const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
-  // Initialize selected legal entity
+  // Effects
   useEffect(() => {
-    if (defaultLegalEntity && !selectedLegalEntity) {
-      dispatch(setSelectedLegalEntity(defaultLegalEntity));
-    }
-  }, [defaultLegalEntity, selectedLegalEntity]);
-
-  // Cleanup abort controllers on unmount
-  useEffect(() => {
-    return () => {
-      abortControllers.current.forEach(controller => controller.abort());
-    };
+    initializeData();
   }, []);
 
-  // Main data fetching effect
   useEffect(() => {
-    if (!companyToUse) return;
+    if (companyToUse) {
+      fetchData(companyToUse);
+    }
+  }, [companyToUse]);
 
-    const fetchAllData = async () => {
-      setIsLoading(true);
-      abortControllers.current.forEach(controller => controller.abort());
-      abortControllers.current = [];
-
-      try {
-        const controller = new AbortController();
-        abortControllers.current.push(controller);
-
-        await Promise.all([
-          fetchProfilePicture(companyToUse, controller.signal),
-          fetchContactDetails(controller.signal),
-          fetchIdentificationDetails(companyToUse, controller.signal),
-        ]);
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          setModalState(prev => ({
-            ...prev,
-            alert: {
-              visible: true,
-              message: 'Failed to load data. Please try again.',
-            },
-          }));
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAllData();
-  }, [companyToUse, userData.employeeId]);
-
-  // Data fetching functions
-  const fetchProfilePicture = useCallback(
-    async (company, signal) => {
-      try {
-        const data = await ProfilePicture(
-          {
-            employeeId: userData.employeeId,
-            defaultCompany: company,
-          },
-          {signal},
-        );
-
-        if (data?.[0]?.StringImage) {
-          setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
-        } else {
-          setProfilePictureUrl(null);
-        }
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error('Profile picture fetch error:', error);
-          setProfilePictureUrl(null);
-        }
-      }
-    },
-    [userData.employeeId],
-  );
-
-  const fetchContactDetails = useCallback(
-    async signal => {
-      try {
-        const data = await ContactDetails(
-          {employeeId: userData.employeeId},
-          {signal},
-        );
-
-        setNameRows(
-          data.map(item => ({
-            RecId: item.RecId,
-            Type: item.Type,
-            Locator: item.Locator,
-            Location: item.Location,
-            IsPrimary: item.IsPrimary,
-            IsPrivate: item.IsPrivate,
-            Description: item.Description,
-            IsMobilePhone: item.IsMobilePhone,
-            LocatorExtension: item.LocatorExtension,
-            CountryRegionCode: item.CountryRegionCode,
-          })),
-        );
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error('Contact details fetch error:', error);
-        }
-      }
-    },
-    [userData.employeeId],
-  );
-
-  const fetchIdentificationDetails = useCallback(
-    async (company, signal) => {
-      try {
-        const data = await IdentificationFindRequest(
-          {
-            employeeId: userData.employeeId,
-            defaultCompany: company,
-          },
-          {signal},
-        );
-
-        setIdentityRows(
-          data.map(item => ({
-            RecId: item.RecId,
-            IdentificationType: item.IdentificationType || 'N/A',
-            Description: item.Description || 'N/A',
-            IdentificationNumber: item.IdentificationNumber || 'N/A',
-            IssuedDate: item.IssuedDate || 'N/A',
-            ExpirationDate: item.ExpirationDate || 'N/A',
-            IssuingAgency: item.IssuingAgency || 'N/A',
-            IssuingAgencyId: item.IssuingAgencyId || 'N/A',
-            IsPrimary: item.IsPrimary,
-            CreatedBy: item.CreatedBy || 'N/A',
-            ModifiedBy: item.ModifiedBy || 'N/A',
-            Classification: item.Classification || 'N/A',
-            IdentificationTypeId: item.IdentificationTypeId || 'N/A',
-            WorkflowOperation: item.WorkflowOperation || 'N/A',
-            ApprovalStatus: item.ApprovalStatus || 'N/A',
-            PersonIdentificationNumberRecVersion:
-              item.PersonIdentificationNumberRecVersion || 'N/A',
-          })),
-        );
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error('Identification details fetch error:', error);
-        }
-      }
-    },
-    [userData.employeeId],
-  );
-
-  // Refresh handler
-  const handleRefresh = useCallback(async () => {
-    if (!companyToUse) return;
-    setIsLoading(true);
-    setIsImageChanged(false);
-
+  // Initialize component data
+  const initializeData = async () => {
     try {
+      setIsLoading(true);
       await Promise.all([
         fetchProfilePicture(companyToUse),
         fetchContactDetails(),
-        fetchIdentificationDetails(companyToUse),
+        fetchIdentificationDetails(),
       ]);
     } catch (error) {
-      setModalState(prev => ({
-        ...prev,
-        alert: {
-          visible: true,
-          message: 'Refresh failed. Please try again.',
-        },
-      }));
+      console.error('Error initializing data:', error);
+      setAlertMessage('Failed to load personal information');
+      setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
-  }, [
-    companyToUse,
-    fetchProfilePicture,
-    fetchContactDetails,
-    fetchIdentificationDetails,
-  ]);
+  };
 
-  // Image handling
-  const handleProfileImageEdit = useCallback(() => {
-    ImagePicker.launchImageLibrary(
-      {mediaType: 'photo', includeBase64: true},
-      response => {
-        if (response.assets?.[0]?.base64) {
-          setProfilePictureUrl(
-            `data:image/jpeg;base64,${response.assets[0].base64}`,
-          );
+  // Fetch all data
+  const fetchData = async (company = companyToUse) => {
+    try {
+      await Promise.all([
+        fetchProfilePicture(company),
+        fetchContactDetails(),
+        fetchIdentificationDetails(),
+      ]);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  // Handle refresh
+  const handleRefresh = async (company = companyToUse) => {
+    setIsLoading(true);
+    setIsImageChanged(false);
+    await fetchData(company);
+    setIsLoading(false);
+  };
+
+  // Toggle section expansion
+  const toggleSection = section => {
+    setExpandedSections(prevState => ({
+      ...prevState,
+      [section]: !prevState[section],
+    }));
+  };
+
+  // Fetch profile picture with error handling
+  const fetchProfilePicture = async (company = companyToUse) => {
+    try {
+      if (!userData?.employeeId) {
+        console.warn('Employee ID not available');
+        return;
+      }
+
+      const data = await ProfilePicture({
+        employeeId: userData.employeeId,
+        defaultCompany: company,
+      });
+
+      // Handle both array and object responses
+      let imageData = null;
+      if (Array.isArray(data) && data.length > 0) {
+        imageData = data[0]; // Get first element if it's an array
+      } else if (data && typeof data === 'object') {
+        imageData = data; // Use directly if it's an object
+      }
+
+      if (imageData?.StringImage) {
+        // Clean up the base64 string if it contains line breaks or extra spaces
+        const cleanBase64 = imageData.StringImage.replace(/\s/g, '');
+        const base64Image = `data:image/png;base64,${cleanBase64}`;
+        setProfilePictureUrl(base64Image);
+      } else {
+        console.warn('No StringImage found in profile picture data');
+        setProfilePictureUrl(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile picture:', error);
+      setProfilePictureUrl(null);
+      // Don't show error modal for missing profile picture as it's optional
+    }
+  };
+
+  // Handle image edit
+  const handleProfileImageEdit = () => {
+    const options = {
+      mediaType: 'photo',
+      includeBase64: true,
+      quality: 0.8,
+      maxWidth: 800,
+      maxHeight: 800,
+    };
+
+    ImagePicker.launchImageLibrary(options, response => {
+      if (response.didCancel || response.error) {
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const base64Image = response.assets[0].base64;
+        if (base64Image) {
+          setProfilePictureUrl(`data:image/jpeg;base64,${base64Image}`);
           setIsImageChanged(true);
         }
-      },
-    );
-  }, []);
+      }
+    });
+  };
 
-  const handleSaveChanges = useCallback(async () => {
-    if (!profilePictureUrl || !companyToUse) return;
-
+  // Save profile picture changes
+  const handleSaveChanges = async () => {
     try {
       setIsLoading(true);
+
+      if (!profilePictureUrl) {
+        setAlertMessage('No image to save');
+        setAlertModal(true);
+        return;
+      }
+
+      // Extract base64 data
       const base64Image = profilePictureUrl.replace(
         /^data:image\/(png|jpg|jpeg);base64,/,
         '',
@@ -273,185 +222,244 @@ const DisplayPersonalInfo = () => {
       });
 
       setIsImageChanged(false);
-      setModalState(prev => ({
-        ...prev,
-        alert: {
-          visible: true,
-          message: 'Profile picture updated successfully.',
-        },
-      }));
+      setAlertMessage('Profile picture updated successfully');
+      setAlertModal(true);
     } catch (error) {
-      setModalState(prev => ({
-        ...prev,
-        alert: {
-          visible: true,
-          message: 'Failed to update profile picture.',
-        },
-      }));
+      console.error('Failed to update profile picture:', error);
+      setAlertMessage('Failed to update profile picture');
+      setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
-  }, [profilePictureUrl, companyToUse, userData.employeeId]);
+  };
+
+  // Fetch contact details
+  const fetchContactDetails = async () => {
+    try {
+      if (!userData?.employeeId) return;
+
+      const data = await ContactDetails({employeeId: userData.employeeId});
+
+      if (Array.isArray(data)) {
+        const formattedData = data.map(item => ({
+          RecId: item.RecId,
+          Type: item.Type,
+          Locator: item.Locator,
+          Location: item.Location,
+          IsPrimary: item.IsPrimary,
+          IsPrivate: item.IsPrivate,
+          Description: item.Description,
+          IsMobilePhone: item.IsMobilePhone,
+          LocatorExtension: item.LocatorExtension,
+          CountryRegionCode: item.CountryRegionCode,
+        }));
+        setNameRows(formattedData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch contact details:', error);
+    }
+  };
+
+  // Fetch identification details
+  const fetchIdentificationDetails = async () => {
+    try {
+      if (!userData?.employeeId) return;
+
+      const data = await IdentificationFindRequest({
+        employeeId: userData.employeeId,
+        defaultCompany: companyToUse,
+      });
+
+      if (Array.isArray(data)) {
+        const formattedData = data.map(item => ({
+          RecId: item.RecId,
+          IdentificationType: item.IdentificationType || 'N/A',
+          Description: item.Description || 'N/A',
+          IdentificationNumber: item.IdentificationNumber || 'N/A',
+          IssuedDate: item.IssuedDate || 'N/A',
+          ExpirationDate: item.ExpirationDate || 'N/A',
+          IssuingAgency: item.IssuingAgency || 'N/A',
+          IssuingAgencyId: item.IssuingAgencyId || 'N/A',
+          IsPrimary: item.IsPrimary,
+          CreatedBy: item.CreatedBy || 'N/A',
+          ModifiedBy: item.ModifiedBy || 'N/A',
+          Classification: item.Classification || 'N/A',
+          IdentificationTypeId: item.IdentificationTypeId || 'N/A',
+          WorkflowOperation: item.WorkflowOperation || 'N/A',
+          ApprovalStatus: item.ApprovalStatus || 'N/A',
+          PersonIdentificationNumberRecVersion:
+            item.PersonIdentificationNumberRecVersion || 'N/A',
+        }));
+        setIdentityRows(formattedData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch identification details:', error);
+    }
+  };
+
+  // Delete contact details
+  const handleDeleteContact = async RecId => {
+    try {
+      const response = await DeleteContactDetails({recordsRecId: [RecId]});
+
+      if (response?.[0]?.IsSuccess) {
+        setAlertMessage('Contact detail deleted successfully');
+        setNameRows(prev => prev.filter(item => item.RecId !== RecId));
+      } else {
+        setAlertMessage('Unable to delete contact detail');
+      }
+      setAlertModal(true);
+    } catch (error) {
+      console.error('Error deleting contact:', error);
+      setAlertMessage('Failed to delete contact detail');
+      setAlertModal(true);
+    } finally {
+      await fetchContactDetails();
+    }
+  };
+
+  // Delete identification
+  const handleDeleteIdentity = async RecId => {
+    try {
+      const response = await DeleteIdentityRequest({recordsRecId: [RecId]});
+
+      if (response?.[0]?.IsSuccess) {
+        setAlertMessage('Identification deleted successfully');
+        setIdentityRows(prev => prev.filter(item => item.RecId !== RecId));
+      } else {
+        setAlertMessage('Unable to delete identification');
+      }
+      setAlertModal(true);
+    } catch (error) {
+      console.error('Error deleting identity:', error);
+      setAlertMessage('Failed to delete identification');
+      setAlertModal(true);
+    } finally {
+      await fetchIdentificationDetails();
+    }
+  };
 
   // Modal handlers
-  const toggleModal = useCallback(
-    (type, visible, mode = 'create', selected = null) => {
-      setModalState(prev => ({
-        ...prev,
-        [type]: {
-          ...prev[type],
-          visible,
-          mode,
-          selected: selected
-            ? {
-                ...selected,
-                recId: userData.WorkerRecId,
-                employeeId: userData.employeeId,
-                employeeName: userData.employeeName,
-              }
-            : null,
-        },
-      }));
-    },
-    [userData],
-  );
+  const handleContactOpenModal = (mode, serviceData = {}) => {
+    const defaultData = {
+      recId: userData?.WorkerRecId,
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+    };
 
-  // Delete handlers
-  const handleDelete = useCallback(
-    async (type, RecId) => {
-      try {
-        let response;
-        if (type === 'contact') {
-          response = await DeleteContactDetails({recordsRecId: [RecId]});
-        } else {
-          response = await DeleteIdentityRequest({recordsRecId: [RecId]});
-        }
+    const modalData =
+      mode === 'create' ? defaultData : {...defaultData, ...serviceData};
 
-        if (response?.[0]?.IsSuccess) {
-          if (type === 'contact') {
-            setNameRows(prev => prev.filter(item => item.RecId !== RecId));
-          } else {
-            setIdentityRows(prev => prev.filter(item => item.RecId !== RecId));
-          }
+    setModalMode(mode);
+    setSelectedLeave(modalData);
+    setIsModalVisible(true);
+  };
 
-          setModalState(prev => ({
-            ...prev,
-            alert: {
-              visible: true,
-              message: `${
-                type === 'contact' ? 'Contact' : 'Identification'
-              } detail deleted successfully.`,
-            },
-          }));
-        } else {
-          throw new Error(response?.Message || 'Deletion failed');
-        }
-      } catch (error) {
-        setModalState(prev => ({
-          ...prev,
-          alert: {
-            visible: true,
-            message: error.message || `Failed to delete ${type} detail.`,
-          },
-        }));
-      } finally {
-        handleRefresh();
+  const handleOpenIdentityModal = (mode, serviceData = {}) => {
+    const defaultData = {
+      recId: userData?.WorkerRecId,
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+    };
+
+    const modalData =
+      mode === 'create' ? defaultData : {...defaultData, ...serviceData};
+
+    setModalModeType(mode);
+    setSelectedIdentity(modalData);
+    setIsModalOpen(true);
+  };
+
+  // Contact action handler
+  const handleContactAction = async (actionType, modalMode, data = {}) => {
+    try {
+      const contactData = {
+        RecId: data.RecId,
+        EmployeeId: userData?.WorkerRecId,
+        Type: data.Type,
+        Locator: data.Locator,
+        IsPrimary: data.IsPrimary?.value ?? data.IsPrimary,
+        IsPrivate: data.IsPrivate?.value ?? data.IsPrivate,
+        Description: data.Description,
+        IsMobilePhone: data.IsMobilePhone?.value ?? data.IsMobilePhone,
+      };
+
+      let response;
+      if (modalMode.toLowerCase() === 'create') {
+        response = await CreateContactDetails(contactData);
+      } else if (modalMode.toLowerCase() === 'update') {
+        response = await UpdateContactDetails(contactData);
       }
-    },
-    [handleRefresh],
-  );
 
-  // Action handlers
-  const handleAction = useCallback(
-    async (type, actionType, data) => {
-      try {
-        let response;
-        const isCreate = modalState[type].mode === 'create';
+      const action =
+        modalMode.toLowerCase() === 'create' ? 'created' : 'updated';
+      const actionText =
+        actionType.toLowerCase() === 'save'
+          ? action
+          : `${action} and submitted`;
 
-        if (type === 'contact') {
-          const contactData = {
-            RecId: data.RecId,
-            EmployeeId: userData.WorkerRecId,
-            Type: data.Type,
-            Locator: data.Locator,
-            IsPrimary: data.IsPrimary?.value ?? data.IsPrimary,
-            IsPrivate: data.IsPrivate?.value ?? data.IsPrivate,
-            Description: data.Description,
-            IsMobilePhone: data.IsMobilePhone?.value ?? data.IsMobilePhone,
-          };
-
-          response = isCreate
-            ? await CreateContactDetails(contactData)
-            : await UpdateContactDetails(contactData);
-        } else {
-          const identityData = {
-            RecId: data.RecId || 0,
-            EmployeeId: userData.WorkerRecId,
-            IdentificationType: data.IdentificationType || 0,
-            IdentificationTypeId: data.IdentificationTypeId,
-            Description: data.Description,
-            IdentificationNumber: data.IdentificationNumber,
-            IssuedDate: data.IssuedDate,
-            ExpirationDate: data.ExpirationDate,
-            IsPrimary: data.IsPrimary?.value ?? data.IsPrimary,
-            Classification: data.Classification,
-            IssuingAgency: 16928090028,
-            IssuingAgencyId: 'Government',
-            PersonIdentificationNumberRecVersion: 1,
-          };
-
-          response = isCreate
-            ? await CreateIdentityRequest(identityData, companyToUse)
-            : await UpdateIdentityRequest(identityData, companyToUse);
-        }
-
-        if (response?.IsSuccess) {
-          const action = actionType.toLowerCase();
-          const operation = isCreate ? 'Created' : 'Updated';
-          const submitted = action === 'submit' ? ' and Submitted' : '';
-
-          setModalState(prev => ({
-            ...prev,
-            [type]: {...prev[type], visible: false},
-            alert: {
-              visible: true,
-              message: `${
-                type === 'contact' ? 'Contact' : 'Identification'
-              } ${operation}${submitted} Successfully.`,
-            },
-          }));
-          handleRefresh();
-        } else {
-          throw new Error(response?.Message || 'Operation failed');
-        }
-      } catch (error) {
-        setModalState(prev => ({
-          ...prev,
-          alert: {
-            visible: true,
-            message:
-              error.message ||
-              'An error occurred while processing the request.',
-          },
-        }));
+      if (response?.IsSuccess) {
+        setAlertMessage(`Contact information ${actionText} successfully`);
+      } else {
+        setAlertMessage(response?.Message || 'Operation failed');
       }
-    },
-    [
-      modalState.contact.mode,
-      modalState.identity.mode,
-      companyToUse,
-      userData,
-      handleRefresh,
-    ],
-  );
+    } catch (error) {
+      console.error('Error in contact action:', error);
+      setAlertMessage('An error occurred while processing the request');
+    } finally {
+      setAlertModal(true);
+      setIsModalVisible(false);
+      await fetchContactDetails();
+    }
+  };
 
-  // Section toggle
-  const toggleSection = useCallback(section => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  }, []);
+  // Identity action handler
+  const handleIdentityAction = async (actionType, modalMode, data = {}) => {
+    try {
+      const identityData = {
+        RecId: data.RecId || 0,
+        EmployeeId: userData?.WorkerRecId,
+        IdentificationType: data.IdentificationType || 0,
+        IdentificationTypeId: data.IdentificationTypeId,
+        Description: data.Description,
+        IdentificationNumber: data.IdentificationNumber,
+        IssuedDate: data.IssuedDate,
+        ExpirationDate: data.ExpirationDate,
+        IsPrimary: data.IsPrimary?.value ?? data.IsPrimary,
+        Classification: data.Classification,
+        IssuingAgency: 16928090028,
+        IssuingAgencyId: 'Government',
+        PersonIdentificationNumberRecVersion: 1,
+      };
+
+      let response;
+      if (modalMode.toLowerCase() === 'create') {
+        response = await CreateIdentityRequest(identityData, companyToUse);
+      } else if (modalMode.toLowerCase() === 'update') {
+        response = await UpdateIdentityRequest(identityData, companyToUse);
+      }
+
+      const action =
+        modalMode.toLowerCase() === 'create' ? 'created' : 'updated';
+      const actionText =
+        actionType.toLowerCase() === 'save'
+          ? action
+          : `${action} and submitted`;
+
+      if (response?.IsSuccess) {
+        setAlertMessage(`Registration request ${actionText} successfully`);
+      } else {
+        setAlertMessage(response?.Message || 'Operation failed');
+      }
+    } catch (error) {
+      console.error('Error in identity action:', error);
+      setAlertMessage('An error occurred while processing the request');
+    } finally {
+      setAlertModal(true);
+      setIsModalOpen(false);
+      await fetchIdentificationDetails();
+    }
+  };
 
   return (
     <ActionPaneContainer
@@ -459,11 +467,14 @@ const DisplayPersonalInfo = () => {
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
-      onRefresh={handleRefresh}>
+      onRefresh={() => handleRefresh(companyToUse)}>
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <KeyboardAvoidingView style={styles.TopContainer}>
+        <KeyboardAvoidingView
+          style={styles.topContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
           <View style={styles.imageContainer}>
             <ProfilePictureEditor
               isLoading={isLoading}
@@ -473,7 +484,10 @@ const DisplayPersonalInfo = () => {
             />
           </View>
 
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}>
+            {/* Contact Details Section */}
             <View style={styles.sectionHeader}>
               <SectionHeader
                 title="Contact Details"
@@ -483,15 +497,16 @@ const DisplayPersonalInfo = () => {
               {expandedSections.nameSection && (
                 <ContactDetailsSection
                   ContactRows={nameRows}
-                  onCreate={() => toggleModal('contact', true, 'create')}
-                  onEdit={selected =>
-                    toggleModal('contact', true, 'edit', selected)
+                  onCreate={() => handleContactOpenModal('create')}
+                  onEdit={selectedRow =>
+                    handleContactOpenModal('edit', selectedRow)
                   }
-                  onDelete={RecId => handleDelete('contact', RecId)}
+                  onDelete={handleDeleteContact}
                 />
               )}
             </View>
 
+            {/* Identification Details Section */}
             <View style={styles.sectionHeader}>
               <SectionHeader
                 title="Identification Numbers"
@@ -501,48 +516,14 @@ const DisplayPersonalInfo = () => {
               {expandedSections.identificationSection && (
                 <IdentificationDetailsSection
                   IdentityrRows={identityRows}
-                  onCreate={() => toggleModal('identity', true, 'create')}
-                  onEdit={selected =>
-                    toggleModal('identity', true, 'edit', selected)
-                  }
-                  onDelete={RecId => handleDelete('identity', RecId)}
+                  onCreate={() => handleOpenIdentityModal('create')}
+                  onDelete={handleDeleteIdentity}
                 />
               )}
             </View>
           </ScrollView>
 
-          <ContactInfoModal
-            visible={modalState.contact.visible}
-            onClose={() => toggleModal('contact', false)}
-            mode={modalState.contact.mode}
-            onAction={(actionType, data) =>
-              handleAction('contact', actionType, data)
-            }
-            serviceData={modalState.contact.selected}
-          />
-
-          <IdentificationInfoModal
-            visible={modalState.identity.visible}
-            onClose={() => toggleModal('identity', false)}
-            mode={modalState.identity.mode}
-            onAction={(actionType, data) =>
-              handleAction('identity', actionType, data)
-            }
-            serviceData={modalState.identity.selected}
-          />
-
-          <AlertModal
-            visible={modalState.alert.visible}
-            heading="Alert"
-            text={modalState.alert.message}
-            onPress={() =>
-              setModalState(prev => ({
-                ...prev,
-                alert: {...prev.alert, visible: false},
-              }))
-            }
-          />
-
+          {/* Fixed Save Button */}
           {isImageChanged && (
             <TouchableOpacity style={styles.fixedButtonContainer}>
               <SaveButton isLoading={isLoading} onSave={handleSaveChanges} />
@@ -550,52 +531,67 @@ const DisplayPersonalInfo = () => {
           )}
         </KeyboardAvoidingView>
       )}
+
+      {/* Modals */}
+      <ContactInfoModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        mode={modalMode.toLowerCase()}
+        onAction={handleContactAction}
+        serviceData={selectedLeave}
+      />
+
+      <IdentificationInfoModal
+        visible={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode={modalModeType.toLowerCase()}
+        onAction={handleIdentityAction}
+        serviceData={selectedIdentity}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  TopContainer: {
+  topContainer: {
     flex: 1,
     backgroundColor: '#fff',
   },
   imageContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 5,
+    paddingHorizontal: screenWidth * 0.05, // 5% of screen width
+    paddingTop: screenHeight * 0.025, // 2.5% of screen height
+    paddingBottom: screenHeight * 0.01, // 1% of screen height
+    alignItems: 'center',
   },
   scrollContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingHorizontal: screenWidth * 0.05,
+    paddingBottom: screenHeight * 0.1, // Extra padding for fixed button
+    flexGrow: 1,
   },
   sectionHeader: {
-    marginBottom: 15,
+    marginBottom: screenHeight * 0.02, // 2% of screen height
   },
   fixedButtonContainer: {
-    backgroundColor: 'white',
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  loadingOverlay: {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 9999,
+    backgroundColor: 'white',
+    padding: screenWidth * 0.025, // 2.5% of screen width
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });
 
