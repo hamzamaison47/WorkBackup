@@ -101,25 +101,6 @@ const MainDashboard = () => {
       setIsLoading(false);
     }
   };
-  // const fetchProfilePicture = async () => {
-  //   setIsLoading(true);
-  //   try {
-  //     const data = await ProfilePicture({
-  //       employeeId: userData.employeeId,
-  //       defaultCompany: selectedLegalEntity,
-  //     });
-  //     if (data?.[0]?.StringImage) {
-  //       setProfilePictureUrl(`data:image/png;base64,${data[0].StringImage}`);
-  //     } else {
-  //       setProfilePictureUrl(null);
-  //     }
-  //   } catch (error) {
-  //     console.error('Failed to fetch profile image:', error);
-  //     setProfilePictureUrl(null);
-  // } finally {
-  //   setIsLoading(false);
-  // }
-  // };
 
   // Handle refresh
   const handleRefresh = () => {
