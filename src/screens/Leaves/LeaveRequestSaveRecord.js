@@ -591,8 +591,10 @@ const LeaveRequestSaveRecord = () => {
                 valueField="value"
                 placeholder="Select Leave Category"
                 value={formData.leaveCategory}
-                itemTextStyle={{color: '#707070ff', fontSize: 16}}
                 onChange={handleLeaveCategoryChange}
+                placeholderStyle={{color: '#444'}}
+                selectedTextStyle={{color: '#444'}}
+                itemTextStyle={{color: '#444'}}
               />
               <Text style={styles.label}>Leave Code *</Text>
               <Dropdown
@@ -602,9 +604,11 @@ const LeaveRequestSaveRecord = () => {
                 valueField="value"
                 placeholder="Select Leave Code"
                 value={formData.leaveCode}
-                itemTextStyle={{color: '#707070ff', fontSize: 16}}
                 onFocus={fetchLeaveCodesForEmployee}
                 onChange={handleLeaveCodeChange}
+                placeholderStyle={{color: '#444'}}
+                selectedTextStyle={{color: '#444'}}
+                itemTextStyle={{color: '#444'}}
               />
               <Text style={styles.label}>Balance</Text>
               <Text style={[styles.input, styles.disabled]}>

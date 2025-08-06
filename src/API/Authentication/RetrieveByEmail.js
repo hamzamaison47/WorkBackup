@@ -23,7 +23,7 @@ const RetrieveByEmail = async ({email}) => {
       </soapenv:Body>
     </soapenv:Envelope>`;
 
-    console.log('Soap Envelope In Retrieve Email:', soapEnvelope);
+    // console.log('Soap Envelope In Retrieve Email:', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/PREmploymentInformationSvcGroup`,
@@ -49,7 +49,7 @@ const RetrieveByEmail = async ({email}) => {
 
     const parsed = parser.parse(xml);
 
-    console.log('parsed In Retrieve Email:', parsed);
+    // console.log('parsed In Retrieve Email:', parsed);
 
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveByEmailResponse']?.[
@@ -61,7 +61,7 @@ const RetrieveByEmail = async ({email}) => {
       return [];
     }
 
-    console.log('rawData In Retrieve Email:', rawData);
+    // console.log('rawData In Retrieve Email:', rawData);
 
     const cleanObject = obj =>
       Object.fromEntries(
@@ -75,7 +75,7 @@ const RetrieveByEmail = async ({email}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
-    console.log('cleanedData In Retrieve Email:', rawData);
+    // console.log('cleanedData In Retrieve Email:', rawData);
 
     return cleanedData;
   } catch (error) {

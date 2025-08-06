@@ -148,11 +148,11 @@ export const fetchEmpInfo = async email => {
         ? [employeeLegalEntitiesRaw]
         : [];
 
-      console.log('Inside Auth Login; data:', data);
-      console.log(
-        'Inside Auth Login; employeeLegalEntities:',
-        employeeLegalEntities,
-      );
+      // console.log('Inside Auth Login; data:', data);
+      // console.log(
+      //   'Inside Auth Login; employeeLegalEntities:',
+      //   employeeLegalEntities,
+      // );
 
       return {
         label: item.EmployeeName?.toString() ?? '',
