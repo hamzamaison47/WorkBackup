@@ -156,6 +156,7 @@ const PRSalarySlip = () => {
       isBackButton={false}
       showFooter={true}
       showFloatingButton={false}
+      isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}>
       {/* Main content */}
@@ -169,7 +170,7 @@ const PRSalarySlip = () => {
             <Icon
               name="file-pdf-o"
               size={50}
-              color="orange"
+              color="#0A66C2"
               style={styles.icon}
             />
             <Text style={styles.screenTitle}>Email Salary Slip</Text>
@@ -191,10 +192,10 @@ const PRSalarySlip = () => {
             />
 
             {loading ? (
-              <ActivityIndicator size="large" color="orange" />
+              <ActivityIndicator size="large" color="#0A66C2" />
             ) : (
               <LinearGradient
-                colors={['orange', 'orange']}
+                colors={['#0A66C2', '#0A66C2']}
                 style={styles.button}>
                 <TouchableOpacity
                   onPress={sendSalarySlip}

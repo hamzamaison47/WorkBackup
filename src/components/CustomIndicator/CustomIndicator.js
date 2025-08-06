@@ -1,43 +1,79 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect} from 'react';
-import {View, Animated, StyleSheet} from 'react-native';
+import {View, StyleSheet, Animated, Dimensions} from 'react-native';
 
-const CustomIndicator = () => {
-  const scale = new Animated.Value(1);
+const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
+
+const CustomIndicator = ({
+  dotCount = 3,
+  animationDuration = 1000,
+  dotColor = '#0A66C2',
+  dotSize = screenWidth * 0.025,
+  spacing = screenWidth * 0.02,
+  containerHeight = screenHeight * 0.05,
+}) => {
+  const animations = Array.from({length: dotCount}).map(() => ({
+    scale: new Animated.Value(1),
+    opacity: new Animated.Value(0.4),
+  }));
 
   useEffect(() => {
-    // Popping animation
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.2,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const animationsArray = animations.map(anim => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(anim.scale, {
+              toValue: 1.6,
+              duration: animationDuration / 2,
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim.opacity, {
+              toValue: 1,
+              duration: animationDuration / 2,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(anim.scale, {
+              toValue: 1,
+              duration: animationDuration / 2,
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim.opacity, {
+              toValue: 0.4,
+              duration: animationDuration / 2,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+      );
+    });
+
+    animationsArray.forEach((anim, index) => {
+      setTimeout(() => anim.start(), index * (animationDuration / dotCount));
+    });
+
+    return () => {
+      animationsArray.forEach(anim => anim.stop());
+    };
   }, []);
 
-  const popStyle = {
-    transform: [
-      {
-        scale,
-      },
-    ],
-  };
-
   return (
-    <View style={styles.container}>
-      <Animated.View style={[styles.spinner]} />
-      <Animated.Image
-        source={require('../../assets/cloud-mini.png')}
-        style={[styles.image, popStyle]}
-      />
+    <View style={[styles.container, {height: containerHeight}]}>
+      {animations.map((anim, index) => (
+        <Animated.View
+          key={index}
+          style={{
+            width: dotSize,
+            height: dotSize,
+            borderRadius: dotSize / 2,
+            marginHorizontal: spacing / 2,
+            backgroundColor: dotColor,
+            transform: [{scale: anim.scale}],
+            opacity: anim.opacity,
+          }}
+        />
+      ))}
     </View>
   );
 };
@@ -45,21 +81,9 @@ const CustomIndicator = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  spinner: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: '#c75e29',
-    borderTopColor: 'transparent',
-  },
-  image: {
-    width: 50,
-    height: 50,
   },
 });
 

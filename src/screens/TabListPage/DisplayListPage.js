@@ -29,7 +29,7 @@ const DisplayListPage = () => {
       title: 'Leave Request',
       icon: 'calendar-outline',
       screen: 'LeaveSaveRecord',
-      color: '#f59e0b',
+      color: '#0A66C2',
       category: 'PR',
       onPress: () =>
         navigation.navigate('LeavesListPage', {
@@ -44,7 +44,7 @@ const DisplayListPage = () => {
       title: 'Salary Slip',
       icon: 'card-outline',
       screen: 'PRSalarySlip',
-      color: '#f59e0b',
+      color: '#0A66C2',
       category: 'PR',
       onPress: () =>
         navigation.navigate('PRSalarySlip', {
@@ -182,6 +182,7 @@ const DisplayListPage = () => {
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
+      isHeaderActive={true}
       onRefresh={handleRefresh}>
       {isCompanySwitching ? (
         <CustomIndicator />
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   filterContainer: {
-    backgroundColor: '#ffefe3',
+    backgroundColor: '#ebf5ff',
     paddingBottom: 0,
     paddingHorizontal: 0,
     marginBottom: height * 0.01,
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   },
   activeFilterButton: {
     borderBottomWidth: 5,
-    borderBottomColor: '#ff6b35',
+    borderBottomColor: '#0A66C2',
   },
   filterButtonText: {
     fontSize: width * 0.04,
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeFilterButtonText: {
-    color: '#ff6b35',
+    color: '#0A66C2',
     fontWeight: '700',
   },
   menuContainer: {

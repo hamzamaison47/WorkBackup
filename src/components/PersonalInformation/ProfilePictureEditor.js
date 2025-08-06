@@ -13,6 +13,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import CustomIndicator from '../CustomIndicator/CustomIndicator';
 
 const {height, width} = Dimensions.get('window');
+const PROFILE_IMAGE_SIZE = width * 0.35; // responsive image size
+const BORDER_WIDTH = 5;
 
 const ProfilePictureEditor = ({
   isLoading,
@@ -24,17 +26,19 @@ const ProfilePictureEditor = ({
 
   // Cancel image selection and close the modal
   const handleCancel = () => {
-    setIsModalVisible(false); // Close modal without saving
+    setIsModalVisible(false);
   };
 
   return (
     <View style={styles.headerContainer}>
-      <View>
+      <View style={styles.profileImageWrapper}>
         <TouchableOpacity
-          onPress={() => setIsModalVisible(true)} // Open modal when image is clicked
+          onPress={() => setIsModalVisible(true)}
           style={styles.profilePictureContainer}>
           {isLoading ? (
-            <CustomIndicator />
+            <View style={styles.loadingContainer}>
+              <CustomIndicator />
+            </View>
           ) : (
             <Image
               source={{
@@ -51,7 +55,7 @@ const ProfilePictureEditor = ({
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.headerTitle}>{userData.employeeName}</Text>
+      <Text style={styles.headerTitle}>{userData?.employeeName || 'User'}</Text>
 
       {/* Modal to show larger image */}
       <Modal
@@ -67,6 +71,7 @@ const ProfilePictureEditor = ({
                   uri: profilePictureUrl || 'https://via.placeholder.com/150',
                 }}
                 style={styles.modalImage}
+                resizeMode="cover"
               />
             </View>
           </View>
@@ -81,28 +86,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  profilePictureContainer: {
+  profileImageWrapper: {
     position: 'relative',
     marginHorizontal: 18,
   },
+  profilePictureContainer: {
+    width: PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2,
+    height: PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2,
+    borderRadius: (PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2) / 2,
+    borderWidth: BORDER_WIDTH,
+    borderColor: '#0A66C2',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 6,
+  },
   profilePicture: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
+  },
+  loadingContainer: {
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
   },
   editIconContainer: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#FFA500',
-    borderRadius: 25,
-    padding: 10,
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#0A66C2',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    marginTop: 10,
+    marginTop: 15,
+    textAlign: 'center',
   },
 
   // Modal Styles
@@ -114,15 +148,13 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    // padding: 20,
     borderRadius: 10,
     alignItems: 'center',
   },
   modalImage: {
     width: width * 0.8,
-    height: height * 0.6,
+    height: height * 0.8,
     borderRadius: 10,
-    // marginBottom: 20,
   },
 });
 

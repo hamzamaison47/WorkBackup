@@ -47,7 +47,7 @@ const MainPageHeader = ({
     </View>
   ),
   headerStyle: {
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     height: hp(14),
   },
   headerTintColor: '#fff',

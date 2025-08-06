@@ -37,15 +37,15 @@ const SplashScreens = ({navigation}) => {
   }, [navigation]);
 
   return (
-    <LinearGradient colors={['#FF6F00', '#FFB300']} style={styles.container}>
+    <LinearGradient colors={['#0A66C2', '#bddeff']} style={styles.container}>
       <Animated.Image
         source={require('../assets/cloud.png')}
         style={[styles.logo, {opacity: logoOpacity}]}
         resizeMode="contain"
       />
-      <Text style={styles.text}>ESS Payroll Portal</Text>
-      <Text style={styles.tagline}>Managing Payroll, Simplified</Text>
-      <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
+      <Text style={styles.text}>ESS By Maison</Text>
+      <Text style={styles.tagline}>Your Technology Partner</Text>
+      <ActivityIndicator size="large" color="#0A66C2" style={styles.loader} />
     </LinearGradient>
   );
 };

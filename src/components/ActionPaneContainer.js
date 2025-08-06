@@ -33,6 +33,7 @@ const ActionPaneContainer = ({
   isBackButton = false, // true for back button, false for drawer
   showFooter = true, // show/hide footer
   showFloatingButton = false, // show/hide floating + button
+  isHeaderActive = true, // show/hide header - NEW PROPERTY
   onBackPress, // callback for back button press
   onRefresh, // callback for refresh button
   onFloatingButtonPress, // callback for floating button press
@@ -139,19 +140,21 @@ const ActionPaneContainer = ({
 
   // Header configuration
   useEffect(() => {
-    const headerOptions = MainPageHeader({
-      onToggleDrawer: isBackButton ? handleBackPress : toggleDrawer,
-      onTitle: pageTitle,
-      onShowNotify: toggleNotification,
-      onCount: notificationCount,
-      onLogout: handleLogout,
-      isBack: isBackButton,
-      onDatPress: toggleCompanyDropdown,
-      selectedDat:
-        selectedLegalEntity || defaultLegalEntity || 'Select Company',
-      defaultDat: defaultLegalEntity,
-    });
-    navigation.setOptions(headerOptions);
+    if (isHeaderActive) {
+      const headerOptions = MainPageHeader({
+        onToggleDrawer: isBackButton ? handleBackPress : toggleDrawer,
+        onTitle: pageTitle,
+        onShowNotify: toggleNotification,
+        onCount: notificationCount,
+        onLogout: handleLogout,
+        isBack: isBackButton,
+        onDatPress: toggleCompanyDropdown,
+        selectedDat:
+          selectedLegalEntity || defaultLegalEntity || 'Select Company',
+        defaultDat: defaultLegalEntity,
+      });
+      navigation.setOptions(headerOptions);
+    }
   }, [
     navigation,
     pageTitle,
@@ -315,7 +318,7 @@ const styles = StyleSheet.create({
   },
   bottomTabBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     paddingVertical: height * 0.012,
     paddingHorizontal: width * 0.18,
     justifyContent: 'space-between',
@@ -342,7 +345,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: '#FFFFFF',
     borderWidth: 3,
-    borderColor: '#FFA500',
+    borderColor: '#0A66C2',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 6,
@@ -353,7 +356,7 @@ const styles = StyleSheet.create({
   },
   plusIcon: {
     fontSize: 24,
-    color: '#FFA500',
+    color: '#0A66C2',
   },
 });
 

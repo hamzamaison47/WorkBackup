@@ -137,12 +137,12 @@ const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
 const styles = StyleSheet.create({
   detailsContainer: {
     padding: 16,
-    backgroundColor: '#ffe8d1',
+    backgroundColor: '#bddeff',
   },
   detailsContainerBorder: {
     padding: 16,
     marginTop: 16,
-    backgroundColor: '#fffcf7',
+    backgroundColor: '#cce6ff',
     borderRadius: 5,
     elevation: 3,
   },
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   editIconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     borderRadius: 25,
     height: 30,
     width: 30,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   createIconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     borderRadius: 5,
     padding: 8,
     marginTop: 15,

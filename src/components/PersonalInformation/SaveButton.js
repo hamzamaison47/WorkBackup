@@ -20,7 +20,7 @@ const SaveButton = ({isLoading, onSave}) => {
 
 const styles = StyleSheet.create({
   saveButton: {
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',

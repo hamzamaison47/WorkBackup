@@ -201,6 +201,7 @@ const LeaveRequestListPage = () => {
       isBackButton={false} // Use drawer instead of back button
       showFooter={true}
       showFloatingButton={true}
+      isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}>

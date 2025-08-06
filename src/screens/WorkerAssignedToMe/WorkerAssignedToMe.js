@@ -1,7 +1,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect} from 'react';
-import {Text, StyleSheet, FlatList} from 'react-native';
+import {Text, StyleSheet, FlatList, RefreshControl} from 'react-native';
 import {useSelector} from 'react-redux';
 
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
@@ -14,6 +14,7 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 const WorkerAssignedToMe = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [teamData, setTeamData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -49,7 +50,7 @@ const WorkerAssignedToMe = () => {
 
   const handleRefresh = async () => {
     setIsLoading(true);
-
+    setRefreshing(true);
     try {
       // clearFormData();
 
@@ -63,6 +64,7 @@ const WorkerAssignedToMe = () => {
       console.error('Error in My Team Record Screen', error);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -85,6 +87,7 @@ const WorkerAssignedToMe = () => {
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
+      isHeaderActive={true}
       onRefresh={handleRefresh}>
       {/* Show loading indicator when isLoading is true */}
       {isLoading ? (
@@ -95,6 +98,9 @@ const WorkerAssignedToMe = () => {
           renderItem={renderTeamCard}
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
         />
       ) : (
         <Text style={styles.mainTxt}>No Data Found</Text>

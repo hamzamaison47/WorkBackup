@@ -12,12 +12,12 @@ import {
   ActivityIndicator,
   TouchableWithoutFeedback,
   SafeAreaView,
+  RefreshControl,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 
-import {wp, hp} from '../constants/Size';
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfilePicture';
 
@@ -36,8 +36,9 @@ const MainDashboard = () => {
     state => state.company.selectedLegalEntity,
   );
 
-  const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [imageModalVisible, setImageModalVisible] = useState(false);
 
   useEffect(() => {
@@ -65,6 +66,8 @@ const MainDashboard = () => {
 
   // Fetch profile picture with error handling
   const fetchProfilePicture = async () => {
+    setIsLoading(true);
+    setRefreshing(true);
     try {
       if (!userData?.employeeId) {
         console.warn('Employee ID not available');
@@ -90,7 +93,6 @@ const MainDashboard = () => {
         const base64Image = `data:image/png;base64,${cleanBase64}`;
         setProfilePictureUrl(base64Image);
       } else {
-        console.warn('No StringImage found in profile picture data');
         setProfilePictureUrl(null);
       }
     } catch (error) {
@@ -99,15 +101,13 @@ const MainDashboard = () => {
       // Don't show error modal for missing profile picture as it's optional
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
 
   // Handle refresh
   const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    fetchProfilePicture();
   };
 
   const cards = [
@@ -157,39 +157,12 @@ const MainDashboard = () => {
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
+      isHeaderActive={true}
       onRefresh={handleRefresh}>
-      {/* Show loading indicator when isLoading is true */}
       {isLoading ? (
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.container}>
-          <View style={styles.headerContainer}>
-            <View style={styles.welcomeCard}>
-              <View style={styles.headerRow}>
-                {isLoading ? (
-                  <ActivityIndicator size="large" color="#FFA500" />
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => navigation.navigate('DisplayPersonalInfo')}>
-                    <Image
-                      source={{
-                        uri:
-                          profilePictureUrl ||
-                          'https://via.placeholder.com/150',
-                      }}
-                      style={styles.profilePicture}
-                    />
-                  </TouchableOpacity>
-                )}
-                <View style={styles.textColumn}>
-                  <Text style={styles.welcomeText}>Welcome Back!</Text>
-                  <Text style={styles.nameText}>{userData.employeeName}</Text>
-                  <Text style={styles.emailText}>{userData.email}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
           <FlatList
             key={'2-cols'}
             numColumns={2}
@@ -199,6 +172,44 @@ const MainDashboard = () => {
             columnWrapperStyle={styles.row}
             contentContainerStyle={styles.grid}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+              />
+            }
+            ListHeaderComponent={
+              <View style={styles.headerContainer}>
+                <View style={styles.welcomeCard}>
+                  <View style={styles.headerRow}>
+                    {isLoading ? (
+                      <ActivityIndicator size="large" color="#0A66C2" />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate('DisplayPersonalInfo')
+                        }>
+                        <Image
+                          source={{
+                            uri:
+                              profilePictureUrl ||
+                              'https://via.placeholder.com/150',
+                          }}
+                          style={styles.profilePicture}
+                        />
+                      </TouchableOpacity>
+                    )}
+                    <View style={styles.textColumn}>
+                      <Text style={styles.welcomeText}>Welcome Back!</Text>
+                      <Text style={styles.nameText}>
+                        {userData.employeeName}
+                      </Text>
+                      <Text style={styles.emailText}>{userData.email}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            }
           />
 
           <Modal
@@ -232,11 +243,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F7F9FC',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingBottom: height * 0.1, // Extra padding for fixed button
+  },
   headerContainer: {
-    width: wp(90),
+    width: width * 0.9,
     alignSelf: 'center',
-    marginTop: hp(3),
-    marginBottom: hp(2),
+    marginTop: height * 0.03,
+    // marginBottom: height * 0.001,
   },
   welcomeCard: {
     backgroundColor: '#FFFFFF',
@@ -247,7 +265,7 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 6},
     shadowRadius: 8,
     elevation: 8,
-    marginBottom: hp(3),
+    marginBottom: height * 0.035,
   },
   headerRow: {
     flexDirection: 'row',
@@ -255,39 +273,39 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   profilePicture: {
-    width: hp(20),
-    height: hp(20),
-    borderRadius: hp(12.5),
-    marginRight: wp(2),
+    width: height * 0.12,
+    height: height * 0.12,
+    borderRadius: height * 0.125,
+    marginRight: width * 0.02,
     borderWidth: 4,
-    borderColor: '#FFA500',
+    borderColor: '#0A66C2',
   },
   textColumn: {
     flexDirection: 'column',
     flex: 1,
   },
   welcomeText: {
-    fontSize: hp(5),
+    fontSize: height * 0.025,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: hp(0.8),
+    // marginBottom: height * 0.008,
     textAlign: 'left',
   },
   nameText: {
-    fontSize: hp(4.5),
-    color: '#FFA500',
+    fontSize: height * 0.022,
+    color: '#0A66C2',
     fontWeight: '600',
     textAlign: 'left',
-    marginBottom: hp(0.5),
+    // marginBottom: height * 0.005,
   },
   emailText: {
-    fontSize: hp(2.8),
+    fontSize: height * 0.015,
     color: '#5A5A5A',
     textAlign: 'left',
   },
   grid: {
     paddingHorizontal: 20,
-    paddingTop: 10,
+    // paddingTop: 10,
     paddingBottom: 40,
   },
   row: {
@@ -307,11 +325,11 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   iconWrapper: {
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     padding: 12,
     borderRadius: 50,
     marginBottom: 12,
-    shadowColor: '#FFA500',
+    shadowColor: '#0A66C2',
     shadowOpacity: 0.2,
     shadowOffset: {width: 0, height: 2},
     shadowRadius: 4,
@@ -335,8 +353,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalImage: {
-    width: width * 0.8,
-    height: height * 0.6,
+    width: width * 0.08,
+    height: height * 0.06,
     borderRadius: 10,
   },
 });

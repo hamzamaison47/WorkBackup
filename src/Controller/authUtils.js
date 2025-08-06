@@ -139,8 +139,20 @@ export const fetchEmpInfo = async email => {
     }
 
     return data.map(item => {
-      const employeeLegalEntities =
-        item.EmployeeLegalEntities?.['a:PREmployeeLegalEntitiesContract'] ?? [];
+      const employeeLegalEntitiesRaw =
+        item.EmployeeLegalEntities?.['a:PREmployeeLegalEntitiesContract'];
+
+      const employeeLegalEntities = Array.isArray(employeeLegalEntitiesRaw)
+        ? employeeLegalEntitiesRaw
+        : employeeLegalEntitiesRaw
+        ? [employeeLegalEntitiesRaw]
+        : [];
+
+      console.log('Inside Auth Login; data:', data);
+      console.log(
+        'Inside Auth Login; employeeLegalEntities:',
+        employeeLegalEntities,
+      );
 
       return {
         label: item.EmployeeName?.toString() ?? '',

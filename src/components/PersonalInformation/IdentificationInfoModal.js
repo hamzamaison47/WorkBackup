@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitButton: {
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
   },
   buttonText: {
     color: '#fff',

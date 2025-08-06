@@ -18,7 +18,7 @@ const CalendarModal = ({
         selected: true,
         customStyles: {
           container: {
-            backgroundColor: '#FFA500',
+            backgroundColor: '#0A66C2',
             borderRadius: 50,
             width: 36,
             height: 36,
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 10,
     alignSelf: 'center',
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 20,

@@ -55,12 +55,12 @@ const CustomDrawerContent = props => {
               cameFrom: 'DisplayListPage',
             })
           }
-          icon={() => <Icon name="calendar" size={24} color="#FFA500" />}
+          icon={() => <Icon name="calendar" size={24} color="#0A66C2" />}
         />
         <DrawerItem
           label="Salary Slip"
           onPress={() => props.navigation.navigate('PRSalarySlip')}
-          icon={() => <Icon name="money" size={24} color="#FFA500" />}
+          icon={() => <Icon name="money" size={24} color="#0A66C2" />}
         />
       </DrawerContentScrollView>
 
@@ -88,8 +88,8 @@ const DrawerNavigator = () => {
         initialRouteName="TabNavigator"
         drawerContent={props => <CustomDrawerContent {...props} />}
         screenOptions={{
-          drawerStyle: {backgroundColor: '#F0F0F0'},
-          drawerActiveTintColor: '#FFA500',
+          drawerStyle: {backgroundColor: '#d4e9ff'},
+          drawerActiveTintColor: '#0A66C2',
           drawerInactiveTintColor: '#333333',
           headerShown: false,
         }}>
@@ -100,7 +100,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Home',
             drawerIcon: () => (
-              <Icon name="tachometer" size={24} color="#FFA500" />
+              <Icon name="tachometer" size={24} color="#0A66C2" />
             ),
           }}
         />
@@ -111,7 +111,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Leave Requests List Page',
             drawerIcon: () => (
-              <Icon name="calendar" size={24} color="#FFA500" />
+              <Icon name="calendar" size={24} color="#0A66C2" />
             ),
             headerShown: true,
           }}
@@ -123,7 +123,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Leave Requests Create and Update',
             drawerIcon: () => (
-              <Icon name="calendar" size={24} color="#FFA500" />
+              <Icon name="calendar" size={24} color="#0A66C2" />
             ),
             headerShown: true,
           }}
@@ -134,7 +134,7 @@ const DrawerNavigator = () => {
           initialParams={{userData}}
           options={{
             title: 'Salary Slip',
-            drawerIcon: () => <Icon name="money" size={24} color="#FFA500" />,
+            drawerIcon: () => <Icon name="money" size={24} color="#0A66C2" />,
             headerShown: true,
           }}
         />
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   drawerHeader: {
     width: '100%',
     padding: 20,
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     alignItems: 'center',
   },
   drawerHeaderImage: {
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     margin: 20,
     padding: 10,
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     borderRadius: 5,
     alignItems: 'center',
   },

@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   okButton: {
     marginTop: height * 0.001,
-    backgroundColor: 'orange',
+    backgroundColor: '#0A66C2',
     paddingVertical: height * 0.015,
     paddingHorizontal: width * 0.3,
     borderRadius: width * 0.03,

@@ -562,6 +562,7 @@ const LeaveRequestSaveRecord = () => {
       isBackButton={true} // Use drawer instead of back button
       showFooter={false}
       showFloatingButton={false}
+      isHeaderActive={true}
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
@@ -620,7 +621,7 @@ const LeaveRequestSaveRecord = () => {
                       : 'Select Start Date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color="#ff7f00" />
+                <Icon name="calendar" size={20} color="#0A66C2" />
               </TouchableOpacity>
               <CalendarModal
                 visible={showCalendar}
@@ -782,7 +783,7 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     borderWidth: 2,
-    borderColor: '#FFA726',
+    borderColor: '#0A66C2',
     borderRadius: 20,
     paddingVertical: 12,
     marginHorizontal: 5,
@@ -790,25 +791,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   submitButton: {
-    borderColor: '#28a745',
+    borderColor: '#0A66C2',
+    backgroundColor: '#0A66C2',
   },
   disabledButton: {
     opacity: 0.6,
   },
   buttonText: {
     fontWeight: 'bold',
-    color: '#FFA726',
+    color: '#0A66C2',
   },
   submitButtonText: {
     fontWeight: 'bold',
-    color: '#28a745',
+    color: '#ffffffff',
   },
   pressedButton: {
-    backgroundColor: '#FFA726',
+    backgroundColor: '#0A66C2',
   },
   pressedSubmitButton: {
-    backgroundColor: '#28a745',
-    borderColor: '#28a745',
+    backgroundColor: '#3d95edff',
+    borderColor: '#3d95edff',
   },
   pressedText: {
     color: '#fff',

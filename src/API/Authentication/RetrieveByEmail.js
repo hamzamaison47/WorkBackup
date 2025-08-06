@@ -11,17 +11,19 @@ const RetrieveByEmail = async ({email}) => {
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
       <soapenv:Header>
         <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-            <dat:Company>USMF</dat:Company>
+            <dat:Company>DAT</dat:Company>
             <dat:Language>en-us</dat:Language>
         </dat:CallContext>
       </soapenv:Header>
       <soapenv:Body>
         <retrieveByEmail xmlns = "http://tempuri.org">
-          <_dataAreaId>USMF</_dataAreaId>
+          <_dataAreaId>DAT</_dataAreaId>
           <_email>${email}</_email>
         </retrieveByEmail>
       </soapenv:Body>
     </soapenv:Envelope>`;
+
+    console.log('Soap Envelope In Retrieve Email:', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/PREmploymentInformationSvcGroup`,
@@ -47,6 +49,8 @@ const RetrieveByEmail = async ({email}) => {
 
     const parsed = parser.parse(xml);
 
+    console.log('parsed In Retrieve Email:', parsed);
+
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveByEmailResponse']?.[
         'result'
@@ -56,6 +60,8 @@ const RetrieveByEmail = async ({email}) => {
       console.warn('No leave data found');
       return [];
     }
+
+    console.log('rawData In Retrieve Email:', rawData);
 
     const cleanObject = obj =>
       Object.fromEntries(
@@ -68,6 +74,8 @@ const RetrieveByEmail = async ({email}) => {
     const cleanedData = Array.isArray(rawData)
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
+
+    console.log('cleanedData In Retrieve Email:', rawData);
 
     return cleanedData;
   } catch (error) {

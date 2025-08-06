@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   dropdownTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFA500',
+    color: '#0A66C2',
     marginBottom: 10,
     textAlign: 'center',
   },

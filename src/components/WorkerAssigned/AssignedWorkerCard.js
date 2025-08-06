@@ -60,7 +60,6 @@ const AssignedWorkerCard = ({
         const base64Image = `data:image/png;base64,${cleanBase64}`;
         setProfilePictureUrl(base64Image);
       } else {
-        console.warn('No StringImage found in profile picture data');
         setProfilePictureUrl(null);
       }
     } catch (error) {
@@ -79,7 +78,7 @@ const AssignedWorkerCard = ({
   return (
     <View style={styles.cardContainer}>
       <LinearGradient
-        colors={['#FFF3E0', '#FFF3E0', '#FFF3E0']}
+        colors={['#6ee0ff', '#bddeff', '#cce6ff']}
         start={{x: 0, y: 0}}
         end={{x: 1, y: 1}}
         style={styles.card}>
@@ -88,7 +87,7 @@ const AssignedWorkerCard = ({
           <Text style={styles.cardHeaderText}>{employeeName}</Text>
           <View style={styles.headerRow}>
             {isLoading ? (
-              <ActivityIndicator size="large" color="orange" />
+              <ActivityIndicator size="large" color="#0A66C2" />
             ) : (
               <TouchableOpacity>
                 <Image
@@ -148,12 +147,12 @@ const AssignedWorkerCard = ({
                 }>
                 <Text style={styles.navigateButtonText}>Leave Details</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.navigateButton}>
+              {/* <TouchableOpacity style={styles.navigateButton}>
                 <Text style={styles.navigateButtonText}>Advance Details</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.navigateButton}>
+              </TouchableOpacity> */}
+              {/* <TouchableOpacity style={styles.navigateButton}>
                 <Text style={styles.navigateButtonText}>Salary Slip</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </>
           )}
         </View>
@@ -203,7 +202,7 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.07,
     resizeMode: 'cover',
     borderWidth: 2,
-    borderColor: '#FFA726',
+    borderColor: '#0A66C2',
   },
 
   cardContent: {
@@ -238,7 +237,7 @@ const styles = StyleSheet.create({
   },
 
   navigateButton: {
-    borderColor: '#FFA726',
+    borderColor: '#0A66C2',
     borderWidth: 1.5,
     borderRadius: 20,
     paddingVertical: height * 0.012,
@@ -258,7 +257,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: height * 0.015,
     padding: 6,
-    backgroundColor: 'orange',
+    backgroundColor: '#0A66C2',
     borderRadius: 50,
     alignSelf: 'center',
   },

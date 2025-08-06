@@ -1,5 +1,12 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -14,6 +21,8 @@ import {
   initializeLegalEntity,
 } from '../store/slices/companySlice';
 
+const {width} = Dimensions.get('window');
+
 const LoginScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -23,13 +32,13 @@ const LoginScreen = () => {
   const [dialogMessage, setDialogMessage] = useState('');
 
   return (
-    <LinearGradient colors={['#FFFFFF', '#F0F0F0']} style={styles.container}>
+    <LinearGradient colors={['#FFFFFF', '#ffffffff']} style={styles.container}>
       {!loading && (
         <>
           <Image source={require('../assets/cloud.png')} style={styles.logo} />
-          <Text style={styles.title}>Welcome to the ESS Payroll Portal</Text>
+          <Text style={styles.title}>Welcome to the ESS</Text>
           <Text style={styles.subtitle}>
-            Manage your employee services with ease and security.
+            Manage your HR services anytime, anywhere
           </Text>
 
           <TouchableOpacity
@@ -47,7 +56,12 @@ const LoginScreen = () => {
               )
             }
             disabled={loading}>
-            <Icon name="windows" size={24} color="#fff" style={styles.icon} />
+            <Icon
+              name="windows"
+              size={24}
+              color="#0A66C2"
+              style={styles.icon}
+            />
             <Text style={styles.buttonText}>Sign in with Microsoft</Text>
           </TouchableOpacity>
 
@@ -66,7 +80,7 @@ const LoginScreen = () => {
               )
             }
             disabled={loading}>
-            <Icon name="google" size={24} color="#fff" style={styles.icon} />
+            <Icon name="google" size={24} color="#0A66C2" style={styles.icon} />
             <Text style={styles.buttonText}>Sign in with Google</Text>
           </TouchableOpacity>
         </>
@@ -131,26 +145,49 @@ const styles = StyleSheet.create({
   loginButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFA500',
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-    marginVertical: 5,
+    justifyContent: 'center',
+    width: width * 0.8, // 80% of screen width
+    height: 55, // Fixed height
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+    marginVertical: 8,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
   },
   buttonText: {
-    color: '#ffffff',
-    fontSize: 18,
+    color: '#0A66C2',
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 10,
   },
   icon: {
     marginRight: 10,
   },
+  // loginButton: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   // backgroundColor: '#0A66C2',
+  //   paddingVertical: 15,
+  //   paddingHorizontal: 40,
+  //   borderRadius: 10,
+  //   borderWidth: 3,
+  //   borderColor: '#0A66C2',
+  //   // shadowColor: '#000',
+  //   // shadowOffset: {width: 0, height: 2},
+  //   // shadowOpacity: 0.3,
+  //   // shadowRadius: 3,
+  //   // elevation: 5,
+  //   marginVertical: 5,
+  // },
+  // buttonText: {
+  //   color: '#0A66C2',
+  //   fontSize: 18,
+  //   fontWeight: 'bold',
+  //   marginLeft: 10,
+  // },
+  // icon: {
+  //   marginRight: 10,
+  // },
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -185,7 +222,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   dialogButton: {
-    backgroundColor: '#FFA500',
+    backgroundColor: '#0A66C2',
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 20,

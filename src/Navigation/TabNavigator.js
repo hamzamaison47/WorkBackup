@@ -34,7 +34,7 @@ const TabNavigator = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: 'orange',
+        tabBarActiveTintColor: '#0A66C2',
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
@@ -68,9 +68,9 @@ const TabNavigator = () => {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#ffefe3',
+    backgroundColor: '#ebf5ff',
     height: 60,
-    borderColor: 'orange',
+    borderColor: '#0A66C2',
     borderTopWidth: 3,
   },
   tabLabel: {
@@ -78,57 +78,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 6,
     color: 'gray',
-  },
-  customButton: {
-    top: -30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerButton: {
-    width: 65,
-    height: 65,
-    borderRadius: 32.5,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#FFA500',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-    borderColor: 'orange',
-    borderWidth: 3,
-  },
-  centerButtonSelected: {
-    backgroundColor: '#FFA500',
-    borderColor: 'white',
-    borderWidth: 3,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
-  iconContainer: {
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#FF6B6B',
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
 });
 

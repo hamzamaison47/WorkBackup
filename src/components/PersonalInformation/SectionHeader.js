@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFA500', // Dark gray header for better contrast
+    backgroundColor: '#0A66C2', // Dark gray header for better contrast
     padding: 10,
     borderRadius: 5,
   },

@@ -73,15 +73,15 @@ const LeaveRequestCard = ({
   const getStatusStyle = () => {
     switch (wfStatus?.toLowerCase()) {
       case 'draft':
-        return {backgroundColor: '#FFD54F', color: '#5D4037'};
+        return {backgroundColor: '#0A66C2', color: '#ffffffff'};
       case 'approved':
-        return {backgroundColor: '#81C784', color: '#1B5E20'};
+        return {backgroundColor: '#81C784', color: '#ffffffff'};
       case 'rejected':
-        return {backgroundColor: '#E57373', color: '#B71C1C'};
+        return {backgroundColor: '#E57373', color: '#ffffffff'};
       case 'submitted':
-        return {backgroundColor: '#64B5F6', color: '#0D47A1'};
+        return {backgroundColor: '#0A66C2', color: '#ffffffff'};
       case 'pending approval':
-        return {backgroundColor: '#FFB74D', color: '#ffffffff'};
+        return {backgroundColor: '#0A66C2', color: '#ffffffff'};
       default:
         return {backgroundColor: '#B0BEC5', color: '#263238'};
     }
@@ -96,7 +96,7 @@ const LeaveRequestCard = ({
     if (isHighlighted) {
       return ['#E8F5E8', '#F0FFF0'];
     }
-    return ['#FFF3E0', '#FFF3E0'];
+    return ['#6ee0ff', '#bddeff', '#cce6ff'];
   };
 
   return (
@@ -105,7 +105,11 @@ const LeaveRequestCard = ({
         styles.cardContainer,
         isHighlighted && styles.highlightedContainer,
       ]}>
-      <LinearGradient colors={getGradientColors()} style={styles.card}>
+      <LinearGradient
+        colors={getGradientColors()}
+        start={{x: 0, y: 0}}
+        end={{x: 1, y: 1}}
+        style={styles.card}>
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.cardHeaderText}>{leaveCode}</Text>
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
     gap: width * 0.025,
   },
   button: {
-    backgroundColor: 'orange',
+    backgroundColor: '#0A66C2',
     borderRadius: 20,
     padding: 8,
   },
@@ -300,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: height * 0.01,
     padding: 5,
-    backgroundColor: 'orange',
+    backgroundColor: '#0A66C2',
     borderRadius: 50,
     alignSelf: 'center',
   },

@@ -66,7 +66,7 @@ const CompanyDropdown = ({
                           <Icon
                             name="check"
                             size={16}
-                            color="#FFA500"
+                            color="#0A66C2"
                             style={styles.checkIcon}
                           />
                         )}
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   dropdownTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFA500',
+    color: '#0A66C2',
     textAlign: 'center',
     paddingVertical: 15,
     paddingHorizontal: 20,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   selectedCompanyName: {
-    color: '#FFA500',
+    color: '#0A66C2',
   },
   checkIcon: {
     marginLeft: 10,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 12,
   },
   selectedCompanyItem: {
-    backgroundColor: '#FFF5E6',
+    backgroundColor: '#ebf5ff',
     zIndex: 1,
   },
 });
