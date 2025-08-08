@@ -25,6 +25,8 @@ const SubmitLeaveRequest = async ({recId}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    // console.log('SOAP ENVELOPE IN SUBMIT REQUEST', soapEnvelope);
+
     const {data: xml} = await axios.post(
       `${resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,
@@ -48,6 +50,9 @@ const SubmitLeaveRequest = async ({recId}) => {
     });
 
     const parsed = parser.parse(xml);
+
+    // console.log('Parsed SOAP ENVELOPE IN SUBMIT REQUEST', parsed);
+
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.[
         'submitLeaveRequestByRecIdResponse'
@@ -55,6 +60,8 @@ const SubmitLeaveRequest = async ({recId}) => {
       parsed?.['soap:Envelope']?.['soap:Body']?.[
         'submitLeaveRequestByRecIdResponse'
       ]?.['result'];
+
+    // console.log('Result SOAP ENVELOPE IN SUBMIT REQUEST', result);
 
     if (!result) {
       console.log('No result found in Submit SOAP response');
@@ -75,6 +82,12 @@ const SubmitLeaveRequest = async ({recId}) => {
     };
 
     const cleanedResult = cleanObject(result);
+
+    // console.log(
+    //   'Cleaned Result SOAP ENVELOPE IN SUBMIT REQUEST',
+    //   cleanedResult,
+    // );
+
     return cleanedResult;
   } catch (error) {
     console.error(

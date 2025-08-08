@@ -27,7 +27,6 @@ import {
   fetchLeaveBalance,
   fetchLeaveCodes,
 } from '../../Controller/leaveRequestApiService';
-
 import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
 import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import {UpdateLeaveRequest} from '../../API/Leaves/UpdateLeaveRequest';
@@ -43,11 +42,7 @@ const LeaveRequestSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
 
-  const {selectedLegalEntity, defaultLegalEntity} = useSelector(
-    state => state.company,
-  );
   const {userData} = useSelector(state => state.user);
-  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   // Navigation params with safe defaults
   const {
@@ -64,7 +59,7 @@ const LeaveRequestSaveRecord = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingButton, setProcessingButton] = useState(''); // Track which button is processing
   const [isLoading, setIsLoading] = useState(false);
 
   // Create initial form data function
@@ -161,33 +156,34 @@ const LeaveRequestSaveRecord = () => {
         );
         setFormData(editFormData);
 
-        // Fetch balance for the existing record
-        if (
-          (leaveData?.employeeId || employeeId) &&
-          leaveData?.leaveCode &&
-          leaveData?.leaveStartDate
-        ) {
-          fetchLeaveBalance(
-            leaveData?.employeeId || employeeId,
-            leaveData?.leaveCode,
-            leaveData?.leaveStartDate,
-            companyToUse,
-          )
-            .then(balance => {
-              setFormData(prev => ({
-                ...prev,
-                balance: balance || '0.00',
-              }));
-            })
-            .catch(error => {
-              console.error('Error fetching balance for edit mode:', error);
-              setFormData(prev => ({
-                ...prev,
-                balance: '0.00',
-              }));
-            });
-        }
-      } else {
+        // Fetch leave codes first, then balance
+        fetchLeaveCodesForEmployee().then(() => {
+          // Fetch balance for the existing record
+          if (
+            (leaveData?.employeeId || employeeId) &&
+            leaveData?.leaveCode &&
+            leaveData?.leaveStartDate
+          ) {
+            fetchLeaveBalance(
+              leaveData?.employeeId || employeeId,
+              leaveData?.leaveCode,
+              leaveData?.leaveStartDate,
+            )
+              .then(balance => {
+                setFormData(prev => ({
+                  ...prev,
+                  balance: balance || '0.00',
+                }));
+              })
+              .catch(error => {
+                console.error('Error fetching balance for edit mode:', error);
+                setFormData(prev => ({
+                  ...prev,
+                  balance: '0.00',
+                }));
+              });
+          }
+        });
       }
     }, [
       mode,
@@ -205,7 +201,7 @@ const LeaveRequestSaveRecord = () => {
     try {
       clearFormData();
 
-      const codes = await fetchLeaveCodes(formData.employeeId, companyToUse);
+      const codes = await fetchLeaveCodes(formData.employeeId);
       setLeaveCodesForEmployee(codes);
     } catch (error) {
       console.error('Error in Save Record Screen', error);
@@ -248,7 +244,6 @@ const LeaveRequestSaveRecord = () => {
           formData.employeeId,
           formData.leaveCode,
           formatted,
-          companyToUse,
         );
 
         const newBalance = balanceData || '0.00';
@@ -363,7 +358,6 @@ const LeaveRequestSaveRecord = () => {
         formData.employeeId,
         newLeaveCode,
         effectiveStartDate,
-        companyToUse,
       );
       setFormData(prev => ({
         ...prev,
@@ -380,10 +374,7 @@ const LeaveRequestSaveRecord = () => {
 
   const fetchLeaveCodesForEmployee = async () => {
     try {
-      const codes = await fetchLeaveCodes(
-        leaveData?.employeeId || employeeId,
-        companyToUse,
-      );
+      const codes = await fetchLeaveCodes(leaveData?.employeeId || employeeId);
       setLeaveCodesForEmployee(codes);
     } catch (error) {
       setAlertMessage('Failed to fetch leave codes.');
@@ -444,23 +435,19 @@ const LeaveRequestSaveRecord = () => {
       if (modalMode === 'create') {
         response = await createLeaveRequest({
           leaveData: leavesData,
-          companyToUse: companyToUse,
         });
         if (actionType === 'submit') {
           await SubmitLeaveRequest({
             recId: response.RecId,
-            companyToUse: companyToUse,
           });
         }
       } else {
         response = await UpdateLeaveRequest({
           leaveData: leavesData,
-          companyToUse: companyToUse,
         });
         if (actionType === 'submit') {
           await SubmitLeaveRequest({
             recId: response.RecId,
-            companyToUse: companyToUse,
           });
         }
       }
@@ -471,12 +458,10 @@ const LeaveRequestSaveRecord = () => {
         response.IsSuccess === true || response.IsSuccess === 'true';
 
       if (isSuccess) {
+        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const submitText = actionType === 'submit' ? ' and Submitted' : '';
         setAlertMessage(
-          actionType === 'submit'
-            ? `${
-                modalMode === 'create' ? 'Created' : 'Updated'
-              } and Submitted Successfully`
-            : `${modalMode === 'create' ? 'Created' : 'Updated'} Successfully`,
+          `${data.leaveCode} is ${actionText}${submitText} Successfully`,
         );
         setAlertModal(true);
         return {success: true, recId: response.RecId};
@@ -495,7 +480,7 @@ const LeaveRequestSaveRecord = () => {
   };
 
   const handleSave = async actionType => {
-    if (isSubmitting) return;
+    if (processingButton) return; // Prevent multiple clicks
 
     const missingFields = [];
 
@@ -517,7 +502,7 @@ const LeaveRequestSaveRecord = () => {
       return;
     }
 
-    setIsSubmitting(true);
+    setProcessingButton(actionType);
 
     try {
       const result = await handleAction(
@@ -549,7 +534,7 @@ const LeaveRequestSaveRecord = () => {
       setAlertMessage('Failed to save leave request. Please try again.');
       setAlertModal(true);
     } finally {
-      setIsSubmitting(false);
+      setProcessingButton('');
     }
   };
 
@@ -559,7 +544,7 @@ const LeaveRequestSaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={mode === 'edit' ? 'Edit' : 'Create'}
-      isBackButton={true} // Use drawer instead of back button
+      isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
@@ -595,6 +580,8 @@ const LeaveRequestSaveRecord = () => {
                 placeholderStyle={{color: '#444'}}
                 selectedTextStyle={{color: '#444'}}
                 itemTextStyle={{color: '#444'}}
+                search
+                searchPlaceholder="Search Leave Category..."
               />
               <Text style={styles.label}>Leave Code *</Text>
               <Dropdown
@@ -609,6 +596,8 @@ const LeaveRequestSaveRecord = () => {
                 placeholderStyle={{color: '#444'}}
                 selectedTextStyle={{color: '#444'}}
                 itemTextStyle={{color: '#444'}}
+                search
+                searchPlaceholder="Search Leave Code..."
               />
               <Text style={styles.label}>Balance</Text>
               <Text style={[styles.input, styles.disabled]}>
@@ -664,14 +653,18 @@ const LeaveRequestSaveRecord = () => {
                 style={({pressed}) => [
                   styles.button,
                   pressed && styles.pressedButton,
-                  isSubmitting && styles.disabledButton,
+                  (processingButton === 'save' ||
+                    processingButton === 'submit') &&
+                    styles.disabledButton,
                 ]}
                 onPress={() => handleSave('save')}
-                disabled={isSubmitting}>
+                disabled={
+                  processingButton === 'save' || processingButton === 'submit'
+                }>
                 {({pressed}) => (
                   <Text
                     style={[styles.buttonText, pressed && styles.pressedText]}>
-                    {isSubmitting
+                    {processingButton === 'save'
                       ? 'Processing...'
                       : mode === 'edit'
                       ? 'Update'
@@ -685,17 +678,21 @@ const LeaveRequestSaveRecord = () => {
                   styles.button,
                   styles.submitButton,
                   pressed && styles.pressedSubmitButton,
-                  isSubmitting && styles.disabledButton,
+                  (processingButton === 'save' ||
+                    processingButton === 'submit') &&
+                    styles.disabledButton,
                 ]}
                 onPress={() => handleSave('submit')}
-                disabled={isSubmitting}>
+                disabled={
+                  processingButton === 'save' || processingButton === 'submit'
+                }>
                 {({pressed}) => (
                   <Text
                     style={[
                       styles.submitButtonText,
                       pressed && styles.pressedText,
                     ]}>
-                    {isSubmitting
+                    {processingButton === 'submit'
                       ? 'Processing...'
                       : mode === 'edit'
                       ? 'Update & Submit'

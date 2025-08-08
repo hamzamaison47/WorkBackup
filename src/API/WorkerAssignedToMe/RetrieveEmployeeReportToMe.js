@@ -3,29 +3,18 @@ import {getToken} from '../Token/getToken';
 import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const RetrieveEmployeeReportToMe = async ({employeeId, defaultCompany}) => {
+const RetrieveEmployeeReportToMe = async ({employeeId}) => {
   try {
     const accessToken = await getToken();
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${defaultCompany}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <retrieve xmlns = "http://tempuri.org">
-            <_employeeId>${employeeId}</_employeeId>
-        </retrieve>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
 
-    // console.log(
-    //   '-=-=-=-=-=-=-=-=-=Worker Request XML-=-=-=-=-=-=-=-=-=-=\n',
-    //   soapEnvelope,
-    // );
+    const soapBody = `
+    <retrieve xmlns = "http://tempuri.org">
+      <_employeeId>${employeeId}</_employeeId>
+    </retrieve>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/HREmployeesListReportToMeSvcGroup`,

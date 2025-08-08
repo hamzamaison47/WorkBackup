@@ -3,28 +3,19 @@ import {getToken} from '../Token/getToken';
 import {XMLParser} from 'fast-xml-parser';
 import {resource} from '@env';
 import axios from 'axios';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
-const PREmailSalarySlip = async ({payPeriodCode, employeeId, dataAreaId}) => {
+const PREmailSalarySlip = async ({payPeriodCode, employeeId}) => {
   try {
     const accessToken = await getToken();
 
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${dataAreaId}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <sendSalarySlipEmail xmlns="http://tempuri.org">
+    const soapBody = `
+      <sendSalarySlipEmail xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
         <_payPeriodCode>${payPeriodCode}</_payPeriodCode>
-        </sendSalarySlipEmail>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+      </sendSalarySlipEmail>`;
 
-    console.log('Soap Envelope Body In Email Salary Slip', soapEnvelope);
+    const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/RetrieveReportsSvcGroup`,
@@ -40,8 +31,6 @@ const PREmailSalarySlip = async ({payPeriodCode, employeeId, dataAreaId}) => {
       },
     );
 
-    console.log('XML Response In Email Salary Slip', xml);
-
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -56,9 +45,6 @@ const PREmailSalarySlip = async ({payPeriodCode, employeeId, dataAreaId}) => {
       parsed?.['s:Envelope']?.['s:Body']?.['sendSalarySlipEmailResponse']?.[
         'result'
       ];
-
-    console.log('Parsed In Email Salary Slip', parsed);
-    console.log('Raw Data In Email Salary Slip', rawData);
 
     if (!rawData) {
       console.warn('No data found');

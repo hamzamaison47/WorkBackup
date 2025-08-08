@@ -1,5 +1,4 @@
 /* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect} from 'react';
 import {Text, StyleSheet, FlatList, RefreshControl} from 'react-native';
 import {useSelector} from 'react-redux';
@@ -19,11 +18,7 @@ const WorkerAssignedToMe = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
-  const {selectedLegalEntity, defaultLegalEntity} = useSelector(
-    state => state.company,
-  );
   const {userData} = useSelector(state => state.user);
-  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   useEffect(() => {
     const fetchEmployeeReportToMe = async () => {
@@ -32,7 +27,6 @@ const WorkerAssignedToMe = () => {
         try {
           const myTeamData = await RetrieveEmployeeReportToMe({
             employeeId: userData.employeeId,
-            defaultCompany: companyToUse,
           });
 
           setTeamData(myTeamData);
@@ -56,7 +50,6 @@ const WorkerAssignedToMe = () => {
 
       const myTeamData = await RetrieveEmployeeReportToMe({
         employeeId: userData.employeeId,
-        defaultCompany: companyToUse,
       });
 
       setTeamData(myTeamData);
@@ -72,7 +65,6 @@ const WorkerAssignedToMe = () => {
     <AssignedWorkerCard
       employeeId={item.EmployeId}
       employeeName={item.Name}
-      defaultCompany={companyToUse}
       departmentName={item.DepartmentName}
       email={item.Email}
       positionId={item.PositionId}

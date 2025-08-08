@@ -13,7 +13,7 @@ import logo from '../assets/cloud.png';
 
 import TabNavigator from './TabNavigator';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
-import PRSalarySlip from '../screens/Reports/PRSalarySlip';
+import PRSalarySlip from '../screens/SalarySlip/PRSalarySlip';
 import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';
 import {handleLogoutauth} from '../Controller/authUtils';

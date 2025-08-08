@@ -20,7 +20,6 @@ const {width, height} = Dimensions.get('window');
 const AssignedWorkerCard = ({
   employeeId,
   employeeName,
-  defaultCompany,
   departmentName,
   email,
   positionId,
@@ -43,7 +42,6 @@ const AssignedWorkerCard = ({
     try {
       const data = await ProfilePicture({
         employeeId: employeeId,
-        defaultCompany: defaultCompany,
       });
 
       // Handle both array and object responses
