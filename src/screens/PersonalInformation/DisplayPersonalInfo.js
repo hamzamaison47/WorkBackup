@@ -4,7 +4,6 @@ import {
   View,
   KeyboardAvoidingView,
   ScrollView,
-  StyleSheet,
   Platform,
   Dimensions,
   RefreshControl,
@@ -22,6 +21,7 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 // API imports
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
 import {UpdateByEmployeeId} from '../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
+import {styles} from '../../styles/styles';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
@@ -193,10 +193,10 @@ const DisplayPersonalInfo = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <View style={styles.container}>
+        <View style={styles.DisplayPIContainer}>
           <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={styles.scrollContainer}
+            style={styles.DisplayPIScrollView}
+            contentContainerStyle={styles.DisplayPIScrollContainer}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -204,10 +204,10 @@ const DisplayPersonalInfo = () => {
               />
             }>
             <KeyboardAvoidingView
-              style={styles.topContainer}
+              style={styles.DisplayPITopContainer}
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-              <View style={styles.imageContainer}>
+              <View style={styles.DisplayPIImageContainer}>
                 <ProfilePictureEditor
                   isLoading={isLoading}
                   profilePictureUrl={profilePictureUrl}
@@ -220,7 +220,7 @@ const DisplayPersonalInfo = () => {
 
           {/* Fixed Save Button at bottom */}
           {isImageChanged && (
-            <View style={styles.fixedButtonContainer}>
+            <View style={styles.DisplayPIFixedButtonContainer}>
               <SaveButton isLoading={isLoading} onSave={handleSaveChanges} />
             </View>
           )}
@@ -236,44 +236,5 @@ const DisplayPersonalInfo = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    paddingBottom: screenHeight * 0.1, // Extra padding for fixed button
-  },
-  topContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  imageContainer: {
-    paddingHorizontal: screenWidth * 0.05,
-    paddingTop: screenHeight * 0.025,
-    paddingBottom: screenHeight * 0.01,
-    alignItems: 'center',
-  },
-  fixedButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    padding: screenWidth * 0.025,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-});
 
 export default DisplayPersonalInfo;
