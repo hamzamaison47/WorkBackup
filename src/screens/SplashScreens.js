@@ -1,7 +1,8 @@
 import React, {useEffect} from 'react';
-import {Text, StyleSheet, Animated, ActivityIndicator} from 'react-native';
+import {Text, Animated, ActivityIndicator} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {getToken} from '../API/Token/getToken';
+import {styles} from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
   const logoOpacity = new Animated.Value(0);
@@ -37,48 +38,23 @@ const SplashScreens = ({navigation}) => {
   }, [navigation]);
 
   return (
-    <LinearGradient colors={['#0A66C2', '#bddeff']} style={styles.container}>
+    <LinearGradient
+      colors={['#0A66C2', '#bddeff']}
+      style={styles.splashcontainer}>
       <Animated.Image
         source={require('../assets/cloud.png')}
-        style={[styles.logo, {opacity: logoOpacity}]}
+        style={[styles.Splashlogo, {opacity: logoOpacity}]}
         resizeMode="contain"
       />
-      <Text style={styles.text}>ESS By Maison</Text>
-      <Text style={styles.tagline}>Your Technology Partner</Text>
-      <ActivityIndicator size="large" color="#0A66C2" style={styles.loader} />
+      <Text style={styles.Splashtext}>ESS By Maison</Text>
+      <Text style={styles.Splashtagline}>Your Technology Partner</Text>
+      <ActivityIndicator
+        size="large"
+        color="#0A66C2"
+        style={styles.Splashloader}
+      />
     </LinearGradient>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 200,
-    height: 80,
-    marginBottom: 20,
-  },
-  text: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    textShadowColor: 'rgba(0, 0, 0, 0.25)',
-    textShadowOffset: {width: 2, height: 2},
-    textShadowRadius: 4,
-  },
-  tagline: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    marginTop: 10,
-    fontStyle: 'italic',
-    fontWeight: '300',
-  },
-  loader: {
-    marginTop: 20,
-  },
-});
 
 export default SplashScreens;

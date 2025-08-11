@@ -3,8 +3,6 @@ import React, {useState} from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  Dimensions,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
@@ -21,8 +19,7 @@ import {PayGroupPayperiodByEmployeeId} from '../../API/SalarySlip/PayGroupPayper
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import {AlertModal} from '../../components/Alert/AlertModal';
-
-const {height, width} = Dimensions.get('window');
+import {styles} from '../../styles/styles';
 
 const PRSalarySlip = () => {
   const [loading, setLoading] = useState(false);
@@ -163,32 +160,34 @@ const PRSalarySlip = () => {
       {loading ? (
         <CustomIndicator />
       ) : (
-        <View style={styles.container}>
+        <View style={styles.SalarySlipContainer}>
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={styles.SalarySlipScrollContent}
             showsVerticalScrollIndicator={false}>
             <Icon
               name="file-pdf-o"
               size={50}
               color="#0A66C2"
-              style={styles.icon}
+              style={styles.SalarySlipIcon}
             />
-            <Text style={styles.screenTitle}>Email Salary Slip</Text>
-            <Text style={styles.screenSubtitle}>
+            <Text style={styles.SalarySlipScreenTitle}>Email Salary Slip</Text>
+            <Text style={styles.SalarySlipScreenSubtitle}>
               Please select a pay period below to email your salary slip.
             </Text>
-            <Text style={styles.fieldsHeading}>Select Pay Period</Text>
+            <Text style={styles.SalarySlipFieldsHeading}>
+              Select Pay Period
+            </Text>
             <Dropdown
-              style={styles.dropdown}
+              style={styles.SalarySlipDropdown}
               data={payPeriods}
-              itemTextStyle={styles.itemText}
+              itemTextStyle={styles.SalarySlipItemText}
               labelField="label"
               valueField="value"
               placeholder="Select Pay Period"
               value={selectedPayPeriod}
               onChange={item => setSelectedPayPeriod(item.value)}
-              placeholderStyle={styles.dropdownPlaceholder}
-              selectedTextStyle={styles.dropdownSelected}
+              placeholderStyle={styles.SalarySlipDropdownPlaceholder}
+              selectedTextStyle={styles.SalarySlipDropdownSelected}
             />
 
             {loading ? (
@@ -196,13 +195,15 @@ const PRSalarySlip = () => {
             ) : (
               <LinearGradient
                 colors={['#0A66C2', '#0A66C2']}
-                style={styles.button}>
+                style={styles.SalarySlipButton}>
                 <TouchableOpacity
                   onPress={sendSalarySlip}
-                  style={styles.buttonContent}
+                  style={styles.SalarySlipButtonContent}
                   activeOpacity={0.7}
                   disabled={loading}>
-                  <Text style={styles.buttonText}>Email Salary Slip</Text>
+                  <Text style={styles.SalarySlipButtonText}>
+                    Email Salary Slip
+                  </Text>
                 </TouchableOpacity>
               </LinearGradient>
             )}
@@ -220,80 +221,5 @@ const PRSalarySlip = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-  },
-  scrollContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: width * 0.05,
-    marginTop: width * 0.1,
-  },
-  icon: {
-    marginBottom: height * 0.03,
-  },
-  screenTitle: {
-    fontSize: width * 0.06,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: height * 0.01,
-  },
-  screenSubtitle: {
-    fontSize: width * 0.04,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: height * 0.025,
-  },
-  fieldsHeading: {
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: height * 0.015,
-  },
-  dropdown: {
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.03,
-    backgroundColor: '#fff',
-    marginBottom: height * 0.025,
-    width: '100%',
-  },
-  itemText: {
-    color: '#000',
-    fontSize: width * 0.04,
-  },
-  dropdownPlaceholder: {
-    color: '#999',
-    fontSize: width * 0.04,
-  },
-  dropdownSelected: {
-    color: '#000',
-    fontSize: width * 0.04,
-  },
-  button: {
-    borderRadius: 8,
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.05,
-    elevation: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: height * 0.025,
-    width: '100%',
-  },
-  buttonContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-  },
-});
 
 export default PRSalarySlip;

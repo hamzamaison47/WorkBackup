@@ -7,7 +7,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   ScrollView,
   SafeAreaView,
@@ -36,6 +35,7 @@ import {AlertModal} from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
+import {styles} from '../../styles/styles';
 
 const {width, height} = Dimensions.get('window');
 
@@ -570,56 +570,52 @@ const LeaveRequestSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={styles.LeaveReqSRSafeArea}>
           <KeyboardAvoidingView
             behavior="padding"
-            style={styles.contentWrapper}>
-            <ScrollView contentContainerStyle={styles.formContainer}>
-              <Text style={styles.label}>Employee Name</Text>
-              <Text style={[styles.input, styles.disabled]}>
+            style={styles.LeaveReqSRContentWrapper}>
+            <ScrollView contentContainerStyle={styles.LeaveReqSRFormContainer}>
+              <Text style={styles.LeaveReqSRLabel}>Employee Name</Text>
+              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
                 {formData.employeeName}
               </Text>
-              <Text style={styles.label}>Request Date</Text>
-              <Text style={[styles.input, styles.disabled]}>
+              <Text style={styles.LeaveReqSRLabel}>Request Date</Text>
+              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
                 {formatDate(today)}
               </Text>
-              <Text style={styles.label}>Leave Category *</Text>
+              <Text style={styles.LeaveReqSRLabel}>Leave Category *</Text>
               <Dropdown
-                style={styles.input}
+                style={styles.LeaveReqSRInput}
                 data={leaveCategoryOptions}
                 labelField="label"
                 valueField="value"
                 placeholder="Select Leave Category"
                 value={formData.leaveCategory}
+                itemTextStyle={{color: '#707070ff', fontSize: 16}}
                 onChange={handleLeaveCategoryChange}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
               />
-              <Text style={styles.label}>Leave Code *</Text>
+              <Text style={styles.LeaveReqSRLabel}>Leave Code *</Text>
               <Dropdown
-                style={styles.input}
+                style={styles.LeaveReqSRInput}
                 data={LeaveCodesForEmployee}
                 labelField="label"
                 valueField="value"
                 placeholder="Select Leave Code"
                 value={formData.leaveCode}
+                itemTextStyle={{color: '#707070ff', fontSize: 16}}
                 onFocus={fetchLeaveCodesForEmployee}
                 onChange={handleLeaveCodeChange}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
               />
-              <Text style={styles.label}>Balance</Text>
-              <Text style={[styles.input, styles.disabled]}>
+              <Text style={styles.LeaveReqSRLabel}>Balance</Text>
+              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
                 {formData.balance}
               </Text>
-              <Text style={styles.label}>Leave Start Date *</Text>
+              <Text style={styles.LeaveReqSRLabel}>Leave Start Date *</Text>
               <TouchableOpacity
-                style={styles.dateSelector}
+                style={styles.LeaveReqSRDateSelector}
                 onPress={() => setShowCalendar(true)}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.dateText}>
+                  <Text style={styles.LeaveReqSRDateText}>
                     {formData.leaveStartDate
                       ? formatDate(formData.leaveStartDate)
                       : 'Select Start Date'}
@@ -633,24 +629,27 @@ const LeaveRequestSaveRecord = () => {
                 onDateSelected={handleDateChange}
                 onClose={() => setShowCalendar(false)}
               />
-              <Text style={styles.label}>Leave Days *</Text>
+              <Text style={styles.LeaveReqSRLabel}>Leave Days *</Text>
               <TextInput
-                style={[styles.input, isLeaveDaysDisabled && styles.disabled]}
+                style={[
+                  styles.LeaveReqSRInput,
+                  isLeaveDaysDisabled && styles.LeaveReqSRDisabled,
+                ]}
                 value={formData.leaveDays.toString()}
                 onChangeText={handleLeaveDaysChange}
                 keyboardType="numeric"
                 placeholder="Enter number of days"
                 editable={!isLeaveDaysDisabled}
               />
-              <Text style={styles.label}>End Date</Text>
-              <Text style={[styles.input, styles.disabled]}>
+              <Text style={styles.LeaveReqSRLabel}>End Date</Text>
+              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
                 {formData.leaveEndDate
                   ? formatDate(formData.leaveEndDate)
                   : 'End date will be calculated'}
               </Text>
-              <Text style={styles.label}>Reason</Text>
+              <Text style={styles.LeaveReqSRLabel}>Reason</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.LeaveReqSRInput, styles.LeaveReqSRTextArea]}
                 value={formData.reason}
                 onChangeText={value => handleInputChange('reason', value)}
                 placeholder="Enter reason for leave"
@@ -659,18 +658,21 @@ const LeaveRequestSaveRecord = () => {
               />
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={styles.LeaveReqSRFooter}>
               <Pressable
                 style={({pressed}) => [
-                  styles.button,
-                  pressed && styles.pressedButton,
-                  isSubmitting && styles.disabledButton,
+                  styles.LeaveReqSRButton,
+                  pressed && styles.LeaveReqSRPressedButton,
+                  isSubmitting && styles.LeaveReqSRDisabledButton,
                 ]}
                 onPress={() => handleSave('save')}
                 disabled={isSubmitting}>
                 {({pressed}) => (
                   <Text
-                    style={[styles.buttonText, pressed && styles.pressedText]}>
+                    style={[
+                      styles.LeaveReqSRButtonText,
+                      pressed && styles.LeaveReqSRpressedText,
+                    ]}>
                     {isSubmitting
                       ? 'Processing...'
                       : mode === 'edit'
@@ -682,18 +684,18 @@ const LeaveRequestSaveRecord = () => {
 
               <Pressable
                 style={({pressed}) => [
-                  styles.button,
-                  styles.submitButton,
-                  pressed && styles.pressedSubmitButton,
-                  isSubmitting && styles.disabledButton,
+                  styles.LeaveReqSRButton,
+                  styles.LeaveReqSRSubmitButton,
+                  pressed && styles.LeaveReqSRpressedSubmitButton,
+                  isSubmitting && styles.LeaveReqSRDisabledButton,
                 ]}
                 onPress={() => handleSave('submit')}
                 disabled={isSubmitting}>
                 {({pressed}) => (
                   <Text
                     style={[
-                      styles.submitButtonText,
-                      pressed && styles.pressedText,
+                      styles.LeaveReqSRSubmitButtonText,
+                      pressed && styles.LeaveReqSRpressedText,
                     ]}>
                     {isSubmitting
                       ? 'Processing...'
@@ -719,106 +721,5 @@ const LeaveRequestSaveRecord = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fefefe',
-  },
-  contentWrapper: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingHorizontal: width * 0.03,
-    paddingTop: height * 0.01,
-  },
-  formContainer: {
-    padding: 5,
-    paddingBottom: 100,
-  },
-  label: {
-    fontSize: 14,
-    marginTop: 12,
-    fontWeight: '600',
-    color: '#444',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
-    fontSize: 15,
-    color: '#333',
-    backgroundColor: '#fff',
-  },
-  disabled: {
-    backgroundColor: '#f1f1f1',
-    color: '#999',
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
-  },
-  dateText: {
-    fontSize: 15,
-    color: '#333',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    backgroundColor: '#fff',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  button: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: '#0A66C2',
-    borderRadius: 20,
-    paddingVertical: 12,
-    marginHorizontal: 5,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  submitButton: {
-    borderColor: '#0A66C2',
-    backgroundColor: '#0A66C2',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    fontWeight: 'bold',
-    color: '#0A66C2',
-  },
-  submitButtonText: {
-    fontWeight: 'bold',
-    color: '#ffffffff',
-  },
-  pressedButton: {
-    backgroundColor: '#0A66C2',
-  },
-  pressedSubmitButton: {
-    backgroundColor: '#3d95edff',
-    borderColor: '#3d95edff',
-  },
-  pressedText: {
-    color: '#fff',
-  },
-});
 
 export default LeaveRequestSaveRecord;

@@ -7,19 +7,19 @@ import {
   DrawerContentScrollView,
   DrawerItem,
 } from '@react-navigation/drawer';
-import Icon from 'react-native-vector-icons/FontAwesome';
+// import Icon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSelector} from 'react-redux';
 import logo from '../assets/cloud.png';
-
 import TabNavigator from './TabNavigator';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import PRSalarySlip from '../screens/Reports/PRSalarySlip';
 import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';
 import {handleLogoutauth} from '../Controller/authUtils';
+import PRTaxCertificate from '../screens/Reports/PRTaxCertificate';
 
 const Drawer = createDrawerNavigator();
-
 const CustomDrawerContent = props => {
   const [modalVisible, setModalVisible] = useState(false);
   const userData = useSelector(state => state.user.userData);
@@ -55,12 +55,21 @@ const CustomDrawerContent = props => {
               cameFrom: 'DisplayListPage',
             })
           }
-          icon={() => <Icon name="calendar" size={24} color="#0A66C2" />}
+          icon={() => <Ionicons name="calendar" size={24} color="#0A66C2" />}
         />
         <DrawerItem
           label="Salary Slip"
           onPress={() => props.navigation.navigate('PRSalarySlip')}
-          icon={() => <Icon name="money" size={24} color="#0A66C2" />}
+          icon={() => (
+            <Ionicons name="card-outline" size={24} color="#0A66C2" />
+          )}
+        />
+        <DrawerItem
+          label="Tax Certificate"
+          onPress={() => props.navigation.navigate('PRTaxCertificate')}
+          icon={() => (
+            <Ionicons name="document-text-outline" size={24} color="#0A66C2" />
+          )}
         />
       </DrawerContentScrollView>
 
@@ -100,7 +109,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Home',
             drawerIcon: () => (
-              <Icon name="tachometer" size={24} color="#0A66C2" />
+              <Ionicons name="tachometer" size={24} color="#0A66C2" />
             ),
           }}
         />
@@ -111,7 +120,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Leave Requests List Page',
             drawerIcon: () => (
-              <Icon name="calendar" size={24} color="#0A66C2" />
+              <Ionicons name="calendar" size={24} color="#0A66C2" />
             ),
             headerShown: true,
           }}
@@ -123,7 +132,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Leave Requests Create and Update',
             drawerIcon: () => (
-              <Icon name="calendar" size={24} color="#0A66C2" />
+              <Ionicons name="calendar" size={24} color="#0A66C2" />
             ),
             headerShown: true,
           }}
@@ -134,7 +143,21 @@ const DrawerNavigator = () => {
           initialParams={{userData}}
           options={{
             title: 'Salary Slip',
-            drawerIcon: () => <Icon name="money" size={24} color="#0A66C2" />,
+            drawerIcon: () => (
+              <Ionicons name="card-outline" size={24} color="#0A66C2" />
+            ),
+            headerShown: true,
+          }}
+        />
+        <Drawer.Screen
+          name="PRTaxCertificate"
+          component={PRTaxCertificate}
+          initialParams={{userData}}
+          options={{
+            title: 'Tax Certificate',
+            drawerIcon: () => (
+              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+            ),
             headerShown: true,
           }}
         />

@@ -51,6 +51,18 @@ const DisplayListPage = () => {
           employeeId: userData.employeeId,
         }),
     },
+    {
+      id: '3',
+      title: 'Tax Certificate',
+      icon: 'document-text-outline',
+      screen: 'PRTaxCertificate',
+      color: '#0A66C2',
+      category: 'PR',
+      onPress: () =>
+        navigation.navigate('PRTaxCertificate', {
+          employeeId: userData.employeeId,
+        }),
+    },
   ];
 
   const [activeFilter, setActiveFilter] = useState('All');

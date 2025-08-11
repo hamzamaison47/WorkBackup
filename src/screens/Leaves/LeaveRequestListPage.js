@@ -8,7 +8,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 
-import {AlertModal} from '../../components/Alert/AlertModal';
+// import {AlertModal} from '../../components/Alert/AlertModal';
 import LeaveRequestCard from '../../components/Leaves/LeaveRequestCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
@@ -221,12 +221,12 @@ const LeaveRequestListPage = () => {
       )}
 
       {/* Alert Modal */}
-      <AlertModal
+      {/* <AlertModal
         visible={alertModal}
         heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
-      />
+      /> */}
     </ActionPaneContainer>
   );
 };

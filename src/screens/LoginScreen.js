@@ -1,12 +1,5 @@
 import React, {useState} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Dimensions,
-} from 'react-native';
+import {View, Text, TouchableOpacity, Image, Dimensions} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -20,6 +13,7 @@ import {
   setLegalEntities,
   initializeLegalEntity,
 } from '../store/slices/companySlice';
+import {styles} from '../styles/styles';
 
 const {width} = Dimensions.get('window');
 
@@ -32,17 +26,22 @@ const LoginScreen = () => {
   const [dialogMessage, setDialogMessage] = useState('');
 
   return (
-    <LinearGradient colors={['#FFFFFF', '#ffffffff']} style={styles.container}>
+    <LinearGradient
+      colors={['#FFFFFF', '#ffffffff']}
+      style={styles.LoginContainer}>
       {!loading && (
         <>
-          <Image source={require('../assets/cloud.png')} style={styles.logo} />
-          <Text style={styles.title}>Welcome to the ESS</Text>
-          <Text style={styles.subtitle}>
+          <Image
+            source={require('../assets/cloud.png')}
+            style={styles.Loginlogo}
+          />
+          <Text style={styles.LoginTitle}>Welcome to the ESS</Text>
+          <Text style={styles.LoginSubtitle}>
             Manage your HR services anytime, anywhere
           </Text>
 
           <TouchableOpacity
-            style={styles.loginButton}
+            style={styles.LoginButton}
             onPress={() =>
               handleLogin(
                 setLoading,
@@ -60,13 +59,13 @@ const LoginScreen = () => {
               name="windows"
               size={24}
               color="#0A66C2"
-              style={styles.icon}
+              style={styles.LoginIcon}
             />
-            <Text style={styles.buttonText}>Sign in with Microsoft</Text>
+            <Text style={styles.LoginButtonText}>Sign in with Microsoft</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.loginButton}
+            style={styles.LoginButton}
             onPress={() =>
               handleLogin(
                 setLoading,
@@ -80,16 +79,21 @@ const LoginScreen = () => {
               )
             }
             disabled={loading}>
-            <Icon name="google" size={24} color="#0A66C2" style={styles.icon} />
-            <Text style={styles.buttonText}>Sign in with Google</Text>
+            <Icon
+              name="google"
+              size={24}
+              color="#0A66C2"
+              style={styles.LoginIcon}
+            />
+            <Text style={styles.LoginButtonText}>Sign in with Google</Text>
           </TouchableOpacity>
         </>
       )}
 
       {loading && (
-        <View style={styles.loadingContainer}>
+        <View style={styles.LoginLoadingContainer}>
           <CustomIndicator />
-          <Text style={styles.loadingText}>
+          <Text style={styles.LoginLoadingText}>
             Connecting to your account, Please wait...
           </Text>
         </View>
@@ -98,140 +102,23 @@ const LoginScreen = () => {
       <PopupDialog
         visible={dialogVisible}
         onTouchOutside={() => setDialogVisible(false)}
-        dialogStyle={styles.dialogContainer}
+        dialogStyle={styles.LoginDialogContainer}
         width={0.8}
         height={0.3}
-        dialogTitle={<Text style={styles.dialogTitle}>Notification</Text>}>
-        <View style={styles.dialogContent}>
-          <Text style={styles.dialogMessage}>{dialogMessage}</Text>
+        dialogTitle={
+          <Text style={styles.LoginDialogTitledialogTitle}>Notification</Text>
+        }>
+        <View style={styles.LoginDialogContent}>
+          <Text style={styles.LoginDialogMessage}>{dialogMessage}</Text>
           <TouchableOpacity
-            style={styles.dialogButton}
+            style={styles.LoginDialogButton}
             onPress={() => setDialogVisible(false)}>
-            <Text style={styles.dialogButtonText}>OK</Text>
+            <Text style={styles.LoginDialogButtonText}>OK</Text>
           </TouchableOpacity>
         </View>
       </PopupDialog>
     </LinearGradient>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  logo: {
-    width: 200,
-    height: 80,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333333',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#333333',
-    marginBottom: 30,
-    textAlign: 'center',
-    paddingHorizontal: 15,
-    fontStyle: 'italic',
-  },
-  loginButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: width * 0.8, // 80% of screen width
-    height: 55, // Fixed height
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: '#0A66C2',
-    marginVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: '#fff',
-  },
-  buttonText: {
-    color: '#0A66C2',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  icon: {
-    marginRight: 10,
-  },
-  // loginButton: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   // backgroundColor: '#0A66C2',
-  //   paddingVertical: 15,
-  //   paddingHorizontal: 40,
-  //   borderRadius: 10,
-  //   borderWidth: 3,
-  //   borderColor: '#0A66C2',
-  //   // shadowColor: '#000',
-  //   // shadowOffset: {width: 0, height: 2},
-  //   // shadowOpacity: 0.3,
-  //   // shadowRadius: 3,
-  //   // elevation: 5,
-  //   marginVertical: 5,
-  // },
-  // buttonText: {
-  //   color: '#0A66C2',
-  //   fontSize: 18,
-  //   fontWeight: 'bold',
-  //   marginLeft: 10,
-  // },
-  // icon: {
-  //   marginRight: 10,
-  // },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-  },
-  dialogContainer: {
-    borderRadius: 10,
-    padding: 15,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  dialogTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  dialogContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dialogMessage: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  dialogButton: {
-    backgroundColor: '#0A66C2',
-    borderRadius: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  dialogButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
 
 export default LoginScreen;

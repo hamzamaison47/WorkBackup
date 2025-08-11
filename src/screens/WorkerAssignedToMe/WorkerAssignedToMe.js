@@ -1,7 +1,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect} from 'react';
-import {Text, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import {Text, FlatList, RefreshControl} from 'react-native';
 import {useSelector} from 'react-redux';
 
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
@@ -10,6 +10,7 @@ import {AlertModal} from '../../components/Alert/AlertModal';
 import AssignedWorkerCard from '../../components/WorkerAssigned/AssignedWorkerCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
+import {styles} from '../../styles/styles';
 
 const WorkerAssignedToMe = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -103,7 +104,7 @@ const WorkerAssignedToMe = () => {
           }
         />
       ) : (
-        <Text style={styles.mainTxt}>No Data Found</Text>
+        <Text style={styles.TeamMainTxt}>No Data Found</Text>
       )}
 
       <AlertModal
@@ -115,20 +116,5 @@ const WorkerAssignedToMe = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  mainTxt: {
-    flex: 1,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#9f9f9fff',
-  },
-});
 
 export default WorkerAssignedToMe;
