@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, Image, Dimensions} from 'react-native';
+import {View, Text, TouchableOpacity, Image} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -14,8 +14,6 @@ import {
   initializeLegalEntity,
 } from '../store/slices/companySlice';
 import {styles} from '../styles/styles';
-
-const {width} = Dimensions.get('window');
 
 const LoginScreen = () => {
   const navigation = useNavigation();

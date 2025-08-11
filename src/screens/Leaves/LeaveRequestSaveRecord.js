@@ -36,8 +36,6 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import {styles} from '../../styles/styles';
 
-const {width, height} = Dimensions.get('window');
-
 const LeaveRequestSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
@@ -576,7 +574,6 @@ const LeaveRequestSaveRecord = () => {
                 valueField="value"
                 placeholder="Select Leave Category"
                 value={formData.leaveCategory}
-                itemTextStyle={{color: '#707070ff', fontSize: 16}}
                 onChange={handleLeaveCategoryChange}
                 placeholderStyle={{color: '#444'}}
                 selectedTextStyle={{color: '#444'}}
