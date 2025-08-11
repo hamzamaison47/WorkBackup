@@ -77,7 +77,6 @@ const MainDashboard = () => {
 
       const data = await ProfilePicture({
         employeeId: userData.employeeId,
-        defaultCompany: selectedLegalEntity,
       });
 
       // Handle both array and object responses

@@ -42,8 +42,8 @@ const createLeaveRequest = async ({leaveData}) => {
 
     const parsed = parser.parse(xml);
 
-    console.log('Raw SOAP Response:', xml);
-    console.log('Parsed SOAP Response:', parsed);
+    // console.log('Raw SOAP Response:', xml);
+    // console.log('Parsed SOAP Response:', parsed);
 
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.['createResponse']?.['result'] ||
@@ -68,7 +68,9 @@ const createLeaveRequest = async ({leaveData}) => {
     };
 
     const cleanedResult = cleanObject(result);
-    console.log('Leave Request Created:', cleanedResult);
+
+    // console.log('Leave Request Created:', cleanedResult);
+
     return cleanedResult;
   } catch (error) {
     console.error(

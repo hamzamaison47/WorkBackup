@@ -4,27 +4,18 @@ import {getToken} from '../../Token/getToken';
 import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 
-const ProfilePicture = async ({employeeId, defaultCompany}) => {
+const ProfilePicture = async ({employeeId}) => {
   try {
     const accessToken = await getToken();
 
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${defaultCompany}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <tem:findByEmployee xmlns:tem="http://tempuri.org">
+    const soapBody = `
+      <tem:findByEmployee xmlns:tem="http://tempuri.org">
           <tem:_employeeId>${employeeId}</tem:_employeeId>
-        </tem:findByEmployee>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+        </tem:findByEmployee>`;
 
-    // console.log('SOAP Request Body (ProfilePicture):', soapEnvelope);
+    const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/HcmPersonImageSvcGroup`,

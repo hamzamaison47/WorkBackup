@@ -25,9 +25,9 @@ export const fetchLeaves = async employeeId => {
   }
 };
 
-export const fetchLeaveCodes = async (employeeId, defaultCompany) => {
+export const fetchLeaveCodes = async employeeId => {
   try {
-    const data = await RetrieveLeaveCodes({employeeId, defaultCompany});
+    const data = await RetrieveLeaveCodes({employeeId});
     return data.map(item => ({
       label: item?.LeaveCode,
       value: item?.LeaveCode,
@@ -41,14 +41,12 @@ export const fetchLeaveBalance = async (
   employeeId,
   leaveCode,
   leaveStartDate,
-  defaultCompany,
 ) => {
   try {
     const balanceData = await GetLeaveBalance({
       employeeId,
       leaveCode,
       leaveStartDate,
-      defaultCompany,
     });
     return balanceData || '0';
   } catch (error) {

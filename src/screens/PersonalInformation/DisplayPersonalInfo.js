@@ -37,11 +37,7 @@ const DisplayPersonalInfo = () => {
   const [alertMessage, setAlertMessage] = useState('');
 
   // Redux selectors
-  const {selectedLegalEntity, defaultLegalEntity} = useSelector(
-    state => state.company,
-  );
   const {userData} = useSelector(state => state.user);
-  const companyToUse = selectedLegalEntity || defaultLegalEntity;
 
   // Effects
   useEffect(() => {
@@ -49,16 +45,14 @@ const DisplayPersonalInfo = () => {
   }, []);
 
   useEffect(() => {
-    if (companyToUse) {
-      fetchData(companyToUse);
-    }
-  }, [companyToUse]);
+    fetchData();
+  }, []);
 
   // Initialize component data
   const initializeData = async () => {
     try {
       setIsLoading(true);
-      await fetchProfilePicture(companyToUse);
+      await fetchProfilePicture();
     } catch (error) {
       console.error('Error initializing data:', error);
       setAlertMessage('Failed to load personal information');
@@ -69,11 +63,11 @@ const DisplayPersonalInfo = () => {
   };
 
   // Fetch all data
-  const fetchData = async (company = companyToUse) => {
+  const fetchData = async () => {
     setIsLoading(true);
     setRefreshing(true);
     try {
-      await fetchProfilePicture(company);
+      await fetchProfilePicture();
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -83,13 +77,13 @@ const DisplayPersonalInfo = () => {
   };
 
   // Handle refresh
-  const handleRefresh = async (company = companyToUse) => {
+  const handleRefresh = async () => {
     setIsImageChanged(false);
-    await fetchData(company);
+    await fetchData();
   };
 
   // Fetch profile picture with error handling
-  const fetchProfilePicture = async (company = companyToUse) => {
+  const fetchProfilePicture = async () => {
     try {
       if (!userData?.employeeId) {
         console.warn('Employee ID not available');
@@ -98,7 +92,6 @@ const DisplayPersonalInfo = () => {
 
       const data = await ProfilePicture({
         employeeId: userData.employeeId,
-        defaultCompany: company,
       });
 
       // Handle both array and object responses
@@ -167,7 +160,6 @@ const DisplayPersonalInfo = () => {
       await UpdateByEmployeeId({
         employeeId: userData.employeeId,
         stringImage: base64Image,
-        defaultCompany: companyToUse,
       });
 
       setIsImageChanged(false);
@@ -189,7 +181,7 @@ const DisplayPersonalInfo = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      onRefresh={() => handleRefresh(companyToUse)}>
+      onRefresh={() => handleRefresh()}>
       {isLoading ? (
         <CustomIndicator />
       ) : (
