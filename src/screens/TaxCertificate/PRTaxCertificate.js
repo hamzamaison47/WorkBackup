@@ -87,6 +87,11 @@ const PRTaxCertificate = () => {
       console.error(error);
       showMessage('Error', 'There was an error sending the Tax Certificate.');
     } finally {
+      setFormData({
+        leaveStartDate: '',
+        leaveEndDate: '',
+      });
+
       setLoading(false);
     }
   };
