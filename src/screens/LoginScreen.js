@@ -104,7 +104,7 @@ const LoginScreen = () => {
         width={0.8}
         height={0.3}
         dialogTitle={
-          <Text style={styles.Login_DialogTitledialogTitle}>Notification</Text>
+          <Text style={styles.Login_DialogTitle}>Notification</Text>
         }>
         <View style={styles.Login_DialogContent}>
           <Text style={styles.Login_DialogMessage}>{dialogMessage}</Text>
