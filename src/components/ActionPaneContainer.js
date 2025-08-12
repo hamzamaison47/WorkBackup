@@ -1,14 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useCallback} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  BackHandler,
-} from 'react-native';
+import {View, Text, TouchableOpacity, BackHandler} from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
@@ -24,8 +17,7 @@ import CompanyDropdown from './PageHeader/CompanyDropdown';
 
 import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import {AlertModal} from './Alert/AlertModal';
-
-const {width, height} = Dimensions.get('window');
+import {styles} from '../styles/styles';
 
 const ActionPaneContainer = ({
   children,
@@ -219,14 +211,16 @@ const ActionPaneContainer = ({
   // Render default footer buttons
   const renderDefaultFooterButtons = () => (
     <>
-      <TouchableOpacity style={styles.tabButton} onPress={handleBackPress}>
+      <TouchableOpacity
+        style={styles.APCont_tabButton}
+        onPress={handleBackPress}>
         <FontAwesome name="arrow-left" size={24} color="#ffffff" />
-        <Text style={styles.tabButtonText}>Back</Text>
+        <Text style={styles.APCont_tabButtonText}>Back</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.tabButton} onPress={handleRefresh}>
+      <TouchableOpacity style={styles.APCont_tabButton} onPress={handleRefresh}>
         <FontAwesome name="refresh" size={24} color="#ffffff" />
-        <Text style={styles.tabButtonText}>Refresh</Text>
+        <Text style={styles.APCont_tabButtonText}>Refresh</Text>
       </TouchableOpacity>
     </>
   );
@@ -236,22 +230,22 @@ const ActionPaneContainer = ({
     return customFooterButtons.map((button, index) => (
       <TouchableOpacity
         key={index}
-        style={styles.tabButton}
+        style={styles.APCont_tabButton}
         onPress={button.onPress}>
         <FontAwesome name={button.icon} size={24} color="#ffffff" />
-        <Text style={styles.tabButtonText}>{button.label}</Text>
+        <Text style={styles.APCont_tabButtonText}>{button.label}</Text>
       </TouchableOpacity>
     ));
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.APCont_container}>
       {/* Main content */}
-      <View style={styles.content}>{children}</View>
+      <View style={styles.APCont_content}>{children}</View>
 
       {/* Footer */}
       {showFooter && (
-        <View style={styles.bottomTabBar}>
+        <View style={styles.APCont_bottomTabBar}>
           {customFooterButtons.length > 0
             ? renderCustomFooterButtons()
             : renderDefaultFooterButtons()}
@@ -260,11 +254,11 @@ const ActionPaneContainer = ({
 
       {/* Floating Button */}
       {showFloatingButton && (
-        <View style={styles.floatingPlusButtonContainer}>
+        <View style={styles.APCont_floatingPlusButtonContainer}>
           <TouchableOpacity
-            style={styles.floatingPlusButton}
+            style={styles.APCont_floatingPlusButton}
             onPress={handleFloatingButtonPress}>
-            <FontAwesome name="plus" style={styles.plusIcon} />
+            <FontAwesome name="plus" style={styles.APCont_plusIcon} />
           </TouchableOpacity>
         </View>
       )}
@@ -305,59 +299,5 @@ const ActionPaneContainer = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    // paddingHorizontal: width * 0.03,
-    // paddingTop: height * 0.01,
-  },
-  bottomTabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#0A66C2',
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.18,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: height * 0.075,
-  },
-  tabButton: {
-    alignItems: 'center',
-  },
-  tabButtonText: {
-    fontSize: width * 0.032,
-    color: '#ffffff',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  floatingPlusButtonContainer: {
-    position: 'absolute',
-    bottom: height * 0.035,
-    left: width / 2 - 28,
-  },
-  floatingPlusButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 3,
-    borderColor: '#0A66C2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  plusIcon: {
-    fontSize: 24,
-    color: '#0A66C2',
-  },
-});
 
 export default ActionPaneContainer;

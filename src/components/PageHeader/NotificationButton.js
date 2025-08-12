@@ -1,49 +1,21 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Text} from 'react-native';
+import {View, TouchableOpacity, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {styles} from '../../styles/styles';
 
 const NotificationButton = ({onPress, notificationCount, onClose}) => {
   return (
-    <TouchableOpacity style={styles.button} onPress={() => onPress(onClose)}>
-      <View style={styles.iconContainer}>
+    <TouchableOpacity style={styles.NB_button} onPress={() => onPress(onClose)}>
+      <View style={styles.NB_iconContainer}>
         <Icon name="bell" size={20} color="#FFFFFF" />
         {notificationCount > 0 && (
-          <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{notificationCount}</Text>
+          <View style={styles.NB_badgeContainer}>
+            <Text style={styles.NB_badgeText}>{notificationCount}</Text>
           </View>
         )}
       </View>
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  button: {
-    marginRight: 10, // Adjust the right margin for proper spacing
-  },
-  iconContainer: {
-    position: 'relative', // Allows badge to position relative to the icon
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: -5, // Adjust vertical position of the badge
-    right: -5, // Adjust horizontal position of the badge
-    backgroundColor: '#FF4500', // Badge background color
-    borderRadius: 10, // Makes the badge circular
-    width: 18, // Set width of the badge
-    height: 18, // Set height of the badge
-    justifyContent: 'center', // Center align text in the badge
-    alignItems: 'center', // Center align text in the badge
-    borderWidth: 1, // Optional: Add border to improve visibility
-    borderColor: '#FFFFFF', // Optional: Set border color
-  },
-  badgeText: {
-    color: '#FFFFFF', // Text color
-    fontSize: 12, // Font size of the badge text
-    fontWeight: 'bold', // Font weight of the badge text
-  },
-});
 
 export default NotificationButton;

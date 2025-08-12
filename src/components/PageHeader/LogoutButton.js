@@ -1,18 +1,11 @@
 import React from 'react';
-import {TouchableOpacity, StyleSheet} from 'react-native';
+import {TouchableOpacity} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import {styles} from '../../styles/styles';
 const LogoutButton = ({onPress}) => (
-  <TouchableOpacity onPress={onPress} style={styles.buttonContainer}>
+  <TouchableOpacity onPress={onPress} style={styles.LgOut_ButtonContainer}>
     <Ionicons name="log-out" size={22} color="white" />
   </TouchableOpacity>
 );
-
-const styles = StyleSheet.create({
-  buttonContainer: {
-    marginRight: 10,
-    // Remove any background color or additional styles
-  },
-});
 
 export default LogoutButton;

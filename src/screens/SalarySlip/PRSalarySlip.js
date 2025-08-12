@@ -4,7 +4,6 @@ import React, {useState} from 'react';
 import {
   View,
   Text,
-  Dimensions,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,

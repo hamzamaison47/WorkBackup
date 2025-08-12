@@ -1,8 +1,9 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, Text, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {AlertDeleteModal} from '../Alert/AlertModal';
+import {styles} from '../../styles/styles';
 
 const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
   const [nameRows, setNameRows] = useState([]);
@@ -47,59 +48,71 @@ const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
   const renderDetailsHeader = () => {
     if (!nameRows || nameRows.length === 0) {
       return (
-        <Text style={styles.cardTextHeading}>No Contact Details Available</Text>
+        <Text style={styles.CntDtlSec_cardTextHeading}>
+          No Contact Details Available
+        </Text>
       );
     }
-    return <Text style={styles.cardTextHeading}>Details:</Text>;
+    return <Text style={styles.CntDtlSec_cardTextHeading}>Details:</Text>;
   };
 
   return (
-    <View style={styles.detailsContainer}>
+    <View style={styles.CntDtlSec_detailsContainer}>
       {renderDetailsHeader()}
       {nameRows && nameRows.length > 0 && (
-        <View style={styles.detailsContainerBorder}>
+        <View style={styles.CntDtlSec_detailsContainerBorder}>
           {nameRows.map((row, index) => (
-            <View key={index} style={styles.textContainer}>
-              <View style={styles.textContainers}>
-                <Text style={styles.insideCardTextHeading}>
+            <View key={index} style={styles.CntDtlSec_textContainer}>
+              <View style={styles.CntDtlSec_textContainers}>
+                <Text style={styles.CntDtlSec_insideCardTextHeading}>
                   Type: {typeMapping[row.Type]}
                 </Text>
 
-                <View style={styles.iconsContainer}>
+                <View style={styles.CntDtlSec_iconsContainer}>
                   <TouchableOpacity
                     onPress={() => confirmDeleteLeave(row.RecId)} // Pass RecId to delete confirmation
-                    style={styles.deleteIconContainer}>
+                    style={styles.CntDtlSec_deleteIconContainer}>
                     <Icon name="trash" size={16} color="#fff" />
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => onEdit(row)} // Pass entire row to the onEdit handler
-                    style={styles.editIconContainer}>
+                    style={styles.CntDtlSec_editIconContainer}>
                     <Icon name="edit" size={16} color="#fff" />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <View style={styles.textContainers}>
-                <Text style={styles.cardSideTextHeading}>Address</Text>
-                <Text style={styles.cardText}>{row.Locator}</Text>
+              <View style={styles.CntDtlSec_textContainers}>
+                <Text style={styles.CntDtlSec_cardSideTextHeading}>
+                  Address
+                </Text>
+                <Text style={styles.CntDtlSec_cardText}>{row.Locator}</Text>
               </View>
 
-              <View style={styles.textContainers}>
-                <Text style={styles.cardSideTextHeading}>Extension</Text>
-                <Text style={styles.cardText}>{row.Extension || 'N/A'}</Text>
+              <View style={styles.CntDtlSec_textContainers}>
+                <Text style={styles.CntDtlSec_cardSideTextHeading}>
+                  Extension
+                </Text>
+                <Text style={styles.CntDtlSec_cardText}>
+                  {row.Extension || 'N/A'}
+                </Text>
               </View>
 
-              <View style={styles.textContainers}>
-                <Text style={styles.cardSideTextHeading}>Primary</Text>
-                <Text style={styles.cardText}>
+              <View style={styles.CntDtlSec_textContainers}>
+                <Text style={styles.CntDtlSec_cardSideTextHeading}>
+                  Primary
+                </Text>
+                <Text style={styles.CntDtlSec_cardText}>
                   {row.IsPrimary ? 'Yes' : 'No'}
                 </Text>
               </View>
 
-              <View style={styles.textContainers}>
-                <Text style={styles.cardSideTextHeading}>Description</Text>
-                <Text style={styles.cardText}>{row.Description}</Text>
+              <View style={styles.CntDtlSec_textContainers}>
+                <Text style={styles.CntDtlSec_cardSideTextHeading}>
+                  Description
+                </Text>
+                <Text style={styles.CntDtlSec_cardText}>{row.Description}</Text>
               </View>
 
               <View
@@ -116,7 +129,9 @@ const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
         </View>
       )}
 
-      <TouchableOpacity onPress={onCreate} style={styles.createIconContainer}>
+      <TouchableOpacity
+        onPress={onCreate}
+        style={styles.CntDtlSec_createIconContainer}>
         <Icon name="plus" size={16} color="#fff" />
       </TouchableOpacity>
 
@@ -133,84 +148,5 @@ const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  detailsContainer: {
-    padding: 16,
-    backgroundColor: '#bddeff',
-  },
-  detailsContainerBorder: {
-    padding: 16,
-    marginTop: 16,
-    backgroundColor: '#cce6ff',
-    borderRadius: 5,
-    elevation: 3,
-  },
-  textContainer: {
-    marginBottom: 16,
-  },
-  textContainers: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  cardTextHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333333',
-  },
-  insideCardTextHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333333',
-    flexShrink: 1,
-  },
-  cardSideTextHeading: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#808080',
-    flexShrink: 0,
-    width: '30%',
-  },
-  cardText: {
-    fontSize: 14,
-    color: '#808080',
-    flexShrink: 1,
-  },
-  iconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  editIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-    borderRadius: 25,
-    height: 30,
-    width: 30,
-    alignSelf: 'flex-end',
-    marginLeft: 5,
-  },
-  deleteIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ff292c',
-    borderRadius: 25,
-    height: 30,
-    width: 30,
-    alignSelf: 'flex-end',
-    marginRight: 5,
-  },
-  createIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-    borderRadius: 5,
-    padding: 8,
-    marginTop: 15,
-  },
-});
 
 export default ContactDetailsSection;

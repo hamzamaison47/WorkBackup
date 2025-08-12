@@ -2,6 +2,8 @@ import {StyleSheet, Dimensions} from 'react-native';
 
 const {height, width} = Dimensions.get('window');
 const cardWidth = (width - 56) / 2;
+const PROFILE_IMAGE_SIZE = width * 0.35; // responsive image size
+const BORDER_WIDTH = 5;
 
 export const styles = StyleSheet.create({
   // start of  splash_ page name
@@ -70,8 +72,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   Main_ProfilePicture: {
-    width: height * 0.12,
-    height: height * 0.12,
+    width: height * 0.1,
+    height: height * 0.1,
     borderRadius: height * 0.125,
     marginRight: width * 0.02,
     borderWidth: 4,
@@ -82,7 +84,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   Main_WelcomeText: {
-    fontSize: height * 0.025,
+    fontSize: height * 0.0235,
     fontWeight: 'bold',
     color: '#1A1A1A',
     // marginBottom: height * 0.008,
@@ -107,7 +109,7 @@ export const styles = StyleSheet.create({
   },
   Main_Row: {
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   Main_Card: {
     width: cardWidth,
@@ -942,4 +944,732 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
   },
+  // End of Alertlogout and alert component
+
+  // Start of Custom Indicator component
+
+  CInd_Container: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // end of custom indicator component
+
+  // start of leaves component
+  // start of calender modal
+
+  CalMod_ModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  CalMod_ModalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '90%',
+  },
+  CalMod_CloseButton: {
+    marginTop: 10,
+    alignSelf: 'center',
+    backgroundColor: '#0A66C2',
+    borderRadius: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  CalMod_CloseButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  // end of calendar modal
+
+  // start of dynamic request card
+
+  DRC_CardContainer: {
+    marginVertical: height * 0.01,
+    marginHorizontal: width * 0.01,
+  },
+  DRC_HighlightedContainer: {
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    borderRadius: width * 0.045,
+    elevation: 8,
+    shadowColor: '#4CAF50',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  DRC_Card: {
+    borderRadius: width * 0.04,
+    padding: width * 0.045,
+    elevation: 3,
+  },
+  DRC_CardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: height * 0.015,
+  },
+  DRC_CardHeaderText: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    color: '#37474F',
+  },
+  DRC_ButtonsContainer: {
+    flexDirection: 'row',
+    gap: width * 0.025,
+  },
+  DRC_IconButton: {
+    backgroundColor: '#0A66C2',
+    borderRadius: 20,
+    padding: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  DRC_TextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#0A66C2',
+    borderWidth: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  DRC_Disabled: {
+    backgroundColor: '#BDBDBD',
+    borderColor: '#BDBDBD',
+  },
+  DRC_DisabledText: {
+    color: '#999',
+  },
+  DRC_IconButtonText: {
+    color: '#fff',
+    fontSize: width * 0.025,
+    marginLeft: 4,
+  },
+  DRC_TextButtonText: {
+    color: '#0A66C2',
+    fontWeight: '600',
+    fontSize: width * 0.03,
+    marginLeft: 6,
+  },
+  DRC_InfoBlock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: height * 0.008,
+  },
+  DRC_Label: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: width * 0.035,
+  },
+  DRC_Value: {
+    color: '#263238',
+    fontSize: width * 0.035,
+  },
+  DRC_StatusText: {
+    fontWeight: '900',
+    fontSize: width * 0.035,
+    textTransform: 'uppercase',
+    color: '#112936ff',
+  },
+  DRC_SectionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#555555',
+    marginVertical: 8,
+  },
+  DRC_BottomContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    position: 'relative',
+    marginTop: height * 0.01,
+  },
+  DRC_BottomButtonsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  DRC_ExpandToggle: {
+    alignItems: 'center',
+    padding: 5,
+    backgroundColor: '#0A66C2',
+    borderRadius: 50,
+    alignSelf: 'center',
+  },
+  // end of dyanmic request card and also leaves component
+
+  // start of page header component
+  // start of company dropdown
+  CD_Overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  CD_DropdownContainer: {
+    marginTop: 10,
+    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    width: 200,
+    maxHeight: 400,
+  },
+  CD_DropdownContent: {
+    padding: 0,
+  },
+  CD_DropdownTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0A66C2',
+    textAlign: 'center',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  CD_ScrollView: {
+    maxHeight: 300,
+  },
+  CD_CompanyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+  CD_CompanyInfo: {
+    flex: 1,
+  },
+  CD_CompanyName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 4,
+  },
+  CD_SelectedCompanyName: {
+    color: '#0A66C2',
+  },
+  CD_CheckIcon: {
+    marginLeft: 10,
+  },
+  CD_NoDataText: {
+    fontSize: 14,
+    color: '#999999',
+    textAlign: 'center',
+    paddingVertical: 20,
+    fontStyle: 'italic',
+  },
+  CD_FirstSelectedItem: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  CD_LastSelectedItem: {
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  CD_SelectedCompanyItem: {
+    backgroundColor: '#ebf5ff',
+    zIndex: 1,
+  },
+  // end of company dropdown
+
+  // start of logout
+
+  LgOut_ButtonContainer: {
+    marginRight: 10,
+    // Remove any background color or additional styles
+  },
+  // end of logout button
+
+  //start of Main page header
+
+  MPH_leftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: width * 0.02, // wp(2)
+  },
+  MPH_leftSide: {
+    width: width * 0.09, // wp(9)
+    alignItems: 'center',
+    height: height * 0.06, // hp(6)
+    justifyContent: 'center',
+    marginRight: width * 0.01, // wp(2)
+  },
+  MPH_title: {
+    color: '#ffffff',
+    fontSize: height * 0.021, // hp(4)
+    fontWeight: 'bold',
+  },
+  MPH_rightSideView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: width * 0.03, // wp(3)
+  },
+  MPH_dropdownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: width * 0.017, // wp(2.5)
+    paddingVertical: height * 0.01, // hp(2.2)
+    borderRadius: width * 0.018, // wp(1.8)
+    marginRight: width * 0.02, // wp(2)
+  },
+  MPH_dropdownText: {
+    color: '#ffffff',
+    fontSize: height * 0.016, // hp(3)
+    fontWeight: '600',
+  },
+  MPH_dropdownIcon: {
+    marginLeft: width * 0.01, // wp(1)
+  },
+  // end of Main Page header
+
+  // start of notification Button
+
+  NB_button: {
+    marginRight: 10, // Adjust the right margin for proper spacing
+  },
+  NB_iconContainer: {
+    position: 'relative', // Allows badge to position relative to the icon
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  NB_badgeContainer: {
+    position: 'absolute',
+    top: -5, // Adjust vertical position of the badge
+    right: -5, // Adjust horizontal position of the badge
+    backgroundColor: '#FF4500', // Badge background color
+    borderRadius: 10, // Makes the badge circular
+    width: 18, // Set width of the badge
+    height: 18, // Set height of the badge
+    justifyContent: 'center', // Center align text in the badge
+    alignItems: 'center', // Center align text in the badge
+    borderWidth: 1, // Optional: Add border to improve visibility
+    borderColor: '#FFFFFF', // Optional: Set border color
+  },
+  NB_badgeText: {
+    color: '#FFFFFF', // Text color
+    fontSize: 12, // Font size of the badge text
+    fontWeight: 'bold', // Font weight of the badge text
+  },
+
+  // End of notification button
+  // start of notification dropdown
+  NotDD_overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  NotDD_dropdownContainer: {
+    marginTop: 10,
+    marginRight: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    width: 300,
+  },
+  NotDD_dropdownContent: {
+    padding: 15,
+  },
+  NotDD_dropdownTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0A66C2',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  NotDD_dropdownText: {
+    fontSize: 14,
+    color: '#333333',
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+    paddingBottom: 5,
+  },
+  NotDD_scrollView: {
+    maxHeight: 300,
+  },
+  // end of notification dropdown or also end of page header
+
+  // start of personal information component
+  // start of contactdetail section
+  CntDtlSec_detailsContainer: {
+    padding: 16,
+    backgroundColor: '#bddeff',
+  },
+  CntDtlSec_detailsContainerBorder: {
+    padding: 16,
+    marginTop: 16,
+    backgroundColor: '#cce6ff',
+    borderRadius: 5,
+    elevation: 3,
+  },
+  CntDtlSec_textContainer: {
+    marginBottom: 16,
+  },
+  CntDtlSec_textContainers: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  CntDtlSec_cardTextHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333333',
+  },
+  CntDtlSec_insideCardTextHeading: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333333',
+    flexShrink: 1,
+  },
+  CntDtlSec_cardSideTextHeading: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#808080',
+    flexShrink: 0,
+    width: '30%',
+  },
+  CntDtlSec_cardText: {
+    fontSize: 14,
+    color: '#808080',
+    flexShrink: 1,
+  },
+  CntDtlSec_iconsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  CntDtlSec_editIconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A66C2',
+    borderRadius: 25,
+    height: 30,
+    width: 30,
+    alignSelf: 'flex-end',
+    marginLeft: 5,
+  },
+  CntDtlSec_deleteIconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ff292c',
+    borderRadius: 25,
+    height: 30,
+    width: 30,
+    alignSelf: 'flex-end',
+    marginRight: 5,
+  },
+  CntDtlSec_createIconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A66C2',
+    borderRadius: 5,
+    padding: 8,
+    marginTop: 15,
+  },
+  // end of contact detail section
+
+  // start of contact info modal
+
+  CntInfoMdl_modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+  },
+  CntInfoMdl_modalContent: {
+    flex: 1,
+    backgroundColor: '#fff',
+    margin: 20,
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5,
+    justifyContent: 'center',
+  },
+  CntInfoMdl_modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  CntInfoMdl_modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#707070',
+  },
+  CntInfoMdl_label: {
+    fontSize: 16,
+    marginTop: 10,
+
+    fontWeight: 'bold',
+    color: '#8a8a8a',
+  },
+  CntInfoMdl_input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 5,
+
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#707070',
+  },
+  CntInfoMdl_disable: {
+    backgroundColor: '#f7f7f7',
+  },
+  CntInfoMdl_modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  CntInfoMdl_button: {
+    flex: 1,
+    backgroundColor: '#007bff',
+    padding: 10,
+    borderRadius: 5,
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  CntInfoMdl_submitButton: {
+    backgroundColor: '#0A66C2',
+  },
+  CntInfoMdl_buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  // end of contact info modal
+
+  // start of display  profile picture
+  DispPP_headerContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  DispPP_profilePictureContainer: {
+    position: 'relative',
+    marginHorizontal: 18,
+  },
+  DispPP_profilePicture: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+  },
+  DispPP_editIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#0A66C2',
+    borderRadius: 25,
+    padding: 10,
+  },
+  DispPP_headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+    marginTop: 10,
+  },
+
+  // Modal Styles
+  DispPP_modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  DispPP_modalContent: {
+    backgroundColor: 'white',
+    // padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  DispPP_modalImage: {
+    width: width * 0.8,
+    height: height * 0.6,
+    borderRadius: 10,
+    // marginBottom: 20,
+  },
+  // end of display profile picture
+
+  // start of  profile picture editor
+
+  PPEdit_headerContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  PPEdit_profileImageWrapper: {
+    position: 'relative',
+    marginHorizontal: 18,
+  },
+  PPEdit_profilePictureContainer: {
+    width: PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2,
+    height: PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2,
+    borderRadius: (PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2) / 2,
+    borderWidth: BORDER_WIDTH,
+    borderColor: '#0A66C2',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  PPEdit_profilePicture: {
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
+  },
+  PPEdit_loadingContainer: {
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+  },
+  PPEdit_editIconContainer: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: '#0A66C2',
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
+  },
+  PPEdit_headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+
+  // Modal Styles
+  PPEdit_modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  PPEdit_modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  PPEdit_modalImage: {
+    width: width * 0.8,
+    height: height * 0.8,
+    borderRadius: 10,
+  },
+  // end of profile picture editor
+
+  // start of save button
+  SB_saveButton: {
+    backgroundColor: '#0A66C2',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    position: 'relative',
+    alignSelf: 'center',
+    width: 320,
+    marginTop: 10,
+  },
+  SB_saveButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  // end of save button and also personal information component
+
+  // start of worker assigned component
+
+  APCont_container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  APCont_content: {
+    flex: 1,
+    // paddingHorizontal: width * 0.03,
+    // paddingTop: height * 0.01,
+  },
+
+  APCont_bottomTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#0A66C2',
+    paddingVertical: height * 0.012,
+    paddingHorizontal: width * 0.18,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: height * 0.075,
+  },
+
+  APCont_tabButton: {
+    alignItems: 'center',
+  },
+
+  APCont_tabButtonText: {
+    fontSize: width * 0.032,
+    color: '#ffffff',
+    marginTop: 2,
+    fontWeight: '500',
+  },
+
+  APCont_floatingPlusButtonContainer: {
+    position: 'absolute',
+    bottom: height * 0.035,
+    left: width / 2 - 28,
+  },
+
+  APCont_floatingPlusButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 3,
+    borderColor: '#0A66C2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+
+  APCont_plusIcon: {
+    fontSize: 24,
+    color: '#0A66C2',
+  },
+  // end of worker assigned me component
 });

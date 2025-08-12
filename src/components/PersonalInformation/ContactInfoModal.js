@@ -5,13 +5,13 @@ import {
   Text,
   Modal,
   TouchableOpacity,
-  StyleSheet,
   KeyboardAvoidingView,
   ScrollView,
   TextInput,
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {styles} from '../../styles/styles';
 
 const ContactInfoModal = ({
   visible,
@@ -86,11 +86,13 @@ const ContactInfoModal = ({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
-      <KeyboardAvoidingView behavior="padding" style={styles.modalContainer}>
-        <View style={styles.modalContent}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={styles.CntInfoMdl_modalContainer}>
+        <View style={styles.CntInfoMdl_modalContent}>
           {/* Header */}
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
+          <View style={styles.CntInfoMdl_modalHeader}>
+            <Text style={styles.CntInfoMdl_modalTitle}>
               {mode === 'edit'
                 ? 'Edit Contact Information'
                 : 'Create Contact Information'}
@@ -102,23 +104,23 @@ const ContactInfoModal = ({
 
           {/* Body */}
           <ScrollView>
-            <Text style={styles.label}>Employee Name</Text>
-            <Text style={[styles.input, styles.disable]}>
+            <Text style={styles.CntInfoMdl_label}>Employee Name</Text>
+            <Text style={[styles.CntInfoMdl_input, styles.CntInfoMdl_disable]}>
               {formData.employeeName}
             </Text>
 
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.CntInfoMdl_label}>Description</Text>
             <TextInput
-              style={styles.input}
+              style={styles.CntInfoMdl_input}
               value={formData.Description}
               onChangeText={value => handleInputChange('Description', value)}
               placeholder="Enter Description"
               placeholderTextColor="grey"
             />
 
-            <Text style={styles.label}>Type</Text>
+            <Text style={styles.CntInfoMdl_label}>Type</Text>
             <Dropdown
-              style={styles.input}
+              style={styles.CntInfoMdl_input}
               data={typeMapping}
               labelField="label"
               valueField="value"
@@ -128,20 +130,20 @@ const ContactInfoModal = ({
               onChange={item => handleInputChange('Type', item.value)}
             />
 
-            <Text style={styles.label}>
+            <Text style={styles.CntInfoMdl_label}>
               {formData.Type === 1 ? 'Phone' : 'Email Address'}
             </Text>
             <TextInput
-              style={styles.input}
+              style={styles.CntInfoMdl_input}
               value={formData.Locator}
               onChangeText={value => handleInputChange('Locator', value)}
               placeholder="Enter Your Info"
               placeholderTextColor="grey"
             />
 
-            <Text style={styles.label}>Mobile</Text>
+            <Text style={styles.CntInfoMdl_label}>Mobile</Text>
             <Dropdown
-              style={styles.input}
+              style={styles.CntInfoMdl_input}
               data={getYesNo}
               labelField="label"
               valueField="value"
@@ -151,9 +153,9 @@ const ContactInfoModal = ({
               onChange={item => handleInputChange('IsMobilePhone', item.value)}
             />
 
-            <Text style={styles.label}>Primary</Text>
+            <Text style={styles.CntInfoMdl_label}>Primary</Text>
             <Dropdown
-              style={styles.input}
+              style={styles.CntInfoMdl_input}
               data={getYesNo}
               labelField="label"
               valueField="value"
@@ -163,9 +165,9 @@ const ContactInfoModal = ({
               onChange={item => handleInputChange('IsPrimary', item.value)}
             />
 
-            <Text style={styles.label}>Private</Text>
+            <Text style={styles.CntInfoMdl_label}>Private</Text>
             <Dropdown
-              style={styles.input}
+              style={styles.CntInfoMdl_input}
               data={getYesNo}
               labelField="label"
               valueField="value"
@@ -177,9 +179,9 @@ const ContactInfoModal = ({
           </ScrollView>
 
           {/* Footer */}
-          <View style={styles.modalFooter}>
+          <View style={styles.CntInfoMdl_modalFooter}>
             <TouchableOpacity
-              style={[styles.button, styles.submitButton]}
+              style={[styles.CntInfoMdl_button, styles.CntInfoMdl_submitButton]}
               onPress={() => {
                 onAction(
                   'submit',
@@ -188,7 +190,7 @@ const ContactInfoModal = ({
                 );
                 handleClose();
               }}>
-              <Text style={styles.buttonText}>
+              <Text style={styles.CntInfoMdl_buttonText}>
                 {mode === 'edit' ? 'Update & Submit' : 'Create & Submit'}
               </Text>
             </TouchableOpacity>
@@ -198,73 +200,5 @@ const ContactInfoModal = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-  },
-  modalContent: {
-    flex: 1,
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 10,
-    padding: 20,
-    elevation: 5,
-    justifyContent: 'center',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#707070',
-  },
-  label: {
-    fontSize: 16,
-    marginTop: 10,
-
-    fontWeight: 'bold',
-    color: '#8a8a8a',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 5,
-
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#707070',
-  },
-  disable: {
-    backgroundColor: '#f7f7f7',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  button: {
-    flex: 1,
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  submitButton: {
-    backgroundColor: '#0A66C2',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-});
 
 export default ContactInfoModal;

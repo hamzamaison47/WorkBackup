@@ -4,11 +4,11 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   TouchableWithoutFeedback,
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {styles} from '../../styles/styles';
 
 const CompanyDropdown = ({
   visible,
@@ -26,14 +26,14 @@ const CompanyDropdown = ({
 
   return (
     <TouchableWithoutFeedback onPress={onClose}>
-      <View style={styles.overlay}>
+      <View style={styles.CD_Overlay}>
         <TouchableWithoutFeedback>
-          <View style={styles.dropdownContainer}>
-            <View style={styles.dropdownContent}>
-              <Text style={styles.dropdownTitle}>Select Company</Text>
+          <View style={styles.CD_DropdownContainer}>
+            <View style={styles.CD_DropdownContent}>
+              <Text style={styles.CD_DropdownTitle}>Select Company</Text>
 
               <ScrollView
-                style={styles.scrollView}
+                style={styles.CD_ScrollView}
                 showsVerticalScrollIndicator={false}>
                 {legalEntities && legalEntities.length > 0 ? (
                   legalEntities.map((entity, index) => {
@@ -46,18 +46,18 @@ const CompanyDropdown = ({
                       <TouchableOpacity
                         key={index}
                         style={[
-                          styles.companyItem,
-                          isSelected && styles.selectedCompanyItem,
-                          isSelected && isFirst && styles.firstSelectedItem,
-                          isSelected && isLast && styles.lastSelectedItem,
+                          styles.CD_CompanyItem,
+                          isSelected && styles.CD_SelectedCompanyItem,
+                          isSelected && isFirst && styles.CD_FirstSelectedItem,
+                          isSelected && isLast && styles.CD_LastSelectedItem,
                         ]}
                         onPress={() => handleSelectCompany(entity.LegalEntity)}
                         activeOpacity={0.7}>
-                        <View style={styles.companyInfo}>
+                        <View style={styles.CD_CompanyInfo}>
                           <Text
                             style={[
-                              styles.companyName,
-                              isSelected && styles.selectedCompanyName,
+                              styles.CD_CompanyName,
+                              isSelected && styles.CD_SelectedCompanyName,
                             ]}>
                             {entity.LegalEntity.toUpperCase()}
                           </Text>
@@ -67,14 +67,16 @@ const CompanyDropdown = ({
                             name="check"
                             size={16}
                             color="#0A66C2"
-                            style={styles.checkIcon}
+                            style={styles.CD_CheckIcon}
                           />
                         )}
                       </TouchableOpacity>
                     );
                   })
                 ) : (
-                  <Text style={styles.noDataText}>No companies available</Text>
+                  <Text style={styles.CD_NoDataText}>
+                    No companies available
+                  </Text>
                 )}
               </ScrollView>
             </View>
@@ -84,90 +86,5 @@ const CompanyDropdown = ({
     </TouchableWithoutFeedback>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  dropdownContainer: {
-    marginTop: 10,
-    marginRight: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    width: 200,
-    maxHeight: 400,
-  },
-  dropdownContent: {
-    padding: 0,
-  },
-  dropdownTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0A66C2',
-    textAlign: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  scrollView: {
-    maxHeight: 300,
-  },
-  companyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  companyInfo: {
-    flex: 1,
-  },
-  companyName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 4,
-  },
-  selectedCompanyName: {
-    color: '#0A66C2',
-  },
-  checkIcon: {
-    marginLeft: 10,
-  },
-  noDataText: {
-    fontSize: 14,
-    color: '#999999',
-    textAlign: 'center',
-    paddingVertical: 20,
-    fontStyle: 'italic',
-  },
-  firstSelectedItem: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  lastSelectedItem: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  selectedCompanyItem: {
-    backgroundColor: '#ebf5ff',
-    zIndex: 1,
-  },
-});
 
 export default CompanyDropdown;

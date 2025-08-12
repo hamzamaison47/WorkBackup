@@ -1,6 +1,7 @@
 import React from 'react';
-import {Modal, View, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import {Modal, View, TouchableOpacity, Text} from 'react-native';
 import {Calendar} from 'react-native-calendars';
+import {styles} from '../../styles/styles';
 
 const CalendarModal = ({
   visible,
@@ -36,8 +37,8 @@ const CalendarModal = ({
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide">
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
+      <View style={styles.CalMod_ModalContainer}>
+        <View style={styles.CalMod_ModalContent}>
           <Calendar
             current={current}
             markedDates={highlightedDates}
@@ -47,40 +48,13 @@ const CalendarModal = ({
               onClose();
             }}
           />
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
+          <TouchableOpacity style={styles.CalMod_CloseButton} onPress={onClose}>
+            <Text style={styles.CalMod_CloseButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    width: '90%',
-  },
-  closeButton: {
-    marginTop: 10,
-    alignSelf: 'center',
-    backgroundColor: '#0A66C2',
-    borderRadius: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-});
 
 export default CalendarModal;

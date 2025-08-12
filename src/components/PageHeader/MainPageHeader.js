@@ -1,11 +1,11 @@
 /* eslint-disable react/react-in-jsx-scope */
-import {TouchableOpacity, View, StyleSheet, Text} from 'react-native';
+import {TouchableOpacity, View, Text, Dimensions} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
-import {hp, wp} from '../../constants/Size';
 
 import NotificationButton from './NotificationButton';
 import LogoutButton from './LogoutButton';
+import {styles} from '../../styles/styles';
+const {height} = Dimensions.get('window');
 
 const MainPageHeader = ({
   onToggleDrawer,
@@ -20,26 +20,28 @@ const MainPageHeader = ({
 }) => ({
   headerTitle: () => null,
   headerLeft: () => (
-    <View style={styles.leftContainer}>
-      <TouchableOpacity onPress={onToggleDrawer} style={styles.leftSide}>
+    <View style={styles.MPH_leftContainer}>
+      <TouchableOpacity onPress={onToggleDrawer} style={styles.MPH_leftSide}>
         <Icon
           name={isBack ? 'arrow-left' : 'bars'}
-          size={hp(6)}
+          size={height * 0.025} // was hp(6)
           color="white"
         />
       </TouchableOpacity>
-      <Text style={styles.title}>{onTitle}</Text>
+      <Text style={styles.MPH_title}>{onTitle}</Text>
     </View>
   ),
   headerRight: () => (
-    <View style={styles.rightSideView}>
-      <TouchableOpacity style={styles.dropdownContainer} onPress={onDatPress}>
-        <Text style={styles.dropdownText}>{selectedDat.toUpperCase()}</Text>
+    <View style={styles.MPH_rightSideView}>
+      <TouchableOpacity
+        style={styles.MPH_dropdownContainer}
+        onPress={onDatPress}>
+        <Text style={styles.MPH_dropdownText}>{selectedDat.toUpperCase()}</Text>
         <Icon
           name="chevron-down"
-          size={hp(2.5)}
+          size={12}
           color="#ffffff"
-          style={styles.dropdownIcon}
+          style={styles.MPH_dropdownIcon}
         />
       </TouchableOpacity>
       <NotificationButton onPress={onShowNotify} notificationCount={onCount} />
@@ -48,52 +50,10 @@ const MainPageHeader = ({
   ),
   headerStyle: {
     backgroundColor: '#0A66C2',
-    height: hp(14),
+    height: height * 0.08, // was hp(14)
   },
   headerTintColor: '#fff',
   headerTitleAlign: 'center',
-});
-
-const styles = StyleSheet.create({
-  leftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: wp(2),
-  },
-  leftSide: {
-    width: wp(9),
-    alignItems: 'center',
-    height: hp(6),
-    justifyContent: 'center',
-    marginRight: wp(2),
-  },
-  title: {
-    color: '#ffffff',
-    fontSize: hp(4),
-    fontWeight: 'bold',
-  },
-  rightSideView: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: wp(3),
-  },
-  dropdownContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: wp(2.5),
-    paddingVertical: hp(2.2),
-    borderRadius: wp(1.8),
-    marginRight: wp(2),
-  },
-  dropdownText: {
-    color: '#ffffff',
-    fontSize: hp(3),
-    fontWeight: '600',
-  },
-  dropdownIcon: {
-    marginLeft: wp(1),
-  },
 });
 
 export default MainPageHeader;

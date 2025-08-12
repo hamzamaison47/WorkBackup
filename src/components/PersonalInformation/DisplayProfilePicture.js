@@ -4,14 +4,11 @@ import {
   TouchableOpacity,
   Text,
   Image,
-  StyleSheet,
-  Dimensions,
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
 import CustomIndicator from '../CustomIndicator/CustomIndicator';
-
-const {height, width} = Dimensions.get('window');
+import {styles} from '../../styles/styles';
 
 const DisplayProfilePicture = ({isLoading, profilePictureUrl, userData}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -22,11 +19,11 @@ const DisplayProfilePicture = ({isLoading, profilePictureUrl, userData}) => {
   };
 
   return (
-    <View style={styles.headerContainer}>
+    <View style={styles.DispPP_headerContainer}>
       <View>
         <TouchableOpacity
           onPress={() => setIsModalVisible(true)} // Open modal when image is clicked
-          style={styles.profilePictureContainer}>
+          style={styles.DispPP_profilePictureContainer}>
           {isLoading ? (
             <CustomIndicator />
           ) : (
@@ -34,13 +31,13 @@ const DisplayProfilePicture = ({isLoading, profilePictureUrl, userData}) => {
               source={{
                 uri: profilePictureUrl || 'https://via.placeholder.com/150',
               }}
-              style={styles.profilePicture}
+              style={styles.DispPP_profilePicture}
             />
           )}
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.headerTitle}>{userData.employeeName}</Text>
+      <Text style={styles.DispPP_headerTitle}>{userData.employeeName}</Text>
 
       {/* Modal to show larger image */}
       <Modal
@@ -49,13 +46,13 @@ const DisplayProfilePicture = ({isLoading, profilePictureUrl, userData}) => {
         animationType="fade"
         onRequestClose={handleCancel}>
         <TouchableWithoutFeedback onPress={handleCancel}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+          <View style={styles.DispPP_modalOverlay}>
+            <View style={styles.DispPP_modalContent}>
               <Image
                 source={{
                   uri: profilePictureUrl || 'https://via.placeholder.com/150',
                 }}
-                style={styles.modalImage}
+                style={styles.DispPP_modalImage}
               />
             </View>
           </View>
@@ -64,55 +61,5 @@ const DisplayProfilePicture = ({isLoading, profilePictureUrl, userData}) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  profilePictureContainer: {
-    position: 'relative',
-    marginHorizontal: 18,
-  },
-  profilePicture: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-  },
-  editIconContainer: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: '#0A66C2',
-    borderRadius: 25,
-    padding: 10,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 10,
-  },
-
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    // padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  modalImage: {
-    width: width * 0.8,
-    height: height * 0.6,
-    borderRadius: 10,
-    // marginBottom: 20,
-  },
-});
 
 export default DisplayProfilePicture;

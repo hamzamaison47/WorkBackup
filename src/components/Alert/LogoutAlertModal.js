@@ -4,10 +4,10 @@ import {
   Text,
   TouchableOpacity,
   Modal,
-  StyleSheet,
   TouchableWithoutFeedback,
 } from 'react-native';
-import {hp, wp} from '../../constants/Size';
+
+import {styles} from '../../styles/styles';
 
 const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
   return (
@@ -18,22 +18,22 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
       onRequestClose={onCancel} // Handle back button action
     >
       <TouchableWithoutFeedback onPress={onCancel}>
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.headingText}>{heading}</Text>
-            <Text style={styles.modalText}>{text}</Text>
+        <View style={styles.AlrtLg_CenteredView}>
+          <View style={styles.AlrtLg_ModalView}>
+            <Text style={styles.AlrtLg_headingText}>{heading}</Text>
+            <Text style={styles.AlrtLg_modalText}>{text}</Text>
 
             {/* Cancel and Confirm Buttons */}
-            <View style={styles.buttonContainer}>
+            <View style={styles.AlrtLg_buttonContainer}>
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+                style={[styles.AlrtLg_button, styles.AlrtLg_cancelButton]}
                 onPress={onCancel}>
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={styles.AlrtLg_buttonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.confirmButton]}
+                style={[styles.AlrtLg_button, styles.AlrtLg_confirmButton]}
                 onPress={onConfirm}>
-                <Text style={styles.buttonText}>Yes</Text>
+                <Text style={styles.AlrtLg_buttonText}>Yes</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -42,66 +42,5 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 35,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  headingText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#525252',
-  },
-  modalText: {
-    marginTop: hp(0.5),
-    marginBottom: hp(3),
-    textAlign: 'center',
-    color: 'grey',
-    fontSize: 16,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: wp(70),
-  },
-  button: {
-    borderRadius: 10,
-    padding: 10,
-    elevation: 2,
-    width: wp(30),
-    marginHorizontal: wp(2),
-  },
-  cancelButton: {
-    backgroundColor: '#ff6666', // Red for cancel button
-  },
-  confirmButton: {
-    backgroundColor: '#4caf50', // Green for confirm button
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-});
 
 export default LogoutAlertModal;

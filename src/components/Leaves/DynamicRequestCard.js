@@ -1,17 +1,10 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Dimensions,
-  StyleSheet,
-} from 'react-native';
+import {View, Text, TouchableOpacity} from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import LinearGradient from 'react-native-linear-gradient';
-
-const {width, height} = Dimensions.get('window');
+import {styles} from '../../styles/styles';
 
 const DynamicRequestCard = ({
   data = {},
@@ -64,16 +57,16 @@ const DynamicRequestCard = ({
 
     if (field.type === 'status') {
       return (
-        <View key={index} style={styles.infoBlock}>
-          <Text style={styles.statusText}>{formattedValue}</Text>
+        <View key={index} style={styles.DRC_InfoBlock}>
+          <Text style={styles.DRC_StatusText}>{formattedValue}</Text>
         </View>
       );
     }
 
     return (
-      <View key={index} style={styles.infoBlock}>
-        <Text style={styles.label}>{field.label}:</Text>
-        <Text style={styles.value}>{formattedValue}</Text>
+      <View key={index} style={styles.DRC_InfoBlock}>
+        <Text style={styles.DRC_Label}>{field.label}:</Text>
+        <Text style={styles.DRC_Value}>{formattedValue}</Text>
       </View>
     );
   };
@@ -92,8 +85,10 @@ const DynamicRequestCard = ({
         onPress={() => onButtonPress(buttonKey, data)}
         disabled={isDisabled}
         style={[
-          buttonConfig.style === 'icon' ? styles.iconButton : styles.textButton,
-          isDisabled && styles.disabled,
+          buttonConfig.style === 'icon'
+            ? styles.DRC_IconButton
+            : styles.DRC_TextButton,
+          isDisabled && styles.DRC_Disabled,
           buttonConfig.customStyle,
         ]}>
         {buttonConfig.icon && !isProcessing && (
@@ -114,9 +109,9 @@ const DynamicRequestCard = ({
           <Text
             style={[
               buttonConfig.style === 'icon'
-                ? styles.iconButtonText
-                : styles.textButtonText,
-              isDisabled && styles.disabledText,
+                ? styles.DRC_IconButtonText
+                : styles.DRC_TextButtonText,
+              isDisabled && styles.DRC_DisabledText,
               {
                 color: isDisabled
                   ? '#999'
@@ -133,25 +128,25 @@ const DynamicRequestCard = ({
   return (
     <View
       style={[
-        styles.cardContainer,
-        isHighlighted && styles.highlightedContainer,
+        styles.DRC_CardContainer,
+        isHighlighted && styles.DRC_HighlightedContainer,
       ]}>
       <LinearGradient
         colors={getGradientColors()}
         start={{x: 0, y: 0}}
         end={{x: 1, y: 1}}
-        style={styles.card}>
+        style={styles.DRC_Card}>
         {/* Header */}
-        <View style={styles.cardHeader}>
+        <View style={styles.DRC_CardHeader}>
           <View>
             {headerConfig.title && (
-              <Text style={styles.cardHeaderText}>
+              <Text style={styles.DRC_CardHeaderText}>
                 {data[headerConfig.title.key] ||
                   headerConfig.title.defaultValue}
               </Text>
             )}
             {headerConfig.subtitle && (
-              <Text style={styles.value}>
+              <Text style={styles.DRC_Value}>
                 {data[headerConfig.subtitle.key] ||
                   headerConfig.subtitle.defaultValue}
               </Text>
@@ -159,7 +154,7 @@ const DynamicRequestCard = ({
           </View>
 
           {/* Header buttons */}
-          <View style={styles.buttonsContainer}>
+          <View style={styles.DRC_ButtonsContainer}>
             {Object.entries(buttons)
               .filter(([key, config]) => config.position === 'header')
               .map(([key, config]) => renderButton(key, config))}
@@ -172,18 +167,18 @@ const DynamicRequestCard = ({
         {/* Expandable content */}
         {expanded && expandableFields.length > 0 && (
           <>
-            <View style={styles.sectionDivider} />
+            <View style={styles.DRC_SectionDivider} />
             {expandableFields.map((field, index) => renderField(field, index))}
           </>
         )}
 
         {/* Bottom container */}
-        <View style={styles.bottomContainer}>
+        <View style={styles.DRC_BottomContainer}>
           {/* Expand toggle */}
           {isExpandable && expandableFields.length > 0 && (
             <TouchableOpacity
               onPress={() => setExpanded(!expanded)}
-              style={styles.expandToggle}>
+              style={styles.DRC_ExpandToggle}>
               <FontAwesome
                 name={expanded ? 'chevron-up' : 'chevron-down'}
                 size={18}
@@ -193,7 +188,7 @@ const DynamicRequestCard = ({
           )}
 
           {/* Bottom buttons */}
-          <View style={styles.bottomButtonsContainer}>
+          <View style={styles.DRC_BottomButtonsContainer}>
             {Object.entries(buttons)
               .filter(([key, config]) => config.position === 'bottom')
               .map(([key, config]) => renderButton(key, config))}
@@ -203,121 +198,5 @@ const DynamicRequestCard = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  cardContainer: {
-    marginVertical: height * 0.01,
-    marginHorizontal: width * 0.01,
-  },
-  highlightedContainer: {
-    borderWidth: 2,
-    borderColor: '#4CAF50',
-    borderRadius: width * 0.045,
-    elevation: 8,
-    shadowColor: '#4CAF50',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  card: {
-    borderRadius: width * 0.04,
-    padding: width * 0.045,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: height * 0.015,
-  },
-  cardHeaderText: {
-    fontSize: width * 0.05,
-    fontWeight: 'bold',
-    color: '#37474F',
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    gap: width * 0.025,
-  },
-  iconButton: {
-    backgroundColor: '#0A66C2',
-    borderRadius: 20,
-    padding: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  textButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#0A66C2',
-    borderWidth: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  disabled: {
-    backgroundColor: '#BDBDBD',
-    borderColor: '#BDBDBD',
-  },
-  disabledText: {
-    color: '#999',
-  },
-  iconButtonText: {
-    color: '#fff',
-    fontSize: width * 0.025,
-    marginLeft: 4,
-  },
-  textButtonText: {
-    color: '#0A66C2',
-    fontWeight: '600',
-    fontSize: width * 0.03,
-    marginLeft: 6,
-  },
-  infoBlock: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: height * 0.008,
-  },
-  label: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: width * 0.035,
-  },
-  value: {
-    color: '#263238',
-    fontSize: width * 0.035,
-  },
-  statusText: {
-    fontWeight: '900',
-    fontSize: width * 0.035,
-    textTransform: 'uppercase',
-    color: '#112936ff',
-  },
-  sectionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#555555',
-    marginVertical: 8,
-  },
-  bottomContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    position: 'relative',
-    marginTop: height * 0.01,
-  },
-  bottomButtonsContainer: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  expandToggle: {
-    alignItems: 'center',
-    padding: 5,
-    backgroundColor: '#0A66C2',
-    borderRadius: 50,
-    alignSelf: 'center',
-  },
-});
 
 export default DynamicRequestCard;

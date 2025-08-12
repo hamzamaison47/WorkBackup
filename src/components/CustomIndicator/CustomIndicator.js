@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect} from 'react';
-import {View, StyleSheet, Animated, Dimensions} from 'react-native';
+import {View, Animated, Dimensions} from 'react-native';
+import {styles} from '../../styles/styles';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
@@ -59,7 +60,7 @@ const CustomIndicator = ({
   }, []);
 
   return (
-    <View style={[styles.container, {height: containerHeight}]}>
+    <View style={[styles.CInd_Container, {height: containerHeight}]}>
       {animations.map((anim, index) => (
         <Animated.View
           key={index}
@@ -77,14 +78,5 @@ const CustomIndicator = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default CustomIndicator;
