@@ -1613,6 +1613,99 @@ export const styles = StyleSheet.create({
 
   // start of worker assigned component
 
+  AWC_cardContainer: {
+    marginVertical: height * 0.01,
+    marginHorizontal: width * 0.03,
+  },
+
+  AWC_card: {
+    borderRadius: width * 0.04,
+    padding: width * 0.045,
+    elevation: 3,
+  },
+
+  AWC_cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: height * 0.015,
+  },
+
+  AWC_cardHeaderText: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    color: '#37474F',
+    flex: 1,
+  },
+
+  AWC_profilePicture: {
+    width: width * 0.14,
+    height: width * 0.14,
+    borderRadius: width * 0.07,
+    resizeMode: 'cover',
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+  },
+
+  AWC_cardContent: {
+    marginTop: height * 0.01,
+  },
+
+  AWC_textContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: height * 0.008,
+    flexWrap: 'wrap',
+  },
+
+  AWC_cardTextHeading: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: width * 0.035,
+    flex: 1,
+  },
+
+  AWC_cardText: {
+    color: '#263238',
+    fontSize: width * 0.035,
+    flex: 1,
+    textAlign: 'right',
+  },
+
+  AWC_sectionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#BDBDBD',
+    marginVertical: height * 0.012,
+  },
+
+  AWC_navigateButton: {
+    borderColor: '#0A66C2',
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingVertical: height * 0.012,
+    paddingHorizontal: width * 0.04,
+    marginVertical: height * 0.008,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+
+  AWC_navigateButtonText: {
+    color: '#000000ff',
+    fontWeight: 'bold',
+    fontSize: width * 0.038,
+  },
+
+  AWC_expandButton: {
+    alignItems: 'center',
+    marginTop: height * 0.015,
+    padding: 6,
+    backgroundColor: '#0A66C2',
+    borderRadius: 50,
+    alignSelf: 'center',
+  },
+  // end of assigned worker card
+  // action pane container
+
   APCont_container: {
     flex: 1,
     backgroundColor: '#FFFFFF',

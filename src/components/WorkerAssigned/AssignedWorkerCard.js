@@ -6,16 +6,13 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  StyleSheet,
-  Dimensions,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
-
-const {width, height} = Dimensions.get('window');
+import {styles} from '../../styles/styles';
 
 const AssignedWorkerCard = ({
   employeeId,
@@ -74,16 +71,16 @@ const AssignedWorkerCard = ({
   };
 
   return (
-    <View style={styles.cardContainer}>
+    <View style={styles.AWC_cardContainer}>
       <LinearGradient
         colors={['#6ee0ff', '#bddeff', '#cce6ff']}
         start={{x: 0, y: 0}}
         end={{x: 1, y: 1}}
-        style={styles.card}>
+        style={styles.AWC_card}>
         {/* Header */}
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardHeaderText}>{employeeName}</Text>
-          <View style={styles.headerRow}>
+        <View style={styles.AWC_cardHeader}>
+          <Text style={styles.AWC_cardHeaderText}>{employeeName}</Text>
+          <View style={styles.AWC_headerRow}>
             {isLoading ? (
               <ActivityIndicator size="large" color="#0A66C2" />
             ) : (
@@ -94,7 +91,7 @@ const AssignedWorkerCard = ({
                       ? {uri: profilePictureUrl}
                       : require('../../assets/userLogo.jpg')
                   }
-                  style={styles.profilePicture}
+                  style={styles.AWC_profilePicture}
                 />
               </TouchableOpacity>
             )}
@@ -102,39 +99,41 @@ const AssignedWorkerCard = ({
         </View>
 
         {/* Card Content */}
-        <View style={styles.cardContent}>
-          <View style={styles.textContainer}>
-            <Text style={styles.cardTextHeading}>Position Description:</Text>
-            <Text style={styles.cardText}>{positionDescription}</Text>
+        <View style={styles.AWC_cardContent}>
+          <View style={styles.AWC_textContainer}>
+            <Text style={styles.AWC_cardTextHeading}>
+              Position Description:
+            </Text>
+            <Text style={styles.AWC_cardText}>{positionDescription}</Text>
           </View>
 
-          <View style={styles.textContainer}>
-            <Text style={styles.cardTextHeading}>Department:</Text>
-            <Text style={styles.cardText}>{departmentName}</Text>
+          <View style={styles.AWC_textContainer}>
+            <Text style={styles.AWC_cardTextHeading}>Department:</Text>
+            <Text style={styles.AWC_cardText}>{departmentName}</Text>
           </View>
 
-          <View style={styles.textContainer}>
-            <Text style={styles.cardTextHeading}>Email:</Text>
-            <Text style={styles.cardText}>{email}</Text>
+          <View style={styles.AWC_textContainer}>
+            <Text style={styles.AWC_cardTextHeading}>Email:</Text>
+            <Text style={styles.AWC_cardText}>{email}</Text>
           </View>
 
           {expanded && (
             <>
-              <View style={styles.sectionDivider} />
+              <View style={styles.AWC_sectionDivider} />
 
-              <View style={styles.textContainer}>
-                <Text style={styles.cardTextHeading}>Employee ID:</Text>
-                <Text style={styles.cardText}>{employeeId}</Text>
+              <View style={styles.AWC_textContainer}>
+                <Text style={styles.AWC_cardTextHeading}>Employee ID:</Text>
+                <Text style={styles.AWC_cardText}>{employeeId}</Text>
               </View>
 
-              <View style={styles.textContainer}>
-                <Text style={styles.cardTextHeading}>Position ID:</Text>
-                <Text style={styles.cardText}>{positionId}</Text>
+              <View style={styles.AWC_textContainer}>
+                <Text style={styles.AWC_cardTextHeading}>Position ID:</Text>
+                <Text style={styles.AWC_cardText}>{positionId}</Text>
               </View>
 
-              <View style={styles.sectionDivider} />
+              <View style={styles.AWC_sectionDivider} />
               <TouchableOpacity
-                style={styles.navigateButton}
+                style={styles.AWC_navigateButton}
                 onPress={() =>
                   navigation.navigate('LeavesListPage', {
                     employeeId: employeeId,
@@ -143,20 +142,22 @@ const AssignedWorkerCard = ({
                     cameFrom: 'WorkerAssignedToMe',
                   })
                 }>
-                <Text style={styles.navigateButtonText}>Leave Details</Text>
+                <Text style={styles.AWC_navigateButtonText}>Leave Details</Text>
               </TouchableOpacity>
-              {/* <TouchableOpacity style={styles.navigateButton}>
-                <Text style={styles.navigateButtonText}>Advance Details</Text>
+              {/* <TouchableOpacity style={styles.AWC_navigateButton}>
+                <Text style={styles.AWC_navigateButtonText}>Advance Details</Text>
               </TouchableOpacity> */}
-              {/* <TouchableOpacity style={styles.navigateButton}>
-                <Text style={styles.navigateButtonText}>Salary Slip</Text>
+              {/* <TouchableOpacity style={styles.AWC_navigateButton}>
+                <Text style={styles.AWC_navigateButtonText}>Salary Slip</Text>
               </TouchableOpacity> */}
             </>
           )}
         </View>
 
         {/* Expand Button */}
-        <TouchableOpacity onPress={toggleExpand} style={styles.expandButton}>
+        <TouchableOpacity
+          onPress={toggleExpand}
+          style={styles.AWC_expandButton}>
           <FontAwesome
             name={expanded ? 'chevron-up' : 'chevron-down'}
             size={18}
@@ -167,98 +168,5 @@ const AssignedWorkerCard = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  cardContainer: {
-    marginVertical: height * 0.01,
-    marginHorizontal: width * 0.03,
-  },
-
-  card: {
-    borderRadius: width * 0.04,
-    padding: width * 0.045,
-    elevation: 3,
-  },
-
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: height * 0.015,
-  },
-
-  cardHeaderText: {
-    fontSize: width * 0.05,
-    fontWeight: 'bold',
-    color: '#37474F',
-    flex: 1,
-  },
-
-  profilePicture: {
-    width: width * 0.14,
-    height: width * 0.14,
-    borderRadius: width * 0.07,
-    resizeMode: 'cover',
-    borderWidth: 2,
-    borderColor: '#0A66C2',
-  },
-
-  cardContent: {
-    marginTop: height * 0.01,
-  },
-
-  textContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: height * 0.008,
-    flexWrap: 'wrap',
-  },
-
-  cardTextHeading: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: width * 0.035,
-    flex: 1,
-  },
-
-  cardText: {
-    color: '#263238',
-    fontSize: width * 0.035,
-    flex: 1,
-    textAlign: 'right',
-  },
-
-  sectionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#BDBDBD',
-    marginVertical: height * 0.012,
-  },
-
-  navigateButton: {
-    borderColor: '#0A66C2',
-    borderWidth: 1.5,
-    borderRadius: 20,
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.04,
-    marginVertical: height * 0.008,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-
-  navigateButtonText: {
-    color: '#000000ff',
-    fontWeight: 'bold',
-    fontSize: width * 0.038,
-  },
-
-  expandButton: {
-    alignItems: 'center',
-    marginTop: height * 0.015,
-    padding: 6,
-    backgroundColor: '#0A66C2',
-    borderRadius: 50,
-    alignSelf: 'center',
-  },
-});
 
 export default AssignedWorkerCard;
