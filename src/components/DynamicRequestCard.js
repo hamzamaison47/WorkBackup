@@ -4,7 +4,7 @@ import React, {useState, useEffect} from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import LinearGradient from 'react-native-linear-gradient';
-import {styles} from '../../styles/styles';
+import {styles} from '../styles/styles';
 
 const DynamicRequestCard = ({
   data = {},

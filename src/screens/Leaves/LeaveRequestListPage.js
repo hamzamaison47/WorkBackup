@@ -11,7 +11,7 @@ import {AlertModal} from '../../components/Alert/AlertModal';
 import {AlertDeleteModal} from '../../components/Alert/AlertModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import DynamicRequestCard from '../../components/Leaves/DynamicRequestCard';
+import DynamicRequestCard from '../../components/DynamicRequestCard';
 
 import {DeleteLeaveRequest} from '../../API/Leaves/DeleteLeaveRequest';
 import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
