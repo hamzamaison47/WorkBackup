@@ -96,7 +96,7 @@ const WorkerAssignedToMe = () => {
           }
         />
       ) : (
-        <Text style={styles.TeamMainTxt}>No Data Found</Text>
+        <Text style={styles.Team_MainTxt}>No Data Found</Text>
       )}
 
       <AlertModal

@@ -7,18 +7,16 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
   Dimensions,
+  SafeAreaView,
   Animated,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-
-const {width, height} = Dimensions.get('window');
-
+import {styles} from '../../styles/styles';
+const {width} = Dimensions.get('window');
 const DisplayListPage = () => {
   const navigation = useNavigation();
   const userData = useSelector(state => state.user.userData);
@@ -138,15 +136,15 @@ const DisplayListPage = () => {
     <TouchableOpacity
       key={filter}
       style={[
-        styles.filterButton,
-        activeFilter === filter && styles.activeFilterButton,
+        styles.DisLp_FilterButton,
+        activeFilter === filter && styles.DisLp_ActiveFilterButton,
       ]}
       onPress={() => handleFilterPress(filter)}
       activeOpacity={0.7}>
       <Text
         style={[
-          styles.filterButtonText,
-          activeFilter === filter && styles.activeFilterButtonText,
+          styles.DisLp_FilterButtonText,
+          activeFilter === filter && styles.DisLp_ActiveFilterButtonText,
         ]}>
         {filter}
       </Text>
@@ -167,21 +165,21 @@ const DisplayListPage = () => {
         ],
       }}>
       <TouchableOpacity
-        style={styles.menuItem}
+        style={styles.DisLp_MenuItem}
         onPress={() => handlePagePress(item)}
         activeOpacity={0.7}>
-        <View style={[styles.iconWrapper, {backgroundColor: item.color}]}>
+        <View style={[styles.DisLp_IconWrapper, {backgroundColor: item.color}]}>
           <Ionicons name={item.icon} size={width * 0.06} color="#ffffff" />
         </View>
-        <Text style={styles.menuTitle}>{item.title}</Text>
+        <Text style={styles.DisLp_MenuTitle}>{item.title}</Text>
         <Ionicons name="chevron-forward" size={width * 0.04} color="#9ca3af" />
       </TouchableOpacity>
     </Animated.View>
   );
 
   const renderNoMenuMessage = () => (
-    <View style={styles.noMenuContainer}>
-      <Text style={styles.noMenuText}>
+    <View style={styles.DisLp_MenuContainer}>
+      <Text style={styles.DisplayNoMenuText}>
         No menu item for{'\n'}
         {getCategoryDisplayName(activeFilter)}
       </Text>
@@ -199,9 +197,9 @@ const DisplayListPage = () => {
       {isCompanySwitching ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.container}>
-          <View style={styles.filterContainer}>
-            <View style={styles.filterScrollContent}>
+        <SafeAreaView style={styles.DisLp_container}>
+          <View style={styles.DisLp_FilterContainer}>
+            <View style={styles.DisLp_FilterScrollContent}>
               {['All', 'PR', 'HR', 'TAS'].map(filter =>
                 renderFilterButton(filter),
               )}
@@ -209,125 +207,20 @@ const DisplayListPage = () => {
           </View>
 
           <ScrollView
-            style={styles.scrollView}
+            style={styles.DisLp_ScrollView}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}>
-            <View style={styles.menuContainer}>
+            contentContainerStyle={styles.DisLp_ScrollContent}>
+            <View style={styles.DisLp_MenuContainer}>
               {filteredPages.length > 0
                 ? filteredPages.map(renderMenuItem)
                 : renderNoMenuMessage()}
             </View>
-            <View style={styles.bottomPadding} />
+            <View style={styles.DisLp_BottomPadding} />
           </ScrollView>
         </SafeAreaView>
       )}
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  filterContainer: {
-    backgroundColor: '#ebf5ff',
-    paddingBottom: 0,
-    paddingHorizontal: 0,
-    marginBottom: height * 0.01,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  filterScrollContent: {
-    paddingHorizontal: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  filterButton: {
-    flex: 1,
-    paddingVertical: height * 0.02,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-    position: 'relative',
-  },
-  activeFilterButton: {
-    borderBottomWidth: 5,
-    borderBottomColor: '#0A66C2',
-  },
-  filterButtonText: {
-    fontSize: width * 0.04,
-    fontWeight: '600',
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  activeFilterButtonText: {
-    color: '#0A66C2',
-    fontWeight: '700',
-  },
-  menuContainer: {
-    paddingTop: width * 0.05,
-    paddingHorizontal: width * 0.03,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    paddingVertical: height * 0.02,
-    paddingHorizontal: width * 0.05,
-    marginBottom: height * 0.015,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowOffset: {width: 0, height: 4},
-    shadowRadius: 3,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#f3f4f6',
-    minHeight: height * 0.08,
-  },
-  iconWrapper: {
-    width: width * 0.1,
-    height: width * 0.1,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: width * 0.04,
-  },
-  menuTitle: {
-    flex: 1,
-    fontSize: width * 0.042,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  noMenuContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: height * 0.1,
-  },
-  noMenuText: {
-    fontSize: width * 0.045,
-    fontWeight: '500',
-    color: '#6b7280',
-    textAlign: 'center',
-    lineHeight: width * 0.055,
-  },
-  bottomPadding: {
-    height: height * 0.05,
-  },
-});
 
 export default DisplayListPage;

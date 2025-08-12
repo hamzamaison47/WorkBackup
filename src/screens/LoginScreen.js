@@ -26,20 +26,20 @@ const LoginScreen = () => {
   return (
     <LinearGradient
       colors={['#FFFFFF', '#ffffffff']}
-      style={styles.LoginContainer}>
+      style={styles.Login_Container}>
       {!loading && (
         <>
           <Image
             source={require('../assets/cloud.png')}
-            style={styles.Loginlogo}
+            style={styles.Login_Logo}
           />
-          <Text style={styles.LoginTitle}>Welcome to the ESS</Text>
-          <Text style={styles.LoginSubtitle}>
+          <Text style={styles.Login_Title}>Welcome to the ESS</Text>
+          <Text style={styles.Login_Subtitle}>
             Manage your HR services anytime, anywhere
           </Text>
 
           <TouchableOpacity
-            style={styles.LoginButton}
+            style={styles.Login_Button}
             onPress={() =>
               handleLogin(
                 setLoading,
@@ -57,13 +57,13 @@ const LoginScreen = () => {
               name="windows"
               size={24}
               color="#0A66C2"
-              style={styles.LoginIcon}
+              style={styles.Login_Icon}
             />
-            <Text style={styles.LoginButtonText}>Sign in with Microsoft</Text>
+            <Text style={styles.Login_ButtonText}>Sign in with Microsoft</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.LoginButton}
+            style={styles.Login_Button}
             onPress={() =>
               handleLogin(
                 setLoading,
@@ -81,17 +81,17 @@ const LoginScreen = () => {
               name="google"
               size={24}
               color="#0A66C2"
-              style={styles.LoginIcon}
+              style={styles.Login_Icon}
             />
-            <Text style={styles.LoginButtonText}>Sign in with Google</Text>
+            <Text style={styles.Login_ButtonText}>Sign in with Google</Text>
           </TouchableOpacity>
         </>
       )}
 
       {loading && (
-        <View style={styles.LoginLoadingContainer}>
+        <View style={styles.Login_LoadingContainer}>
           <CustomIndicator />
-          <Text style={styles.LoginLoadingText}>
+          <Text style={styles.Login_LoadingText}>
             Connecting to your account, Please wait...
           </Text>
         </View>
@@ -100,18 +100,18 @@ const LoginScreen = () => {
       <PopupDialog
         visible={dialogVisible}
         onTouchOutside={() => setDialogVisible(false)}
-        dialogStyle={styles.LoginDialogContainer}
+        dialogStyle={styles.Login_DialogContainer}
         width={0.8}
         height={0.3}
         dialogTitle={
-          <Text style={styles.LoginDialogTitledialogTitle}>Notification</Text>
+          <Text style={styles.Login_DialogTitledialogTitle}>Notification</Text>
         }>
-        <View style={styles.LoginDialogContent}>
-          <Text style={styles.LoginDialogMessage}>{dialogMessage}</Text>
+        <View style={styles.Login_DialogContent}>
+          <Text style={styles.Login_DialogMessage}>{dialogMessage}</Text>
           <TouchableOpacity
-            style={styles.LoginDialogButton}
+            style={styles.Login_DialogButton}
             onPress={() => setDialogVisible(false)}>
-            <Text style={styles.LoginDialogButtonText}>OK</Text>
+            <Text style={styles.Login_DialogButtonText}>OK</Text>
           </TouchableOpacity>
         </View>
       </PopupDialog>

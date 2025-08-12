@@ -151,30 +151,28 @@ const PRTaxCertificate = () => {
       {loading ? (
         <CustomIndicator />
       ) : (
-        <View style={styles.TaxCertificateContainer}>
+        <View style={styles.TCert_Container}>
           <ScrollView
-            contentContainerStyle={styles.TaxCertificateScrollContent}
+            contentContainerStyle={styles.TCert_ScrollContent}
             showsVerticalScrollIndicator={false}>
             <Icon
               name="file-pdf-o"
               size={50}
               color="#0A66C2"
-              style={styles.TaxCertificateIcon}
+              style={styles.TCert_Icon}
             />
-            <Text style={styles.TaxCertificateScreenTitle}>
-              Email Tax Certificate
-            </Text>
-            <Text style={styles.TaxCertificateScreenSubtitle}>
+            <Text style={styles.TCert_ScreenTitle}>Email Tax Certificate</Text>
+            <Text style={styles.TCert_ScreenSubtitle}>
               Please select a From Date and To Date to email your Tax
               Certificate.
             </Text>
 
-            <Text style={styles.TaxCertificateLabel}>From Date</Text>
+            <Text style={styles.TCert_Label}>From Date</Text>
             <TouchableOpacity
-              style={styles.TaxCertificateDateSelector}
+              style={styles.TCert_DateSelector}
               onPress={() => setShowStartCalendar(true)}>
               <View style={{flex: 1}}>
-                <Text style={styles.TaxCertificateDateText}>
+                <Text style={styles.TCert_DateText}>
                   {formData.leaveStartDate
                     ? formatDate(formData.leaveStartDate)
                     : 'Select From Date'}
@@ -189,12 +187,12 @@ const PRTaxCertificate = () => {
               onClose={() => setShowStartCalendar(false)}
             />
 
-            <Text style={styles.TaxCertificateLabel}>To Date</Text>
+            <Text style={styles.TCert_Label}>To Date</Text>
             <TouchableOpacity
-              style={styles.TaxCertificateDateSelector}
+              style={styles.TCert_DateSelector}
               onPress={() => setShowEndCalendar(true)}>
               <View style={{flex: 1}}>
-                <Text style={styles.TaxCertificateDateText}>
+                <Text style={styles.TCert_DateText}>
                   {formData.leaveEndDate
                     ? formatDate(formData.leaveEndDate)
                     : 'Select To Date'}
@@ -211,13 +209,13 @@ const PRTaxCertificate = () => {
 
             <LinearGradient
               colors={['#0A66C2', '#0A66C2']}
-              style={styles.TaxCertificateButton}>
+              style={styles.TCert_Button}>
               <TouchableOpacity
                 onPress={onPressButton}
-                style={styles.TaxCertificateButtonContent}
+                style={styles.TCert_ButtonContent}
                 activeOpacity={0.7}
                 disabled={loading}>
-                <Text style={styles.TaxCertificateButtonText}>
+                <Text style={styles.TCert_ButtonText}>
                   Email Tax Certificate
                 </Text>
               </TouchableOpacity>

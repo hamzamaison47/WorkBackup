@@ -4,18 +4,18 @@ const {height, width} = Dimensions.get('window');
 const cardWidth = (width - 56) / 2;
 
 export const styles = StyleSheet.create({
-  // start of  splash page name
-  splashcontainer: {
+  // start of  splash_ page name
+  splash_Container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  Splashlogo: {
+  splash_Logo: {
     width: 200,
     height: 80,
     marginBottom: 20,
   },
-  Splashtext: {
+  splash_Text: {
     fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
@@ -23,37 +23,37 @@ export const styles = StyleSheet.create({
     textShadowOffset: {width: 2, height: 2},
     textShadowRadius: 4,
   },
-  Splashtagline: {
+  splash_Tagline: {
     fontSize: 18,
     color: '#FFFFFF',
     marginTop: 10,
     fontStyle: 'italic',
     fontWeight: '300',
   },
-  Splashloader: {
+  splash_Loader: {
     marginTop: 20,
   },
-  // end of splash screen name
+  // end of splash_ screen name
 
   // Start of Maindashboard Screen
-  Maincontainer: {
+  Main_Container: {
     flex: 1,
     backgroundColor: '#F7F9FC',
   },
-  MainscrollView: {
+  Main_ScrollView: {
     flex: 1,
   },
-  MainscrollContainer: {
+  Main_ScrollContainer: {
     flexGrow: 1,
     paddingBottom: height * 0.1, // Extra padding for fixed button
   },
-  MainheaderContainer: {
+  Main_HeaderContainer: {
     width: width * 0.9,
     alignSelf: 'center',
     marginTop: height * 0.03,
     // marginBottom: height * 0.001,
   },
-  MainwelcomeCard: {
+  Main_WelcomeCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 15,
@@ -64,12 +64,12 @@ export const styles = StyleSheet.create({
     elevation: 8,
     marginBottom: height * 0.035,
   },
-  MainHeaderRow: {
+  Main_HeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  MainProfilePicture: {
+  Main_ProfilePicture: {
     width: height * 0.12,
     height: height * 0.12,
     borderRadius: height * 0.125,
@@ -77,39 +77,39 @@ export const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: '#0A66C2',
   },
-  MainTextColumn: {
+  Main_TextColumn: {
     flexDirection: 'column',
     flex: 1,
   },
-  MainWelcomeText: {
+  Main_WelcomeText: {
     fontSize: height * 0.025,
     fontWeight: 'bold',
     color: '#1A1A1A',
     // marginBottom: height * 0.008,
     textAlign: 'left',
   },
-  MainNameText: {
+  Main_NameText: {
     fontSize: height * 0.022,
     color: '#0A66C2',
     fontWeight: '600',
     textAlign: 'left',
     // marginBottom: height * 0.005,
   },
-  MainEmailText: {
+  Main_EmailText: {
     fontSize: height * 0.015,
     color: '#5A5A5A',
     textAlign: 'left',
   },
-  Maingrid: {
+  Main_Grid: {
     paddingHorizontal: 20,
     // paddingTop: 10,
     paddingBottom: 40,
   },
-  Mainrow: {
+  Main_Row: {
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  Maincard: {
+  Main_Card: {
     width: cardWidth,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -121,7 +121,7 @@ export const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 5,
   },
-  MainIconWrapper: {
+  Main_IconWrapper: {
     backgroundColor: '#0A66C2',
     padding: 12,
     borderRadius: 50,
@@ -131,51 +131,51 @@ export const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowRadius: 4,
   },
-  MainCardTitle: {
+  Main_CardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     textAlign: 'center',
     marginBottom: 4,
   },
-  MainModalOverlay: {
+  Main_ModalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
-  MainModalContent: {
+  Main_ModalContent: {
     backgroundColor: 'white',
     borderRadius: 10,
     alignItems: 'center',
   },
-  MainModalImage: {
+  Main_ModalImage: {
     width: width * 0.08,
     height: height * 0.06,
     borderRadius: 10,
   },
   // End Of MainDashboard
 
-  // Start of Login Screen
-  LoginContainer: {
+  // Start of Login_ Screen
+  Login_Container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  Loginlogo: {
+  Login_Logo: {
     width: 200,
     height: 80,
     marginBottom: 20,
   },
-  LoginTitle: {
+  Login_Title: {
     fontSize: 26,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333333',
     textAlign: 'center',
   },
-  LoginSubtitle: {
+  Login_Subtitle: {
     fontSize: 18,
     color: '#333333',
     marginBottom: 30,
@@ -183,7 +183,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 15,
     fontStyle: 'italic',
   },
-  LoginButton: {
+  Login_Button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -196,67 +196,67 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: '#fff',
   },
-  LoginButtonText: {
+  Login_ButtonText: {
     color: '#0A66C2',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  LoginIcon: {
+  Login_Icon: {
     marginRight: 10,
   },
 
-  LoginLoadingContainer: {
+  Login_LoadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  LoginLoadingText: {
+  Login_LoadingText: {
     marginTop: 10,
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
   },
-  LoginDialogContainer: {
+  Login_DialogContainer: {
     borderRadius: 10,
     padding: 15,
     backgroundColor: '#fff',
     alignItems: 'center',
   },
-  LoginDialogTitle: {
+  Login_DialogTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
-  LoginDialogContent: {
+  Login_DialogContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  LoginDialogMessage: {
+  Login_DialogMessage: {
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
     marginBottom: 20,
   },
-  LoginDialogButton: {
+  Login_DialogButton: {
     backgroundColor: '#0A66C2',
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 20,
   },
-  LoginDialogButtonText: {
+  Login_DialogButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // End Of Login
+  // End Of Login_
 
   //WorkAssigned
-  TeamContainer: {
+  Team_Container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  TeamMainTxt: {
+  Team_MainTxt: {
     flex: 1,
     textAlign: 'center',
     textAlignVertical: 'center',
@@ -373,38 +373,38 @@ export const styles = StyleSheet.create({
 
   // Start of Salary Slip
 
-  SalarySlipContainer: {
+  SSlip_Container: {
     flex: 1,
     backgroundColor: '#f7f7f7',
   },
-  SalarySlipScrollContent: {
+  SSlip_ScrollContent: {
     justifyContent: 'center',
     alignItems: 'center',
     padding: width * 0.05,
     marginTop: width * 0.1,
   },
-  SalarySlipIcon: {
+  SSlip_Icon: {
     marginBottom: height * 0.03,
   },
-  SalarySlipScreenTitle: {
+  SSlip_ScreenTitle: {
     fontSize: width * 0.06,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: height * 0.01,
   },
-  SalarySlipScreenSubtitle: {
+  SSlip_ScreenSubtitle: {
     fontSize: width * 0.04,
     color: '#666',
     textAlign: 'center',
     marginBottom: height * 0.025,
   },
-  SalarySlipFieldsHeading: {
+  SSlip_FieldsHeading: {
     fontSize: width * 0.045,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: height * 0.015,
   },
-  SalarySlipDropdown: {
+  SSlip_Dropdown: {
     borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 8,
@@ -414,19 +414,19 @@ export const styles = StyleSheet.create({
     marginBottom: height * 0.025,
     width: '100%',
   },
-  SalarySlipItemText: {
+  SSlip_ItemText: {
     color: '#000',
     fontSize: width * 0.04,
   },
-  SalarySlipDropdownPlaceholder: {
+  SSlip_DropdownPlaceholder: {
     color: '#999',
     fontSize: width * 0.04,
   },
-  SalarySlipDropdownSelected: {
+  SSlip_DropdownSelected: {
     color: '#000',
     fontSize: width * 0.04,
   },
-  SalarySlipButton: {
+  SSlip_Button: {
     borderRadius: 8,
     paddingVertical: height * 0.015,
     paddingHorizontal: width * 0.05,
@@ -436,11 +436,11 @@ export const styles = StyleSheet.create({
     marginTop: height * 0.025,
     width: '100%',
   },
-  SalarySlipButtonContent: {
+  SSlip_ButtonContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  SalarySlipButtonText: {
+  SSlip_ButtonText: {
     color: '#FFFFFF',
     fontSize: width * 0.045,
     fontWeight: 'bold',
@@ -448,27 +448,27 @@ export const styles = StyleSheet.create({
   // End oF Salary Slip
 
   // Start of Leave Request Save Record
-  LeaveReqSRSafeArea: {
+  LReqSR_SafeArea: {
     flex: 1,
     backgroundColor: '#fefefe',
   },
-  LeaveReqSRContentWrapper: {
+  LReqSR_ContentWrapper: {
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: width * 0.03,
     paddingTop: height * 0.01,
   },
-  LeaveReqSRFormContainer: {
+  LReqSR_FormContainer: {
     padding: 5,
     paddingBottom: 100,
   },
-  LeaveReqSRLabel: {
+  LReqSR_Label: {
     fontSize: 14,
     marginTop: 12,
     fontWeight: '600',
     color: '#444',
   },
-  LeaveReqSRInput: {
+  LReqSR_Input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
@@ -478,15 +478,15 @@ export const styles = StyleSheet.create({
     color: '#333',
     backgroundColor: '#fff',
   },
-  LeaveReqSRDisabled: {
+  LReqSR_Disabled: {
     backgroundColor: '#f1f1f1',
     color: '#999',
   },
-  LeaveReqSRTextArea: {
+  LReqSR_TextArea: {
     height: 100,
     textAlignVertical: 'top',
   },
-  LeaveReqSRDateSelector: {
+  LReqSR_DateSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -495,11 +495,11 @@ export const styles = StyleSheet.create({
     padding: 10,
     marginTop: 6,
   },
-  LeaveReqSRDateText: {
+  LReqSR_DateText: {
     fontSize: 15,
     color: '#333',
   },
-  LeaveReqSRFooter: {
+  LReqSR_Footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 10,
@@ -511,7 +511,7 @@ export const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  LeaveReqSRButton: {
+  LReqSR_Button: {
     flex: 1,
     borderWidth: 2,
     borderColor: '#0A66C2',
@@ -521,40 +521,40 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
-  LeaveReqSRSubmitButton: {
+  LReqSR_SubmitButton: {
     borderColor: '#0A66C2',
     backgroundColor: '#0A66C2',
   },
-  LeaveReqSRDisabledButton: {
+  LReqSR_DisabledButton: {
     opacity: 0.6,
   },
-  LeaveReqSRButtonText: {
+  LReqSR_ButtonText: {
     fontWeight: 'bold',
     color: '#0A66C2',
   },
-  LeaveReqSRSubmitButtonText: {
+  LReqSR_SubmitButtonText: {
     fontWeight: 'bold',
     color: '#ffffffff',
   },
-  LeaveReqSRPressedButton: {
+  LReqSR_PressedButton: {
     backgroundColor: '#0A66C2',
   },
-  LeaveReqSRpressedSubmitButton: {
+  LReqSR_pressedSubmitButton: {
     backgroundColor: '#3d95edff',
     borderColor: '#3d95edff',
   },
-  LeaveReqSRpressedText: {
+  LReqSR_pressedText: {
     color: '#fff',
   },
   // End oF Leave Req Save Record
 
   // Start oF Leave Req List Page
-  LeaveReqLpListContainer: {
+  LReqLP_ListContainer: {
     paddingBottom: height * 0.05,
     paddingHorizontal: width * 0.03,
     paddingTop: height * 0.01,
   },
-  LeaveReqLpNoDataText: {
+  LReqLP_NoDataText: {
     flex: 1,
     textAlign: 'center',
     textAlignVertical: 'center',
@@ -565,28 +565,28 @@ export const styles = StyleSheet.create({
   // End Of Leave Req List Page
 
   // Start Of Display Personal Info
-  DisplayPIContainer: {
+  DPI_Container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  DisplayPIScrollView: {
+  DPI_ScrollView: {
     flex: 1,
   },
-  DisplayPIScrollContainer: {
+  DPI_ScrollContainer: {
     flexGrow: 1,
     //paddingBottom: screenHeight * 0.1, // Extra padding for fixed button
   },
-  DisplayPITopContainer: {
+  DPI_TopContainer: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  DisplayPIImageContainer: {
+  DPI_ImageContainer: {
     paddingHorizontal: width * 0.05,
     paddingTop: height * 0.025,
     paddingBottom: height * 0.01,
     alignItems: 'center',
   },
-  DisplayPIFixedButtonContainer: {
+  DPI_FixedButtonContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -601,13 +601,13 @@ export const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
-  TaxCertificateContainer: {
+  TCert_Container: {
     flex: 1,
-    backgroundColor: '#f7f7f7', // Matches SalarySlipContainer for consistency
+    backgroundColor: '#f7f7f7', // Matches SSlip_Container for consistency
     justifyContent: 'center',
     alignItems: 'center',
   },
-  TaxCertificateScrollContent: {
+  TCert_ScrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -615,25 +615,25 @@ export const styles = StyleSheet.create({
     paddingTop: height * 0.1,
     paddingBottom: height * 0.1, // Ensure enough space for scrolling
   },
-  TaxCertificateIcon: {
+  TCert_Icon: {
     marginBottom: height * 0.03,
     alignSelf: 'center',
   },
-  TaxCertificateScreenTitle: {
+  TCert_ScreenTitle: {
     fontSize: width * 0.06,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: height * 0.01,
     textAlign: 'center',
   },
-  TaxCertificateScreenSubtitle: {
+  TCert_ScreenSubtitle: {
     fontSize: width * 0.04,
     color: '#666',
     textAlign: 'center',
     marginBottom: height * 0.025,
     paddingHorizontal: width * 0.05,
   },
-  TaxCertificateLabel: {
+  TCert_Label: {
     fontSize: width * 0.045,
     fontWeight: '600',
     color: '#444',
@@ -642,7 +642,7 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-  TaxCertificateInput: {
+  TCert_Input: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
@@ -654,11 +654,11 @@ export const styles = StyleSheet.create({
     width: '100%',
     textAlign: 'center',
   },
-  TaxCertificateDisabled: {
+  TCert_Disabled: {
     backgroundColor: '#f1f1f1',
     color: '#999',
   },
-  TaxCertificateDateSelector: {
+  TCert_DateSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -670,13 +670,13 @@ export const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'space-between',
   },
-  TaxCertificateDateText: {
+  TCert_DateText: {
     fontSize: width * 0.04,
     color: '#333',
     textAlign: 'center',
     flex: 1,
   },
-  TaxCertificateButton: {
+  TCert_Button: {
     borderRadius: 8,
     paddingVertical: height * 0.015,
     paddingHorizontal: width * 0.05,
@@ -686,14 +686,260 @@ export const styles = StyleSheet.create({
     marginTop: height * 0.025,
     width: '100%',
   },
-  TaxCertificateButtonContent: {
+  TCert_ButtonContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  TaxCertificateButtonText: {
+  TCert_ButtonText: {
     color: '#FFFFFF',
     fontSize: width * 0.045,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  // end of tax certificate
+
+  // start of display list page
+
+  DisLp_container: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+  },
+  DisLp_ScrollView: {
+    flex: 1,
+  },
+  DisLp_ScrollContent: {
+    flexGrow: 1,
+  },
+  DisLp_FilterContainer: {
+    backgroundColor: '#ebf5ff',
+    paddingBottom: 0,
+    paddingHorizontal: 0,
+    marginBottom: height * 0.01,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: {width: 0, height: 2},
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  DisLp_FilterScrollContent: {
+    paddingHorizontal: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  DisLp_FilterButton: {
+    flex: 1,
+    paddingVertical: height * 0.02,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+    position: 'relative',
+  },
+  DisLp_ActiveFilterButton: {
+    borderBottomWidth: 5,
+    borderBottomColor: '#0A66C2',
+  },
+  DisLp_FilterButtonText: {
+    fontSize: width * 0.04,
+    fontWeight: '600',
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  DisLp_ActiveFilterButtonText: {
+    color: '#0A66C2',
+    fontWeight: '700',
+  },
+  DisLp_MenuContainer: {
+    paddingTop: width * 0.05,
+    paddingHorizontal: width * 0.03,
+  },
+  DisLp_MenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingVertical: height * 0.02,
+    paddingHorizontal: width * 0.05,
+    marginBottom: height * 0.015,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowOffset: {width: 0, height: 4},
+    shadowRadius: 3,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    minHeight: height * 0.08,
+  },
+  DisLp_IconWrapper: {
+    width: width * 0.1,
+    height: width * 0.1,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: width * 0.04,
+  },
+  DisLp_MenuTitle: {
+    flex: 1,
+    fontSize: width * 0.042,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  DisLp_NoMenuContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: height * 0.1,
+  },
+  DisLp_NoMenuText: {
+    fontSize: width * 0.045,
+    fontWeight: '500',
+    color: '#6b7280',
+    textAlign: 'center',
+    lineHeight: width * 0.055,
+  },
+  DisLp_BottomPadding: {
+    height: height * 0.05,
+  },
+
+  // end of display list page
+
+  // start of Alert
+
+  Alert_ModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  Alert_ModalBox: {
+    width: width * 0.85,
+    paddingVertical: height * 0.035,
+    paddingHorizontal: width * 0.06,
+    backgroundColor: '#fff',
+    borderRadius: width * 0.04,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: {width: 0, height: 3},
+    shadowRadius: 6,
+    alignItems: 'center',
+  },
+  Alert_ModalHeading: {
+    fontSize: width * 0.05,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: height * 0.015,
+    textAlign: 'center',
+  },
+  Alert_ModalText: {
+    fontSize: width * 0.038,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: height * 0.02,
+    lineHeight: 22,
+  },
+  Alert_ButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  Alert_CancelButton: {
+    flex: 1,
+    paddingVertical: height * 0.014,
+    backgroundColor: '#ccc',
+    borderRadius: width * 0.025,
+    alignItems: 'center',
+    marginRight: width * 0.025,
+  },
+  Alert_DeleteButton: {
+    flex: 1,
+    paddingVertical: height * 0.014,
+    backgroundColor: '#FF5252',
+    borderRadius: width * 0.025,
+    alignItems: 'center',
+    marginLeft: width * 0.025,
+  },
+  Alert_ButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: width * 0.04,
+  },
+  Alert_OkButton: {
+    marginTop: height * 0.001,
+    backgroundColor: '#0A66C2',
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.3,
+    borderRadius: width * 0.03,
+    alignItems: 'center',
+  },
+  Alert_OkButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: width * 0.04,
+  },
+
+  // end of Alert
+
+  // start of Alert Logout
+
+  AlrtLg_CenteredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  AlrtLg_ModalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    AlrtLg_ShadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  AlrtLg_headingText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#525252',
+  },
+  AlrtLg_modalText: {
+    marginTop: height * 0.005,
+    marginBottom: height * 0.03,
+    textAlign: 'center',
+    color: 'grey',
+    fontSize: 16,
+  },
+  AlrtLg_buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: width * 0.7,
+  },
+  AlrtLg_button: {
+    borderRadius: 10,
+    padding: 10,
+    elevation: 2,
+    width: width * 0.3,
+    marginHorizontal: width * 0.02,
+  },
+  AlrtLg_cancelButton: {
+    backgroundColor: '#ff6666', // Red for cancel button
+  },
+  AlrtLg_confirmButton: {
+    backgroundColor: '#4caf50', // Green for confirm button
+  },
+  AlrtLg_buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 16,
   },
 });

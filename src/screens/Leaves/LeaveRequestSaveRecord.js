@@ -11,7 +11,6 @@ import {
   ScrollView,
   SafeAreaView,
   Pressable,
-  Dimensions,
 } from 'react-native';
 import {
   useNavigation,
@@ -553,22 +552,22 @@ const LeaveRequestSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LeaveReqSRSafeArea}>
+        <SafeAreaView style={styles.LReqSR_SafeArea}>
           <KeyboardAvoidingView
             behavior="padding"
-            style={styles.LeaveReqSRContentWrapper}>
-            <ScrollView contentContainerStyle={styles.LeaveReqSRFormContainer}>
-              <Text style={styles.LeaveReqSRLabel}>Employee Name</Text>
-              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
+            style={styles.LReqSR_ContentWrapper}>
+            <ScrollView contentContainerStyle={styles.LReqSR_FormContainer}>
+              <Text style={styles.LReqSR_Label}>Employee Name</Text>
+              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.employeeName}
               </Text>
-              <Text style={styles.LeaveReqSRLabel}>Request Date</Text>
-              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
+              <Text style={styles.LReqSR_Label}>Request Date</Text>
+              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formatDate(today)}
               </Text>
-              <Text style={styles.LeaveReqSRLabel}>Leave Category *</Text>
+              <Text style={styles.LReqSR_Label}>Leave Category *</Text>
               <Dropdown
-                style={styles.LeaveReqSRInput}
+                style={styles.LReqSR_Input}
                 data={leaveCategoryOptions}
                 labelField="label"
                 valueField="value"
@@ -581,9 +580,9 @@ const LeaveRequestSaveRecord = () => {
                 search
                 searchPlaceholder="Search Leave Category..."
               />
-              <Text style={styles.LeaveReqSRLabel}>Leave Code *</Text>
+              <Text style={styles.LReqSR_Label}>Leave Code *</Text>
               <Dropdown
-                style={styles.LeaveReqSRInput}
+                style={styles.LReqSR_Input}
                 data={LeaveCodesForEmployee}
                 labelField="label"
                 valueField="value"
@@ -597,16 +596,16 @@ const LeaveRequestSaveRecord = () => {
                 search
                 searchPlaceholder="Search Leave Code..."
               />
-              <Text style={styles.LeaveReqSRLabel}>Balance</Text>
-              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
+              <Text style={styles.LReqSR_Label}>Balance</Text>
+              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.balance}
               </Text>
-              <Text style={styles.LeaveReqSRLabel}>Leave Start Date *</Text>
+              <Text style={styles.LReqSR_Label}>Leave Start Date *</Text>
               <TouchableOpacity
-                style={styles.LeaveReqSRDateSelector}
+                style={styles.LReqSR_DateSelector}
                 onPress={() => setShowCalendar(true)}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LeaveReqSRDateText}>
+                  <Text style={styles.LReqSR_DateText}>
                     {formData.leaveStartDate
                       ? formatDate(formData.leaveStartDate)
                       : 'Select Start Date'}
@@ -620,11 +619,11 @@ const LeaveRequestSaveRecord = () => {
                 onDateSelected={handleDateChange}
                 onClose={() => setShowCalendar(false)}
               />
-              <Text style={styles.LeaveReqSRLabel}>Leave Days *</Text>
+              <Text style={styles.LReqSR_Label}>Leave Days *</Text>
               <TextInput
                 style={[
-                  styles.LeaveReqSRInput,
-                  isLeaveDaysDisabled && styles.LeaveReqSRDisabled,
+                  styles.LReqSR_Input,
+                  isLeaveDaysDisabled && styles.LReqSR_Disabled,
                 ]}
                 value={formData.leaveDays.toString()}
                 onChangeText={handleLeaveDaysChange}
@@ -632,15 +631,15 @@ const LeaveRequestSaveRecord = () => {
                 placeholder="Enter number of days"
                 editable={!isLeaveDaysDisabled}
               />
-              <Text style={styles.LeaveReqSRLabel}>End Date</Text>
-              <Text style={[styles.LeaveReqSRInput, styles.LeaveReqSRDisabled]}>
+              <Text style={styles.LReqSR_Label}>End Date</Text>
+              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.leaveEndDate
                   ? formatDate(formData.leaveEndDate)
                   : 'End date will be calculated'}
               </Text>
-              <Text style={styles.LeaveReqSRLabel}>Reason</Text>
+              <Text style={styles.LReqSR_Label}>Reason</Text>
               <TextInput
-                style={[styles.LeaveReqSRInput, styles.LeaveReqSRTextArea]}
+                style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
                 value={formData.reason}
                 onChangeText={value => handleInputChange('reason', value)}
                 placeholder="Enter reason for leave"
@@ -649,14 +648,14 @@ const LeaveRequestSaveRecord = () => {
               />
             </ScrollView>
 
-            <View style={styles.LeaveReqSRFooter}>
+            <View style={styles.LReqSR_Footer}>
               <Pressable
                 style={({pressed}) => [
-                  styles.button,
-                  pressed && styles.pressedButton,
+                  styles.LReqSR_Button,
+                  pressed && styles.LReqSR_PressedButton,
                   (processingButton === 'save' ||
                     processingButton === 'submit') &&
-                    styles.disabledButton,
+                    styles.LReqSR_DisabledButton,
                 ]}
                 onPress={() => handleSave('save')}
                 disabled={
@@ -664,7 +663,10 @@ const LeaveRequestSaveRecord = () => {
                 }>
                 {({pressed}) => (
                   <Text
-                    style={[styles.buttonText, pressed && styles.pressedText]}>
+                    style={[
+                      styles.LReqSR_ButtonText,
+                      pressed && styles.LReqSR_pressedText,
+                    ]}>
                     {processingButton === 'save'
                       ? 'Processing...'
                       : mode === 'edit'
@@ -676,12 +678,12 @@ const LeaveRequestSaveRecord = () => {
 
               <Pressable
                 style={({pressed}) => [
-                  styles.button,
-                  styles.submitButton,
-                  pressed && styles.pressedSubmitButton,
+                  styles.LReqSR_Button,
+                  styles.LReqSR_SubmitButton,
+                  pressed && styles.LReqSR_pressedSubmitButton,
                   (processingButton === 'save' ||
                     processingButton === 'submit') &&
-                    styles.disabledButton,
+                    styles.LReqSR_DisabledButton,
                 ]}
                 onPress={() => handleSave('submit')}
                 disabled={
@@ -690,8 +692,8 @@ const LeaveRequestSaveRecord = () => {
                 {({pressed}) => (
                   <Text
                     style={[
-                      styles.LeaveReqSRSubmitButtonText,
-                      pressed && styles.LeaveReqSRpressedText,
+                      styles.LReqSR_SubmitButtonText,
+                      pressed && styles.LReqSR_pressedText,
                     ]}>
                     {processingButton === 'submit'
                       ? 'Processing...'

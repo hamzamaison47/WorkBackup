@@ -40,18 +40,18 @@ const SplashScreens = ({navigation}) => {
   return (
     <LinearGradient
       colors={['#0A66C2', '#bddeff']}
-      style={styles.splashcontainer}>
+      style={styles.splash_Container}>
       <Animated.Image
         source={require('../assets/cloud.png')}
-        style={[styles.Splashlogo, {opacity: logoOpacity}]}
+        style={[styles.splash_Logo, {opacity: logoOpacity}]}
         resizeMode="contain"
       />
-      <Text style={styles.Splashtext}>ESS By Maison</Text>
-      <Text style={styles.Splashtagline}>Your Technology Partner</Text>
+      <Text style={styles.splash_Text}>ESS By Maison</Text>
+      <Text style={styles.splash_Tagline}>Your Technology Partner</Text>
       <ActivityIndicator
         size="large"
         color="#0A66C2"
-        style={styles.Splashloader}
+        style={styles.splash_Loader}
       />
     </LinearGradient>
   );

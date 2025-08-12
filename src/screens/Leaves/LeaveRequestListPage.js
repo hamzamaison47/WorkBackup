@@ -1,6 +1,6 @@
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, StyleSheet, FlatList, Dimensions} from 'react-native';
+import {Text, FlatList} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -16,8 +16,7 @@ import DynamicRequestCard from '../../components/Leaves/DynamicRequestCard';
 import {DeleteLeaveRequest} from '../../API/Leaves/DeleteLeaveRequest';
 import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
-
-const {width, height} = Dimensions.get('window');
+import {styles} from '../../styles/styles';
 
 const LeaveRequestListPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -386,11 +385,11 @@ const LeaveRequestListPage = () => {
           keyExtractor={(item, index) =>
             item.recId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <Text style={styles.noDataText}>No Data Found</Text>
+        <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
       )}
 
       {/* Alert Modal */}
@@ -415,21 +414,5 @@ const LeaveRequestListPage = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  listContainer: {
-    paddingBottom: height * 0.05,
-    paddingHorizontal: width * 0.03,
-    paddingTop: height * 0.01,
-  },
-  noDataText: {
-    flex: 1,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: width * 0.04,
-    fontWeight: 'bold',
-    color: '#999999',
-  },
-});
 
 export default LeaveRequestListPage;

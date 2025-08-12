@@ -17,7 +17,7 @@ import PRSalarySlip from '../screens/SalarySlip/PRSalarySlip';
 import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';
 import {handleLogoutauth} from '../Controller/authUtils';
-import PRTaxCertificate from '../screens/Reports/PRTaxCertificate';
+import PRTaxCertificate from '../screens/TaxCertificate/PRTaxCertificate';
 
 const Drawer = createDrawerNavigator();
 const CustomDrawerContent = props => {

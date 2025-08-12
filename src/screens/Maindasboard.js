@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
   Modal,
-  Dimensions,
   ActivityIndicator,
   TouchableWithoutFeedback,
   SafeAreaView,
@@ -23,10 +22,6 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import {styles} from '../styles/styles';
-import Icon from 'react-native-vector-icons/FontAwesome';
-
-const {height, width} = Dimensions.get('window');
-const cardWidth = (width - 56) / 2;
 
 const MainDashboard = () => {
   const dispatch = useDispatch();
@@ -152,13 +147,13 @@ const MainDashboard = () => {
 
   const renderCard = ({item}) => (
     <TouchableOpacity
-      style={styles.Maincard}
+      style={styles.Main_Card}
       onPress={item.onPress}
       activeOpacity={0.85}>
-      <View style={styles.MainIconWrapper}>
+      <View style={styles.Main_IconWrapper}>
         <Ionicons name={item.icon} size={30} color="#fff" />
       </View>
-      <Text style={styles.MainCardTitle}>{item.title}</Text>
+      <Text style={styles.Main_CardTitle}>{item.title}</Text>
     </TouchableOpacity>
   );
 
@@ -173,15 +168,15 @@ const MainDashboard = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.Maincontainer}>
+        <SafeAreaView style={styles.Main_Container}>
           <FlatList
             key={'2-cols'}
             numColumns={2}
             data={cards}
             renderItem={renderCard}
             keyExtractor={item => item.id}
-            columnWrapperStyle={styles.Mainrow}
-            contentContainerStyle={styles.Maingrid}
+            columnWrapperStyle={styles.Main_Row}
+            contentContainerStyle={styles.Main_Grid}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -190,9 +185,9 @@ const MainDashboard = () => {
               />
             }
             ListHeaderComponent={
-              <View style={styles.MainheaderContainer}>
-                <View style={styles.MainwelcomeCard}>
-                  <View style={styles.MainHeaderRow}>
+              <View style={styles.Main_HeaderContainer}>
+                <View style={styles.Main_WelcomeCard}>
+                  <View style={styles.Main_HeaderRow}>
                     {isLoading ? (
                       <ActivityIndicator size="large" color="#0A66C2" />
                     ) : (
@@ -206,16 +201,18 @@ const MainDashboard = () => {
                               profilePictureUrl ||
                               'https://via.placeholder.com/150',
                           }}
-                          style={styles.MainProfilePicture}
+                          style={styles.Main_ProfilePicture}
                         />
                       </TouchableOpacity>
                     )}
-                    <View style={styles.MainTextColumn}>
-                      <Text style={styles.MainWelcomeText}>Welcome Back!</Text>
-                      <Text style={styles.MainNameText}>
+                    <View style={styles.Main_TextColumn}>
+                      <Text style={styles.Main_WelcomeText}>Welcome Back!</Text>
+                      <Text style={styles.Main_NameText}>
                         {userData.employeeName}
                       </Text>
-                      <Text style={styles.MainEmailText}>{userData.email}</Text>
+                      <Text style={styles.Main_EmailText}>
+                        {userData.email}
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -230,14 +227,14 @@ const MainDashboard = () => {
             onRequestClose={() => setImageModalVisible(false)}>
             <TouchableWithoutFeedback
               onPress={() => setImageModalVisible(false)}>
-              <View style={styles.MainModalOverlay}>
-                <View style={styles.MainModalContent}>
+              <View style={styles.Main_ModalOverlay}>
+                <View style={styles.Main_ModalContent}>
                   <Image
                     source={{
                       uri:
                         profilePictureUrl || 'https://via.placeholder.com/150',
                     }}
-                    style={styles.MainModalImage}
+                    style={styles.Main_ModalImage}
                   />
                 </View>
               </View>

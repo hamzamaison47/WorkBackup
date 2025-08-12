@@ -23,8 +23,6 @@ import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/Profi
 import {UpdateByEmployeeId} from '../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
 import {styles} from '../../styles/styles';
 
-const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
-
 const DisplayPersonalInfo = () => {
   // State management
   const [isLoading, setIsLoading] = useState(true);
@@ -185,10 +183,10 @@ const DisplayPersonalInfo = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <View style={styles.DisplayPIContainer}>
+        <View style={styles.DPI_Container}>
           <ScrollView
-            style={styles.DisplayPIScrollView}
-            contentContainerStyle={styles.DisplayPIScrollContainer}
+            style={styles.DPI_ScrollView}
+            contentContainerStyle={styles.DPI_ScrollContainer}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -196,10 +194,10 @@ const DisplayPersonalInfo = () => {
               />
             }>
             <KeyboardAvoidingView
-              style={styles.DisplayPITopContainer}
+              style={styles.DPI_TopContainer}
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-              <View style={styles.DisplayPIImageContainer}>
+              <View style={styles.DPI_ImageContainer}>
                 <ProfilePictureEditor
                   isLoading={isLoading}
                   profilePictureUrl={profilePictureUrl}
@@ -212,7 +210,7 @@ const DisplayPersonalInfo = () => {
 
           {/* Fixed Save Button at bottom */}
           {isImageChanged && (
-            <View style={styles.DisplayPIFixedButtonContainer}>
+            <View style={styles.DPI_FixedButtonContainer}>
               <SaveButton isLoading={isLoading} onSave={handleSaveChanges} />
             </View>
           )}
