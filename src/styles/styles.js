@@ -219,18 +219,22 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   Login_DialogContainer: {
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 20,
     backgroundColor: '#fff',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   Login_DialogTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   Login_DialogContent: {
     flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -238,13 +242,22 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
+    paddingHorizontal: 10,
+  },
+  Login_DialogButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 20,
   },
   Login_DialogButton: {
+    flex: 1,
     backgroundColor: '#0A66C2',
-    borderRadius: 5,
+    borderRadius: 6,
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    marginHorizontal: 5,
+    alignItems: 'center',
   },
   Login_DialogButtonText: {
     color: '#fff',
@@ -1018,6 +1031,11 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#37474F',
   },
+  DRC_CardSubHeaderText: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: width * 0.035,
+  },
   DRC_ButtonsContainer: {
     flexDirection: 'row',
     gap: width * 0.025,
@@ -1068,7 +1086,10 @@ export const styles = StyleSheet.create({
   },
   DRC_Value: {
     color: '#263238',
-    fontSize: width * 0.035,
+    fontSize: Math.min(width * 0.035, 16), // max 16px
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    textAlign: 'right',
   },
   DRC_StatusText: {
     fontWeight: '900',

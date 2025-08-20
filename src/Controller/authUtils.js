@@ -1,3 +1,13 @@
+import {decode as atob, encode as btoa} from 'base-64';
+
+// Polyfill at the top of your authUtils file
+if (typeof global.atob === 'undefined') {
+  global.atob = atob;
+}
+if (typeof global.btoa === 'undefined') {
+  global.btoa = btoa;
+}
+
 /* eslint-disable no-alert */
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
@@ -5,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveByEmail} from '../API/Authentication/RetrieveByEmail';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 
-export const handleLogoutauth = async Provider => {
+export const handleLogoutauth = async () => {
   try {
     await AsyncStorage.removeItem('accessToken');
     await AsyncStorage.removeItem('idToken');
@@ -17,12 +27,14 @@ export const handleLogoutauth = async Provider => {
 
 export const handleLogin = async (
   setLoading,
-  setUserData, // now from Redux: dispatch(setUserData(...))
+  setUserData,
   navigation,
   setDialogVisible,
   setDialogMessage,
-  initializeLegalEntity, // dispatch(initializeLegalEntity(...))
-  setLegalEntities, // dispatch(setLegalEntities(...))
+  setAlertModal,
+  setAlertMessage,
+  initializeLegalEntity,
+  setLegalEntities,
   provider,
 ) => {
   setLoading(true);
@@ -56,8 +68,12 @@ export const handleLogin = async (
       );
     }
   } catch (error) {
-    console.error('Login error:', error);
-    alert('Login failed. Please try again.');
+    console.error('Login error details:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+
+    setAlertMessage(`Login failed: ${error.message}. Please try again.`);
+    setAlertModal(true);
   } finally {
     setLoading(false);
   }
@@ -88,9 +104,20 @@ export const handleSuccessfulLogin = async (
     employeeInfo[0].WorkerRecId === 0
   ) {
     setDialogMessage(
-      'Incorrect Login Details.\nPlease verify your Username and Password, or contact support if you are having trouble accessing your account.',
+      "Incorrect Login Details.\nYour email isn't registered in our system. Would you like to create an account?",
     );
+
+    // Show popup
     setDialogVisible(true);
+
+    // Save callback for OK button
+    global.onDialogOk = () => {
+      setDialogVisible(false);
+      navigation.navigate('DrawerNavigator', {
+        screen: 'RequestForRegistration',
+      });
+    };
+
     return;
   }
 
@@ -147,12 +174,6 @@ export const fetchEmpInfo = async email => {
         : employeeLegalEntitiesRaw
         ? [employeeLegalEntitiesRaw]
         : [];
-
-      // console.log('Inside Auth Login; data:', data);
-      // console.log(
-      //   'Inside Auth Login; employeeLegalEntities:',
-      //   employeeLegalEntities,
-      // );
 
       return {
         label: item.EmployeeName?.toString() ?? '',

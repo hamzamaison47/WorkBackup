@@ -14,7 +14,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-import {PayGroupPayperiodByEmployeeId} from '../../API/SalarySlip/PayGroupPayperiodByEmployeeId';
+import {PayGroupPayperiodByEmployeeId} from '../../API/PayGroupPayPeriod/PayGroupPayperiodByEmployeeId';
 import {PREmailSalarySlip} from '../../API/SalarySlip/PREmailSalarySlip';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';

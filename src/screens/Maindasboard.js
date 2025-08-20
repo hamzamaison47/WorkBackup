@@ -143,6 +143,45 @@ const MainDashboard = () => {
           selectedLegalEntity,
         }),
     },
+    {
+      id: '4',
+      title: 'Loan & Advance',
+      description: 'View Loan Request',
+      icon: 'wallet-outline',
+      onPress: () =>
+        navigation.navigate('LoanRequestListPage', {
+          employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'MainDashboard',
+        }),
+    },
+    {
+      id: '5',
+      title: 'Entitlement Balance',
+      description: 'Entitlement Balance Request',
+      icon: 'time-outline',
+      onPress: () =>
+        navigation.navigate('EntitlementBalance', {
+          employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'MainDashboard',
+        }),
+    },
+    // {
+    //   id: '6',
+    //   title: 'Advance Request',
+    //   description: 'View Advance Request',
+    //   icon: 'wallet-outline',
+    //   onPress: () =>
+    //     navigation.navigate('AdvanceRequestListPage', {
+    //       employeeId: userData.employeeId,
+    //       employeeName: userData.employeeName,
+    //       WorkerRecId: userData.WorkerRecId,
+    //       cameFrom: 'MainDashboard',
+    //     }),
+    // },
   ];
 
   const renderCard = ({item}) => (

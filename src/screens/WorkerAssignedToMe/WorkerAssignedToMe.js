@@ -14,7 +14,6 @@ import {styles} from '../../styles/styles';
 const WorkerAssignedToMe = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [teamData, setTeamData] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
 
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -45,7 +44,6 @@ const WorkerAssignedToMe = () => {
 
   const handleRefresh = async () => {
     setIsLoading(true);
-    setRefreshing(true);
     try {
       // clearFormData();
 
@@ -58,7 +56,6 @@ const WorkerAssignedToMe = () => {
       console.error('Error in My Team Record Screen', error);
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -92,7 +89,7 @@ const WorkerAssignedToMe = () => {
           keyExtractor={(item, index) => index.toString()}
           contentContainerStyle={{flexGrow: 1}}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }
         />
       ) : (

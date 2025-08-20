@@ -127,6 +127,16 @@ const PRTaxCertificate = () => {
   };
 
   const handleStartDateChange = date => {
+    if (formData.leaveEndDate) {
+      const newStartDate = new Date(date);
+      const endDate = new Date(formData.leaveEndDate);
+
+      if (newStartDate >= endDate) {
+        showMessage('Error', 'Start date must be earlier than end date.');
+        return;
+      }
+    }
+
     const formattedDate = formatToISOWithTime(date);
     setFormData(prev => ({
       ...prev,
@@ -136,6 +146,16 @@ const PRTaxCertificate = () => {
   };
 
   const handleEndDateChange = date => {
+    if (formData.leaveStartDate) {
+      const newEndDate = new Date(date);
+      const startDate = new Date(formData.leaveStartDate);
+
+      if (newEndDate <= startDate) {
+        showMessage('Error', 'End date must be later than start date.');
+        return; // stop here, don't set the end date
+      }
+    }
+
     const formattedDate = formatToISOWithTime(date);
     setFormData(prev => ({
       ...prev,

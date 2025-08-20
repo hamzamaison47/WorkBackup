@@ -18,6 +18,11 @@ import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';
 import {handleLogoutauth} from '../Controller/authUtils';
 import PRTaxCertificate from '../screens/TaxCertificate/PRTaxCertificate';
+import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
+import LoanRequestListPage from '../screens/EmployeeAdvanceRequest/Loan/LoanRequestListPage';
+import EntitlementBalance from '../screens/EntitlementBalance/EntitlementBalance';
+import GenericAdvanceSaveScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceSaveScreen';
+// import AdvanceRequestListPage from '../screens/EmployeeAdvanceRequest/Advance/AdvanceRequestListPage';
 
 const Drawer = createDrawerNavigator();
 const CustomDrawerContent = props => {
@@ -55,7 +60,9 @@ const CustomDrawerContent = props => {
               cameFrom: 'DisplayListPage',
             })
           }
-          icon={() => <Ionicons name="calendar" size={24} color="#0A66C2" />}
+          icon={() => (
+            <Ionicons name="calendar-outline" size={24} color="#0A66C2" />
+          )}
         />
         <DrawerItem
           label="Salary Slip"
@@ -69,6 +76,20 @@ const CustomDrawerContent = props => {
           onPress={() => props.navigation.navigate('PRTaxCertificate')}
           icon={() => (
             <Ionicons name="document-text-outline" size={24} color="#0A66C2" />
+          )}
+        />
+        <DrawerItem
+          label="Loan & Advance"
+          onPress={() => props.navigation.navigate('LoanRequestListPage')}
+          icon={() => (
+            <Ionicons name="wallet-outline" size={24} color="#0A66C2" />
+          )}
+        />
+        <DrawerItem
+          label="Entitlement Balance"
+          onPress={() => props.navigation.navigate('EntitlementBalance')}
+          icon={() => (
+            <Ionicons name="time-outline" size={24} color="#0A66C2" />
           )}
         />
       </DrawerContentScrollView>
@@ -109,7 +130,7 @@ const DrawerNavigator = () => {
           options={{
             title: 'Home',
             drawerIcon: () => (
-              <Ionicons name="tachometer" size={24} color="#0A66C2" />
+              <Ionicons name="speedometer" size={24} color="#0A66C2" />
             ),
           }}
         />
@@ -161,6 +182,66 @@ const DrawerNavigator = () => {
             headerShown: true,
           }}
         />
+        <Drawer.Screen
+          name="RequestForRegistration"
+          component={RequestForRegistration}
+          initialParams={{userData}}
+          options={{
+            title: 'Registration Request',
+            drawerIcon: () => (
+              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+            ),
+            headerShown: false,
+          }}
+        />
+        <Drawer.Screen
+          name="LoanRequestListPage"
+          component={LoanRequestListPage}
+          initialParams={{userData}}
+          options={{
+            title: 'Loan Request',
+            drawerIcon: () => (
+              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+            ),
+            headerShown: true,
+          }}
+        />
+        <Drawer.Screen
+          name="GenericAdvanceSaveScreen"
+          component={GenericAdvanceSaveScreen}
+          initialParams={{userData}}
+          options={{
+            title: 'Loan and Advance Requests Create and Update',
+            drawerIcon: () => (
+              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+            ),
+            headerShown: true,
+          }}
+        />
+        <Drawer.Screen
+          name="EntitlementBalance"
+          component={EntitlementBalance}
+          initialParams={{userData}}
+          options={{
+            title: 'Entitlement Balance',
+            drawerIcon: () => (
+              <Ionicons name="calendar-outline" size={24} color="#0A66C2" />
+            ),
+            headerShown: true,
+          }}
+        />
+        {/* <Drawer.Screen
+          name="AdvanceRequestListPage"
+          component={AdvanceRequestListPage}
+          initialParams={{userData}}
+          options={{
+            title: 'Advance Request',
+            drawerIcon: () => (
+              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+            ),
+            headerShown: true,
+          }}
+        /> */}
       </Drawer.Navigator>
     </>
   );

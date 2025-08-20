@@ -61,6 +61,36 @@ const DisplayListPage = () => {
           employeeId: userData.employeeId,
         }),
     },
+    {
+      id: '4',
+      title: 'Loan & Advance',
+      icon: 'wallet-outline',
+      screen: 'LoanRequestListPage',
+      color: '#0A66C2',
+      category: 'PR',
+      onPress: () =>
+        navigation.navigate('LoanRequestListPage', {
+          employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'DisplayListPage',
+        }),
+    },
+    {
+      id: '5',
+      title: 'Entitlement Balance',
+      icon: 'time-outline',
+      screen: 'EntitlementBalance',
+      color: '#0A66C2',
+      category: 'PR',
+      onPress: () =>
+        navigation.navigate('EntitlementBalance', {
+          employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'DisplayListPage',
+        }),
+    },
   ];
 
   const [activeFilter, setActiveFilter] = useState('All');

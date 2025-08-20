@@ -77,30 +77,20 @@ const LeaveRequestSaveRecord = () => {
   // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
 
-  // Fixed goBack function with proper navigation logic
   const goBack = useCallback(() => {
     if (cameFrom === 'MainDashboard') {
       navigation.navigate('MainDashboard');
     } else if (cameFrom === 'LeavesListPage') {
       navigation.navigate('LeavesListPage', {
-        employeeId: formData.employeeId || employeeId,
-        employeeName: formData.employeeName || employeeName,
-        WorkerRecId: formData.WorkerRecId || WorkerRecId,
+        employeeId: employeeId,
+        employeeName: employeeName,
+        WorkerRecId: WorkerRecId,
         cameFrom: 'LeaveRequestSaveRecord',
       });
     } else {
       navigation.goBack();
     }
-  }, [
-    cameFrom,
-    formData.employeeId,
-    formData.employeeName,
-    formData.WorkerRecId,
-    employeeId,
-    employeeName,
-    WorkerRecId,
-    navigation,
-  ]);
+  }, [cameFrom, employeeId, employeeName, WorkerRecId, navigation]);
 
   // Function to normalize leave category for display
   const normalizeLeaveCategoryForDisplay = category => {

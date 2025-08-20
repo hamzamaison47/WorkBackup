@@ -146,7 +146,7 @@ const DynamicRequestCard = ({
               </Text>
             )}
             {headerConfig.subtitle && (
-              <Text style={styles.DRC_Value}>
+              <Text style={styles.DRC_CardSubHeaderText}>
                 {data[headerConfig.subtitle.key] ||
                   headerConfig.subtitle.defaultValue}
               </Text>

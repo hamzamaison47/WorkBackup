@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, {useState} from 'react';
 import {View, Text, TouchableOpacity, Image} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
@@ -6,8 +7,9 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import PopupDialog from 'react-native-popup-dialog';
 import {useDispatch} from 'react-redux';
 
-import {handleLogin} from '../Controller/authUtils';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
+import {AlertModal} from '../components/Alert/AlertModal';
+import {handleLogin} from '../Controller/authUtils';
 import {setUserData} from '../store/slices/userSlice';
 import {
   setLegalEntities,
@@ -22,6 +24,8 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
+  const [alertModal, setAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   return (
     <LinearGradient
@@ -47,6 +51,8 @@ const LoginScreen = () => {
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
+                setAlertModal,
+                setAlertMessage,
                 legalEntity => dispatch(initializeLegalEntity(legalEntity)),
                 list => dispatch(setLegalEntities(list)),
                 'Azure',
@@ -71,6 +77,8 @@ const LoginScreen = () => {
                 navigation,
                 setDialogVisible,
                 setDialogMessage,
+                setAlertModal,
+                setAlertMessage,
                 legalEntity => dispatch(initializeLegalEntity(legalEntity)),
                 list => dispatch(setLegalEntities(list)),
                 'Google',
@@ -106,15 +114,35 @@ const LoginScreen = () => {
         dialogTitle={
           <Text style={styles.Login_DialogTitle}>Notification</Text>
         }>
-        <View style={styles.Login_DialogContent}>
-          <Text style={styles.Login_DialogMessage}>{dialogMessage}</Text>
+        <Text style={styles.Login_DialogMessage}>{dialogMessage}</Text>
+
+        <View style={styles.Login_DialogButtonsRow}>
           <TouchableOpacity
-            style={styles.Login_DialogButton}
+            style={[styles.Login_DialogButton, {backgroundColor: '#999'}]}
             onPress={() => setDialogVisible(false)}>
+            <Text style={styles.Login_DialogButtonText}>Cancel</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.Login_DialogButton, {backgroundColor: '#0A66C2'}]}
+            onPress={() => {
+              setDialogVisible(false);
+              if (global.onDialogOk) {
+                global.onDialogOk();
+                global.onDialogOk = null;
+              }
+            }}>
             <Text style={styles.Login_DialogButtonText}>OK</Text>
           </TouchableOpacity>
         </View>
       </PopupDialog>
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </LinearGradient>
   );
 };
