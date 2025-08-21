@@ -2,7 +2,7 @@ import React, {useEffect} from 'react';
 import {Text, Animated, ActivityIndicator} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {getToken} from '../API/Token/getToken';
-import {styles} from '../styles/styles';
+import styles from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
   const logoOpacity = new Animated.Value(0);

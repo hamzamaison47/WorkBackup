@@ -1,7 +1,7 @@
 import React from 'react';
 import {Modal, View, TouchableOpacity, Text} from 'react-native';
 import {Calendar} from 'react-native-calendars';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const CalendarModal = ({
   visible,

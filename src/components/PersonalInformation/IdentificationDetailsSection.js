@@ -2,7 +2,7 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {AlertDeleteModal} from '../Alert/AlertModal';
+import AlertDeleteModal from '../Alert/AlertDeleteModal';
 
 const IdentificationDetailsSection = ({
   IdentityrRows,

@@ -5,11 +5,11 @@ import {useSelector} from 'react-redux';
 
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
 
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 import AssignedWorkerCard from '../../components/WorkerAssigned/AssignedWorkerCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const WorkerAssignedToMe = () => {
   const [isLoading, setIsLoading] = useState(false);

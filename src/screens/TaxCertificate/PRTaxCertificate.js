@@ -8,11 +8,11 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {PREmailTaxCertificate} from '../../API/TaxCertificate/TaxCertificate';
 
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 
 const PRTaxCertificate = () => {
   const navigation = useNavigation();

@@ -16,8 +16,8 @@ import NotificationDropdown from './PageHeader/NotificationDropdown';
 import CompanyDropdown from './PageHeader/CompanyDropdown';
 
 import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
-import {AlertModal} from './Alert/AlertModal';
-import {styles} from '../styles/styles';
+import AlertModal from './Alert/AlertModal';
+import styles from '../styles/styles';
 
 const ActionPaneContainer = ({
   children,

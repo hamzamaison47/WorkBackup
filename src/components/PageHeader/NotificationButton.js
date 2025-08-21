@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, TouchableOpacity, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const NotificationButton = ({onPress, notificationCount, onClose}) => {
   return (

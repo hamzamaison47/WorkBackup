@@ -12,7 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const AssignedWorkerCard = ({
   employeeId,

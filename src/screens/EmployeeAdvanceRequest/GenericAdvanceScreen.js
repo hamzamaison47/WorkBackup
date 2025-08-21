@@ -8,15 +8,19 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 
-import {AlertDeleteModal, AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
+import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 
+import {
+  fetchAdvances,
+  retrieveAdvanceTypeCode,
+} from '../../Controller/advanceRequestApiService';
 import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
-import {fetchAdvances} from '../../Controller/advanceRequestApiService';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const GenericAdvanceScreen = ({advanceType, screenName}) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -40,6 +44,10 @@ const GenericAdvanceScreen = ({advanceType, screenName}) => {
 
     try {
       const advanceResults = await fetchAdvances(employeeId);
+
+      const advanceTypeRequest = await retrieveAdvanceTypeCode();
+      console.log('advance Type code Request: ', advanceTypeRequest);
+
       setAdvanceData(advanceResults);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');

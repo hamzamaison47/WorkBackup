@@ -29,11 +29,11 @@ import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
 import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import {UpdateLeaveRequest} from '../../API/Leaves/UpdateLeaveRequest';
 
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const LeaveRequestSaveRecord = () => {
   const route = useRoute();

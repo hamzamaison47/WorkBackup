@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const CompanyDropdown = ({
   visible,

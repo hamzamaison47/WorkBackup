@@ -7,7 +7,7 @@ import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
 import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/RetrieveEntitlementBalanceRequest';
 
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import EntitlementCards from '../../components/EntitlementBalance/EntitlementCards';

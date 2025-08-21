@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CustomIndicator from '../CustomIndicator/CustomIndicator';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const ProfilePictureEditor = ({
   isLoading,

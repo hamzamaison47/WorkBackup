@@ -1,6 +1,6 @@
 import React from 'react';
 import {TouchableOpacity, Text, ActivityIndicator} from 'react-native';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const SaveButton = ({isLoading, onSave}) => {
   return (

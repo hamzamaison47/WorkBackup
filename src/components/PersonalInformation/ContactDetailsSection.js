@@ -2,8 +2,9 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {AlertDeleteModal} from '../Alert/AlertModal';
-import {styles} from '../../styles/styles';
+
+import styles from '../../styles/styles';
+import AlertDeleteModal from '../Alert/AlertDeleteModal';
 
 const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
   const [nameRows, setNameRows] = useState([]);

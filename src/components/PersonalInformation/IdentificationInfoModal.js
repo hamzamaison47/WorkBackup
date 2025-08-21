@@ -13,7 +13,7 @@ import {
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CalendarModal from '../Leaves/CalendarModal';
-import {AlertModal} from '../Alert/AlertModal';
+import AlertModal from '../Alert/AlertModal';
 
 import {FindIdentificationTypeRequest} from '../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
 

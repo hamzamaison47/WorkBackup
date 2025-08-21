@@ -19,8 +19,8 @@ import {PREmailSalarySlip} from '../../API/SalarySlip/PREmailSalarySlip';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import {AlertModal} from '../../components/Alert/AlertModal';
-import {styles} from '../../styles/styles';
+import AlertModal from '../../components/Alert/AlertModal';
+import styles from '../../styles/styles';
 
 const PRSalarySlip = () => {
   const [loading, setLoading] = useState(false);

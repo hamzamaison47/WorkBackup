@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const ContactInfoModal = ({
   visible,

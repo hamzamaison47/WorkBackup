@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 // import {useNavigation} from '@react-navigation/native';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const NotificationDropdown = ({visible, notifications, onClose}) => {
   // const navigation = useNavigation();

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import PopupDialog from 'react-native-popup-dialog';
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 
 const RequestForRegistration = () => {
   const navigation = useNavigation();

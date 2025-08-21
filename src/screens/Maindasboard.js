@@ -21,7 +21,7 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../components/ActionPaneContainer';
-import {styles} from '../styles/styles';
+import styles from '../styles/styles';
 
 const MainDashboard = () => {
   const dispatch = useDispatch();

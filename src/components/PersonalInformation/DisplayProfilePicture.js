@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import CustomIndicator from '../CustomIndicator/CustomIndicator';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const DisplayProfilePicture = ({isLoading, profilePictureUrl, userData}) => {
   const [isModalVisible, setIsModalVisible] = useState(false);

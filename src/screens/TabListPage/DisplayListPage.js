@@ -15,8 +15,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
+
 const {width} = Dimensions.get('window');
+
 const DisplayListPage = () => {
   const navigation = useNavigation();
   const userData = useSelector(state => state.user.userData);

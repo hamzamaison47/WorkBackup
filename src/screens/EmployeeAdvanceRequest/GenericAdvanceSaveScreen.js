@@ -21,19 +21,17 @@ import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
-// import {
-//   fetchEntitlementCodes,
-//   fetchEntitlementBalance,
-// } from '../../Controller/entitlementApiService';
-// import {createEntitlementRequest} from '../../API/Entitlement/CreateEntitlementRequest';
-// import {SubmitEntitlementRequest} from '../../API/Entitlement/SubmitEntitlementRequest';
-// import {UpdateEntitlementRequest} from '../../API/Entitlement/UpdateEntitlementRequest';
+// import {RetrieveAdvanceType} from '../../API/Advance/RetrieveAdvanceType';
+import {PayGroupPayperiodByEmployeeId} from '../../API/PayGroupPayPeriod/PayGroupPayperiodByEmployeeId';
+import {CreateAdvanceRequest} from '../../API/EmployeeAdvanceRequest/CreateAdvanceRequest';
+import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
+import {UpdateAdvanceRequest} from '../../API/EmployeeAdvanceRequest/UpdateAdvanceRequest';
 
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -44,59 +42,81 @@ const GenericAdvanceSaveScreen = () => {
   // Navigation params with safe defaults
   const {
     mode = 'create',
-    entitlementData = {},
-    employeeId = entitlementData.employeeId || userData?.employeeId || '',
-    employeeName = entitlementData.employeeName || userData?.employeeName || '',
-    WorkerRecId = entitlementData.WorkerRecId || userData?.WorkerRecId || '',
+    advanceData = {},
+    employeeId = advanceData.employeeId || userData?.employeeId || '',
+    employeeName = advanceData.employeeName || userData?.employeeName || '',
+    WorkerRecId = advanceData.WorkerRecId || userData?.WorkerRecId || '',
     cameFrom = 'MainDashboard',
+    advanceType = 'Loan',
+    screenName = 'Loan',
   } = route.params || {};
 
   // State declarations
-  const [EntitlementCodesForEmployee, setEntitlementCodesForEmployee] =
-    useState([]);
+  const [advanceCodes, setAdvanceCodes] = useState([]);
+  const [advanceCodeDropDown, setAdvanceCodeDropDown] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarMode, setCalendarMode] = useState('startDate'); // 'startDate' or 'endDate'
+  const [currentDateField, setCurrentDateField] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [processingButton, setProcessingButton] = useState(''); // Track which button is processing
+  const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Validation states
+  const [isAdvanceAmountValid, setIsAdvanceAmountValid] = useState(true);
+  const [isAmountExceeds, setIsAmountExceeds] = useState(false);
+  const [maxAdvanceAmount, setMaxAdvanceAmount] = useState(0);
+  const [isAdvanceTypeCodeValid, setIsAdvanceTypeCodeValid] = useState(true);
+  const [isPaymentDateValid, setIsPaymentDateValid] = useState(true);
+  const [isRecoveryDateValid, setIsRecoveryDateValid] = useState(true);
+  const [isRecoveryAmountValid, setIsRecoveryAmountValid] = useState(true);
+  const [isRecoveriesValid, setIsRecoveriesValid] = useState(true);
+  const [maxRecoveries, setMaxRecoveries] = useState(0);
+  const [isFieldsDisabled, setIsFieldsDisabled] = useState(false);
+  const [isAmountFieldsDisabled, setIsAmountFieldsDisabled] = useState(false);
 
   // Create initial form data function
   const createInitialFormData = () => ({
-    recId:
-      !entitlementData.recId || entitlementData.recId === '0'
-        ? ''
-        : entitlementData.recId,
+    RecId:
+      !advanceData.RecId || advanceData.RecId === '0' ? '' : advanceData.RecId,
     employeeId: employeeId,
     employeeName: employeeName,
     WorkerRecId: WorkerRecId,
-    entitlementCode: '',
-    entitlementType: '',
-    entitlementAmount: '0.00',
-    entitlementStartDate: '',
-    entitlementEndDate: '',
-    balance: '0.00',
-    description: '',
-    currency: 'USD', // Default currency
+    AdvanceTypeCode: '',
+    AdvanceAmount: '0',
+    RequestedPaymentDate: '',
+    RecoveryStartDate: '',
+    RequestedInstallmentAmount: '',
+    RequestedInstallments: '',
+    AdvanceDescription: '',
   });
 
-  // Form state - Initialize by calling the function
+  // Form state
   const [formData, setFormData] = useState(() => createInitialFormData());
 
   const goBack = useCallback(() => {
     if (cameFrom === 'MainDashboard') {
       navigation.navigate('MainDashboard');
-    } else if (cameFrom === 'EntitlementListPage') {
-      navigation.navigate('EntitlementListPage', {
+    } else if (cameFrom.includes('ListPage')) {
+      navigation.navigate('GenericAdvanceScreen', {
         employeeId: employeeId,
         employeeName: employeeName,
         WorkerRecId: WorkerRecId,
-        cameFrom: 'EntitlementSaveRecord',
+        cameFrom: 'GenericAdvanceSaveScreen',
+        advanceType: advanceType,
+        screenName: screenName,
       });
     } else {
       navigation.goBack();
     }
-  }, [cameFrom, employeeId, employeeName, WorkerRecId, navigation]);
+  }, [
+    cameFrom,
+    employeeId,
+    employeeName,
+    WorkerRecId,
+    navigation,
+    advanceType,
+    screenName,
+  ]);
 
   // Function to clear form data
   const clearFormData = useCallback(() => {
@@ -105,62 +125,87 @@ const GenericAdvanceSaveScreen = () => {
   }, []);
 
   // Reset form data when screen comes into focus and mode changes
-  //   useFocusEffect(
-  //     React.useCallback(() => {
-  //       if (mode === 'create') {
-  //         // Always reset form data for create mode
-  //         const freshFormData = createInitialFormData();
-  //         setFormData(freshFormData);
-  //       } else if (mode === 'edit' && entitlementData?.recId) {
-  //         const editFormData = {
-  //           ...createInitialFormData(),
-  //           ...entitlementData,
-  //           employeeId: entitlementData.employeeId || employeeId,
-  //           employeeName: entitlementData.employeeName || employeeName,
-  //           WorkerRecId: entitlementData.WorkerRecId || WorkerRecId,
-  //         };
+  useFocusEffect(
+    React.useCallback(() => {
+      if (mode === 'create') {
+        const freshFormData = createInitialFormData();
+        setFormData(freshFormData);
+      } else if (mode === 'edit' && advanceData?.RecId) {
+        const editFormData = {
+          ...createInitialFormData(),
+          ...advanceData,
+          employeeId: advanceData.employeeId || employeeId,
+          employeeName: advanceData.employeeName || employeeName,
+          WorkerRecId: advanceData.WorkerRecId || WorkerRecId,
+          AdvanceAmount: advanceData.AdvanceAmount
+            ? advanceData.AdvanceAmount.toString()
+            : '0',
+          RequestedInstallmentAmount: advanceData.RequestedInstallmentAmount
+            ? advanceData.RequestedInstallmentAmount.toString()
+            : '',
+          RequestedInstallments: advanceData.RequestedInstallments
+            ? advanceData.RequestedInstallments.toString()
+            : '',
+        };
 
-  //         console.log('Setting edit form data:', editFormData);
-  //         setFormData(editFormData);
+        setFormData(editFormData);
+      }
 
-  //         // Fetch entitlement codes first, then balance
-  //         fetchEntitlementCodesForEmployee().then(() => {
-  //           // Fetch balance for the existing record if needed
-  //           if (
-  //             (entitlementData?.employeeId || employeeId) &&
-  //             entitlementData?.entitlementCode
-  //           ) {
-  //             fetchEntitlementBalance(
-  //               entitlementData?.employeeId || employeeId,
-  //               entitlementData?.entitlementCode,
-  //             )
-  //               .then(balance => {
-  //                 setFormData(prev => ({
-  //                   ...prev,
-  //                   balance: balance || '0.00',
-  //                 }));
-  //               })
-  //               .catch(error => {
-  //                 console.error('Error fetching balance for edit mode:', error);
-  //                 setFormData(prev => ({
-  //                   ...prev,
-  //                   balance: '0.00',
-  //                 }));
-  //               });
-  //           }
-  //         });
-  //       }
-  //     }, [mode, entitlementData?.recId, employeeId, employeeName, WorkerRecId]),
-  //   );
+      // Fetch initial data
+      fetchInitialData();
+    }, [mode, advanceData?.RecId, employeeId, employeeName, WorkerRecId]),
+  );
+
+  const fetchInitialData = async () => {
+    try {
+      // Fetch advance codes
+      // const advanceCode = await RetrieveAdvanceType();
+      // const filteredAdvanceType = advanceCode.filter(
+      //   type => type.AdvanceType === 0,
+      // );
+      // const dropdownData = Array.from(
+      //   new Set(filteredAdvanceType.map(item => item.AdvanceTypeCode)),
+      // ).map(code => ({
+      //   label: code,
+      //   value: code,
+      // }));
+
+      // setAdvanceCodeDropDown(dropdownData);
+      // setAdvanceCodes(filteredAdvanceType);
+
+      // Fetch PayGroupPayPeriod data if EmployeeId is available
+      if (employeeId) {
+        // const response = await getPayGroupPayPeriod(employeeId);
+        const response = await PayGroupPayperiodByEmployeeId({
+          employeeId: userData.employeeId,
+        });
+        const filteredPayGroupPayPeriod = response.filter(
+          a => a.PayPeriodStatus === 0,
+        );
+
+        if (filteredPayGroupPayPeriod && filteredPayGroupPayPeriod.length > 0) {
+          if (mode === 'create') {
+            setFormData(prev => ({
+              ...prev,
+              RecoveryStartDate: formatToISOWithTime(
+                filteredPayGroupPayPeriod[0]?.EndDate,
+              ),
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching initial data:', error);
+      setAlertMessage('Failed to fetch initial data.');
+      setAlertModal(true);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsLoading(true);
-
     try {
       clearFormData();
-
-      //   const codes = await fetchEntitlementCodes(formData.employeeId);
-      //   setEntitlementCodesForEmployee(codes);
+      await fetchInitialData();
     } catch (error) {
       console.error('Error in Save Record Screen', error);
     } finally {
@@ -175,113 +220,7 @@ const GenericAdvanceSaveScreen = () => {
     }));
   };
 
-  const entitlementTypeOptions = [
-    {label: 'Annual', value: 'Annual'},
-    {label: 'Monthly', value: 'Monthly'},
-    {label: 'One-time', value: 'One-time'},
-    {label: 'Quarterly', value: 'Quarterly'},
-  ];
-
-  const currencyOptions = [
-    {label: 'USD', value: 'USD'},
-    {label: 'EUR', value: 'EUR'},
-    {label: 'GBP', value: 'GBP'},
-    {label: 'PKR', value: 'PKR'},
-  ];
-
-  const formatToISOWithTime = date => {
-    const baseDate = new Date(date);
-    const year = baseDate.getFullYear();
-    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-    const day = String(baseDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T12:00:00`;
-  };
-
-  const handleDateChange = async (date, dateType) => {
-    const formatted = formatToISOWithTime(date);
-
-    if (dateType === 'startDate') {
-      setFormData(prev => ({
-        ...prev,
-        entitlementStartDate: formatted,
-      }));
-    } else if (dateType === 'endDate') {
-      setFormData(prev => ({
-        ...prev,
-        entitlementEndDate: formatted,
-      }));
-    }
-
-    // Fetch balance when start date changes
-    if (
-      dateType === 'startDate' &&
-      formData.employeeId &&
-      formData.entitlementCode
-    ) {
-      try {
-        // const balanceData = await fetchEntitlementBalance(
-        //   formData.employeeId,
-        //   formData.entitlementCode,
-        // );
-        // setFormData(prev => ({
-        //   ...prev,
-        //   balance: balanceData || '0.00',
-        // }));
-      } catch (error) {
-        console.error('Error fetching entitlement balance:', error);
-        setFormData(prev => ({
-          ...prev,
-          balance: '0.00',
-        }));
-      }
-    }
-  };
-
-  const handleEntitlementCodeChange = async item => {
-    const newEntitlementCode = item.value;
-
-    const resetForm = {
-      ...createInitialFormData(),
-      employeeId: formData.employeeId,
-      employeeName: formData.employeeName,
-      WorkerRecId: formData.WorkerRecId,
-      entitlementCode: newEntitlementCode,
-      entitlementType: formData.entitlementType,
-      currency: formData.currency,
-    };
-
-    setFormData(resetForm);
-
-    try {
-      //   const balanceData = await fetchEntitlementBalance(
-      //     formData.employeeId,
-      //     newEntitlementCode,
-      //   );
-      //   setFormData(prev => ({
-      //     ...prev,
-      //     balance: balanceData || '0.00',
-      //   }));
-    } catch (error) {
-      console.error('Error fetching entitlement balance:', error);
-      setFormData(prev => ({
-        ...prev,
-        balance: '0.00',
-      }));
-    }
-  };
-
-  const fetchEntitlementCodesForEmployee = async () => {
-    try {
-      //   const codes = await fetchEntitlementCodes(
-      //     entitlementData?.employeeId || employeeId,
-      //   );
-      //   setEntitlementCodesForEmployee(codes);
-    } catch (error) {
-      setAlertMessage('Failed to fetch entitlement codes.');
-      setAlertModal(true);
-    }
-  };
-
+  // Format date functions
   const formatDate = date =>
     date
       ? new Date(date).toLocaleDateString('en-US', {
@@ -291,103 +230,329 @@ const GenericAdvanceSaveScreen = () => {
         })
       : '';
 
-  const convertDateFormat = date => {
-    const d = new Date(date);
-    return `${d.getFullYear()}-${(d.getMonth() + 1)
-      .toString()
-      .padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}T12:00:00`;
+  const formatToISOWithTime = date => {
+    const baseDate = new Date(date);
+    const year = baseDate.getFullYear();
+    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const day = String(baseDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T12:00:00`;
   };
 
-  //   const handleAction = async (actionType, modalMode, data = {}) => {
-  //     try {
-  //       const formattedRequestDate = `${
-  //         new Date().toISOString().split('T')[0]
-  //       }T12:00:00`;
+  // Handle date changes
+  const handleDateChange = async (date, fieldName) => {
+    const formatted = formatToISOWithTime(date);
 
-  //       const entitlementRequestData = {
-  //         EntitlementCode: data.entitlementCode,
-  //         EntitlementType: data.entitlementType,
-  //         EntitlementAmount: data.entitlementAmount.toString(),
-  //         EntitlementStartDate: data.entitlementStartDate,
-  //         EntitlementEndDate: convertDateFormat(data.entitlementEndDate),
-  //         Balance: data.balance.toString(),
-  //         Description: data.description,
-  //         Currency: data.currency,
-  //         RequestDate: formattedRequestDate,
-  //         EmployeeId: data.employeeId,
-  //         RecId: data.recId === '' ? '0' : data.recId,
-  //       };
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: formatted,
+    }));
 
-  //       if (
-  //         !entitlementRequestData.EntitlementCode ||
-  //         !entitlementRequestData.EntitlementStartDate
-  //       ) {
-  //         setAlertMessage('Entitlement Code and Start Date are required.');
-  //         setAlertModal(true);
-  //         return false;
-  //       }
+    setShowCalendar(false);
 
-  //       let response;
-  //       if (modalMode === 'create') {
-  //         response = await createEntitlementRequest({
-  //           entitlementData: entitlementRequestData,
-  //         });
-  //         if (actionType === 'submit') {
-  //           await SubmitEntitlementRequest({
-  //             recId: response.RecId,
-  //           });
-  //         }
-  //       } else {
-  //         response = await UpdateEntitlementRequest({
-  //           entitlementData: entitlementRequestData,
-  //         });
-  //         if (actionType === 'submit') {
-  //           await SubmitEntitlementRequest({
-  //             recId: response.RecId,
-  //           });
-  //         }
-  //       }
+    // Validate dates
+    if (fieldName === 'RequestedPaymentDate') {
+      validatePaymentDate(formatted);
+    } else if (fieldName === 'RecoveryStartDate') {
+      validateRecoveryStartDate(formatted);
+    }
+  };
 
-  //       console.log('API Response:', response);
+  // Validation functions
+  const validatePaymentDate = date => {
+    const selectedDate = new Date(date);
+    const recoveryStartDateObj = new Date(formData.RecoveryStartDate);
 
-  //       const isSuccess =
-  //         response.IsSuccess === true || response.IsSuccess === 'true';
+    if (formData.RecoveryStartDate && selectedDate > recoveryStartDateObj) {
+      setIsPaymentDateValid(false);
+    } else {
+      setIsPaymentDateValid(true);
+    }
+  };
 
-  //       if (isSuccess) {
-  //         const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-  //         const submitText = actionType === 'submit' ? ' and Submitted' : '';
-  //         setAlertMessage(
-  //           `${data.entitlementCode} is ${actionText}${submitText} Successfully`,
-  //         );
-  //         setAlertModal(true);
-  //         return {success: true, recId: response.RecId};
-  //       } else {
-  //         const errorMessage = response.Message || 'Operation Failed';
-  //         setAlertMessage(errorMessage);
-  //         setAlertModal(true);
-  //         return {success: false, message: errorMessage};
-  //       }
-  //     } catch (error) {
-  //       console.error('Error in handleAction:', error);
-  //       setAlertMessage('An error occurred while processing the request.');
-  //       setAlertModal(true);
-  //       return {success: false, message: 'Network or server error'};
-  //     }
-  //   };
+  const validateRecoveryStartDate = date => {
+    const selectedDate = new Date(date);
+    const paymentDateObj = new Date(formData.RequestedPaymentDate);
 
-  const handleSave = async actionType => {
-    if (processingButton) return; // Prevent multiple clicks
+    if (formData.RequestedPaymentDate && selectedDate < paymentDateObj) {
+      setIsRecoveryDateValid(false);
+    } else {
+      setIsRecoveryDateValid(true);
+    }
+  };
 
+  // Handle Advance Amount Change
+  const handleAdvanceAmountChange = value => {
+    const cleanedValue = value.replace(/[^0-9.]/g, '');
+    const formattedValue = new Intl.NumberFormat().format(cleanedValue);
+    handleInputChange('AdvanceAmount', formattedValue);
+    setIsAdvanceAmountValid(true);
+    setIsAmountExceeds(false);
+  };
+
+  // Validate Advance Amount
+  const validateAdvanceAmount = () => {
+    const advanceAmountStr = formData.AdvanceAmount || '0';
+    const advanceAmountNum = Number(advanceAmountStr.replace(/,/g, ''));
+
+    if (!advanceAmountNum || advanceAmountNum === 0) {
+      setIsAdvanceAmountValid(false);
+    } else {
+      setIsAdvanceAmountValid(true);
+    }
+  };
+
+  // Check if the Advance Amount exceeds the limit
+  const checkAdvanceAmountLimit = () => {
+    const advanceTypeCode = formData.AdvanceTypeCode;
+    const advanceAmountStr = formData.AdvanceAmount || '0';
+    const advanceAmountNum = Number(advanceAmountStr.replace(/,/g, ''));
+
+    const filteredAdvances = advanceCodes.filter(
+      a => a.AdvanceTypeCode === advanceTypeCode,
+    );
+
+    if (filteredAdvances.length > 0) {
+      const maxAdvanceAmounts = filteredAdvances[0]?.MaxAdanceAmount || 0;
+      if (advanceAmountNum > maxAdvanceAmounts && maxAdvanceAmounts !== 0) {
+        setIsAmountExceeds(true);
+        setMaxAdvanceAmount(maxAdvanceAmounts);
+      } else {
+        setIsAmountExceeds(false);
+      }
+    }
+  };
+
+  // Handle Advance Type Code Change
+  const handleAdvanceTypeCodeChange = async item => {
+    const newAdvanceTypeCode = item.value;
+
+    // Reset form but keep employee info and selected type code
+    const resetForm = {
+      ...createInitialFormData(),
+      employeeId: formData.employeeId,
+      employeeName: formData.employeeName,
+      WorkerRecId: formData.WorkerRecId,
+      AdvanceTypeCode: newAdvanceTypeCode,
+    };
+
+    setFormData(resetForm);
+    setIsAdvanceTypeCodeValid(true);
+
+    // Fetch recoveries for the new advance type
+    await fetchRecoveries(newAdvanceTypeCode);
+  };
+
+  // Handle Recovery Amount Change
+  const handleRecoveryAmountChange = value => {
+    const cleanedValue = value.replace(/[^0-9.]/g, '');
+    const formattedValue = new Intl.NumberFormat().format(cleanedValue);
+
+    setFormData(prev => ({
+      ...prev,
+      RequestedInstallmentAmount: formattedValue,
+      RequestedInstallments:
+        formattedValue !== '' && formattedValue !== '0'
+          ? ''
+          : prev.RequestedInstallments,
+    }));
+
+    validateRecoveryAmount(formattedValue);
+
+    if (formattedValue !== '' && formattedValue !== '0') {
+      setIsFieldsDisabled(true);
+    } else {
+      setIsFieldsDisabled(false);
+    }
+  };
+
+  // Validate Recovery Amount
+  const validateRecoveryAmount = value => {
+    const advanceAmountStr = formData.AdvanceAmount || '0';
+    const advanceAmountNum = Number(advanceAmountStr.replace(/,/g, ''));
+    const recoveryAmountNum = Number(value.replace(/,/g, ''));
+
+    if (recoveryAmountNum > advanceAmountNum) {
+      setIsRecoveryAmountValid(false);
+    } else {
+      setIsRecoveryAmountValid(true);
+    }
+  };
+
+  // Handle Recoveries Change
+  const handleRecoveriesChange = value => {
+    const cleanedValue = value.replace(/[^0-9]/g, '');
+
+    setFormData(prev => ({
+      ...prev,
+      RequestedInstallments: cleanedValue,
+      RequestedInstallmentAmount:
+        cleanedValue !== '' ? '' : prev.RequestedInstallmentAmount,
+    }));
+
+    validateRecoveries(cleanedValue);
+
+    if (cleanedValue !== '') {
+      setIsAmountFieldsDisabled(true);
+    } else {
+      setIsAmountFieldsDisabled(false);
+    }
+  };
+
+  // Validate Recoveries
+  const validateRecoveries = value => {
+    const recoveriesNum = Number(value);
+    if (recoveriesNum > maxRecoveries) {
+      setIsRecoveriesValid(false);
+    } else {
+      setIsRecoveriesValid(true);
+    }
+  };
+
+  // Fetch recoveries based on the advance type code
+  const fetchRecoveries = async (
+    advanceTypeCode = formData.AdvanceTypeCode,
+  ) => {
+    try {
+      const filteredAdvances = advanceCodes.filter(
+        a => a.AdvanceTypeCode === advanceTypeCode,
+      );
+
+      if (filteredAdvances.length > 0) {
+        const maxRecoverie = filteredAdvances[0]?.Recoveries || 0;
+        setMaxRecoveries(maxRecoverie);
+
+        // Set default values based on recoveries
+        if (maxRecoverie > 0) {
+          setFormData(prev => ({
+            ...prev,
+            RequestedInstallments: maxRecoverie.toString(),
+            RequestedInstallmentAmount: '',
+          }));
+          setIsAmountFieldsDisabled(true);
+        } else {
+          setFormData(prev => ({
+            ...prev,
+            RequestedInstallments: '',
+            RequestedInstallmentAmount: '',
+          }));
+          setIsFieldsDisabled(false);
+          setIsAmountFieldsDisabled(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching recoveries:', error);
+    }
+  };
+
+  // Main action handler
+  const handleAction = async (actionType, modalMode, data = {}) => {
+    try {
+      const formattedRequestDate = `${
+        new Date().toISOString().split('T')[0]
+      }T12:00:00`;
+
+      const advanceRequestData = {
+        AdvanceTypeCode: data.AdvanceTypeCode,
+        AdvanceAmount: data.AdvanceAmount.toString().replace(/,/g, ''),
+        RequestedPaymentDate: data.RequestedPaymentDate,
+        RecoveryStartDate: data.RecoveryStartDate,
+        RequestedInstallmentAmount: data.RequestedInstallmentAmount
+          ? data.RequestedInstallmentAmount.toString().replace(/,/g, '')
+          : '0',
+        RequestedInstallments: data.RequestedInstallments || '0',
+        AdvanceDescription: data.AdvanceDescription,
+        EmployeeId: data.employeeId,
+        RecId: data.RecId === '' ? '0' : data.RecId,
+        RequestDate: formattedRequestDate,
+      };
+
+      if (
+        !advanceRequestData.AdvanceTypeCode ||
+        !advanceRequestData.RequestedPaymentDate
+      ) {
+        setAlertMessage('Advance Type Code and Payment Date are required.');
+        setAlertModal(true);
+        return false;
+      }
+
+      let response;
+      if (modalMode === 'create') {
+        response = await CreateAdvanceRequest({
+          advanceData: advanceRequestData,
+        });
+        if (actionType === 'submit') {
+          await SubmitAdvanceRequest({
+            recId: response.RecId,
+          });
+        }
+      } else {
+        response = await UpdateAdvanceRequest({
+          advanceData: advanceRequestData,
+        });
+        if (actionType === 'submit') {
+          await SubmitAdvanceRequest({
+            recId: response.RecId,
+          });
+        }
+      }
+
+      const isSuccess =
+        response.IsSuccess === true || response.IsSuccess === 'true';
+
+      if (isSuccess) {
+        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const submitText = actionType === 'submit' ? ' and Submitted' : '';
+        setAlertMessage(
+          `${data.AdvanceTypeCode} is ${actionText}${submitText} Successfully`,
+        );
+        setAlertModal(true);
+        return {success: true, recId: response.RecId};
+      } else {
+        const errorMessage = response.Message || 'Operation Failed';
+        setAlertMessage(errorMessage);
+        setAlertModal(true);
+        return {success: false, message: errorMessage};
+      }
+    } catch (error) {
+      console.error('Error in handleAction:', error);
+      setAlertMessage('An error occurred while processing the request.');
+      setAlertModal(true);
+      return {success: false, message: 'Network or server error'};
+    }
+  };
+
+  // Validate all fields
+  const validateFields = () => {
+    let isValid = true;
     const missingFields = [];
 
-    if (!formData.entitlementCode) missingFields.push('Entitlement Code');
-    if (!formData.entitlementType) missingFields.push('Entitlement Type');
-    if (!formData.entitlementStartDate) missingFields.push('Start Date');
-    if (
-      !formData.entitlementAmount ||
-      Number(formData.entitlementAmount) === 0
-    ) {
-      missingFields.push('Entitlement Amount');
+    // Validate Advance Type Code
+    if (!formData.AdvanceTypeCode) {
+      setIsAdvanceTypeCodeValid(false);
+      missingFields.push('Advance Type Code');
+      isValid = false;
+    } else {
+      setIsAdvanceTypeCodeValid(true);
+    }
+
+    // Validate Advance Amount
+    const advanceAmountStr = formData.AdvanceAmount || '0';
+    const advanceAmountNum = Number(advanceAmountStr.replace(/,/g, ''));
+    if (!advanceAmountNum || advanceAmountNum === 0) {
+      setIsAdvanceAmountValid(false);
+      missingFields.push('Advance Amount');
+      isValid = false;
+    } else {
+      setIsAdvanceAmountValid(true);
+    }
+
+    // Validate Payment Date
+    if (!formData.RequestedPaymentDate) {
+      setIsPaymentDateValid(false);
+      missingFields.push('Payment Date');
+      isValid = false;
+    } else {
+      setIsPaymentDateValid(true);
     }
 
     if (missingFields.length > 0) {
@@ -396,36 +561,60 @@ const GenericAdvanceSaveScreen = () => {
         missingFields.join('\n');
       setAlertMessage(message);
       setAlertModal(true);
+    }
+
+    return isValid;
+  };
+
+  const handleSave = async actionType => {
+    if (processingButton) return;
+
+    if (!validateFields()) {
+      return;
+    }
+
+    // Check for validation errors
+    if (
+      isAmountExceeds ||
+      !isRecoveryAmountValid ||
+      !isRecoveriesValid ||
+      !isPaymentDateValid ||
+      !isRecoveryDateValid
+    ) {
+      setAlertMessage('Please fix the validation errors before proceeding.');
+      setAlertModal(true);
       return;
     }
 
     setProcessingButton(actionType);
 
     try {
-      //   const result = await handleAction(
-      //     actionType,
-      //     mode === 'edit' ? 'update' : 'create',
-      //     formData,
-      //   );
-      //   if (result.success) {
-      //     // Clear form data after successful operation
-      //     setTimeout(() => {
-      //       setAlertModal(false);
-      //       // Clear the form data
-      //       clearFormData();
-      //       // Navigate to EntitlementListPage after successful create/update
-      //       navigation.navigate('EntitlementListPage', {
-      //         employeeId: formData.employeeId,
-      //         employeeName: formData.employeeName,
-      //         WorkerRecId: formData.WorkerRecId,
-      //         highlightRecId: result.recId,
-      //         cameFrom: mode === 'create' ? 'CreateSuccess' : 'UpdateSuccess',
-      //       });
-      //     }, 2000);
-      //   }
+      const result = await handleAction(
+        actionType,
+        mode === 'edit' ? 'update' : 'create',
+        formData,
+      );
+
+      if (result.success) {
+        setTimeout(() => {
+          setAlertModal(false);
+          clearFormData();
+
+          // Navigate to list page after successful create/update
+          navigation.navigate('GenericAdvanceScreen', {
+            employeeId: formData.employeeId,
+            employeeName: formData.employeeName,
+            WorkerRecId: formData.WorkerRecId,
+            highlightRecId: result.recId,
+            cameFrom: mode === 'create' ? 'CreateSuccess' : 'UpdateSuccess',
+            advanceType: advanceType,
+            screenName: screenName,
+          });
+        }, 2000);
+      }
     } catch (error) {
-      console.error('Error saving entitlement request:', error);
-      setAlertMessage('Failed to save entitlement request. Please try again.');
+      console.error('Error saving advance request:', error);
+      setAlertMessage('Failed to save advance request. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -434,14 +623,11 @@ const GenericAdvanceSaveScreen = () => {
 
   const today = new Date().toISOString().split('T')[0];
 
-  const openCalendar = mode => {
-    setCalendarMode(mode);
-    setShowCalendar(true);
-  };
-
   return (
     <ActionPaneContainer
-      pageTitle={mode === 'edit' ? 'Edit Entitlement' : 'Create Entitlement'}
+      pageTitle={
+        mode === 'edit' ? `Edit ${screenName}` : `Create ${screenName}`
+      }
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -449,7 +635,6 @@ const GenericAdvanceSaveScreen = () => {
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
-      {/* Show loading indicator when isLoading is true */}
       {isLoading ? (
         <CustomIndicator />
       ) : (
@@ -468,152 +653,161 @@ const GenericAdvanceSaveScreen = () => {
                 {formatDate(today)}
               </Text>
 
-              <Text style={styles.LReqSR_Label}>Entitlement Code *</Text>
-              <Dropdown
-                style={styles.LReqSR_Input}
-                data={EntitlementCodesForEmployee}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Entitlement Code"
-                value={formData.entitlementCode}
-                onFocus={fetchEntitlementCodesForEmployee}
-                onChange={handleEntitlementCodeChange}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
-                search
-                searchPlaceholder="Search Entitlement Code..."
-              />
-
-              <Text style={styles.LReqSR_Label}>Entitlement Type *</Text>
-              <Dropdown
-                style={styles.LReqSR_Input}
-                data={entitlementTypeOptions}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Entitlement Type"
-                value={formData.entitlementType}
-                onChange={item =>
-                  handleInputChange('entitlementType', item.value)
-                }
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
-                search
-                searchPlaceholder="Search Entitlement Type..."
-              />
-
-              <Text style={styles.LReqSR_Label}>Currency</Text>
-              <Dropdown
-                style={styles.LReqSR_Input}
-                data={currencyOptions}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Currency"
-                value={formData.currency}
-                onChange={item => handleInputChange('currency', item.value)}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
-              />
-
-              <Text style={styles.LReqSR_Label}>Entitlement Amount *</Text>
+              <Text style={styles.LReqSR_Label}>Advance Amount *</Text>
               <TextInput
-                style={styles.LReqSR_Input}
-                value={formData.entitlementAmount.toString()}
-                onChangeText={value =>
-                  handleInputChange('entitlementAmount', value)
-                }
-                keyboardType="numeric"
-                placeholder="Enter entitlement amount"
-              />
-
-              <Text style={styles.LReqSR_Label}>Balance</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
-                {formData.balance}
-              </Text>
-
-              <Text style={styles.LReqSR_Label}>Start Date *</Text>
-              <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
-                onPress={() => openCalendar('startDate')}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
-                    {formData.entitlementStartDate
-                      ? formatDate(formData.entitlementStartDate)
-                      : 'Select Start Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-
-              <Text style={styles.LReqSR_Label}>End Date</Text>
-              <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
-                onPress={() => openCalendar('endDate')}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
-                    {formData.entitlementEndDate
-                      ? formatDate(formData.entitlementEndDate)
-                      : 'Select End Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-
-              <CalendarModal
-                visible={showCalendar}
-                current={
-                  calendarMode === 'startDate'
-                    ? formData.entitlementStartDate
-                    : formData.entitlementEndDate
-                }
-                onDateSelected={date => {
-                  handleDateChange(date, calendarMode);
-                  setShowCalendar(false);
+                style={[
+                  styles.LReqSR_Input,
+                  !isAdvanceAmountValid && {borderColor: 'red'},
+                  !formData.AdvanceTypeCode && styles.LReqSR_Disabled,
+                ]}
+                value={formData.AdvanceAmount}
+                onChangeText={handleAdvanceAmountChange}
+                onBlur={() => {
+                  validateAdvanceAmount();
+                  checkAdvanceAmountLimit();
                 }}
-                onClose={() => setShowCalendar(false)}
+                keyboardType="numeric"
+                placeholder="Enter advance amount"
+                editable={!!formData.AdvanceTypeCode}
               />
+              {!isAdvanceAmountValid && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Advance Amount is required
+                </Text>
+              )}
+              {isAmountExceeds && maxAdvanceAmount > 0 && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Advance Amount cannot exceed{' '}
+                  {Number(maxAdvanceAmount).toLocaleString()}
+                </Text>
+              )}
 
-              <Text style={styles.LReqSR_Label}>Description</Text>
+              <Text style={styles.LReqSR_Label}>Advance Type Code *</Text>
+              <Dropdown
+                style={[
+                  styles.LReqSR_Input,
+                  !isAdvanceTypeCodeValid && {borderColor: 'red'},
+                ]}
+                data={advanceCodeDropDown}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Advance Type Code"
+                value={formData.AdvanceTypeCode}
+                onChange={handleAdvanceTypeCodeChange}
+                placeholderStyle={{color: '#444'}}
+                selectedTextStyle={{color: '#444'}}
+                itemTextStyle={{color: '#444'}}
+                search
+                searchPlaceholder="Search Advance Type Code..."
+              />
+              {!isAdvanceTypeCodeValid && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Advance Type Code is required
+                </Text>
+              )}
+
+              <Text style={styles.LReqSR_Label}>Payment Date *</Text>
+              <TouchableOpacity
+                style={[
+                  styles.LReqSR_DateSelector,
+                  !isPaymentDateValid && {borderColor: 'red'},
+                ]}
+                onPress={() => {
+                  setCurrentDateField('RequestedPaymentDate');
+                  setShowCalendar(true);
+                }}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.LReqSR_DateText}>
+                    {formData.RequestedPaymentDate
+                      ? formatDate(formData.RequestedPaymentDate)
+                      : 'Select Payment Date'}
+                  </Text>
+                </View>
+                <Icon name="calendar" size={20} color="#0A66C2" />
+              </TouchableOpacity>
+              {!isPaymentDateValid && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Payment Date is required
+                </Text>
+              )}
+
+              <Text style={styles.LReqSR_Label}>Recovery Start Date</Text>
+              <TouchableOpacity
+                style={[
+                  styles.LReqSR_DateSelector,
+                  !isRecoveryDateValid && {borderColor: 'red'},
+                ]}
+                onPress={() => {
+                  setCurrentDateField('RecoveryStartDate');
+                  setShowCalendar(true);
+                }}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.LReqSR_DateText}>
+                    {formData.RecoveryStartDate
+                      ? formatDate(formData.RecoveryStartDate)
+                      : 'Select Recovery Start Date'}
+                  </Text>
+                </View>
+                <Icon name="calendar" size={20} color="#0A66C2" />
+              </TouchableOpacity>
+              {!isRecoveryDateValid && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Recovery Start Date cannot be before Payment Date
+                </Text>
+              )}
+
+              <Text style={styles.LReqSR_Label}>Recovery Amount</Text>
+              <TextInput
+                style={[
+                  styles.LReqSR_Input,
+                  isAmountFieldsDisabled && styles.LReqSR_Disabled,
+                  !isRecoveryAmountValid && {borderColor: 'red'},
+                ]}
+                value={formData.RequestedInstallmentAmount}
+                onChangeText={handleRecoveryAmountChange}
+                keyboardType="numeric"
+                placeholder="Enter recovery amount"
+                editable={!isAmountFieldsDisabled}
+              />
+              {!isRecoveryAmountValid && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Recovery Amount cannot exceed Advance Amount
+                </Text>
+              )}
+
+              <Text style={styles.LReqSR_Label}>Recoveries</Text>
+              <TextInput
+                style={[
+                  styles.LReqSR_Input,
+                  isFieldsDisabled && styles.LReqSR_Disabled,
+                  !isRecoveriesValid && {borderColor: 'red'},
+                ]}
+                value={formData.RequestedInstallments}
+                onChangeText={handleRecoveriesChange}
+                keyboardType="numeric"
+                placeholder="Enter number of recoveries"
+                editable={!isFieldsDisabled}
+              />
+              {!isRecoveriesValid && (
+                <Text style={{color: 'red', fontSize: 12, marginTop: 5}}>
+                  Recoveries cannot exceed {maxRecoveries}
+                </Text>
+              )}
+
+              <Text style={styles.LReqSR_Label}>Advance Description</Text>
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
-                value={formData.description}
-                onChangeText={value => handleInputChange('description', value)}
-                placeholder="Enter description"
+                value={formData.AdvanceDescription}
+                onChangeText={value =>
+                  handleInputChange('AdvanceDescription', value)
+                }
+                placeholder="Enter advance description"
                 multiline
-                numberOfLines={6}
+                numberOfLines={4}
               />
             </ScrollView>
 
             <View style={styles.LReqSR_Footer}>
-              <Pressable
-                style={({pressed}) => [
-                  styles.LReqSR_Button,
-                  pressed && styles.LReqSR_PressedButton,
-                  (processingButton === 'save' ||
-                    processingButton === 'submit') &&
-                    styles.LReqSR_DisabledButton,
-                ]}
-                onPress={() => handleSave('save')}
-                disabled={
-                  processingButton === 'save' || processingButton === 'submit'
-                }>
-                {({pressed}) => (
-                  <Text
-                    style={[
-                      styles.LReqSR_ButtonText,
-                      pressed && styles.LReqSR_pressedText,
-                    ]}>
-                    {processingButton === 'save'
-                      ? 'Processing...'
-                      : mode === 'edit'
-                      ? 'Update'
-                      : 'Create'}
-                  </Text>
-                )}
-              </Pressable>
-
               <Pressable
                 style={({pressed}) => [
                   styles.LReqSR_Button,
@@ -643,6 +837,17 @@ const GenericAdvanceSaveScreen = () => {
               </Pressable>
             </View>
           </KeyboardAvoidingView>
+
+          <CalendarModal
+            visible={showCalendar}
+            current={
+              currentDateField === 'RequestedPaymentDate'
+                ? formData.RequestedPaymentDate
+                : formData.RecoveryStartDate
+            }
+            onDateSelected={date => handleDateChange(date, currentDateField)}
+            onClose={() => setShowCalendar(false)}
+          />
 
           <AlertModal
             visible={alertModal}

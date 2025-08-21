@@ -7,16 +7,16 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 
-import {AlertModal} from '../../components/Alert/AlertModal';
-import {AlertDeleteModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
+import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
+import styles from '../../styles/styles';
 
 import {DeleteLeaveRequest} from '../../API/Leaves/DeleteLeaveRequest';
 import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
-import {styles} from '../../styles/styles';
 
 const LeaveRequestListPage = () => {
   const [isLoading, setIsLoading] = useState(false);

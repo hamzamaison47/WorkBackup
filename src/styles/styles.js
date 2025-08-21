@@ -5,7 +5,7 @@ const cardWidth = (width - 56) / 2;
 const PROFILE_IMAGE_SIZE = width * 0.35; // responsive image size
 const BORDER_WIDTH = 5;
 
-export const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   // start of  splash_ page name
   splash_Container: {
     flex: 1,
@@ -1787,3 +1787,5 @@ export const styles = StyleSheet.create({
   },
   // end of worker assigned me component
 });
+
+export default styles;

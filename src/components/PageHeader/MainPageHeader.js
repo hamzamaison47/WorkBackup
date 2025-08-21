@@ -4,7 +4,8 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import NotificationButton from './NotificationButton';
 import LogoutButton from './LogoutButton';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
+
 const {height} = Dimensions.get('window');
 
 const MainPageHeader = ({

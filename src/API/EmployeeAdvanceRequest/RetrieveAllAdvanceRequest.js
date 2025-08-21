@@ -1,42 +1,12 @@
-// import {BASE_URL} from '@env';
-// import {getToken} from '../Token/getToken';
-
-// const RetrieveAllAdvancesRequest = async () => {
-//   try {
-//     const accessToken = await getToken();
-//     const response = await fetch(
-//       `${BASE_URL}PREmployeeAdvanceRequestSvcGroup/PREmployeeAdvanceRequestSvc/retrieveAll`,
-//       {
-//         method: 'POST',
-//         headers: {
-//           Authorization: `Bearer ${accessToken}`,
-//           'Content-Type': 'application/json',
-//         },
-//         body: JSON.stringify(),
-//       },
-//     );
-//     if (!response.ok) {
-//       const errorText = await response.text();
-//       throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-//     }
-//     const leaveCodes = await response.json();
-//     // console.log('Advance Request Data =================:', leaveCodes);
-
-//     return leaveCodes;
-//   } catch (error) {
-//     console.error('Failed to fetch All employee IDs:', error);
-//     throw error;
-//   }
-// };
-
-// export {RetrieveAllAdvancesRequest};
-
 /* eslint-disable dot-notation */
 import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
-import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {
+  createSoapEnvelope,
+  createSoapHeader,
+} from '../../store/utils/soapHeaderUtils';
 
 const RetrieveAllAdvanceRequest = async () => {
   try {
@@ -46,7 +16,8 @@ const RetrieveAllAdvanceRequest = async () => {
       <retrieveAll xmlns="http://tempuri.org">
       </retrieveAll>`;
 
-    const soapEnvelope = createSoapEnvelope(soapBody);
+    // const soapEnvelope = createSoapEnvelope(soapBody);
+    const soapEnvelope = createSoapHeader();
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/PREmployeeAdvanceRequestSvcGroup`,

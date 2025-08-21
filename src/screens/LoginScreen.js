@@ -8,14 +8,14 @@ import PopupDialog from 'react-native-popup-dialog';
 import {useDispatch} from 'react-redux';
 
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
-import {AlertModal} from '../components/Alert/AlertModal';
+import AlertModal from '../components/Alert/AlertModal';
 import {handleLogin} from '../Controller/authUtils';
 import {setUserData} from '../store/slices/userSlice';
 import {
   setLegalEntities,
   initializeLegalEntity,
 } from '../store/slices/companySlice';
-import {styles} from '../styles/styles';
+import styles from '../styles/styles';
 
 const LoginScreen = () => {
   const navigation = useNavigation();

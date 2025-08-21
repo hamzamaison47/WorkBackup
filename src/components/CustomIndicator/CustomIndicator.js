@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect} from 'react';
 import {View, Animated, Dimensions} from 'react-native';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 

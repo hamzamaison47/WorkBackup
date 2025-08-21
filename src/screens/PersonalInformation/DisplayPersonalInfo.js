@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  Dimensions,
   RefreshControl,
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
@@ -14,14 +13,14 @@ import {useSelector} from 'react-redux';
 // Components
 import ProfilePictureEditor from '../../components/PersonalInformation/ProfilePictureEditor';
 import SaveButton from '../../components/PersonalInformation/SaveButton';
-import {AlertModal} from '../../components/Alert/AlertModal';
+import AlertModal from '../../components/Alert/AlertModal';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 
 // API imports
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
 import {UpdateByEmployeeId} from '../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const DisplayPersonalInfo = () => {
   // State management

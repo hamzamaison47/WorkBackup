@@ -7,7 +7,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 
-import {styles} from '../../styles/styles';
+import styles from '../../styles/styles';
 
 const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
   return (
