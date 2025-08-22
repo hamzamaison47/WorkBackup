@@ -46,7 +46,7 @@ const SplashScreens = ({navigation}) => {
         style={[styles.splash_Logo, {opacity: logoOpacity}]}
         resizeMode="contain"
       />
-      <Text style={styles.splash_Text}>ESS By Maison</Text>
+      <Text style={styles.splash_Text}>Dynaface ESS By Maison</Text>
       <Text style={styles.splash_Tagline}>Your Technology Partner</Text>
       <ActivityIndicator
         size="large"

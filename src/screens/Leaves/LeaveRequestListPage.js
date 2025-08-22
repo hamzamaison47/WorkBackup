@@ -367,7 +367,7 @@ const LeaveRequestListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Leaves"
+      pageTitle="Employee Leave Requests"
       isBackButton={false} // Use drawer instead of back button
       showFooter={true}
       showFloatingButton={true}

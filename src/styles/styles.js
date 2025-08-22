@@ -493,6 +493,40 @@ const styles = StyleSheet.create({
     color: '#333',
     backgroundColor: '#fff',
   },
+  LReqSR_DropdownPlaceholder: {
+    color: '#444',
+  },
+  LReqSR_DropdownSelectedText: {
+    color: '#444',
+    fontWeight: '400',
+  },
+  LReqSR_DropdownItemText: {
+    color: '#444',
+  },
+  LReqSR_DropdownContainer: {
+    borderWidth: 1.5,
+    borderColor: '#4A90E2',
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    marginTop: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  LReqSR_DropdownItemContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  LReqSR_DropdownSearchInput: {
+    color: '#444',
+    backgroundColor: '#fff',
+  },
+  LReqSR_DropdownIcon: {
+    width: 22,
+    height: 22,
+  },
   LReqSR_Disabled: {
     backgroundColor: '#f1f1f1',
     color: '#999',
@@ -1234,7 +1268,7 @@ const styles = StyleSheet.create({
   },
   MPH_title: {
     color: '#ffffff',
-    fontSize: height * 0.021, // hp(4)
+    fontSize: height * 0.02, // hp(4)
     fontWeight: 'bold',
   },
   MPH_rightSideView: {

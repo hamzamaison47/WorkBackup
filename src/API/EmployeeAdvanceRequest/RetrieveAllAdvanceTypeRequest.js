@@ -9,7 +9,8 @@ const RetrieveAllAdvanceTypeRequest = async () => {
   try {
     const token = await getToken();
 
-    const soapBody = `<retrieveAll xmlns="http://tempuri.org" />`;
+    const soapBody = `<retrieveAll xmlns="http://tempuri.org">
+      </retrieveAll>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
