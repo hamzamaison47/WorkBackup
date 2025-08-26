@@ -71,7 +71,7 @@ const DisplayListPage = () => {
       color: '#0A66C2',
       category: 'PR',
       onPress: () =>
-        navigation.navigate('LoanRequestListPage', {
+        navigation.navigate('GenericAdvanceListScreen', {
           employeeId: userData.employeeId,
           employeeName: userData.employeeName,
           WorkerRecId: userData.WorkerRecId,

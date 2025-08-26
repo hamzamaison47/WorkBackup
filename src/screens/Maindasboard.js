@@ -146,10 +146,10 @@ const MainDashboard = () => {
     {
       id: '4',
       title: 'Loan & Advance',
-      description: 'View Loan Request',
+      description: 'Manage loan and advance requests',
       icon: 'wallet-outline',
       onPress: () =>
-        navigation.navigate('LoanRequestListPage', {
+        navigation.navigate('GenericAdvanceListScreen', {
           employeeId: userData.employeeId,
           employeeName: userData.employeeName,
           WorkerRecId: userData.WorkerRecId,
@@ -159,7 +159,7 @@ const MainDashboard = () => {
     {
       id: '5',
       title: 'Entitlement Balance',
-      description: 'Entitlement Balance Request',
+      description: 'Check leave balances',
       icon: 'time-outline',
       onPress: () =>
         navigation.navigate('EntitlementBalance', {
@@ -169,19 +169,6 @@ const MainDashboard = () => {
           cameFrom: 'MainDashboard',
         }),
     },
-    // {
-    //   id: '6',
-    //   title: 'Advance Request',
-    //   description: 'View Advance Request',
-    //   icon: 'wallet-outline',
-    //   onPress: () =>
-    //     navigation.navigate('AdvanceRequestListPage', {
-    //       employeeId: userData.employeeId,
-    //       employeeName: userData.employeeName,
-    //       WorkerRecId: userData.WorkerRecId,
-    //       cameFrom: 'MainDashboard',
-    //     }),
-    // },
   ];
 
   const renderCard = ({item}) => (

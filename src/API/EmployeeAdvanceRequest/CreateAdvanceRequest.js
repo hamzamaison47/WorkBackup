@@ -81,16 +81,16 @@ const buildContractXml = contract => {
 
   const ns = 'tem';
   const fields = [
-    'Balance',
+    'AdvanceAmount',
+    'AdvanceDescription',
+    'AdvanceTypeCode',
     'EmployeeId',
-    'LeaveCategory',
-    'LeaveCode',
-    'LeaveDays',
-    'LeaveEndDate',
-    'LeaveReqDate',
-    'LeaveStartDate',
-    'Reason',
     'RecId',
+    'RecoveryStartDate',
+    'RequestDate',
+    'RequestedInstallmentAmount',
+    'RequestedInstallments',
+    'RequestedPaymentDate',
   ];
 
   return fields

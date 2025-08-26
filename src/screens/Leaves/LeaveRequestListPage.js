@@ -268,10 +268,13 @@ const LeaveRequestListPage = () => {
 
     setButtonProcessing(itemToDelete.recId, 'delete', true);
 
+    console.log('Delete Leave Request response', itemToDelete.recId);
     try {
       const response = await DeleteLeaveRequest({
         recordsRecId: [itemToDelete.recId],
       });
+
+      console.log('Delete Leave Request response', response);
 
       if (response[0].IsSuccess) {
         setAlertMessage('Leave Request Deleted Successfully.');
@@ -283,6 +286,7 @@ const LeaveRequestListPage = () => {
       }
     } catch (error) {
       setAlertMessage('Failed to Delete Leave Request');
+      console.log('Delete Leave Request response', error);
     } finally {
       setButtonProcessing(itemToDelete.recId, 'delete', false);
       setDeleteModal(false);
@@ -367,7 +371,7 @@ const LeaveRequestListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Leaves"
+      pageTitle="Employee Leave Requests"
       isBackButton={false} // Use drawer instead of back button
       showFooter={true}
       showFloatingButton={true}

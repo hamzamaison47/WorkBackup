@@ -51,8 +51,6 @@ const SubmitAdvanceRequest = async ({recId}) => {
 
     const parsed = parser.parse(xml);
 
-    // console.log('Parsed SOAP ENVELOPE IN SUBMIT REQUEST', parsed);
-
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.[
         'submitAdvanceRequestByRecIdResponse'
@@ -60,8 +58,6 @@ const SubmitAdvanceRequest = async ({recId}) => {
       parsed?.['soap:Envelope']?.['soap:Body']?.[
         'submitAdvanceRequestByRecIdResponse'
       ]?.['result'];
-
-    // console.log('Result SOAP ENVELOPE IN SUBMIT REQUEST', result);
 
     if (!result) {
       console.log('No result found in Submit SOAP response');
@@ -82,11 +78,6 @@ const SubmitAdvanceRequest = async ({recId}) => {
     };
 
     const cleanedResult = cleanObject(result);
-
-    // console.log(
-    //   'Cleaned Result SOAP ENVELOPE IN SUBMIT REQUEST',
-    //   cleanedResult,
-    // );
 
     return cleanedResult;
   } catch (error) {

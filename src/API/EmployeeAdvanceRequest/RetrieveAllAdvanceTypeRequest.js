@@ -9,11 +9,10 @@ const RetrieveAllAdvanceTypeRequest = async () => {
   try {
     const token = await getToken();
 
-    const soapBody = `<retrieveAll xmlns="http://tempuri.org" />`;
+    const soapBody = `<retrieveAll xmlns="http://tempuri.org">
+    </retrieveAll>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-
-    console.log('soapEnvelope of advance Type request', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${resource}soap/services/PRAdvanceTypesSvcGroup`,
@@ -28,8 +27,6 @@ const RetrieveAllAdvanceTypeRequest = async () => {
       },
     );
 
-    console.log('xml of advance Type request', xml);
-
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -40,9 +37,9 @@ const RetrieveAllAdvanceTypeRequest = async () => {
 
     const parsed = parser.parse(xml);
     const rawData =
-      parsed?.['soapenv:Envelope']?.['soapenv:Body']?.['retrieveAllResponse']?.[
-        'result'
-      ]?.['a:PRAdvanceTypesSvcContract'];
+      parsed?.['s:Envelope']?.['s:Body']?.['retrieveAllResponse']?.['result']?.[
+        'a:PRAdvanceTypesSvcContract'
+      ];
 
     if (!rawData) {
       console.log('No Retrieve All Advance Type Request Response found');

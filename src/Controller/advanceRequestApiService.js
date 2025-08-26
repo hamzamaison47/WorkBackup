@@ -1,5 +1,4 @@
 import {FindByEmployeeAdvanceRequest} from '../API/EmployeeAdvanceRequest/FindByEmployeeAdvanceRequest';
-import {RetrieveAllAdvanceTypeRequest} from '../API/EmployeeAdvanceRequest/RetrieveAllAdvanceTypeRequest';
 
 export const fetchAdvances = async employeeId => {
   try {
@@ -35,26 +34,5 @@ export const fetchAdvances = async employeeId => {
     }));
   } catch (error) {
     throw new Error('Error fetching Advance Request');
-  }
-};
-
-export const retrieveAdvanceTypeCode = async () => {
-  try {
-    const data = await RetrieveAllAdvanceTypeRequest();
-    console.log('Main Data of Advance Type Request', data);
-    return data.map(item => ({
-      AdvanceTypeCode: item.AdvanceTypeCode,
-      Description: item.Description,
-      EmploymentType: item.EmploymentType,
-      MaxAdanceAmount: item.MaxAdanceAmount,
-      MaxAdavnceTaken: item.MaxAdavnceTaken,
-      MinServiceYear: item.MinServiceYear,
-      RecoveryCode: item.RecoveryCode,
-      CalculationCode: item.CalculationCode,
-      Recoveries: item.Recoveries,
-      RecId: item.RecId,
-    }));
-  } catch (error) {
-    throw new Error('Error fetching Advace Type Code Request');
   }
 };

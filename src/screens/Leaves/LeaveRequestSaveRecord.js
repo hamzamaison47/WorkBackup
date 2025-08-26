@@ -128,6 +128,7 @@ const LeaveRequestSaveRecord = () => {
           leaveData.leaveCategory,
         );
 
+        // FIXED: Set leaveDays correctly for edit mode
         const editFormData = {
           ...createInitialFormData(),
           ...leaveData,
@@ -135,6 +136,7 @@ const LeaveRequestSaveRecord = () => {
           employeeName: leaveData.employeeName || employeeName,
           WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
           leaveCategory: normalizedLeaveCategory, // Use normalized category
+          leaveDays: leaveData.leaveDays || '', // FIXED: Use existing leaveDays from leaveData
         };
 
         console.log(
@@ -145,30 +147,13 @@ const LeaveRequestSaveRecord = () => {
 
         // Fetch leave codes first, then balance
         fetchLeaveCodesForEmployee().then(() => {
-          // Fetch balance for the existing record
-          if (
-            (leaveData?.employeeId || employeeId) &&
-            leaveData?.leaveCode &&
-            leaveData?.leaveStartDate
-          ) {
-            fetchLeaveBalance(
-              leaveData?.employeeId || employeeId,
-              leaveData?.leaveCode,
-              leaveData?.leaveStartDate,
-            )
-              .then(balance => {
-                setFormData(prev => ({
-                  ...prev,
-                  balance: balance || '0.00',
-                }));
-              })
-              .catch(error => {
-                console.error('Error fetching balance for edit mode:', error);
-                setFormData(prev => ({
-                  ...prev,
-                  balance: '0.00',
-                }));
-              });
+          // FIXED: For edit mode, don't fetch balance - keep existing balance
+          // This prevents the balance from changing when editing existing records
+          if (mode === 'edit' && leaveData?.balance) {
+            setFormData(prev => ({
+              ...prev,
+              balance: leaveData.balance,
+            }));
           }
         });
       }
@@ -179,6 +164,8 @@ const LeaveRequestSaveRecord = () => {
       employeeName,
       WorkerRecId,
       leaveData?.leaveCategory,
+      leaveData?.leaveDays, // FIXED: Add leaveDays to dependencies
+      leaveData?.balance, // FIXED: Add balance to dependencies
     ]),
   );
 
@@ -225,7 +212,8 @@ const LeaveRequestSaveRecord = () => {
       leaveStartDate: formatted,
     }));
 
-    if (formData.employeeId && formData.leaveCode) {
+    // FIXED: Only fetch balance for create mode, not edit mode
+    if (mode === 'create' && formData.employeeId && formData.leaveCode) {
       try {
         const balanceData = await fetchLeaveBalance(
           formData.employeeId,
@@ -253,6 +241,14 @@ const LeaveRequestSaveRecord = () => {
         setFormData(prev => ({
           ...prev,
           balance: '0.00',
+        }));
+      }
+    } else if (mode === 'edit') {
+      // For edit mode, just recalculate end date if leave days are present
+      if (formData.leaveDays) {
+        setFormData(prev => ({
+          ...prev,
+          leaveEndDate: calculateEndDate(formatted, formData.leaveDays),
         }));
       }
     } else {
@@ -337,25 +333,28 @@ const LeaveRequestSaveRecord = () => {
 
     setFormData(resetForm);
 
-    const effectiveStartDate =
-      formData.leaveStartDate || new Date().toISOString().split('T')[0];
+    // FIXED: Only fetch balance for create mode
+    if (mode === 'create') {
+      const effectiveStartDate =
+        formData.leaveStartDate || new Date().toISOString().split('T')[0];
 
-    try {
-      const balanceData = await fetchLeaveBalance(
-        formData.employeeId,
-        newLeaveCode,
-        effectiveStartDate,
-      );
-      setFormData(prev => ({
-        ...prev,
-        balance: balanceData || '0.00',
-      }));
-    } catch (error) {
-      console.error('Error fetching leave balance:', error);
-      setFormData(prev => ({
-        ...prev,
-        balance: '0.00',
-      }));
+      try {
+        const balanceData = await fetchLeaveBalance(
+          formData.employeeId,
+          newLeaveCode,
+          effectiveStartDate,
+        );
+        setFormData(prev => ({
+          ...prev,
+          balance: balanceData || '0.00',
+        }));
+      } catch (error) {
+        console.error('Error fetching leave balance:', error);
+        setFormData(prev => ({
+          ...prev,
+          balance: '0.00',
+        }));
+      }
     }
   };
 
@@ -530,7 +529,9 @@ const LeaveRequestSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={mode === 'edit' ? 'Edit' : 'Create'}
+      pageTitle={
+        mode === 'edit' ? 'Edit Leave Request' : 'Create Leave Request'
+      }
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -551,10 +552,12 @@ const LeaveRequestSaveRecord = () => {
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.employeeName}
               </Text>
+
               <Text style={styles.LReqSR_Label}>Request Date</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formatDate(today)}
               </Text>
+
               <Text style={styles.LReqSR_Label}>Leave Category *</Text>
               <Dropdown
                 style={styles.LReqSR_Input}
@@ -564,12 +567,19 @@ const LeaveRequestSaveRecord = () => {
                 placeholder="Select Leave Category"
                 value={formData.leaveCategory}
                 onChange={handleLeaveCategoryChange}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
+                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                itemTextStyle={styles.LReqSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={styles.LReqSR_DropdownContainer}
+                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                maxHeight={280}
                 search
                 searchPlaceholder="Search Leave Category..."
+                inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                iconStyle={styles.LReqSR_DropdownIcon}
               />
+
               <Text style={styles.LReqSR_Label}>Leave Code *</Text>
               <Dropdown
                 style={styles.LReqSR_Input}
@@ -580,16 +590,24 @@ const LeaveRequestSaveRecord = () => {
                 value={formData.leaveCode}
                 onFocus={fetchLeaveCodesForEmployee}
                 onChange={handleLeaveCodeChange}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
+                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                itemTextStyle={styles.LReqSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={styles.LReqSR_DropdownContainer}
+                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                maxHeight={280}
                 search
-                searchPlaceholder="Search Leave Code..."
+                searchPlaceholder="Search Leave Category..."
+                inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                iconStyle={styles.LReqSR_DropdownIcon}
               />
+
               <Text style={styles.LReqSR_Label}>Balance</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.balance}
               </Text>
+
               <Text style={styles.LReqSR_Label}>Leave Start Date *</Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
@@ -609,6 +627,7 @@ const LeaveRequestSaveRecord = () => {
                 onDateSelected={handleDateChange}
                 onClose={() => setShowCalendar(false)}
               />
+
               <Text style={styles.LReqSR_Label}>Leave Days *</Text>
               <TextInput
                 style={[
@@ -621,12 +640,14 @@ const LeaveRequestSaveRecord = () => {
                 placeholder="Enter number of days"
                 editable={!isLeaveDaysDisabled}
               />
+
               <Text style={styles.LReqSR_Label}>End Date</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.leaveEndDate
                   ? formatDate(formData.leaveEndDate)
                   : 'End date will be calculated'}
               </Text>
+
               <Text style={styles.LReqSR_Label}>Reason</Text>
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}

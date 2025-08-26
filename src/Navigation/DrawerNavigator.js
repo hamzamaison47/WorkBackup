@@ -7,22 +7,22 @@ import {
   DrawerContentScrollView,
   DrawerItem,
 } from '@react-navigation/drawer';
-// import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSelector} from 'react-redux';
+
 import logo from '../assets/cloud.png';
-import TabNavigator from './TabNavigator';
+import {handleLogoutauth} from '../Controller/authUtils';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
+
+import TabNavigator from './TabNavigator';
 import PRSalarySlip from '../screens/SalarySlip/PRSalarySlip';
 import LeaveRequestListPage from '../screens/Leaves/LeaveRequestListPage';
 import LeaveRequestSaveRecord from '../screens/Leaves/LeaveRequestSaveRecord';
-import {handleLogoutauth} from '../Controller/authUtils';
 import PRTaxCertificate from '../screens/TaxCertificate/PRTaxCertificate';
 import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
-import LoanRequestListPage from '../screens/EmployeeAdvanceRequest/Loan/LoanRequestListPage';
 import EntitlementBalance from '../screens/EntitlementBalance/EntitlementBalance';
 import GenericAdvanceSaveScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceSaveScreen';
-// import AdvanceRequestListPage from '../screens/EmployeeAdvanceRequest/Advance/AdvanceRequestListPage';
+import GenericAdvanceListScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceListScreen';
 
 const Drawer = createDrawerNavigator();
 const CustomDrawerContent = props => {
@@ -80,7 +80,14 @@ const CustomDrawerContent = props => {
         />
         <DrawerItem
           label="Loan & Advance"
-          onPress={() => props.navigation.navigate('LoanRequestListPage')}
+          onPress={() =>
+            props.navigation.navigate('GenericAdvanceListScreen', {
+              employeeId: userData.employeeId,
+              employeeName: userData.employeeName,
+              WorkerRecId: userData.WorkerRecId,
+              cameFrom: 'DrawerNavigation',
+            })
+          }
           icon={() => (
             <Ionicons name="wallet-outline" size={24} color="#0A66C2" />
           )}
@@ -195,13 +202,13 @@ const DrawerNavigator = () => {
           }}
         />
         <Drawer.Screen
-          name="LoanRequestListPage"
-          component={LoanRequestListPage}
+          name="GenericAdvanceListScreen"
+          component={GenericAdvanceListScreen}
           initialParams={{userData}}
           options={{
-            title: 'Loan Request',
+            title: 'Loan & Advance Requests',
             drawerIcon: () => (
-              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+              <Ionicons name="wallet-outline" size={24} color="#0A66C2" />
             ),
             headerShown: true,
           }}
@@ -211,9 +218,9 @@ const DrawerNavigator = () => {
           component={GenericAdvanceSaveScreen}
           initialParams={{userData}}
           options={{
-            title: 'Loan and Advance Requests Create and Update',
+            title: 'Create/Edit Request',
             drawerIcon: () => (
-              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
+              <Ionicons name="create-outline" size={24} color="#0A66C2" />
             ),
             headerShown: true,
           }}
@@ -230,18 +237,6 @@ const DrawerNavigator = () => {
             headerShown: true,
           }}
         />
-        {/* <Drawer.Screen
-          name="AdvanceRequestListPage"
-          component={AdvanceRequestListPage}
-          initialParams={{userData}}
-          options={{
-            title: 'Advance Request',
-            drawerIcon: () => (
-              <Ionicons name="receipt-outline" size={24} color="#0A66C2" />
-            ),
-            headerShown: true,
-          }}
-        /> */}
       </Drawer.Navigator>
     </>
   );

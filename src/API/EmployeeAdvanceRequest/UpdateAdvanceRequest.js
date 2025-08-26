@@ -32,8 +32,8 @@ const UpdateAdvanceRequest = async ({advanceData}) => {
       },
     );
 
-    // console.log('soap envelope data', soapEnvelope);
-    // console.log('soap body data', soapBody);
+    console.log('soap envelope data', soapEnvelope);
+    console.log('soap body data', soapBody);
 
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -67,6 +67,9 @@ const UpdateAdvanceRequest = async ({advanceData}) => {
     };
 
     const cleanedResult = cleanObject(result);
+
+    console.log('soap body cleanedResult', cleanedResult);
+
     return cleanedResult;
   } catch (error) {
     console.error(
@@ -82,16 +85,16 @@ const buildContractXml = contract => {
 
   const ns = 'tem';
   const fields = [
-    'Balance',
+    'AdvanceAmount',
+    'AdvanceDescription',
+    'AdvanceTypeCode',
     'EmployeeId',
-    'LeaveCategory',
-    'LeaveCode',
-    'LeaveDays',
-    'LeaveEndDate',
-    'LeaveReqDate',
-    'LeaveStartDate',
-    'Reason',
     'RecId',
+    'RecoveryStartDate',
+    'RequestDate',
+    'RequestedInstallmentAmount',
+    'RequestedInstallments',
+    'RequestedPaymentDate',
   ];
 
   return fields
