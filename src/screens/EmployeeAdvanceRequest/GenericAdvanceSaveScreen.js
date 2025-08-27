@@ -1550,16 +1550,19 @@ const GenericAdvanceSaveScreen = () => {
             behavior="padding"
             style={styles.LReqSR_ContentWrapper}>
             <ScrollView contentContainerStyle={styles.LReqSR_FormContainer}>
+              {/* Employee Name */}
               <Text style={styles.LReqSR_Label}>Employee Name</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.employeeName}
               </Text>
 
+              {/* Request Date */}
               <Text style={styles.LReqSR_Label}>Request Date</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formatDate(today)}
               </Text>
 
+              {/* Advance Type Code */}
               <Text style={styles.LReqSR_Label}>Advance Type Code *</Text>
               <Dropdown
                 style={[
@@ -1572,14 +1575,21 @@ const GenericAdvanceSaveScreen = () => {
                 placeholder="Select Advance Type Code"
                 value={formData.AdvanceTypeCode}
                 onChange={handleAdvanceTypeCodeChange}
-                placeholderStyle={{color: '#444'}}
-                selectedTextStyle={{color: '#444'}}
-                itemTextStyle={{color: '#444'}}
+                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                itemTextStyle={styles.LReqSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={styles.LReqSR_DropdownContainer}
+                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                maxHeight={280}
                 search
                 searchPlaceholder="Search Advance Type Code..."
+                inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                iconStyle={styles.LReqSR_DropdownIcon}
                 disable={requestType === 'Advance'}
               />
 
+              {/* Advance Amount */}
               <Text style={styles.LReqSR_Label}>Advance Amount *</Text>
               <TextInput
                 style={[
@@ -1590,9 +1600,11 @@ const GenericAdvanceSaveScreen = () => {
                 onChangeText={handleAdvanceAmountChange}
                 keyboardType="numeric"
                 placeholder="Enter advance amount"
+                placeholderTextColor="#888"
                 editable={!!formData.AdvanceTypeCode}
               />
 
+              {/* Payment Date */}
               <Text style={styles.LReqSR_Label}>Payment Date *</Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
@@ -1640,6 +1652,7 @@ const GenericAdvanceSaveScreen = () => {
                     onChangeText={handleRecoveryAmountChange}
                     keyboardType="numeric"
                     placeholder="Enter recovery amount"
+                    placeholderTextColor="#888"
                     editable={!isRecoveryAmountDisabled}
                   />
 
@@ -1653,11 +1666,13 @@ const GenericAdvanceSaveScreen = () => {
                     onChangeText={handleRecoveriesChange}
                     keyboardType="numeric"
                     placeholder="Enter number of recoveries"
+                    placeholderTextColor="#888"
                     editable={!isRecoveriesDisabled}
                   />
                 </>
               )}
 
+              {/* Loan / Advance Description */}
               <Text style={styles.LReqSR_Label}>{requestType} Description</Text>
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
@@ -1666,6 +1681,7 @@ const GenericAdvanceSaveScreen = () => {
                   handleInputChange('AdvanceDescription', value)
                 }
                 placeholder={`Enter ${requestType.toLowerCase()} description (max 60 characters)`}
+                placeholderTextColor="#888"
                 multiline
                 numberOfLines={4}
                 maxLength={60}
@@ -1675,8 +1691,8 @@ const GenericAdvanceSaveScreen = () => {
               </Text>
             </ScrollView>
 
+            {/* Footer */}
             <View style={styles.LReqSR_Footer}>
-              {/* Create/Update Button */}
               <Pressable
                 style={({pressed}) => [
                   styles.LReqSR_Button,
@@ -1704,7 +1720,6 @@ const GenericAdvanceSaveScreen = () => {
                 )}
               </Pressable>
 
-              {/* Create & Submit / Update & Submit Button */}
               <Pressable
                 style={({pressed}) => [
                   styles.LReqSR_Button,
@@ -1735,6 +1750,7 @@ const GenericAdvanceSaveScreen = () => {
             </View>
           </KeyboardAvoidingView>
 
+          {/* Calendar Modal */}
           <CalendarModal
             visible={showCalendar}
             current={
@@ -1746,6 +1762,7 @@ const GenericAdvanceSaveScreen = () => {
             onClose={() => setShowCalendar(false)}
           />
 
+          {/* Alert Modal */}
           <AlertModal
             visible={alertModal}
             heading="Alert"
@@ -1758,6 +1775,235 @@ const GenericAdvanceSaveScreen = () => {
       )}
     </ActionPaneContainer>
   );
+
+  // return (
+  //   <ActionPaneContainer
+  //     pageTitle={
+  //       mode === 'edit' ? `Edit ${screenName}` : `Create ${screenName}`
+  //     }
+  //     isBackButton={true}
+  //     showFooter={false}
+  //     showFloatingButton={false}
+  //     isHeaderActive={true}
+  //     onBackPress={goBack}
+  //     onRefresh={handleRefresh}
+  //     onFloatingButtonPress={{}}>
+  //     {isLoading ? (
+  //       <CustomIndicator />
+  //     ) : (
+  //       <SafeAreaView style={styles.LReqSR_SafeArea}>
+  //         <KeyboardAvoidingView
+  //           behavior="padding"
+  //           style={styles.LReqSR_ContentWrapper}>
+  //           <ScrollView contentContainerStyle={styles.LReqSR_FormContainer}>
+  //             <Text style={styles.LReqSR_Label}>Employee Name</Text>
+  //             <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+  //               {formData.employeeName}
+  //             </Text>
+
+  //             <Text style={styles.LReqSR_Label}>Request Date</Text>
+  //             <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+  //               {formatDate(today)}
+  //             </Text>
+
+  //             <Text style={styles.LReqSR_Label}>Advance Type Code *</Text>
+  //             <Dropdown
+  //               style={[
+  //                 styles.LReqSR_Input,
+  //                 requestType === 'Advance' && styles.LReqSR_Disabled,
+  //               ]}
+  //               data={advanceCodeDropDown}
+  //               labelField="label"
+  //               valueField="value"
+  //               placeholder="Select Advance Type Code"
+  //               value={formData.AdvanceTypeCode}
+  //               onChange={handleAdvanceTypeCodeChange}
+  //               placeholderStyle={{color: '#444'}}
+  //               selectedTextStyle={{color: '#444'}}
+  //               itemTextStyle={{color: '#444'}}
+  //               search
+  //               searchPlaceholder="Search Advance Type Code..."
+  //               disable={requestType === 'Advance'}
+  //             />
+
+  //             <Text style={styles.LReqSR_Label}>Advance Amount *</Text>
+  //             <TextInput
+  //               style={[
+  //                 styles.LReqSR_Input,
+  //                 !formData.AdvanceTypeCode && styles.LReqSR_Disabled,
+  //               ]}
+  //               value={formData.AdvanceAmount}
+  //               onChangeText={handleAdvanceAmountChange}
+  //               keyboardType="numeric"
+  //               placeholder="Enter advance amount"
+  //               editable={!!formData.AdvanceTypeCode}
+  //             />
+
+  //             <Text style={styles.LReqSR_Label}>Payment Date *</Text>
+  //             <TouchableOpacity
+  //               style={styles.LReqSR_DateSelector}
+  //               onPress={() => {
+  //                 setCurrentDateField('RequestedPaymentDate');
+  //                 setShowCalendar(true);
+  //               }}>
+  //               <View style={{flex: 1}}>
+  //                 <Text style={styles.LReqSR_DateText}>
+  //                   {formData.RequestedPaymentDate
+  //                     ? formatDate(formData.RequestedPaymentDate)
+  //                     : 'Select Payment Date'}
+  //                 </Text>
+  //               </View>
+  //               <Icon name="calendar" size={20} color="#0A66C2" />
+  //             </TouchableOpacity>
+
+  //             {/* Recovery fields - only show for Loan requests */}
+  //             {showRecoveryFields && (
+  //               <>
+  //                 <Text style={styles.LReqSR_Label}>Recovery Start Date</Text>
+  //                 <TouchableOpacity
+  //                   style={styles.LReqSR_DateSelector}
+  //                   onPress={() => {
+  //                     setCurrentDateField('RecoveryStartDate');
+  //                     setShowCalendar(true);
+  //                   }}>
+  //                   <View style={{flex: 1}}>
+  //                     <Text style={styles.LReqSR_DateText}>
+  //                       {formData.RecoveryStartDate
+  //                         ? formatDate(formData.RecoveryStartDate)
+  //                         : 'Select Recovery Start Date'}
+  //                     </Text>
+  //                   </View>
+  //                   <Icon name="calendar" size={20} color="#0A66C2" />
+  //                 </TouchableOpacity>
+
+  //                 <Text style={styles.LReqSR_Label}>Recovery Amount *</Text>
+  //                 <TextInput
+  //                   style={[
+  //                     styles.LReqSR_Input,
+  //                     isRecoveryAmountDisabled && styles.LReqSR_Disabled,
+  //                   ]}
+  //                   value={formData.RequestedInstallmentAmount}
+  //                   onChangeText={handleRecoveryAmountChange}
+  //                   keyboardType="numeric"
+  //                   placeholder="Enter recovery amount"
+  //                   editable={!isRecoveryAmountDisabled}
+  //                 />
+
+  //                 <Text style={styles.LReqSR_Label}>Recoveries</Text>
+  //                 <TextInput
+  //                   style={[
+  //                     styles.LReqSR_Input,
+  //                     isRecoveriesDisabled && styles.LReqSR_Disabled,
+  //                   ]}
+  //                   value={formData.RequestedInstallments}
+  //                   onChangeText={handleRecoveriesChange}
+  //                   keyboardType="numeric"
+  //                   placeholder="Enter number of recoveries"
+  //                   editable={!isRecoveriesDisabled}
+  //                 />
+  //               </>
+  //             )}
+
+  //             <Text style={styles.LReqSR_Label}>{requestType} Description</Text>
+  //             <TextInput
+  //               style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
+  //               value={formData.AdvanceDescription}
+  //               onChangeText={value =>
+  //                 handleInputChange('AdvanceDescription', value)
+  //               }
+  //               placeholder={`Enter ${requestType.toLowerCase()} description (max 60 characters)`}
+  //               multiline
+  //               numberOfLines={4}
+  //               maxLength={60}
+  //             />
+  //             <Text style={styles.LReqSR_CharCount}>
+  //               {formData.AdvanceDescription?.length || 0}/60
+  //             </Text>
+  //           </ScrollView>
+
+  //           <View style={styles.LReqSR_Footer}>
+  //             {/* Create/Update Button */}
+  //             <Pressable
+  //               style={({pressed}) => [
+  //                 styles.LReqSR_Button,
+  //                 pressed && styles.LReqSR_PressedButton,
+  //                 (processingButton === 'save' ||
+  //                   processingButton === 'submit') &&
+  //                   styles.LReqSR_DisabledButton,
+  //               ]}
+  //               onPress={() => handleSave('save')}
+  //               disabled={
+  //                 processingButton === 'save' || processingButton === 'submit'
+  //               }>
+  //               {({pressed}) => (
+  //                 <Text
+  //                   style={[
+  //                     styles.LReqSR_ButtonText,
+  //                     pressed && styles.LReqSR_pressedText,
+  //                   ]}>
+  //                   {processingButton === 'save'
+  //                     ? 'Processing...'
+  //                     : mode === 'edit'
+  //                     ? 'Update'
+  //                     : 'Create'}
+  //                 </Text>
+  //               )}
+  //             </Pressable>
+
+  //             {/* Create & Submit / Update & Submit Button */}
+  //             <Pressable
+  //               style={({pressed}) => [
+  //                 styles.LReqSR_Button,
+  //                 styles.LReqSR_SubmitButton,
+  //                 pressed && styles.LReqSR_pressedSubmitButton,
+  //                 (processingButton === 'save' ||
+  //                   processingButton === 'submit') &&
+  //                   styles.LReqSR_DisabledButton,
+  //               ]}
+  //               onPress={() => handleSave('submit')}
+  //               disabled={
+  //                 processingButton === 'save' || processingButton === 'submit'
+  //               }>
+  //               {({pressed}) => (
+  //                 <Text
+  //                   style={[
+  //                     styles.LReqSR_SubmitButtonText,
+  //                     pressed && styles.LReqSR_pressedText,
+  //                   ]}>
+  //                   {processingButton === 'submit'
+  //                     ? 'Processing...'
+  //                     : mode === 'edit'
+  //                     ? 'Update & Submit'
+  //                     : 'Create & Submit'}
+  //                 </Text>
+  //               )}
+  //             </Pressable>
+  //           </View>
+  //         </KeyboardAvoidingView>
+
+  //         <CalendarModal
+  //           visible={showCalendar}
+  //           current={
+  //             currentDateField === 'RequestedPaymentDate'
+  //               ? formData.RequestedPaymentDate
+  //               : formData.RecoveryStartDate
+  //           }
+  //           onDateSelected={date => handleDateChange(date, currentDateField)}
+  //           onClose={() => setShowCalendar(false)}
+  //         />
+
+  //         <AlertModal
+  //           visible={alertModal}
+  //           heading="Alert"
+  //           text={alertMessage}
+  //           onPress={() => {
+  //             setAlertModal(false);
+  //           }}
+  //         />
+  //       </SafeAreaView>
+  //     )}
+  //   </ActionPaneContainer>
+  // );
 };
 
 export default GenericAdvanceSaveScreen;

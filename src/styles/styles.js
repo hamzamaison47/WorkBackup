@@ -535,6 +535,10 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
+  LReqSR_CharCount: {
+    fontSize: 13,
+    color: '#333',
+  },
   LReqSR_DateSelector: {
     flexDirection: 'row',
     alignItems: 'center',

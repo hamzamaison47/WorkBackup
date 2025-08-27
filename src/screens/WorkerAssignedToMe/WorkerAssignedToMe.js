@@ -6,7 +6,7 @@ import {useSelector} from 'react-redux';
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
 
 import AlertModal from '../../components/Alert/AlertModal';
-import AssignedWorkerCard from '../../components/WorkerAssigned/AssignedWorkerCard';
+import AssignedWorkerCard from '../../components/WorkerAssignedToMe/AssignedWorkerCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';

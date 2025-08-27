@@ -154,6 +154,7 @@ const ActionPaneContainer = ({
     notificationCount,
     selectedLegalEntity,
     defaultLegalEntity,
+    isHeaderActive, // Added missing dependency
   ]);
 
   // Navigation handlers
@@ -171,8 +172,10 @@ const ActionPaneContainer = ({
     navigation.toggleDrawer();
   };
 
+  // FIXED: Proper toggle logic for notification dropdown
   const toggleNotification = () => {
-    closeAllOverlays();
+    // Close company dropdown if open, then toggle notification
+    setDropdownVisible(false);
     setNotificationVisible(prev => !prev);
   };
 
@@ -181,8 +184,10 @@ const ActionPaneContainer = ({
     setModalVisible(true);
   };
 
+  // FIXED: Proper toggle logic for company dropdown
   const toggleCompanyDropdown = () => {
-    closeAllOverlays();
+    // Close notification dropdown if open, then toggle company dropdown
+    setNotificationVisible(false);
     setDropdownVisible(prev => !prev);
   };
 

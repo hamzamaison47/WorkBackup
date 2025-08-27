@@ -1,5 +1,4 @@
 /* eslint-disable curly */
-
 import React from 'react';
 import {
   View,
@@ -8,13 +7,10 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from 'react-native';
-// import {useNavigation} from '@react-navigation/native';
+
 import styles from '../../styles/styles';
 
 const NotificationDropdown = ({visible, notifications, onClose}) => {
-  // const navigation = useNavigation();
-  // console.log('Notifications:', notifications); // For debugging
-
   if (!visible) return null;
 
   // Format notifications to display document and document type
