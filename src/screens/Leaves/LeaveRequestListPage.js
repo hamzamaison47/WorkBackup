@@ -64,7 +64,9 @@ const LeaveRequestListPage = () => {
     useCallback(() => {
       if (
         highlightRecId &&
-        (cameFrom === 'CreateSuccess' || cameFrom === 'UpdateSuccess')
+        (cameFrom === 'CreateSuccess' ||
+          cameFrom === 'UpdateSuccess' ||
+          cameFrom === 'SubmitSuccess') // FIXED: Added SubmitSuccess for highlighting submitted records
       ) {
         setHighlightedRecId(highlightRecId);
         fetchLeavesData();
@@ -78,6 +80,7 @@ const LeaveRequestListPage = () => {
     }, [highlightRecId, cameFrom, fetchLeavesData]),
   );
 
+  console.log('cameFrom in sssssssssssssssssssss', cameFrom);
   // Handle back navigation
   const handleGoBack = () => {
     if (cameFrom === 'DisplayListPage') {
@@ -274,8 +277,6 @@ const LeaveRequestListPage = () => {
         recordsRecId: [itemToDelete.recId],
       });
 
-      console.log('Delete Leave Request response', response);
-
       if (response[0].IsSuccess) {
         setAlertMessage('Leave Request Deleted Successfully.');
         setLeavesData(prev =>
@@ -316,6 +317,14 @@ const LeaveRequestListPage = () => {
       ) {
         setAlertMessage(`${itemData.leaveCode} is Submitted Successfully.`);
         setAlertModal(true);
+
+        // FIXED: Set highlighting for submitted record
+        setHighlightedRecId(itemData.recId);
+
+        // Set a timer to remove highlighting after 3 seconds
+        setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
 
         setTimeout(() => {
           fetchLeavesData();

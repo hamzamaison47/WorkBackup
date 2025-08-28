@@ -32,19 +32,19 @@ const DynamicRequestCard = ({
     return isHighlighted ? highlightGradientColors : gradientColors;
   };
 
-  // Helper function to format values based on field type
   const formatValue = (value, fieldType) => {
     switch (fieldType) {
-      case 'date':
-        return new Date(value).toLocaleDateString('en-GB', {
-          year: 'numeric',
-          month: 'short',
-          day: '2-digit',
-        });
+      case 'date': {
+        const d = new Date(value);
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear(); // always 4-digit
+        return `${month}/${day}/${year}`;
+      }
       case 'currency':
         return `${value}`;
       case 'status':
-        return value?.toUpperCase();
+        return value;
       default:
         return value || 'N/A';
     }

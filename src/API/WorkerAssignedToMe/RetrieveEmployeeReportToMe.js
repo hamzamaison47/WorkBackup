@@ -62,6 +62,8 @@ const RetrieveEmployeeReportToMe = async ({employeeId}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
+    console.log('Worker Assigned to me cleanedData: ', cleanedData);
+
     return cleanedData;
   } catch (error) {
     console.error('Failed to fetch Team employee IDs:', error);

@@ -508,7 +508,6 @@ const styles = StyleSheet.create({
     borderColor: '#4A90E2',
     borderRadius: 10,
     backgroundColor: '#fff',
-    marginTop: 4,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.25,
@@ -516,7 +515,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   LReqSR_DropdownItemContainer: {
-    paddingVertical: 12,
     paddingHorizontal: 12,
   },
   LReqSR_DropdownSearchInput: {
@@ -1131,8 +1129,7 @@ const styles = StyleSheet.create({
   },
   DRC_StatusText: {
     fontWeight: '900',
-    fontSize: width * 0.035,
-    textTransform: 'uppercase',
+    fontSize: width * 0.036,
     color: '#112936ff',
   },
   DRC_SectionDivider: {
@@ -1670,99 +1667,181 @@ const styles = StyleSheet.create({
   },
   // end of save button and also personal information component
 
-  // start of worker assigned component
-
-  AWC_cardContainer: {
-    marginVertical: height * 0.01,
-    marginHorizontal: width * 0.03,
-  },
-
-  AWC_card: {
-    borderRadius: width * 0.04,
-    padding: width * 0.045,
-    elevation: 3,
-  },
-
-  AWC_cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  // Start of worker assigned to me component
+  orgStyles_rootContainer: {
     alignItems: 'center',
-    marginBottom: height * 0.015,
+    paddingHorizontal: 16,
   },
-
-  AWC_cardHeaderText: {
-    fontSize: width * 0.05,
-    fontWeight: 'bold',
-    color: '#37474F',
-    flex: 1,
-  },
-
-  AWC_profilePicture: {
-    width: width * 0.14,
-    height: width * 0.14,
-    borderRadius: width * 0.07,
-    resizeMode: 'cover',
+  orgStyles_rootCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 2,
     borderColor: '#0A66C2',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 200,
   },
-
-  AWC_cardContent: {
-    marginTop: height * 0.01,
-  },
-
-  AWC_textContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: height * 0.008,
-    flexWrap: 'wrap',
-  },
-
-  AWC_cardTextHeading: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: width * 0.035,
-    flex: 1,
-  },
-
-  AWC_cardText: {
-    color: '#263238',
-    fontSize: width * 0.035,
-    flex: 1,
-    textAlign: 'right',
-  },
-
-  AWC_sectionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#BDBDBD',
-    marginVertical: height * 0.012,
-  },
-
-  AWC_navigateButton: {
+  orgStyles_rootAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
     borderColor: '#0A66C2',
-    borderWidth: 1.5,
-    borderRadius: 20,
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.04,
-    marginVertical: height * 0.008,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    alignSelf: 'center',
+    marginBottom: 8,
   },
-
-  AWC_navigateButtonText: {
-    color: '#000000ff',
-    fontWeight: 'bold',
-    fontSize: width * 0.038,
+  orgStyles_rootName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
   },
-
-  AWC_expandButton: {
-    alignItems: 'center',
-    marginTop: height * 0.015,
-    padding: 6,
+  orgStyles_rootRole: {
+    fontSize: 14,
+    color: '#0A66C2',
+    textAlign: 'center',
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  orgStyles_connectorFromRoot: {
+    width: 2,
+    height: 40,
     backgroundColor: '#0A66C2',
-    borderRadius: 50,
     alignSelf: 'center',
   },
-  // end of assigned worker card
+  orgStyles_departmentHeader: {
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#0A66C2',
+  },
+  orgStyles_departmentIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E8F3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  orgStyles_departmentName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
+    flex: 1,
+  },
+  orgStyles_departmentCount: {
+    fontSize: 12,
+    color: '#6B7280',
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginRight: 8,
+  },
+  orgStyles_employeeContainer: {
+    marginHorizontal: 18,
+    marginVertical: 4,
+  },
+  orgStyles_employeeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginLeft: 20,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  orgStyles_employeeAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  orgStyles_employeeInfo: {
+    flex: 1,
+  },
+  orgStyles_employeeName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  orgStyles_employeeRole: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  orgStyles_hierarchyConnector: {
+    position: 'absolute',
+    left: 10,
+    top: -12,
+    width: 15,
+    height: 50,
+    borderLeftWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#0A66C2',
+  },
+  orgStyles_verticalLine: {
+    position: 'absolute',
+    left: 20,
+    top: 0,
+    bottom: 38,
+    width: 1.5,
+    backgroundColor: '#0A66C2',
+  },
+  orgStyles_horizontalConnector: {
+    position: 'absolute',
+    left: 2,
+    top: '50%',
+    width: 20,
+    height: 1.5,
+    backgroundColor: '#0A66C2',
+  },
+  orgStyles_scrollContainer: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+    paddingTop: 16,
+  },
+  orgStyles_contentWrapper: {
+    paddingBottom: 40,
+  },
+  orgStyles_noDataText: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  eorgStyles_xpandButton: {
+    padding: 4,
+  },
+  orgStyles_backButton: {
+    color: '#0A66C2',
+    textAlign: 'center',
+    marginVertical: 8,
+    fontWeight: '600',
+  },
+  // end of worker assigned to me card
+
   // action pane container
 
   APCont_container: {
