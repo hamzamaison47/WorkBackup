@@ -145,19 +145,6 @@ const MainDashboard = () => {
     },
     {
       id: '4',
-      title: 'Loan & Advance',
-      description: 'Manage loan and advance requests',
-      icon: 'wallet-outline',
-      onPress: () =>
-        navigation.navigate('GenericAdvanceListScreen', {
-          employeeId: userData.employeeId,
-          employeeName: userData.employeeName,
-          WorkerRecId: userData.WorkerRecId,
-          cameFrom: 'MainDashboard',
-        }),
-    },
-    {
-      id: '5',
       title: 'Entitlement Balance',
       description: 'Check leave balances',
       icon: 'time-outline',
@@ -167,6 +154,79 @@ const MainDashboard = () => {
           employeeName: userData.employeeName,
           WorkerRecId: userData.WorkerRecId,
           cameFrom: 'MainDashboard',
+        }),
+    },
+    // {
+    //   id: '5',
+    //   title: 'Loan & Advance',
+    //   description: 'Manage loan and advance requests',
+    //   icon: 'wallet-outline',
+    //   onPress: () =>
+    //     navigation.navigate('GenericAdvanceListScreen', {
+    //       employeeId: userData.employeeId,
+    //       employeeName: userData.employeeName,
+    //       WorkerRecId: userData.WorkerRecId,
+    //       cameFrom: 'MainDashboard',
+    //     }),
+    // },
+    {
+      id: '5',
+      title: 'Loan Request',
+      description: 'Create loan requests',
+      icon: 'wallet-outline',
+      onPress: () =>
+        navigation.navigate('GenericAdvanceSaveScreen', {
+          mode: 'create',
+          employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'MainDashboard',
+          requestType: 'Loan',
+          advanceType: 0,
+          screenName: 'Loan Request',
+          advanceData: {
+            employeeId: userData.employeeId,
+            employeeName: userData.employeeName,
+            WorkerRecId: userData.WorkerRecId,
+            RecId: '',
+            AdvanceTypeCode: '',
+            AdvanceAmount: '0.00',
+            RequestedPaymentDate: '',
+            RecoveryStartDate: '',
+            RequestedInstallmentAmount: '0.00',
+            RequestedInstallments: '0',
+            AdvanceDescription: '',
+          },
+        }),
+    },
+    {
+      id: '6',
+      title: 'Advance Request',
+      description: 'Create advance requests',
+      icon: 'wallet-outline',
+      onPress: () =>
+        navigation.navigate('GenericAdvanceSaveScreen', {
+          mode: 'create',
+          employeeId: userData.employeeId,
+          employeeName: userData.employeeName,
+          WorkerRecId: userData.WorkerRecId,
+          cameFrom: 'MainDashboard',
+          requestType: 'Advance',
+          advanceType: 1,
+          screenName: 'Advance Salary',
+          advanceData: {
+            employeeId: userData.employeeId,
+            employeeName: userData.employeeName,
+            WorkerRecId: userData.WorkerRecId,
+            RecId: '',
+            AdvanceTypeCode: '',
+            AdvanceAmount: '0.00',
+            RequestedPaymentDate: '',
+            RecoveryStartDate: '',
+            RequestedInstallmentAmount: '0.00',
+            RequestedInstallments: '0',
+            AdvanceDescription: '',
+          },
         }),
     },
   ];
@@ -185,7 +245,7 @@ const MainDashboard = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Employee Self Service"
+      pageTitle="Dynaface"
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}

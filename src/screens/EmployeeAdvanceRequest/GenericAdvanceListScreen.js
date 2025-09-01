@@ -7,17 +7,17 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 
+import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
+import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
+import {FindByEmployeeAdvanceRequest} from '../../API/EmployeeAdvanceRequest/FindByEmployeeAdvanceRequest';
+
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import RequestTypeSelectionModal from '../../components/EmployeeAdvanceRequest/RequestTypeSelectionModal';
-
-import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
-import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
 import styles from '../../styles/styles';
-import {FindByEmployeeAdvanceRequest} from '../../API/EmployeeAdvanceRequest/FindByEmployeeAdvanceRequest';
 
 const GenericAdvanceListScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,8 +32,15 @@ const GenericAdvanceListScreen = () => {
 
   const navigation = useNavigation();
   const route = useRoute();
-  const {employeeId, employeeName, WorkerRecId, cameFrom, highlightRecId} =
-    route.params || {};
+
+  // Enhanced parameter handling with better validation and fallbacks
+  const {
+    employeeId = '',
+    employeeName = '',
+    WorkerRecId = '',
+    cameFrom = 'MainDashboard',
+    highlightRecId = null,
+  } = route.params || {};
 
   /** Fetch all advance data (both loans and advances) */
   const fetchAllAdvanceData = useCallback(async () => {
@@ -41,8 +48,6 @@ const GenericAdvanceListScreen = () => {
     setIsLoading(true);
 
     try {
-      // Fetch all advance records
-      // const allResults = await fetchAdvances(employeeId);
       const allResults = await FindByEmployeeAdvanceRequest({employeeId});
 
       // Filter to show only Loan and Advance types (excluding Expense)
@@ -53,7 +58,6 @@ const GenericAdvanceListScreen = () => {
 
       // Sort by RecId or RequestDate in descending order (latest first)
       const sortedResults = filteredResults.sort((a, b) => {
-        // First try to sort by RecId (if it's numeric)
         const aRecId = parseInt(a.RecId, 10);
         const bRecId = parseInt(b.RecId, 10);
 
@@ -61,7 +65,6 @@ const GenericAdvanceListScreen = () => {
           return bRecId - aRecId; // Descending order
         }
 
-        // Fallback to sorting by RequestDate
         const aDate = new Date(a.RequestDate || 0);
         const bDate = new Date(b.RequestDate || 0);
         return bDate - aDate; // Latest first
@@ -69,6 +72,7 @@ const GenericAdvanceListScreen = () => {
 
       setAllAdvanceData(sortedResults);
     } catch (error) {
+      console.error('Error fetching advance data:', error);
       setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     } finally {
@@ -76,33 +80,50 @@ const GenericAdvanceListScreen = () => {
     }
   }, [employeeId]);
 
-  /** Refresh data when screen comes into focus */
+  /** Enhanced refresh data when screen comes into focus */
   useFocusEffect(
     useCallback(() => {
       fetchAllAdvanceData();
     }, [fetchAllAdvanceData]),
   );
 
-  /** Highlight record after create/update */
+  /** Enhanced highlighting with SubmitSuccess support */
   useFocusEffect(
     useCallback(() => {
       if (
         highlightRecId &&
-        (cameFrom === 'CreateSuccess' || cameFrom === 'UpdateSuccess')
+        (cameFrom === 'CreateSuccess' ||
+          cameFrom === 'UpdateSuccess' ||
+          cameFrom === 'SubmitSuccess') // FIXED: Added SubmitSuccess for highlighting submitted records
       ) {
         setHighlightedRecId(highlightRecId);
         fetchAllAdvanceData();
 
-        const timer = setTimeout(() => setHighlightedRecId(null), 3000);
+        const timer = setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
+
         return () => clearTimeout(timer);
       }
     }, [highlightRecId, cameFrom, fetchAllAdvanceData]),
   );
 
-  /** Back navigation */
+  /** Enhanced back navigation with better parameter handling */
   const handleGoBack = () => {
-    if (cameFrom === 'MainDashboard') navigation.navigate('MainDashboard');
-    else navigation.goBack();
+    if (cameFrom === 'DisplayListPage') {
+      navigation.navigate('DisplayListPage');
+    } else if (cameFrom === 'WorkerAssignedToMe') {
+      navigation.navigate('WorkerAssignedToMe');
+    } else if (cameFrom === 'MainDashboard') {
+      navigation.navigate('MainDashboard');
+    } else {
+      navigation.navigate('MainDashboard'); // Default fallback
+    }
+  };
+
+  /** Enhanced refresh handler */
+  const handleRefresh = () => {
+    fetchAllAdvanceData();
   };
 
   /** Show type selection modal */
@@ -110,17 +131,23 @@ const GenericAdvanceListScreen = () => {
     setTypeSelectionModal(true);
   };
 
-  /** Handle type selection from modal */
+  /** Handle type selection from modal with enhanced validation */
   const handleTypeSelection = selectedType => {
+    if (!selectedType || !selectedType.type) {
+      setAlertMessage('Invalid selection. Please try again.');
+      setAlertModal(true);
+      return;
+    }
+
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'create',
       employeeId,
       employeeName,
       WorkerRecId,
       cameFrom: 'GenericAdvanceListScreen',
-      requestType: selectedType.type, // 'Loan', 'Advance', or 'Expense'
-      advanceType: selectedType.advanceType, // 0, 1, or 2
-      screenName: selectedType.title, // 'Loan Request', 'Advance Salary', etc.
+      requestType: selectedType.type,
+      advanceType: selectedType.advanceType,
+      screenName: selectedType.title,
       advanceData: {
         employeeId,
         employeeName,
@@ -137,11 +164,17 @@ const GenericAdvanceListScreen = () => {
     });
   };
 
-  /** Determine request type from data */
+  /** Enhanced request type detection */
   const getRequestTypeFromData = itemData => {
-    // Based on your API response, determine the type
-    // This is a mapping function that should match your API data structure
-    const advanceTypeCode = itemData.AdvanceTypeCode?.toLowerCase() || '';
+    if (!itemData || !itemData.AdvanceTypeCode) {
+      return {
+        type: 'Loan',
+        advanceType: 0,
+        screenName: 'Loan Request',
+      };
+    }
+
+    const advanceTypeCode = itemData.AdvanceTypeCode.toLowerCase();
 
     if (
       advanceTypeCode.includes('loan') ||
@@ -162,13 +195,6 @@ const GenericAdvanceListScreen = () => {
         screenName: 'Advance Salary',
       };
     }
-    // else if (advanceTypeCode.includes('expense')) {
-    //   return {
-    //     type: 'Expense',
-    //     advanceType: 2,
-    //     screenName: 'Expense Request',
-    //   };
-    // }
 
     // Default fallback
     return {
@@ -178,8 +204,10 @@ const GenericAdvanceListScreen = () => {
     };
   };
 
-  /** Status label mapper */
+  /** Enhanced status label mapper */
   const getStatusLabel = status => {
+    if (!status) return 'Draft';
+
     const statusMap = {
       NotSubmitted: 'Draft',
       Approved: 'Approved',
@@ -198,9 +226,6 @@ const GenericAdvanceListScreen = () => {
     return statusMap[status] || 'Draft';
   };
 
-  const formatDate = dateString =>
-    dateString ? new Date(dateString).toLocaleDateString() : '';
-
   /** Card configuration */
   const cardConfig = {
     headerConfig: {
@@ -210,27 +235,22 @@ const GenericAdvanceListScreen = () => {
     fields: [
       {key: 'AdvanceAmount', label: 'Amount', type: 'currency'},
       {key: 'RequestedPaymentDate', label: 'Payment Date', type: 'date'},
-      {key: 'RequestDate', label: 'Request Date', type: 'date'},
+      {key: 'RecoveryStartDate', label: 'Recovery Start Date', type: 'text'},
       {key: 'WFStatus', label: '', type: 'status'},
     ],
     expandableFields: [
       {key: 'AdvanceRequestId', label: 'Request Id', type: 'text'},
-      {key: 'RecoveryStartDate', label: 'Recovery Start Date', type: 'text'},
+      {key: 'RequestDate', label: 'Request Date', type: 'date'},
       {
         key: 'RequestedInstallmentAmount',
-        label: 'Installment Amount',
+        label: 'Recovery Amount',
         type: 'text',
       },
-      {key: 'RequestedInstallments', label: 'Installments', type: 'text'},
-      {key: 'AdvanceDescription', label: 'Description', type: 'text'},
-      {key: 'Currency', label: 'Currency', type: 'text'},
-      {key: 'Guarantor1', label: 'Guarantor 1', type: 'text'},
-      {key: 'Guarantor2', label: 'Guarantor 2', type: 'text'},
-      {key: 'RequestType', label: 'Type', type: 'text'}, // Added to show type
+      {key: 'RequestedInstallments', label: 'Recoveries', type: 'text'},
     ],
   };
 
-  /** Button configuration */
+  /** Enhanced button configuration */
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
 
@@ -268,7 +288,7 @@ const GenericAdvanceListScreen = () => {
     };
   };
 
-  /** Track button processing state */
+  /** Enhanced processing state management */
   const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
       ...prev,
@@ -278,11 +298,36 @@ const GenericAdvanceListScreen = () => {
     }));
   };
 
-  /** Button handlers */
+  /** Enhanced button handlers */
   const handleButtonPress = (buttonType, itemData) => {
-    if (buttonType === 'edit') handleEditPress(itemData);
-    if (buttonType === 'delete') handleDeletePress(itemData);
-    if (buttonType === 'submit') handleSubmitPress(itemData);
+    if (!itemData) {
+      setAlertMessage('Invalid item data. Please refresh and try again.');
+      setAlertModal(true);
+      return;
+    }
+
+    switch (buttonType) {
+      case 'edit':
+        handleEditPress(itemData);
+        break;
+      case 'delete':
+        handleDeletePress(itemData);
+        break;
+      case 'submit':
+        handleSubmitPress(itemData);
+        break;
+      default:
+        console.log('Unknown button pressed:', buttonType);
+    }
+  };
+
+  const formatDate = date => {
+    if (!date) return '';
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear(); // always 4 digits
+    return `${month}/${day}/${year}`;
   };
 
   const formatToISOWithTime = date => {
@@ -294,24 +339,33 @@ const GenericAdvanceListScreen = () => {
     return `${year}-${month}-${day}T12:00:00`;
   };
 
+  const formatNumberForDisplay = value => {
+    if (value === null || value === undefined) return '0';
+
+    const num = Number(value.toString().replace(/,/g, '')); // clean commas if already present
+    if (isNaN(num)) return '0';
+
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  /** Enhanced edit handler */
   const handleEditPress = itemData => {
-    // Determine the request type automatically
     const requestTypeInfo = getRequestTypeFromData(itemData);
 
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'edit',
-      // employeeId: itemData.EmployeeId || employeeId,
-      employeeId: employeeId,
+      employeeId: itemData.employeeId || employeeId,
       employeeName: itemData.employeeName || employeeName,
+      WorkerRecId: itemData.WorkerRecId || WorkerRecId,
       cameFrom: 'GenericAdvanceListScreen',
       requestType: requestTypeInfo.type,
       advanceType: requestTypeInfo.advanceType,
       screenName: requestTypeInfo.screenName,
       advanceData: {
         RecId: itemData.RecId,
-        // employeeId: itemData.EmployeeId || employeeId,
-        employeeId: employeeId,
+        employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
+        WorkerRecId: itemData.WorkerRecId || WorkerRecId,
         AdvanceTypeCode: itemData.AdvanceTypeCode,
         AdvanceAmount: itemData.AdvanceAmount,
         RequestedPaymentDate: formatToISOWithTime(
@@ -330,11 +384,14 @@ const GenericAdvanceListScreen = () => {
     setDeleteModal(true);
   };
 
+  /** Enhanced delete confirmation with better error handling */
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
     setButtonProcessing(itemToDelete.RecId, 'delete', true);
+
     try {
+      console.log('Delete Advance Request response', itemToDelete.RecId);
       const response = await DeleteAdvanceRequest({
         recordsRecId: [itemToDelete.RecId],
       });
@@ -357,6 +414,7 @@ const GenericAdvanceListScreen = () => {
         );
       }
     } catch (error) {
+      console.log('Delete Advance Request error:', error);
       setAlertMessage(
         `Failed to Delete ${itemToDelete.AdvanceTypeCode} Request.`,
       );
@@ -365,29 +423,48 @@ const GenericAdvanceListScreen = () => {
       setDeleteModal(false);
       setItemToDelete(null);
       setAlertModal(true);
-      setTimeout(() => fetchAllAdvanceData(), 1000);
+      setTimeout(() => {
+        fetchAllAdvanceData();
+      }, 1000);
     }
   };
 
+  /** FIXED: Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
     setButtonProcessing(itemData.RecId, 'submit', true);
+
     try {
+      console.log('Submit Advance Request:', itemData.RecId);
       const response = await SubmitAdvanceRequest({recId: itemData.RecId});
       const resObj = Array.isArray(response) ? response[0] : response;
 
-      if (resObj?.IsSuccess?.toString().toLowerCase() === 'true') {
+      if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
         setAlertMessage(
           `${itemData.AdvanceTypeCode} Request Submitted Successfully.`,
         );
+        setAlertModal(true);
+
+        // FIXED: Set highlighting for submitted record
+        setHighlightedRecId(itemData.RecId);
+
+        // Set a timer to remove highlighting after 3 seconds
+        setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
+
+        setTimeout(() => {
+          fetchAllAdvanceData();
+        }, 1000);
       } else {
-        setAlertMessage(
-          resObj?.Message ||
-            `Failed to Submit ${itemData.AdvanceTypeCode} Request`,
-        );
+        const errorMessage =
+          resObj && resObj.Message
+            ? resObj.Message
+            : `Failed to Submit ${itemData.AdvanceTypeCode} Request`;
+        setAlertMessage(errorMessage);
+        setAlertModal(true);
       }
-      setAlertModal(true);
-      setTimeout(() => fetchAllAdvanceData(), 1000);
     } catch (error) {
+      console.error('Submit error:', error);
       setAlertMessage(`Failed to Submit ${itemData.AdvanceTypeCode} Request`);
       setAlertModal(true);
     } finally {
@@ -395,8 +472,10 @@ const GenericAdvanceListScreen = () => {
     }
   };
 
-  /** Render card */
+  /** Enhanced render card with better data validation and comma formatting */
   const renderAdvanceCard = ({item}) => {
+    if (!item) return null;
+
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
     const requestTypeInfo = getRequestTypeFromData(item);
@@ -404,17 +483,20 @@ const GenericAdvanceListScreen = () => {
     const processedItem = {
       ...item,
       WFStatus: getStatusLabel(item.WFStatus),
-      AdvanceAmount: item.AdvanceAmount,
-      RequestedInstallmentAmount: item.RequestedInstallmentAmount,
+      AdvanceAmount: formatNumberForDisplay(item.AdvanceAmount || '0.00'),
+      RequestedInstallmentAmount: formatNumberForDisplay(
+        item.RequestedInstallmentAmount || '0.00',
+      ),
       RequestedPaymentDate: formatDate(item.RequestedPaymentDate),
       RequestDate: formatDate(item.RequestDate),
       RecoveryStartDate: formatDate(item.RecoveryStartDate),
-      employeeId: item.EmployeeId || employeeId,
+      employeeId: item.employeeId || employeeId,
       employeeName: item.employeeName || employeeName,
+      WorkerRecId: item.WorkerRecId || WorkerRecId,
       AdvanceRequestId:
         item.AdvanceRequestId ||
         `${requestTypeInfo.type.toUpperCase()}-${item.RecId}`,
-      RequestType: requestTypeInfo.type, // Add type to display
+      RequestType: requestTypeInfo.type,
     };
 
     return (
@@ -442,7 +524,7 @@ const GenericAdvanceListScreen = () => {
       showFloatingButton
       isHeaderActive
       onBackPress={handleGoBack}
-      onRefresh={fetchAllAdvanceData}
+      onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}>
       {isLoading ? (
         <CustomIndicator />
@@ -467,6 +549,7 @@ const GenericAdvanceListScreen = () => {
         onSelectType={handleTypeSelection}
       />
 
+      {/* Alert Modal */}
       <AlertModal
         visible={alertModal}
         heading="Alert"
@@ -474,6 +557,7 @@ const GenericAdvanceListScreen = () => {
         onPress={() => setAlertModal(false)}
       />
 
+      {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"

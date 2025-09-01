@@ -13,7 +13,11 @@ import {
   SafeAreaView,
   Pressable,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -30,30 +34,15 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
 
-// Helper function to format numbers
-const formatNumber = value => {
-  if (!value || value === '0') return '0';
-  const cleanValue = value.toString().replace(/,/g, '');
-  const num = parseFloat(cleanValue);
-  if (isNaN(num)) return '0';
-  return num.toLocaleString();
-};
-
-// Helper function to parse formatted numbers
-const parseNumber = value => {
-  if (!value) return 0;
-  const cleanValue = value.toString().replace(/,/g, '');
-  const num = parseFloat(cleanValue);
-  return isNaN(num) ? 0 : num;
-};
-
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
 
+  const scrollViewRef = useRef(null);
+
   const {userData} = useSelector(state => state.user);
 
-  // Navigation params with safe defaults
+  // Enhanced navigation params with robust validation and fallbacks
   const {
     mode = 'create',
     advanceData = {},
@@ -61,8 +50,8 @@ const GenericAdvanceSaveScreen = () => {
     employeeName = advanceData.employeeName || userData?.employeeName || '',
     WorkerRecId = advanceData.WorkerRecId || userData?.WorkerRecId || '',
     cameFrom = 'MainDashboard',
-    requestType = 'Loan', // 'Loan', 'Advance', 'Expense'
-    advanceType = 0, // 0 = Loan, 1 = Advance/Salary, 2 = Expense
+    requestType = 'Loan',
+    advanceType = 0,
     screenName = 'Loan Request',
   } = route.params || {};
 
@@ -75,51 +64,82 @@ const GenericAdvanceSaveScreen = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [dataInitialized, setDataInitialized] = useState(false); // Track data initialization
+  const [dataInitialized, setDataInitialized] = useState(false);
 
-  // Validation error states for real-time validation
+  // Enhanced validation error states
   const [validationErrors, setValidationErrors] = useState({});
 
-  // Create initial form data function
+  // Create initial form data function with enhanced validation
   const createInitialFormData = useCallback(
     () => ({
       RecId:
         !advanceData.RecId || advanceData.RecId === '0'
           ? ''
           : advanceData.RecId,
-      employeeId: employeeId,
-      employeeName: employeeName,
-      WorkerRecId: WorkerRecId,
+      employeeId: employeeId || '',
+      employeeName: employeeName || '',
+      WorkerRecId: WorkerRecId || '',
       AdvanceTypeCode: '',
-      AdvanceAmount: '0',
-      RequestedPaymentDate: '',
+      AdvanceAmount: '',
+      RequestedPaymentDate:
+        mode === 'create'
+          ? (() => {
+              try {
+                return getTodayDate();
+              } catch (error) {
+                return '';
+              }
+            })()
+          : '',
       RecoveryStartDate: '',
       RequestedInstallmentAmount: '',
       RequestedInstallments: '',
       AdvanceDescription: '',
     }),
-    [advanceData, employeeId, employeeName, WorkerRecId],
+    [advanceData, employeeId, employeeName, WorkerRecId, mode],
   );
 
-  // Form state
+  // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
   const [selectedAdvanceTypeData, setSelectedAdvanceTypeData] = useState(null);
 
-  // Get advance type mapping based on API response
-  const getAdvanceTypeMapping = () => {
-    switch (requestType) {
-      case 'Loan':
-        return 'Loan';
-      case 'Advance':
-        return 'Salary';
-      // case 'Expense':
-      //   return 'Expense';
-      default:
-        return 'Loan';
+  useEffect(() => {
+    if (mode === 'create') {
+      try {
+        getTodayDate();
+      } catch (error) {
+        setAlertMessage(
+          'Error getting current date. Please set the payment date manually.',
+        );
+        setAlertModal(true);
+      }
     }
-  };
+  }, [mode]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (mode === 'create' && cameFrom !== 'RequestTypeSelectionModal') {
+        // Clear form data when returning to create mode from back navigation
+        const freshFormData = createInitialFormData();
+        setFormData(freshFormData);
+        setSelectedAdvanceTypeData(null);
+        setAdvanceCodeDropDown([]);
+        setAdvanceCodes([]);
+        setValidationErrors({});
+        setDataInitialized(false);
+      }
+    }, [mode, cameFrom, createInitialFormData]),
+  );
+
+  // Enhanced back navigation with comprehensive parameter handling
   const goBack = useCallback(() => {
+    if (mode === 'create') {
+      const freshFormData = createInitialFormData();
+      setFormData(freshFormData);
+      setSelectedAdvanceTypeData(null);
+      setValidationErrors({});
+    }
+
     if (cameFrom === 'MainDashboard') {
       navigation.navigate('MainDashboard');
     } else if (cameFrom === 'GenericAdvanceListScreen') {
@@ -132,9 +152,29 @@ const GenericAdvanceSaveScreen = () => {
     } else {
       navigation.goBack();
     }
-  }, [cameFrom, employeeId, employeeName, WorkerRecId, navigation]);
+  }, [
+    cameFrom,
+    formData.employeeId,
+    employeeName,
+    WorkerRecId,
+    navigation,
+    mode,
+    createInitialFormData,
+  ]);
 
-  // Function to clear form data
+  // Get advance type mapping based on API response
+  const getAdvanceTypeMapping = () => {
+    switch (requestType) {
+      case 'Loan':
+        return 'Loan';
+      case 'Advance':
+        return 'Salary';
+      default:
+        return 'Loan';
+    }
+  };
+
+  // Enhanced form data clearing with better state management
   const clearFormData = useCallback(() => {
     const clearedForm = createInitialFormData();
     setFormData(clearedForm);
@@ -145,7 +185,16 @@ const GenericAdvanceSaveScreen = () => {
     setValidationErrors({});
   }, [createInitialFormData]);
 
-  // Real-time validation function
+  // Reset scroll position when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      if (scrollViewRef.current) {
+        scrollViewRef.current.scrollTo({y: 0, animated: false});
+      }
+    }, []),
+  );
+
+  // Enhanced real-time validation function
   const validateField = useCallback(
     (fieldName, value, formDataToCheck = formData) => {
       const errors = {};
@@ -203,18 +252,19 @@ const GenericAdvanceSaveScreen = () => {
         }
       }
 
-      // Validate Recoveries against max recoveries
+      // Validate Recoveries against max recoveries - only when max recoveries > 0
       if (fieldName === 'RequestedInstallments') {
         const recoveries = parseNumber(value);
         if (selectedAdvanceTypeData && selectedAdvanceTypeData.Recoveries) {
           const maxRecoveries = parseNumber(selectedAdvanceTypeData.Recoveries);
-          if (recoveries > maxRecoveries) {
-            errors.recoveries = `Recoveries cannot exceed ${maxRecoveries}`;
+          // Only validate if maxRecoveries > 0
+          if (maxRecoveries > 0 && recoveries > maxRecoveries) {
+            errors.recoveries = `Requested Installment cannot be greater than ${maxRecoveries}`;
           }
         }
       }
 
-      // Update validation errors
+      // Enhanced validation error state management
       setValidationErrors(prev => {
         const newErrors = {...prev};
         // Remove old errors for this field group
@@ -239,7 +289,7 @@ const GenericAdvanceSaveScreen = () => {
     [formData, selectedAdvanceTypeData],
   );
 
-  // Initialize data properly on screen focus
+  // Enhanced data initialization with better error handling
   useEffect(() => {
     let isMounted = true;
 
@@ -262,7 +312,7 @@ const GenericAdvanceSaveScreen = () => {
             employeeId: advanceData.employeeId || employeeId,
             employeeName: advanceData.employeeName || employeeName,
             WorkerRecId: advanceData.WorkerRecId || WorkerRecId,
-            AdvanceAmount: formatNumber(advanceData.AdvanceAmount || '0'),
+            AdvanceAmount: formatNumber(advanceData.AdvanceAmount || ''),
             RequestedInstallmentAmount: formatNumber(
               advanceData.RequestedInstallmentAmount || '',
             ),
@@ -292,14 +342,17 @@ const GenericAdvanceSaveScreen = () => {
     setDataInitialized(false);
   }, [mode, advanceData?.RecId, employeeId, requestType]);
 
+  // Enhanced data fetching with better error handling
   const fetchInitialData = async () => {
     try {
       setIsLoading(true);
 
-      // Fetch advance codes
       const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
 
-      // Filter based on the request type (using the mapping from API response)
+      if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
+        throw new Error('Invalid advance codes data received');
+      }
+
       const expectedAdvanceType = getAdvanceTypeMapping();
       const filteredAdvanceType = allAdvanceCodes.filter(
         type => type.AdvanceType === expectedAdvanceType,
@@ -315,7 +368,7 @@ const GenericAdvanceSaveScreen = () => {
       setAdvanceCodeDropDown(dropdownData);
       setAdvanceCodes(filteredAdvanceType);
 
-      // Auto-select first option for Advance type in create mode
+      // Enhanced auto-selection logic for Advance type in create mode
       if (
         mode === 'create' &&
         requestType === 'Advance' &&
@@ -332,7 +385,7 @@ const GenericAdvanceSaveScreen = () => {
         setSelectedAdvanceTypeData(firstAdvanceType);
       }
 
-      // For edit mode, set the selected advance type data if AdvanceTypeCode exists
+      // Enhanced edit mode data handling
       if (mode === 'edit' && formData.AdvanceTypeCode) {
         const selectedType = filteredAdvanceType.find(
           type => type.AdvanceTypeCode === formData.AdvanceTypeCode,
@@ -342,33 +395,77 @@ const GenericAdvanceSaveScreen = () => {
         }
       }
 
-      // Fetch PayGroupPayPeriod data if EmployeeId is available
+      // Enhanced PayGroupPayPeriod data fetching
       if (employeeId) {
-        const response = await FindFirstPayGroupPayPeriod();
-        const filteredPayGroupPayPeriod = response.filter(
-          a => a.PayPeriodStatus === 'Active',
-        );
+        try {
+          const response = await FindFirstPayGroupPayPeriod();
+          const filteredPayGroupPayPeriod = response.filter(
+            a => a.PayPeriodStatus === 'Active',
+          );
 
-        if (filteredPayGroupPayPeriod && filteredPayGroupPayPeriod.length > 0) {
-          if (mode === 'create') {
-            setFormData(prev => ({
-              ...prev,
-              RecoveryStartDate: formatToISOWithTime(
-                filteredPayGroupPayPeriod[0]?.EndDate,
-              ),
-            }));
+          if (
+            filteredPayGroupPayPeriod &&
+            filteredPayGroupPayPeriod.length > 0
+          ) {
+            if (mode === 'create') {
+              setFormData(prev => ({
+                ...prev,
+                RecoveryStartDate: formatToISOWithTime(
+                  filteredPayGroupPayPeriod[0]?.EndDate,
+                ),
+              }));
+            }
           }
+        } catch (payGroupError) {
+          console.warn('PayGroup data fetch failed:', payGroupError);
+          // Continue without setting recovery date
         }
       }
     } catch (error) {
       console.error('Error fetching initial data:', error);
-      setAlertMessage('Failed to fetch initial data.');
+      setAlertMessage(
+        'Failed to fetch initial data. Please refresh and try again.',
+      );
       setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const formatNumber = value => {
+    if (value === null || value === undefined || value === '') return '';
+
+    const num = Number(value.toString().replace(/,/g, '')); // clean commas if already present
+    if (isNaN(num)) return '';
+
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
+  // Helper function to parse formatted numbers
+  const parseNumber = value => {
+    if (!value) return 0;
+    const cleanValue = value.toString().replace(/,/g, '');
+    const num = parseFloat(cleanValue);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const getTodayDate = () => {
+    try {
+      const today = new Date();
+      if (isNaN(today.getTime())) {
+        throw new Error('Invalid date');
+      }
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}T12:00:00`;
+    } catch (error) {
+      console.error('Error getting today date:', error);
+      throw new Error('Failed to get current date');
+    }
+  };
+
+  // Enhanced refresh handler
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
@@ -376,11 +473,14 @@ const GenericAdvanceSaveScreen = () => {
       await fetchInitialData();
     } catch (error) {
       console.error('Error in Save Record Screen', error);
+      setAlertMessage('Failed to refresh data. Please try again.');
+      setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Enhanced input change handler
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -391,23 +491,35 @@ const GenericAdvanceSaveScreen = () => {
   // Format date functions
   const formatDate = date => {
     if (!date) return '';
-    const d = new Date(date);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear(); // always 4 digits
-    return `${month}/${day}/${year}`;
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${month}/${day}/${year}`;
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '';
+    }
   };
 
   const formatToISOWithTime = date => {
     if (!date) return '';
-    const baseDate = new Date(date);
-    const year = baseDate.getFullYear();
-    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-    const day = String(baseDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T12:00:00`;
+    try {
+      const baseDate = new Date(date);
+      if (isNaN(baseDate.getTime())) return '';
+      const year = baseDate.getFullYear();
+      const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+      const day = String(baseDate.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}T12:00:00`;
+    } catch (error) {
+      console.error('Date ISO formatting error:', error);
+      return '';
+    }
   };
 
-  // Handle date changes with validation
+  // Enhanced date change handler with validation
   const handleDateChange = async (date, fieldName) => {
     const formatted = formatToISOWithTime(date);
 
@@ -416,7 +528,7 @@ const GenericAdvanceSaveScreen = () => {
       [fieldName]: formatted,
     }));
 
-    // Validate the date field
+    // Validate the date field with delay to ensure state is updated
     setTimeout(() => {
       validateField(fieldName, formatted);
     }, 100);
@@ -424,33 +536,39 @@ const GenericAdvanceSaveScreen = () => {
     setShowCalendar(false);
   };
 
-  // Handle Advance Amount Change with validation
   const handleAdvanceAmountChange = value => {
     const cleanedValue = value.replace(/[^0-9.]/g, '');
     const formattedValue = formatNumber(cleanedValue);
     handleInputChange('AdvanceAmount', formattedValue);
 
-    // Validate immediately
+    // Validate immediately with slight delay
     setTimeout(() => {
       validateField('AdvanceAmount', formattedValue);
     }, 100);
   };
 
-  // Handle Advance Type Code Change
   const handleAdvanceTypeCodeChange = async item => {
     const newAdvanceTypeCode = item.value;
     const selectedType = advanceCodes.find(
       type => type.AdvanceTypeCode === newAdvanceTypeCode,
     );
 
-    // Reset form but keep employee info and selected type code
+    const currentPaymentDate = formData.RequestedPaymentDate;
+    const currentRecoveryDate = formData.RecoveryStartDate;
+    const currentDescription = formData.AdvanceDescription;
+    const currentAdvanceAmount = formData.AdvanceAmount;
+
+    // Reset form but preserve important data
     const resetForm = {
       ...createInitialFormData(),
       employeeId: formData.employeeId,
       employeeName: formData.employeeName,
       WorkerRecId: formData.WorkerRecId,
       AdvanceTypeCode: newAdvanceTypeCode,
-      RecoveryStartDate: formData.RecoveryStartDate, // Keep recovery start date
+      RequestedPaymentDate: currentPaymentDate,
+      RecoveryStartDate: currentRecoveryDate,
+      AdvanceDescription: currentDescription,
+      AdvanceAmount: currentAdvanceAmount,
     };
 
     setFormData(resetForm);
@@ -471,7 +589,6 @@ const GenericAdvanceSaveScreen = () => {
     }
   };
 
-  // Handle Recovery Amount Change with validation
   const handleRecoveryAmountChange = value => {
     const cleanedValue = value.replace(/[^0-9.]/g, '');
     const formattedValue = formatNumber(cleanedValue);
@@ -491,7 +608,7 @@ const GenericAdvanceSaveScreen = () => {
     }, 100);
   };
 
-  // Handle Recoveries Change with validation
+  // Enhanced recoveries change handler
   const handleRecoveriesChange = value => {
     const cleanedValue = value.replace(/[^0-9]/g, '');
 
@@ -510,7 +627,7 @@ const GenericAdvanceSaveScreen = () => {
     }, 100);
   };
 
-  // Main action handler
+  // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
       const formattedRequestDate = `${
@@ -531,6 +648,14 @@ const GenericAdvanceSaveScreen = () => {
         RecId: data.RecId === '' ? '0' : data.RecId,
         RequestDate: formattedRequestDate,
       };
+
+      // Enhanced validation before API call
+      if (
+        !advanceRequestData.AdvanceTypeCode ||
+        !advanceRequestData.RequestedPaymentDate
+      ) {
+        throw new Error('Advance Type Code and Payment Date are required.');
+      }
 
       let response;
 
@@ -573,13 +698,15 @@ const GenericAdvanceSaveScreen = () => {
       }
     } catch (error) {
       console.error('Error in handleAction:', error);
-      setAlertMessage('An error occurred while processing the request.');
+      const errorMessage =
+        error.message || 'An error occurred while processing the request.';
+      setAlertMessage(errorMessage);
       setAlertModal(true);
-      return {success: false, message: 'Network or server error'};
+      return {success: false, message: errorMessage};
     }
   };
 
-  // Validate all fields - returns validation result without showing alert
+  // Enhanced field validation with comprehensive checks
   const validateFields = () => {
     const errors = [];
 
@@ -591,7 +718,7 @@ const GenericAdvanceSaveScreen = () => {
     // Validate Advance Amount
     const advanceAmount = parseNumber(formData.AdvanceAmount);
     if (!advanceAmount || advanceAmount === 0) {
-      errors.push('Advance Amount is required');
+      errors.push('Advance Amount is required and must be greater than 0');
     } else {
       // Check if amount exceeds maximum allowed
       if (selectedAdvanceTypeData && selectedAdvanceTypeData.MaxAdanceAmount) {
@@ -624,7 +751,7 @@ const GenericAdvanceSaveScreen = () => {
       }
     }
 
-    // Validate Recovery fields for Loan requests
+    // Enhanced validation for Loan requests
     if (requestType === 'Loan') {
       const recoveryAmount = parseNumber(formData.RequestedInstallmentAmount);
       const recoveries = parseNumber(formData.RequestedInstallments);
@@ -639,11 +766,14 @@ const GenericAdvanceSaveScreen = () => {
         errors.push('Recovery Amount cannot exceed Advance Amount');
       }
 
-      // Recoveries cannot exceed max recoveries
+      // Recoveries cannot exceed max recoveries - only when max recoveries > 0
       if (selectedAdvanceTypeData && selectedAdvanceTypeData.Recoveries) {
         const maxRecoveries = parseNumber(selectedAdvanceTypeData.Recoveries);
-        if (recoveries > maxRecoveries) {
-          errors.push(`Recoveries cannot exceed ${maxRecoveries}`);
+        // Only validate if maxRecoveries > 0
+        if (maxRecoveries > 0 && recoveries > maxRecoveries) {
+          errors.push(
+            `Requested Installment cannot be greater than ${maxRecoveries}`,
+          );
         }
       }
     }
@@ -654,8 +784,9 @@ const GenericAdvanceSaveScreen = () => {
     };
   };
 
+  // Enhanced save handler with better error handling and navigation
   const handleSave = async actionType => {
-    if (processingButton) return;
+    if (processingButton) return; // Prevent multiple clicks
 
     const validation = validateFields();
     if (!validation.isValid) {
@@ -678,13 +809,20 @@ const GenericAdvanceSaveScreen = () => {
           setAlertModal(false);
           clearFormData();
 
+          const cameFromValue =
+            actionType === 'submit'
+              ? 'SubmitSuccess'
+              : mode === 'create'
+              ? 'CreateSuccess'
+              : 'UpdateSuccess';
+
           // Navigate back to list page after successful create/update
           navigation.navigate('GenericAdvanceListScreen', {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
             WorkerRecId: formData.WorkerRecId,
             highlightRecId: result.recId,
-            cameFrom: mode === 'create' ? 'CreateSuccess' : 'UpdateSuccess',
+            cameFrom: cameFromValue,
           });
         }, 2000);
       }
@@ -731,7 +869,9 @@ const GenericAdvanceSaveScreen = () => {
           <KeyboardAvoidingView
             behavior="padding"
             style={styles.LReqSR_ContentWrapper}>
-            <ScrollView contentContainerStyle={styles.LReqSR_FormContainer}>
+            <ScrollView
+              ref={scrollViewRef}
+              contentContainerStyle={styles.LReqSR_FormContainer}>
               {/* Employee Name */}
               <Text style={styles.LReqSR_Label}>Employee Name</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
@@ -765,7 +905,7 @@ const GenericAdvanceSaveScreen = () => {
                 itemContainerStyle={styles.LReqSR_DropdownItemContainer}
                 maxHeight={280}
                 search
-                searchPlaceholder="Search Advance Type Code..."
+                searchPlaceholder="Search Advance Type Code"
                 inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                 iconStyle={styles.LReqSR_DropdownIcon}
                 disable={requestType === 'Advance'}
@@ -781,7 +921,7 @@ const GenericAdvanceSaveScreen = () => {
                 value={formData.AdvanceAmount}
                 onChangeText={handleAdvanceAmountChange}
                 keyboardType="numeric"
-                placeholder="Enter advance amount"
+                placeholder="0"
                 placeholderTextColor="#888"
                 editable={!!formData.AdvanceTypeCode}
               />
@@ -833,12 +973,12 @@ const GenericAdvanceSaveScreen = () => {
                     value={formData.RequestedInstallmentAmount}
                     onChangeText={handleRecoveryAmountChange}
                     keyboardType="numeric"
-                    placeholder="Enter recovery amount"
+                    placeholder="0"
                     placeholderTextColor="#888"
                     editable={!isRecoveryAmountDisabled}
                   />
 
-                  <Text style={styles.LReqSR_Label}>Recoveries</Text>
+                  <Text style={styles.LReqSR_Label}>Recoveries *</Text>
                   <TextInput
                     style={[
                       styles.LReqSR_Input,
@@ -847,14 +987,14 @@ const GenericAdvanceSaveScreen = () => {
                     value={formData.RequestedInstallments}
                     onChangeText={handleRecoveriesChange}
                     keyboardType="numeric"
-                    placeholder="Enter number of recoveries"
+                    placeholder="0"
                     placeholderTextColor="#888"
                     editable={!isRecoveriesDisabled}
                   />
                 </>
               )}
 
-              {/* Loan / Advance Description */}
+              {/* Description */}
               <Text style={styles.LReqSR_Label}>{requestType} Description</Text>
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
@@ -862,7 +1002,7 @@ const GenericAdvanceSaveScreen = () => {
                 onChangeText={value =>
                   handleInputChange('AdvanceDescription', value)
                 }
-                placeholder={`Enter ${requestType.toLowerCase()} description (max 60 characters)`}
+                placeholder={`Enter ${requestType.toLowerCase()} description`}
                 placeholderTextColor="#888"
                 multiline
                 numberOfLines={4}
