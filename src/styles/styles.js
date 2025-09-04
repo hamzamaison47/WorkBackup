@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   // Start Of Display Personal Info
   DPI_Container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FAFAFA',
   },
   DPI_ScrollView: {
     flex: 1,
@@ -1668,10 +1668,10 @@ const styles = StyleSheet.create({
   // end of save button and also personal information component
 
   // Start of worker assigned to me component
-  orgStyles_rootContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
+  // orgStyles_rootContainer: {
+  //   alignItems: 'center',
+  //   paddingHorizontal: 16,
+  // },
   orgStyles_rootCard: {
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
@@ -1694,19 +1694,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 8,
   },
-  orgStyles_rootName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-  },
-  orgStyles_rootRole: {
-    fontSize: 14,
-    color: '#0A66C2',
-    textAlign: 'center',
-    marginTop: 4,
-    fontWeight: '600',
-  },
+  // orgStyles_rootName: {
+  //   fontSize: 18,
+  //   fontWeight: '700',
+  //   color: '#111827',
+  //   textAlign: 'center',
+  // },
+  // orgStyles_rootRole: {
+  //   fontSize: 14,
+  //   color: '#0A66C2',
+  //   textAlign: 'center',
+  //   marginTop: 4,
+  //   fontWeight: '600',
+  // },
   orgStyles_connectorFromRoot: {
     width: 2,
     height: 40,
@@ -1839,6 +1839,62 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 8,
     fontWeight: '600',
+  },
+  orgStyles_rootContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  orgStyles_rootCardRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    minWidth: 370,
+  },
+  orgStyles_rootAvatarLarge: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 3,
+    borderColor: '#0A66C2',
+    marginRight: 16,
+  },
+  orgStyles_rootInfo: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  orgStyles_rootInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  orgStyles_rootName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginRight: 12,
+    flexShrink: 1,
+  },
+  orgStyles_rootRole: {
+    fontSize: 14,
+    color: '#0A66C2',
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  orgStyles_rootMeta: {
+    fontSize: 13,
+    color: '#374151',
+    marginRight: 12,
+    flexShrink: 1,
   },
   // end of worker assigned to me card
 

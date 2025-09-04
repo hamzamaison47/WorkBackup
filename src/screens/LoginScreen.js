@@ -37,7 +37,7 @@ const LoginScreen = () => {
             source={require('../assets/cloud.png')}
             style={styles.Login_Logo}
           />
-          <Text style={styles.Login_Title}>Welcome to the ESS</Text>
+          <Text style={styles.Login_Title}>Welcome to Dynaface</Text>
           <Text style={styles.Login_Subtitle}>
             Manage your HR services anytime, anywhere
           </Text>

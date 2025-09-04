@@ -39,6 +39,7 @@ const TabNavigator = () => {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
         // headerShown: false,
+        headerShadowVisible: false,
       })}>
       <Tab.Screen
         name="MainDashboard"

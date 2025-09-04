@@ -12,7 +12,8 @@ if (typeof global.btoa === 'undefined') {
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {RetrieveByEmail} from '../API/Authentication/RetrieveByEmail';
+import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
+import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 
 export const handleLogoutauth = async () => {
@@ -89,109 +90,148 @@ export const handleSuccessfulLogin = async (
   setLegalEntities,
   provider,
 ) => {
-  const decodedAccessToken = jwtDecode(accessToken);
-  await AsyncStorage.setItem('accessToken', accessToken);
+  try {
+    const decodedAccessToken = jwtDecode(accessToken);
+    await AsyncStorage.setItem('accessToken', accessToken);
 
-  const userEmailOrUPN =
-    provider === 'Azure' ? decodedAccessToken.upn : decodedAccessToken.email;
+    const userEmailOrUPN =
+      provider === 'Azure' ? decodedAccessToken.upn : decodedAccessToken.email;
 
-  const employeeInfo = await fetchEmpInfo(userEmailOrUPN);
+    // Step 1: Get user info first
+    const userInfo = await fetchUserInfo(userEmailOrUPN);
 
-  if (
-    !employeeInfo.length ||
-    !employeeInfo[0].value ||
-    !employeeInfo[0].label ||
-    employeeInfo[0].WorkerRecId === 0
-  ) {
-    setDialogMessage(
-      "Incorrect Login Details.\nYour email isn't registered in our system. Would you like to create an account?",
-    );
+    if (
+      !userInfo.length ||
+      !userInfo[0].EmployeeName ||
+      !userInfo[0].EmployeeId ||
+      userInfo[0].WorkerRecId === 0
+    ) {
+      setDialogMessage(
+        "Incorrect Login Details.\nYour email isn't registered in our system. Would you like to create an account?",
+      );
 
-    // Show popup
-    setDialogVisible(true);
+      // Show popup
+      setDialogVisible(true);
 
-    // Save callback for OK button
-    global.onDialogOk = () => {
-      setDialogVisible(false);
-      navigation.navigate('DrawerNavigator', {
-        screen: 'RequestForRegistration',
-      });
-    };
+      // Save callback for OK button
+      global.onDialogOk = () => {
+        setDialogVisible(false);
+        navigation.navigate('DrawerNavigator', {
+          screen: 'RequestForRegistration',
+        });
+      };
 
-    return;
+      return;
+    }
+
+    const user = userInfo[0];
+
+    // Step 2: Initialize default legal entity in Redux first
+    await initializeLegalEntity(user.DefaultLegalEntity);
+
+    // Step 3: Fetch legal entities using the employee ID
+    const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+
+    // Step 4: Set legal entities in Redux
+    setLegalEntities(legalEntities);
+
+    // Step 5: Set user data in Redux
+    setUserData({
+      userName: decodedAccessToken.name,
+      employeeName: user.EmployeeName,
+      employeeId: user.EmployeeId,
+      WorkerRecId: user.WorkerRecId,
+      email: userEmailOrUPN,
+      jobId: user.JobId,
+      department: user.Department,
+      defaultLegalEntity: user.DefaultLegalEntity,
+      PositionDescription: user.PositionDescription,
+      CreatedBy: user.CreatedBy,
+      CreatedDateTime: user.CreatedDateTime,
+      DataAreaId: user.DataAreaId,
+      IsEnrolledInPayroll: user.IsEnrolledInPayroll,
+      JobDescription: user.JobDescription,
+      ModifiedBy: user.ModifiedBy,
+      ModifiedDateTime: user.ModifiedDateTime,
+      OriginalHireDate: user.OriginalHireDate,
+      Partition: user.Partition,
+      Person: user.Person,
+      Positionid: user.Positionid,
+      RecId: user.RecId,
+      isDynamicsUser: user.isDynamicsUser,
+      employeeFullInfo: user,
+    });
+
+    // Step 6: Navigate to main app
+    navigation.navigate('DrawerNavigator', {
+      userName: decodedAccessToken.name,
+    });
+  } catch (error) {
+    console.error('Error in handleSuccessfulLogin:', error);
+    throw error;
   }
-
-  const availableLegalEntities = employeeInfo[0].EmployeeLegalEntities || [];
-
-  setLegalEntities(availableLegalEntities);
-  await initializeLegalEntity(employeeInfo[0]?.DefaultLegalEntity);
-
-  const {
-    label: employeeName,
-    value: employeeId,
-    WorkerRecId,
-    JobId,
-    Department,
-    DefaultLegalEntity,
-  } = employeeInfo[0];
-
-  setUserData({
-    userName: decodedAccessToken.name,
-    employeeName,
-    employeeId,
-    WorkerRecId,
-    email: userEmailOrUPN,
-    jobId: JobId,
-    department: Department,
-    defaultLegalEntity: DefaultLegalEntity,
-    employeeFullInfo: employeeInfo[0],
-  });
-
-  navigation.navigate('DrawerNavigator', {
-    userName: decodedAccessToken.name,
-  });
 };
 
-export const fetchEmpInfo = async email => {
+export const fetchUserInfo = async email => {
   try {
     if (!email) {
       console.error('Invalid email input:', email);
       return [];
     }
 
-    const data = await RetrieveByEmail({email});
+    const data = await RetrieveUserInfoByEmail({email});
     if (!data || !Array.isArray(data)) {
-      console.error('Unexpected data format:', data);
+      console.error('Unexpected user data format:', data);
       return [];
     }
 
-    return data.map(item => {
-      const employeeLegalEntitiesRaw =
-        item.EmployeeLegalEntities?.['a:PREmployeeLegalEntitiesContract'];
-
-      const employeeLegalEntities = Array.isArray(employeeLegalEntitiesRaw)
-        ? employeeLegalEntitiesRaw
-        : employeeLegalEntitiesRaw
-        ? [employeeLegalEntitiesRaw]
-        : [];
-
-      return {
-        label: item.EmployeeName?.toString() ?? '',
-        value: item.EmployeeId?.toString() ?? '',
-        WorkerRecId: item.WorkerRecId,
-        JobId: item.JobId?.toString() ?? '',
-        Department: item.Department?.toString() ?? '',
-        DefaultLegalEntity: item.DefaultLegalEntity?.toString() ?? '',
-        EmployeeLegalEntities: employeeLegalEntities.map(entity => ({
-          LegalEntity: entity['a:LegalEntity']?.toString() ?? '',
-        })),
-        BasicSalary: item.BasicSalary,
-        Currency: item.Currency,
-        PayGroupCode: item.PayGroupCode,
-      };
-    });
+    return data.map(item => ({
+      EmployeeName: item.EmployeeName?.toString() ?? '',
+      EmployeeId: item.EmployeeId?.toString() ?? '',
+      WorkerRecId: item.WorkerRecId,
+      JobId: item.JobId?.toString() ?? '',
+      Department: item.Department?.toString() ?? '',
+      DefaultLegalEntity: item.DefaultLegalEntity?.toString() ?? '',
+      CreatedBy: item.CreatedBy?.toString() ?? '',
+      CreatedDateTime: item.CreatedDateTime?.toString() ?? '',
+      DataAreaId: item.DataAreaId?.toString() ?? '',
+      IsEnrolledInPayroll: item.IsEnrolledInPayroll?.toString() ?? '',
+      JobDescription: item.JobDescription?.toString() ?? '',
+      ModifiedBy: item.ModifiedBy?.toString() ?? '',
+      ModifiedDateTime: item.ModifiedDateTime?.toString() ?? '',
+      OriginalHireDate: item.OriginalHireDate?.toString() ?? '',
+      Partition: item.Partition?.toString() ?? '',
+      Person: item.Person?.toString() ?? '',
+      PositionDescription: item.PositionDescription?.toString() ?? '',
+      Positionid: item.Positionid?.toString() ?? '',
+      RecId: item.RecId,
+      isDynamicsUser: item.isDynamicsUser?.toString() ?? '',
+    }));
   } catch (error) {
-    console.error('Error in fetchEmpInfo:', error);
+    console.error('Error in fetchUserInfo:', error);
+    return [];
+  }
+};
+
+export const fetchEmployeeLegalEntities = async employeeId => {
+  try {
+    if (!employeeId) {
+      console.error('Invalid employeeId input:', employeeId);
+      return [];
+    }
+
+    const data = await RetrieveEmployeeLegalEntities({employeeId});
+    if (!data || !Array.isArray(data)) {
+      console.error('Unexpected legal entities data format:', data);
+      return [];
+    }
+
+    return data.map(entity => ({
+      LegalEntity: entity.DataAreaId?.toString() ?? '',
+      FullName: entity.FullName?.toString() ?? '',
+    }));
+  } catch (error) {
+    console.error('Error in fetchEmployeeLegalEntities:', error);
     return [];
   }
 };

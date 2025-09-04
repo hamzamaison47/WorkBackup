@@ -4,7 +4,7 @@ import {XMLParser} from 'fast-xml-parser';
 import {resource} from '@env';
 import axios from 'axios';
 
-const RetrieveByEmail = async ({email}) => {
+const RetrieveUserInfoByEmail = async ({email}) => {
   try {
     const accessToken = await getToken();
     const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
@@ -16,22 +16,21 @@ const RetrieveByEmail = async ({email}) => {
         </dat:CallContext>
       </soapenv:Header>
       <soapenv:Body>
-        <retrieveByEmail xmlns = "http://tempuri.org">
-          <_dataAreaId>DAT</_dataAreaId>
+        <retrieveUserInfoByEmail xmlns = "http://tempuri.org">
           <_email>${email}</_email>
-        </retrieveByEmail>
+        </retrieveUserInfoByEmail>
       </soapenv:Body>
     </soapenv:Envelope>`;
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/PREmploymentInformationSvcGroup`,
+      `${resource}soap/services/DFUserInfoSvcGroup`,
       soapEnvelope,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction:
-            'http://tempuri.org/PREmploymentInformationSvc/retrieveByEmail',
+            'http://tempuri.org/DFUserInfoSvc/retrieveUserInfoByEmail',
         },
         responseType: 'text',
       },
@@ -48,32 +47,30 @@ const RetrieveByEmail = async ({email}) => {
     const parsed = parser.parse(xml);
 
     const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['retrieveByEmailResponse']?.[
+      parsed?.['s:Envelope']?.['s:Body']?.['retrieveUserInfoByEmailResponse']?.[
         'result'
-      ]?.['a:PREmploymentInformationSvcContract'];
+      ];
 
     if (!rawData) {
-      console.warn('No leave data found');
+      console.warn('No Employee User data found');
       return [];
     }
 
     const cleanObject = obj =>
       Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
-          key.replace(/^a:/, ''),
+          key.replace(/^a:/, ''), // remove the namespace prefix
           value,
         ]),
       );
 
-    const cleanedData = Array.isArray(rawData)
-      ? rawData.map(cleanObject)
-      : [cleanObject(rawData)];
+    const cleanedData = [cleanObject(rawData)];
 
     return cleanedData;
   } catch (error) {
-    console.error('Failed to fetch Employment Information Data:', error);
+    console.error('Failed to fetch Employee User Data:', error);
     throw error;
   }
 };
 
-export {RetrieveByEmail};
+export {RetrieveUserInfoByEmail};

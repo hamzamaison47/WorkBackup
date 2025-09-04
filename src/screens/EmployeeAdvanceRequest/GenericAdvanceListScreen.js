@@ -519,7 +519,6 @@ const GenericAdvanceListScreen = () => {
   return (
     <ActionPaneContainer
       pageTitle="Loan & Advance Requests"
-      isBackButton={cameFrom !== 'MainDashboard'}
       showFooter
       showFloatingButton
       isHeaderActive

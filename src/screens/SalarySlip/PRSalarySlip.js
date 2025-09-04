@@ -67,12 +67,13 @@ const PRSalarySlip = () => {
         );
       } else {
         setPayPeriods([]);
-        showMessage('Info', 'No pay periods found for the selected company.');
+        showMessage('Info', 'No salary record found for the selected company.');
+        navigation.goBack();
       }
     } catch (error) {
       console.error('Failed to fetch pay periods:', error);
       setPayPeriods([]);
-      showMessage('Error', 'Failed to fetch pay periods. Please try again.');
+      // showMessage('Error', 'Failed to fetch pay periods. Please try again.');
     } finally {
       setLoading(false);
     }

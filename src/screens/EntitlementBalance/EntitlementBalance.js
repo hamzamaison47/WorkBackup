@@ -43,7 +43,7 @@ const EntitlementBalance = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userData?.employeeId]);
+  }, [userData.employeeId]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -57,7 +57,6 @@ const EntitlementBalance = () => {
 
   // Handle refresh
   const handleRefresh = () => fetchEntitlementData();
-
   const renderEntitlementCard = ({item}) => (
     <EntitlementCards
       employeeName={item.EmployeeName}
@@ -72,7 +71,6 @@ const EntitlementBalance = () => {
   return (
     <ActionPaneContainer
       pageTitle="Entitlement Balance"
-      isBackButton
       showFooter
       showFloatingButton={false}
       isHeaderActive
