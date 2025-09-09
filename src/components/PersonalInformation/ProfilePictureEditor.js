@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 import React, {useState} from 'react';
 import {
   View,
@@ -24,6 +25,16 @@ const ProfilePictureEditor = ({
     setIsModalVisible(false);
   };
 
+  const getInitials = name => {
+    if (!name) return 'UN';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <View style={styles.PPEdit_headerContainer}>
       <View style={styles.PPEdit_profileImageWrapper}>
@@ -34,13 +45,21 @@ const ProfilePictureEditor = ({
             <View style={styles.PPEdit_loadingContainer}>
               <CustomIndicator />
             </View>
-          ) : (
+          ) : profilePictureUrl ? (
             <Image
-              source={{
-                uri: profilePictureUrl || 'https://via.placeholder.com/150',
-              }}
+              source={{uri: profilePictureUrl}}
               style={styles.PPEdit_profilePicture}
             />
+          ) : (
+            <View
+              style={[
+                styles.PPEdit_profilePicture,
+                styles.PPEdit_initialsContainer,
+              ]}>
+              <Text style={styles.PPEdit_initialsText}>
+                {getInitials(userData?.employeeName)}
+              </Text>
+            </View>
           )}
         </TouchableOpacity>
 
@@ -65,13 +84,19 @@ const ProfilePictureEditor = ({
         <TouchableWithoutFeedback onPress={handleCancel}>
           <View style={styles.PPEdit_modalOverlay}>
             <View style={styles.PPEdit_modalContent}>
-              <Image
-                source={{
-                  uri: profilePictureUrl || 'https://via.placeholder.com/150',
-                }}
-                style={styles.PPEdit_modalImage}
-                resizeMode="cover"
-              />
+              {profilePictureUrl ? (
+                <Image
+                  source={{uri: profilePictureUrl}}
+                  style={styles.PPEdit_modalImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.PPEdit_modalImage}>
+                  <Text style={styles.PPEdit_initialsTextModal}>
+                    {getInitials(userData?.employeeName)}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </TouchableWithoutFeedback>

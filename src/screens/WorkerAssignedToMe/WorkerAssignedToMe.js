@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
@@ -183,6 +184,16 @@ const EmployeeNode = ({employee, onPress}) => {
     fetchProfilePicture(employee.id);
   }, [employee.id]);
 
+  const getInitials = name => {
+    if (!name) return 'UN';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   const fetchProfilePicture = async employeeId => {
     try {
       const data = await ProfilePicture({employeeId});
@@ -203,14 +214,26 @@ const EmployeeNode = ({employee, onPress}) => {
         activeOpacity={0.7}
         style={styles.orgStyles_employeeCard}
         onPress={onPress}>
-        <Image
-          source={
-            profilePictureUrl
-              ? {uri: profilePictureUrl}
-              : require('../../assets/userLogo.jpg')
-          }
-          style={styles.orgStyles_employeeAvatar}
-        />
+        {profilePictureUrl ? (
+          <Image
+            source={{uri: profilePictureUrl}}
+            style={styles.orgStyles_employeeAvatar}
+          />
+        ) : (
+          <View
+            style={[
+              styles.orgStyles_employeeAvatar,
+              {
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#E5E7EB',
+              },
+            ]}>
+            <Text style={{fontSize: 16, fontWeight: '600', color: '#374151'}}>
+              {getInitials(employee?.name)}
+            </Text>
+          </View>
+        )}
         <View style={styles.orgStyles_employeeInfo}>
           <Text style={styles.orgStyles_employeeName}>{employee.name}</Text>
           <Text style={styles.orgStyles_employeeRole}>{employee.role}</Text>
@@ -225,6 +248,18 @@ const EmployeeNode = ({employee, onPress}) => {
 const RootUser = ({employee, profilePictureUrl, isRootEmployee}) => {
   const navigation = useNavigation();
 
+  console.log('-----------------', employee);
+
+  const getInitials = name => {
+    if (!name) return 'UN';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   const handleLeaveHistoryPress = () => {
     navigation.navigate('LeavesListPage', {
       employeeId: employee?.employeeId || employee?.id,
@@ -237,27 +272,46 @@ const RootUser = ({employee, profilePictureUrl, isRootEmployee}) => {
   return (
     <View style={styles.orgStyles_rootContainer}>
       <View style={styles.orgStyles_rootCardRow}>
-        <Image
-          source={
-            profilePictureUrl
-              ? {uri: profilePictureUrl}
-              : require('../../assets/userLogo.jpg')
-          }
-          style={styles.orgStyles_rootAvatarLarge}
-        />
+        {profilePictureUrl ? (
+          <Image
+            source={{uri: profilePictureUrl}}
+            style={styles.orgStyles_rootAvatarLarge}
+          />
+        ) : (
+          <View
+            style={[
+              styles.orgStyles_rootAvatarLarge,
+              {
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#E5E7EB',
+              },
+            ]}>
+            <Text style={{fontSize: 24, fontWeight: '700', color: '#374151'}}>
+              {getInitials(employee?.employeeName || employee?.name)}
+            </Text>
+          </View>
+        )}
         <View style={styles.orgStyles_rootInfo}>
           <View style={styles.orgStyles_rootInfoRow}>
             <Text style={styles.orgStyles_rootName}>
               {employee?.employeeName || employee?.name || 'No name'}
             </Text>
             <Text style={styles.orgStyles_rootRole}>
-              {employee?.role || employee?.department || '—'}
+              {employee?.employeeId || employee?.id || '—'}
             </Text>
           </View>
           <View style={styles.orgStyles_rootInfoRow}>
             <Text style={styles.orgStyles_rootMeta}>
-              ID: {employee?.employeeId || employee?.id || '—'}
+              Department: {employee?.department || employee?.department || '—'}
             </Text>
+            <Text style={styles.orgStyles_rootMeta}>
+              Position Description:{' '}
+              {employee?.role || employee?.PositionDescription || '—'}
+            </Text>
+            {/* <Text style={styles.orgStyles_rootMeta}>
+              Email: {employee?.email || employee?.email || '—'}
+            </Text> */}
           </View>
 
           {!isRootEmployee && (
@@ -316,12 +370,18 @@ const WorkerAssignedToMe = () => {
       const myTeamData = await RetrieveEmployeeReportToMe({
         employeeId: getEmployeeId(employee),
       });
+
       const mapped =
         myTeamData?.map(emp => ({
           id: emp.EmployeId,
+          employeeId: emp.EmployeId,
           name: emp.Name,
           role: emp.PositionDescription,
+          department: emp.DepartmentName,
+          email: emp.Email,
+          positionId: emp.PositionId,
         })) || [];
+
       setEmployees(mapped);
 
       if (resetChain) {

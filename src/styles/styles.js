@@ -1630,6 +1630,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  PPEdit_initialsContainer: {
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  PPEdit_initialsText: {
+    fontSize: 50,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+
+  PPEdit_initialsTextModal: {
+    fontSize: 50,
+    fontWeight: 'bold',
+    color: '#374151',
+    textAlign: 'center',
+  },
+
   // Modal Styles
   PPEdit_modalOverlay: {
     flex: 1,
