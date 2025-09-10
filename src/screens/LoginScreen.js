@@ -15,6 +15,7 @@ import {
   setLegalEntities,
   initializeLegalEntity,
 } from '../store/slices/companySlice';
+import {setMenuItems} from '../store/slices/menuItemSlice';
 import styles from '../styles/styles';
 
 const LoginScreen = () => {
@@ -55,6 +56,7 @@ const LoginScreen = () => {
                 setAlertMessage,
                 legalEntity => dispatch(initializeLegalEntity(legalEntity)),
                 list => dispatch(setLegalEntities(list)),
+                menus => dispatch(setMenuItems(menus)),
                 'Azure',
               )
             }
@@ -81,6 +83,7 @@ const LoginScreen = () => {
                 setAlertMessage,
                 legalEntity => dispatch(initializeLegalEntity(legalEntity)),
                 list => dispatch(setLegalEntities(list)),
+                menus => dispatch(setMenuItems(menus)),
                 'Google',
               )
             }

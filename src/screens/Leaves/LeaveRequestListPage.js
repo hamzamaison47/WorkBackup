@@ -36,6 +36,12 @@ const LeaveRequestListPage = () => {
   const {employeeId, employeeName, WorkerRecId, cameFrom, highlightRecId} =
     route.params || {};
 
+  console.log('employee Id: ', employeeId);
+  console.log('employee Name: ', employeeName);
+  console.log('Worker Rec Id: ', WorkerRecId);
+  console.log('highlight Rec Id: ', highlightRecId);
+  console.log('Came from: ', cameFrom);
+
   // Fetch leaves data
   const fetchLeavesData = useCallback(async () => {
     if (!employeeId) return;
@@ -76,15 +82,18 @@ const LeaveRequestListPage = () => {
   );
 
   // Handle back navigation
-  const handleGoBack = () => {
-    if (cameFrom === 'WorkerAssignedToMe') {
-      navigation.navigate('WorkerAssignedToMe');
-    } else if (cameFrom === 'DisplayListPage') {
-      navigation.navigate('DisplayListPage');
-    } else {
-      navigation.navigate('DisplayListPage');
-    }
-  };
+  const handleGoBack = useCallback(() => {
+    navigation.goBack();
+  }, []);
+  // const handleGoBack = () => {
+  //   if (cameFrom === 'WorkerAssignedToMe') {
+  //     navigation.navigate('WorkerAssignedToMe');
+  //   } else if (cameFrom === 'DisplayListPage') {
+  //     navigation.navigate('DisplayListPage');
+  //   } else {
+  //     navigation.navigate('DisplayListPage');
+  //   }
+  // };
 
   // Handle refresh
   const handleRefresh = () => {

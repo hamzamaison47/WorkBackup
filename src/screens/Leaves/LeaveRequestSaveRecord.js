@@ -64,6 +64,14 @@ const LeaveRequestSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [originalBalance, setOriginalBalance] = useState(null);
 
+  console.log('mode: ', mode);
+  console.log('leave Data: ', leaveData);
+  console.log('employee Id: ', employeeId);
+  console.log('employee Name: ', employeeName);
+  console.log('Worker Rec Id: ', WorkerRecId);
+  console.log('original Came From: ', originalCameFrom);
+  console.log('Came from: ', cameFrom);
+
   // Create initial form data function
   const createInitialFormData = () => ({
     recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
@@ -83,27 +91,31 @@ const LeaveRequestSaveRecord = () => {
   const [formData, setFormData] = useState(() => createInitialFormData());
 
   const goBack = useCallback(() => {
-    if (cameFrom === 'MainDashboard') {
-      navigation.navigate('MainDashboard');
-    } else if (cameFrom === 'LeavesListPage') {
-      const targetCameFrom = originalCameFrom || 'DisplayListPage';
-      navigation.navigate('LeavesListPage', {
-        employeeId: employeeId,
-        employeeName: employeeName,
-        WorkerRecId: WorkerRecId,
-        cameFrom: targetCameFrom,
-      });
-    } else {
-      navigation.goBack();
-    }
-  }, [
-    cameFrom,
-    originalCameFrom,
-    employeeId,
-    employeeName,
-    WorkerRecId,
-    navigation,
-  ]);
+    navigation.goBack();
+  }, []);
+
+  // const goBack = useCallback(() => {
+  //   if (cameFrom === 'MainDashboard') {
+  //     navigation.navigate('MainDashboard');
+  //   } else if (cameFrom === 'LeavesListPage') {
+  //     const targetCameFrom = originalCameFrom || 'DisplayListPage';
+  //     navigation.navigate('LeavesListPage', {
+  //       employeeId: employeeId,
+  //       employeeName: employeeName,
+  //       WorkerRecId: WorkerRecId,
+  //       cameFrom: targetCameFrom,
+  //     });
+  //   } else {
+  //     navigation.goBack();
+  //   }
+  // }, [
+  //   cameFrom,
+  //   originalCameFrom,
+  //   employeeId,
+  //   employeeName,
+  //   WorkerRecId,
+  //   navigation,
+  // ]);
 
   // Function to normalize leave category for display
   const normalizeLeaveCategoryForDisplay = category => {

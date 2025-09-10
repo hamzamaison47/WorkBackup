@@ -14,6 +14,7 @@ import {jwtDecode} from 'jwt-decode';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
+import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 
 export const handleLogoutauth = async () => {
@@ -36,6 +37,7 @@ export const handleLogin = async (
   setAlertMessage,
   initializeLegalEntity,
   setLegalEntities,
+  setMenuItems,
   provider,
 ) => {
   setLoading(true);
@@ -65,6 +67,7 @@ export const handleLogin = async (
         setDialogMessage,
         initializeLegalEntity,
         setLegalEntities,
+        setMenuItems,
         provider,
       );
     }
@@ -88,6 +91,7 @@ export const handleSuccessfulLogin = async (
   setDialogMessage,
   initializeLegalEntity,
   setLegalEntities,
+  setMenuItems,
   provider,
 ) => {
   try {
@@ -131,9 +135,11 @@ export const handleSuccessfulLogin = async (
 
     // Step 3: Fetch legal entities using the employee ID
     const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+    const menus = await fetchEmployeeMenuItems(user.EmployeeId);
 
     // Step 4: Set legal entities in Redux
     setLegalEntities(legalEntities);
+    setMenuItems(menus);
 
     // Step 5: Set user data in Redux
     setUserData({
@@ -232,6 +238,41 @@ export const fetchEmployeeLegalEntities = async employeeId => {
     }));
   } catch (error) {
     console.error('Error in fetchEmployeeLegalEntities:', error);
+    return [];
+  }
+};
+
+export const fetchEmployeeMenuItems = async employeeId => {
+  try {
+    if (!employeeId) {
+      console.error('Invalid employeeId input:', employeeId);
+      return [];
+    }
+
+    const data = await RetrieveEmployeeMenuItems({employeeId});
+    if (!data || !Array.isArray(data)) {
+      console.error('Unexpected menu Item data format:', data);
+      return [];
+    }
+
+    return data.map(entity => ({
+      LegalEntity: entity.DataAreaId?.toString() ?? '',
+      FullName: entity.FullName?.toString() ?? '',
+
+      AccessLevel: entity.AccessLevel?.toString() ?? '',
+      Image: entity.Image?.toString() ?? '',
+      Label: entity.Label?.toString() ?? '',
+      MenuId: entity.MenuId?.toString() ?? '',
+      ModuleId: entity.ModuleId?.toString() ?? '',
+      Object: entity.Object?.toString() ?? '',
+      ParentId: entity.ParentId?.toString() ?? '',
+      RoleId: entity.RoleId?.toString() ?? '',
+      Sequence: entity.Sequence?.toString() ?? '',
+      Type: entity.Type?.toString() ?? '',
+      Visible: entity.Visible?.toString() ?? '',
+    }));
+  } catch (error) {
+    console.error('Error in fetchEmployeeMenuItems:', error);
     return [];
   }
 };

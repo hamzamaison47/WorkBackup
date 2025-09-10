@@ -12,6 +12,7 @@ const RetrieveEmployeeMenuItems = async ({employeeId}) => {
     const soapBody = `
       <retrieveEmployeeMenuItems xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
+        <_menuType>${'MobileApp'}</_menuType>
       </retrieveEmployeeMenuItems>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

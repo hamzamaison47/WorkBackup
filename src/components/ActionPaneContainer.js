@@ -278,8 +278,8 @@ const ActionPaneContainer = ({
 
       <LogoutAlertModal
         visible={modalVisible}
-        heading="Are you sure?"
-        text="Do you really want to logout?"
+        heading="Are you sure you want to logout?"
+        text="Are you sure you want to logout?"
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
       />

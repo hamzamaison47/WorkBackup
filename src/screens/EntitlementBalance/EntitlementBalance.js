@@ -20,6 +20,7 @@ const EntitlementBalance = () => {
 
   const navigation = useNavigation();
   const {userData} = useSelector(state => state.user);
+  // const {menuItems} = useSelector(state => state.menuItem);
 
   // Fetch entitlement data
   const fetchEntitlementData = useCallback(async () => {
