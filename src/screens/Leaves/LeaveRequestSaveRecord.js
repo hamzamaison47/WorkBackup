@@ -38,19 +38,21 @@ import styles from '../../styles/styles';
 const LeaveRequestSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
-
-  // Add ref for ScrollView to control scroll position
   const scrollViewRef = useRef(null);
 
-  const {userData} = useSelector(state => state.user);
+  const userData = useSelector(state => state.user.userData);
+  const routeUserData = route.params?.userData;
+  const effectiveUserData = routeUserData || userData || {};
 
   // Navigation params with safe defaults
   const {
     mode = 'create',
     leaveData = {},
-    employeeId = leaveData.employeeId || userData?.employeeId || '',
-    employeeName = leaveData.employeeName || userData?.employeeName || '',
-    WorkerRecId = leaveData.WorkerRecId || userData?.WorkerRecId || '',
+    employeeId = leaveData.employeeId || effectiveUserData?.employeeId || '',
+    employeeName = leaveData.employeeName ||
+      effectiveUserData?.employeeName ||
+      '',
+    WorkerRecId = leaveData.WorkerRecId || effectiveUserData?.WorkerRecId || '',
     cameFrom = 'MainDashboard',
     originalCameFrom = null,
   } = route.params || {};
@@ -63,14 +65,6 @@ const LeaveRequestSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [originalBalance, setOriginalBalance] = useState(null);
-
-  console.log('mode: ', mode);
-  console.log('leave Data: ', leaveData);
-  console.log('employee Id: ', employeeId);
-  console.log('employee Name: ', employeeName);
-  console.log('Worker Rec Id: ', WorkerRecId);
-  console.log('original Came From: ', originalCameFrom);
-  console.log('Came from: ', cameFrom);
 
   // Create initial form data function
   const createInitialFormData = () => ({
@@ -91,31 +85,46 @@ const LeaveRequestSaveRecord = () => {
   const [formData, setFormData] = useState(() => createInitialFormData());
 
   const goBack = useCallback(() => {
-    navigation.goBack();
-  }, []);
-
-  // const goBack = useCallback(() => {
-  //   if (cameFrom === 'MainDashboard') {
-  //     navigation.navigate('MainDashboard');
-  //   } else if (cameFrom === 'LeavesListPage') {
-  //     const targetCameFrom = originalCameFrom || 'DisplayListPage';
-  //     navigation.navigate('LeavesListPage', {
-  //       employeeId: employeeId,
-  //       employeeName: employeeName,
-  //       WorkerRecId: WorkerRecId,
-  //       cameFrom: targetCameFrom,
-  //     });
-  //   } else {
-  //     navigation.goBack();
-  //   }
-  // }, [
-  //   cameFrom,
-  //   originalCameFrom,
-  //   employeeId,
-  //   employeeName,
-  //   WorkerRecId,
-  //   navigation,
-  // ]);
+    if (cameFrom === 'MainDashboard') {
+      // Reset stack so only MainDashboard remains
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'TabNavigator',
+            params: {screen: 'MainDashboard'},
+          },
+        ],
+      });
+    } else if (cameFrom === 'LeavesListPage') {
+      // Reset stack so only LeavesListPage remains
+      const targetCameFrom = originalCameFrom || 'DisplayListPage';
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'LeavesListPage',
+            params: {
+              employeeId,
+              employeeName,
+              WorkerRecId,
+              cameFrom: targetCameFrom,
+            },
+          },
+        ],
+      });
+    } else {
+      // Default: just go back one screen in the stack
+      navigation.goBack();
+    }
+  }, [
+    navigation,
+    cameFrom,
+    originalCameFrom,
+    employeeId,
+    employeeName,
+    WorkerRecId,
+  ]);
 
   // Function to normalize leave category for display
   const normalizeLeaveCategoryForDisplay = category => {
@@ -157,12 +166,10 @@ const LeaveRequestSaveRecord = () => {
   useFocusEffect(
     React.useCallback(() => {
       if (mode === 'create') {
-        // Always reset form data for create mode with default Full Day Leave
         const freshFormData = createInitialFormData();
         setFormData(freshFormData);
         setOriginalBalance(null); // Clear original balance for create mode
       } else if (mode === 'edit' && leaveData?.recId) {
-        // Normalize the leave category from API
         const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
           leaveData.leaveCategory,
         );
@@ -177,16 +184,14 @@ const LeaveRequestSaveRecord = () => {
           employeeId: leaveData.employeeId || employeeId,
           employeeName: leaveData.employeeName || employeeName,
           WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
-          leaveCategory: normalizedLeaveCategory, // Use normalized category
-          leaveDays: leaveData.leaveDays || '', // Use existing leaveDays from leaveData
+          leaveCategory: normalizedLeaveCategory,
+          leaveDays: leaveData.leaveDays || '',
         };
 
         setFormData(editFormData);
 
         // Fetch leave codes first, then balance
         fetchLeaveCodesForEmployee().then(() => {
-          // For edit mode, don't fetch balance - keep existing balance
-          // This prevents the balance from changing when editing existing records
           if (mode === 'edit' && leaveData?.balance) {
             setFormData(prev => ({
               ...prev,
@@ -542,7 +547,7 @@ const LeaveRequestSaveRecord = () => {
     if (processingButton) return; // Prevent multiple clicks
 
     const missingFields = [];
-    const listPageCameFrom = originalCameFrom || 'DisplayListPage';
+    // const listPageCameFrom = originalCameFrom || 'DisplayListPage';
 
     if (!formData.leaveCode) missingFields.push('Leave Code');
     if (!formData.leaveStartDate) missingFields.push('Leave Start Date');
@@ -584,8 +589,13 @@ const LeaveRequestSaveRecord = () => {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
             WorkerRecId: formData.WorkerRecId,
+            userData: route.params?.userData || {
+              employeeId: formData.employeeId,
+              employeeName: formData.employeeName,
+              WorkerRecId: formData.WorkerRecId,
+            },
             highlightRecId: result.recId,
-            cameFrom: listPageCameFrom,
+            cameFrom: originalCameFrom || 'DisplayListPage',
           });
         }, 2000);
       }

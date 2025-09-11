@@ -18,6 +18,7 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import RequestTypeSelectionModal from '../../components/EmployeeAdvanceRequest/RequestTypeSelectionModal';
 import styles from '../../styles/styles';
+import {useSelector} from 'react-redux';
 
 const GenericAdvanceListScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -33,18 +34,26 @@ const GenericAdvanceListScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // Enhanced parameter handling with better validation and fallbacks
   const {
-    employeeId = '',
-    employeeName = '',
-    WorkerRecId = '',
+    employeeId,
+    employeeName,
+    WorkerRecId,
     cameFrom = 'MainDashboard',
     highlightRecId = null,
+    userData: routeUserData,
   } = route.params || {};
+
+  const reduxUserData = useSelector(state => state.user.userData);
+  const effectiveUserData = routeUserData || reduxUserData;
+
+  // Use effective user data for all operations
+  const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
+  const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
+  const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
 
   /** Fetch all advance data (both loans and advances) */
   const fetchAllAdvanceData = useCallback(async () => {
-    if (!employeeId) return;
+    if (!effectiveEmployeeId) return;
     setIsLoading(true);
 
     try {
@@ -78,7 +87,7 @@ const GenericAdvanceListScreen = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [employeeId]);
+  }, [effectiveEmployeeId, employeeId]);
 
   /** Enhanced refresh data when screen comes into focus */
   useFocusEffect(
@@ -110,15 +119,31 @@ const GenericAdvanceListScreen = () => {
 
   /** Enhanced back navigation with better parameter handling */
   const handleGoBack = () => {
-    if (cameFrom === 'DisplayListPage') {
-      navigation.navigate('DisplayListPage');
-    } else if (cameFrom === 'WorkerAssignedToMe') {
-      navigation.navigate('WorkerAssignedToMe');
-    } else if (cameFrom === 'MainDashboard') {
-      navigation.navigate('MainDashboard');
-    } else {
-      navigation.navigate('MainDashboard'); // Default fallback
+    let targetRoute = 'MainDashboard'; // default
+
+    switch (cameFrom) {
+      case 'MainDashboard':
+        targetRoute = 'MainDashboard';
+        break;
+      case 'DisplayListPage':
+        targetRoute = 'DisplayListPage';
+        break;
+      case 'DrawerNavigation':
+      case 'DrawerNavigator':
+        targetRoute = 'MainDashboard';
+        break;
+      case 'WorkerAssignedToMe':
+        targetRoute = 'WorkerAssignedToMe';
+        break;
+      default:
+        navigation.goBack();
+        return;
     }
+
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+    });
   };
 
   /** Enhanced refresh handler */
@@ -141,17 +166,18 @@ const GenericAdvanceListScreen = () => {
 
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'create',
-      employeeId,
-      employeeName,
-      WorkerRecId,
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
       cameFrom: 'GenericAdvanceListScreen',
       requestType: selectedType.type,
       advanceType: selectedType.advanceType,
       screenName: selectedType.title,
       advanceData: {
-        employeeId,
-        employeeName,
-        WorkerRecId,
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
         RecId: '',
         AdvanceTypeCode: '',
         AdvanceAmount: '0.00',
@@ -354,18 +380,20 @@ const GenericAdvanceListScreen = () => {
 
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'edit',
-      employeeId: itemData.employeeId || employeeId,
-      employeeName: itemData.employeeName || employeeName,
-      WorkerRecId: itemData.WorkerRecId || WorkerRecId,
+      employeeId: itemData.employeeId || effectiveEmployeeId,
+      employeeName: itemData.employeeName || effectiveEmployeeName,
+      WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
+      userData: effectiveUserData,
       cameFrom: 'GenericAdvanceListScreen',
+      originalCameFrom: cameFrom,
       requestType: requestTypeInfo.type,
       advanceType: requestTypeInfo.advanceType,
       screenName: requestTypeInfo.screenName,
       advanceData: {
         RecId: itemData.RecId,
-        employeeId: itemData.employeeId || employeeId,
-        employeeName: itemData.employeeName || employeeName,
-        WorkerRecId: itemData.WorkerRecId || WorkerRecId,
+        employeeId: itemData.employeeId || effectiveEmployeeId,
+        employeeName: itemData.employeeName || effectiveEmployeeName,
+        WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
         AdvanceTypeCode: itemData.AdvanceTypeCode,
         AdvanceAmount: itemData.AdvanceAmount,
         RequestedPaymentDate: formatToISOWithTime(

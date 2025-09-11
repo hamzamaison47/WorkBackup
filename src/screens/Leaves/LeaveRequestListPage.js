@@ -17,8 +17,30 @@ import styles from '../../styles/styles';
 import {DeleteLeaveRequest} from '../../API/Leaves/DeleteLeaveRequest';
 import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
+import {useSelector} from 'react-redux';
 
 const LeaveRequestListPage = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  const {
+    employeeId,
+    employeeName,
+    WorkerRecId,
+    cameFrom,
+    highlightRecId,
+    userData: routeUserData,
+  } = route.params || {};
+
+  // Get userData from Redux as fallback
+  const reduxUserData = useSelector(state => state.user.userData);
+  const effectiveUserData = routeUserData || reduxUserData;
+
+  // Use effective user data for all operations
+  const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
+  const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
+  const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
+
   const [isLoading, setIsLoading] = useState(false);
   const [leavesData, setLeavesData] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
@@ -30,25 +52,13 @@ const LeaveRequestListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
-  const navigation = useNavigation();
-
-  const route = useRoute();
-  const {employeeId, employeeName, WorkerRecId, cameFrom, highlightRecId} =
-    route.params || {};
-
-  console.log('employee Id: ', employeeId);
-  console.log('employee Name: ', employeeName);
-  console.log('Worker Rec Id: ', WorkerRecId);
-  console.log('highlight Rec Id: ', highlightRecId);
-  console.log('Came from: ', cameFrom);
-
   // Fetch leaves data
   const fetchLeavesData = useCallback(async () => {
-    if (!employeeId) return;
+    if (!effectiveEmployeeId) return;
 
     setIsLoading(true);
     try {
-      const LeaveData = await fetchLeaves(employeeId);
+      const LeaveData = await fetchLeaves(effectiveEmployeeId);
       setLeavesData(LeaveData);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
@@ -56,7 +66,7 @@ const LeaveRequestListPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [employeeId]);
+  }, [effectiveEmployeeId]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -82,18 +92,32 @@ const LeaveRequestListPage = () => {
   );
 
   // Handle back navigation
-  const handleGoBack = useCallback(() => {
-    navigation.goBack();
-  }, []);
-  // const handleGoBack = () => {
-  //   if (cameFrom === 'WorkerAssignedToMe') {
-  //     navigation.navigate('WorkerAssignedToMe');
-  //   } else if (cameFrom === 'DisplayListPage') {
-  //     navigation.navigate('DisplayListPage');
-  //   } else {
-  //     navigation.navigate('DisplayListPage');
-  //   }
-  // };
+  const handleGoBack = () => {
+    let targetRoute = 'MainDashboard'; // default
+
+    switch (cameFrom) {
+      case 'MainDashboard':
+        targetRoute = 'MainDashboard';
+        break;
+      case 'DisplayListPage':
+        targetRoute = 'DisplayListPage';
+        break;
+      case 'DrawerNavigator':
+        targetRoute = 'MainDashboard';
+        break;
+      case 'WorkerAssignedToMe':
+        targetRoute = 'WorkerAssignedToMe';
+        break;
+      default:
+        navigation.goBack();
+        return; // exit early
+    }
+
+    navigation.reset({
+      index: 0, // top of the stack
+      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+    });
+  };
 
   // Handle refresh
   const handleRefresh = () => {
@@ -104,15 +128,16 @@ const LeaveRequestListPage = () => {
   const handleCreateLeave = () => {
     navigation.navigate('LeaveSaveRecord', {
       mode: 'create',
-      employeeId,
-      employeeName,
-      WorkerRecId,
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
       cameFrom: 'LeavesListPage',
       originalCameFrom: cameFrom,
       leaveData: {
-        employeeId,
-        employeeName,
-        WorkerRecId,
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
         recId: '',
         leaveCode: '',
         leaveCategory: '',
@@ -249,12 +274,19 @@ const LeaveRequestListPage = () => {
       mode: 'edit',
       employeeId: itemData.employeeId || employeeId,
       employeeName: itemData.employeeName || employeeName,
+      WorkerRecId: itemData.WorkerRecId || WorkerRecId,
+      userData: route.params?.userData || {
+        employeeId,
+        employeeName,
+        WorkerRecId,
+      }, // Ensure userData is passed
       cameFrom: 'LeavesListPage',
       originalCameFrom: cameFrom,
       leaveData: {
         recId: itemData.recId,
         employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
+        WorkerRecId: itemData.WorkerRecId || WorkerRecId,
         leaveCode: itemData.leaveCode,
         leaveCategory: itemData.leaveCategory,
         balance: itemData.balance,

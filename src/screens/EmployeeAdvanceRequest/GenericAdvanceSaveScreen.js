@@ -37,19 +37,25 @@ import styles from '../../styles/styles';
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
-
   const scrollViewRef = useRef(null);
 
-  const {userData} = useSelector(state => state.user);
+  const userData = useSelector(state => state.user.userData);
+  const routeUserData = route.params?.userData;
+  const effectiveUserData = routeUserData || userData || {};
 
   // Enhanced navigation params with robust validation and fallbacks
   const {
     mode = 'create',
     advanceData = {},
-    employeeId = advanceData.employeeId || userData?.employeeId || '',
-    employeeName = advanceData.employeeName || userData?.employeeName || '',
-    WorkerRecId = advanceData.WorkerRecId || userData?.WorkerRecId || '',
+    employeeId = advanceData.employeeId || effectiveUserData?.employeeId || '',
+    employeeName = advanceData.employeeName ||
+      effectiveUserData?.employeeName ||
+      '',
+    WorkerRecId = advanceData.WorkerRecId ||
+      effectiveUserData?.WorkerRecId ||
+      '',
     cameFrom = 'MainDashboard',
+    originalCameFrom = null,
     requestType = 'Loan',
     advanceType = 0,
     screenName = 'Loan Request',
@@ -70,8 +76,20 @@ const GenericAdvanceSaveScreen = () => {
   const [validationErrors, setValidationErrors] = useState({});
 
   // Create initial form data function with enhanced validation
-  const createInitialFormData = useCallback(
-    () => ({
+  const createInitialFormData = useCallback(() => {
+    const getTodayDateSafe = () => {
+      try {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}T12:00:00`;
+      } catch (error) {
+        return '';
+      }
+    };
+
+    return {
       RecId:
         !advanceData.RecId || advanceData.RecId === '0'
           ? ''
@@ -81,85 +99,73 @@ const GenericAdvanceSaveScreen = () => {
       WorkerRecId: WorkerRecId || '',
       AdvanceTypeCode: '',
       AdvanceAmount: '',
-      RequestedPaymentDate:
-        mode === 'create'
-          ? (() => {
-              try {
-                return getTodayDate();
-              } catch (error) {
-                return '';
-              }
-            })()
-          : '',
+      RequestedPaymentDate: mode === 'create' ? getTodayDateSafe() : '',
       RecoveryStartDate: '',
       RequestedInstallmentAmount: '',
       RequestedInstallments: '',
       AdvanceDescription: '',
-    }),
-    [advanceData, employeeId, employeeName, WorkerRecId, mode],
-  );
+    };
+  }, []); // Empty dependency array to prevent recreation
 
   // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
   const [selectedAdvanceTypeData, setSelectedAdvanceTypeData] = useState(null);
 
-  useEffect(() => {
-    if (mode === 'create') {
-      try {
-        getTodayDate();
-      } catch (error) {
-        setAlertMessage(
-          'Error getting current date. Please set the payment date manually.',
-        );
-        setAlertModal(true);
-      }
-    }
-  }, [mode]);
-
   useFocusEffect(
     useCallback(() => {
       if (mode === 'create' && cameFrom !== 'RequestTypeSelectionModal') {
-        // Clear form data when returning to create mode from back navigation
-        const freshFormData = createInitialFormData();
-        setFormData(freshFormData);
-        setSelectedAdvanceTypeData(null);
-        setAdvanceCodeDropDown([]);
-        setAdvanceCodes([]);
-        setValidationErrors({});
-        setDataInitialized(false);
+        // Only reset if coming from navigation, not from type selection
+        const shouldReset =
+          cameFrom === 'MainDashboard' ||
+          cameFrom === 'GenericAdvanceListScreen';
+
+        if (shouldReset) {
+          setFormData(createInitialFormData());
+          setSelectedAdvanceTypeData(null);
+          setAdvanceCodeDropDown([]);
+          setAdvanceCodes([]);
+          setValidationErrors({});
+          setDataInitialized(false);
+        }
       }
-    }, [mode, cameFrom, createInitialFormData]),
+    }, [mode, cameFrom]),
   );
 
   // Enhanced back navigation with comprehensive parameter handling
   const goBack = useCallback(() => {
-    if (mode === 'create') {
-      const freshFormData = createInitialFormData();
-      setFormData(freshFormData);
-      setSelectedAdvanceTypeData(null);
-      setValidationErrors({});
-    }
-
     if (cameFrom === 'MainDashboard') {
-      navigation.navigate('MainDashboard');
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'TabNavigator', params: {screen: 'MainDashboard'}}],
+      });
     } else if (cameFrom === 'GenericAdvanceListScreen') {
-      navigation.navigate('GenericAdvanceListScreen', {
-        employeeId: formData.employeeId,
-        employeeName: employeeName,
-        WorkerRecId: WorkerRecId,
-        cameFrom: 'GenericAdvanceSaveScreen',
+      const targetCameFrom = originalCameFrom || 'DisplayListPage';
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'GenericAdvanceListScreen',
+            params: {
+              employeeId,
+              employeeName,
+              WorkerRecId,
+              userData: effectiveUserData,
+              cameFrom: targetCameFrom,
+            },
+          },
+        ],
       });
     } else {
       navigation.goBack();
     }
   }, [
+    navigation,
     cameFrom,
-    formData.employeeId,
+    originalCameFrom,
+    employeeId,
     employeeName,
     WorkerRecId,
-    navigation,
-    mode,
-    createInitialFormData,
+    effectiveUserData,
   ]);
 
   // Get advance type mapping based on API response
@@ -291,56 +297,49 @@ const GenericAdvanceSaveScreen = () => {
 
   // Enhanced data initialization with better error handling
   useEffect(() => {
-    let isMounted = true;
-
     const initializeScreen = async () => {
       if (!dataInitialized) {
         setDataInitialized(true);
+
+        // Reset states
         setAdvanceCodeDropDown([]);
         setAdvanceCodes([]);
         setSelectedAdvanceTypeData(null);
         setProcessingButton('');
         setValidationErrors({});
 
-        if (mode === 'create') {
-          const freshFormData = createInitialFormData();
-          setFormData(freshFormData);
-        } else if (mode === 'edit' && advanceData?.RecId) {
-          const editFormData = {
-            ...createInitialFormData(),
-            ...advanceData,
-            employeeId: advanceData.employeeId || employeeId,
-            employeeName: advanceData.employeeName || employeeName,
-            WorkerRecId: advanceData.WorkerRecId || WorkerRecId,
-            AdvanceAmount: formatNumber(advanceData.AdvanceAmount || ''),
-            RequestedInstallmentAmount: formatNumber(
-              advanceData.RequestedInstallmentAmount || '',
-            ),
-            RequestedInstallments:
-              advanceData.RequestedInstallments?.toString() || '',
-          };
-          if (isMounted) {
+        try {
+          if (mode === 'create') {
+            const freshFormData = createInitialFormData();
+            setFormData(freshFormData);
+          } else if (mode === 'edit' && advanceData?.RecId) {
+            const editFormData = {
+              ...createInitialFormData(),
+              ...advanceData,
+              employeeId: advanceData.employeeId || employeeId,
+              employeeName: advanceData.employeeName || employeeName,
+              WorkerRecId: advanceData.WorkerRecId || WorkerRecId,
+              AdvanceAmount: formatNumber(advanceData.AdvanceAmount || ''),
+              RequestedInstallmentAmount: formatNumber(
+                advanceData.RequestedInstallmentAmount || '',
+              ),
+              RequestedInstallments:
+                advanceData.RequestedInstallments?.toString() || '',
+            };
             setFormData(editFormData);
           }
-        }
 
-        if (isMounted) {
           await fetchInitialData();
+        } catch (error) {
+          console.error('Initialization error:', error);
+          setAlertMessage('Failed to initialize screen. Please try again.');
+          setAlertModal(true);
         }
       }
     };
 
     initializeScreen();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [mode, advanceData?.RecId, dataInitialized, createInitialFormData]);
-
-  // Reset data initialization when key params change
-  useEffect(() => {
-    setDataInitialized(false);
-  }, [mode, advanceData?.RecId, employeeId, requestType]);
+  }, [mode, advanceData?.RecId, requestType]); // Simplified dependencies
 
   // Enhanced data fetching with better error handling
   const fetchInitialData = async () => {
@@ -449,21 +448,21 @@ const GenericAdvanceSaveScreen = () => {
     return isNaN(num) ? 0 : num;
   };
 
-  const getTodayDate = () => {
-    try {
-      const today = new Date();
-      if (isNaN(today.getTime())) {
-        throw new Error('Invalid date');
-      }
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}T12:00:00`;
-    } catch (error) {
-      console.error('Error getting today date:', error);
-      throw new Error('Failed to get current date');
-    }
-  };
+  // const getTodayDate = () => {
+  //   try {
+  //     const today = new Date();
+  //     if (isNaN(today.getTime())) {
+  //       throw new Error('Invalid date');
+  //     }
+  //     const year = today.getFullYear();
+  //     const month = String(today.getMonth() + 1).padStart(2, '0');
+  //     const day = String(today.getDate()).padStart(2, '0');
+  //     return `${year}-${month}-${day}T12:00:00`;
+  //   } catch (error) {
+  //     console.error('Error getting today date:', error);
+  //     throw new Error('Failed to get current date');
+  //   }
+  // };
 
   // Enhanced refresh handler
   const handleRefresh = async () => {
@@ -821,8 +820,9 @@ const GenericAdvanceSaveScreen = () => {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
             WorkerRecId: formData.WorkerRecId,
+            userData: effectiveUserData,
             highlightRecId: result.recId,
-            cameFrom: cameFromValue,
+            cameFrom: originalCameFrom || 'DisplayListPage',
           });
         }, 2000);
       }
