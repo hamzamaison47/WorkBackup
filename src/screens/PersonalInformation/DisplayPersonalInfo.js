@@ -178,6 +178,7 @@ const DisplayPersonalInfo = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
+      showTabNavigator={false}
       onRefresh={() => handleRefresh()}>
       {isLoading ? (
         <CustomIndicator />

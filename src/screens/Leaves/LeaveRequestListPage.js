@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList} from 'react-native';
+import {Text, FlatList, BackHandler} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -89,6 +90,20 @@ const LeaveRequestListPage = () => {
         return () => clearTimeout(timer);
       }
     }, [highlightRecId, fetchLeavesData]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleGoBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
   );
 
   // Handle back navigation

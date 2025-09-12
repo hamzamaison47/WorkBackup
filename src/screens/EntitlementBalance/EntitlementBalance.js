@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, StyleSheet} from 'react-native';
+import {Text, FlatList} from 'react-native';
 import {useSelector} from 'react-redux';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
@@ -11,6 +11,7 @@ import AlertModal from '../../components/Alert/AlertModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import EntitlementCards from '../../components/EntitlementBalance/EntitlementCards';
+import styles from '../../styles/styles';
 
 const EntitlementBalance = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +93,7 @@ const EntitlementBalance = () => {
           showsVerticalScrollIndicator={false}
         />
       ) : (
-        <Text style={styles.noDataText}>No Data Found</Text>
+        <Text style={styles.EntBal_NoDataText}>No Data Found</Text>
       )}
 
       <AlertModal
@@ -104,16 +105,5 @@ const EntitlementBalance = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  noDataText: {
-    flex: 1,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#cccccc',
-  },
-});
 
 export default EntitlementBalance;

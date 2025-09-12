@@ -1,14 +1,118 @@
+// /* eslint-disable react-hooks/exhaustive-deps */
+// /* eslint-disable react-hooks/rules-of-hooks */
+// /* eslint-disable react/no-unstable-nested-components */
+// import React, {useEffect, useRef} from 'react';
+// import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+// import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// import MainDashboard from '../screens/Maindasboard';
+// import DisplayPersonalInfo from '../screens/PersonalInformation/DisplayPersonalInfo';
+// import DisplayListPage from '../screens/TabListPage/DisplayListPage';
+// import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
+// import styles from '../styles/styles';
+// import {Animated} from 'react-native';
+
+// const Tab = createBottomTabNavigator();
+
+// const TabNavigator = () => {
+//   return (
+//     <Tab.Navigator
+//       initialRouteName="MainDashboard"
+//       screenOptions={({route}) => ({
+//         tabBarIcon: ({focused, color}) => {
+//           const scaleAnim = useRef(new Animated.Value(1)).current;
+
+//           useEffect(() => {
+//             Animated.spring(scaleAnim, {
+//               toValue: focused ? 1.3 : 1,
+//               friction: 4,
+//               useNativeDriver: true,
+//             }).start();
+//           }, [focused]);
+
+//           let iconName;
+
+//           if (route.name === 'MainDashboard') {
+//             iconName = focused ? 'home' : 'home-outline';
+//           } else if (route.name === 'DisplayListPage') {
+//             iconName = focused ? 'grid' : 'grid-outline';
+//           } else if (route.name === 'DisplayPersonalInfo') {
+//             iconName = focused ? 'person' : 'person-outline';
+//           } else if (route.name === 'WorkerAssignedToMe') {
+//             iconName = focused ? 'people' : 'people-outline';
+//           }
+//           return (
+//             <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+//               <Ionicons
+//                 name={iconName}
+//                 size={focused ? 22 : 22}
+//                 color={color}
+//               />
+//             </Animated.View>
+//           );
+//         },
+//         tabBarActiveTintColor: '#ffffffff',
+//         tabBarInactiveTintColor: 'white',
+//         tabBarStyle: styles.TNav_TabBarO,
+//         tabBarLabelStyle: styles.TNav_TabLabelO,
+//         // headerShown: false,
+//         headerShadowVisible: false,
+//       })}>
+//       <Tab.Screen
+//         name="MainDashboard"
+//         component={MainDashboard}
+//         options={{tabBarLabel: 'Home'}}
+//       />
+//       <Tab.Screen
+//         name="WorkerAssignedToMe"
+//         component={WorkerAssignedToMe}
+//         options={{
+//           tabBarLabel: 'My Team',
+//         }}
+//       />
+//       <Tab.Screen
+//         name="DisplayListPage"
+//         component={DisplayListPage}
+//         options={{tabBarLabel: 'History'}}
+//       />
+//       <Tab.Screen
+//         name="DisplayPersonalInfo"
+//         component={DisplayPersonalInfo}
+//         options={{tabBarLabel: 'Profile'}}
+//       />
+//     </Tab.Navigator>
+//   );
+// };
+
+// export default TabNavigator;
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unstable-nested-components */
-import React from 'react';
+import React, {useRef, useEffect} from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {StyleSheet} from 'react-native';
+import {Animated} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/FontAwesome';
 
 import MainDashboard from '../screens/Maindasboard';
 import DisplayPersonalInfo from '../screens/PersonalInformation/DisplayPersonalInfo';
 import DisplayListPage from '../screens/TabListPage/DisplayListPage';
 import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
+
+import styles from '../styles/styles';
+import CustomTabBar from '../Controller/CustomTabBar';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,10 +120,21 @@ const TabNavigator = () => {
   return (
     <Tab.Navigator
       initialRouteName="MainDashboard"
+      // ⬅️ Use CustomTabBar as the tabBar
+      tabBar={props => <CustomTabBar {...props} />}
       screenOptions={({route}) => ({
-        tabBarIcon: ({focused, color, size}) => {
-          let iconName;
+        tabBarIcon: ({focused, color}) => {
+          const scaleAnim = useRef(new Animated.Value(1)).current;
 
+          useEffect(() => {
+            Animated.spring(scaleAnim, {
+              toValue: focused ? 1.3 : 1,
+              friction: 4,
+              useNativeDriver: true,
+            }).start();
+          }, [focused]);
+
+          let iconName;
           if (route.name === 'MainDashboard') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'DisplayListPage') {
@@ -27,18 +142,19 @@ const TabNavigator = () => {
           } else if (route.name === 'DisplayPersonalInfo') {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'WorkerAssignedToMe') {
-            return (
-              <Icon focused={focused} name="users" size={20} color={color} />
-            );
+            iconName = focused ? 'people' : 'people-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return (
+            <Animated.View style={{transform: [{scale: scaleAnim}]}}>
+              <Ionicons name={iconName} size={22} color={color} />
+            </Animated.View>
+          );
         },
-        tabBarActiveTintColor: '#0A66C2',
-        tabBarInactiveTintColor: 'gray',
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabLabel,
-        // headerShown: false,
+        tabBarActiveTintColor: '#ffffffff',
+        tabBarInactiveTintColor: 'white',
+        tabBarStyle: styles.TNav_TabBarO,
+        tabBarLabelStyle: styles.TNav_TabLabelO,
         headerShadowVisible: false,
       })}>
       <Tab.Screen
@@ -49,9 +165,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="WorkerAssignedToMe"
         component={WorkerAssignedToMe}
-        options={{
-          tabBarLabel: 'My Team',
-        }}
+        options={{tabBarLabel: 'My Team'}}
       />
       <Tab.Screen
         name="DisplayListPage"
@@ -66,20 +180,5 @@ const TabNavigator = () => {
     </Tab.Navigator>
   );
 };
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#ebf5ff',
-    height: 60,
-    borderColor: '#0A66C2',
-    borderTopWidth: 3,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: 'gray',
-  },
-});
 
 export default TabNavigator;

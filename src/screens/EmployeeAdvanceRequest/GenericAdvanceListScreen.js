@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList} from 'react-native';
+import {Text, FlatList, BackHandler} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -16,7 +17,7 @@ import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
-import RequestTypeSelectionModal from '../../components/EmployeeAdvanceRequest/RequestTypeSelectionModal';
+// import RequestTypeSelectionModal from '../../components/EmployeeAdvanceRequest/RequestTypeSelectionModal';
 import styles from '../../styles/styles';
 import {useSelector} from 'react-redux';
 
@@ -29,7 +30,7 @@ const GenericAdvanceListScreen = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [typeSelectionModal, setTypeSelectionModal] = useState(false);
+  // const [typeSelectionModal, setTypeSelectionModal] = useState(false);
 
   const navigation = useNavigation();
   const route = useRoute();
@@ -99,12 +100,7 @@ const GenericAdvanceListScreen = () => {
   /** Enhanced highlighting with SubmitSuccess support */
   useFocusEffect(
     useCallback(() => {
-      if (
-        highlightRecId &&
-        (cameFrom === 'CreateSuccess' ||
-          cameFrom === 'UpdateSuccess' ||
-          cameFrom === 'SubmitSuccess') // FIXED: Added SubmitSuccess for highlighting submitted records
-      ) {
+      if (highlightRecId) {
         setHighlightedRecId(highlightRecId);
         fetchAllAdvanceData();
 
@@ -114,7 +110,21 @@ const GenericAdvanceListScreen = () => {
 
         return () => clearTimeout(timer);
       }
-    }, [highlightRecId, cameFrom, fetchAllAdvanceData]),
+    }, [highlightRecId, fetchAllAdvanceData]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleGoBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
   );
 
   /** Enhanced back navigation with better parameter handling */
@@ -151,19 +161,47 @@ const GenericAdvanceListScreen = () => {
     fetchAllAdvanceData();
   };
 
-  /** Show type selection modal */
+  // /** Show type selection modal */
+  // const handleCreateRequest = () => {
+  //   setTypeSelectionModal(true);
+  // };
+
+  // /** Handle type selection from modal with enhanced validation */
+  // const handleTypeSelection = selectedType => {
+  //   if (!selectedType || !selectedType.type) {
+  //     setAlertMessage('Invalid selection. Please try again.');
+  //     setAlertModal(true);
+  //     return;
+  //   }
+
+  //   navigation.navigate('GenericAdvanceSaveScreen', {
+  //     mode: 'create',
+  //     employeeId: effectiveEmployeeId,
+  //     employeeName: effectiveEmployeeName,
+  //     WorkerRecId: effectiveWorkerRecId,
+  //     userData: effectiveUserData,
+  //     cameFrom: 'GenericAdvanceListScreen',
+  //     requestType: selectedType.type,
+  //     advanceType: selectedType.advanceType,
+  //     screenName: selectedType.title,
+  //     advanceData: {
+  //       employeeId: effectiveEmployeeId,
+  //       employeeName: effectiveEmployeeName,
+  //       WorkerRecId: effectiveWorkerRecId,
+  //       RecId: '',
+  //       AdvanceTypeCode: '',
+  //       AdvanceAmount: '0.00',
+  //       RequestedPaymentDate: '',
+  //       RecoveryStartDate: '',
+  //       RequestedInstallmentAmount: '0.00',
+  //       RequestedInstallments: '0',
+  //       AdvanceDescription: '',
+  //     },
+  //   });
+  // };
+
+  /** New Version for Creating Record. */
   const handleCreateRequest = () => {
-    setTypeSelectionModal(true);
-  };
-
-  /** Handle type selection from modal with enhanced validation */
-  const handleTypeSelection = selectedType => {
-    if (!selectedType || !selectedType.type) {
-      setAlertMessage('Invalid selection. Please try again.');
-      setAlertModal(true);
-      return;
-    }
-
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'create',
       employeeId: effectiveEmployeeId,
@@ -171,9 +209,9 @@ const GenericAdvanceListScreen = () => {
       WorkerRecId: effectiveWorkerRecId,
       userData: effectiveUserData,
       cameFrom: 'GenericAdvanceListScreen',
-      requestType: selectedType.type,
-      advanceType: selectedType.advanceType,
-      screenName: selectedType.title,
+      requestType: 'Loan',
+      advanceType: 0,
+      screenName: 'Loan Request',
       advanceData: {
         employeeId: effectiveEmployeeId,
         employeeName: effectiveEmployeeName,
@@ -570,11 +608,11 @@ const GenericAdvanceListScreen = () => {
       )}
 
       {/* Type Selection Modal */}
-      <RequestTypeSelectionModal
+      {/* <RequestTypeSelectionModal
         visible={typeSelectionModal}
         onClose={() => setTypeSelectionModal(false)}
         onSelectType={handleTypeSelection}
-      />
+      /> */}
 
       {/* Alert Modal */}
       <AlertModal

@@ -7,7 +7,6 @@ import React, {useState, useEffect} from 'react';
 import {
   Image,
   View,
-  StyleSheet,
   Text,
   TouchableOpacity,
   Dimensions,
@@ -27,20 +26,24 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 
 import TabNavigator from './TabNavigator';
+import styles from '../styles/styles';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
 
 const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => (
   <TouchableOpacity
-    style={[styles.drawerItem, isActive && styles.activeDrawerItem]}
+    style={[styles.DNav_DrawerItem, isActive && styles.DNav_ActiveDrawerItem]}
     onPress={onPress}>
     <Image
       source={typeof icon === 'string' ? {uri: icon} : icon}
-      style={styles.drawerIcon}
+      style={styles.DNav_DrawerIcon}
     />
     <Text
-      style={[styles.drawerItemText, isActive && styles.activeDrawerItemText]}>
+      style={[
+        styles.DNav_DrawerItemText,
+        isActive && styles.DNav_ActiveDrawerItemText,
+      ]}>
       {label}
     </Text>
   </TouchableOpacity>
@@ -137,38 +140,38 @@ const CustomDrawerContent = props => {
       {/* Header */}
       <ImageBackground
         source={require('../assets/DrawerNavigator/backgroungGradient.jpg')}
-        style={styles.headerBackground}
+        style={styles.DNav_HeaderBackground}
         imageStyle={{resizeMode: 'stretch'}}>
         <Image
           source={require('../assets/cloud.png')}
-          style={styles.maisonLogo}
+          style={styles.DNav_MaisonLogo}
           resizeMode="contain"
         />
-        <View style={styles.empInfoContainer}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
+        <View style={styles.DNav_EmpInfoContainer}>
+          <View style={styles.DNav_AvatarContainer}>
+            <View style={styles.DNav_Avatar}>
               <TouchableOpacity
                 onPress={() => navigateToScreen('DisplayPersonalInfo')}>
                 {profilePictureUrl ? (
                   <Image
                     source={{uri: profilePictureUrl}}
-                    style={styles.profilePicture}
+                    style={styles.DNav_ProfilePicture}
                     resizeMode="cover"
                   />
                 ) : (
-                  <Text style={styles.avatarText}>
+                  <Text style={styles.DNav_AvatarText}>
                     {getInitials(userData?.employeeName)}
                   </Text>
                 )}
               </TouchableOpacity>
             </View>
-            <View style={styles.onlineIndicator} />
+            <View style={styles.DNav_OnlineIndicator} />
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName} numberOfLines={1}>
+          <View style={styles.DNav_UserInfo}>
+            <Text style={styles.DNav_UserName} numberOfLines={1}>
               {userData?.employeeName || 'User Name'}
             </Text>
-            <Text style={styles.userEmail} numberOfLines={1}>
+            <Text style={styles.DNav_UserEmail} numberOfLines={1}>
               {userData?.email || 'user@email.com'}
             </Text>
           </View>
@@ -221,14 +224,14 @@ const CustomDrawerContent = props => {
 
       {/* Footer */}
       <TouchableOpacity
-        style={styles.logoutButton}
+        style={styles.DNav_LogoutButton}
         onPress={handleLogout}
         activeOpacity={0.7}>
-        <View style={styles.logoutIconSection}>
+        <View style={styles.DNav_LogoutIconSection}>
           <Ionicons name="log-out-outline" size={18} color="#FFFFFF" />
         </View>
-        <View style={styles.logoutTextSection}>
-          <Text style={styles.logoutText}>LOGOUT</Text>
+        <View style={styles.DNav_LogoutTextSection}>
+          <Text style={styles.DNav_LogoutText}>LOGOUT</Text>
         </View>
       </TouchableOpacity>
 
@@ -297,130 +300,5 @@ const DrawerNavigator = () => {
     </Drawer.Navigator>
   );
 };
-
-const styles = StyleSheet.create({
-  drawerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-  },
-  drawerIcon: {
-    width: 20,
-    height: 20,
-    marginRight: 12,
-    resizeMode: 'contain',
-  },
-  activeDrawerItem: {
-    backgroundColor: '#E0E7FF',
-  },
-  drawerItemText: {
-    fontSize: 15,
-    color: '#374151',
-  },
-  activeDrawerItemText: {
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-  headerBackground: {
-    width: '100%',
-    height: 150,
-    justifyContent: 'flex-end',
-  },
-  maisonLogo: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 100,
-    height: 40,
-  },
-  empInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-    marginLeft: 8,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.20)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  userEmail: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 10,
-  },
-  profilePicture: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    marginHorizontal: 16,
-    marginVertical: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  logoutIconSection: {
-    backgroundColor: '#2196F3',
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
-  },
-  logoutTextSection: {
-    backgroundColor: '#1976D2',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    flex: 1,
-  },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-});
 
 export default DrawerNavigator;

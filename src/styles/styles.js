@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
     borderColor: '#0A66C2',
     borderRadius: 20,
     paddingVertical: 12,
-    marginHorizontal: 5,
+    marginHorizontal: 1,
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
@@ -596,6 +596,26 @@ const styles = StyleSheet.create({
   },
   LReqSR_pressedText: {
     color: '#fff',
+  },
+  LReqSR_CancelButton: {
+    borderWidth: 2,
+    borderColor: '#cccccc',
+    backgroundColor: 'transparent',
+    borderRadius: 20,
+    paddingVertical: 12,
+    marginHorizontal: 1,
+    alignItems: 'center',
+    flex: 1,
+  },
+  LReqSR_CancelButtonText: {
+    fontWeight: 'bold',
+    color: '#666666',
+  },
+  LReqSR_pressedCancelButton: {
+    backgroundColor: '#e6e6e6',
+  },
+  LReqSR_pressedCancelText: {
+    color: '#959595ff',
   },
   // End oF Leave Req Save Record
 
@@ -1917,67 +1937,654 @@ const styles = StyleSheet.create({
   },
   // end of worker assigned to me card
 
-  // action pane container
+  // Start of ActionPaneContainer
+  // APCont_customTabItem: {
+  //   flex: 1,
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   paddingVertical: 8,
+  // },
 
+  // APCont_container: {
+  //   flex: 1,
+  //   backgroundColor: '#FFFFFF',
+  // },
+
+  // APCont_content: {
+  //   flex: 1,
+  //   // paddingHorizontal: width * 0.03,
+  //   // paddingTop: height * 0.01,
+  // },
+
+  // APCont_bottomTabBar: {
+  //   flexDirection: 'row',
+  //   backgroundColor: '#0A66C2',
+  //   paddingVertical: height * 0.012,
+  //   paddingHorizontal: width * 0.18,
+  //   justifyContent: 'space-between',
+  //   alignItems: 'center',
+  //   height: height * 0.075,
+  // },
+
+  // APCont_tabButton: {
+  //   alignItems: 'center',
+  // },
+
+  // APCont_tabButtonText: {
+  //   fontSize: width * 0.032,
+  //   color: '#ffffff',
+  //   marginTop: 2,
+  //   fontWeight: '500',
+  // },
+
+  // APCont_floatingPlusButtonContainer: {
+  //   position: 'absolute',
+  //   bottom: height * 0.035,
+  //   left: width / 2 - 28,
+  // },
+
+  // APCont_floatingPlusButton: {
+  //   width: 56,
+  //   height: 56,
+  //   borderRadius: 28,
+  //   backgroundColor: '#FFFFFF',
+  //   borderWidth: 3,
+  //   borderColor: '#0A66C2',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   elevation: 6,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.2,
+  //   shadowRadius: 3,
+  // },
+
+  // APCont_plusIcon: {
+  //   fontSize: 24,
+  //   color: '#0A66C2',
+  // },
+  // APCont_container: {
+  //   flex: 1,
+  //   backgroundColor: '#FFFFFF',
+  // },
+  // APCont_content: {
+  //   flex: 1,
+  // },
+  // // --- CUSTOM TAB NAVIGATOR ---
+  // APCont_customTabItem: {
+  //   flex: 1,
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   paddingVertical: 6,
+  // },
+  // TNav_TabBar: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-around',
+  //   alignItems: 'center',
+  //   backgroundColor: '#0A66C2',
+  //   height: height * 0.08,
+  //   borderTopColor: '#ccc',
+  //   borderColor: '#0A66C2',
+  //   borderTopWidth: 3,
+  //   elevation: 10,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: -2},
+  //   shadowOpacity: 0.1,
+  //   shadowRadius: 4,
+  // },
+  // TNav_TabLabel: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   marginBottom: 6,
+  //   color: 'white',
+  // },
+  // // --- FLOATING PLUS BUTTON ---
+  // APCont_floatingPlusButtonContainer: {
+  //   position: 'absolute',
+  //   bottom: height * 0.1, // slightly above the tab bar
+  //   right: 20, // place it on the right side
+  // },
+  // APCont_floatingPlusButton: {
+  //   width: 66,
+  //   height: 66,
+  //   borderRadius: 48,
+  //   backgroundColor: '#0A66C2',
+  //   borderWidth: 4,
+  //   borderColor: '#ffffffff',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   elevation: 6,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.2,
+  //   shadowRadius: 3,
+  // },
+  // APCont_plusIcon: {
+  //   fontSize: 24,
+  //   color: '#ffffffff',
+  // },
   APCont_container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-
   APCont_content: {
     flex: 1,
-    // paddingHorizontal: width * 0.03,
-    // paddingTop: height * 0.01,
   },
 
-  APCont_bottomTabBar: {
+  // Tab Bar styles - More responsive
+  TNav_TabBar: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     backgroundColor: '#0A66C2',
-    paddingVertical: height * 0.012,
-    paddingHorizontal: width * 0.18,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: height * 0.075,
+    height: Math.max(height * 0.08, 60), // Minimum 60px, responsive to screen
+    borderTopColor: '#ccc',
+    borderColor: '#0A66C2',
+    borderTopWidth: 3,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    paddingBottom: 4, // Add padding for better touch targets
   },
 
-  APCont_tabButton: {
+  APCont_customTabItem: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8, // Increased for better touch area
+    minHeight: 48, // Minimum touch target size
   },
 
-  APCont_tabButtonText: {
-    fontSize: width * 0.032,
-    color: '#ffffff',
+  TNav_TabLabel: {
+    fontSize: Math.max(width * 0.025, 11), // Responsive font size
+    fontWeight: '600',
     marginTop: 2,
-    fontWeight: '500',
+    color: 'white',
+    textAlign: 'center',
   },
 
+  // Floating button styles - More responsive positioning
   APCont_floatingPlusButtonContainer: {
     position: 'absolute',
-    bottom: height * 0.035,
-    left: width / 2 - 28,
+    bottom: Math.max(height * 0.1, 70), // Responsive positioning above tab bar
+    right: width * 0.05, // 5% from right edge
+    zIndex: 1000,
   },
 
   APCont_floatingPlusButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 3,
-    borderColor: '#0A66C2',
+    width: Math.max(width * 0.15, 56), // Responsive size with minimum
+    height: Math.max(width * 0.15, 56),
+    borderRadius: Math.max(width * 0.075, 28),
+    backgroundColor: '#0A66C2',
+    borderWidth: 4,
+    borderColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
   },
 
   APCont_plusIcon: {
-    fontSize: 24,
-    color: '#0A66C2',
+    fontSize: Math.max(width * 0.06, 20),
+    color: '#ffffff',
   },
-  // end of worker assigned me component
+  // End of ActionPaneContainer
+
+  // Start of RequestTypeSelectionModal
+  RTSModal_ModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  RTSModal_ModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    margin: 20,
+    width: '90%',
+    maxWidth: 400,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  RTSModal_ModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  RTSModal_ModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  RTSModal_CloseButton: {
+    padding: 4,
+  },
+  RTSModal_OptionsContainer: {
+    marginBottom: 10,
+  },
+  RTSModal_OptionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 18,
+    borderLeftWidth: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  RTSModal_IconContainer: {
+    marginRight: 16,
+    width: 40,
+    alignItems: 'center',
+  },
+  RTSModal_TextContainer: {
+    flex: 1,
+  },
+  RTSModal_OptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  RTSModal_OptionDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  RTSModal_ArrowContainer: {
+    marginLeft: 8,
+  },
+  RTSModal_CancelButton: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  RTSModal_CancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  // End of RequestTypeSelectionModal
+
+  // Start of EntitlementCards
+  EntCards_CardContainer: {
+    marginVertical: 10,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  EntCards_Card: {
+    borderRadius: 16,
+    padding: 16,
+  },
+  EntCards_CardHeader: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#ffffffff',
+    paddingBottom: 8,
+    marginBottom: 12,
+  },
+  EntCards_CardHeaderText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#004aad',
+    textAlign: 'center',
+  },
+  EntCards_CardContent: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  EntCards_TextContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  EntCards_CardTextHeading: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  EntCards_CardText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#111',
+  },
+  // End of EntitlementCards
+
+  // Start of DrawerNavigator
+  // DNav_DrawerItem: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   paddingVertical: 12,
+  //   paddingHorizontal: 20,
+  // },
+  // DNav_DrawerIcon: {
+  //   width: 20,
+  //   height: 20,
+  //   marginRight: 12,
+  //   resizeMode: 'contain',
+  // },
+  // DNav_ActiveDrawerItem: {
+  //   backgroundColor: '#E0E7FF',
+  // },
+  // DNav_DrawerItemText: {
+  //   fontSize: 15,
+  //   color: '#374151',
+  // },
+  // DNav_ActiveDrawerItemText: {
+  //   color: '#2563EB',
+  //   fontWeight: '600',
+  // },
+  // DNav_HeaderBackground: {
+  //   width: '100%',
+  //   height: 150,
+  //   justifyContent: 'flex-end',
+  // },
+  // DNav_MaisonLogo: {
+  //   position: 'absolute',
+  //   top: 16,
+  //   right: 16,
+  //   width: 100,
+  //   height: 40,
+  // },
+  // DNav_EmpInfoContainer: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   marginVertical: 16,
+  //   marginLeft: 8,
+  // },
+  // DNav_AvatarContainer: {
+  //   position: 'relative',
+  //   marginRight: 12,
+  // },
+  // DNav_Avatar: {
+  //   width: 70,
+  //   height: 70,
+  //   borderRadius: 35,
+  //   backgroundColor: 'rgba(255,255,255,0.20)',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   borderWidth: 1,
+  //   borderColor: 'rgba(255,255,255,0.5)',
+  // },
+  // DNav_AvatarText: {
+  //   color: '#FFFFFF',
+  //   fontSize: 18,
+  //   fontWeight: '600',
+  // },
+  // DNav_OnlineIndicator: {
+  //   position: 'absolute',
+  //   bottom: 0,
+  //   right: 0,
+  //   width: 14,
+  //   height: 14,
+  //   borderRadius: 7,
+  //   backgroundColor: '#10B981',
+  //   borderWidth: 2,
+  //   borderColor: '#FFFFFF',
+  // },
+  // DNav_UserInfo: {
+  //   flex: 1,
+  // },
+  // DNav_UserName: {
+  //   color: '#FFFFFF',
+  //   fontSize: 16,
+  //   fontWeight: '600',
+  // },
+  // DNav_UserEmail: {
+  //   color: 'rgba(255,255,255,0.9)',
+  //   fontSize: 10,
+  // },
+  // DNav_ProfilePicture: {
+  //   width: 70,
+  //   height: 70,
+  //   borderRadius: 35,
+  // },
+  // DNav_LogoutButton: {
+  //   flexDirection: 'row',
+  //   alignItems: 'stretch',
+  //   marginHorizontal: 16,
+  //   marginVertical: 16,
+  //   borderRadius: 8,
+  //   overflow: 'hidden',
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.15,
+  //   shadowRadius: 4,
+  //   elevation: 4,
+  // },
+  // DNav_LogoutIconSection: {
+  //   backgroundColor: '#2196F3',
+  //   paddingHorizontal: 16,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   borderTopLeftRadius: 8,
+  //   borderBottomLeftRadius: 8,
+  // },
+  // DNav_LogoutTextSection: {
+  //   backgroundColor: '#1976D2',
+  //   paddingVertical: 12,
+  //   paddingHorizontal: 24,
+  //   justifyContent: 'center',
+  //   flex: 1,
+  // },
+  // DNav_LogoutText: {
+  //   color: '#FFFFFF',
+  //   fontSize: 14,
+  //   fontWeight: '700',
+  //   letterSpacing: 0.5,
+  // },
+  DNav_DrawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: height * 0.015, // Responsive vertical padding
+    paddingHorizontal: width * 0.05, // Responsive horizontal padding
+    minHeight: 48, // Minimum touch target
+  },
+
+  DNav_DrawerIcon: {
+    width: Math.max(width * 0.05, 20), // Responsive icon size
+    height: Math.max(width * 0.05, 20),
+    marginRight: width * 0.03,
+    resizeMode: 'contain',
+  },
+
+  DNav_ActiveDrawerItem: {
+    backgroundColor: '#E0E7FF',
+    marginHorizontal: width * 0.02,
+    borderRadius: 8,
+  },
+
+  DNav_DrawerItemText: {
+    fontSize: Math.max(width * 0.035, 14), // Responsive font size
+    color: '#374151',
+  },
+
+  DNav_ActiveDrawerItemText: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+
+  DNav_HeaderBackground: {
+    width: '100%',
+    height: Math.max(height * 0.2, 140), // Responsive header height
+    justifyContent: 'flex-end',
+  },
+
+  DNav_MaisonLogo: {
+    position: 'absolute',
+    top: height * 0.02,
+    right: width * 0.04,
+    width: Math.max(width * 0.25, 80),
+    height: Math.max(height * 0.05, 30),
+  },
+
+  DNav_EmpInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: height * 0.02,
+    marginLeft: width * 0.02,
+  },
+
+  DNav_AvatarContainer: {
+    position: 'relative',
+    marginRight: width * 0.03,
+  },
+
+  DNav_Avatar: {
+    width: Math.max(width * 0.16, 60), // Responsive avatar size
+    height: Math.max(width * 0.16, 60),
+    borderRadius: Math.max(width * 0.08, 30),
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+
+  DNav_AvatarText: {
+    color: '#FFFFFF',
+    fontSize: Math.max(width * 0.04, 16),
+    fontWeight: '600',
+  },
+
+  DNav_OnlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: Math.max(width * 0.035, 12),
+    height: Math.max(width * 0.035, 12),
+    borderRadius: Math.max(width * 0.0175, 6),
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
+  DNav_UserInfo: {
+    flex: 1,
+    marginRight: width * 0.02,
+  },
+
+  DNav_UserName: {
+    color: '#FFFFFF',
+    fontSize: Math.max(width * 0.04, 15),
+    fontWeight: '600',
+  },
+
+  DNav_UserEmail: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: Math.max(width * 0.025, 10),
+    marginTop: 2,
+  },
+
+  DNav_ProfilePicture: {
+    width: Math.max(width * 0.16, 60),
+    height: Math.max(width * 0.16, 60),
+    borderRadius: Math.max(width * 0.08, 30),
+  },
+
+  DNav_LogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginHorizontal: width * 0.04,
+    marginVertical: height * 0.02,
+    borderRadius: 8,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    minHeight: 48, // Minimum touch target
+  },
+
+  DNav_LogoutIconSection: {
+    backgroundColor: '#2196F3',
+    paddingHorizontal: width * 0.04,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+  },
+
+  DNav_LogoutTextSection: {
+    backgroundColor: '#1976D2',
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.06,
+    justifyContent: 'center',
+    flex: 1,
+  },
+
+  DNav_LogoutText: {
+    color: '#FFFFFF',
+    fontSize: Math.max(width * 0.035, 13),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  // End of DrawerNavigator
+
+  // Start of TabNavigator
+  // TNav_TabBarO: {
+  //   // backgroundColor: '#ebf5ff',
+  //   backgroundColor: '#0A66C2',
+  //   height: 60,
+  //   borderColor: '#0A66C2',
+  //   borderTopWidth: 3,
+  // },
+  // TNav_TabLabelO: {
+  //   fontSize: 11,
+  //   fontWeight: '600',
+  //   marginBottom: 6,
+  //   color: 'white',
+  // },
+  TNav_TabBarO: {
+    backgroundColor: '#0A66C2',
+    height: Math.max(height * 0.08, 60),
+    borderColor: '#0A66C2',
+    borderTopWidth: 3,
+    paddingBottom: 4,
+  },
+  TNav_TabLabelO: {
+    fontSize: Math.max(width * 0.025, 11),
+    fontWeight: '600',
+    marginTop: 2,
+    color: 'white',
+  },
+  // End of TabNavigator
+
+  // Start of EntitlementBalance
+  EntBal_NoDataText: {
+    flex: 1,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#cccccc',
+  },
+  // End of EntitlementBalance
 });
 
 export default styles;

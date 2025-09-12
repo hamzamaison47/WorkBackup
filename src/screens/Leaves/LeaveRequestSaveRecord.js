@@ -11,6 +11,7 @@ import {
   ScrollView,
   SafeAreaView,
   Pressable,
+  BackHandler,
 } from 'react-native';
 import {
   useNavigation,
@@ -151,6 +152,20 @@ const LeaveRequestSaveRecord = () => {
     setFormData(clearedForm);
     setOriginalBalance(null); // Clear original balance
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        goBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
 
   // Reset scroll position when screen comes into focus
   useFocusEffect(
@@ -797,6 +812,29 @@ const LeaveRequestSaveRecord = () => {
                       : mode === 'edit'
                       ? 'Update & Submit'
                       : 'Create & Submit'}
+                  </Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({pressed}) => [
+                  styles.LReqSR_Button,
+                  pressed && styles.LReqSR_CancelButton,
+                  (processingButton === 'save' ||
+                    processingButton === 'submit') &&
+                    styles.LReqSR_pressedCancelButton,
+                ]}
+                onPress={goBack}
+                disabled={
+                  processingButton === 'save' || processingButton === 'submit'
+                }>
+                {({pressed}) => (
+                  <Text
+                    style={[
+                      styles.LReqSR_CancelButtonText,
+                      pressed && styles.LReqSR_pressedCancelText,
+                    ]}>
+                    Cancel
                   </Text>
                 )}
               </Pressable>

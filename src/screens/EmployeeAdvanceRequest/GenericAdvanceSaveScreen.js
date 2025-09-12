@@ -12,6 +12,7 @@ import {
   ScrollView,
   SafeAreaView,
   Pressable,
+  BackHandler,
 } from 'react-native';
 import {
   useNavigation,
@@ -129,6 +130,20 @@ const GenericAdvanceSaveScreen = () => {
         }
       }
     }, [mode, cameFrom]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        goBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
   );
 
   // Enhanced back navigation with comprehensive parameter handling
@@ -808,13 +823,6 @@ const GenericAdvanceSaveScreen = () => {
           setAlertModal(false);
           clearFormData();
 
-          const cameFromValue =
-            actionType === 'submit'
-              ? 'SubmitSuccess'
-              : mode === 'create'
-              ? 'CreateSuccess'
-              : 'UpdateSuccess';
-
           // Navigate back to list page after successful create/update
           navigation.navigate('GenericAdvanceListScreen', {
             employeeId: formData.employeeId,
@@ -1066,6 +1074,29 @@ const GenericAdvanceSaveScreen = () => {
                       : mode === 'edit'
                       ? 'Update & Submit'
                       : 'Create & Submit'}
+                  </Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={({pressed}) => [
+                  styles.LReqSR_Button,
+                  pressed && styles.LReqSR_CancelButton,
+                  (processingButton === 'save' ||
+                    processingButton === 'submit') &&
+                    styles.LReqSR_pressedCancelButton,
+                ]}
+                onPress={goBack}
+                disabled={
+                  processingButton === 'save' || processingButton === 'submit'
+                }>
+                {({pressed}) => (
+                  <Text
+                    style={[
+                      styles.LReqSR_CancelButtonText,
+                      pressed && styles.LReqSR_pressedCancelText,
+                    ]}>
+                    Cancel
                   </Text>
                 )}
               </Pressable>
