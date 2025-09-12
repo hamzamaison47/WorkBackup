@@ -1595,7 +1595,7 @@ const styles = StyleSheet.create({
 
   PPEdit_headerContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    // marginBottom: 20,
   },
   PPEdit_profileImageWrapper: {
     position: 'relative',
@@ -1686,6 +1686,7 @@ const styles = StyleSheet.create({
     height: height * 0.8,
     borderRadius: 10,
   },
+
   // end of profile picture editor
 
   // start of save button

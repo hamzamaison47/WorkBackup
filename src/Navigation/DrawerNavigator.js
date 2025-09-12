@@ -27,6 +27,8 @@ import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 
 import TabNavigator from './TabNavigator';
 import styles from '../styles/styles';
+import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayPersonalInfo';
+import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -150,8 +152,7 @@ const CustomDrawerContent = props => {
         <View style={styles.DNav_EmpInfoContainer}>
           <View style={styles.DNav_AvatarContainer}>
             <View style={styles.DNav_Avatar}>
-              <TouchableOpacity
-                onPress={() => navigateToScreen('DisplayPersonalInfo')}>
+              <TouchableOpacity onPress={() => navigateToScreen('Profile')}>
                 {profilePictureUrl ? (
                   <Image
                     source={{uri: profilePictureUrl}}
@@ -297,6 +298,32 @@ const DrawerNavigator = () => {
           />
         );
       })}
+
+      <Drawer.Screen
+        name="DisplayPersonalInfo"
+        component={DisplayPersonalInfo}
+        initialParams={{userData}}
+        options={{
+          title: 'DisplayPersonalInfo',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="ChangeProfileImage"
+        component={ChangeProfileImage}
+        initialParams={{userData}}
+        options={{
+          title: 'ChangeProfileImage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
     </Drawer.Navigator>
   );
 };

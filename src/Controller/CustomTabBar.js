@@ -29,7 +29,7 @@ export default function CustomTabBar(props) {
       iconUnfocused: 'grid-outline',
     },
     {
-      name: 'DisplayPersonalInfo',
+      name: 'Profile',
       label: 'Profile',
       iconFocused: 'person',
       iconUnfocused: 'person-outline',

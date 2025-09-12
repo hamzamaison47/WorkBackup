@@ -530,7 +530,7 @@
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   ScrollView,
   Image,
@@ -543,8 +543,9 @@ import {
   useWindowDimensions,
   FlatList,
   Dimensions,
+  BackHandler,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
@@ -552,6 +553,7 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import {screenMapping, iconMapping} from '../Controller/screenMapping';
+import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 
 // Get initial screen dimensions
 const {width: initialScreenWidth, height: initialScreenHeight} =
@@ -640,6 +642,7 @@ const MainDashboard = () => {
   const {menuItems} = useSelector(state => state.menuItem);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
@@ -660,6 +663,20 @@ const MainDashboard = () => {
   useEffect(() => {
     fetchProfilePicture();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleLogout();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
 
   const calculateYearsSinceHire = hireDateString => {
     if (!hireDateString) return 0;
@@ -717,6 +734,14 @@ const MainDashboard = () => {
   const handleRefresh = () => {
     fetchProfilePicture();
   };
+
+  const handleLogout = () => setModalVisible(true);
+  const confirmLogout = () => {
+    setModalVisible(false);
+    handleLogout(userData.Provider);
+    navigation.navigate('Login');
+  };
+  const cancelLogout = () => setModalVisible(false);
 
   // DYNAMIC MENU CREATION - Build navigation parameters dynamically
   const getNavigationParams = menuItem => {
@@ -1119,7 +1144,7 @@ const MainDashboard = () => {
                   <ActivityIndicator size="large" color="#fff" />
                 ) : (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate('DisplayPersonalInfo')}
+                    onPress={() => navigation.navigate('Profile')}
                     activeOpacity={0.8}
                     style={styles.avatarContainer}>
                     {profilePictureUrl ? (
@@ -1201,6 +1226,14 @@ const MainDashboard = () => {
           </ScrollView>
         </SafeAreaView>
       )}
+
+      <LogoutAlertModal
+        visible={modalVisible}
+        heading="Are you sure you want to logout?"
+        text="Are you sure you want to logout?"
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
     </ActionPaneContainer>
   );
 };

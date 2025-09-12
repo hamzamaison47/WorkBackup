@@ -107,9 +107,9 @@ import {Animated} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import MainDashboard from '../screens/Maindasboard';
-import DisplayPersonalInfo from '../screens/PersonalInformation/DisplayPersonalInfo';
 import DisplayListPage from '../screens/TabListPage/DisplayListPage';
 import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
+import Profile from '../screens/Profile/Profile';
 
 import styles from '../styles/styles';
 import CustomTabBar from '../Controller/CustomTabBar';
@@ -139,7 +139,7 @@ const TabNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'DisplayListPage') {
             iconName = focused ? 'grid' : 'grid-outline';
-          } else if (route.name === 'DisplayPersonalInfo') {
+          } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'WorkerAssignedToMe') {
             iconName = focused ? 'people' : 'people-outline';
@@ -173,8 +173,8 @@ const TabNavigator = () => {
         options={{tabBarLabel: 'History'}}
       />
       <Tab.Screen
-        name="DisplayPersonalInfo"
-        component={DisplayPersonalInfo}
+        name="Profile"
+        component={Profile}
         options={{tabBarLabel: 'Profile'}}
       />
     </Tab.Navigator>
