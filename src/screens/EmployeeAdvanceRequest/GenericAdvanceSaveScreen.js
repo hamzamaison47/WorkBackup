@@ -34,6 +34,7 @@ import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
+import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -1022,7 +1023,16 @@ const GenericAdvanceSaveScreen = () => {
             </ScrollView>
 
             {/* Footer */}
-            <View style={styles.LReqSR_Footer}>
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'save' || processingButton === 'submit'
+              }
+            />
+            {/* <View style={styles.LReqSR_Footer}>
               <Pressable
                 style={({pressed}) => [
                   styles.LReqSR_Button,
@@ -1100,7 +1110,7 @@ const GenericAdvanceSaveScreen = () => {
                   </Text>
                 )}
               </Pressable>
-            </View>
+            </View> */}
           </KeyboardAvoidingView>
 
           {/* Calendar Modal */}

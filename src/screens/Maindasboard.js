@@ -528,6 +528,7 @@
 // export default MainDashboard;
 
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useCallback} from 'react';
@@ -549,10 +550,12 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
 
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
+import {screenMapping, iconMapping} from '../Controller/screenMapping';
+
 import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfilePicture';
+
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../components/ActionPaneContainer';
-import {screenMapping, iconMapping} from '../Controller/screenMapping';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 
 // Get initial screen dimensions
@@ -818,6 +821,11 @@ const MainDashboard = () => {
       return hasScreen && validType;
     });
 
+    // If no menu items exist, return empty array
+    if (dashboardMenuItems.length === 0) {
+      return [];
+    }
+
     // Map to card objects (excluding Advance Salary)
     let cards = dashboardMenuItems
       .filter(item => item.MenuId !== 'GenericAdvanceSaveScreen')
@@ -835,7 +843,7 @@ const MainDashboard = () => {
         },
       }));
 
-    // ✅ Add Loan Request card manually
+    // ✅ Add Loan Request card only if there are other menu items
     const loanCard = {
       id: 'GenericLoanSaveScreen',
       title: 'Loan Request',
@@ -1180,16 +1188,19 @@ const MainDashboard = () => {
 
             {/* Main Section */}
             <View style={styles.mainContent}>
-              <Text style={styles.sectionTitle}>
+              {/* <Text style={styles.sectionTitle}>
                 What would you like to do?
-              </Text>
+              </Text> */}
 
               {dynamicMenus.length === 0 ? (
                 <View style={styles.noMenuContainer}>
-                  <Text style={styles.noMenuText}>No menu items available</Text>
+                  <Text style={styles.noMenuText}>No available request</Text>
                 </View>
               ) : (
                 <>
+                  <Text style={styles.sectionTitle}>
+                    What would you like to do?
+                  </Text>
                   <FlatList
                     data={pages}
                     renderItem={renderPage}

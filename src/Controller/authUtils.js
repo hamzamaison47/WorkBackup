@@ -276,3 +276,49 @@ export const fetchEmployeeMenuItems = async employeeId => {
     return [];
   }
 };
+
+export const fetchEmployeeMenuItemsByCompany = async (
+  employeeId,
+  legalEntity,
+) => {
+  try {
+    if (!employeeId || !legalEntity) {
+      console.error(
+        'Invalid employeeId or legalEntity input:',
+        employeeId,
+        legalEntity,
+      );
+      return [];
+    }
+
+    // You'll need to modify your API call to accept legalEntity parameter
+    const data = await RetrieveEmployeeMenuItems({
+      employeeId,
+      legalEntity, // Pass the selected legal entity
+    });
+
+    if (!data || !Array.isArray(data)) {
+      console.error('Unexpected menu Item data format:', data);
+      return [];
+    }
+
+    return data.map(entity => ({
+      LegalEntity: entity.DataAreaId?.toString() ?? '',
+      FullName: entity.FullName?.toString() ?? '',
+      AccessLevel: entity.AccessLevel?.toString() ?? '',
+      Image: entity.Image?.toString() ?? '',
+      Label: entity.Label?.toString() ?? '',
+      MenuId: entity.MenuId?.toString() ?? '',
+      ModuleId: entity.ModuleId?.toString() ?? '',
+      Object: entity.Object?.toString() ?? '',
+      ParentId: entity.ParentId?.toString() ?? '',
+      RoleId: entity.RoleId?.toString() ?? '',
+      Sequence: entity.Sequence?.toString() ?? '',
+      Type: entity.Type?.toString() ?? '',
+      Visible: entity.Visible?.toString() ?? '',
+    }));
+  } catch (error) {
+    console.error('Error in fetchEmployeeMenuItemsByCompany:', error);
+    return [];
+  }
+};
