@@ -4,9 +4,16 @@ import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const FindByEmployeeAdvanceRequest = async ({employeeId}) => {
   try {
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const token = await getToken();
 
     const soapBody = `
@@ -17,7 +24,7 @@ const FindByEmployeeAdvanceRequest = async ({employeeId}) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/PREmployeeAdvanceRequestSvcGroup`,
+      `${config.resource}soap/services/PREmployeeAdvanceRequestSvcGroup`,
       soapEnvelope,
       {
         headers: {

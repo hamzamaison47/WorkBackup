@@ -11,11 +11,13 @@ if (typeof global.btoa === 'undefined') {
 /* eslint-disable no-alert */
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
+import {getActiveConfigData} from './secureConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
+
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
-import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 
 export const handleLogoutauth = async () => {
   try {
@@ -43,6 +45,19 @@ export const handleLogin = async (
   setLoading(true);
 
   try {
+    // Use the new active config system
+    const scan = await getActiveConfigData();
+    if (!scan || Object.keys(scan).length === 0) {
+      setAlertMessage(
+        'Login failed\nPlease setup your environment configuration first',
+      );
+      setAlertModal(true);
+      setLoading(false);
+      return;
+    } else {
+      console.log('Active config exists, proceed with login:', scan);
+    }
+
     const config =
       provider === 'Azure'
         ? getAzureConfigurationV2()
@@ -120,9 +135,7 @@ export const handleSuccessfulLogin = async (
       // Save callback for OK button
       global.onDialogOk = () => {
         setDialogVisible(false);
-        navigation.navigate('DrawerNavigator', {
-          screen: 'RequestForRegistration',
-        });
+        navigation.navigate('RequestForRegistration');
       };
 
       return;

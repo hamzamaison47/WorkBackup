@@ -1,5 +1,5 @@
 /* eslint-disable dot-notation */
-import {resource} from '@env';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
@@ -7,6 +7,13 @@ import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 
 const RetrieveEmployeeLegalEntities = async ({employeeId}) => {
   try {
+    // Get configuration from secure storage
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const token = await getToken();
 
     const soapBody = `
@@ -17,7 +24,7 @@ const RetrieveEmployeeLegalEntities = async ({employeeId}) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/DFUserInfoSvcGroup`,
+      `${config.resource}soap/services/DFUserInfoSvcGroup`,
       soapEnvelope,
       {
         headers: {

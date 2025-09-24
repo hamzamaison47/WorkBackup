@@ -1,11 +1,18 @@
 /* eslint-disable dot-notation */
 import {getToken} from '../Token/getToken';
 import {XMLParser} from 'fast-xml-parser';
-import {resource} from '@env';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 import axios from 'axios';
 
 const RetrieveUserInfoByEmail = async ({email}) => {
   try {
+    // Get configuration from secure storage
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const accessToken = await getToken();
     const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
@@ -23,7 +30,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
     </soapenv:Envelope>`;
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/DFUserInfoSvcGroup`,
+      `${config.resource}soap/services/DFUserInfoSvcGroup`,
       soapEnvelope,
       {
         headers: {

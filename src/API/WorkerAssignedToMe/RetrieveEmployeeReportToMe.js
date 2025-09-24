@@ -1,12 +1,19 @@
 /* eslint-disable dot-notation */
 import {getToken} from '../Token/getToken';
-import {resource} from '@env';
+// import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const RetrieveEmployeeReportToMe = async ({employeeId}) => {
   try {
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const accessToken = await getToken();
 
     const soapBody = `
@@ -17,7 +24,7 @@ const RetrieveEmployeeReportToMe = async ({employeeId}) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/HREmployeesListReportToMeSvcGroup`,
+      `${config.resource}soap/services/HREmployeesListReportToMeSvcGroup`,
       soapEnvelope,
       {
         headers: {

@@ -1,13 +1,20 @@
 /* eslint-disable dot-notation */
 /* eslint-disable curly */
 import {getToken} from '../../Token/getToken';
-import {resource} from '@env';
+// import {resource} from '@env';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 
 const ProfilePicture = async ({employeeId}) => {
   try {
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const accessToken = await getToken();
 
     const soapBody = `
@@ -18,7 +25,8 @@ const ProfilePicture = async ({employeeId}) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/HcmPersonImageSvcGroup`,
+      // `${resource}soap/services/HcmPersonImageSvcGroup`,
+      `${config.resource}soap/services/HcmPersonImageSvcGroup`,
       soapEnvelope,
       {
         headers: {

@@ -165,6 +165,123 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+  Login_QRButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
+  Login_StatusIndicator: {
+    position: 'absolute',
+    top: 120,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+
+  Login_StatusIndicatorActive: {
+    backgroundColor: '#d4edda',
+    borderColor: '#c3e6cb',
+    borderWidth: 1,
+  },
+
+  Login_StatusIndicatorInactive: {
+    backgroundColor: '#f8d7da',
+    borderColor: '#f5c6cb',
+    borderWidth: 1,
+  },
+
+  Login_StatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+
+  Login_StatusTextActive: {
+    color: '#155724',
+  },
+
+  Login_StatusTextInactive: {
+    color: '#721c24',
+  },
+
+  // Setup Message
+  Login_SetupMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e6f3ff',
+    borderColor: '#0A66C2',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+
+  Login_SetupMessageText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0A66C2',
+    fontWeight: '500',
+  },
+
+  // Disabled Button Styles
+  Login_ButtonDisabled: {
+    backgroundColor: '#f8f9fa',
+    borderColor: '#e9ecef',
+  },
+
+  Login_ButtonTextDisabled: {
+    color: '#999',
+  },
+
+  // Setup Button
+  Login_SetupButton: {
+    backgroundColor: '#0A66C2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginTop: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  Login_SetupButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   Login_Logo: {
     width: 200,
     height: 80,

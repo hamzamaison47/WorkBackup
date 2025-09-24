@@ -106,7 +106,7 @@ const Profile = () => {
       }}>
       <View style={styles.settingContent}>
         <View style={styles.settingIconWrapper}>
-          <Icon name={item.icon} size={18} color="#6366F1" />
+          <Icon name={item.icon} size={18} color="#0A66C2" />
         </View>
         <View style={styles.settingTextContainer}>
           <Text style={styles.settingTitle}>{item.title}</Text>

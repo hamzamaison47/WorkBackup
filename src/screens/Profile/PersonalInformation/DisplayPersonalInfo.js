@@ -69,7 +69,7 @@ const DisplayPersonalInfo = () => {
         }
       }}>
       <View style={styles.iconContainer}>
-        <Icon name={item.icon} size={22} color="#6366F1" />
+        <Icon name={item.icon} size={22} color="#0A66C2" />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title}</Text>
@@ -93,7 +93,7 @@ const DisplayPersonalInfo = () => {
         <View style={styles.container}>
           {/* 🌟 Modern Header */}
           <LinearGradient
-            colors={['#6366F1', '#818CF8']}
+            colors={['#0A66C2', '#0A66C2']}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.headerContainer}>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   headerContainer: {
-    paddingVertical: 30,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,

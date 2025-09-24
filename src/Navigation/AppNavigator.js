@@ -4,6 +4,9 @@ import {createStackNavigator} from '@react-navigation/stack';
 import SplashScreens from '../screens/SplashScreens';
 import LoginScreen from '../screens/LoginScreen';
 import DrawerNavigator from './DrawerNavigator';
+import QRSetupScreen from '../screens/Setup/QRSetupScreen';
+import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
+import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 
 const Stack = createStackNavigator();
 
@@ -23,6 +26,21 @@ const AppNavigator = () => {
       <Stack.Screen
         name="DrawerNavigator"
         component={DrawerNavigator}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="QRSetupScreen"
+        component={QRSetupScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="RequestForRegistration"
+        component={RequestForRegistration}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="ConfigSelectionScreen"
+        component={ConfigSelectionScreen}
         options={{headerShown: false}}
       />
     </Stack.Navigator>

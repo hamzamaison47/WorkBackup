@@ -34,6 +34,13 @@ const LoginScreen = () => {
       style={styles.Login_Container}>
       {!loading && (
         <>
+          {/* QR Code Setup Button - Top Right */}
+          <TouchableOpacity
+            style={styles.Login_QRButton}
+            onPress={() => navigation.navigate('ConfigSelectionScreen')}>
+            <Icon name="qrcode" size={24} color="#0A66C2" />
+          </TouchableOpacity>
+
           <Image
             source={require('../assets/cloud.png')}
             style={styles.Login_Logo}

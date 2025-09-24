@@ -1,12 +1,19 @@
 /* eslint-disable dot-notation */
 import {getToken} from '../Token/getToken';
 import {XMLParser} from 'fast-xml-parser';
-import {resource} from '@env';
+// import {resource} from '@env';
 import axios from 'axios';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const PREmailSalarySlip = async ({payPeriodCode, employeeId}) => {
   try {
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const accessToken = await getToken();
 
     const soapBody = `
@@ -18,7 +25,7 @@ const PREmailSalarySlip = async ({payPeriodCode, employeeId}) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/RetrieveReportsSvcGroup`,
+      `${config.resource}soap/services/RetrieveReportsSvcGroup`,
       soapEnvelope,
       {
         headers: {

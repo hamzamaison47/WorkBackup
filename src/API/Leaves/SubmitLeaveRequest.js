@@ -1,10 +1,11 @@
 /* eslint-disable curly */
 /* eslint-disable dot-notation */
-import {resource} from '@env';
+// import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const SubmitLeaveRequest = async ({recId}) => {
   try {
@@ -14,6 +15,12 @@ const SubmitLeaveRequest = async ({recId}) => {
       } else {
         throw new Error('Invalid recId. Expected a number, got an object.');
       }
+    }
+
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
     }
 
     const token = await getToken();
@@ -28,7 +35,7 @@ const SubmitLeaveRequest = async ({recId}) => {
     // console.log('SOAP ENVELOPE IN SUBMIT REQUEST', soapEnvelope);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/EssWorkflowSvcGroup`,
+      `${config.resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,
       {
         headers: {

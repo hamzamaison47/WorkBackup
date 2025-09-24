@@ -309,6 +309,7 @@ const DrawerNavigator = () => {
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
           headerShown: true,
+          headerShadowVisible: false,
         }}
       />
 

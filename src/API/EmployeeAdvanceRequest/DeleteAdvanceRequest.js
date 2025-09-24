@@ -1,12 +1,19 @@
 /* eslint-disable dot-notation */
-import {resource} from '@env';
+// import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const DeleteAdvanceRequest = async ({recordsRecId}) => {
   try {
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
     const token = await getToken();
 
     const soapBody = `
@@ -19,7 +26,7 @@ const DeleteAdvanceRequest = async ({recordsRecId}) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${resource}soap/services/PREmployeeAdvanceRequestSvcGroup`,
+      `${config.resource}soap/services/PREmployeeAdvanceRequestSvcGroup`,
       soapEnvelope,
       {
         headers: {
