@@ -7,6 +7,7 @@ import PRTaxCertificate from '../screens/TaxCertificate/PRTaxCertificate';
 import EntitlementBalance from '../screens/EntitlementBalance/EntitlementBalance';
 import GenericAdvanceListScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceListScreen';
 import GenericAdvanceSaveScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceSaveScreen';
+import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -18,6 +19,7 @@ export const screenMapping = {
   EntitlementBalance: EntitlementBalance,
   GenericAdvanceListScreen: GenericAdvanceListScreen,
   GenericAdvanceSaveScreen: GenericAdvanceSaveScreen,
+  CreateAttendanceScreen: CreateAttendanceScreen,
 };
 
 // Map Images → Screen component
@@ -30,4 +32,5 @@ export const iconMapping = {
   EntitlementBalance: require('../assets/Maindashboard/justice.png'),
   GenericAdvanceListScreen: require('../assets/Maindashboard/signing.png'),
   GenericAdvanceSaveScreen: require('../assets/Maindashboard/loan-approved.png'),
+  CreateAttendanceScreen: require('../assets/Maindashboard/attendance.png'),
 };

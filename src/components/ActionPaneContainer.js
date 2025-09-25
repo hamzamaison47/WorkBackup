@@ -429,7 +429,7 @@ const ActionPaneContainer = ({
           setNotificationCount(formatted.length);
         }
       } catch (err) {
-        console.error('Error fetching notifications:', err);
+        // console.error('Error fetching notifications:', err);
       }
     };
     const interval = setInterval(fetchNotifications, 30000);
@@ -468,6 +468,7 @@ const ActionPaneContainer = ({
     setDropdownVisible(false);
 
     // Show loading state if needed
+    // eslint-disable-next-line no-unused-vars
     const currentMenus = [...notifications]; // Store current state for rollback if needed
 
     try {

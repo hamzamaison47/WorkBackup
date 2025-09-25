@@ -1,4 +1,5 @@
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
 import {
@@ -11,9 +12,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
-import {SECRET_KEY} from '@env';
-// import CryptoJS from 'crypto-js';
-// import {Buffer} from 'buffer';
+import CryptoJS from 'crypto-js';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {saveConfig, saveConfigWithId} from '../../Controller/secureConfig';
@@ -21,9 +20,8 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 import AlertModal from '../../components/Alert/AlertModal';
-import {decryptQRData} from '../../Controller/decryptQRData';
 
-// const secretKey = 'P@$sw0rd321';
+const secretKey = 'P@$sw0rd321';
 
 const QRSetupScreen = () => {
   const [isScanning, setIsScanning] = useState(true);
@@ -37,94 +35,42 @@ const QRSetupScreen = () => {
 
   // Check if coming from ConfigSelectionScreen
   const isFromConfigSelection = route.params?.isFromConfigSelection || false;
-  // const returnScreen = route.params?.returnScreen || 'Login';
+  const returnScreen = route.params?.returnScreen || 'Login';
 
-  // console.log(
-  //   'QR Data saved with isFromConfigSelection:',
-  //   isFromConfigSelection,
-  // );
-  // console.log('QR Data saved with returnScreen:', returnScreen);
-
-  // Handle QR Code Read
-  // const handleQRCodeRead = async e => {
-  //   setIsScanning(false);
-
-  //   console.log('QR Data saved with e:', e);
-
-  //   try {
-  //     if (!e.data) throw new Error('No data found in QR code');
-
-  //     const bytes = CryptoJS.AES.decrypt(e.data, secretKey);
-  //     const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
-  //     const parsedData = JSON.parse(decryptedData);
-
-  //     console.log('QR Data saved with bytes:', bytes);
-  //     console.log('QR Data saved with decryptedData:', decryptedData);
-
-  //     if (!parsedData || Object.keys(parsedData).length === 0) {
-  //       throw new Error('Invalid QR code data');
-  //     }
-
-  //     if (isFromConfigSelection) {
-  //       // Save with new system when coming from ConfigSelectionScreen
-  //       const configName = `Config ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
-  //       await saveConfigWithId(parsedData, configName);
-  //       console.log('QR Data saved with ID:', parsedData);
-
-  //       setAlertMessage('Configuration added successfully!');
-  //       setAlertModal(true);
-
-  //       // Navigate back to ConfigSelectionScreen after showing success message
-  //       setTimeout(() => {
-  //         setAlertModal(false);
-  //         navigation.navigate('ConfigSelectionScreen');
-  //       }, 2000);
-  //     } else {
-  //       // Original flow for backward compatibility
-  //       await saveConfig(parsedData);
-  //       console.log('QR Data saved to Keychain:', parsedData);
-
-  //       navigation.replace('Login');
-  //     }
-  //   } catch (err) {
-  //     console.log('Error with QR data:', err.message);
-  //     setAlertMessage('QR code not recognized. Please try again.');
-  //     setAlertModal(true);
-  //   } finally {
-  //     setTimeout(() => setIsScanning(true), 2000);
-  //   }
-  // };
   // Handle QR Code Read
   const handleQRCodeRead = async e => {
     setIsScanning(false);
-    console.log('QR Data scanned:', e);
 
     try {
       if (!e.data) throw new Error('No data found in QR code');
 
-      // Decrypt + parse JSON (throws on failure)
-      const parsedData = decryptQRData(e.data, SECRET_KEY);
-
-      // SUCCESS: parsedData is your object from X++
-      // Do NOT console.log the whole object in production (contains client_secret)
-      console.log('QR decrypted successfully, keys:', Object.keys(parsedData));
+      const bytes = CryptoJS.AES.decrypt(e.data, secretKey);
+      const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+      const parsedData = JSON.parse(decryptedData);
 
       if (!parsedData || Object.keys(parsedData).length === 0) {
         throw new Error('Invalid QR code data');
       }
 
       if (isFromConfigSelection) {
+        // Save with new system when coming from ConfigSelectionScreen
         const configName = `Config ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
         await saveConfigWithId(parsedData, configName);
+        console.log('QR Data saved with ID:', parsedData);
+
         setAlertMessage('Configuration added successfully!');
         setAlertModal(true);
 
+        // Navigate back to ConfigSelectionScreen after showing success message
         setTimeout(() => {
           setAlertModal(false);
           navigation.navigate('ConfigSelectionScreen');
         }, 2000);
       } else {
+        // Original flow for backward compatibility
         await saveConfig(parsedData);
+        console.log('QR Data saved to Keychain:', parsedData);
+
         navigation.replace('Login');
       }
     } catch (err) {

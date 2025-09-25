@@ -13,7 +13,6 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import PopupDialog from 'react-native-popup-dialog';
 import AlertModal from '../../components/Alert/AlertModal';
-import {RegisterNewEmployee} from '../../API/RequestForRegistration/RegisterNewEmployee';
 
 const RequestForRegistration = () => {
   const navigation = useNavigation();
@@ -38,12 +37,13 @@ const RequestForRegistration = () => {
     return () => backHandler.remove();
   }, [navigation]);
 
-  const handleRegister = async () => {
+  const handleRegister = () => {
     const missingFields = [];
 
     if (!email.trim()) missingFields.push('Email');
     if (!employeeId.trim()) missingFields.push('Employee ID');
 
+    // Optional: email format validation
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       missingFields.push('Enter a valid Email address');
     }
@@ -57,30 +57,9 @@ const RequestForRegistration = () => {
       return;
     }
 
-    try {
-      const response = await RegisterNewEmployee({
-        registerData: {
-          Email: email,
-          EmployeeID: employeeId,
-        },
-      });
-
-      console.log('API Response:', response);
-
-      if (response?.IsSuccess === 'true') {
-        setAlertMessage('Registration successful!');
-        setAlertModal(true);
-      } else {
-        setAlertMessage(
-          response?.Message || 'Registration failed. Please try again.',
-        );
-        setAlertModal(true);
-      }
-    } catch (error) {
-      console.error('Registration API error:', error);
-      setAlertMessage('Error during registration. Please try again.');
-      setAlertModal(true);
-    }
+    // ✅ If validation passes
+    console.log('Email:', email);
+    console.log('Employee ID:', employeeId);
   };
 
   return (
