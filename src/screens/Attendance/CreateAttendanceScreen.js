@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 import React, {useState, useEffect, useCallback, useRef} from 'react';
@@ -91,7 +90,7 @@ const CreateAttendanceScreen = () => {
   const formatSeconds = totalSeconds => {
     if (totalSeconds == null) return '-';
     const duration = moment.duration(totalSeconds, 'seconds');
-    const hours = String(duration.hours()).padStart(2, '0');
+    const hours = String(Math.floor(duration.asHours())).padStart(2, '0');
     const minutes = String(duration.minutes()).padStart(2, '0');
     const seconds = String(duration.seconds()).padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
@@ -121,9 +120,9 @@ const CreateAttendanceScreen = () => {
           setClockOut(outTime);
         }
 
-        if (record.ShiftHours && record.ClockIn) {
-          setShiftHours(record.ShiftHours);
-          setClockInSeconds(record.ClockIn);
+        if (record.ShiftHours && record.ClockIn != null) {
+          setShiftHours(Number(record.ShiftHours));
+          setClockInSeconds(Number(record.ClockIn));
         }
       } else {
         setClockIn(null);
@@ -155,12 +154,15 @@ const CreateAttendanceScreen = () => {
         toDate,
       });
 
+      // ===== UPDATED FOR NEW CONTRACT KEYS =====
+      // Expecting object fields:
+      // PresentCount, AbsentCount, LateArrivalCount, EarlyOutCount
       if (summary && summary.length > 0) {
         const s = summary[0];
-        setPresentCount(Number(s.Present || 0));
-        setAbsentCount(Number(s.Absent || 0));
-        setLateCount(Number(s.LateArrival || 0));
-        setEarlyOutCount(Number(s.EarlyOut || 0));
+        setPresentCount(Number(s.PresentCount || 0));
+        setAbsentCount(Number(s.AbsentCount || 0));
+        setLateCount(Number(s.LateArrivalCount || 0));
+        setEarlyOutCount(Number(s.EarlyOutCount || 0));
       } else {
         setPresentCount(0);
         setAbsentCount(0);
@@ -314,21 +316,20 @@ const CreateAttendanceScreen = () => {
     }
   }, []);
 
-  // Haversine
+  // Standard Haversine distance (in meters)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRad = d => (d * Math.PI) / 180;
     const R = 6371e3;
-    const φ1 = (lat1 * Math.PI) / 180;
-    const φ2 = (lat2 * Math.PI) / 180;
-    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const dφ = toRad(lat2 - lat1);
+    const dλ = toRad(lon2 - lon1);
 
     const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c =
-      2 * Math.atan2(Math.sqrt(Math.sqrt(a) === 0 ? 0 : a), Math.sqrt(1 - a));
-    // Slightly safer atan2 domain, though original formula is fine:
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+      Math.sin(dφ / 2) * Math.sin(dφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) * Math.sin(dλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   };
 
   // Main action
@@ -376,6 +377,8 @@ const CreateAttendanceScreen = () => {
         OFFICE_LOCATION.latitude,
         OFFICE_LOCATION.longitude,
       );
+
+      // Allow for inaccuracy by subtracting up to ALLOWED_RADIUS from accuracy
       const effectiveDistance = Math.max(
         0,
         distance - Math.min(accuracy, ALLOWED_RADIUS),
@@ -461,6 +464,7 @@ const CreateAttendanceScreen = () => {
         />
       </View>
 
+      {/* Compact 4-stat row — single line, non-wrapping */}
       <View style={styles.quickSummary}>
         <Text style={styles.quickSummaryTitle}>This Month Overview</Text>
         <View style={styles.quickSummaryRow}>
@@ -514,6 +518,37 @@ const CreateAttendanceScreen = () => {
             }>
             <Icon name="chevron-right" size={32} color="#1E88E5" />
           </TouchableOpacity>
+        </View>
+
+        {/* Same compact 4-stat row here too */}
+        <View style={styles.quickSummary}>
+          <Text style={styles.quickSummaryTitle}>This Month Overview</Text>
+          <View style={styles.quickSummaryRow}>
+            <View style={styles.quickSummaryItem}>
+              <Text style={[styles.quickSummaryValue, {color: '#4CAF50'}]}>
+                {presentCount}
+              </Text>
+              <Text style={styles.quickSummaryLabel}>Present</Text>
+            </View>
+            <View style={styles.quickSummaryItem}>
+              <Text style={[styles.quickSummaryValue, {color: '#F44336'}]}>
+                {absentCount}
+              </Text>
+              <Text style={styles.quickSummaryLabel}>Absent</Text>
+            </View>
+            <View style={styles.quickSummaryItem}>
+              <Text style={[styles.quickSummaryValue, {color: '#FF9800'}]}>
+                {lateCount}
+              </Text>
+              <Text style={styles.quickSummaryLabel}>Late</Text>
+            </View>
+            <View style={styles.quickSummaryItem}>
+              <Text style={[styles.quickSummaryValue, {color: '#9C27B0'}]}>
+                {earlyOutCount}
+              </Text>
+              <Text style={styles.quickSummaryLabel}>Early Out</Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.summaryCard}>
@@ -586,6 +621,7 @@ const CreateAttendanceScreen = () => {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F5F5'},
   content: {flex: 1},
+
   homeContainer: {
     flexGrow: 1,
     padding: SCREEN_WIDTH * 0.05,
@@ -605,6 +641,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     textAlign: 'center',
   },
+
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -615,11 +652,14 @@ const styles = StyleSheet.create({
     elevation: 2,
     flexWrap: 'wrap',
   },
+
   buttonContainer: {
     alignItems: 'center',
     marginVertical: SCREEN_HEIGHT * 0.02,
     minHeight: 200,
   },
+
+  // ===== Compact 4-stat card reused in both tabs
   quickSummary: {
     backgroundColor: '#FFF',
     padding: 20,
@@ -637,21 +677,28 @@ const styles = StyleSheet.create({
   },
   quickSummaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'stretch',
+    flexWrap: 'nowrap', // keep all 4 on the same line
   },
   quickSummaryItem: {
+    flex: 1, // equal-width columns
+    minWidth: 0, // allow shrinking on small devices
     alignItems: 'center',
     marginVertical: 5,
-    minWidth: SCREEN_WIDTH * 0.2,
+    paddingHorizontal: 6,
   },
-  quickSummaryValue: {fontSize: isSmallDevice ? 20 : 24, fontWeight: 'bold'},
+  quickSummaryValue: {
+    fontSize: isSmallDevice ? 18 : 24,
+    fontWeight: 'bold',
+  },
   quickSummaryLabel: {
     fontSize: isSmallDevice ? 10 : 12,
     color: '#757575',
     marginTop: 5,
     textAlign: 'center',
   },
+
   summaryScreenContainer: {flex: 1},
   summaryContainer: {
     flex: 1,

@@ -16,11 +16,11 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
 
     // ✅ SOAP Body
     const soapBody = `
-      <getRegisterDetails xmlns="http://tempuri.org">
+      <getRegisterSummaryByDate xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
         <fromDate>${fromDate}</fromDate>
         <toDate>${toDate}</toDate>
-      </getRegisterDetails>`;
+      </getRegisterSummaryByDate>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
@@ -33,7 +33,7 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction:
-            'http://tempuri.org/TASAttendanceRegisterSvc/getRegisterDetails',
+            'http://tempuri.org/TASAttendanceRegisterSvc/getRegisterSummaryByDate',
         },
         responseType: 'text',
       },
@@ -52,9 +52,9 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
 
     // ✅ Navigate to result
     const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['getRegisterDetailsResponse']?.[
-        'result'
-      ]?.['a:TASAttendanceRegisterSvcContract'];
+      parsed?.['s:Envelope']?.['s:Body']?.[
+        'getRegisterSummaryByDateResponse'
+      ]?.['result']?.['a:TASAttendanceRegisterSvcContract'];
 
     if (!rawData) {
       console.log('⚠️ No register details found in SOAP response');
