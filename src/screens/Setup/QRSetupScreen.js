@@ -18,6 +18,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import {saveConfig, saveConfigWithId} from '../../Controller/secureConfig';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {decryptQRData} from '../../Controller/decryptQRData';
 
 import AlertModal from '../../components/Alert/AlertModal';
 
@@ -40,37 +41,34 @@ const QRSetupScreen = () => {
   // Handle QR Code Read
   const handleQRCodeRead = async e => {
     setIsScanning(false);
+    console.log('QR Data scanned:', e);
 
     try {
       if (!e.data) throw new Error('No data found in QR code');
 
-      const bytes = CryptoJS.AES.decrypt(e.data, secretKey);
-      const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
-      const parsedData = JSON.parse(decryptedData);
+      // Decrypt + parse JSON (throws on failure)
+      const parsedData = decryptQRData(e.data, secretKey);
+
+      // SUCCESS: parsedData is your object from X++
+      // Do NOT console.log the whole object in production (contains client_secret)
+      console.log('QR decrypted successfully, keys:', Object.keys(parsedData));
 
       if (!parsedData || Object.keys(parsedData).length === 0) {
         throw new Error('Invalid QR code data');
       }
 
       if (isFromConfigSelection) {
-        // Save with new system when coming from ConfigSelectionScreen
         const configName = `Config ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
         await saveConfigWithId(parsedData, configName);
-        console.log('QR Data saved with ID:', parsedData);
-
         setAlertMessage('Configuration added successfully!');
         setAlertModal(true);
 
-        // Navigate back to ConfigSelectionScreen after showing success message
         setTimeout(() => {
           setAlertModal(false);
           navigation.navigate('ConfigSelectionScreen');
         }, 2000);
       } else {
-        // Original flow for backward compatibility
         await saveConfig(parsedData);
-        console.log('QR Data saved to Keychain:', parsedData);
-
         navigation.replace('Login');
       }
     } catch (err) {
