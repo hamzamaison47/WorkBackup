@@ -151,7 +151,13 @@ const LoginScreen = () => {
         visible={alertModal}
         heading="Alert"
         text={alertMessage}
-        onPress={() => setAlertModal(false)}
+        onPress={() => {
+          setAlertModal(false);
+          if (global.onDialogOk) {
+            global.onDialogOk();
+            global.onDialogOk = null; // clear after use
+          }
+        }}
       />
     </LinearGradient>
   );

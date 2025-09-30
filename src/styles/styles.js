@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   },
   // End oF Salary Slip
 
-  // Start of Leave Request Save Record
+  // // Start of Leave Request Save Record
   LReqSR_SafeArea: {
     flex: 1,
     backgroundColor: '#fefefe',
@@ -587,43 +587,46 @@ const styles = StyleSheet.create({
   LReqSR_ContentWrapper: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: width * 0.03,
-    paddingTop: height * 0.01,
+    paddingHorizontal: width * 0.04, // responsive padding
+    paddingTop: height * 0.015,
   },
   LReqSR_FormContainer: {
-    padding: 5,
-    paddingBottom: 100,
+    padding: width * 0.01,
+    paddingBottom: height * 0.02, // spacing relative to screen
   },
   LReqSR_Label: {
-    fontSize: 14,
-    marginTop: 12,
+    fontSize: width * 0.038, // scales with width
+    marginTop: height * 0.015,
     fontWeight: '600',
     color: '#444',
   },
   LReqSR_Input: {
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
-    fontSize: 15,
+    borderRadius: width * 0.02,
+    padding: width * 0.025,
+    marginTop: height * 0.007,
+    fontSize: width * 0.04,
     color: '#333',
     backgroundColor: '#fff',
   },
   LReqSR_DropdownPlaceholder: {
     color: '#444',
+    fontSize: width * 0.038,
   },
   LReqSR_DropdownSelectedText: {
     color: '#444',
     fontWeight: '400',
+    fontSize: width * 0.038,
   },
   LReqSR_DropdownItemText: {
     color: '#444',
+    fontSize: width * 0.038,
   },
   LReqSR_DropdownContainer: {
     borderWidth: 1.5,
     borderColor: '#4A90E2',
-    borderRadius: 10,
+    borderRadius: width * 0.025,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -632,26 +635,28 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   LReqSR_DropdownItemContainer: {
-    paddingHorizontal: 12,
+    paddingHorizontal: width * 0.03,
   },
   LReqSR_DropdownSearchInput: {
     color: '#444',
     backgroundColor: '#fff',
+    fontSize: width * 0.038,
   },
   LReqSR_DropdownIcon: {
-    width: 22,
-    height: 22,
+    width: width * 0.055,
+    height: width * 0.055,
   },
   LReqSR_Disabled: {
     backgroundColor: '#f1f1f1',
     color: '#999',
   },
   LReqSR_TextArea: {
-    height: 100,
+    height: height * 0.15,
     textAlignVertical: 'top',
+    fontSize: width * 0.04,
   },
   LReqSR_CharCount: {
-    fontSize: 13,
+    fontSize: width * 0.034,
     color: '#333',
   },
   LReqSR_DateSelector: {
@@ -659,33 +664,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
+    borderRadius: width * 0.02,
+    padding: width * 0.025,
+    marginTop: height * 0.007,
   },
   LReqSR_DateText: {
-    fontSize: 15,
+    fontSize: width * 0.04,
     color: '#333',
   },
+  // LReqSR_Footer: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   padding: width * 0.025, // responsive padding
+  //   borderTopWidth: 1,
+  //   borderColor: '#eee',
+  //   backgroundColor: '#fff',
+  //   position: 'absolute',
+  //   bottom: 0,
+  //   left: 0,
+  //   right: 0,
+  // },
   LReqSR_Footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 10,
-    borderTopWidth: 1,
+    // padding: width * 0.025,
+    paddingVertical: width * 0.025,
+    // borderTopWidth: 1,
     borderColor: '#eee',
     backgroundColor: '#fff',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    // Remove absolute positioning
+    position: 'relative', // Change from 'absolute'
+    // Remove bottom, left, right properties
   },
   LReqSR_Button: {
     flex: 1,
     borderWidth: 2,
     borderColor: '#0A66C2',
-    borderRadius: 20,
-    paddingVertical: 12,
-    marginHorizontal: 1,
+    borderRadius: width * 0.05, // dynamic radius
+    paddingVertical: height * 0.015, // scales with screen height
+    marginHorizontal: width * 0.005,
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
@@ -698,10 +715,12 @@ const styles = StyleSheet.create({
   },
   LReqSR_ButtonText: {
     fontWeight: 'bold',
+    fontSize: width * 0.038, // responsive font
     color: '#0A66C2',
   },
   LReqSR_SubmitButtonText: {
     fontWeight: 'bold',
+    fontSize: width * 0.038,
     color: '#ffffffff',
   },
   LReqSR_PressedButton: {
@@ -718,14 +737,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#cccccc',
     backgroundColor: 'transparent',
-    borderRadius: 20,
-    paddingVertical: 12,
-    marginHorizontal: 1,
+    borderRadius: width * 0.05,
+    paddingVertical: height * 0.015,
+    marginHorizontal: width * 0.005,
     alignItems: 'center',
     flex: 1,
   },
   LReqSR_CancelButtonText: {
     fontWeight: 'bold',
+    fontSize: width * 0.038,
     color: '#666666',
   },
   LReqSR_pressedCancelButton: {
@@ -734,7 +754,161 @@ const styles = StyleSheet.create({
   LReqSR_pressedCancelText: {
     color: '#959595ff',
   },
-  // End oF Leave Req Save Record
+  // LReqSR_SafeArea: {
+  //   flex: 1,
+  //   backgroundColor: '#fefefe',
+  // },
+  // LReqSR_ContentWrapper: {
+  //   flex: 1,
+  //   justifyContent: 'space-between',
+  //   paddingHorizontal: width * 0.03,
+  //   paddingTop: height * 0.01,
+  // },
+  // LReqSR_FormContainer: {
+  //   padding: 5,
+  //   paddingBottom: 100,
+  // },
+  // LReqSR_Label: {
+  //   fontSize: 14,
+  //   marginTop: 12,
+  //   fontWeight: '600',
+  //   color: '#444',
+  // },
+  // LReqSR_Input: {
+  //   borderWidth: 1,
+  //   borderColor: '#ddd',
+  //   borderRadius: 8,
+  //   padding: 10,
+  //   marginTop: 6,
+  //   fontSize: 15,
+  //   color: '#333',
+  //   backgroundColor: '#fff',
+  // },
+  // LReqSR_DropdownPlaceholder: {
+  //   color: '#444',
+  // },
+  // LReqSR_DropdownSelectedText: {
+  //   color: '#444',
+  //   fontWeight: '400',
+  // },
+  // LReqSR_DropdownItemText: {
+  //   color: '#444',
+  // },
+  // LReqSR_DropdownContainer: {
+  //   borderWidth: 1.5,
+  //   borderColor: '#4A90E2',
+  //   borderRadius: 10,
+  //   backgroundColor: '#fff',
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.25,
+  //   shadowRadius: 6,
+  //   elevation: 6,
+  // },
+  // LReqSR_DropdownItemContainer: {
+  //   paddingHorizontal: 12,
+  // },
+  // LReqSR_DropdownSearchInput: {
+  //   color: '#444',
+  //   backgroundColor: '#fff',
+  // },
+  // LReqSR_DropdownIcon: {
+  //   width: 22,
+  //   height: 22,
+  // },
+  // LReqSR_Disabled: {
+  //   backgroundColor: '#f1f1f1',
+  //   color: '#999',
+  // },
+  // LReqSR_TextArea: {
+  //   height: 100,
+  //   textAlignVertical: 'top',
+  // },
+  // LReqSR_CharCount: {
+  //   fontSize: 13,
+  //   color: '#333',
+  // },
+  // LReqSR_DateSelector: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   borderWidth: 1,
+  //   borderColor: '#ddd',
+  //   borderRadius: 8,
+  //   padding: 10,
+  //   marginTop: 6,
+  // },
+  // LReqSR_DateText: {
+  //   fontSize: 15,
+  //   color: '#333',
+  // },
+  // LReqSR_Footer: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   padding: 10,
+  //   borderTopWidth: 1,
+  //   borderColor: '#eee',
+  //   backgroundColor: '#fff',
+  //   position: 'absolute',
+  //   bottom: 0,
+  //   left: 0,
+  //   right: 0,
+  // },
+  // LReqSR_Button: {
+  //   flex: 1,
+  //   borderWidth: 2,
+  //   borderColor: '#0A66C2',
+  //   borderRadius: 20,
+  //   paddingVertical: 12,
+  //   marginHorizontal: 1,
+  //   alignItems: 'center',
+  //   backgroundColor: 'transparent',
+  // },
+  // LReqSR_SubmitButton: {
+  //   borderColor: '#0A66C2',
+  //   backgroundColor: '#0A66C2',
+  // },
+  // LReqSR_DisabledButton: {
+  //   opacity: 0.6,
+  // },
+  // LReqSR_ButtonText: {
+  //   fontWeight: 'bold',
+  //   color: '#0A66C2',
+  // },
+  // LReqSR_SubmitButtonText: {
+  //   fontWeight: 'bold',
+  //   color: '#ffffffff',
+  // },
+  // LReqSR_PressedButton: {
+  //   backgroundColor: '#0A66C2',
+  // },
+  // LReqSR_pressedSubmitButton: {
+  //   backgroundColor: '#3d95edff',
+  //   borderColor: '#3d95edff',
+  // },
+  // LReqSR_pressedText: {
+  //   color: '#fff',
+  // },
+  // LReqSR_CancelButton: {
+  //   borderWidth: 2,
+  //   borderColor: '#cccccc',
+  //   backgroundColor: 'transparent',
+  //   borderRadius: 20,
+  //   paddingVertical: 12,
+  //   marginHorizontal: 1,
+  //   alignItems: 'center',
+  //   flex: 1,
+  // },
+  // LReqSR_CancelButtonText: {
+  //   fontWeight: 'bold',
+  //   color: '#666666',
+  // },
+  // LReqSR_pressedCancelButton: {
+  //   backgroundColor: '#e6e6e6',
+  // },
+  // LReqSR_pressedCancelText: {
+  //   color: '#959595ff',
+  // },
+  // // End oF Leave Req Save Record
 
   // Start oF Leave Req List Page
   LReqLP_ListContainer: {
@@ -1391,7 +1565,6 @@ const styles = StyleSheet.create({
   // end of logout button
 
   //start of Main page header
-
   MPH_leftContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2055,140 +2228,6 @@ const styles = StyleSheet.create({
   },
   // end of worker assigned to me card
 
-  // Start of ActionPaneContainer
-  // APCont_customTabItem: {
-  //   flex: 1,
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   paddingVertical: 8,
-  // },
-
-  // APCont_container: {
-  //   flex: 1,
-  //   backgroundColor: '#FFFFFF',
-  // },
-
-  // APCont_content: {
-  //   flex: 1,
-  //   // paddingHorizontal: width * 0.03,
-  //   // paddingTop: height * 0.01,
-  // },
-
-  // APCont_bottomTabBar: {
-  //   flexDirection: 'row',
-  //   backgroundColor: '#0A66C2',
-  //   paddingVertical: height * 0.012,
-  //   paddingHorizontal: width * 0.18,
-  //   justifyContent: 'space-between',
-  //   alignItems: 'center',
-  //   height: height * 0.075,
-  // },
-
-  // APCont_tabButton: {
-  //   alignItems: 'center',
-  // },
-
-  // APCont_tabButtonText: {
-  //   fontSize: width * 0.032,
-  //   color: '#ffffff',
-  //   marginTop: 2,
-  //   fontWeight: '500',
-  // },
-
-  // APCont_floatingPlusButtonContainer: {
-  //   position: 'absolute',
-  //   bottom: height * 0.035,
-  //   left: width / 2 - 28,
-  // },
-
-  // APCont_floatingPlusButton: {
-  //   width: 56,
-  //   height: 56,
-  //   borderRadius: 28,
-  //   backgroundColor: '#FFFFFF',
-  //   borderWidth: 3,
-  //   borderColor: '#0A66C2',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   elevation: 6,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.2,
-  //   shadowRadius: 3,
-  // },
-
-  // APCont_plusIcon: {
-  //   fontSize: 24,
-  //   color: '#0A66C2',
-  // },
-  // APCont_container: {
-  //   flex: 1,
-  //   backgroundColor: '#FFFFFF',
-  // },
-  // APCont_content: {
-  //   flex: 1,
-  // },
-  // // --- CUSTOM TAB NAVIGATOR ---
-  // APCont_customTabItem: {
-  //   flex: 1,
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   paddingVertical: 6,
-  // },
-  // TNav_TabBar: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-around',
-  //   alignItems: 'center',
-  //   backgroundColor: '#0A66C2',
-  //   height: height * 0.08,
-  //   borderTopColor: '#ccc',
-  //   borderColor: '#0A66C2',
-  //   borderTopWidth: 3,
-  //   elevation: 10,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: -2},
-  //   shadowOpacity: 0.1,
-  //   shadowRadius: 4,
-  // },
-  // TNav_TabLabel: {
-  //   fontSize: 11,
-  //   fontWeight: '600',
-  //   marginBottom: 6,
-  //   color: 'white',
-  // },
-  // // --- FLOATING PLUS BUTTON ---
-  // APCont_floatingPlusButtonContainer: {
-  //   position: 'absolute',
-  //   bottom: height * 0.1, // slightly above the tab bar
-  //   right: 20, // place it on the right side
-  // },
-  // APCont_floatingPlusButton: {
-  //   width: 66,
-  //   height: 66,
-  //   borderRadius: 48,
-  //   backgroundColor: '#0A66C2',
-  //   borderWidth: 4,
-  //   borderColor: '#ffffffff',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   elevation: 6,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.2,
-  //   shadowRadius: 3,
-  // },
-  // APCont_plusIcon: {
-  //   fontSize: 24,
-  //   color: '#ffffffff',
-  // },
-  APCont_container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  APCont_content: {
-    flex: 1,
-  },
-
   // Tab Bar styles - More responsive
   TNav_TabBar: {
     flexDirection: 'row',
@@ -2224,6 +2263,13 @@ const styles = StyleSheet.create({
   },
 
   // Floating button styles - More responsive positioning
+  APCont_container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  APCont_content: {
+    flex: 1,
+  },
   APCont_floatingPlusButtonContainer: {
     position: 'absolute',
     bottom: Math.max(height * 0.1, 70), // Responsive positioning above tab bar

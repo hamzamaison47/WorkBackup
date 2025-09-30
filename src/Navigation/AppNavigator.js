@@ -29,11 +29,6 @@ const AppNavigator = () => {
         options={{headerShown: false}}
       />
       <Stack.Screen
-        name="QRSetupScreen"
-        component={QRSetupScreen}
-        options={{headerShown: false}}
-      />
-      <Stack.Screen
         name="RequestForRegistration"
         component={RequestForRegistration}
         options={{headerShown: false}}
@@ -41,6 +36,11 @@ const AppNavigator = () => {
       <Stack.Screen
         name="ConfigSelectionScreen"
         component={ConfigSelectionScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="QRSetupScreen"
+        component={QRSetupScreen}
         options={{headerShown: false}}
       />
     </Stack.Navigator>

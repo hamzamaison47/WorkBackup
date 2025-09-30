@@ -53,6 +53,10 @@ export const handleLogin = async (
       );
       setAlertModal(true);
       setLoading(false);
+      global.onDialogOk = () => {
+        setAlertModal(false); // close the alert
+        navigation.navigate('ConfigSelectionScreen'); // navigate to config screen
+      };
       return;
     } else {
       console.log('Active config exists, proceed with login:', scan);

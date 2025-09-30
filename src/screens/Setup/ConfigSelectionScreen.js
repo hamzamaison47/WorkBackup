@@ -1,6 +1,7 @@
+/* eslint-disable curly */
 /* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unstable-nested-components */
-/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
@@ -10,6 +11,9 @@ import {
   FlatList,
   Alert,
   RefreshControl,
+  TextInput,
+  Modal,
+  Dimensions,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -22,8 +26,15 @@ import {
   setActiveConfig,
   getActiveConfig,
   clearConfigById,
+  updateConfigById,
 } from '../../Controller/secureConfig';
 import AlertModal from '../../components/Alert/AlertModal';
+import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
+
+const {height, width} = Dimensions.get('window');
+
+const wp = percentage => (width * percentage) / 100;
+const hp = percentage => (height * percentage) / 100;
 
 const ConfigSelectionScreen = () => {
   const navigation = useNavigation();
@@ -31,10 +42,51 @@ const ConfigSelectionScreen = () => {
   const [activeConfigId, setActiveConfigId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alertModal, setAlertModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [selectedRecId, setSelectedRecId] = useState(null);
+  const [selectedRecName, setSelectedRecName] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingConfig, setEditingConfig] = useState(null);
+  const [editedTitle, setEditedTitle] = useState('');
 
-  // Load configurations when screen focuses
+  // Extract title from resource URL
+  const extractTitle = configOrUrl => {
+    try {
+      const resource =
+        typeof configOrUrl === 'string'
+          ? configOrUrl
+          : configOrUrl?.resource || '';
+
+      if (!resource) return 'Unknown Configuration';
+
+      let withoutProtocol = resource.replace(/(^\w+:|^)\/\//, '');
+      const hostname = withoutProtocol.split('/')[0];
+      const firstPart = hostname.split('.')[0];
+      const hyphenParts = firstPart.split('-');
+
+      if (hyphenParts.length >= 2) {
+        return `${hyphenParts[0]}-${hyphenParts[1]}`;
+      }
+
+      return firstPart || 'Unknown Configuration';
+    } catch (err) {
+      console.error('extractTitle parsing error:', err);
+      return 'Unknown Configuration';
+    }
+  };
+
+  // Format configuration data for display
+  const formatConfigData = configData => {
+    return {
+      environment: extractTitle(configData),
+      clientId: configData.client_id?.substring(0, 8) + '...' || 'N/A',
+      grantType: configData.grant_type || 'N/A',
+      resourceUrl: configData.resource || 'N/A',
+    };
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadConfigurations();
@@ -47,7 +99,14 @@ const ConfigSelectionScreen = () => {
       const allConfigs = await getAllConfigs();
       const activeId = await getActiveConfig();
 
-      setConfigs(allConfigs);
+      // Enhance configs with extracted titles
+      const enhancedConfigs = allConfigs.map(config => ({
+        ...config,
+        displayTitle: config.customTitle || extractTitle(config.data),
+        formattedData: formatConfigData(config.data),
+      }));
+
+      setConfigs(enhancedConfigs);
       setActiveConfigId(activeId);
     } catch (error) {
       console.error('Error loading configurations:', error);
@@ -76,13 +135,12 @@ const ConfigSelectionScreen = () => {
       await setActiveConfig(configId);
       setActiveConfigId(configId);
 
-      // Also save the selected config as the main config for backward compatibility
       const selectedConfig = configs.find(config => config.id === configId);
       if (selectedConfig) {
         await saveConfig(selectedConfig.data);
       }
 
-      setAlertMessage('Configuration selected successfully!');
+      setAlertMessage('Configuration activated successfully!');
       setAlertModal(true);
     } catch (error) {
       console.error('Error selecting configuration:', error);
@@ -91,37 +149,50 @@ const ConfigSelectionScreen = () => {
     }
   };
 
+  const handleEditTitle = config => {
+    setEditingConfig(config);
+    setEditedTitle(config.customTitle || config.displayTitle);
+    setEditModalVisible(true);
+  };
+
+  const saveEditedTitle = async () => {
+    try {
+      const updatedConfig = {
+        ...editingConfig,
+        name: editedTitle,
+        customTitle: editedTitle,
+        data: editingConfig.data,
+      };
+
+      await updateConfigById(editingConfig.id, updatedConfig);
+
+      setEditModalVisible(false);
+      await loadConfigurations();
+
+      setAlertMessage('Title updated successfully!');
+      setAlertModal(true);
+    } catch (error) {
+      console.error('Error updating title:', error);
+      setAlertMessage('Failed to update title. Please try again.');
+      setAlertModal(true);
+    }
+  };
+
   const handleDeleteConfiguration = (configId, configName) => {
-    Alert.alert(
-      'Delete Configuration',
-      `Are you sure you want to delete "${configName}"?`,
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteConfiguration(configId),
-        },
-      ],
-    );
+    setSelectedRecId(configId);
+    setSelectedRecName(configName);
+    setDeleteModal(true);
   };
 
   const deleteConfiguration = async configId => {
     try {
-      // If deleting the active config, clear the active config
       if (configId === activeConfigId) {
         await setActiveConfig(null);
-        await clearConfig(); // Clear main config too
+        await clearConfig();
         setActiveConfigId(null);
       }
 
-      // Remove from keychain (you'll need to implement this in secureConfig.js)
       await clearConfigById(configId);
-
-      // Reload configurations
       await loadConfigurations();
 
       setAlertMessage('Configuration deleted successfully!');
@@ -137,62 +208,163 @@ const ConfigSelectionScreen = () => {
     const isActive = item.id === activeConfigId;
 
     return (
-      <View style={[styles.configItem, isActive && styles.activeConfigItem]}>
-        <TouchableOpacity
-          style={styles.configContent}
-          onPress={() => handleSelectConfiguration(item.id)}>
-          <View style={styles.configInfo}>
-            <Text
-              style={[styles.configName, isActive && styles.activeConfigText]}>
-              {item.name}
-            </Text>
-            <Text
+      <TouchableOpacity
+        style={[styles.configCard, isActive && styles.activeConfigCard]}
+        onPress={() => handleSelectConfiguration(item.id)}
+        activeOpacity={0.7}>
+        {/* Active Badge */}
+        {isActive && (
+          <View style={styles.activeBadge}>
+            <Icon name="check-circle" size={16} color="#fff" />
+            <Text style={styles.activeBadgeText}>ACTIVE</Text>
+          </View>
+        )}
+
+        {/* Card Header */}
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <View
               style={[
-                styles.configDate,
-                isActive && styles.activeConfigSubText,
+                styles.iconContainer,
+                isActive && styles.activeIconContainer,
               ]}>
-              Added: {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
-            {item.data.serverUrl && (
+              <Icon
+                name="server"
+                size={20}
+                color={isActive ? '#fff' : '#0A66C2'}
+              />
+            </View>
+            <View style={styles.cardHeaderText}>
+              <Text style={[styles.configTitle, isActive && styles.activeText]}>
+                {item.displayTitle}
+              </Text>
               <Text
                 style={[
-                  styles.configUrl,
-                  isActive && styles.activeConfigSubText,
-                ]}
-                numberOfLines={1}>
-                {item.data.serverUrl}
+                  styles.configSubtitle,
+                  isActive && styles.activeSubText,
+                ]}>
+                Added{' '}
+                {new Date(item.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
               </Text>
-            )}
+            </View>
           </View>
 
-          {isActive && (
-            <View style={styles.activeIndicator}>
-              <Icon name="check-circle" size={20} color="#0A66C2" />
-            </View>
-          )}
-        </TouchableOpacity>
+          <View style={styles.cardActions}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => handleEditTitle(item)}>
+              <Icon
+                name="edit"
+                size={18}
+                color={isActive ? '#0A66C2' : '#666'}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() =>
+                handleDeleteConfiguration(item.id, item.displayTitle)
+              }>
+              <Icon name="trash" size={18} color="#dc3545" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteConfiguration(item.id, item.name)}>
-          <Icon name="trash" size={16} color="#dc3545" />
-        </TouchableOpacity>
-      </View>
+        {/* Card Details */}
+        <View style={styles.cardDetails}>
+          <View style={styles.detailRow}>
+            <Icon
+              name="globe"
+              size={14}
+              color="#666"
+              style={styles.detailIcon}
+            />
+            <Text style={styles.detailLabel}>Environment:</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                isActive && styles.activeDetailValue,
+              ]}>
+              {item.formattedData.environment}
+            </Text>
+          </View>
+
+          {/* <View style={styles.detailRow}>
+            <Icon name="key" size={14} color="#666" style={styles.detailIcon} />
+            <Text style={styles.detailLabel}>Client ID:</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                isActive && styles.activeDetailValue,
+              ]}>
+              {item.formattedData.clientId}
+            </Text>
+          </View> */}
+
+          {/* <View style={styles.detailRow}>
+            <Icon
+              name="shield"
+              size={14}
+              color="#666"
+              style={styles.detailIcon}
+            />
+            <Text style={styles.detailLabel}>Grant Type:</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                isActive && styles.activeDetailValue,
+              ]}>
+              {item.formattedData.grantType}
+            </Text>
+          </View> */}
+
+          <View style={styles.detailRow}>
+            <Icon
+              name="link"
+              size={14}
+              color="#666"
+              style={styles.detailIcon}
+            />
+            <Text style={styles.detailLabel}>Resource:</Text>
+            <Text
+              style={[
+                styles.detailValue,
+                styles.urlValue,
+                isActive && styles.activeDetailValue,
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="middle">
+              {item.formattedData.resourceUrl}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
   };
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Icon name="qrcode" size={60} color="#ccc" />
-      <Text style={styles.emptyStateTitle}>No Configurations Found</Text>
+      <View style={styles.emptyIconContainer}>
+        <Icon name="qrcode" size={70} color="#0A66C2" />
+      </View>
+      <Text style={styles.emptyStateTitle}>No Configurations Yet</Text>
       <Text style={styles.emptyStateSubtitle}>
-        Add your first configuration by scanning a QR code
+        Get started by scanning a QR code to add your first configuration
       </Text>
       <TouchableOpacity
-        style={styles.emptyStateButton}
-        onPress={handleAddConfiguration}>
-        <Icon name="plus" size={16} color="#fff" style={{marginRight: 8}} />
-        <Text style={styles.emptyStateButtonText}>Add Configuration</Text>
+        style={styles.primaryButton}
+        onPress={handleAddConfiguration}
+        activeOpacity={0.8}>
+        <Icon
+          name="plus-circle"
+          size={20}
+          color="#fff"
+          style={styles.buttonIcon}
+        />
+        <Text style={styles.primaryButtonText}>Add Configuration</Text>
       </TouchableOpacity>
     </View>
   );
@@ -202,21 +374,26 @@ const ConfigSelectionScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.headerButton}
           onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={20} color="#0A66C2" />
+          <Icon name="arrow-left" size={22} color="#0A66C2" />
         </TouchableOpacity>
 
-        <Text style={styles.title}>Select Configuration</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Configurations</Text>
+          <Text style={styles.headerSubtitle}>
+            {configs.length} {configs.length === 1 ? 'Config' : 'Configs'}
+          </Text>
+        </View>
 
         <TouchableOpacity
-          style={styles.addButton}
+          style={styles.headerButton}
           onPress={handleAddConfiguration}>
-          <Icon name="plus" size={20} color="#0A66C2" />
+          <Icon name="plus" size={22} color="#0A66C2" />
         </TouchableOpacity>
       </View>
 
-      {/* Configuration List */}
+      {/* Content */}
       <View style={styles.content}>
         {configs.length > 0 ? (
           <FlatList
@@ -225,9 +402,15 @@ const ConfigSelectionScreen = () => {
             renderItem={renderConfigItem}
             contentContainerStyle={styles.listContainer}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#0A66C2']}
+                tintColor="#0A66C2"
+              />
             }
             ItemSeparatorComponent={() => <View style={styles.separator} />}
+            showsVerticalScrollIndicator={false}
           />
         ) : (
           !loading && renderEmptyState()
@@ -235,24 +418,80 @@ const ConfigSelectionScreen = () => {
 
         {loading && (
           <View style={styles.loadingContainer}>
+            <View style={styles.loadingSpinner}>
+              <Icon name="spinner" size={40} color="#0A66C2" />
+            </View>
             <Text style={styles.loadingText}>Loading configurations...</Text>
           </View>
         )}
       </View>
 
-      {/* Footer Info */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Select a configuration to use for login, or add a new one by scanning
-          a QR code.
-        </Text>
-      </View>
+      {/* Edit Modal */}
+      <Modal
+        visible={editModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setEditModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Configuration Title</Text>
+              <TouchableOpacity
+                onPress={() => setEditModalVisible(false)}
+                style={styles.modalCloseButton}>
+                <Icon name="times" size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Title</Text>
+              <TextInput
+                style={styles.input}
+                value={editedTitle}
+                onChangeText={setEditedTitle}
+                placeholder="Enter configuration title"
+                placeholderTextColor="#999"
+              />
+            </View>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => setEditModalVisible(false)}>
+                <Text style={styles.secondaryButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.primaryButtonModal}
+                onPress={saveEditedTitle}>
+                <Icon
+                  name="check"
+                  size={16}
+                  color="#fff"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.primaryButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <AlertModal
         visible={alertModal}
         heading="Configuration"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
+      />
+
+      <AlertDeleteModal
+        visible={deleteModal}
+        heading="Confirm Deletion"
+        text={`Are you sure you want to delete "${selectedRecName}"?`}
+        onPress={() => {
+          deleteConfiguration(selectedRecId);
+          setDeleteModal(false);
+        }}
+        onCancel={() => setDeleteModal(false)}
       />
     </View>
   );
@@ -261,100 +500,177 @@ const ConfigSelectionScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f7fa',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     paddingTop: 20,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e6e6e6',
+    borderBottomColor: '#e8eaed',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
   },
-  backButton: {
-    padding: 8,
+  headerButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+    backgroundColor: '#f0f8ff',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+  headerCenter: {
     flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 16,
+    alignItems: 'center',
   },
-  addButton: {
-    padding: 8,
-    backgroundColor: '#f8f9fa',
-    // borderRadius: 20,
-    // borderWidth: 1,
-    // borderColor: '#0A66C2',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   content: {
     flex: 1,
   },
   listContainer: {
     padding: 16,
+    paddingBottom: 32,
   },
-  configItem: {
+  configCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e6e6e6',
+    borderWidth: 2,
+    borderColor: '#e8eaed',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  activeConfigItem: {
+  activeConfigCard: {
     borderColor: '#0A66C2',
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#f8fbff',
   },
-  configContent: {
-    flex: 1,
+  activeBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#0A66C2',
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
-  configInfo: {
+  activeBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  configName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  activeIconContainer: {
+    backgroundColor: '#0A66C2',
+  },
+  cardHeaderText: {
+    flex: 1,
+  },
+  configTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a1a',
     marginBottom: 4,
   },
-  configDate: {
+  configSubtitle: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 2,
   },
-  configUrl: {
+  activeText: {
+    color: '#0A66C2',
+  },
+  activeSubText: {
+    color: '#0A66C2',
+    opacity: 0.8,
+  },
+  cardActions: {
+    marginTop: height * 0.035,
+    flexDirection: 'row',
+    gap: width * 0.02,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#f5f7fa',
+  },
+  cardDetails: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailIcon: {
+    marginRight: 8,
+    width: 16,
+  },
+  detailLabel: {
     fontSize: 12,
-    color: '#888',
-    fontStyle: 'italic',
+    color: '#666',
+    fontWeight: '600',
+    width: 90,
   },
-  activeConfigText: {
+  detailValue: {
+    fontSize: 12,
+    color: '#1a1a1a',
+    flex: 1,
+    fontWeight: '500',
+  },
+  activeDetailValue: {
     color: '#0A66C2',
   },
-  activeConfigSubText: {
-    color: '#0A66C2',
-    opacity: 0.7,
-  },
-  activeIndicator: {
-    marginLeft: 12,
-  },
-  deleteButton: {
-    padding: 8,
-    marginLeft: 8,
+  urlValue: {
+    fontFamily: 'monospace',
   },
   separator: {
-    height: 12,
+    height: 16,
   },
   emptyState: {
     flex: 1,
@@ -362,53 +678,146 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 40,
   },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
+  emptyIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 24,
   },
-  emptyStateButton: {
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  emptyStateSubtitle: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+    paddingHorizontal: 20,
+  },
+  primaryButton: {
     backgroundColor: '#0A66C2',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  emptyStateButtonText: {
+  buttonIcon: {
+    marginRight: 8,
+  },
+  primaryButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingSpinner: {
+    marginBottom: 16,
+  },
   loadingText: {
     fontSize: 16,
     color: '#666',
+    fontWeight: '500',
   },
-  footer: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f9fa',
-    borderTopWidth: 1,
-    borderTopColor: '#e6e6e6',
   },
-  footerText: {
-    fontSize: 12,
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e8eaed',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+    backgroundColor: '#f5f7fa',
+  },
+  modalBody: {
+    padding: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: '#e8eaed',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    color: '#1a1a1a',
+    backgroundColor: '#f8f9fa',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e8eaed',
+  },
+  secondaryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#f5f7fa',
+  },
+  secondaryButtonText: {
     color: '#666',
-    textAlign: 'center',
-    lineHeight: 16,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  primaryButtonModal: {
+    backgroundColor: '#0A66C2',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

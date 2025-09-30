@@ -29,6 +29,47 @@ export async function clearConfig() {
   await Keychain.resetGenericPassword({service: CONFIG_SERVICE});
 }
 
+// Update existing config instead of creating new one
+export async function updateConfigById(configId, updatedConfig) {
+  try {
+    // Get current list
+    const configsList = await getConfigsList();
+    const index = configsList.findIndex(c => c.id === configId);
+
+    if (index === -1) {
+      throw new Error(`Config with ID ${configId} not found`);
+    }
+
+    // Update the list entry (shown in ConfigSelectionScreen)
+    configsList[index].name =
+      updatedConfig.name ||
+      updatedConfig.customTitle ||
+      configsList[index].name;
+
+    await saveConfigsList(configsList);
+
+    // Save full updated config object
+    const finalConfig = {
+      ...updatedConfig,
+      id: configId,
+      createdAt: configsList[index].createdAt, // preserve createdAt
+    };
+
+    await Keychain.setGenericPassword(
+      `config_${configId}`,
+      JSON.stringify(finalConfig),
+      {
+        service: `${CONFIG_SERVICE}_${configId}`,
+      },
+    );
+
+    return true;
+  } catch (error) {
+    console.error('Error updating config:', error);
+    throw error;
+  }
+}
+
 // New functions for multiple configurations
 export async function saveConfigWithId(config, customName = null) {
   try {
