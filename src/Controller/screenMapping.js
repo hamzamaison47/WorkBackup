@@ -8,6 +8,7 @@ import EntitlementBalance from '../screens/EntitlementBalance/EntitlementBalance
 import GenericAdvanceListScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceListScreen';
 import GenericAdvanceSaveScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceSaveScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
+import AttendanceDetailsScreen from '../screens/Attendance/AttendanceDetailsScreen';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -20,6 +21,7 @@ export const screenMapping = {
   GenericAdvanceListScreen: GenericAdvanceListScreen,
   GenericAdvanceSaveScreen: GenericAdvanceSaveScreen,
   CreateAttendanceScreen: CreateAttendanceScreen,
+  AttendanceDetailsScreen: AttendanceDetailsScreen,
 };
 
 // Map Images → Screen component
@@ -33,4 +35,5 @@ export const iconMapping = {
   GenericAdvanceListScreen: require('../assets/Maindashboard/signing.png'),
   GenericAdvanceSaveScreen: require('../assets/Maindashboard/loan-approved.png'),
   CreateAttendanceScreen: require('../assets/Maindashboard/attendance.png'),
+  AttendanceDetailsScreen: require('../assets/calendar.png'),
 };

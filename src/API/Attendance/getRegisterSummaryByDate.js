@@ -5,7 +5,7 @@ import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
+const getRegisterSummaryByDate = async ({employeeId, fromDate, toDate}) => {
   try {
     const config = await getActiveConfigData();
     if (!config || !config.resource) {
@@ -14,7 +14,7 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
 
     const token = await getToken();
 
-    // ✅ SOAP Body
+    // ✅ SOAP Body (your working JSON converted)
     const soapBody = `
       <getRegisterSummaryByDate xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
@@ -22,7 +22,10 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
         <toDate>${toDate}</toDate>
       </getRegisterSummaryByDate>`;
 
+    // Wrap with your helper
     const soapEnvelope = createSoapEnvelope(soapBody);
+
+    console.log('soapEnvelope=-=-=-==-=-=-', soapEnvelope);
 
     // ✅ SOAP Request
     const {data: xml} = await axios.post(
@@ -38,6 +41,7 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
         responseType: 'text',
       },
     );
+    console.log('xml=-=-=-==-=-=-', xml);
 
     // ✅ Parse XML
     const parser = new XMLParser({
@@ -50,18 +54,22 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
 
     const parsed = parser.parse(xml);
 
-    // ✅ Navigate to result
+    console.log('parsed=-=-=-==-=-=-', parsed);
+
+    // ✅ Navigate to result node
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.[
         'getRegisterSummaryByDateResponse'
       ]?.['result']?.['a:TASAttendanceRegisterSvcContract'];
 
+    console.log('rawData=-=-=-==-=-=-', rawData);
+
     if (!rawData) {
-      console.log('⚠️ No register details found in SOAP response');
+      console.log('⚠️ No register summary found in SOAP response');
       return [];
     }
 
-    // ✅ Clean namespaces like "a:"
+    // ✅ Remove namespace prefixes like "a:"
     const cleanObject = obj =>
       Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
@@ -78,11 +86,11 @@ const GetRegisterDetails = async ({employeeId, fromDate, toDate}) => {
     return cleanedData;
   } catch (err) {
     console.error(
-      '❌ GetRegisterDetails SOAP error:',
+      '❌ getRegisterSummaryByDate SOAP error:',
       err.response?.data || err.message,
     );
     throw err;
   }
 };
 
-export {GetRegisterDetails};
+export {getRegisterSummaryByDate};

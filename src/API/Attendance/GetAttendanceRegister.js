@@ -25,7 +25,7 @@ const GetAttendanceRegister = async ({employeeId, attendanceDate}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log('0-0-0-0-0-0-0-0-0-', soapEnvelope);
+    // console.log('0-0-0-0-0-0-0-0-0-', soapEnvelope);
 
     // ✅ SOAP Request
     const {data: xml} = await axios.post(
