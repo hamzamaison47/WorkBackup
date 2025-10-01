@@ -27,6 +27,8 @@ const CreateAttendance = async ({employeeId, punchDateTime}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    console.log('CreateAttendance soapEnvelope-0-0-0-0-0-0-', soapEnvelope);
+
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/TASEmployeeTimeLogSVCGroup`,
       soapEnvelope,
