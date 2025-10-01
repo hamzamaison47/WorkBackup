@@ -25,8 +25,6 @@ const getRegisterSummaryByDate = async ({employeeId, fromDate, toDate}) => {
     // Wrap with your helper
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log('soapEnvelope=-=-=-==-=-=-', soapEnvelope);
-
     // ✅ SOAP Request
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/TASAttendanceRegisterSvcGroup`,
@@ -41,7 +39,6 @@ const getRegisterSummaryByDate = async ({employeeId, fromDate, toDate}) => {
         responseType: 'text',
       },
     );
-    console.log('xml=-=-=-==-=-=-', xml);
 
     // ✅ Parse XML
     const parser = new XMLParser({
@@ -54,15 +51,11 @@ const getRegisterSummaryByDate = async ({employeeId, fromDate, toDate}) => {
 
     const parsed = parser.parse(xml);
 
-    console.log('parsed=-=-=-==-=-=-', parsed);
-
     // ✅ Navigate to result node
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.[
         'getRegisterSummaryByDateResponse'
       ]?.['result']?.['a:TASAttendanceRegisterSvcContract'];
-
-    console.log('rawData=-=-=-==-=-=-', rawData);
 
     if (!rawData) {
       console.log('⚠️ No register summary found in SOAP response');

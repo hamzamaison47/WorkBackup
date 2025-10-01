@@ -5,12 +5,6 @@ import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-/**
- * Calls DFgpsCoordinatesSVC.getGPSCoordinates and returns:
- *   [{ latitude: number, longitude: number, radius: number }, ...]
- *
- * NOTE: No auto-corrections are applied. Values are used exactly as sent by D365.
- */
 const GetGPSCoordinates = async () => {
   try {
     const config = await getActiveConfigData();

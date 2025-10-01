@@ -25,8 +25,6 @@ const GetAttendanceRegister = async ({employeeId, attendanceDate}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    // console.log('0-0-0-0-0-0-0-0-0-', soapEnvelope);
-
     // ✅ SOAP Request
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/TASAttendanceRegisterSvcGroup`,

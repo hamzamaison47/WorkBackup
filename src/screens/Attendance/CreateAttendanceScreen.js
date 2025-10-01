@@ -539,16 +539,11 @@ const CreateAttendanceScreen = () => {
         return;
       }
 
-      const today = new Date().toISOString();
-
       const payload = {
         employeeId: userData?.employeeId,
-        // punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss'),
-        punchDateTime: today,
+        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
         location: `${latitude},${longitude} (±${Math.round(accuracy)}m)`,
       };
-
-      console.log('payload-0-0-0-0-0-0-', payload);
 
       const response = await CreateAttendance(payload);
       if (response?.isSuccess || response === true) {
