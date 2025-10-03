@@ -17,15 +17,12 @@ import Geolocation from '@react-native-community/geolocation';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
 import {CreateAttendance} from '../../API/Attendance/CreateAttendance';
 import {GetAttendanceRegister} from '../../API/Attendance/GetAttendanceRegister';
 import {getRegisterSummaryColorByDate} from '../../API/Attendance/getRegisterSummaryColorByDate';
 import {GetGPSCoordinates} from '../../API/Attendance/GetGPSCoordinates';
-
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
-
 import {
   AttendanceButton,
   InfoItem,
@@ -33,7 +30,7 @@ import {
 } from '../../components/Attendance/AttendanceComponents';
 
 // Screen sizing
-const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
 const CreateAttendanceScreen = () => {
@@ -60,9 +57,9 @@ const CreateAttendanceScreen = () => {
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [earlyOutCount, setEarlyOutCount] = useState(0);
-  const [overviewColor, setOverviewColor] = useState('#00FF00'); // default
+  const [overviewColor, setOverviewColor] = useState('#00FF00');
 
-  // ===== Summary-screen counts (DEPEND on selectedMonth)
+  // ===== Summary counts (DEPEND on selected month)
   const [summaryPresentCount, setSummaryPresentCount] = useState(0);
   const [summaryAbsentCount, setSummaryAbsentCount] = useState(0);
   const [summaryLateCount, setSummaryLateCount] = useState(0);
@@ -71,11 +68,28 @@ const CreateAttendanceScreen = () => {
   const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
   const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
   const [summaryErrorCount, setSummaryErrorCount] = useState(0);
-  const [summaryColor, setSummaryColor] = useState('#00FF00'); // default
+  const [summaryColor, setSummaryColor] = useState('#00FF00');
 
-  // Month + view
-  const [selectedMonth, setSelectedMonth] = useState(moment()); // summary screen only
+  // Month & View
   const [activeTab, setActiveTab] = useState('home');
+  // Store month as primitives so refresh never "snaps back" to today
+  const [selectedMonthYM, setSelectedMonthYM] = useState({
+    year: moment().year(),
+    monthIndex: moment().month(), // 0..11
+  });
+
+  // Helper: derive range/label from selectedMonthYM
+  const getSelectedRange = useCallback(() => {
+    const m = moment()
+      .year(selectedMonthYM.year)
+      .month(selectedMonthYM.monthIndex);
+    return {
+      fromDate: m.clone().startOf('month').format('YYYY-MM-DD'),
+      toDate: m.clone().endOf('month').format('YYYY-MM-DD'),
+      label: m.clone().format('MMMM YYYY'),
+      key: m.clone().format('YYYY-MM'),
+    };
+  }, [selectedMonthYM]);
 
   const {userData} = useSelector(state => state.user || {});
 
@@ -83,31 +97,8 @@ const CreateAttendanceScreen = () => {
   const lastCoordsRef = useRef(null);
   const watchIdRef = useRef(null);
 
-  // ===== Geofences
-  // eslint-disable-next-line no-unused-vars
-  const [sites, setSites] = useState([]);
-
   // Pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = useCallback(async () => {
-    try {
-      setRefreshing(true);
-      if (activeTab === 'home') {
-        await Promise.all([fetchAttendanceRegister(), fetchOverviewSummary()]);
-      } else {
-        await fetchMonthlySummary();
-      }
-      await fetchSites();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [
-    activeTab,
-    fetchAttendanceRegister,
-    fetchMonthlySummary,
-    fetchOverviewSummary,
-    fetchSites,
-  ]);
 
   // Clock tick
   useEffect(() => {
@@ -187,7 +178,6 @@ const CreateAttendanceScreen = () => {
     try {
       const fromDate = moment().startOf('month').format('YYYY-MM-DD');
       const toDate = moment().endOf('month').format('YYYY-MM-DD');
-
       const summary = await getRegisterSummaryColorByDate({
         employeeId: userData.employeeId,
         fromDate,
@@ -213,16 +203,12 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId]);
 
-  // Monthly summary (selectedMonth)
+  // Monthly summary (selected month)
   const fetchMonthlySummary = useCallback(async () => {
     if (!userData?.employeeId) return;
     try {
       setLoadingSummary(true);
-      const fromDate = moment(selectedMonth)
-        .startOf('month')
-        .format('YYYY-MM-DD');
-      const toDate = moment(selectedMonth).endOf('month').format('YYYY-MM-DD');
-
+      const {fromDate, toDate} = getSelectedRange();
       const summary = await getRegisterSummaryColorByDate({
         employeeId: userData.employeeId,
         fromDate,
@@ -256,15 +242,15 @@ const CreateAttendanceScreen = () => {
     } finally {
       setLoadingSummary(false);
     }
-  }, [userData?.employeeId, selectedMonth]);
+  }, [userData?.employeeId, getSelectedRange]);
 
   // Geofences
   const fetchSites = useCallback(async () => {
     try {
-      const list = await GetGPSCoordinates();
-      setSites(Array.isArray(list) ? list : []);
+      await GetGPSCoordinates();
+      // We don't need to store sites as it's only used in handleAttendance
     } catch {
-      setSites([]);
+      // ignore
     }
   }, []);
 
@@ -275,7 +261,7 @@ const CreateAttendanceScreen = () => {
     fetchSites();
   }, [fetchAttendanceRegister, fetchOverviewSummary, fetchSites]);
 
-  // Reload summary when month changes
+  // Reload summary when month changes or when entering summary tab
   useEffect(() => {
     if (activeTab === 'summary') {
       fetchMonthlySummary();
@@ -345,7 +331,6 @@ const CreateAttendanceScreen = () => {
         },
       );
       watchIdRef.current = id;
-
       setTimeout(() => {
         if (watchIdRef.current != null) {
           Geolocation.clearWatch(watchIdRef.current);
@@ -367,7 +352,6 @@ const CreateAttendanceScreen = () => {
       }
       startWarmWatch();
     })();
-
     return () => {
       if (watchIdRef.current != null) {
         Geolocation.clearWatch(watchIdRef.current);
@@ -428,15 +412,13 @@ const CreateAttendanceScreen = () => {
         const lat1 = Number(p.latitude);
         const lon1 = Number(p.longitude);
         if (!Number.isFinite(lat1) || !Number.isFinite(lon1)) continue;
-
+        // try normal vs swapped (in case data has lat/lon swapped)
         const dNormal = calculateDistance(userLat, userLon, lat1, lon1);
         const dSwapped = calculateDistance(userLat, userLon, lon1, lat1);
-
         const useSwap = dSwapped < dNormal;
         const chosenLat = useSwap ? lon1 : lat1;
         const chosenLon = useSwap ? lat1 : lon1;
         const d = useSwap ? dSwapped : dNormal;
-
         if (!best || d < best.distance) {
           best = {
             latitude: chosenLat,
@@ -446,7 +428,6 @@ const CreateAttendanceScreen = () => {
           };
         }
       }
-
       if (!best) return null;
       const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
       const effectiveDistance = Math.max(
@@ -495,6 +476,7 @@ const CreateAttendanceScreen = () => {
               PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
             )
           : true;
+
       if (!hasFine && !hasCoarse) {
         const ok = await requestLocationPermission();
         if (!ok) {
@@ -510,14 +492,15 @@ const CreateAttendanceScreen = () => {
       if (!coords?.latitude || !coords?.longitude) {
         throw new Error('Invalid location from device');
       }
-      const {latitude, longitude, accuracy = 9999} = coords;
 
+      const {latitude, longitude, accuracy = 9999} = coords;
       const nearest = nearestWithEffective(
         latitude,
         longitude,
         accuracy,
         freshSites,
       );
+
       if (!nearest) {
         setAlertMessage('Unable to evaluate geofence. Please try again.');
         setAlertModal(true);
@@ -537,7 +520,8 @@ const CreateAttendanceScreen = () => {
 
       const payload = {
         employeeId: userData?.employeeId,
-        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'), // keep 24h ISO with literal Z
+        // 24h ISO with literal Z (server expects this from your earlier tests)
+        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
         location: `${latitude},${longitude} (±${Math.round(accuracy)}m)`,
       };
 
@@ -566,16 +550,35 @@ const CreateAttendanceScreen = () => {
     nearestWithEffective,
   ]);
 
-  // ====== RENDER ======
+  // Pull-to-refresh - FIXED VERSION
+  const onRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true);
+      if (activeTab === 'home') {
+        await Promise.all([fetchAttendanceRegister(), fetchOverviewSummary()]);
+      } else {
+        await fetchMonthlySummary(); // respects selectedMonthYM
+      }
+      await fetchSites();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [
+    activeTab,
+    fetchAttendanceRegister,
+    fetchOverviewSummary,
+    fetchMonthlySummary,
+    fetchSites,
+  ]);
+
+  /* ========================= RENDER ========================= */
   const renderHomeScreen = () => (
     <View style={styles.homeRoot}>
-      {/* top section: time/date */}
+      {/* time/date */}
       <View style={styles.timeContainer}>
         <Text numberOfLines={1} adjustsFontSizeToFit style={styles.timeText}>
           {currentTime.format('hh:mm:ss A')}
         </Text>
-
-        {/* lifted slightly with extra bottom space so it doesn't touch next card */}
         <Text numberOfLines={1} adjustsFontSizeToFit style={styles.dateText}>
           {currentTime.format('dddd, MMM D, YYYY')}
         </Text>
@@ -603,7 +606,7 @@ const CreateAttendanceScreen = () => {
         />
       </View>
 
-      {/* Centered button */}
+      {/* centered button */}
       <View style={styles.centeredButtonContainer}>
         <AttendanceButton
           onPress={handleAttendance}
@@ -616,12 +619,8 @@ const CreateAttendanceScreen = () => {
         ) : null}
       </View>
 
-      {/* Month overview (ONLY 4 items now) */}
-      <View
-        style={[
-          styles.quickSummaryCard,
-          // {borderLeftColor: overviewColor, borderLeftWidth: 4},
-        ]}>
+      {/* month overview */}
+      <View style={styles.quickSummaryCard}>
         <View style={styles.quickSummaryHeaderRow}>
           <Text style={styles.quickSummaryTitle}>This Month Overview</Text>
           <TouchableOpacity
@@ -632,7 +631,6 @@ const CreateAttendanceScreen = () => {
             <Icon name="chevron-right" size={18} color="#1E88E5" />
           </TouchableOpacity>
         </View>
-
         <View style={styles.quickSummaryRow}>
           <View className="item" style={styles.quickSummaryItem}>
             <Text style={[styles.quickSummaryValue, {color: '#4CAF50'}]}>
@@ -659,119 +657,113 @@ const CreateAttendanceScreen = () => {
             <Text style={styles.quickSummaryLabel}>Early Out</Text>
           </View>
         </View>
-        {/* Removed: Leave / Off Day / Gazetted / Errors row (now only on Summary screen) */}
       </View>
     </View>
   );
 
-  const renderMonthlySummary = () => (
-    <View style={styles.summaryRoot}>
-      {/* back */}
-      <View style={styles.topRow}>
-        <TouchableOpacity
-          onPress={() => setActiveTab('home')}
-          style={styles.backBtn}
-          activeOpacity={0.8}>
-          <Icon name="chevron-left" size={20} color="#1E88E5" />
-          <Text style={styles.backBtnText}>Overview</Text>
-        </TouchableOpacity>
+  const renderMonthlySummary = () => {
+    const keyForMonth = getSelectedRange().key; // force fresh layout per month
+    return (
+      <View key={keyForMonth} style={styles.summaryRoot}>
+        {/* back */}
+        <View style={styles.topRow}>
+          <TouchableOpacity
+            onPress={() => setActiveTab('home')}
+            style={styles.backBtn}
+            activeOpacity={0.8}>
+            <Icon name="chevron-left" size={20} color="#1E88E5" />
+            <Text style={styles.backBtnText}>Overview</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* month selector */}
+        <View style={styles.monthSelector}>
+          <TouchableOpacity
+            onPress={() =>
+              setSelectedMonthYM(prev => {
+                const m = moment()
+                  .year(prev.year)
+                  .month(prev.monthIndex)
+                  .subtract(1, 'month');
+                return {year: m.year(), monthIndex: m.month()};
+              })
+            }>
+            <Icon name="chevron-left" size={28} color="#1E88E5" />
+          </TouchableOpacity>
+          <Text numberOfLines={1} adjustsFontSizeToFit style={styles.monthText}>
+            {getSelectedRange().label}
+          </Text>
+          <TouchableOpacity
+            onPress={() =>
+              setSelectedMonthYM(prev => {
+                const m = moment()
+                  .year(prev.year)
+                  .month(prev.monthIndex)
+                  .add(1, 'month');
+                return {year: m.year(), monthIndex: m.month()};
+              })
+            }>
+            <Icon name="chevron-right" size={28} color="#1E88E5" />
+          </TouchableOpacity>
+        </View>
+
+        {/* summary card */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryCardTitle}>Attendance Summary</Text>
+          {loadingSummary ? (
+            <ActivityIndicator
+              size="large"
+              color="#1E88E5"
+              style={styles.loader}
+            />
+          ) : (
+            <View style={styles.summaryList}>
+              <SummaryItem
+                label="Present Days"
+                value={String(summaryPresentCount)}
+                color="#4CAF50"
+              />
+              <SummaryItem
+                label="Absent Days"
+                value={String(summaryAbsentCount)}
+                color="#F44336"
+              />
+              <SummaryItem
+                label="Late Arrivals"
+                value={String(summaryLateCount)}
+                color="#FF9800"
+              />
+              <SummaryItem
+                label="Early Outs"
+                value={String(summaryEarlyOutCount)}
+                color="#9C27B0"
+              />
+              <SummaryItem
+                label="Leave Days"
+                value={String(summaryLeaveCount)}
+                color="#2196F3"
+              />
+              <SummaryItem
+                label="Off Days"
+                value={String(summaryOffDayCount)}
+                color="#FFB6C1"
+              />
+              <SummaryItem
+                label="Gazetted Days"
+                value={String(summaryGazettedDayCount)}
+                color="#FF69B4"
+              />
+              <SummaryItem
+                label="Error Days"
+                value={String(summaryErrorCount)}
+                color="#FFA500"
+              />
+            </View>
+          )}
+        </View>
       </View>
-
-      {/* month selector */}
-      <View style={styles.monthSelector}>
-        <TouchableOpacity
-          onPress={() =>
-            setSelectedMonth(moment(selectedMonth).subtract(1, 'month'))
-          }>
-          <Icon name="chevron-left" size={28} color="#1E88E5" />
-        </TouchableOpacity>
-
-        <Text numberOfLines={1} adjustsFontSizeToFit style={styles.monthText}>
-          {moment(selectedMonth).format('MMMM YYYY')}
-        </Text>
-
-        <TouchableOpacity
-          onPress={() =>
-            setSelectedMonth(moment(selectedMonth).add(1, 'month'))
-          }>
-          <Icon name="chevron-right" size={28} color="#1E88E5" />
-        </TouchableOpacity>
-      </View>
-
-      {/* summary card (added vertical gap above via monthSelector marginBottom & card marginTop) */}
-      <View
-        style={[
-          styles.summaryCard,
-          // {borderLeftColor: summaryColor, borderLeftWidth: 4},
-        ]}>
-        <Text style={styles.summaryCardTitle}>Attendance Summary</Text>
-
-        {loadingSummary ? (
-          <ActivityIndicator
-            size="large"
-            color="#1E88E5"
-            style={styles.loader}
-          />
-        ) : (
-          <>
-            <SummaryItem
-              label="Present Days"
-              value={String(summaryPresentCount)}
-              color="#4CAF50"
-            />
-            <SummaryItem
-              label="Absent Days"
-              value={String(summaryAbsentCount)}
-              color="#F44336"
-            />
-            <SummaryItem
-              label="Late Arrivals"
-              value={String(summaryLateCount)}
-              color="#FF9800"
-            />
-            <SummaryItem
-              label="Early Outs"
-              value={String(summaryEarlyOutCount)}
-              color="#9C27B0"
-            />
-            <SummaryItem
-              label="Leave Days"
-              value={String(summaryLeaveCount)}
-              color="#2196F3"
-            />
-            <SummaryItem
-              label="Off Days"
-              value={String(summaryOffDayCount)}
-              color="#FFB6C1"
-            />
-            <SummaryItem
-              label="Gazetted Days"
-              value={String(summaryGazettedDayCount)}
-              color="#FF69B4"
-            />
-            <SummaryItem
-              label="Error Days"
-              value={String(summaryErrorCount)}
-              color="#FFA500"
-            />
-
-            {/* <View style={styles.totalContainer}>
-              <Text style={styles.totalLabel}>Total Working Days:</Text>
-              <Text style={styles.totalValue}>
-                {String(
-                  summaryPresentCount +
-                    summaryAbsentCount +
-                    summaryLeaveCount +
-                    summaryOffDayCount +
-                    summaryGazettedDayCount,
-                )}
-              </Text>
-            </View> */}
-          </>
-        )}
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <ActionPaneContainer
@@ -784,7 +776,8 @@ const CreateAttendanceScreen = () => {
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
-          scrollEnabled={false}
+          // Keep overview fixed-page feel; allow summary to scroll if absolutely necessary on tiny screens
+          scrollEnabled={activeTab === 'summary'}
           alwaysBounceVertical
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -792,7 +785,6 @@ const CreateAttendanceScreen = () => {
           {activeTab === 'home' ? renderHomeScreen() : renderMonthlySummary()}
         </ScrollView>
       </View>
-
       <AlertModal
         visible={alertModal}
         heading="Alert"
@@ -804,39 +796,35 @@ const CreateAttendanceScreen = () => {
 };
 
 const PAD = SCREEN_WIDTH * 0.05;
-
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F5F5'},
   content: {flex: 1},
-  contentContainer: {flexGrow: 1},
-
+  contentContainer: {flexGrow: 1, paddingBottom: 8},
   /* ================== HOME ================== */
   homeRoot: {
     flex: 1,
     padding: PAD,
     backgroundColor: '#F5F5F5',
     justifyContent: 'space-between',
+    gap: 10,
   },
   timeContainer: {
     alignItems: 'center',
-    marginBottom: 8, // extra breathing room under the date block
+    marginBottom: 8,
   },
   timeText: {
     fontSize: isSmallDevice ? 34 : 46,
     fontWeight: '800',
     color: '#1E88E5',
     textAlign: 'center',
-    marginBottom: 0,
   },
-  // ⬆️ Lifted visually by adding bottom margin so it doesn't touch the next card
   dateText: {
     fontSize: isSmallDevice ? 13 : 15,
     color: '#757575',
     marginTop: 6,
-    marginBottom: 10, // <- key: creates a small gap from the next section (no “touching”)
+    marginBottom: 10,
     textAlign: 'center',
   },
-
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -847,17 +835,14 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-
   centeredButtonContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: isSmallDevice ? 140 : 180,
   },
-
   quickSummaryCard: {
     backgroundColor: '#FFF',
-    padding: isSmallDevice ? 14 : 18,
+    padding: isSmallDevice ? 12 : 16,
     borderRadius: 12,
     elevation: 2,
   },
@@ -865,7 +850,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 6,
     paddingHorizontal: 2,
     columnGap: 12,
   },
@@ -894,7 +879,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'stretch',
-    marginBottom: 0,
   },
   quickSummaryItem: {
     flex: 1,
@@ -912,18 +896,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-
   /* ================== SUMMARY ================== */
   summaryRoot: {
     flex: 1,
     padding: PAD,
     backgroundColor: '#F5F5F5',
-    justifyContent: 'space-between',
+    gap: 10,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginBottom: 10,
   },
   backBtn: {
     flexDirection: 'row',
@@ -940,18 +922,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 2,
   },
-
-  // Added bottom margin so it doesn’t “touch” the summary card
   monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFF',
-    padding: isSmallDevice ? 10 : 14,
+    padding: isSmallDevice ? 10 : 12,
     borderRadius: 12,
     elevation: 2,
-    minHeight: 56,
+    minHeight: 52,
     justifyContent: 'space-between',
-    marginBottom: 10, // <- gap below month selector
   },
   monthText: {
     fontSize: isSmallDevice ? 18 : 20,
@@ -961,31 +940,30 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 10,
   },
-
-  // Also add a small top margin for extra breathing room
   summaryCard: {
     backgroundColor: '#FFF',
-    padding: isSmallDevice ? 14 : 18,
+    padding: isSmallDevice ? 12 : 16,
     borderRadius: 12,
     elevation: 2,
-    minHeight: SCREEN_HEIGHT * 0.38,
-    justifyContent: 'center',
-    marginTop: 6, // <- tiny extra gap from monthSelector
+    alignSelf: 'stretch',
   },
   summaryCardTitle: {
-    fontSize: isSmallDevice ? 18 : 20,
+    fontSize: isSmallDevice ? 17 : 19,
     fontWeight: 'bold',
     color: '#1E88E5',
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: 'center',
   },
-  loader: {marginVertical: 18},
+  summaryList: {
+    gap: isSmallDevice ? 6 : 8, // tighter vertical rhythm = less overflow risk
+  },
+  loader: {marginVertical: 16},
   totalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 14,
-    paddingTop: 12,
+    marginTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
   },
