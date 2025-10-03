@@ -20,11 +20,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {CreateAttendance} from '../../API/Attendance/CreateAttendance';
 import {GetAttendanceRegister} from '../../API/Attendance/GetAttendanceRegister';
-import {getRegisterSummaryByDate} from '../../API/Attendance/getRegisterSummaryByDate';
+import {getRegisterSummaryColorByDate} from '../../API/Attendance/getRegisterSummaryColorByDate';
 import {GetGPSCoordinates} from '../../API/Attendance/GetGPSCoordinates';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
+
 import {
   AttendanceButton,
   InfoItem,
@@ -38,9 +39,9 @@ const isSmallDevice = SCREEN_WIDTH < 375;
 const CreateAttendanceScreen = () => {
   // Loading states
   const [loadingAttendance, setLoadingAttendance] = useState(false);
-  const [loadingSummary, setLoadingSummary] = useState(false); // summary screen
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingRegister, setLoadingRegister] = useState(false);
-  const [loadingGeo, setLoadingGeo] = useState(false); // Changed: only show when actually fetching
+  const [loadingGeo, setLoadingGeo] = useState(false);
 
   // UI
   const [alertModal, setAlertModal] = useState(false);
@@ -59,15 +60,21 @@ const CreateAttendanceScreen = () => {
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [earlyOutCount, setEarlyOutCount] = useState(0);
+  const [overviewColor, setOverviewColor] = useState('#00FF00'); // default
 
   // ===== Summary-screen counts (DEPEND on selectedMonth)
   const [summaryPresentCount, setSummaryPresentCount] = useState(0);
   const [summaryAbsentCount, setSummaryAbsentCount] = useState(0);
   const [summaryLateCount, setSummaryLateCount] = useState(0);
   const [summaryEarlyOutCount, setSummaryEarlyOutCount] = useState(0);
+  const [summaryLeaveCount, setSummaryLeaveCount] = useState(0);
+  const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
+  const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
+  const [summaryErrorCount, setSummaryErrorCount] = useState(0);
+  const [summaryColor, setSummaryColor] = useState('#00FF00'); // default
 
   // Month + view
-  const [selectedMonth, setSelectedMonth] = useState(moment()); // used only by summary screen
+  const [selectedMonth, setSelectedMonth] = useState(moment()); // summary screen only
   const [activeTab, setActiveTab] = useState('home');
 
   const {userData} = useSelector(state => state.user || {});
@@ -76,7 +83,7 @@ const CreateAttendanceScreen = () => {
   const lastCoordsRef = useRef(null);
   const watchIdRef = useRef(null);
 
-  // ===== Geofences from D365 (array of {latitude, longitude, radius})
+  // ===== Geofences
   // eslint-disable-next-line no-unused-vars
   const [sites, setSites] = useState([]);
 
@@ -125,13 +132,12 @@ const CreateAttendanceScreen = () => {
     return `${hours}:${minutes}:${seconds}`;
   };
 
-  // Data fetching: Attendance for TODAY
+  // TODAY register
   const fetchAttendanceRegister = useCallback(async () => {
     if (!userData?.employeeId) return;
     try {
       setLoadingRegister(true);
       const fromDate = moment().format('YYYY-MM-DD');
-
       const data = await GetAttendanceRegister({
         employeeId: userData.employeeId,
         attendanceDate: fromDate,
@@ -139,11 +145,9 @@ const CreateAttendanceScreen = () => {
 
       if (Array.isArray(data) && data.length > 0) {
         const record = data[0];
-
         const inSec = record?.ClockIn != null ? Number(record.ClockIn) : null;
         const outSec =
           record?.ClockOut != null ? Number(record.ClockOut) : null;
-
         const inTime = secondsTo12Hour(inSec);
         const outTime = secondsTo12Hour(outSec);
 
@@ -177,14 +181,14 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId]);
 
-  // ===== Overview summary (ALWAYS current month — used on HOME card)
+  // Overview summary (current month)
   const fetchOverviewSummary = useCallback(async () => {
     if (!userData?.employeeId) return;
     try {
       const fromDate = moment().startOf('month').format('YYYY-MM-DD');
       const toDate = moment().endOf('month').format('YYYY-MM-DD');
 
-      const summary = await getRegisterSummaryByDate({
+      const summary = await getRegisterSummaryColorByDate({
         employeeId: userData.employeeId,
         fromDate,
         toDate,
@@ -196,18 +200,20 @@ const CreateAttendanceScreen = () => {
         setAbsentCount(Number(s.AbsentCount ?? 0));
         setLateCount(Number(s.LateArrivalCount ?? 0));
         setEarlyOutCount(Number(s.EarlyOutCount ?? 0));
+        setOverviewColor(String(s.Color ?? '#00FF00'));
       } else {
         setPresentCount(0);
         setAbsentCount(0);
         setLateCount(0);
         setEarlyOutCount(0);
+        setOverviewColor('#00FF00');
       }
     } catch {
-      // keep the card as-is on failure
+      // keep existing values
     }
   }, [userData?.employeeId]);
 
-  // ===== Monthly summary (depends on selectedMonth — used on SUMMARY screen)
+  // Monthly summary (selectedMonth)
   const fetchMonthlySummary = useCallback(async () => {
     if (!userData?.employeeId) return;
     try {
@@ -217,7 +223,7 @@ const CreateAttendanceScreen = () => {
         .format('YYYY-MM-DD');
       const toDate = moment(selectedMonth).endOf('month').format('YYYY-MM-DD');
 
-      const summary = await getRegisterSummaryByDate({
+      const summary = await getRegisterSummaryColorByDate({
         employeeId: userData.employeeId,
         fromDate,
         toDate,
@@ -229,20 +235,30 @@ const CreateAttendanceScreen = () => {
         setSummaryAbsentCount(Number(s.AbsentCount ?? 0));
         setSummaryLateCount(Number(s.LateArrivalCount ?? 0));
         setSummaryEarlyOutCount(Number(s.EarlyOutCount ?? 0));
+        setSummaryLeaveCount(Number(s.LeaveCount ?? 0));
+        setSummaryOffDayCount(Number(s.OffDayCount ?? 0));
+        setSummaryGazettedDayCount(Number(s.GazettedDayCount ?? 0));
+        setSummaryErrorCount(Number(s.ErrorCount ?? 0));
+        setSummaryColor(String(s.Color ?? '#00FF00'));
       } else {
         setSummaryPresentCount(0);
         setSummaryAbsentCount(0);
         setSummaryLateCount(0);
         setSummaryEarlyOutCount(0);
+        setSummaryLeaveCount(0);
+        setSummaryOffDayCount(0);
+        setSummaryGazettedDayCount(0);
+        setSummaryErrorCount(0);
+        setSummaryColor('#00FF00');
       }
     } catch {
-      // keep previous numbers; optionally show alert
+      // ignore
     } finally {
       setLoadingSummary(false);
     }
   }, [userData?.employeeId, selectedMonth]);
 
-  // ===== Fetch geofences from D365
+  // Geofences
   const fetchSites = useCallback(async () => {
     try {
       const list = await GetGPSCoordinates();
@@ -259,7 +275,7 @@ const CreateAttendanceScreen = () => {
     fetchSites();
   }, [fetchAttendanceRegister, fetchOverviewSummary, fetchSites]);
 
-  // Reload summary when month changes (only affects summary screen state)
+  // Reload summary when month changes
   useEffect(() => {
     if (activeTab === 'summary') {
       fetchMonthlySummary();
@@ -281,7 +297,7 @@ const CreateAttendanceScreen = () => {
     return () => clearInterval(interval);
   }, [shiftHours, clockInSeconds]);
 
-  // ===== Permissions (request on mount), then warm-up watch
+  // ===== Permissions + warm watch
   const requestLocationPermission = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
@@ -311,11 +327,9 @@ const CreateAttendanceScreen = () => {
     }
   }, []);
 
-  // Background warm watch (25s)
   const startWarmWatch = useCallback(() => {
     try {
       if (watchIdRef.current != null) return;
-
       const id = Geolocation.watchPosition(
         pos => {
           const c = (pos && pos.coords) || {};
@@ -362,7 +376,6 @@ const CreateAttendanceScreen = () => {
     };
   }, [requestLocationPermission, startWarmWatch]);
 
-  // Utility: promisified getCurrentPosition
   const tryGetPosition = opts =>
     new Promise((resolve, reject) => {
       Geolocation.getCurrentPosition(
@@ -372,7 +385,6 @@ const CreateAttendanceScreen = () => {
       );
     });
 
-  // Get current position with retries & fallbacks
   const getCurrentLocationFast = useCallback(async () => {
     try {
       return await tryGetPosition({
@@ -394,7 +406,6 @@ const CreateAttendanceScreen = () => {
     }
   }, []);
 
-  // Haversine distance (meters)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const toRad = d => (d * Math.PI) / 180;
     const R = 6371e3;
@@ -402,7 +413,6 @@ const CreateAttendanceScreen = () => {
     const φ2 = toRad(lat2);
     const dφ = toRad(lat2 - lat1);
     const dλ = toRad(lon2 - lon1);
-
     const a =
       Math.sin(dφ / 2) * Math.sin(dφ / 2) +
       Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) * Math.sin(dλ / 2);
@@ -410,25 +420,18 @@ const CreateAttendanceScreen = () => {
     return R * c;
   };
 
-  // ✅ Resolve each site's lat/lon by trying both orders and picking the closer one.
-  // We DO NOT mutate what came from D365; we only choose the mapping for distance math.
   const nearestWithEffective = useCallback(
     (userLat, userLon, accuracy, points) => {
       if (!points || points.length === 0) return null;
-
       let best = null;
-
       for (const p of points) {
         const lat1 = Number(p.latitude);
         const lon1 = Number(p.longitude);
         if (!Number.isFinite(lat1) || !Number.isFinite(lon1)) continue;
 
-        // distance if we trust D365 order (lat, lon)
         const dNormal = calculateDistance(userLat, userLon, lat1, lon1);
-        // distance if swapped (lon, lat)
         const dSwapped = calculateDistance(userLat, userLon, lon1, lat1);
 
-        // pick whichever mapping yields smaller distance
         const useSwap = dSwapped < dNormal;
         const chosenLat = useSwap ? lon1 : lat1;
         const chosenLon = useSwap ? lat1 : lon1;
@@ -445,7 +448,6 @@ const CreateAttendanceScreen = () => {
       }
 
       if (!best) return null;
-
       const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
       const effectiveDistance = Math.max(
         0,
@@ -456,19 +458,16 @@ const CreateAttendanceScreen = () => {
     [],
   );
 
-  // Main action - MODIFIED: Fetch coordinates from API every time
   const handleAttendance = useCallback(async () => {
     try {
       setLoadingAttendance(true);
-      setLoadingGeo(true); // Show loading for geofence fetch
+      setLoadingGeo(true);
 
-      // Fetch fresh coordinates from API every time
+      // Always fetch latest geofences
       let freshSites = [];
       try {
         freshSites = await GetGPSCoordinates();
-        if (!Array.isArray(freshSites)) {
-          freshSites = [];
-        }
+        if (!Array.isArray(freshSites)) freshSites = [];
       } catch (geoError) {
         console.error('Error fetching GPS coordinates:', geoError);
         setAlertMessage('Unable to fetch office geofence. Please try again.');
@@ -496,7 +495,6 @@ const CreateAttendanceScreen = () => {
               PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
             )
           : true;
-
       if (!hasFine && !hasCoarse) {
         const ok = await requestLocationPermission();
         if (!ok) {
@@ -512,10 +510,8 @@ const CreateAttendanceScreen = () => {
       if (!coords?.latitude || !coords?.longitude) {
         throw new Error('Invalid location from device');
       }
-
       const {latitude, longitude, accuracy = 9999} = coords;
 
-      // Use nearest site from fresh API data (with robust lat/lon resolution)
       const nearest = nearestWithEffective(
         latitude,
         longitude,
@@ -541,7 +537,7 @@ const CreateAttendanceScreen = () => {
 
       const payload = {
         employeeId: userData?.employeeId,
-        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
+        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'), // keep 24h ISO with literal Z
         location: `${latitude},${longitude} (±${Math.round(accuracy)}m)`,
       };
 
@@ -570,8 +566,7 @@ const CreateAttendanceScreen = () => {
     nearestWithEffective,
   ]);
 
-  // ====== RENDER (NO SCROLLING, but pull-to-refresh enabled) ======
-
+  // ====== RENDER ======
   const renderHomeScreen = () => (
     <View style={styles.homeRoot}>
       {/* top section: time/date */}
@@ -579,6 +574,8 @@ const CreateAttendanceScreen = () => {
         <Text numberOfLines={1} adjustsFontSizeToFit style={styles.timeText}>
           {currentTime.format('hh:mm:ss A')}
         </Text>
+
+        {/* lifted slightly with extra bottom space so it doesn't touch next card */}
         <Text numberOfLines={1} adjustsFontSizeToFit style={styles.dateText}>
           {currentTime.format('dddd, MMM D, YYYY')}
         </Text>
@@ -606,23 +603,25 @@ const CreateAttendanceScreen = () => {
         />
       </View>
 
-      {/* flexible spacer that centers the button between tiles and summary */}
-      <View style={styles.midSpacer}>
-        <View style={styles.buttonContainer}>
-          <AttendanceButton
-            onPress={handleAttendance}
-            loading={loadingAttendance || loadingGeo}
-          />
-          {loadingGeo ? (
-            <Text style={{marginTop: 8, color: '#757575', fontSize: 12}}>
-              Loading office geofence…
-            </Text>
-          ) : null}
-        </View>
+      {/* Centered button */}
+      <View style={styles.centeredButtonContainer}>
+        <AttendanceButton
+          onPress={handleAttendance}
+          loading={loadingAttendance || loadingGeo}
+        />
+        {loadingGeo ? (
+          <Text style={{marginTop: 8, color: '#757575', fontSize: 12}}>
+            Loading office geofence…
+          </Text>
+        ) : null}
       </View>
 
-      {/* bottom section: compact month overview + jump */}
-      <View style={styles.quickSummaryCard}>
+      {/* Month overview (ONLY 4 items now) */}
+      <View
+        style={[
+          styles.quickSummaryCard,
+          // {borderLeftColor: overviewColor, borderLeftWidth: 4},
+        ]}>
         <View style={styles.quickSummaryHeaderRow}>
           <Text style={styles.quickSummaryTitle}>This Month Overview</Text>
           <TouchableOpacity
@@ -635,38 +634,39 @@ const CreateAttendanceScreen = () => {
         </View>
 
         <View style={styles.quickSummaryRow}>
-          <View style={styles.quickSummaryItem}>
+          <View className="item" style={styles.quickSummaryItem}>
             <Text style={[styles.quickSummaryValue, {color: '#4CAF50'}]}>
               {String(presentCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Present</Text>
           </View>
-          <View style={styles.quickSummaryItem}>
+          <View className="item" style={styles.quickSummaryItem}>
             <Text style={[styles.quickSummaryValue, {color: '#F44336'}]}>
               {String(absentCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Absent</Text>
           </View>
-          <View style={styles.quickSummaryItem}>
+          <View className="item" style={styles.quickSummaryItem}>
             <Text style={[styles.quickSummaryValue, {color: '#FF9800'}]}>
               {String(lateCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Late</Text>
           </View>
-          <View style={styles.quickSummaryItem}>
+          <View className="item" style={styles.quickSummaryItem}>
             <Text style={[styles.quickSummaryValue, {color: '#9C27B0'}]}>
               {String(earlyOutCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Early Out</Text>
           </View>
         </View>
+        {/* Removed: Leave / Off Day / Gazetted / Errors row (now only on Summary screen) */}
       </View>
     </View>
   );
 
   const renderMonthlySummary = () => (
-    <View style={styles.summaryRoot /* fixed layout; no scroll */}>
-      {/* top-row back */}
+    <View style={styles.summaryRoot}>
+      {/* back */}
       <View style={styles.topRow}>
         <TouchableOpacity
           onPress={() => setActiveTab('home')}
@@ -685,9 +685,11 @@ const CreateAttendanceScreen = () => {
           }>
           <Icon name="chevron-left" size={28} color="#1E88E5" />
         </TouchableOpacity>
+
         <Text numberOfLines={1} adjustsFontSizeToFit style={styles.monthText}>
           {moment(selectedMonth).format('MMMM YYYY')}
         </Text>
+
         <TouchableOpacity
           onPress={() =>
             setSelectedMonth(moment(selectedMonth).add(1, 'month'))
@@ -696,9 +698,14 @@ const CreateAttendanceScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* summary card */}
-      <View style={styles.summaryCard}>
+      {/* summary card (added vertical gap above via monthSelector marginBottom & card marginTop) */}
+      <View
+        style={[
+          styles.summaryCard,
+          // {borderLeftColor: summaryColor, borderLeftWidth: 4},
+        ]}>
         <Text style={styles.summaryCardTitle}>Attendance Summary</Text>
+
         {loadingSummary ? (
           <ActivityIndicator
             size="large"
@@ -727,13 +734,39 @@ const CreateAttendanceScreen = () => {
               value={String(summaryEarlyOutCount)}
               color="#9C27B0"
             />
+            <SummaryItem
+              label="Leave Days"
+              value={String(summaryLeaveCount)}
+              color="#2196F3"
+            />
+            <SummaryItem
+              label="Off Days"
+              value={String(summaryOffDayCount)}
+              color="#FFB6C1"
+            />
+            <SummaryItem
+              label="Gazetted Days"
+              value={String(summaryGazettedDayCount)}
+              color="#FF69B4"
+            />
+            <SummaryItem
+              label="Error Days"
+              value={String(summaryErrorCount)}
+              color="#FFA500"
+            />
 
-            <View style={styles.totalContainer}>
+            {/* <View style={styles.totalContainer}>
               <Text style={styles.totalLabel}>Total Working Days:</Text>
               <Text style={styles.totalValue}>
-                {String(summaryPresentCount + summaryAbsentCount)}
+                {String(
+                  summaryPresentCount +
+                    summaryAbsentCount +
+                    summaryLeaveCount +
+                    summaryOffDayCount +
+                    summaryGazettedDayCount,
+                )}
               </Text>
-            </View>
+            </View> */}
           </>
         )}
       </View>
@@ -777,29 +810,32 @@ const styles = StyleSheet.create({
   content: {flex: 1},
   contentContainer: {flexGrow: 1},
 
-  /* ================== HOME (no scroll) ================== */
+  /* ================== HOME ================== */
   homeRoot: {
     flex: 1,
     padding: PAD,
     backgroundColor: '#F5F5F5',
     justifyContent: 'space-between',
   },
-
-  timeContainer: {alignItems: 'center'},
+  timeContainer: {
+    alignItems: 'center',
+    marginBottom: 8, // extra breathing room under the date block
+  },
   timeText: {
     fontSize: isSmallDevice ? 34 : 46,
     fontWeight: '800',
     color: '#1E88E5',
     textAlign: 'center',
+    marginBottom: 0,
   },
+  // ⬆️ Lifted visually by adding bottom margin so it doesn't touch the next card
   dateText: {
     fontSize: isSmallDevice ? 13 : 15,
     color: '#757575',
-    marginTop: 4,
+    marginTop: 6,
+    marginBottom: 10, // <- key: creates a small gap from the next section (no “touching”)
     textAlign: 'center',
   },
-
-  middleBlock: {},
 
   infoRow: {
     flexDirection: 'row',
@@ -812,11 +848,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  buttonContainer: {
-    alignItems: 'center',
-    marginTop: SCREEN_HEIGHT * 0.02,
-    minHeight: isSmallDevice ? 140 : 180,
+  centeredButtonContainer: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: isSmallDevice ? 140 : 180,
   },
 
   quickSummaryCard: {
@@ -825,7 +861,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 2,
   },
-
   quickSummaryHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -855,11 +890,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 2,
   },
-
   quickSummaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'stretch',
+    marginBottom: 0,
   },
   quickSummaryItem: {
     flex: 1,
@@ -878,17 +913,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* ================== SUMMARY (no scroll) ================== */
+  /* ================== SUMMARY ================== */
   summaryRoot: {
     flex: 1,
     padding: PAD,
     backgroundColor: '#F5F5F5',
     justifyContent: 'space-between',
   },
-
   topRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
+    marginBottom: 10,
   },
   backBtn: {
     flexDirection: 'row',
@@ -906,6 +941,7 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
 
+  // Added bottom margin so it doesn’t “touch” the summary card
   monthSelector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -915,6 +951,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     minHeight: 56,
     justifyContent: 'space-between',
+    marginBottom: 10, // <- gap below month selector
   },
   monthText: {
     fontSize: isSmallDevice ? 18 : 20,
@@ -925,6 +962,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
 
+  // Also add a small top margin for extra breathing room
   summaryCard: {
     backgroundColor: '#FFF',
     padding: isSmallDevice ? 14 : 18,
@@ -932,6 +970,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     minHeight: SCREEN_HEIGHT * 0.38,
     justifyContent: 'center',
+    marginTop: 6, // <- tiny extra gap from monthSelector
   },
   summaryCardTitle: {
     fontSize: isSmallDevice ? 18 : 20,

@@ -13,7 +13,7 @@ const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
 // ✅ Improved Circular Attendance Button with responsiveness
-export const AttendanceButton = ({onPress, loading}) => (
+const AttendanceButton = ({onPress, loading}) => (
   <TouchableOpacity
     style={[styles.buttonOuter, styles.responsiveButton]}
     onPress={onPress}
@@ -44,7 +44,7 @@ export const AttendanceButton = ({onPress, loading}) => (
 );
 
 // ✅ Responsive Info Item
-export const InfoItem = ({icon, label, value, loading = false}) => (
+const InfoItem = ({icon, label, value, loading = false}) => (
   <View style={styles.infoItem}>
     <Icon name={icon} size={isSmallDevice ? 18 : 22} color="#1E88E5" />
     <Text
@@ -69,7 +69,7 @@ export const InfoItem = ({icon, label, value, loading = false}) => (
 );
 
 // ✅ Summary Item for Monthly Summary
-export const SummaryItem = ({label, value, color = '#1E88E5'}) => (
+const SummaryItem = ({label, value, color = '#1E88E5'}) => (
   <View style={styles.summaryItem}>
     <Text
       style={[
@@ -85,7 +85,7 @@ export const SummaryItem = ({label, value, color = '#1E88E5'}) => (
 );
 
 // ✅ Improved Bottom Navigation
-export const BottomTabs = ({active, onChange}) => (
+const BottomTabs = ({active, onChange}) => (
   <View style={styles.bottomTabs}>
     <TouchableOpacity
       style={[styles.tab, active === 'home' && styles.activeTab]}
@@ -272,3 +272,5 @@ const styles = StyleSheet.create({
     color: '#FFF',
   },
 });
+
+export {AttendanceButton, InfoItem, SummaryItem, BottomTabs};
