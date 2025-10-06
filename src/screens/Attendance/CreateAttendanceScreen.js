@@ -34,6 +34,11 @@ import {useNavigation} from '@react-navigation/native';
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
+// ---- tunables
+const GEO_TTL_MS = 10 * 60 * 1000; // geofence cache time (10m)
+const FRESH_FIX_MS = 15 * 1000; // last-known fix freshness window (15s)
+const MAX_ALLOWED_ACCURACY = 100; // meters; relax to 150–200 if needed
+
 const CreateAttendanceScreen = () => {
   // Loading states
   const [loadingAttendance, setLoadingAttendance] = useState(false);
@@ -53,15 +58,14 @@ const CreateAttendanceScreen = () => {
   const [clockInSeconds, setClockInSeconds] = useState(null);
   const [remainingShiftTime, setRemainingShiftTime] = useState(null);
 
-  // ===== Overview counts (ALWAYS current month)
+  // Overview counts (ALWAYS current month)
   const [presentCount, setPresentCount] = useState(0);
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [earlyOutCount, setEarlyOutCount] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [overviewColor, setOverviewColor] = useState('#00FF00');
 
-  // ===== Summary counts (DEPEND on selected month)
+  // Summary counts (DEPEND on selected month)
   const [summaryPresentCount, setSummaryPresentCount] = useState(0);
   const [summaryAbsentCount, setSummaryAbsentCount] = useState(0);
   const [summaryLateCount, setSummaryLateCount] = useState(0);
@@ -70,18 +74,15 @@ const CreateAttendanceScreen = () => {
   const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
   const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
   const [summaryErrorCount, setSummaryErrorCount] = useState(0);
-  // eslint-disable-next-line no-unused-vars
   const [summaryColor, setSummaryColor] = useState('#00FF00');
 
   // Month & View
   const [activeTab, setActiveTab] = useState('home');
-  // Store month as primitives so refresh never "snaps back" to today
   const [selectedMonthYM, setSelectedMonthYM] = useState({
     year: moment().year(),
     monthIndex: moment().month(), // 0..11
   });
 
-  // Helper: derive range/label from selectedMonthYM
   const getSelectedRange = useCallback(() => {
     const m = moment()
       .year(selectedMonthYM.year)
@@ -95,26 +96,27 @@ const CreateAttendanceScreen = () => {
   }, [selectedMonthYM]);
 
   const {userData} = useSelector(state => state.user || {});
+  const navigation = useNavigation();
 
-  // ===== location warm cache
-  const lastCoordsRef = useRef(null);
+  // ===== location & geofence caches
+  const lastCoordsRef = useRef(null); // { latitude, longitude, accuracy, timestamp }
   const watchIdRef = useRef(null);
+  const geofenceCacheRef = useRef({sites: [], ts: 0});
 
   // Pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
+
+  // Block concurrent mark attempts
+  const markInFlightRef = useRef(false);
 
   // Clock tick
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
-  const navigation = useNavigation();
 
   useEffect(() => {
-    const unsub = navigation.addListener('blur', () => {
-      // runs as soon as the screen loses focus
-      setActiveTab('home');
-    });
+    const unsub = navigation.addListener('blur', () => setActiveTab('home'));
     return unsub;
   }, [navigation]);
 
@@ -256,28 +258,34 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId, getSelectedRange]);
 
-  // Geofences
-  const fetchSites = useCallback(async () => {
-    try {
-      await GetGPSCoordinates();
-      // We don't need to store sites as it's only used in handleAttendance
-    } catch {
-      // ignore
+  // Geofences (cached)
+  const getGeofencesCached = useCallback(async () => {
+    const now = Date.now();
+    if (
+      geofenceCacheRef.current.sites.length &&
+      now - geofenceCacheRef.current.ts < GEO_TTL_MS
+    ) {
+      return geofenceCacheRef.current.sites;
     }
+    const sites = await GetGPSCoordinates().catch(() => []);
+    geofenceCacheRef.current = {
+      sites: Array.isArray(sites) ? sites : [],
+      ts: Date.now(),
+    };
+    return geofenceCacheRef.current.sites;
   }, []);
 
   // Initial loads
   useEffect(() => {
     fetchAttendanceRegister();
     fetchOverviewSummary();
-    fetchSites();
-  }, [fetchAttendanceRegister, fetchOverviewSummary, fetchSites]);
+    // warm geofences silently
+    getGeofencesCached();
+  }, [fetchAttendanceRegister, fetchOverviewSummary, getGeofencesCached]);
 
   // Reload summary when month changes or when entering summary tab
   useEffect(() => {
-    if (activeTab === 'summary') {
-      fetchMonthlySummary();
-    }
+    if (activeTab === 'summary') fetchMonthlySummary();
   }, [fetchMonthlySummary, activeTab]);
 
   // Remaining shift timer
@@ -296,9 +304,17 @@ const CreateAttendanceScreen = () => {
   }, [shiftHours, clockInSeconds]);
 
   // ===== Permissions + warm watch
-  const requestLocationPermission = useCallback(async () => {
+  const ensureLocationPermission = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
+        const fineGranted = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        const coarseGranted = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        );
+        if (fineGranted || coarseGranted) return true;
+
         const fine = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
@@ -309,13 +325,12 @@ const CreateAttendanceScreen = () => {
             buttonPositive: 'OK',
           },
         );
+        if (fine === PermissionsAndroid.RESULTS.GRANTED) return true;
+
         const coarse = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         );
-        return (
-          fine === PermissionsAndroid.RESULTS.GRANTED ||
-          coarse === PermissionsAndroid.RESULTS.GRANTED
-        );
+        return coarse === PermissionsAndroid.RESULTS.GRANTED;
       } else {
         const auth = await Geolocation.requestAuthorization('whenInUse');
         return auth === 'granted';
@@ -331,7 +346,6 @@ const CreateAttendanceScreen = () => {
       const id = Geolocation.watchPosition(
         pos => {
           const c = (pos && pos.coords) || {};
-          // store a timestamp for freshness checks
           lastCoordsRef.current = {...c, timestamp: Date.now()};
         },
         () => {},
@@ -345,19 +359,18 @@ const CreateAttendanceScreen = () => {
       );
       watchIdRef.current = id;
 
-      // Keep warm watch alive a bit longer to build cache
       setTimeout(() => {
         if (watchIdRef.current != null) {
           Geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
         }
-      }, 45000); // was 25000
+      }, 45000);
     } catch {}
   }, []);
 
   useEffect(() => {
     (async () => {
-      const ok = await requestLocationPermission();
+      const ok = await ensureLocationPermission();
       if (!ok) {
         setAlertMessage(
           'Location permission is required to mark attendance. Please enable it in Settings.',
@@ -373,7 +386,7 @@ const CreateAttendanceScreen = () => {
         watchIdRef.current = null;
       }
     };
-  }, [requestLocationPermission, startWarmWatch]);
+  }, [ensureLocationPermission, startWarmWatch]);
 
   const tryGetPosition = opts =>
     new Promise((resolve, reject) => {
@@ -384,34 +397,35 @@ const CreateAttendanceScreen = () => {
       );
     });
 
+  // Fast location strategy with caching + fallback + refine
   const getCurrentLocationFast = useCallback(async () => {
-    // 1) If we have a very recent cached fix, use it
-    const cached = lastCoordsRef.current;
     const now = Date.now();
-    if (cached?.timestamp && now - cached.timestamp < 15000) {
-      // 15s fresh
+    const cached = lastCoordsRef.current;
+    if (
+      cached?.timestamp &&
+      now - cached.timestamp < FRESH_FIX_MS &&
+      cached.accuracy <= MAX_ALLOWED_ACCURACY
+    ) {
       return cached;
     }
-
-    // 2) Try high accuracy first (geofence needs precision)
     try {
       const hi = await tryGetPosition({
         enableHighAccuracy: true,
-        timeout: 12000, // was 7000
-        maximumAge: 7000, // allow a very recent fix
+        timeout: 12000,
+        maximumAge: 7000,
       });
+      lastCoordsRef.current = {...hi, timestamp: Date.now()};
       return hi;
     } catch (e1) {
-      // 3) Fallback to balanced (may return coarse but fast)
       try {
         const lo = await tryGetPosition({
           enableHighAccuracy: false,
-          timeout: 8000, // was 5000
+          timeout: 8000,
           maximumAge: 15000,
         });
+        lastCoordsRef.current = {...lo, timestamp: Date.now()};
         return lo;
       } catch (e2) {
-        // 4) Last resort: if we cached *anything* from warm watch, use it
         if (lastCoordsRef.current) return lastCoordsRef.current;
         throw e2;
       }
@@ -440,7 +454,6 @@ const CreateAttendanceScreen = () => {
         const lat1 = Number(p.latitude);
         const lon1 = Number(p.longitude);
         if (!Number.isFinite(lat1) || !Number.isFinite(lon1)) continue;
-        // try normal vs swapped (in case data has lat/lon swapped)
         const dNormal = calculateDistance(userLat, userLon, lat1, lon1);
         const dSwapped = calculateDistance(userLat, userLon, lon1, lat1);
         const useSwap = dSwapped < dNormal;
@@ -468,59 +481,54 @@ const CreateAttendanceScreen = () => {
   );
 
   const handleAttendance = useCallback(async () => {
+    if (markInFlightRef.current) return; // prevent double-taps
+    markInFlightRef.current = true;
     try {
       setLoadingAttendance(true);
       setLoadingGeo(true);
 
-      // Always fetch latest geofences
-      let freshSites = [];
-      try {
-        freshSites = await GetGPSCoordinates();
-        if (!Array.isArray(freshSites)) freshSites = [];
-      } catch (geoError) {
-        console.error('Error fetching GPS coordinates:', geoError);
-        setAlertMessage('Unable to fetch office geofence. Please try again.');
-        setAlertModal(true);
-        return;
-      } finally {
-        setLoadingGeo(false);
-      }
-
-      if (freshSites.length === 0) {
+      // 1) Get cached geofences (no network if cache is fresh)
+      const freshSites = await getGeofencesCached();
+      if (!freshSites.length) {
         setAlertMessage('No office geofence available from D365.');
         setAlertModal(true);
         return;
       }
 
-      const hasFine =
-        Platform.OS === 'android'
-          ? await PermissionsAndroid.check(
-              PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            )
-          : true;
-      const hasCoarse =
-        Platform.OS === 'android'
-          ? await PermissionsAndroid.check(
-              PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-            )
-          : true;
-
-      if (!hasFine && !hasCoarse) {
-        const ok = await requestLocationPermission();
-        if (!ok) {
-          setAlertMessage(
-            'Location permission is required. Please enable it in Settings.',
-          );
-          setAlertModal(true);
-          return;
-        }
+      // 2) Ensure permission (cheap if already granted)
+      const ok = await ensureLocationPermission();
+      if (!ok) {
+        setAlertMessage(
+          'Location permission is required. Please enable it in Settings.',
+        );
+        setAlertModal(true);
+        return;
       }
 
-      const coords = await getCurrentLocationFast();
+      // 3) Get location fast with fallbacks
+      let coords = await getCurrentLocationFast();
       if (!coords?.latitude || !coords?.longitude) {
         throw new Error('Invalid location from device');
       }
 
+      // 3b) Optional refine if accuracy is poor
+      if ((coords.accuracy ?? 9999) > MAX_ALLOWED_ACCURACY) {
+        try {
+          const refined = await tryGetPosition({
+            enableHighAccuracy: true,
+            timeout: 6000,
+            maximumAge: 5000,
+          });
+          if (refined?.accuracy && refined.accuracy < coords.accuracy) {
+            coords = refined;
+            lastCoordsRef.current = {...refined, timestamp: Date.now()};
+          }
+        } catch {}
+      }
+
+      setLoadingGeo(false);
+
+      // 4) Geofence evaluate
       const {latitude, longitude, accuracy = 9999} = coords;
       const nearest = nearestWithEffective(
         latitude,
@@ -528,13 +536,11 @@ const CreateAttendanceScreen = () => {
         accuracy,
         freshSites,
       );
-
       if (!nearest) {
         setAlertMessage('Unable to evaluate geofence. Please try again.');
         setAlertModal(true);
         return;
       }
-
       if (nearest.effectiveDistance > nearest.radius) {
         const displayDist = Math.max(0, Math.round(nearest.distance));
         setAlertMessage(
@@ -546,9 +552,9 @@ const CreateAttendanceScreen = () => {
         return;
       }
 
+      // 5) Save
       const payload = {
         employeeId: userData?.employeeId,
-        // 24h ISO with literal Z (server expects this from your earlier tests)
         punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
         location: `${latitude},${longitude} (±${Math.round(accuracy)}m)`,
       };
@@ -557,8 +563,11 @@ const CreateAttendanceScreen = () => {
       if (response?.isSuccess || response === true) {
         setAlertMessage('Attendance recorded');
         setAlertModal(true);
-        await fetchAttendanceRegister();
-        await fetchOverviewSummary();
+        // parallel refresh to minimize perceived latency
+        await Promise.allSettled([
+          fetchAttendanceRegister(),
+          fetchOverviewSummary(),
+        ]);
       } else {
         throw new Error(response?.message || 'Failed to save attendance');
       }
@@ -568,9 +577,11 @@ const CreateAttendanceScreen = () => {
     } finally {
       setLoadingAttendance(false);
       setLoadingGeo(false);
+      markInFlightRef.current = false;
     }
   }, [
-    requestLocationPermission,
+    ensureLocationPermission,
+    getGeofencesCached,
     getCurrentLocationFast,
     userData?.employeeId,
     fetchAttendanceRegister,
@@ -578,16 +589,19 @@ const CreateAttendanceScreen = () => {
     nearestWithEffective,
   ]);
 
-  // Pull-to-refresh - FIXED VERSION
+  // Pull-to-refresh
   const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
       if (activeTab === 'home') {
-        await Promise.all([fetchAttendanceRegister(), fetchOverviewSummary()]);
+        await Promise.all([
+          fetchAttendanceRegister(),
+          fetchOverviewSummary(),
+          getGeofencesCached(),
+        ]);
       } else {
-        await fetchMonthlySummary(); // respects selectedMonthYM
+        await fetchMonthlySummary();
       }
-      await fetchSites();
     } finally {
       setRefreshing(false);
     }
@@ -596,7 +610,7 @@ const CreateAttendanceScreen = () => {
     fetchAttendanceRegister,
     fetchOverviewSummary,
     fetchMonthlySummary,
-    fetchSites,
+    getGeofencesCached,
   ]);
 
   /* ========================= RENDER ========================= */
@@ -642,7 +656,7 @@ const CreateAttendanceScreen = () => {
         />
         {loadingGeo ? (
           <Text style={{marginTop: 8, color: '#757575', fontSize: 12}}>
-            Loading office geofence…
+            Getting location…
           </Text>
         ) : null}
       </View>
@@ -690,7 +704,7 @@ const CreateAttendanceScreen = () => {
   );
 
   const renderMonthlySummary = () => {
-    const keyForMonth = getSelectedRange().key; // force fresh layout per month
+    const keyForMonth = getSelectedRange().key;
     return (
       <View key={keyForMonth} style={styles.summaryRoot}>
         {/* back */}
@@ -804,7 +818,6 @@ const CreateAttendanceScreen = () => {
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
-          // Keep overview fixed-page feel; allow summary to scroll if absolutely necessary on tiny screens
           scrollEnabled={activeTab === 'summary'}
           alwaysBounceVertical
           refreshControl={
@@ -828,7 +841,6 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F5F5'},
   content: {flex: 1},
   contentContainer: {flexGrow: 1, paddingBottom: 8},
-  /* ================== HOME ================== */
   homeRoot: {
     flex: 1,
     padding: PAD,
@@ -836,10 +848,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
   },
-  timeContainer: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
+  timeContainer: {alignItems: 'center', marginBottom: 8},
   timeText: {
     fontSize: isSmallDevice ? 34 : 46,
     fontWeight: '800',
@@ -886,8 +895,7 @@ const styles = StyleSheet.create({
     fontSize: isSmallDevice ? 16 : 18,
     fontWeight: 'bold',
     color: '#1E88E5',
-    // flexShrink: 1,
-    flexGrow: 0, // Change from 1 to 0
+    flexGrow: 0,
     marginRight: 1,
   },
   summarySwitchBtn: {
@@ -917,27 +925,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  quickSummaryValue: {
-    fontSize: isSmallDevice ? 18 : 22,
-    fontWeight: 'bold',
-  },
+  quickSummaryValue: {fontSize: isSmallDevice ? 18 : 22, fontWeight: 'bold'},
   quickSummaryLabel: {
     fontSize: isSmallDevice ? 10 : 12,
     color: '#757575',
     marginTop: 4,
     textAlign: 'center',
   },
-  /* ================== SUMMARY ================== */
-  summaryRoot: {
-    flex: 1,
-    padding: PAD,
-    backgroundColor: '#F5F5F5',
-    gap: 10,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-  },
+  summaryRoot: {flex: 1, padding: PAD, backgroundColor: '#F5F5F5', gap: 10},
+  topRow: {flexDirection: 'row', justifyContent: 'flex-start'},
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -985,9 +981,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
-  summaryList: {
-    gap: isSmallDevice ? 6 : 8, // tighter vertical rhythm = less overflow risk
-  },
+  summaryList: {gap: isSmallDevice ? 6 : 8},
   loader: {marginVertical: 16},
   totalContainer: {
     flexDirection: 'row',
