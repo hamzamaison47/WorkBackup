@@ -89,18 +89,32 @@ const formatDuration = value => {
   return secToHHMMSS(n);
 };
 
-/* ------------ UI helpers ------------ */
-const getStatusMeta = (status = '') => {
-  const s = String(status).toLowerCase();
-  if (s.includes('leave'))
-    return {bg: '#FFE9EC', fg: '#D32F2F', label: 'Leave'};
-  if (s.includes('holiday') || s.includes('gazetted'))
-    return {bg: '#E7F6EC', fg: '#2E7D32', label: 'Holiday'};
-  if (s.includes('error'))
-    return {bg: '#FFF4E5', fg: '#E65100', label: 'Error'};
-  if (s.includes('calculated'))
-    return {bg: '#ECEFF1', fg: '#455A64', label: 'Calculated'};
-  return {bg: '#E8F0FE', fg: '#1E88E5', label: status || '—'};
+/* ------------ color helpers (use API color for whole card) ------------ */
+const DEFAULT_COLOR = '#6ce66c'; // fallback green matching your API default
+
+const isHex = c => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || ''));
+const clamp01 = n => Math.max(0, Math.min(1, n));
+
+const hexToRgb = hex => {
+  if (!isHex(hex)) return {r: 108, g: 230, b: 108}; // default rgb of #6ce66c
+  let h = hex.replace('#', '');
+  if (h.length === 3)
+    h = h
+      .split('')
+      .map(ch => ch + ch)
+      .join('');
+  const num = parseInt(h, 16);
+  return {r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255};
+};
+const rgba = (hex, a) => {
+  const {r, g, b} = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${clamp01(a)})`;
+};
+const readableTextOn = hex => {
+  // luminance check to pick dark or white text on chip bg
+  const {r, g, b} = hexToRgb(hex);
+  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return L > 0.7 ? '#1A1A1A' : '#0E1521';
 };
 
 const AttendanceDetailsScreen = () => {
@@ -164,7 +178,7 @@ const AttendanceDetailsScreen = () => {
     if (isFocused) fetchData();
   }, [isFocused, fetchData]);
 
-  // fetch on month change (only if focused)
+  // fetch on month change (if focused)
   useEffect(() => {
     if (isFocused) fetchData();
   }, [month, isFocused, fetchData]);
@@ -196,39 +210,52 @@ const AttendanceDetailsScreen = () => {
     const showClockOut =
       !looksLikeMissingDate(item.ClockOutDate) && !isBlankTime(item.ClockOut);
 
-    const statusMeta = getStatusMeta(item.Status);
+    // Use API color for the whole row (fallback to default if invalid)
+    const apiColor = isHex(item?.Color) ? item.Color : DEFAULT_COLOR;
+    const chipBg = rgba(apiColor, 0.14); // soft tint
+    const chipText = readableTextOn(apiColor); // dark text on light tint
+    const underline = rgba(apiColor, 0.45); // header underline/tint
 
     return (
       <View
-        style={[styles.rowCard, {borderLeftColor: item.Color || '#6ce66c'}]}>
-        {/* header with underline */}
-        <View style={styles.cardHeader}>
+        style={[
+          styles.rowCard,
+          {borderLeftColor: apiColor, borderLeftWidth: 5},
+        ]}>
+        {/* header with underline + status chip */}
+        <View style={[styles.cardHeader, {borderBottomColor: underline}]}>
           <Text style={styles.dateText}>{dateLabel}</Text>
-          <View style={[styles.chip, {backgroundColor: statusMeta.bg}]}>
-            <Text style={[styles.chipText, {color: statusMeta.fg}]}>
-              {statusMeta.label}
+          <View
+            style={[
+              styles.chip,
+              {backgroundColor: chipBg, borderColor: rgba(apiColor, 0.5)},
+            ]}>
+            <Text
+              style={[styles.chipText, {color: chipText}]}
+              numberOfLines={1}>
+              {item.Status || '—'}
             </Text>
           </View>
         </View>
 
-        {/* values row */}
+        {/* values row (neutral colors) */}
         <View style={styles.rowGrid}>
           <View style={styles.cell}>
-            <Text style={[styles.value, styles.inValue]}>
+            <Text style={styles.value}>
               {showClockIn ? formatInOut12h(item.ClockIn) : '--'}
             </Text>
             <Text style={styles.label}>Clock In</Text>
           </View>
 
           <View style={styles.cell}>
-            <Text style={[styles.value, styles.outValue]}>
+            <Text style={styles.value}>
               {showClockOut ? formatInOut12h(item.ClockOut) : '--'}
             </Text>
             <Text style={styles.label}>Clock Out</Text>
           </View>
 
           <View style={styles.cell}>
-            <Text style={[styles.value, styles.hoursValue]}>
+            <Text style={styles.value}>
               {formatDuration(item.ShiftWorkingTime)}
             </Text>
             <Text style={styles.label}>Working Hours</Text>
@@ -256,7 +283,6 @@ const AttendanceDetailsScreen = () => {
         </View>
 
         <FlatList
-          // eslint-disable-next-line react-native/no-inline-styles
           style={{flex: 1}}
           contentContainerStyle={styles.listContent}
           data={data}
@@ -302,9 +328,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 14,
     padding: 12,
-    marginBottom: 12, // more separation between records
+    marginBottom: 12,
     elevation: 2,
-    // borderLeftWidth: 5,
   },
 
   /* underline header */
@@ -314,21 +339,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#E6E9EE',
     marginBottom: 10,
   },
   dateText: {fontSize: 15, fontWeight: '700', color: '#263238'},
 
-  /* status chip */
-  chip: {paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999},
+  /* status chip (uses tinted API color) */
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   chipText: {fontSize: 11, fontWeight: '700'},
 
   rowGrid: {flexDirection: 'row', columnGap: 10},
   cell: {flex: 1},
   value: {fontSize: 16, fontWeight: '800', color: '#263238'},
-  inValue: {color: '#2E7D32'}, // green
-  outValue: {color: '#E65100'}, // orange
-  hoursValue: {color: '#1565C0'}, // blue
   label: {fontSize: 11, color: '#607D8B', marginTop: 2},
 
   empty: {alignItems: 'center', paddingTop: 36, paddingHorizontal: 12},
