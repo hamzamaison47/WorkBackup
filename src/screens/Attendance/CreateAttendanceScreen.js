@@ -14,6 +14,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -34,10 +35,46 @@ import {useNavigation} from '@react-navigation/native';
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
-// ---- tunables
+/* =================== Tunables =================== */
 const GEO_TTL_MS = 10 * 60 * 1000; // geofence cache time (10m)
 const FRESH_FIX_MS = 15 * 1000; // last-known fix freshness window (15s)
-const MAX_ALLOWED_ACCURACY = 100; // meters; relax to 150–200 if needed
+const MAX_ALLOWED_ACCURACY = 100; // meters (relax to 150–200 if needed)
+const GEOF_KEY = 'df_geofences_v1'; // AsyncStorage key
+
+/* =================== Helpers =================== */
+const raceTimeout = (promise, ms) =>
+  new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), ms);
+    promise
+      .then(v => {
+        clearTimeout(t);
+        resolve(v);
+      })
+      .catch(e => {
+        clearTimeout(t);
+        reject(e);
+      });
+  });
+
+const saveGeofences = async sites => {
+  try {
+    const payload = {ts: Date.now(), sites: Array.isArray(sites) ? sites : []};
+    await AsyncStorage.setItem(GEOF_KEY, JSON.stringify(payload));
+  } catch {}
+};
+const loadGeofences = async () => {
+  try {
+    const raw = await AsyncStorage.getItem(GEOF_KEY);
+    if (!raw) return {ts: 0, sites: []};
+    const obj = JSON.parse(raw);
+    return {
+      ts: obj?.ts || 0,
+      sites: Array.isArray(obj?.sites) ? obj.sites : [],
+    };
+  } catch {
+    return {ts: 0, sites: []};
+  }
+};
 
 const CreateAttendanceScreen = () => {
   // Loading states
@@ -63,7 +100,7 @@ const CreateAttendanceScreen = () => {
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [earlyOutCount, setEarlyOutCount] = useState(0);
-  const [overviewColor, setOverviewColor] = useState('#00FF00');
+  const [, setOverviewColor] = useState('#00FF00');
 
   // Summary counts (DEPEND on selected month)
   const [summaryPresentCount, setSummaryPresentCount] = useState(0);
@@ -74,7 +111,7 @@ const CreateAttendanceScreen = () => {
   const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
   const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
   const [summaryErrorCount, setSummaryErrorCount] = useState(0);
-  const [summaryColor, setSummaryColor] = useState('#00FF00');
+  const [, setSummaryColor] = useState('#00FF00');
 
   // Month & View
   const [activeTab, setActiveTab] = useState('home');
@@ -120,7 +157,7 @@ const CreateAttendanceScreen = () => {
     return unsub;
   }, [navigation]);
 
-  // Helpers
+  // Helpers for UI
   const secondsTo12Hour = seconds => {
     if (seconds == null || seconds === 0) return null;
     const date = new Date(0);
@@ -258,21 +295,28 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId, getSelectedRange]);
 
-  // Geofences (cached)
+  /* ====== Geofences (persistent cache) ====== */
   const getGeofencesCached = useCallback(async () => {
     const now = Date.now();
+    // in-memory
     if (
       geofenceCacheRef.current.sites.length &&
       now - geofenceCacheRef.current.ts < GEO_TTL_MS
     ) {
       return geofenceCacheRef.current.sites;
     }
+    // storage
+    const persisted = await loadGeofences();
+    if (persisted.sites.length && now - persisted.ts < GEO_TTL_MS) {
+      geofenceCacheRef.current = {sites: persisted.sites, ts: persisted.ts};
+      return persisted.sites;
+    }
+    // network
     const sites = await GetGPSCoordinates().catch(() => []);
-    geofenceCacheRef.current = {
-      sites: Array.isArray(sites) ? sites : [],
-      ts: Date.now(),
-    };
-    return geofenceCacheRef.current.sites;
+    const clean = Array.isArray(sites) ? sites : [];
+    geofenceCacheRef.current = {sites: clean, ts: Date.now()};
+    saveGeofences(clean); // fire & forget
+    return clean;
   }, []);
 
   // Initial loads
@@ -303,7 +347,7 @@ const CreateAttendanceScreen = () => {
     return () => clearInterval(interval);
   }, [shiftHours, clockInSeconds]);
 
-  // ===== Permissions + warm watch
+  // ===== Permissions + warm watch =====
   const ensureLocationPermission = useCallback(async () => {
     try {
       if (Platform.OS === 'android') {
@@ -397,39 +441,65 @@ const CreateAttendanceScreen = () => {
       );
     });
 
-  // Fast location strategy with caching + fallback + refine
+  // Fast location strategy with racing + caching + refine
   const getCurrentLocationFast = useCallback(async () => {
     const now = Date.now();
     const cached = lastCoordsRef.current;
+
+    // super fresh cached fix
     if (
       cached?.timestamp &&
       now - cached.timestamp < FRESH_FIX_MS &&
-      cached.accuracy <= MAX_ALLOWED_ACCURACY
+      (cached.accuracy ?? 9999) <= MAX_ALLOWED_ACCURACY
     ) {
       return cached;
     }
+
+    // Start both requests: first result wins
+    const lowP = tryGetPosition({
+      enableHighAccuracy: false,
+      timeout: 5000,
+      maximumAge: 20000,
+    });
+    const hiP = tryGetPosition({
+      enableHighAccuracy: true,
+      timeout: 9000,
+      maximumAge: 8000,
+    });
+
+    let first;
     try {
-      const hi = await tryGetPosition({
+      first = await Promise.race([lowP, hiP]);
+    } catch {
+      if (lastCoordsRef.current) return lastCoordsRef.current;
+      first = await tryGetPosition({
         enableHighAccuracy: true,
-        timeout: 12000,
-        maximumAge: 7000,
+        timeout: 6000,
+        maximumAge: 5000,
       });
-      lastCoordsRef.current = {...hi, timestamp: Date.now()};
-      return hi;
-    } catch (e1) {
-      try {
-        const lo = await tryGetPosition({
-          enableHighAccuracy: false,
-          timeout: 8000,
-          maximumAge: 15000,
-        });
-        lastCoordsRef.current = {...lo, timestamp: Date.now()};
-        return lo;
-      } catch (e2) {
-        if (lastCoordsRef.current) return lastCoordsRef.current;
-        throw e2;
-      }
     }
+
+    lastCoordsRef.current = {...first, timestamp: Date.now()};
+
+    // background refine if coarse
+    if ((first.accuracy ?? 9999) > MAX_ALLOWED_ACCURACY) {
+      tryGetPosition({
+        enableHighAccuracy: true,
+        timeout: 6000,
+        maximumAge: 5000,
+      })
+        .then(best => {
+          if (
+            best?.accuracy &&
+            best.accuracy < (lastCoordsRef.current?.accuracy ?? 1e9)
+          ) {
+            lastCoordsRef.current = {...best, timestamp: Date.now()};
+          }
+        })
+        .catch(() => {});
+    }
+
+    return first;
   }, []);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -454,6 +524,7 @@ const CreateAttendanceScreen = () => {
         const lat1 = Number(p.latitude);
         const lon1 = Number(p.longitude);
         if (!Number.isFinite(lat1) || !Number.isFinite(lon1)) continue;
+        // try normal vs swapped (in case data has lat/lon swapped)
         const dNormal = calculateDistance(userLat, userLon, lat1, lon1);
         const dSwapped = calculateDistance(userLat, userLon, lon1, lat1);
         const useSwap = dSwapped < dNormal;
@@ -480,47 +551,49 @@ const CreateAttendanceScreen = () => {
     [],
   );
 
+  /* =================== PUNCH =================== */
   const handleAttendance = useCallback(async () => {
     if (markInFlightRef.current) return; // prevent double-taps
     markInFlightRef.current = true;
+
     try {
       setLoadingAttendance(true);
       setLoadingGeo(true);
 
-      // 1) Get cached geofences (no network if cache is fresh)
-      const freshSites = await getGeofencesCached();
-      if (!freshSites.length) {
-        setAlertMessage('No office geofence available from D365.');
-        setAlertModal(true);
-        return;
-      }
+      // Start both immediately (parallel)
+      const geofencesP = getGeofencesCached();
+      const locP = (async () => {
+        const ok = await ensureLocationPermission();
+        if (!ok)
+          throw new Error(
+            'Location permission is required. Please enable it in Settings.',
+          );
+        return getCurrentLocationFast();
+      })();
 
-      // 2) Ensure permission (cheap if already granted)
-      const ok = await ensureLocationPermission();
-      if (!ok) {
-        setAlertMessage(
-          'Location permission is required. Please enable it in Settings.',
-        );
-        setAlertModal(true);
-        return;
-      }
+      const [freshSites, coords] = await Promise.all([geofencesP, locP]);
 
-      // 3) Get location fast with fallbacks
-      let coords = await getCurrentLocationFast();
+      if (!Array.isArray(freshSites) || freshSites.length === 0) {
+        throw new Error('No office geofence available from D365.');
+      }
       if (!coords?.latitude || !coords?.longitude) {
         throw new Error('Invalid location from device');
       }
 
-      // 3b) Optional refine if accuracy is poor
+      // Optional quick refine (bounded)
+      let used = coords;
       if ((coords.accuracy ?? 9999) > MAX_ALLOWED_ACCURACY) {
         try {
-          const refined = await tryGetPosition({
-            enableHighAccuracy: true,
-            timeout: 6000,
-            maximumAge: 5000,
-          });
-          if (refined?.accuracy && refined.accuracy < coords.accuracy) {
-            coords = refined;
+          const refined = await raceTimeout(
+            tryGetPosition({
+              enableHighAccuracy: true,
+              timeout: 4000,
+              maximumAge: 4000,
+            }),
+            4200,
+          );
+          if (refined?.accuracy && refined.accuracy < used.accuracy) {
+            used = refined;
             lastCoordsRef.current = {...refined, timestamp: Date.now()};
           }
         } catch {}
@@ -528,31 +601,25 @@ const CreateAttendanceScreen = () => {
 
       setLoadingGeo(false);
 
-      // 4) Geofence evaluate
-      const {latitude, longitude, accuracy = 9999} = coords;
+      const {latitude, longitude, accuracy = 9999} = used;
       const nearest = nearestWithEffective(
         latitude,
         longitude,
         accuracy,
         freshSites,
       );
-      if (!nearest) {
-        setAlertMessage('Unable to evaluate geofence. Please try again.');
-        setAlertModal(true);
-        return;
-      }
+      if (!nearest)
+        throw new Error('Unable to evaluate geofence. Please try again.');
+
       if (nearest.effectiveDistance > nearest.radius) {
         const displayDist = Math.max(0, Math.round(nearest.distance));
-        setAlertMessage(
+        throw new Error(
           `You are ~${displayDist}m from office (±${Math.round(
             accuracy,
           )}m). Must be within ${Math.round(nearest.radius)}m.`,
         );
-        setAlertModal(true);
-        return;
       }
 
-      // 5) Save
       const payload = {
         employeeId: userData?.employeeId,
         punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
@@ -563,7 +630,6 @@ const CreateAttendanceScreen = () => {
       if (response?.isSuccess || response === true) {
         setAlertMessage('Attendance recorded');
         setAlertModal(true);
-        // parallel refresh to minimize perceived latency
         await Promise.allSettled([
           fetchAttendanceRegister(),
           fetchOverviewSummary(),
@@ -841,6 +907,7 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F5F5'},
   content: {flex: 1},
   contentContainer: {flexGrow: 1, paddingBottom: 8},
+  /* ================== HOME ================== */
   homeRoot: {
     flex: 1,
     padding: PAD,
@@ -932,6 +999,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  /* ================== SUMMARY ================== */
   summaryRoot: {flex: 1, padding: PAD, backgroundColor: '#F5F5F5', gap: 10},
   topRow: {flexDirection: 'row', justifyContent: 'flex-start'},
   backBtn: {
