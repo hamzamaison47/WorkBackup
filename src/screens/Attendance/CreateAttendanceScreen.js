@@ -28,6 +28,7 @@ import {
   InfoItem,
   SummaryItem,
 } from '../../components/Attendance/AttendanceComponents';
+import {useNavigation} from '@react-navigation/native';
 
 // Screen sizing
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -57,6 +58,7 @@ const CreateAttendanceScreen = () => {
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [earlyOutCount, setEarlyOutCount] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [overviewColor, setOverviewColor] = useState('#00FF00');
 
   // ===== Summary counts (DEPEND on selected month)
@@ -68,6 +70,7 @@ const CreateAttendanceScreen = () => {
   const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
   const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
   const [summaryErrorCount, setSummaryErrorCount] = useState(0);
+  // eslint-disable-next-line no-unused-vars
   const [summaryColor, setSummaryColor] = useState('#00FF00');
 
   // Month & View
@@ -105,6 +108,15 @@ const CreateAttendanceScreen = () => {
     const timer = setInterval(() => setCurrentTime(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const unsub = navigation.addListener('blur', () => {
+      // runs as soon as the screen loses focus
+      setActiveTab('home');
+    });
+    return unsub;
+  }, [navigation]);
 
   // Helpers
   const secondsTo12Hour = seconds => {
@@ -319,24 +331,27 @@ const CreateAttendanceScreen = () => {
       const id = Geolocation.watchPosition(
         pos => {
           const c = (pos && pos.coords) || {};
-          lastCoordsRef.current = c;
+          // store a timestamp for freshness checks
+          lastCoordsRef.current = {...c, timestamp: Date.now()};
         },
         () => {},
         {
           enableHighAccuracy: true,
           distanceFilter: 0,
-          interval: 3000,
-          fastestInterval: 2000,
+          interval: 2000,
+          fastestInterval: 1000,
           useSignificantChanges: false,
         },
       );
       watchIdRef.current = id;
+
+      // Keep warm watch alive a bit longer to build cache
       setTimeout(() => {
         if (watchIdRef.current != null) {
           Geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
         }
-      }, 25000);
+      }, 45000); // was 25000
     } catch {}
   }, []);
 
@@ -370,20 +385,33 @@ const CreateAttendanceScreen = () => {
     });
 
   const getCurrentLocationFast = useCallback(async () => {
+    // 1) If we have a very recent cached fix, use it
+    const cached = lastCoordsRef.current;
+    const now = Date.now();
+    if (cached?.timestamp && now - cached.timestamp < 15000) {
+      // 15s fresh
+      return cached;
+    }
+
+    // 2) Try high accuracy first (geofence needs precision)
     try {
-      return await tryGetPosition({
-        enableHighAccuracy: false,
-        timeout: 5000,
-        maximumAge: 60000,
+      const hi = await tryGetPosition({
+        enableHighAccuracy: true,
+        timeout: 12000, // was 7000
+        maximumAge: 7000, // allow a very recent fix
       });
+      return hi;
     } catch (e1) {
+      // 3) Fallback to balanced (may return coarse but fast)
       try {
-        return await tryGetPosition({
-          enableHighAccuracy: true,
-          timeout: 7000,
-          maximumAge: 5000,
+        const lo = await tryGetPosition({
+          enableHighAccuracy: false,
+          timeout: 8000, // was 5000
+          maximumAge: 15000,
         });
+        return lo;
       } catch (e2) {
+        // 4) Last resort: if we cached *anything* from warm watch, use it
         if (lastCoordsRef.current) return lastCoordsRef.current;
         throw e2;
       }
@@ -858,7 +886,9 @@ const styles = StyleSheet.create({
     fontSize: isSmallDevice ? 16 : 18,
     fontWeight: 'bold',
     color: '#1E88E5',
-    marginRight: 6,
+    // flexShrink: 1,
+    flexGrow: 0, // Change from 1 to 0
+    marginRight: 1,
   },
   summarySwitchBtn: {
     flexDirection: 'row',
@@ -868,9 +898,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#E3F2FD',
     marginLeft: 6,
+    flexShrink: 0,
   },
   summarySwitchBtnText: {
-    fontSize: isSmallDevice ? 12 : 13,
+    fontSize: isSmallDevice ? 11 : 12,
     color: '#1E88E5',
     fontWeight: '600',
     marginRight: 2,

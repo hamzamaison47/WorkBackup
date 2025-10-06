@@ -3,6 +3,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {View, Text, StyleSheet, FlatList, RefreshControl} from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
+import {useIsFocused} from '@react-navigation/native';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
@@ -64,7 +65,6 @@ const to12h = (h24, m = 0) => {
 /** Accepts "HH:MM(:SS)" or seconds. Returns 12h with AM/PM for in/out display */
 const formatInOut12h = value => {
   if (isBlankTime(value)) return '--';
-  // String with colon
   if (typeof value === 'string' && value.includes(':')) {
     const [hStr, mStr] = value.split(':');
     const h = Number(hStr);
@@ -72,7 +72,6 @@ const formatInOut12h = value => {
     if (!Number.isFinite(h) || !Number.isFinite(m)) return '--';
     return to12h(h, m);
   }
-  // Seconds
   const sec = Number(value);
   if (!Number.isFinite(sec)) return '--';
   const h = Math.floor(sec / 3600);
@@ -84,11 +83,24 @@ const formatInOut12h = value => {
 const formatDuration = value => {
   if (isBlankTime(value)) return '--:--';
   if (typeof value === 'string' && value.includes(':')) {
-    // Show as-is if API already gives "HH:MM:SS" / "HH:MM"
     return value.length === 5 ? `${value}:00` : value;
   }
   const n = Number(value);
   return secToHHMMSS(n);
+};
+
+/* ------------ UI helpers ------------ */
+const getStatusMeta = (status = '') => {
+  const s = String(status).toLowerCase();
+  if (s.includes('leave'))
+    return {bg: '#FFE9EC', fg: '#D32F2F', label: 'Leave'};
+  if (s.includes('holiday') || s.includes('gazetted'))
+    return {bg: '#E7F6EC', fg: '#2E7D32', label: 'Holiday'};
+  if (s.includes('error'))
+    return {bg: '#FFF4E5', fg: '#E65100', label: 'Error'};
+  if (s.includes('calculated'))
+    return {bg: '#ECEFF1', fg: '#455A64', label: 'Calculated'};
+  return {bg: '#E8F0FE', fg: '#1E88E5', label: status || '—'};
 };
 
 const AttendanceDetailsScreen = () => {
@@ -99,6 +111,8 @@ const AttendanceDetailsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [alert, setAlert] = useState({visible: false, text: ''});
+
+  const isFocused = useIsFocused();
 
   const fromDate = useMemo(
     () => moment(month).startOf('month').format('YYYY-MM-DD'),
@@ -123,7 +137,7 @@ const AttendanceDetailsScreen = () => {
       const arr = normalizeArray(list).map((d, idx) => {
         const dt = parseISO(d.AttendanceDate);
         return {
-          ...d, // keep EXACT API fields
+          ...d,
           __parsedDate: dt,
           id:
             d.id ??
@@ -145,11 +159,17 @@ const AttendanceDetailsScreen = () => {
     }
   }, [userData?.employeeId, fromDate, toDate]);
 
+  // fetch on focus
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isFocused) fetchData();
+  }, [isFocused, fetchData]);
 
-  // month filter + newest first
+  // fetch on month change (only if focused)
+  useEffect(() => {
+    if (isFocused) fetchData();
+  }, [month, isFocused, fetchData]);
+
+  // filter + sort newest first
   useEffect(() => {
     const filtered = raw
       .filter(it => it.__parsedDate && it.__parsedDate.isSame(month, 'month'))
@@ -176,34 +196,42 @@ const AttendanceDetailsScreen = () => {
     const showClockOut =
       !looksLikeMissingDate(item.ClockOutDate) && !isBlankTime(item.ClockOut);
 
+    const statusMeta = getStatusMeta(item.Status);
+
     return (
       <View
         style={[styles.rowCard, {borderLeftColor: item.Color || '#6ce66c'}]}>
-        <View style={styles.rowTop}>
+        {/* header with underline */}
+        <View style={styles.cardHeader}>
           <Text style={styles.dateText}>{dateLabel}</Text>
-          <Text style={styles.badge}>{item.Status || '—'}</Text>
+          <View style={[styles.chip, {backgroundColor: statusMeta.bg}]}>
+            <Text style={[styles.chipText, {color: statusMeta.fg}]}>
+              {statusMeta.label}
+            </Text>
+          </View>
         </View>
 
+        {/* values row */}
         <View style={styles.rowGrid}>
           <View style={styles.cell}>
-            <Text style={styles.value}>
+            <Text style={[styles.value, styles.inValue]}>
               {showClockIn ? formatInOut12h(item.ClockIn) : '--'}
             </Text>
             <Text style={styles.label}>Clock In</Text>
           </View>
 
           <View style={styles.cell}>
-            <Text style={styles.value}>
+            <Text style={[styles.value, styles.outValue]}>
               {showClockOut ? formatInOut12h(item.ClockOut) : '--'}
             </Text>
             <Text style={styles.label}>Clock Out</Text>
           </View>
 
           <View style={styles.cell}>
-            <Text style={styles.value}>
+            <Text style={[styles.value, styles.hoursValue]}>
               {formatDuration(item.ShiftWorkingTime)}
             </Text>
-            <Text style={styles.label}>Shift Working Time</Text>
+            <Text style={styles.label}>Working Hours</Text>
           </View>
         </View>
       </View>
@@ -274,30 +302,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 14,
     padding: 12,
-    marginBottom: 10,
+    marginBottom: 12, // more separation between records
     elevation: 2,
-    borderLeftWidth: 5,
+    // borderLeftWidth: 5,
   },
-  rowTop: {
+
+  /* underline header */
+  cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E6E9EE',
+    marginBottom: 10,
   },
   dateText: {fontSize: 15, fontWeight: '700', color: '#263238'},
-  badge: {
-    fontSize: 11,
-    color: '#455A64',
-    backgroundColor: '#ECEFF1',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
+
+  /* status chip */
+  chip: {paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999},
+  chipText: {fontSize: 11, fontWeight: '700'},
 
   rowGrid: {flexDirection: 'row', columnGap: 10},
   cell: {flex: 1},
   value: {fontSize: 16, fontWeight: '800', color: '#263238'},
+  inValue: {color: '#2E7D32'}, // green
+  outValue: {color: '#E65100'}, // orange
+  hoursValue: {color: '#1565C0'}, // blue
   label: {fontSize: 11, color: '#607D8B', marginTop: 2},
 
   empty: {alignItems: 'center', paddingTop: 36, paddingHorizontal: 12},
