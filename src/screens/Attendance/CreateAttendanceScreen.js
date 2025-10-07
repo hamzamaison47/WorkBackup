@@ -36,12 +36,13 @@ const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
 
 /* =================== Tunables =================== */
-const GEO_TTL_MS = 10 * 60 * 1000; // geofence cache time (10m)
-const FRESH_FIX_MS = 15 * 1000; // last-known fix freshness window (15s)
-const MAX_ALLOWED_ACCURACY = 100; // meters (relax to 150–200 if needed)
-const GEOF_KEY = 'df_geofences_v1'; // AsyncStorage key
+const GEO_TTL_MS = 30 * 60 * 1000; // 30m for less frequent network calls
+const FRESH_FIX_MS = 30 * 1000; // 30s to allow more cache hits
+const MAX_ALLOWED_ACCURACY = 150; // Relaxed to 150m for faster fixes
+const GEOF_KEY = 'df_geofences_v1';
 
 /* =================== Helpers =================== */
+// eslint-disable-next-line no-unused-vars
 const raceTimeout = (promise, ms) =>
   new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('timeout')), ms);
@@ -62,6 +63,7 @@ const saveGeofences = async sites => {
     await AsyncStorage.setItem(GEOF_KEY, JSON.stringify(payload));
   } catch {}
 };
+
 const loadGeofences = async () => {
   try {
     const raw = await AsyncStorage.getItem(GEOF_KEY);
@@ -100,7 +102,10 @@ const CreateAttendanceScreen = () => {
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
   const [earlyOutCount, setEarlyOutCount] = useState(0);
-  const [, setOverviewColor] = useState('#00FF00');
+  const [overviewPresentColor, setOverviewPresentColor] = useState('');
+  const [overviewAbsentColor, setOverviewAbsentColor] = useState('');
+  const [overviewLateColor, setOverviewLateColor] = useState('');
+  const [overviewEarlyOutColor, setOverviewEarlyOutColor] = useState('');
 
   // Summary counts (DEPEND on selected month)
   const [summaryPresentCount, setSummaryPresentCount] = useState(0);
@@ -111,13 +116,20 @@ const CreateAttendanceScreen = () => {
   const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
   const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
   const [summaryErrorCount, setSummaryErrorCount] = useState(0);
-  const [, setSummaryColor] = useState('#00FF00');
+  const [summaryPresentColor, setSummaryPresentColor] = useState('');
+  const [summaryAbsentColor, setSummaryAbsentColor] = useState('');
+  const [summaryLateColor, setSummaryLateColor] = useState('');
+  const [summaryEarlyOutColor, setSummaryEarlyOutColor] = useState('');
+  const [summaryLeaveColor, setSummaryLeaveColor] = useState('');
+  const [summaryOffDayColor, setSummaryOffDayColor] = useState('');
+  const [summaryGazettedDayColor, setSummaryGazettedDayColor] = useState('');
+  const [summaryErrorColor, setSummaryErrorColor] = useState('');
 
   // Month & View
   const [activeTab, setActiveTab] = useState('home');
   const [selectedMonthYM, setSelectedMonthYM] = useState({
     year: moment().year(),
-    monthIndex: moment().month(), // 0..11
+    monthIndex: moment().month(),
   });
 
   const getSelectedRange = useCallback(() => {
@@ -135,10 +147,11 @@ const CreateAttendanceScreen = () => {
   const {userData} = useSelector(state => state.user || {});
   const navigation = useNavigation();
 
-  // ===== location & geofence caches
-  const lastCoordsRef = useRef(null); // { latitude, longitude, accuracy, timestamp }
+  // Location & geofence caches
+  const lastCoordsRef = useRef(null);
   const watchIdRef = useRef(null);
   const geofenceCacheRef = useRef({sites: [], ts: 0});
+  const permissionStatusRef = useRef(null);
 
   // Pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
@@ -241,13 +254,20 @@ const CreateAttendanceScreen = () => {
         setAbsentCount(Number(s.AbsentCount ?? 0));
         setLateCount(Number(s.LateArrivalCount ?? 0));
         setEarlyOutCount(Number(s.EarlyOutCount ?? 0));
-        setOverviewColor(String(s.Color ?? '#00FF00'));
+
+        setOverviewPresentColor(String(s.PresentColor));
+        setOverviewAbsentColor(String(s.AbsentColor));
+        setOverviewLateColor(String(s.LateArrivalColor));
+        setOverviewEarlyOutColor(String(s.EarlyOutColor));
       } else {
         setPresentCount(0);
         setAbsentCount(0);
         setLateCount(0);
         setEarlyOutCount(0);
-        setOverviewColor('#00FF00');
+        setOverviewPresentColor('');
+        setOverviewAbsentColor('');
+        setOverviewLateColor('');
+        setOverviewEarlyOutColor('');
       }
     } catch {
       // keep existing values
@@ -276,7 +296,15 @@ const CreateAttendanceScreen = () => {
         setSummaryOffDayCount(Number(s.OffDayCount ?? 0));
         setSummaryGazettedDayCount(Number(s.GazettedDayCount ?? 0));
         setSummaryErrorCount(Number(s.ErrorCount ?? 0));
-        setSummaryColor(String(s.Color ?? '#00FF00'));
+
+        setSummaryPresentColor(String(s.PresentColor));
+        setSummaryAbsentColor(String(s.AbsentColor));
+        setSummaryLateColor(String(s.LateArrivalColor));
+        setSummaryEarlyOutColor(String(s.EarlyOutColor));
+        setSummaryLeaveColor(String(s.LeaveColor));
+        setSummaryOffDayColor(String(s.OffDayColor));
+        setSummaryGazettedDayColor(String(s.GazettedDayColor));
+        setSummaryErrorColor(String(s.ErrorColor));
       } else {
         setSummaryPresentCount(0);
         setSummaryAbsentCount(0);
@@ -286,7 +314,14 @@ const CreateAttendanceScreen = () => {
         setSummaryOffDayCount(0);
         setSummaryGazettedDayCount(0);
         setSummaryErrorCount(0);
-        setSummaryColor('#00FF00');
+        setSummaryPresentColor('');
+        setSummaryAbsentColor('');
+        setSummaryLateColor('');
+        setSummaryEarlyOutColor('');
+        setSummaryLeaveColor('');
+        setSummaryOffDayColor('');
+        setSummaryGazettedDayColor('');
+        setSummaryErrorColor('');
       }
     } catch {
       // ignore
@@ -295,27 +330,24 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId, getSelectedRange]);
 
-  /* ====== Geofences (persistent cache) ====== */
+  // Geofences (persistent cache)
   const getGeofencesCached = useCallback(async () => {
     const now = Date.now();
-    // in-memory
     if (
       geofenceCacheRef.current.sites.length &&
       now - geofenceCacheRef.current.ts < GEO_TTL_MS
     ) {
       return geofenceCacheRef.current.sites;
     }
-    // storage
     const persisted = await loadGeofences();
     if (persisted.sites.length && now - persisted.ts < GEO_TTL_MS) {
       geofenceCacheRef.current = {sites: persisted.sites, ts: persisted.ts};
       return persisted.sites;
     }
-    // network
     const sites = await GetGPSCoordinates().catch(() => []);
     const clean = Array.isArray(sites) ? sites : [];
     geofenceCacheRef.current = {sites: clean, ts: Date.now()};
-    saveGeofences(clean); // fire & forget
+    saveGeofences(clean);
     return clean;
   }, []);
 
@@ -323,7 +355,6 @@ const CreateAttendanceScreen = () => {
   useEffect(() => {
     fetchAttendanceRegister();
     fetchOverviewSummary();
-    // warm geofences silently
     getGeofencesCached();
   }, [fetchAttendanceRegister, fetchOverviewSummary, getGeofencesCached]);
 
@@ -347,19 +378,27 @@ const CreateAttendanceScreen = () => {
     return () => clearInterval(interval);
   }, [shiftHours, clockInSeconds]);
 
-  // ===== Permissions + warm watch =====
+  // Permissions + warm watch
   const ensureLocationPermission = useCallback(async () => {
+    if (permissionStatusRef.current === true) return true;
     try {
       if (Platform.OS === 'android') {
-        const fineGranted = await PermissionsAndroid.check(
+        const fine = await PermissionsAndroid.check(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
-        const coarseGranted = await PermissionsAndroid.check(
+        if (fine) {
+          permissionStatusRef.current = true;
+          return true;
+        }
+        const coarse = await PermissionsAndroid.check(
           PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         );
-        if (fineGranted || coarseGranted) return true;
+        if (coarse) {
+          permissionStatusRef.current = true;
+          return true;
+        }
 
-        const fine = await PermissionsAndroid.request(
+        const fineResult = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: 'Location Permission',
@@ -369,24 +408,31 @@ const CreateAttendanceScreen = () => {
             buttonPositive: 'OK',
           },
         );
-        if (fine === PermissionsAndroid.RESULTS.GRANTED) return true;
+        if (fineResult === PermissionsAndroid.RESULTS.GRANTED) {
+          permissionStatusRef.current = true;
+          return true;
+        }
 
-        const coarse = await PermissionsAndroid.request(
+        const coarseResult = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
         );
-        return coarse === PermissionsAndroid.RESULTS.GRANTED;
+        permissionStatusRef.current =
+          coarseResult === PermissionsAndroid.RESULTS.GRANTED;
+        return permissionStatusRef.current;
       } else {
         const auth = await Geolocation.requestAuthorization('whenInUse');
-        return auth === 'granted';
+        permissionStatusRef.current = auth === 'granted';
+        return permissionStatusRef.current;
       }
     } catch {
+      permissionStatusRef.current = false;
       return false;
     }
   }, []);
 
   const startWarmWatch = useCallback(() => {
+    if (watchIdRef.current != null) return;
     try {
-      if (watchIdRef.current != null) return;
       const id = Geolocation.watchPosition(
         pos => {
           const c = (pos && pos.coords) || {};
@@ -396,19 +442,12 @@ const CreateAttendanceScreen = () => {
         {
           enableHighAccuracy: true,
           distanceFilter: 0,
-          interval: 2000,
-          fastestInterval: 1000,
+          interval: 3000,
+          fastestInterval: 2000,
           useSignificantChanges: false,
         },
       );
       watchIdRef.current = id;
-
-      setTimeout(() => {
-        if (watchIdRef.current != null) {
-          Geolocation.clearWatch(watchIdRef.current);
-          watchIdRef.current = null;
-        }
-      }, 45000);
     } catch {}
   }, []);
 
@@ -441,12 +480,10 @@ const CreateAttendanceScreen = () => {
       );
     });
 
-  // Fast location strategy with racing + caching + refine
   const getCurrentLocationFast = useCallback(async () => {
     const now = Date.now();
     const cached = lastCoordsRef.current;
 
-    // super fresh cached fix
     if (
       cached?.timestamp &&
       now - cached.timestamp < FRESH_FIX_MS &&
@@ -455,16 +492,15 @@ const CreateAttendanceScreen = () => {
       return cached;
     }
 
-    // Start both requests: first result wins
     const lowP = tryGetPosition({
       enableHighAccuracy: false,
-      timeout: 5000,
-      maximumAge: 20000,
+      timeout: 3000,
+      maximumAge: 15000,
     });
     const hiP = tryGetPosition({
       enableHighAccuracy: true,
-      timeout: 9000,
-      maximumAge: 8000,
+      timeout: 5000,
+      maximumAge: 10000,
     });
 
     let first;
@@ -474,31 +510,12 @@ const CreateAttendanceScreen = () => {
       if (lastCoordsRef.current) return lastCoordsRef.current;
       first = await tryGetPosition({
         enableHighAccuracy: true,
-        timeout: 6000,
+        timeout: 4000,
         maximumAge: 5000,
       });
     }
 
     lastCoordsRef.current = {...first, timestamp: Date.now()};
-
-    // background refine if coarse
-    if ((first.accuracy ?? 9999) > MAX_ALLOWED_ACCURACY) {
-      tryGetPosition({
-        enableHighAccuracy: true,
-        timeout: 6000,
-        maximumAge: 5000,
-      })
-        .then(best => {
-          if (
-            best?.accuracy &&
-            best.accuracy < (lastCoordsRef.current?.accuracy ?? 1e9)
-          ) {
-            lastCoordsRef.current = {...best, timestamp: Date.now()};
-          }
-        })
-        .catch(() => {});
-    }
-
     return first;
   }, []);
 
@@ -524,7 +541,6 @@ const CreateAttendanceScreen = () => {
         const lat1 = Number(p.latitude);
         const lon1 = Number(p.longitude);
         if (!Number.isFinite(lat1) || !Number.isFinite(lon1)) continue;
-        // try normal vs swapped (in case data has lat/lon swapped)
         const dNormal = calculateDistance(userLat, userLon, lat1, lon1);
         const dSwapped = calculateDistance(userLat, userLon, lon1, lat1);
         const useSwap = dSwapped < dNormal;
@@ -551,27 +567,20 @@ const CreateAttendanceScreen = () => {
     [],
   );
 
-  /* =================== PUNCH =================== */
   const handleAttendance = useCallback(async () => {
-    if (markInFlightRef.current) return; // prevent double-taps
+    if (markInFlightRef.current) return;
     markInFlightRef.current = true;
 
     try {
       setLoadingAttendance(true);
       setLoadingGeo(true);
 
-      // Start both immediately (parallel)
-      const geofencesP = getGeofencesCached();
-      const locP = (async () => {
-        const ok = await ensureLocationPermission();
-        if (!ok)
-          throw new Error(
-            'Location permission is required. Please enable it in Settings.',
-          );
-        return getCurrentLocationFast();
-      })();
+      const [freshSites, coords] = await Promise.all([
+        getGeofencesCached(),
+        getCurrentLocationFast(),
+      ]);
 
-      const [freshSites, coords] = await Promise.all([geofencesP, locP]);
+      setLoadingGeo(false); // Moved earlier to clear geo loading after fetch
 
       if (!Array.isArray(freshSites) || freshSites.length === 0) {
         throw new Error('No office geofence available from D365.');
@@ -580,28 +589,7 @@ const CreateAttendanceScreen = () => {
         throw new Error('Invalid location from device');
       }
 
-      // Optional quick refine (bounded)
-      let used = coords;
-      if ((coords.accuracy ?? 9999) > MAX_ALLOWED_ACCURACY) {
-        try {
-          const refined = await raceTimeout(
-            tryGetPosition({
-              enableHighAccuracy: true,
-              timeout: 4000,
-              maximumAge: 4000,
-            }),
-            4200,
-          );
-          if (refined?.accuracy && refined.accuracy < used.accuracy) {
-            used = refined;
-            lastCoordsRef.current = {...refined, timestamp: Date.now()};
-          }
-        } catch {}
-      }
-
-      setLoadingGeo(false);
-
-      const {latitude, longitude, accuracy = 9999} = used;
+      const {latitude, longitude, accuracy = 9999} = coords;
       const nearest = nearestWithEffective(
         latitude,
         longitude,
@@ -628,6 +616,7 @@ const CreateAttendanceScreen = () => {
 
       const response = await CreateAttendance(payload);
       if (response?.isSuccess || response === true) {
+        setLoadingAttendance(false); // Clear loading before showing success message
         setAlertMessage('Attendance recorded');
         setAlertModal(true);
         await Promise.allSettled([
@@ -641,12 +630,11 @@ const CreateAttendanceScreen = () => {
       setAlertMessage(err?.message || 'Failed to mark attendance.');
       setAlertModal(true);
     } finally {
-      setLoadingAttendance(false);
+      setLoadingAttendance(false); // Ensure both are reset
       setLoadingGeo(false);
       markInFlightRef.current = false;
     }
   }, [
-    ensureLocationPermission,
     getGeofencesCached,
     getCurrentLocationFast,
     userData?.employeeId,
@@ -655,7 +643,6 @@ const CreateAttendanceScreen = () => {
     nearestWithEffective,
   ]);
 
-  // Pull-to-refresh
   const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
@@ -679,10 +666,8 @@ const CreateAttendanceScreen = () => {
     getGeofencesCached,
   ]);
 
-  /* ========================= RENDER ========================= */
   const renderHomeScreen = () => (
     <View style={styles.homeRoot}>
-      {/* time/date */}
       <View style={styles.timeContainer}>
         <Text numberOfLines={1} adjustsFontSizeToFit style={styles.timeText}>
           {currentTime.format('hh:mm:ss A')}
@@ -692,7 +677,6 @@ const CreateAttendanceScreen = () => {
         </Text>
       </View>
 
-      {/* info tiles */}
       <View style={styles.infoRow}>
         <InfoItem
           icon="login"
@@ -714,7 +698,6 @@ const CreateAttendanceScreen = () => {
         />
       </View>
 
-      {/* centered button */}
       <View style={styles.centeredButtonContainer}>
         <AttendanceButton
           onPress={handleAttendance}
@@ -727,7 +710,6 @@ const CreateAttendanceScreen = () => {
         ) : null}
       </View>
 
-      {/* month overview */}
       <View style={styles.quickSummaryCard}>
         <View style={styles.quickSummaryHeaderRow}>
           <Text style={styles.quickSummaryTitle}>This Month Overview</Text>
@@ -741,25 +723,32 @@ const CreateAttendanceScreen = () => {
         </View>
         <View style={styles.quickSummaryRow}>
           <View className="item" style={styles.quickSummaryItem}>
-            <Text style={[styles.quickSummaryValue, {color: '#4CAF50'}]}>
+            <Text
+              style={[styles.quickSummaryValue, {color: overviewPresentColor}]}>
               {String(presentCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Present</Text>
           </View>
           <View className="item" style={styles.quickSummaryItem}>
-            <Text style={[styles.quickSummaryValue, {color: '#F44336'}]}>
+            <Text
+              style={[styles.quickSummaryValue, {color: overviewAbsentColor}]}>
               {String(absentCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Absent</Text>
           </View>
           <View className="item" style={styles.quickSummaryItem}>
-            <Text style={[styles.quickSummaryValue, {color: '#FF9800'}]}>
+            <Text
+              style={[styles.quickSummaryValue, {color: overviewLateColor}]}>
               {String(lateCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Late</Text>
           </View>
           <View className="item" style={styles.quickSummaryItem}>
-            <Text style={[styles.quickSummaryValue, {color: '#9C27B0'}]}>
+            <Text
+              style={[
+                styles.quickSummaryValue,
+                {color: overviewEarlyOutColor},
+              ]}>
               {String(earlyOutCount)}
             </Text>
             <Text style={styles.quickSummaryLabel}>Early Out</Text>
@@ -773,7 +762,6 @@ const CreateAttendanceScreen = () => {
     const keyForMonth = getSelectedRange().key;
     return (
       <View key={keyForMonth} style={styles.summaryRoot}>
-        {/* back */}
         <View style={styles.topRow}>
           <TouchableOpacity
             onPress={() => setActiveTab('home')}
@@ -784,7 +772,6 @@ const CreateAttendanceScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* month selector */}
         <View style={styles.monthSelector}>
           <TouchableOpacity
             onPress={() =>
@@ -815,7 +802,6 @@ const CreateAttendanceScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* summary card */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryCardTitle}>Attendance Summary</Text>
           {loadingSummary ? (
@@ -829,42 +815,42 @@ const CreateAttendanceScreen = () => {
               <SummaryItem
                 label="Present Days"
                 value={String(summaryPresentCount)}
-                color="#4CAF50"
+                color={summaryPresentColor}
               />
               <SummaryItem
                 label="Absent Days"
                 value={String(summaryAbsentCount)}
-                color="#F44336"
+                color={summaryAbsentColor}
               />
               <SummaryItem
                 label="Late Arrivals"
                 value={String(summaryLateCount)}
-                color="#FF9800"
+                color={summaryLateColor}
               />
               <SummaryItem
                 label="Early Outs"
                 value={String(summaryEarlyOutCount)}
-                color="#9C27B0"
+                color={summaryEarlyOutColor}
               />
               <SummaryItem
                 label="Leave Days"
                 value={String(summaryLeaveCount)}
-                color="#2196F3"
+                color={summaryLeaveColor}
               />
               <SummaryItem
                 label="Off Days"
                 value={String(summaryOffDayCount)}
-                color="#FFB6C1"
+                color={summaryOffDayColor}
               />
               <SummaryItem
                 label="Gazetted Days"
                 value={String(summaryGazettedDayCount)}
-                color="#FF69B4"
+                color={summaryGazettedDayColor}
               />
               <SummaryItem
                 label="Error Days"
                 value={String(summaryErrorCount)}
-                color="#FFA500"
+                color={summaryErrorColor}
               />
             </View>
           )}
@@ -907,7 +893,6 @@ const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F5F5'},
   content: {flex: 1},
   contentContainer: {flexGrow: 1, paddingBottom: 8},
-  /* ================== HOME ================== */
   homeRoot: {
     flex: 1,
     padding: PAD,
@@ -999,7 +984,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  /* ================== SUMMARY ================== */
   summaryRoot: {flex: 1, padding: PAD, backgroundColor: '#F5F5F5', gap: 10},
   topRow: {flexDirection: 'row', justifyContent: 'flex-start'},
   backBtn: {
@@ -1051,25 +1035,6 @@ const styles = StyleSheet.create({
   },
   summaryList: {gap: isSmallDevice ? 6 : 8},
   loader: {marginVertical: 16},
-  totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  totalLabel: {
-    fontSize: isSmallDevice ? 14 : 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  totalValue: {
-    fontSize: isSmallDevice ? 16 : 18,
-    fontWeight: 'bold',
-    color: '#1E88E5',
-  },
 });
 
 export default CreateAttendanceScreen;
