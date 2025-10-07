@@ -153,6 +153,9 @@ const CreateAttendanceScreen = () => {
   const geofenceCacheRef = useRef({sites: [], ts: 0});
   const permissionStatusRef = useRef(null);
 
+  // Track last geofence error to force refresh on retry
+  const lastGeofenceErrorRef = useRef(null);
+
   // Pull-to-refresh
   const [refreshing, setRefreshing] = useState(false);
 
@@ -330,20 +333,35 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId, getSelectedRange]);
 
-  // Geofences (persistent cache)
-  const getGeofencesCached = useCallback(async () => {
+  // Geofences (persistent cache) - MODIFIED to allow cache bypass
+  const getGeofencesCached = useCallback(async (forceRefresh = false) => {
     const now = Date.now();
+
+    // If force refresh is requested, always fetch fresh data
+    if (forceRefresh) {
+      const sites = await GetGPSCoordinates().catch(() => []);
+      const clean = Array.isArray(sites) ? sites : [];
+      geofenceCacheRef.current = {sites: clean, ts: Date.now()};
+      saveGeofences(clean);
+      return clean;
+    }
+
+    // Check memory cache first
     if (
       geofenceCacheRef.current.sites.length &&
       now - geofenceCacheRef.current.ts < GEO_TTL_MS
     ) {
       return geofenceCacheRef.current.sites;
     }
+
+    // Check persisted cache
     const persisted = await loadGeofences();
     if (persisted.sites.length && now - persisted.ts < GEO_TTL_MS) {
       geofenceCacheRef.current = {sites: persisted.sites, ts: persisted.ts};
       return persisted.sites;
     }
+
+    // Fetch fresh data
     const sites = await GetGPSCoordinates().catch(() => []);
     const clean = Array.isArray(sites) ? sites : [];
     geofenceCacheRef.current = {sites: clean, ts: Date.now()};
@@ -575,18 +593,24 @@ const CreateAttendanceScreen = () => {
       setLoadingAttendance(true);
       setLoadingGeo(true);
 
+      // Check if we had a previous geofence error to force refresh
+      const forceRefresh = lastGeofenceErrorRef.current !== null;
+
       const [freshSites, coords] = await Promise.all([
-        getGeofencesCached(),
+        getGeofencesCached(forceRefresh),
         getCurrentLocationFast(),
       ]);
 
-      setLoadingGeo(false); // Moved earlier to clear geo loading after fetch
+      setLoadingGeo(false);
 
       if (!Array.isArray(freshSites) || freshSites.length === 0) {
-        throw new Error('No office geofence available from D365.');
+        lastGeofenceErrorRef.current =
+          'No office geofence available from D365.';
+        throw new Error(lastGeofenceErrorRef.current);
       }
       if (!coords?.latitude || !coords?.longitude) {
-        throw new Error('Invalid location from device');
+        lastGeofenceErrorRef.current = 'Invalid location from device';
+        throw new Error(lastGeofenceErrorRef.current);
       }
 
       const {latitude, longitude, accuracy = 9999} = coords;
@@ -596,17 +620,22 @@ const CreateAttendanceScreen = () => {
         accuracy,
         freshSites,
       );
-      if (!nearest)
-        throw new Error('Unable to evaluate geofence. Please try again.');
+      if (!nearest) {
+        lastGeofenceErrorRef.current =
+          'Unable to evaluate geofence. Please try again.';
+        throw new Error(lastGeofenceErrorRef.current);
+      }
 
       if (nearest.effectiveDistance > nearest.radius) {
         const displayDist = Math.max(0, Math.round(nearest.distance));
-        throw new Error(
-          `You are ~${displayDist}m from office (±${Math.round(
-            accuracy,
-          )}m). Must be within ${Math.round(nearest.radius)}m.`,
-        );
+        lastGeofenceErrorRef.current = `You are ~${displayDist}m from office (±${Math.round(
+          accuracy,
+        )}m). Must be within ${Math.round(nearest.radius)}m.`;
+        throw new Error(lastGeofenceErrorRef.current);
       }
+
+      // Clear any previous geofence error since we're now within range
+      lastGeofenceErrorRef.current = null;
 
       const payload = {
         employeeId: userData?.employeeId,
@@ -616,7 +645,6 @@ const CreateAttendanceScreen = () => {
 
       const response = await CreateAttendance(payload);
       if (response?.isSuccess || response === true) {
-        setLoadingAttendance(false); // Clear loading before showing success message
         setAlertMessage('Attendance recorded');
         setAlertModal(true);
         await Promise.allSettled([
@@ -630,7 +658,7 @@ const CreateAttendanceScreen = () => {
       setAlertMessage(err?.message || 'Failed to mark attendance.');
       setAlertModal(true);
     } finally {
-      setLoadingAttendance(false); // Ensure both are reset
+      setLoadingAttendance(false);
       setLoadingGeo(false);
       markInFlightRef.current = false;
     }
@@ -650,7 +678,7 @@ const CreateAttendanceScreen = () => {
         await Promise.all([
           fetchAttendanceRegister(),
           fetchOverviewSummary(),
-          getGeofencesCached(),
+          getGeofencesCached(true), // Force refresh on pull-to-refresh
         ]);
       } else {
         await fetchMonthlySummary();
