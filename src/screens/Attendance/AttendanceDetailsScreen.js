@@ -185,11 +185,11 @@ const AttendanceDetailsScreen = () => {
     if (isFocused) fetchData();
   }, [month, isFocused, fetchData]);
 
-  // filter + sort newest first
+  // filter + sort OLDEST FIRST (ascending)
   useEffect(() => {
     const filtered = raw
       .filter(it => it.__parsedDate && it.__parsedDate.isSame(month, 'month'))
-      .sort((a, b) => b.__parsedDate.valueOf() - a.__parsedDate.valueOf());
+      .sort((a, b) => a.__parsedDate.valueOf() - b.__parsedDate.valueOf());
     setData(filtered);
   }, [raw, month]);
 
