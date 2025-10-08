@@ -137,6 +137,11 @@ const CustomDrawerContent = props => {
     return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
   });
 
+  const uniqueMenuItems = filteredMenuItems.filter(
+    (it, idx, arr) =>
+      !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
+  );
+
   return (
     <View style={{flex: 1, backgroundColor: '#FAFAFA'}}>
       {/* Header */}
@@ -190,9 +195,19 @@ const CustomDrawerContent = props => {
         />
 
         {/* Dynamic Menu Items */}
-        {filteredMenuItems.map(item => (
+        {/* {filteredMenuItems.map(item => (
           <CustomDrawerItem
             key={item.Sequence}
+            label={item.Label || item.MenuId}
+            icon={
+              iconMapping[item.MenuId] ||
+              require('../assets/Maindashboard/calendar.png')
+            }
+            isActive={activeRoute === item.MenuId}
+            onPress={() => { */}
+        {uniqueMenuItems.map((item, idx) => (
+          <CustomDrawerItem
+            key={`${item.MenuId}-${item.Sequence ?? idx}`} // ✅ unique, stable
             label={item.Label || item.MenuId}
             icon={
               iconMapping[item.MenuId] ||
@@ -256,6 +271,11 @@ const DrawerNavigator = () => {
     return screenMapping[item.MenuId];
   });
 
+  const uniqueMenuItems = filteredMenuItems.filter(
+    (it, idx, arr) =>
+      !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
+  );
+
   return (
     <Drawer.Navigator
       initialRouteName="TabNavigator"
@@ -280,12 +300,30 @@ const DrawerNavigator = () => {
       />
 
       {/* Dynamic Screens */}
-      {filteredMenuItems.map(item => {
+      {/* {filteredMenuItems.map(item => {
         const ScreenComponent = screenMapping[item.MenuId];
         return (
           <Drawer.Screen
             key={item.Sequence}
             name={item.MenuId}
+            component={ScreenComponent}
+            initialParams={{userData}}
+            options={{
+              title: item.DisplayName || item.MenuId,
+              drawerIcon: () => (
+                <Ionicons name="menu" size={24} color="#0A66C2" />
+              ),
+              headerShown: true,
+            }}
+          />
+        );
+      })} */}
+      {uniqueMenuItems.map((item, idx) => {
+        const ScreenComponent = screenMapping[item.MenuId];
+        return (
+          <Drawer.Screen
+            key={`${item.MenuId}-${item.Sequence ?? idx}`} // ✅ unique, stable
+            name={item.MenuId} // keep route name as-is
             component={ScreenComponent}
             initialParams={{userData}}
             options={{
