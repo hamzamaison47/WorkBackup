@@ -113,10 +113,22 @@ const rgba = (hex, a) => {
   return `rgba(${r},${g},${b},${clamp01(a)})`;
 };
 const readableTextOn = hex => {
-  // luminance check to pick dark or white text on chip bg
   const {r, g, b} = hexToRgb(hex);
   const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return L > 0.7 ? '#1A1A1A' : '#0E1521';
+};
+
+/** Build a guaranteed-unique, stable key for FlatList */
+const buildKey = (d, idx) => {
+  const recId = d.RecId ?? d.RecID ?? d.recId ?? d.ID ?? d.Id ?? d.id ?? ''; // tolerate various id names
+  const parts = [
+    d.AttendanceDate || 'NA',
+    d.ClockIn || 'NA',
+    d.ClockOut || 'NA',
+    recId || 'noid',
+    idx, // final disambiguator if everything else collides
+  ];
+  return String(parts.join('|'));
 };
 
 const AttendanceDetailsScreen = () => {
@@ -150,18 +162,16 @@ const AttendanceDetailsScreen = () => {
         toDate,
       });
 
-      const arr = normalizeArray(list).map((d, idx) => {
-        const dt = parseISO(d.AttendanceDate);
-        return {
-          ...d,
-          __parsedDate: dt,
-          id:
-            d.id ??
-            `${d.AttendanceDate || 'NA'}-${d.ClockIn ?? 'NA'}-${
-              d.ClockOut ?? 'NA'
-            }-${idx}`,
-        };
-      });
+      const arr = normalizeArray(list)
+        .filter(Boolean)
+        .map((d, idx) => {
+          const dt = parseISO(d.AttendanceDate);
+          return {
+            ...d,
+            __parsedDate: dt,
+            _key: buildKey(d, idx), // <- stable, unique key for FlatList
+          };
+        });
 
       setRaw(arr);
     } catch (e) {
@@ -288,7 +298,7 @@ const AttendanceDetailsScreen = () => {
           style={{flex: 1}}
           contentContainerStyle={styles.listContent}
           data={data}
-          keyExtractor={it => String(it.id)}
+          keyExtractor={(it, idx) => it._key || String(idx)} // <- use guaranteed-unique key
           renderItem={renderItem}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
