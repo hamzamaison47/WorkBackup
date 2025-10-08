@@ -179,6 +179,7 @@ const CreateAttendanceScreen = () => {
     const date = new Date(0);
     date.setSeconds(seconds);
     return moment.utc(date).format('hh:mm A');
+    // note: UTC format to avoid timezone drift in pure seconds-of-day numbers
   };
 
   const formatSeconds = totalSeconds => {
@@ -585,6 +586,14 @@ const CreateAttendanceScreen = () => {
     [],
   );
 
+  // fire-and-forget helper so UI doesn't wait
+  const refreshAfterMark = useCallback(() => {
+    try {
+      fetchAttendanceRegister(); // intentionally not awaited
+      fetchOverviewSummary(); // intentionally not awaited
+    } catch {}
+  }, [fetchAttendanceRegister, fetchOverviewSummary]);
+
   const handleAttendance = useCallback(async () => {
     if (markInFlightRef.current) return;
     markInFlightRef.current = true;
@@ -593,7 +602,6 @@ const CreateAttendanceScreen = () => {
       setLoadingAttendance(true);
       setLoadingGeo(true);
 
-      // Check if we had a previous geofence error to force refresh
       const forceRefresh = lastGeofenceErrorRef.current !== null;
 
       const [freshSites, coords] = await Promise.all([
@@ -634,7 +642,7 @@ const CreateAttendanceScreen = () => {
         throw new Error(lastGeofenceErrorRef.current);
       }
 
-      // Clear any previous geofence error since we're now within range
+      // within range now
       lastGeofenceErrorRef.current = null;
 
       const payload = {
@@ -644,31 +652,40 @@ const CreateAttendanceScreen = () => {
       };
 
       const response = await CreateAttendance(payload);
+
       if (response?.isSuccess || response === true) {
+        // ✅ Immediately stop spinner & unlock tap
+        setLoadingAttendance(false);
+        markInFlightRef.current = false;
+
+        // Show success right away
         setAlertMessage('Attendance recorded');
         setAlertModal(true);
-        await Promise.allSettled([
-          fetchAttendanceRegister(),
-          fetchOverviewSummary(),
-        ]);
-      } else {
-        throw new Error(response?.message || 'Failed to save attendance');
+
+        // Trigger refresh without keeping the button busy
+        refreshAfterMark();
+
+        // short early return so finally{} doesn't re-toggle spinner
+        return;
       }
+
+      throw new Error(response?.message || 'Failed to save attendance');
     } catch (err) {
       setAlertMessage(err?.message || 'Failed to mark attendance.');
       setAlertModal(true);
     } finally {
-      setLoadingAttendance(false);
+      // Make sure geo spinner goes off even on failures
       setLoadingGeo(false);
+      // If we didn't already stop it in the success early-return path
+      setLoadingAttendance(false);
       markInFlightRef.current = false;
     }
   }, [
     getGeofencesCached,
     getCurrentLocationFast,
     userData?.employeeId,
-    fetchAttendanceRegister,
-    fetchOverviewSummary,
     nearestWithEffective,
+    refreshAfterMark,
   ]);
 
   const onRefresh = useCallback(async () => {
@@ -975,8 +992,6 @@ const styles = StyleSheet.create({
     fontSize: isSmallDevice ? 16 : 18,
     fontWeight: 'bold',
     color: '#1E88E5',
-    flexGrow: 0,
-    marginRight: 1,
   },
   summarySwitchBtn: {
     flexDirection: 'row',
@@ -986,7 +1001,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: '#E3F2FD',
     marginLeft: 6,
-    flexShrink: 0,
   },
   summarySwitchBtnText: {
     fontSize: isSmallDevice ? 11 : 12,
