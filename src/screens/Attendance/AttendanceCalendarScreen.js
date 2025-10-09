@@ -388,8 +388,9 @@ const AttendanceCalendarScreen = () => {
               </View>
               {selectedDayDetails ? (
                 <ScrollView
-                  style={styles.detailsContainer}
-                  showsVerticalScrollIndicator={false}>
+                  contentContainerStyle={styles.detailsContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled">
                   <View
                     style={[
                       styles.statusBadge,
@@ -535,7 +536,7 @@ const AttendanceCalendarScreen = () => {
                         value={pick(selectedDayDetails, 'shiftId', 'ShiftId')}
                       />
                     )}
-                    {pick(
+                    {/* {pick(
                       selectedDayDetails,
                       'employeeName',
                       'EmployeeName',
@@ -548,7 +549,7 @@ const AttendanceCalendarScreen = () => {
                           'EmployeeName',
                         )}
                       />
-                    )}
+                    )} */}
                   </View>
                 </ScrollView>
               ) : (
@@ -649,8 +650,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
+    maxHeight: '85%', // keep the taller sheet
+    paddingBottom: 0, // ⬅️ remove extra bottom padding that created the white band
   },
+
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -662,13 +665,17 @@ const styles = StyleSheet.create({
   modalTitle: {fontSize: 18, fontWeight: 'bold', color: '#1c1c1e', flex: 1},
   closeButton: {padding: 4, marginLeft: 10},
   closeButtonText: {fontSize: 20, color: '#8e8e93', fontWeight: 'bold'},
-  detailsContainer: {padding: 20},
+  detailsContainer: {},
   statusBadge: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
     alignSelf: 'flex-start',
     marginBottom: 20,
+  },
+  detailsContent: {
+    padding: 20,
+    paddingBottom: 10, // ⬅️ last row visibility
   },
   statusText: {fontSize: 14, fontWeight: 'bold'},
   detailsGrid: {gap: 12},

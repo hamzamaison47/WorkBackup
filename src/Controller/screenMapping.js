@@ -36,7 +36,7 @@ export const iconMapping = {
   EntitlementBalance: require('../assets/Maindashboard/justice.png'),
   GenericAdvanceListScreen: require('../assets/Maindashboard/signing.png'),
   GenericAdvanceSaveScreen: require('../assets/Maindashboard/loan-approved.png'),
-  CreateAttendanceScreen: require('../assets/Maindashboard/attendance.png'),
+  CreateAttendanceScreen: require('../assets/immigration.png'),
   AttendanceDetailsScreen: require('../assets/calendar.png'),
   AttendanceCalendarScreen: require('../assets/machine.png'),
 };
