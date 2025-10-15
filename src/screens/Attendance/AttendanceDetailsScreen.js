@@ -2,15 +2,25 @@
 /* eslint-disable no-bitwise */
 /* eslint-disable curly */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {View, Text, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+} from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
-import {useIsFocused} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
 import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents';
+
+/** <<< EDIT THIS IF YOUR SCREENS ARE IN A NESTED STACK >>> */
+const PARENT_STACK_NAME = null;
 
 /* ------------ utils ------------ */
 const parseISO = iso =>
@@ -55,7 +65,7 @@ const secToHHMMSS = sec => {
   ).padStart(2, '0')}`;
 };
 
-/** Convert 24h h:m(:s) to 12h with AM/PM */
+/** Convert 24h h:m to 12h with AM/PM */
 const to12h = (h24, m = 0) => {
   if (!Number.isFinite(h24) || !Number.isFinite(m)) return '--';
   const ampm = h24 >= 12 ? 'PM' : 'AM';
@@ -91,14 +101,14 @@ const formatDuration = value => {
   return secToHHMMSS(n);
 };
 
-/* ------------ color helpers (use API color for whole card) ------------ */
-const DEFAULT_COLOR = '#6ce66c'; // fallback green matching your API default
+/* ------------ color helpers ------------ */
+const DEFAULT_COLOR = '#6ce66c';
 
 const isHex = c => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || ''));
 const clamp01 = n => Math.max(0, Math.min(1, n));
 
 const hexToRgb = hex => {
-  if (!isHex(hex)) return {r: 108, g: 230, b: 108}; // default rgb of #6ce66c
+  if (!isHex(hex)) return {r: 108, g: 230, b: 108};
   let h = hex.replace('#', '');
   if (h.length === 3)
     h = h
@@ -120,18 +130,58 @@ const readableTextOn = hex => {
 
 /** Build a guaranteed-unique, stable key for FlatList */
 const buildKey = (d, idx) => {
-  const recId = d.RecId ?? d.RecID ?? d.recId ?? d.ID ?? d.Id ?? d.id ?? ''; // tolerate various id names
+  const recId = d.RecId ?? d.RecID ?? d.recId ?? d.ID ?? d.Id ?? d.id ?? '';
   const parts = [
     d.AttendanceDate || 'NA',
     d.ClockIn || 'NA',
     d.ClockOut || 'NA',
     recId || 'noid',
-    idx, // final disambiguator if everything else collides
+    idx,
   ];
   return String(parts.join('|'));
 };
 
+/* ---------- NEW: robust normalizers for params ---------- */
+
+/** Normalize any date-ish value to "YYYY-MM-DD" (local) */
+const normalizeDateISO = v => {
+  if (!v) return '';
+  // If already YYYY-MM-DD
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  // ISO with time or other → moment
+  const m =
+    typeof v === 'string' && v.length >= 10 ? moment(v) : moment(parseISO(v));
+  if (!m || !m.isValid()) return '';
+  return m.local().format('YYYY-MM-DD');
+};
+
+/** Normalize mixed time formats to strict "HH:mm" (24h) */
+const normalizeTimeTo24h = v => {
+  if (isBlankTime(v)) return '';
+  // seconds (number or numeric string)
+  if (/^\d{1,5}$/.test(String(v))) {
+    const sec = Number(v);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  const sv = String(v).trim();
+
+  // 12h like "9:05 AM" / "09:05 pm"
+  const t12 = moment(sv, ['h:mm A', 'hh:mm A'], true);
+  if (t12.isValid()) return t12.format('HH:mm');
+
+  // 24h "HH:mm" or "HH:mm:ss"
+  const t24 = moment(sv, ['HH:mm', 'HH:mm:ss'], true);
+  if (t24.isValid()) return t24.format('HH:mm');
+
+  // Last resort: parse loosely
+  const mx = moment(sv);
+  return mx.isValid() ? mx.format('HH:mm') : '';
+};
+
 const AttendanceDetailsScreen = () => {
+  const navigation = useNavigation();
   const {userData} = useSelector(state => state.user || {});
   const [month, setMonth] = useState(moment());
   const [raw, setRaw] = useState([]);
@@ -169,7 +219,7 @@ const AttendanceDetailsScreen = () => {
           return {
             ...d,
             __parsedDate: dt,
-            _key: buildKey(d, idx), // <- stable, unique key for FlatList
+            _key: buildKey(d, idx),
           };
         });
 
@@ -185,23 +235,27 @@ const AttendanceDetailsScreen = () => {
     }
   }, [userData?.employeeId, fromDate, toDate]);
 
-  // fetch on focus
   useEffect(() => {
     if (isFocused) fetchData();
   }, [isFocused, fetchData]);
 
-  // fetch on month change (if focused)
   useEffect(() => {
     if (isFocused) fetchData();
   }, [month, isFocused, fetchData]);
 
-  // filter + sort OLDEST FIRST (ascending)
   useEffect(() => {
     const filtered = raw
       .filter(it => it.__parsedDate && it.__parsedDate.isSame(month, 'month'))
       .sort((a, b) => a.__parsedDate.valueOf() - b.__parsedDate.valueOf());
     setData(filtered);
   }, [raw, month]);
+
+  useEffect(() => {
+    if (__DEV__) {
+      const s = [...new Set(raw.map(r => (r.Status || '').toString()))];
+      console.log('Sample statuses this month:', s);
+    }
+  }, [raw]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -211,6 +265,17 @@ const AttendanceDetailsScreen = () => {
       setRefreshing(false);
     }
   }, [fetchData]);
+
+  const goTo = useCallback(
+    (screenName, params) => {
+      if (PARENT_STACK_NAME) {
+        navigation.navigate(PARENT_STACK_NAME, {screen: screenName, params});
+      } else {
+        navigation.navigate(screenName, params);
+      }
+    },
+    [navigation],
+  );
 
   const renderItem = ({item}) => {
     const dateLabel = item.__parsedDate
@@ -222,19 +287,78 @@ const AttendanceDetailsScreen = () => {
     const showClockOut =
       !looksLikeMissingDate(item.ClockOutDate) && !isBlankTime(item.ClockOut);
 
-    // Use API color for the whole row (fallback to default if invalid)
     const apiColor = isHex(item?.Color) ? item.Color : DEFAULT_COLOR;
-    const chipBg = rgba(apiColor, 0.14); // soft tint
-    const chipText = readableTextOn(apiColor); // dark text on light tint
-    const underline = rgba(apiColor, 0.45); // header underline/tint
+    const chipBg = rgba(apiColor, 0.14);
+    const chipText = readableTextOn(apiColor);
+    const underline = rgba(apiColor, 0.45);
+
+    const rawStatus = (item.Status ?? '').toString().trim().toLowerCase();
+    const ABSENT_ALIASES = [
+      'absent',
+      'a',
+      'no in/out',
+      'no in out',
+      'missing',
+      'abs',
+      'leave without pay',
+    ];
+
+    const noIn =
+      isBlankTime(item.ClockIn) || looksLikeMissingDate(item.ClockInDate);
+    const noOut =
+      isBlankTime(item.ClockOut) || looksLikeMissingDate(item.ClockOutDate);
+    const computedAbsent = noIn && noOut;
+
+    const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+    const isPresent =
+      rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
+    const isEditableIssue = !isPresent && !isAbsent;
+
+    const isTouchable = isAbsent || isEditableIssue;
+
+    // ----- NEW: build clean params -----
+    const selectedDateISO = item?.__parsedDate
+      ? item.__parsedDate.local().format('YYYY-MM-DD')
+      : normalizeDateISO(item.AttendanceDate);
+
+    const normalizedClockIn = normalizeTimeTo24h(item.ClockIn);
+    const normalizedClockOut = normalizeTimeTo24h(item.ClockOut);
+
+    const onPressRow = () => {
+      if (!selectedDateISO) return;
+
+      if (isAbsent) {
+        // Only date is needed for marking present
+        goTo('MarkPresentScreen', {
+          employeeId: userData?.employeeId,
+          employeeName: userData?.employeeName,
+          attendanceDate: selectedDateISO,
+          sourceScreen: 'AttendanceDetailsScreen',
+        });
+      } else if (isEditableIssue) {
+        // Bind date AND times for editing
+        goTo('EditAttendanceScreen', {
+          employeeId: userData?.employeeId,
+          employeeName: userData?.employeeName,
+          attendanceDate: selectedDateISO,
+          clockIn: normalizedClockIn,
+          clockOut: normalizedClockOut,
+          remarks: item?.Remarks || '',
+          sourceScreen: 'AttendanceDetailsScreen',
+        });
+      }
+    };
+    // -----------------------------------
 
     return (
-      <View
+      <TouchableOpacity
+        activeOpacity={isTouchable ? 0.7 : 1}
+        onPress={isTouchable ? onPressRow : undefined}
         style={[
           styles.rowCard,
           {borderLeftColor: apiColor, borderLeftWidth: 5},
         ]}>
-        {/* header with underline + status chip */}
+        {/* header */}
         <View style={[styles.cardHeader, {borderBottomColor: underline}]}>
           <Text style={styles.dateText}>{dateLabel}</Text>
           <View
@@ -250,7 +374,7 @@ const AttendanceDetailsScreen = () => {
           </View>
         </View>
 
-        {/* values row (neutral colors) */}
+        {/* values row */}
         <View style={styles.rowGrid}>
           <View style={styles.cell}>
             <Text style={styles.value}>
@@ -273,7 +397,7 @@ const AttendanceDetailsScreen = () => {
             <Text style={styles.label}>Working Hours</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -298,7 +422,7 @@ const AttendanceDetailsScreen = () => {
           style={{flex: 1}}
           contentContainerStyle={styles.listContent}
           data={data}
-          keyExtractor={(it, idx) => it._key || String(idx)} // <- use guaranteed-unique key
+          keyExtractor={(it, idx) => it._key || String(idx)}
           renderItem={renderItem}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -344,7 +468,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  /* underline header */
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -355,7 +478,6 @@ const styles = StyleSheet.create({
   },
   dateText: {fontSize: 15, fontWeight: '700', color: '#263238'},
 
-  /* status chip (uses tinted API color) */
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 4,

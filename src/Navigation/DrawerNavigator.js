@@ -29,6 +29,8 @@ import TabNavigator from './TabNavigator';
 import styles from '../styles/styles';
 import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayPersonalInfo';
 import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
+import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
+import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -357,6 +359,32 @@ const DrawerNavigator = () => {
         initialParams={{userData}}
         options={{
           title: 'ChangeProfileImage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="MarkPresentScreen"
+        component={MarkPresentScreen}
+        initialParams={{userData}}
+        options={{
+          title: 'MarkPresentScreen',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="EditAttendanceScreen"
+        component={EditAttendanceScreen}
+        initialParams={{userData}}
+        options={{
+          title: 'EditAttendanceScreen',
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),

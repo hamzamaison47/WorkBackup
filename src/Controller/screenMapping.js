@@ -10,7 +10,6 @@ import GenericAdvanceSaveScreen from '../screens/EmployeeAdvanceRequest/GenericA
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 import AttendanceDetailsScreen from '../screens/Attendance/AttendanceDetailsScreen';
 import AttendanceCalendarScreen from '../screens/Attendance/AttendanceCalendarScreen';
-import EmploymentCertificate from '../screens/EmploymentCertificate/EmploymentCertificate';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -25,7 +24,6 @@ export const screenMapping = {
   CreateAttendanceScreen: CreateAttendanceScreen,
   AttendanceDetailsScreen: AttendanceDetailsScreen,
   AttendanceCalendarScreen: AttendanceCalendarScreen,
-  EmploymentCertificate: EmploymentCertificate,
 };
 
 // Map Images → Screen component
@@ -41,5 +39,4 @@ export const iconMapping = {
   CreateAttendanceScreen: require('../assets/immigration.png'),
   AttendanceDetailsScreen: require('../assets/calendar.png'),
   AttendanceCalendarScreen: require('../assets/machine.png'),
-  EmploymentCertificate: require('../assets/Maindashboard/EmploymentCertificate.png'),
 };

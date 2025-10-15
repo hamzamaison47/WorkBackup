@@ -1,0 +1,380 @@
+/* =============================
+ * EditAttendanceScreen.js
+ * ============================= */
+/* eslint-disable curly */
+/* eslint-disable react-native/no-inline-styles */
+import React, {useEffect, useMemo, useState, useCallback} from 'react';
+import {
+  Text,
+  TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
+  SafeAreaView,
+  Platform,
+} from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
+
+import ActionPaneContainer from '../../components/ActionPaneContainer';
+import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import AlertModal from '../../components/Alert/AlertModal';
+import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+import TimeFlicker from '../../components/Attendance/TimeFlicker';
+import styles from '../../styles/styles';
+
+import EditAdjustment from '../../API/Attendance/EditAdjustment';
+import {SubmitAdjustment} from '../../API/Attendance/SubmitAdjustment';
+
+const TIME_HINT = 'hh:mm AM/PM or HH:mm'; // UI hint; API expects seconds
+
+/* ---------------- helpers (same semantics as MarkPresent) ---------------- */
+const isBlank = v =>
+  v === null || v === undefined || v === '' || v === '0' || v === 0;
+const pad2 = n => String(n).padStart(2, '0');
+const valOf = v => (v && typeof v === 'object' && 'value' in v ? v.value : v);
+
+/** Accepts seconds | HH:mm[:ss] | h:mm AM/PM -> returns seconds (number) or null */
+const toSecondsFromAnyTime = raw => {
+  if (isBlank(raw)) return null;
+  const s = String(valOf(raw)).trim();
+
+  if (/^\d+$/.test(s)) return Number(s); // already seconds
+
+  // 24h with seconds
+  let m = s.match(/^([01]?\d|2[0-3]):([0-5]\d):([0-5]\d)$/);
+  if (m) return +m[1] * 3600 + +m[2] * 60 + +m[3];
+
+  // 24h, no seconds
+  m = s.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  if (m) return +m[1] * 3600 + +m[2] * 60;
+
+  // 12h h:mm AM/PM
+  m = s.match(/^(\d{1,2}):([0-5]\d)\s*(AM|PM)$/i);
+  if (m) {
+    let h = +m[1];
+    const min = +m[2];
+    const mer = m[3].toUpperCase();
+    if (mer === 'AM') {
+      if (h === 12) h = 0;
+    } else {
+      if (h !== 12) h += 12;
+    }
+    return h * 3600 + min * 60;
+  }
+
+  return null;
+};
+
+/** Normalize date/datetime string for AX:
+ * - keep 'YYYY-MM-DDTHH:mm:ssZ' (literal Z)
+ * - accept pure 'YYYY-MM-DD'
+ * - accept ISO with timezone offsets like '+05:00' or '+0500'
+ * - if value looks like only time, keep previous ISO date/datetime
+ */
+const normalizeAxDateTime = (raw, fallbackIso) => {
+  const s = String(valOf(raw) ?? '').trim();
+  if (!s) return fallbackIso || '';
+
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(s)) return s; // full ISO Z
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date only
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+\-]\d{2}:\d{2})$/.test(s))
+    return s; // ISO with :offset
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+\-]\d{4})$/.test(s)) return s; // ISO with compact offset
+
+  if (
+    /^\d{1,2}:[0-5]\d(\s*[AP]M)?$/i.test(s) ||
+    /^\d{1,2}:[0-5]\d:[0-5]\d$/.test(s)
+  ) {
+    return fallbackIso || '';
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.split('T')[0];
+
+  return fallbackIso || '';
+};
+
+const cleanRemarks = txt =>
+  String(txt ?? '')
+    .replace(/\\n/g, ' ')
+    .replace(/\/n/g, ' ')
+    .replace(/\r?\n/g, ' ')
+    .trim();
+
+const extractRecId = res =>
+  res?.RecId ||
+  res?.recId ||
+  res?.RecordId ||
+  res?.recordId ||
+  res?.Result?.RecId ||
+  res?.result?.RecId ||
+  res?.result?.recId ||
+  res?.Data?.RecId ||
+  res?.data?.RecId ||
+  res?.raw?.RecId ||
+  res?.raw?.recId ||
+  null;
+
+/* ---------------- component ---------------- */
+const EditAttendanceScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const {userData} = useSelector(state => state.user || {});
+
+  const {
+    employeeId: paramEmpId,
+    employeeName = userData?.employeeName || '',
+    attendanceDate: routeAttendanceDate = '', // e.g., 'YYYY-MM-DD' or ISO
+    clockIn = '', // may be seconds or formatted
+    clockOut = '',
+    remarks = '',
+    recId, // optional, used as fallback for submit
+    sourceScreen = 'AttendanceDetailsScreen',
+  } = route.params || {};
+
+  // Build a safe initial date/datetime
+  const today = new Date();
+  const todayISO = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(
+    today.getDate(),
+  )}`;
+  const initialAxDate = normalizeAxDateTime(routeAttendanceDate, todayISO);
+
+  // Prefill UI fields (keep raw-friendly for user editing)
+  const [form, setForm] = useState({
+    EmployeeName: employeeName,
+    AttendanceDateUI: initialAxDate, // bound to TimeFlicker (date or ISO)
+    ClockInUI: clockIn ?? '',
+    ClockOutUI: clockOut ?? '',
+    Remarks: remarks ?? '',
+  });
+
+  // Canonical date/datetime to send to API
+  const [axDateTime, setAxDateTime] = useState(initialAxDate);
+
+  useEffect(() => {
+    setForm(prev => ({...prev, EmployeeName: employeeName}));
+    const normalized = normalizeAxDateTime(
+      routeAttendanceDate,
+      axDateTime || todayISO,
+    );
+    setAxDateTime(normalized || todayISO);
+    setForm(prev => ({
+      ...prev,
+      AttendanceDateUI: normalized || prev.AttendanceDateUI,
+      ClockInUI: clockIn ?? prev.ClockInUI,
+      ClockOutUI: clockOut ?? prev.ClockOutUI,
+      Remarks: remarks ?? prev.Remarks,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeName, routeAttendanceDate, clockIn, clockOut, remarks]);
+
+  const [processing, setProcessing] = useState(''); // '', 'save', 'submit'
+  const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({visible: false, text: ''});
+
+  const onDateChange = v => {
+    const next = normalizeAxDateTime(v, axDateTime);
+    setAxDateTime(next);
+    setForm(prev => ({
+      ...prev,
+      AttendanceDateUI: next || prev.AttendanceDateUI,
+    }));
+  };
+
+  const onTimeChange = (field, v) =>
+    setForm(prev => ({...prev, [field]: valOf(v)}));
+  const onChangeText = (field, v) => setForm(prev => ({...prev, [field]: v}));
+
+  const doEdit = async () => {
+    const employeeId = userData?.employeeId || paramEmpId || '';
+
+    // Accept seconds directly (or parse formatted times if provided)
+    const clockInSec = toSecondsFromAnyTime(form.ClockInUI);
+    const clockOutSec = toSecondsFromAnyTime(form.ClockOutUI);
+
+    const payload = {
+      EmployeeId: employeeId,
+      EmployeeName: form.EmployeeName || '',
+      ClockIn: clockInSec ?? '',
+      ClockOut: clockOutSec ?? '',
+      AttendanceDate: axDateTime, // ✅ single, correct field
+      Remarks: cleanRemarks(form.Remarks),
+    };
+
+    const res = await EditAdjustment({contract: payload});
+    const ok =
+      res?.isSuccess === true ||
+      res?.IsSuccess === true ||
+      String(res?.IsSuccess).toLowerCase() === 'true';
+    return {res, ok};
+  };
+
+  const onSave = async actionType => {
+    if (processing) return;
+
+    const employeeId = userData?.employeeId || paramEmpId || '';
+    const missing = [];
+    if (!employeeId) missing.push('EmployeeId (not found in userData)');
+    if (!axDateTime) missing.push('Attendance Date');
+
+    const cin = toSecondsFromAnyTime(form.ClockInUI);
+    const cout = toSecondsFromAnyTime(form.ClockOutUI);
+    if (cin === null) missing.push('Clock In (' + TIME_HINT + ' → seconds)');
+    if (cout === null) missing.push('Clock Out (' + TIME_HINT + ' → seconds)');
+
+    if (missing.length) {
+      setAlert({visible: true, text: 'Please fill:\n' + missing.join('\n')});
+      return;
+    }
+
+    setProcessing(actionType);
+    setLoading(true);
+
+    try {
+      // 1) EDIT
+      const {res, ok} = await doEdit();
+      if (!ok) {
+        setAlert({
+          visible: true,
+          text: res?.message || res?.Message || 'Edit failed',
+        });
+        return;
+      }
+
+      if (actionType === 'save') {
+        setAlert({visible: true, text: 'Attendance edited successfully.'});
+      } else if (actionType === 'submit') {
+        // 2) SUBMIT — needs recId (same API shape as MarkPresent: recIds: [])
+        const outRecId = extractRecId(res) || recId;
+        if (!outRecId) {
+          setAlert({
+            visible: true,
+            text: 'Edited, but recId not returned — cannot submit.',
+          });
+          return;
+        }
+        const submitRes = await SubmitAdjustment({recIds: [outRecId]});
+        const submitOk =
+          submitRes?.IsSuccess === true ||
+          String(submitRes?.IsSuccess).toLowerCase() === 'true' ||
+          submitRes?.isSuccess === true;
+        if (!submitOk) {
+          setAlert({
+            visible: true,
+            text: submitRes?.Message || submitRes?.message || 'Submit failed',
+          });
+          return;
+        }
+        setAlert({
+          visible: true,
+          text: 'Attendance edited & submitted successfully.',
+        });
+      }
+
+      setTimeout(() => {
+        setAlert(s => ({...s, visible: false}));
+        if (sourceScreen) navigation.navigate(sourceScreen, {refresh: true});
+        else navigation.goBack();
+      }, 900);
+    } catch (e) {
+      setAlert({visible: true, text: e?.message || 'Network error'});
+    } finally {
+      setLoading(false);
+      setProcessing('');
+    }
+  };
+
+  const onBack = useCallback(() => {
+    if (sourceScreen) navigation.navigate(sourceScreen);
+    else navigation.goBack();
+  }, [navigation, sourceScreen]);
+
+  return (
+    <ActionPaneContainer
+      pageTitle="Edit Attendance"
+      isBackButton
+      showFooter={false}
+      showFloatingButton={false}
+      isHeaderActive
+      onBackPress={onBack}
+      onRefresh={() => {}}
+      onFloatingButtonPress={{}}>
+      {loading ? (
+        <CustomIndicator />
+      ) : (
+        <SafeAreaView style={styles.LReqSR_SafeArea}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.LReqSR_ContentWrapper}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+            <ScrollView
+              contentContainerStyle={styles.LReqSR_FormContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled>
+              {/* Employee (read-only). EmployeeId is taken from userData/params */}
+              <Text style={styles.LReqSR_Label}>Employee</Text>
+              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+                {form.EmployeeName ||
+                  (userData?.employeeId ?? paramEmpId ?? '')}
+              </Text>
+
+              {/* Attendance Date (single field) */}
+              <TimeFlicker
+                mode="date"
+                label="Attendance Date *"
+                value={form.AttendanceDateUI}
+                onChange={onDateChange}
+                uiFormat="12h"
+              />
+
+              {/* Times — converted to seconds for API */}
+              <TimeFlicker
+                mode="time"
+                label="Clock In *"
+                value={form.ClockInUI}
+                onChange={v => onTimeChange('ClockInUI', v)}
+                uiFormat="12h"
+              />
+              <TimeFlicker
+                mode="time"
+                label="Clock Out *"
+                value={form.ClockOutUI}
+                onChange={v => onTimeChange('ClockOutUI', v)}
+                uiFormat="12h"
+              />
+
+              <Text style={[styles.LReqSR_Label, {marginTop: 12}]}>
+                Remarks
+              </Text>
+              <TextInput
+                style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
+                value={form.Remarks}
+                onChangeText={v => onChangeText('Remarks', v)}
+                placeholder="Optional remarks"
+                multiline
+                numberOfLines={6}
+              />
+            </ScrollView>
+
+            <SaveRecordButtons
+              mode="edit"
+              processingButton={processing}
+              onSave={onSave}
+              onCancel={onBack}
+              isDisabled={processing === 'save' || processing === 'submit'}
+            />
+          </KeyboardAvoidingView>
+
+          <AlertModal
+            visible={alert.visible}
+            heading="Alert"
+            text={alert.text}
+            onPress={() => setAlert(s => ({...s, visible: false}))}
+          />
+        </SafeAreaView>
+      )}
+    </ActionPaneContainer>
+  );
+};
+
+export default EditAttendanceScreen;

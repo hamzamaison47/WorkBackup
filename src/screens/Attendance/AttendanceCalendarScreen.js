@@ -13,11 +13,11 @@ import {
 import moment from 'moment';
 import {useSelector} from 'react-redux';
 import {useIsFocused} from '@react-navigation/native';
+
 import DFCalendar from '../../components/Attendance/DFCalendar';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
-import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents';
 
 /* ---------------- helpers (outside component) ---------------- */
 const pick = (obj, ...keys) =>
@@ -196,7 +196,15 @@ const AttendanceCalendarScreen = () => {
         const color = determineColor(item);
         marked[dateStr] = {
           customStyles: {
-            container: {backgroundColor: color, borderRadius: 8},
+            container: {
+              backgroundColor: color,
+              borderRadius: 50,
+              margin: 2,
+              paddingVertical: 2,
+              aspectRatio: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+            },
             text: {color: getTextColor(color), fontWeight: 'bold'},
           },
         };
@@ -228,7 +236,6 @@ const AttendanceCalendarScreen = () => {
         fromDate,
         toDate,
       });
-
       processAttendanceData(rows);
     } catch (err) {
       console.error('Attendance fetch error:', err?.message || err);
@@ -242,9 +249,7 @@ const AttendanceCalendarScreen = () => {
   }, [employeeId, currentMonth, processAttendanceData]);
 
   useEffect(() => {
-    if (isFocused && employeeId) {
-      fetchAttendanceData();
-    }
+    if (isFocused && employeeId) fetchAttendanceData();
   }, [currentMonth, fetchAttendanceData, isFocused, employeeId]);
 
   const onRefresh = useCallback(async () => {
@@ -266,6 +271,43 @@ const AttendanceCalendarScreen = () => {
   const handleMonthChange = month => {
     setCurrentMonth(moment(month.dateString));
   };
+
+  // --- NEW: ensure "today" is visibly highlighted ---
+  const todayStr = useMemo(() => moment().format('YYYY-MM-DD'), []);
+  const withTodayMarked = useMemo(() => {
+    const base = {...markedDates};
+    const isSameMonth = currentMonth.isSame(moment(), 'month');
+
+    if (isSameMonth) {
+      // If the API already marked today, keep its fill but add a blue ring.
+      const existing = base[todayStr]?.customStyles || {};
+      const prevContainer = existing.container || {};
+      const prevText = existing.text || {};
+
+      base[todayStr] = {
+        customStyles: {
+          container: {
+            ...prevContainer,
+            borderWidth: 2, // blue ring around the day
+            borderColor: '#0EA5E9',
+            borderRadius: 50,
+            margin: 2,
+            paddingVertical: 2,
+            aspectRatio: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+          text: {
+            ...prevText,
+            fontWeight: '800',
+            color: prevText.color || '#0F172A',
+          },
+        },
+      };
+    }
+    return base;
+  }, [markedDates, currentMonth, todayStr]);
+  // ---------------------------------------------------
 
   // eslint-disable-next-line no-unused-vars
   const headerSubtitle = useMemo(
@@ -289,20 +331,9 @@ const AttendanceCalendarScreen = () => {
           </View>
         ) : (
           <>
-            <View style={styles.headerRow}>
-              <Text style={styles.title}>Attendance Calendar</Text>
-              <MonthFilter
-                month={currentMonth}
-                onPrev={() =>
-                  setCurrentMonth(m => m.clone().subtract(1, 'month'))
-                }
-                onNext={() => setCurrentMonth(m => m.clone().add(1, 'month'))}
-              />
-            </View>
-
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#007AFF" />
+                <ActivityIndicator size="large" color="#0EA5E9" />
                 <Text style={styles.loadingText}>
                   Loading attendance data...
                 </Text>
@@ -315,14 +346,54 @@ const AttendanceCalendarScreen = () => {
                     onRefresh={onRefresh}
                   />
                 }>
-                {/* Calendar */}
-                <View style={styles.calendarContainer}>
+                {/* Modern Calendar Card */}
+                <View style={styles.calendarCard}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardNav}>
+                      <TouchableOpacity
+                        accessibilityLabel="Previous month"
+                        onPress={() =>
+                          setCurrentMonth(m => moment(m).subtract(1, 'month'))
+                        }>
+                        <Text style={styles.navBtn}>{'‹'}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityLabel="Next month"
+                        onPress={() =>
+                          setCurrentMonth(m => moment(m).add(1, 'month'))
+                        }>
+                        <Text style={styles.navBtn}>{'›'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
                   <DFCalendar
                     currentDate={currentMonth.toDate()}
-                    markedDates={markedDates}
+                    // use the merged marks that include "today"
+                    markedDates={withTodayMarked}
                     onDayPress={handleDateSelect}
                     onMonthChange={handleMonthChange}
-                    hideDayNames={true} // <-- prevents duplicate-key warning from weekday letters ("S","T")
+                    enableSwipeMonths
+                    hideArrows
+                    hideExtraDays={false}
+                    firstDay={1}
+                    hideDayNames={false}
+                    markingType="custom"
+                    themeOverrides={{
+                      backgroundColor: '#F5F7FB',
+                      calendarBackground: '#FFFFFF',
+                      textSectionTitleColor: '#8E99A4',
+                      monthTextColor: '#0F172A',
+                      arrowColor: '#0EA5E9',
+                      todayTextColor: '#0EA5E9', // also tint today's number
+                      dayTextColor: '#0F172A',
+                      textDisabledColor: '#C7CED6',
+                      selectedDayTextColor: '#0F172A',
+                      textMonthFontWeight: '800',
+                      textMonthFontSize: 30,
+                      textDayFontSize: 14,
+                      textDayHeaderFontSize: 12,
+                    }}
                     style={styles.calendar}
                   />
                 </View>
@@ -536,20 +607,6 @@ const AttendanceCalendarScreen = () => {
                         value={pick(selectedDayDetails, 'shiftId', 'ShiftId')}
                       />
                     )}
-                    {/* {pick(
-                      selectedDayDetails,
-                      'employeeName',
-                      'EmployeeName',
-                    ) && (
-                      <DetailRow
-                        label="Employee"
-                        value={pick(
-                          selectedDayDetails,
-                          'employeeName',
-                          'EmployeeName',
-                        )}
-                      />
-                    )} */}
                   </View>
                 </ScrollView>
               ) : (
@@ -584,37 +641,53 @@ const DetailRow = ({label, value}) => (
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F5F5F5', padding: 16},
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 2,
-  },
-  title: {fontSize: 18, fontWeight: '800', color: '#263238'},
+
   loadingContainer: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   loadingText: {marginTop: 10, fontSize: 16, color: '#8e8e93'},
-  calendarContainer: {
+
+  /* Modern calendar card */
+  calendarCard: {
     marginBottom: 16,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 6,
     overflow: 'hidden',
   },
-  calendar: {borderRadius: 12},
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#EEF2F6',
+    backgroundColor: '#FFFFFF',
+  },
+  cardNav: {flexDirection: 'row', gap: 8},
+  navBtn: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#334155',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  calendar: {borderRadius: 16, paddingHorizontal: 6, paddingBottom: 12},
+
+  /* Legend as a matching card */
   legendContainer: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    padding: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 4,
   },
   legendTitle: {
     fontSize: 16,
@@ -631,16 +704,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     width: '48%',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  legendColor: {width: 12, height: 12, borderRadius: 6, marginRight: 8},
-  legendText: {fontSize: 12, color: '#8e8e93'},
+  legendColor: {
+    width: 10,
+    height: 10,
+    borderRadius: 8,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E5EAF0',
+  },
+  legendText: {fontSize: 13, color: '#4B5563'},
   legendPresent: {backgroundColor: '#6ce66c'},
   legendAbsent: {backgroundColor: '#FF0000'},
   legendLate: {backgroundColor: '#FFFF00'},
   legendLeave: {backgroundColor: '#808080'},
   legendHoliday: {backgroundColor: '#FFB6C1'},
   legendNoData: {backgroundColor: '#f0f0f0'},
+
+  /* Modal */
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -650,10 +732,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '85%', // keep the taller sheet
-    paddingBottom: 0, // ⬅️ remove extra bottom padding that created the white band
+    maxHeight: '85%',
+    paddingBottom: 0,
   },
-
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -665,17 +746,15 @@ const styles = StyleSheet.create({
   modalTitle: {fontSize: 18, fontWeight: 'bold', color: '#1c1c1e', flex: 1},
   closeButton: {padding: 4, marginLeft: 10},
   closeButtonText: {fontSize: 20, color: '#8e8e93', fontWeight: 'bold'},
-  detailsContainer: {},
+
+  /* Details */
+  detailsContent: {padding: 20, paddingBottom: 10},
   statusBadge: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
     alignSelf: 'flex-start',
     marginBottom: 20,
-  },
-  detailsContent: {
-    padding: 20,
-    paddingBottom: 10, // ⬅️ last row visibility
   },
   statusText: {fontSize: 14, fontWeight: 'bold'},
   detailsGrid: {gap: 12},
