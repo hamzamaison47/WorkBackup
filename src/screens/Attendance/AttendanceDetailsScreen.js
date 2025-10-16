@@ -9,6 +9,7 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
@@ -141,7 +142,7 @@ const buildKey = (d, idx) => {
   return String(parts.join('|'));
 };
 
-/* ---------- NEW: robust normalizers for params ---------- */
+/* ---------- robust normalizers for params ---------- */
 
 /** Normalize any date-ish value to "YYYY-MM-DD" (local) */
 const normalizeDateISO = v => {
@@ -189,6 +190,13 @@ const AttendanceDetailsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [alert, setAlert] = useState({visible: false, text: ''});
+  const [actionModal, setActionModal] = useState({
+    visible: false,
+    selectedItem: null,
+    leftButtonText: '',
+    isAbsent: false,
+    isEditableIssue: false,
+  });
 
   const isFocused = useIsFocused();
 
@@ -277,6 +285,121 @@ const AttendanceDetailsScreen = () => {
     [navigation],
   );
 
+  const handleRowPress = useCallback(item => {
+    const rawStatus = (item.Status ?? '').toString().trim().toLowerCase();
+    const ABSENT_ALIASES = [
+      'absent',
+      'a',
+      'no in/out',
+      'no in out',
+      'missing',
+      'abs',
+      'leave without pay',
+    ];
+
+    const noIn =
+      isBlankTime(item.ClockIn) || looksLikeMissingDate(item.ClockInDate);
+    const noOut =
+      isBlankTime(item.ClockOut) || looksLikeMissingDate(item.ClockOutDate);
+    const computedAbsent = noIn && noOut;
+
+    const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+    const isPresent =
+      rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
+    const isEditableIssue = !isPresent && !isAbsent;
+
+    const isTouchable = isAbsent || isEditableIssue;
+
+    if (!isTouchable) return;
+
+    const leftButtonText = isAbsent ? 'Mark Present' : 'Edit Attendance';
+
+    setActionModal({
+      visible: true,
+      selectedItem: item,
+      leftButtonText,
+      isAbsent,
+      isEditableIssue,
+    });
+  }, []);
+
+  const handleLeftButtonPress = useCallback(() => {
+    const {selectedItem, isAbsent, isEditableIssue} = actionModal;
+
+    if (!selectedItem) return;
+
+    const selectedDateISO = selectedItem?.__parsedDate
+      ? selectedItem.__parsedDate.local().format('YYYY-MM-DD')
+      : normalizeDateISO(selectedItem.AttendanceDate);
+
+    const normalizedClockIn = normalizeTimeTo24h(selectedItem.ClockIn);
+    const normalizedClockOut = normalizeTimeTo24h(selectedItem.ClockOut);
+
+    if (isAbsent) {
+      goTo('MarkPresentScreen', {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        attendanceDate: selectedDateISO,
+        sourceScreen: 'AttendanceDetailsScreen',
+      });
+    } else if (isEditableIssue) {
+      goTo('EditAttendanceScreen', {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        attendanceDate: selectedDateISO,
+        clockIn: normalizedClockIn,
+        clockOut: normalizedClockOut,
+        remarks: selectedItem?.Remarks || '',
+        sourceScreen: 'AttendanceDetailsScreen',
+      });
+    }
+
+    setActionModal({
+      visible: false,
+      selectedItem: null,
+      leftButtonText: '',
+      isAbsent: false,
+      isEditableIssue: false,
+    });
+  }, [actionModal, userData, goTo]);
+
+  const handleLeaveRequest = useCallback(() => {
+    const {selectedItem} = actionModal;
+
+    if (!selectedItem) return;
+
+    const selectedDateISO = selectedItem?.__parsedDate
+      ? selectedItem.__parsedDate.local().format('YYYY-MM-DD')
+      : normalizeDateISO(selectedItem.AttendanceDate);
+
+    // Pass the correct cameFrom parameter to ensure proper navigation back
+    goTo('LeaveSaveRecord', {
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+      attendanceDate: selectedDateISO,
+      cameFrom: 'AttendanceDetailsScreen', // This is the key fix
+      sourceScreen: 'AttendanceDetailsScreen',
+    });
+
+    setActionModal({
+      visible: false,
+      selectedItem: null,
+      leftButtonText: '',
+      isAbsent: false,
+      isEditableIssue: false,
+    });
+  }, [actionModal, userData, goTo]);
+
+  const closeActionModal = useCallback(() => {
+    setActionModal({
+      visible: false,
+      selectedItem: null,
+      leftButtonText: '',
+      isAbsent: false,
+      isEditableIssue: false,
+    });
+  }, []);
+
   const renderItem = ({item}) => {
     const dateLabel = item.__parsedDate
       ? item.__parsedDate.local().format('ddd, MMM D, YYYY')
@@ -316,44 +439,10 @@ const AttendanceDetailsScreen = () => {
 
     const isTouchable = isAbsent || isEditableIssue;
 
-    // ----- NEW: build clean params -----
-    const selectedDateISO = item?.__parsedDate
-      ? item.__parsedDate.local().format('YYYY-MM-DD')
-      : normalizeDateISO(item.AttendanceDate);
-
-    const normalizedClockIn = normalizeTimeTo24h(item.ClockIn);
-    const normalizedClockOut = normalizeTimeTo24h(item.ClockOut);
-
-    const onPressRow = () => {
-      if (!selectedDateISO) return;
-
-      if (isAbsent) {
-        // Only date is needed for marking present
-        goTo('MarkPresentScreen', {
-          employeeId: userData?.employeeId,
-          employeeName: userData?.employeeName,
-          attendanceDate: selectedDateISO,
-          sourceScreen: 'AttendanceDetailsScreen',
-        });
-      } else if (isEditableIssue) {
-        // Bind date AND times for editing
-        goTo('EditAttendanceScreen', {
-          employeeId: userData?.employeeId,
-          employeeName: userData?.employeeName,
-          attendanceDate: selectedDateISO,
-          clockIn: normalizedClockIn,
-          clockOut: normalizedClockOut,
-          remarks: item?.Remarks || '',
-          sourceScreen: 'AttendanceDetailsScreen',
-        });
-      }
-    };
-    // -----------------------------------
-
     return (
       <TouchableOpacity
         activeOpacity={isTouchable ? 0.7 : 1}
-        onPress={isTouchable ? onPressRow : undefined}
+        onPress={isTouchable ? () => handleRowPress(item) : undefined}
         style={[
           styles.rowCard,
           {borderLeftColor: apiColor, borderLeftWidth: 5},
@@ -438,6 +527,49 @@ const AttendanceDetailsScreen = () => {
         />
       </View>
 
+      {/* Action Modal */}
+      <Modal
+        visible={actionModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeActionModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Action</Text>
+            <Text style={styles.modalSubtitle}>
+              Choose what you want to do for{' '}
+              {actionModal.selectedItem?.__parsedDate
+                ? actionModal.selectedItem.__parsedDate
+                    .local()
+                    .format('MMM D, YYYY')
+                : 'this date'}
+            </Text>
+
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.leftButton]}
+                onPress={handleLeftButtonPress}>
+                <Text style={styles.leftButtonText}>
+                  {actionModal.leftButtonText}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.rightButton]}
+                onPress={handleLeaveRequest}>
+                <Text style={styles.rightButtonText}>Leave Request</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={closeActionModal}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <AlertModal
         visible={alert.visible}
         heading="Alert"
@@ -493,6 +625,81 @@ const styles = StyleSheet.create({
 
   empty: {alignItems: 'center', paddingTop: 36, paddingHorizontal: 12},
   emptyText: {color: '#78909C'},
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#263238',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#607D8B',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leftButton: {
+    backgroundColor: '#2196F3',
+  },
+  rightButton: {
+    backgroundColor: '#FF9800',
+  },
+  leftButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  rightButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#B0BEC5',
+  },
+  cancelButtonText: {
+    color: '#607D8B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 export default AttendanceDetailsScreen;

@@ -86,8 +86,44 @@ const LeaveRequestSaveRecord = () => {
   // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
 
+  // const goBack = useCallback(() => {
+  //   if (cameFrom === 'MainDashboard') {
+  //     // Reset stack so only MainDashboard remains
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [
+  //         {
+  //           name: 'TabNavigator',
+  //           params: {screen: 'MainDashboard'},
+  //         },
+  //       ],
+  //     });
+  //   } else if (cameFrom === 'LeavesListPage') {
+  //     // Reset stack so only LeavesListPage remains
+  //     const targetCameFrom = originalCameFrom || 'DisplayListPage';
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [
+  //         {
+  //           name: 'LeavesListPage',
+  //           params: {
+  //             employeeId,
+  //             employeeName,
+  //             WorkerRecId,
+  //             cameFrom: targetCameFrom,
+  //           },
+  //         },
+  //       ],
+  //     });
+  //   } else {
   const goBack = useCallback(() => {
-    if (cameFrom === 'MainDashboard') {
+    if (cameFrom === 'AttendanceCalendarScreen') {
+      navigation.navigate('AttendanceCalendarScreen');
+      return;
+    } else if (cameFrom === 'AttendanceDetailsScreen') {
+      navigation.navigate('AttendanceDetailsScreen');
+      return;
+    } else if (cameFrom === 'MainDashboard') {
       // Reset stack so only MainDashboard remains
       navigation.reset({
         index: 0,

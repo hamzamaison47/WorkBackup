@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import {
@@ -12,7 +13,7 @@ import {
 } from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
-import {useIsFocused} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 
 import DFCalendar from '../../components/Attendance/DFCalendar';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
@@ -127,10 +128,58 @@ const normalizeArray = payload => {
     return [];
   }
 };
+
+/** Normalize any date-ish value to "YYYY-MM-DD" (local) */
+const normalizeDateISO = v => {
+  if (!v) return '';
+  // If already YYYY-MM-DD
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  // ISO with time or other → moment
+  const m =
+    typeof v === 'string' && v.length >= 10 ? moment(v) : moment(parseISO(v));
+  if (!m || !m.isValid()) return '';
+  return m.local().format('YYYY-MM-DD');
+};
+
+/** Normalize mixed time formats to strict "HH:mm" (24h) */
+const normalizeTimeTo24h = v => {
+  if (!v && v !== 0) return '';
+  // seconds (number or numeric string)
+  if (/^\d{1,5}$/.test(String(v))) {
+    const sec = Number(v);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  const sv = String(v).trim();
+  // 12h like "9:05 AM" / "09:05 pm"
+  const t12 = moment(sv, ['h:mm A', 'hh:mm A'], true);
+  if (t12.isValid()) return t12.format('HH:mm');
+  // 24h "HH:mm" or "HH:mm:ss"
+  const t24 = moment(sv, ['HH:mm', 'HH:mm:ss'], true);
+  if (t24.isValid()) return t24.format('HH:mm');
+  // Last resort: parse loosely
+  const mx = moment(sv);
+  return mx.isValid() ? mx.format('HH:mm') : '';
+};
+
+const parseISO = iso =>
+  iso ? moment.parseZone(iso, moment.ISO_8601, true).utc() : null;
+const isBlankTime = v =>
+  v === null ||
+  v === undefined ||
+  v === '' ||
+  v === 0 ||
+  v === '0' ||
+  v === '00:00' ||
+  v === '00:00:00';
+const looksLikeMissingDate = iso =>
+  !iso || String(iso).startsWith('1900-01-01');
 /* ---------------------------------------------------------------- */
 
 const AttendanceCalendarScreen = () => {
   const {userData} = useSelector(state => state.user || {});
+  const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState('');
   const [attendanceData, setAttendanceData] = useState({});
   const [markedDates, setMarkedDates] = useState({});
@@ -173,6 +222,42 @@ const AttendanceCalendarScreen = () => {
     }
     if (!absent && leaveCode) return 'On Leave';
     return 'Present';
+  }, []);
+
+  // Determine if record is absent/off day or needs editing
+  const getRecordActionType = useCallback(details => {
+    if (!details) return 'none';
+
+    const rawStatus = (details.Status ?? '').toString().trim().toLowerCase();
+    const ABSENT_ALIASES = [
+      'absent',
+      'a',
+      'no in/out',
+      'no in out',
+      'missing',
+      'abs',
+      'leave without pay',
+    ];
+
+    const offDay = bool(pick(details, 'offDay', 'OffDay'));
+    const gazettedDay = bool(pick(details, 'gazettedDay', 'GazettedDay'));
+    const noIn =
+      isBlankTime(details.ClockIn) || looksLikeMissingDate(details.ClockInDate);
+    const noOut =
+      isBlankTime(details.ClockOut) ||
+      looksLikeMissingDate(details.ClockOutDate);
+    const computedAbsent = noIn && noOut;
+    const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+    const isPresent =
+      rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
+
+    if (offDay || gazettedDay || isAbsent) {
+      return 'markPresent';
+    } else if (!isPresent) {
+      return 'edit';
+    }
+
+    return 'none';
   }, []);
 
   const processAttendanceData = useCallback(rows => {
@@ -272,7 +357,88 @@ const AttendanceCalendarScreen = () => {
     setCurrentMonth(moment(month.dateString));
   };
 
-  // --- NEW: ensure "today" is visibly highlighted ---
+  const handleMarkPresent = () => {
+    if (!selectedDate || !selectedDayDetails) return;
+
+    const selectedDateISO = normalizeDateISO(selectedDate);
+
+    navigation.navigate('MarkPresentScreen', {
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+      attendanceDate: selectedDateISO,
+      sourceScreen: 'AttendanceCalendarScreen',
+    });
+
+    setModalVisible(false);
+  };
+
+  const handleEditAttendance = () => {
+    if (!selectedDate || !selectedDayDetails) return;
+
+    const selectedDateISO = normalizeDateISO(selectedDate);
+    const normalizedClockIn = normalizeTimeTo24h(selectedDayDetails.ClockIn);
+    const normalizedClockOut = normalizeTimeTo24h(selectedDayDetails.ClockOut);
+
+    navigation.navigate('EditAttendanceScreen', {
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+      attendanceDate: selectedDateISO,
+      clockIn: normalizedClockIn,
+      clockOut: normalizedClockOut,
+      remarks: selectedDayDetails?.Remarks || '',
+      sourceScreen: 'AttendanceCalendarScreen',
+    });
+
+    setModalVisible(false);
+  };
+
+  // New function to handle Short Leave
+  const handleShortLeave = () => {
+    if (!selectedDate || !selectedDayDetails) return;
+
+    const selectedDateISO = normalizeDateISO(selectedDate);
+
+    // Navigate to LeaveRequestSaveRecord with edit attendance scenario
+    navigation.navigate('LeaveSaveRecord', {
+      mode: 'create',
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+      WorkerRecId: userData?.WorkerRecId,
+      cameFrom: 'AttendanceCalendarScreen',
+      isShortLeave: true,
+      attendanceDate: selectedDateISO,
+      prefillData: {
+        leaveCategory: 'Half Day Leave',
+      },
+    });
+
+    setModalVisible(false);
+  };
+
+  // New function to handle Leave Request
+  const handleLeaveRequest = () => {
+    if (!selectedDate) return;
+
+    const selectedDateISO = normalizeDateISO(selectedDate);
+
+    // Navigate to LeaveRequestSaveRecord with mark present scenario
+    navigation.navigate('LeaveSaveRecord', {
+      mode: 'create',
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+      WorkerRecId: userData?.WorkerRecId,
+      cameFrom: 'AttendanceCalendarScreen',
+      isLeaveRequest: true,
+      attendanceDate: selectedDateISO,
+      prefillData: {
+        leaveStartDate: selectedDateISO,
+      },
+    });
+
+    setModalVisible(false);
+  };
+
+  // --- ensure "today" is visibly highlighted ---
   const todayStr = useMemo(() => moment().format('YYYY-MM-DD'), []);
   const withTodayMarked = useMemo(() => {
     const base = {...markedDates};
@@ -309,10 +475,14 @@ const AttendanceCalendarScreen = () => {
   }, [markedDates, currentMonth, todayStr]);
   // ---------------------------------------------------
 
-  // eslint-disable-next-line no-unused-vars
   const headerSubtitle = useMemo(
     () => currentMonth.format('MMMM YYYY'),
     [currentMonth],
+  );
+
+  const actionType = useMemo(
+    () => getRecordActionType(selectedDayDetails),
+    [selectedDayDetails, getRecordActionType],
   );
 
   return (
@@ -462,22 +632,6 @@ const AttendanceCalendarScreen = () => {
                   contentContainerStyle={styles.detailsContent}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled">
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      {backgroundColor: selectedDayDetails.color},
-                    ]}>
-                    <Text
-                      style={[
-                        styles.statusText,
-                        {color: getTextColor(selectedDayDetails.color)},
-                      ]}>
-                      {getStatusDescription(
-                        selectedDayDetails.color,
-                        selectedDayDetails,
-                      )}
-                    </Text>
-                  </View>
                   <View style={styles.detailsGrid}>
                     <DetailRow
                       label="Clock In"
@@ -608,12 +762,94 @@ const AttendanceCalendarScreen = () => {
                       />
                     )}
                   </View>
+
+                  {/* Action Buttons */}
+                  <View style={styles.actionButtonsContainer}>
+                    {actionType === 'markPresent' && (
+                      <>
+                        <TouchableOpacity
+                          style={[
+                            styles.actionButton,
+                            styles.markPresentButton,
+                          ]}
+                          onPress={handleMarkPresent}>
+                          <Text style={styles.actionButtonText}>
+                            Mark Present
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.actionButton,
+                            styles.leaveRequestButton,
+                          ]}
+                          onPress={handleLeaveRequest}>
+                          <Text style={styles.actionButtonText}>
+                            Leave Request
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+
+                    {actionType === 'edit' && (
+                      <>
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.editButton]}
+                          onPress={handleEditAttendance}>
+                          <Text style={styles.actionButtonText}>
+                            Edit Attendance
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.actionButton, styles.shortLeaveButton]}
+                          onPress={handleShortLeave}>
+                          <Text style={styles.actionButtonText}>
+                            Short Leave
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+
+                    {(actionType === 'markPresent' ||
+                      actionType === 'edit') && (
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.cancelButton]}
+                        onPress={() => setModalVisible(false)}>
+                        <Text
+                          style={[
+                            styles.actionButtonText,
+                            styles.cancelButtonText,
+                          ]}>
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </ScrollView>
               ) : (
                 <View style={styles.noDataContainer}>
                   <Text style={styles.noDataText}>
                     No attendance data for this date
                   </Text>
+                  <View style={styles.noDataButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.actionButton,
+                        styles.markPresentButton,
+                        styles.fullWidthButton,
+                      ]}
+                      onPress={handleMarkPresent}>
+                      <Text style={styles.actionButtonText}>Mark Present</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.actionButton,
+                        styles.leaveRequestButton,
+                        styles.fullWidthButton,
+                      ]}
+                      onPress={handleLeaveRequest}>
+                      <Text style={styles.actionButtonText}>Leave Request</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               )}
             </View>
@@ -774,8 +1010,59 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-  noDataContainer: {padding: 40, alignItems: 'center'},
-  noDataText: {fontSize: 16, color: '#8e8e93', textAlign: 'center'},
+
+  /* Action Buttons */
+  actionButtonsContainer: {
+    marginTop: 20,
+    gap: 12,
+  },
+  actionButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markPresentButton: {
+    backgroundColor: '#6ce66c',
+  },
+  editButton: {
+    backgroundColor: '#0EA5E9',
+  },
+  shortLeaveButton: {
+    backgroundColor: '#FFA500',
+  },
+  leaveRequestButton: {
+    backgroundColor: '#9370DB',
+  },
+  cancelButton: {
+    backgroundColor: '#f1f1f1',
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  cancelButtonText: {
+    color: '#666666',
+  },
+  fullWidthButton: {
+    marginTop: 8,
+  },
+  noDataContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noDataText: {
+    fontSize: 16,
+    color: '#8e8e93',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  noDataButtons: {
+    width: '100%',
+    gap: 12,
+  },
 });
 
 export default AttendanceCalendarScreen;

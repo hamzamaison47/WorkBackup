@@ -1,6 +1,5 @@
-/* =============================
- * MarkPresentScreen.js
- * ============================= */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-useless-escape */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState, useCallback} from 'react';
@@ -135,13 +134,12 @@ const MarkPresentScreen = () => {
 
   const [form, setForm] = useState({
     EmployeeName: employeeName,
-    AttendanceDateUI: initialAxDate, // bound to TimeFlicker (date or ISO)
-    ClockInUI: '', // UI accepts seconds, HH:mm, or h:mm AM/PM
+    AttendanceDateUI: initialAxDate,
+    ClockInUI: '',
     ClockOutUI: '',
     Remarks: '',
   });
 
-  // Canonical date/datetime to send to API
   const [axDateTime, setAxDateTime] = useState(initialAxDate);
 
   useEffect(() => {
@@ -158,7 +156,7 @@ const MarkPresentScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeName, routeAttendanceDate]);
 
-  const [processing, setProcessing] = useState(''); // '', 'save', 'submit'
+  const [processing, setProcessing] = useState('');
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({visible: false, text: ''});
 
@@ -178,7 +176,6 @@ const MarkPresentScreen = () => {
   const doCreate = async () => {
     const employeeId = userData?.employeeId || paramEmpId || '';
 
-    // Accept seconds directly (or parse formatted times if provided)
     const clockInSec = toSecondsFromAnyTime(form.ClockInUI);
     const clockOutSec = toSecondsFromAnyTime(form.ClockOutUI);
 
@@ -187,7 +184,7 @@ const MarkPresentScreen = () => {
       EmployeeName: form.EmployeeName || '',
       ClockIn: clockInSec ?? '',
       ClockOut: clockOutSec ?? '',
-      AttendanceDate: axDateTime, // ✅ single, correct field
+      AttendanceDate: axDateTime,
       Remarks: cleanRemarks(form.Remarks),
     };
 
@@ -211,9 +208,13 @@ const MarkPresentScreen = () => {
     const cout = toSecondsFromAnyTime(form.ClockOutUI);
     if (cin === null) missing.push('Clock In (' + TIME_HINT + ' → seconds)');
     if (cout === null) missing.push('Clock Out (' + TIME_HINT + ' → seconds)');
+    if (!cleanRemarks(form.Remarks)) missing.push('Remarks');
 
     if (missing.length) {
-      setAlert({visible: true, text: 'Please fill:\n' + missing.join('\n')});
+      setAlert({
+        visible: true,
+        text: 'Please fill:\n' + missing.join('\n'),
+      });
       return;
     }
 
@@ -221,7 +222,6 @@ const MarkPresentScreen = () => {
     setLoading(true);
 
     try {
-      // 1) CREATE
       const {res, ok} = await doCreate();
       if (!ok) {
         setAlert({
@@ -234,7 +234,6 @@ const MarkPresentScreen = () => {
       if (actionType === 'save') {
         setAlert({visible: true, text: 'Attendance created successfully.'});
       } else if (actionType === 'submit') {
-        // 2) SUBMIT — needs recId
         const recId = extractRecId(res);
         if (!recId) {
           setAlert({
@@ -302,13 +301,11 @@ const MarkPresentScreen = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled>
-              {/* Employee (read-only). EmployeeId is taken from userData/params */}
               <Text style={styles.LReqSR_Label}>Employee</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {form.EmployeeName || (userData?.employeeId ?? '')}
               </Text>
 
-              {/* Attendance Date (single field) */}
               <TimeFlicker
                 mode="date"
                 label="Attendance Date *"
@@ -317,7 +314,6 @@ const MarkPresentScreen = () => {
                 uiFormat="12h"
               />
 
-              {/* Times — converted to seconds for API */}
               <TimeFlicker
                 mode="time"
                 label="Clock In *"
@@ -334,13 +330,13 @@ const MarkPresentScreen = () => {
               />
 
               <Text style={[styles.LReqSR_Label, {marginTop: 12}]}>
-                Remarks
+                Remarks *
               </Text>
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
                 value={form.Remarks}
                 onChangeText={v => onChangeText('Remarks', v)}
-                placeholder="Optional remarks"
+                placeholder="Enter remarks (required)"
                 multiline
                 numberOfLines={6}
               />
