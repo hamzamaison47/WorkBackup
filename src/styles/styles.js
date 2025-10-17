@@ -889,17 +889,17 @@ const styles = StyleSheet.create({
   },
   TCert_Button: {
     borderRadius: 8,
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.05,
-    elevation: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: height * 0.025,
     width: '100%',
+    overflow: 'hidden', // Important for rounded corners with gradient
+    elevation: 4, // Keep elevation here for shadow
   },
   TCert_ButtonContent: {
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.05,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   TCert_ButtonText: {
     color: '#FFFFFF',
@@ -907,6 +907,49 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  // Add to your styles.js file
+  TCert_Dropdown: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: height * 0.02,
+    width: '100%',
+    backgroundColor: '#fff',
+  },
+  TCert_ItemText: {
+    fontSize: width * 0.04,
+    color: '#333',
+  },
+  TCert_DropdownPlaceholder: {
+    fontSize: width * 0.04,
+    color: '#999',
+  },
+  TCert_DropdownSelected: {
+    fontSize: width * 0.04,
+    color: '#333',
+  },
+  // TCert_Button: {
+  //   borderRadius: 8,
+  //   paddingVertical: height * 0.015,
+  //   paddingHorizontal: width * 0.05,
+  //   elevation: 4,
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   marginTop: height * 0.025,
+  //   width: '100%',
+  // },
+  // TCert_ButtonContent: {
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+  // TCert_ButtonText: {
+  //   color: '#FFFFFF',
+  //   fontSize: width * 0.045,
+  //   fontWeight: 'bold',
+  //   textAlign: 'center',
+  // },
   // end of tax certificate
 
   // start of display list page
