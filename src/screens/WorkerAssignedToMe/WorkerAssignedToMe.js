@@ -425,7 +425,7 @@ const RootUser = ({
           </View>
 
           {/* Only show action buttons for current selected user (not shrunk) */}
-          {!isRootEmployee && !isShrunk && (
+          {/* {!isRootEmployee && !isShrunk && (
             <View style={rootStyles.buttonRow}>
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -439,7 +439,7 @@ const RootUser = ({
                 <Text style={rootStyles.actionButtonText}>Leave History</Text>
               </TouchableOpacity>
             </View>
-          )}
+          )} */}
         </View>
       </View>
 

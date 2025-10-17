@@ -1,4 +1,5 @@
 import {StyleSheet, Dimensions} from 'react-native';
+import {moderateScale, fontScale} from '../Controller/scaling';
 
 const {height, width} = Dimensions.get('window');
 const cardWidth = (width - 56) / 2;
@@ -672,37 +673,21 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: '#333',
   },
-  // LReqSR_Footer: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   padding: width * 0.025, // responsive padding
-  //   borderTopWidth: 1,
-  //   borderColor: '#eee',
-  //   backgroundColor: '#fff',
-  //   position: 'absolute',
-  //   bottom: 0,
-  //   left: 0,
-  //   right: 0,
-  // },
   LReqSR_Footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    // padding: width * 0.025,
-    paddingVertical: width * 0.025,
-    // borderTopWidth: 1,
+    paddingVertical: moderateScale(10),
     borderColor: '#eee',
     backgroundColor: '#fff',
-    // Remove absolute positioning
-    position: 'relative', // Change from 'absolute'
-    // Remove bottom, left, right properties
+    position: 'relative',
   },
   LReqSR_Button: {
     flex: 1,
     borderWidth: 2,
     borderColor: '#0A66C2',
-    borderRadius: width * 0.05, // dynamic radius
-    paddingVertical: height * 0.015, // scales with screen height
-    marginHorizontal: width * 0.005,
+    borderRadius: moderateScale(20),
+    paddingVertical: moderateScale(12),
+    marginHorizontal: moderateScale(4),
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
@@ -715,13 +700,13 @@ const styles = StyleSheet.create({
   },
   LReqSR_ButtonText: {
     fontWeight: 'bold',
-    fontSize: width * 0.038, // responsive font
+    fontSize: fontScale(14),
     color: '#0A66C2',
   },
   LReqSR_SubmitButtonText: {
     fontWeight: 'bold',
-    fontSize: width * 0.038,
-    color: '#ffffffff',
+    fontSize: fontScale(13),
+    color: '#fff',
   },
   LReqSR_PressedButton: {
     backgroundColor: '#0A66C2',
@@ -737,15 +722,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#cccccc',
     backgroundColor: 'transparent',
-    borderRadius: width * 0.05,
-    paddingVertical: height * 0.015,
-    marginHorizontal: width * 0.005,
+    borderRadius: moderateScale(20),
+    paddingVertical: moderateScale(12),
+    marginHorizontal: moderateScale(4),
     alignItems: 'center',
     flex: 1,
   },
   LReqSR_CancelButtonText: {
     fontWeight: 'bold',
-    fontSize: width * 0.038,
+    fontSize: fontScale(14),
     color: '#666666',
   },
   LReqSR_pressedCancelButton: {
@@ -754,160 +739,6 @@ const styles = StyleSheet.create({
   LReqSR_pressedCancelText: {
     color: '#959595ff',
   },
-  // LReqSR_SafeArea: {
-  //   flex: 1,
-  //   backgroundColor: '#fefefe',
-  // },
-  // LReqSR_ContentWrapper: {
-  //   flex: 1,
-  //   justifyContent: 'space-between',
-  //   paddingHorizontal: width * 0.03,
-  //   paddingTop: height * 0.01,
-  // },
-  // LReqSR_FormContainer: {
-  //   padding: 5,
-  //   paddingBottom: 100,
-  // },
-  // LReqSR_Label: {
-  //   fontSize: 14,
-  //   marginTop: 12,
-  //   fontWeight: '600',
-  //   color: '#444',
-  // },
-  // LReqSR_Input: {
-  //   borderWidth: 1,
-  //   borderColor: '#ddd',
-  //   borderRadius: 8,
-  //   padding: 10,
-  //   marginTop: 6,
-  //   fontSize: 15,
-  //   color: '#333',
-  //   backgroundColor: '#fff',
-  // },
-  // LReqSR_DropdownPlaceholder: {
-  //   color: '#444',
-  // },
-  // LReqSR_DropdownSelectedText: {
-  //   color: '#444',
-  //   fontWeight: '400',
-  // },
-  // LReqSR_DropdownItemText: {
-  //   color: '#444',
-  // },
-  // LReqSR_DropdownContainer: {
-  //   borderWidth: 1.5,
-  //   borderColor: '#4A90E2',
-  //   borderRadius: 10,
-  //   backgroundColor: '#fff',
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.25,
-  //   shadowRadius: 6,
-  //   elevation: 6,
-  // },
-  // LReqSR_DropdownItemContainer: {
-  //   paddingHorizontal: 12,
-  // },
-  // LReqSR_DropdownSearchInput: {
-  //   color: '#444',
-  //   backgroundColor: '#fff',
-  // },
-  // LReqSR_DropdownIcon: {
-  //   width: 22,
-  //   height: 22,
-  // },
-  // LReqSR_Disabled: {
-  //   backgroundColor: '#f1f1f1',
-  //   color: '#999',
-  // },
-  // LReqSR_TextArea: {
-  //   height: 100,
-  //   textAlignVertical: 'top',
-  // },
-  // LReqSR_CharCount: {
-  //   fontSize: 13,
-  //   color: '#333',
-  // },
-  // LReqSR_DateSelector: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   borderWidth: 1,
-  //   borderColor: '#ddd',
-  //   borderRadius: 8,
-  //   padding: 10,
-  //   marginTop: 6,
-  // },
-  // LReqSR_DateText: {
-  //   fontSize: 15,
-  //   color: '#333',
-  // },
-  // LReqSR_Footer: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   padding: 10,
-  //   borderTopWidth: 1,
-  //   borderColor: '#eee',
-  //   backgroundColor: '#fff',
-  //   position: 'absolute',
-  //   bottom: 0,
-  //   left: 0,
-  //   right: 0,
-  // },
-  // LReqSR_Button: {
-  //   flex: 1,
-  //   borderWidth: 2,
-  //   borderColor: '#0A66C2',
-  //   borderRadius: 20,
-  //   paddingVertical: 12,
-  //   marginHorizontal: 1,
-  //   alignItems: 'center',
-  //   backgroundColor: 'transparent',
-  // },
-  // LReqSR_SubmitButton: {
-  //   borderColor: '#0A66C2',
-  //   backgroundColor: '#0A66C2',
-  // },
-  // LReqSR_DisabledButton: {
-  //   opacity: 0.6,
-  // },
-  // LReqSR_ButtonText: {
-  //   fontWeight: 'bold',
-  //   color: '#0A66C2',
-  // },
-  // LReqSR_SubmitButtonText: {
-  //   fontWeight: 'bold',
-  //   color: '#ffffffff',
-  // },
-  // LReqSR_PressedButton: {
-  //   backgroundColor: '#0A66C2',
-  // },
-  // LReqSR_pressedSubmitButton: {
-  //   backgroundColor: '#3d95edff',
-  //   borderColor: '#3d95edff',
-  // },
-  // LReqSR_pressedText: {
-  //   color: '#fff',
-  // },
-  // LReqSR_CancelButton: {
-  //   borderWidth: 2,
-  //   borderColor: '#cccccc',
-  //   backgroundColor: 'transparent',
-  //   borderRadius: 20,
-  //   paddingVertical: 12,
-  //   marginHorizontal: 1,
-  //   alignItems: 'center',
-  //   flex: 1,
-  // },
-  // LReqSR_CancelButtonText: {
-  //   fontWeight: 'bold',
-  //   color: '#666666',
-  // },
-  // LReqSR_pressedCancelButton: {
-  //   backgroundColor: '#e6e6e6',
-  // },
-  // LReqSR_pressedCancelText: {
-  //   color: '#959595ff',
-  // },
   // // End oF Leave Req Save Record
 
   // Start oF Leave Req List Page
