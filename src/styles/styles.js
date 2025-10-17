@@ -561,23 +561,41 @@ const styles = StyleSheet.create({
   },
   SSlip_Button: {
     borderRadius: 8,
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.05,
-    elevation: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginTop: height * 0.025,
     width: '100%',
+    overflow: 'hidden', // Important for rounded corners with gradient
   },
   SSlip_ButtonContent: {
-    justifyContent: 'center',
+    paddingVertical: height * 0.015,
+    paddingHorizontal: width * 0.05,
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   SSlip_ButtonText: {
     color: '#FFFFFF',
     fontSize: width * 0.045,
     fontWeight: 'bold',
   },
+  // SSlip_Button: {
+  //   borderRadius: 8,
+  //   paddingVertical: height * 0.015,
+  //   paddingHorizontal: width * 0.05,
+  //   elevation: 4,
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   marginTop: height * 0.025,
+  //   width: '100%',
+  // },
+  // SSlip_ButtonContent: {
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+  // SSlip_ButtonText: {
+  //   color: '#FFFFFF',
+  //   fontSize: width * 0.045,
+  //   fontWeight: 'bold',
+  // },
   // End oF Salary Slip
 
   // // Start of Leave Request Save Record
