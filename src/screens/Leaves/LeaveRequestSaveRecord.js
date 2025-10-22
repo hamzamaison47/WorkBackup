@@ -27,7 +27,8 @@ import {
   fetchLeaveCodes,
 } from '../../Controller/leaveRequestApiService';
 import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
-import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
+// import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
+import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import {UpdateLeaveRequest} from '../../API/Leaves/UpdateLeaveRequest';
 
 import AlertModal from '../../components/Alert/AlertModal';
