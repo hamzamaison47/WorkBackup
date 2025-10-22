@@ -29,6 +29,7 @@ const EmploymentCertificate = () => {
   const [remarks, setRemarks] = useState('');
   const [showRequestedForDropdown, setShowRequestedForDropdown] =
     useState(false);
+  const [processingButton, setProcessingButton] = useState(''); // Add this state
 
   const navigation = useNavigation();
   const {userData} = useSelector(state => state.user);
@@ -74,7 +75,14 @@ const EmploymentCertificate = () => {
   };
 
   const onSend = async () => {
+    // Prevent multiple clicks if already processing
+    if (processingButton === 'send') {
+      return;
+    }
+
     try {
+      setProcessingButton('send'); // Set processing state
+
       // Format current date for RequestedDate
       const formattedRequestedDate = `${
         new Date().toISOString().split('T')[0]
@@ -88,7 +96,7 @@ const EmploymentCertificate = () => {
         RecId: '0',
         Remarks: remarks,
         RequestedDate: formattedRequestedDate,
-        ReqestedFor: selectedRequestedFor?.value || selectedRequestedFor,
+        ReqestedFor: selectedRequestedFor?.value || selectedRequestedFor || '', // Handle null case
       };
 
       // Create the certificate request
@@ -99,6 +107,7 @@ const EmploymentCertificate = () => {
       if (!createResponse) {
         setAlertMessage('Failed to create certificate request.');
         setAlertModal(true);
+        setProcessingButton(''); // Reset processing state
         return;
       }
 
@@ -129,17 +138,20 @@ const EmploymentCertificate = () => {
         // Refresh data
         fetchData();
 
+        setProcessingButton(''); // Reset processing state
         return {success: true, recId: recId};
       } else {
         const errorMessage = submitResponse?.Message || 'Submission failed';
         setAlertMessage(errorMessage);
         setAlertModal(true);
+        setProcessingButton(''); // Reset processing state
         return {success: false, message: errorMessage};
       }
     } catch (error) {
       console.error('Error in onSend:', error);
       setAlertMessage('An error occurred while processing your request.');
       setAlertModal(true);
+      setProcessingButton(''); // Reset processing state
       return {success: false, message: 'Network or server error'};
     }
   };
@@ -189,6 +201,7 @@ const EmploymentCertificate = () => {
         setRemarks={setRemarks}
         onCancel={() => setDetailsModal(false)}
         onSend={onSend}
+        processingButton={processingButton} // Pass processing state
       />
 
       <AlertModal
