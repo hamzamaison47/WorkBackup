@@ -21,7 +21,11 @@ const CertificateDetailsModal = ({
   setRemarks,
   onCancel,
   onSend,
+  processingButton, // Add this prop
 }) => {
+  // Only disable if processing, no validation for required fields
+  const isSendDisabled = processingButton === 'send';
+
   return (
     <Modal
       visible={visible}
@@ -34,7 +38,11 @@ const CertificateDetailsModal = ({
             {/* Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Certificate Request</Text>
-              <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
+              <TouchableOpacity
+                onPress={onCancel}
+                style={styles.closeButton}
+                disabled={processingButton === 'send'} // Disable close when processing
+              >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
@@ -65,21 +73,25 @@ const CertificateDetailsModal = ({
               </View>
             </View>
 
-            {/* Requested For Dropdown */}
+            {/* Requested For Dropdown - Optional */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Requested For</Text>
+              <Text style={styles.inputLabel}>Requested For (Optional)</Text>
               <RequestedForDropdown
                 data={requestedForList}
-                selectedValue={selectedRequestedFor} // Pass the full object
-                onSelect={onSelectRequestedFor} // Pass the function directly
+                selectedValue={selectedRequestedFor}
+                onSelect={onSelectRequestedFor}
+                disabled={processingButton === 'send'} // Disable dropdown when processing
               />
             </View>
 
-            {/* Remarks */}
+            {/* Remarks - Optional */}
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Remarks</Text>
+              <Text style={styles.inputLabel}>Remarks (Optional)</Text>
               <TextInput
-                style={styles.textArea}
+                style={[
+                  styles.textArea,
+                  processingButton === 'send' && styles.disabledInput,
+                ]}
                 placeholder="Enter any additional information..."
                 placeholderTextColor="#999"
                 multiline
@@ -88,28 +100,39 @@ const CertificateDetailsModal = ({
                 onChangeText={setRemarks}
                 textAlignVertical="top"
                 maxLength={500}
+                editable={processingButton !== 'send'} // Disable when processing
               />
               <Text style={styles.charCount}>{remarks.length}/500</Text>
             </View>
 
             {/* Buttons */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+              <TouchableOpacity
+                style={[
+                  styles.cancelButton,
+                  processingButton === 'send' && styles.disabledButton,
+                ]}
+                onPress={onCancel}
+                disabled={processingButton === 'send'} // Disable when processing
+              >
+                <Text style={styles.cancelButtonText}>
+                  {processingButton === 'send' ? 'Processing...' : 'Cancel'}
+                </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.sendButton} onPress={onSend}>
-                <Text style={styles.sendButtonText}>Send Request</Text>
-              </TouchableOpacity>
-              {/* <TouchableOpacity
+              <TouchableOpacity
                 style={[
                   styles.sendButton,
-                  !selectedRequestedFor && styles.sendButtonDisabled,
+                  isSendDisabled && styles.sendButtonDisabled,
                 ]}
                 onPress={onSend}
-                disabled={!selectedRequestedFor}>
-                <Text style={styles.sendButtonText}>Send Request</Text>
-              </TouchableOpacity> */}
+                disabled={isSendDisabled}>
+                <Text style={styles.sendButtonText}>
+                  {processingButton === 'send'
+                    ? 'Processing...'
+                    : 'Send Request'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </View>
@@ -215,7 +238,6 @@ const styles = StyleSheet.create({
     color: '#334155',
     marginBottom: 8,
   },
-  required: {color: '#dc2626'},
   textArea: {
     borderWidth: 1,
     borderColor: '#e2e8f0',
@@ -229,6 +251,10 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
     shadowRadius: 2,
+  },
+  disabledInput: {
+    backgroundColor: '#f8fafc',
+    color: '#94a3b8',
   },
   charCount: {
     fontSize: 12,
@@ -251,11 +277,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  cancelButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#475569',
-  },
   sendButton: {
     flex: 1,
     borderRadius: 12,
@@ -271,6 +292,14 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: '#cbd5e1',
     shadowOpacity: 0,
+  },
+  disabledButton: {
+    backgroundColor: '#e2e8f0',
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#475569',
   },
   sendButtonText: {
     fontSize: 15,
