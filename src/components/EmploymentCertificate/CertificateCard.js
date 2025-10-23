@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import {TouchableOpacity, View, Text, StyleSheet} from 'react-native';
 import {getFormatIcon, getFormatText} from './utils';
@@ -30,9 +31,9 @@ const CertificateCard = ({certificate, onPress}) => {
           <Text style={styles.title} numberOfLines={1}>
             {CertificateTypeCode || 'Untitled Certificate'}
           </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
+          {/* <Text style={styles.subtitle} numberOfLines={1}>
             {TemplateName || 'No template assigned'}
-          </Text>
+          </Text> */}
         </View>
 
         <View style={styles.formatBadge}>

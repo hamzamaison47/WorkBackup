@@ -58,12 +58,12 @@ const CertificateDetailsModal = ({
                 </Text>
               </View>
 
-              <View style={styles.detailRow}>
+              {/* <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Template:</Text>
                 <Text style={styles.detailValue}>
                   {certificate?.TemplateName || 'N/A'}
                 </Text>
-              </View>
+              </View> */}
 
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Format:</Text>
