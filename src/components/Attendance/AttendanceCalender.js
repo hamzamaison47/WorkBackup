@@ -13,6 +13,7 @@ import {
 import moment from 'moment';
 import DFCalendar from '../../components/Attendance/DFCalendar';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
+import {useSelector} from 'react-redux';
 
 // Helper functions for calendar (moved here as they are calendar-specific)
 const pick = (obj, ...keys) =>
@@ -179,7 +180,19 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
     () => monthKeyFromMoment(currentMonth),
     [currentMonth],
   );
-
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
+  useEffect(() => {
+    if (userData?.employeeId) {
+      // Clear caches and reload current month
+      setMarkedDatesCache({});
+      setDataCache({});
+      setMarkedDates({});
+      setAttendanceData({});
+      warmLoadMonth(currentMonth);
+    }
+  }, [selectedLegalEntity]);
   // initial month fetch
   useEffect(() => {
     warmLoadMonth(currentMonth);
