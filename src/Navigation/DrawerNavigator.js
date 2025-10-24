@@ -31,6 +31,12 @@ import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayP
 import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
 import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
 import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
+import PersonalContacts from '../screens/Profile/PersonalInformation/PersonalContacts/PersonalContacts';
+import PersonalContactSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/PersonalContactSaveRecord';
+import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
+import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
+import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
+import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -197,16 +203,6 @@ const CustomDrawerContent = props => {
         />
 
         {/* Dynamic Menu Items */}
-        {/* {filteredMenuItems.map(item => (
-          <CustomDrawerItem
-            key={item.Sequence}
-            label={item.Label || item.MenuId}
-            icon={
-              iconMapping[item.MenuId] ||
-              require('../assets/Maindashboard/calendar.png')
-            }
-            isActive={activeRoute === item.MenuId}
-            onPress={() => { */}
         {uniqueMenuItems.map((item, idx) => (
           <CustomDrawerItem
             key={`${item.MenuId}-${item.Sequence ?? idx}`} // ✅ unique, stable
@@ -302,24 +298,6 @@ const DrawerNavigator = () => {
       />
 
       {/* Dynamic Screens */}
-      {/* {filteredMenuItems.map(item => {
-        const ScreenComponent = screenMapping[item.MenuId];
-        return (
-          <Drawer.Screen
-            key={item.Sequence}
-            name={item.MenuId}
-            component={ScreenComponent}
-            initialParams={{userData}}
-            options={{
-              title: item.DisplayName || item.MenuId,
-              drawerIcon: () => (
-                <Ionicons name="menu" size={24} color="#0A66C2" />
-              ),
-              headerShown: true,
-            }}
-          />
-        );
-      })} */}
       {uniqueMenuItems.map((item, idx) => {
         const ScreenComponent = screenMapping[item.MenuId];
         return (
@@ -389,6 +367,82 @@ const DrawerNavigator = () => {
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
           headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="PersonalContacts"
+        component={PersonalContacts}
+        initialParams={{userData}}
+        options={{
+          title: 'PersonalContacts',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="PersonalContactSaveRecord"
+        component={PersonalContactSaveRecord}
+        initialParams={{userData}}
+        options={{
+          title: 'PersonalContactSaveRecord',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="PersonalEducation"
+        component={PersonalEducation}
+        initialParams={{userData}}
+        options={{
+          title: 'Education',
+          drawerIcon: () => (
+            <Ionicons name="school-outline" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="BankAccountListPage"
+        component={BankAccountListPage}
+        initialParams={{userData}}
+        options={{
+          title: 'Bank Account',
+          drawerIcon: () => (
+            <Ionicons name="school-outline" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="BankAccountSaveRecord"
+        component={BankAccountSaveRecord}
+        options={{
+          title: 'Add / Edit Bank Account Details',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
+        }}
+      />
+
+      <Drawer.Screen
+        name="PersonalEducationSaveRecord"
+        component={PersonalEducationSaveRecord}
+        options={{
+          title: 'Add / Edit Education',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
         }}
       />
     </Drawer.Navigator>
