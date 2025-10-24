@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -602,6 +602,9 @@ const GenericAdvanceListScreen = () => {
           }
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
         <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>

@@ -32,6 +32,7 @@ const SubmitLeaveRequest = async ({recId}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    // console.log('SubmitLeaveRequest recId-0-0-0-0-0-', recId);
     // console.log('SOAP ENVELOPE IN SUBMIT REQUEST', soapEnvelope);
 
     const {data: xml} = await axios.post(
@@ -105,4 +106,4 @@ const SubmitLeaveRequest = async ({recId}) => {
   }
 };
 
-export {SubmitLeaveRequest};
+export default SubmitLeaveRequest;

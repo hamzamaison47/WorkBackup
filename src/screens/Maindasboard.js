@@ -28,6 +28,7 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
+import AttendanceCalendar from '../components/Attendance/AttendanceCalender';
 
 // Get initial screen dimensions
 const {width: initialScreenWidth, height: initialScreenHeight} =
@@ -342,79 +343,6 @@ const MainDashboard = () => {
     return cards;
   };
 
-  // const getDynamicMenus = () => {
-  //   const dashboardMenuItems = menuItems.filter(item => {
-  //     const hasScreen = screenMapping[item.MenuId];
-  //     const validType = [1, 2, 3].includes(Number(item.Type));
-  //     return hasScreen && validType;
-  //   });
-
-  //   let cards = dashboardMenuItems.map((menuItem, index) => ({
-  //     id: menuItem.MenuId || index.toString(),
-  //     title: menuItem.Label || menuItem.DisplayName || menuItem.MenuId,
-  //     description: `Access ${menuItem.Label || menuItem.MenuId}`,
-  //     icon:
-  //       iconMapping[menuItem.MenuId] ||
-  //       require('../assets/Maindashboard/calendar.png'),
-  //     menuItem: menuItem,
-  //     onPress: () => {
-  //       const navigationParams = getNavigationParams(menuItem);
-
-  //       // Special handling for different menu items
-  //       if (menuItem.MenuId === 'LeaveSaveRecord') {
-  //         navigation.navigate('LeaveSaveRecord', {
-  //           ...navigationParams,
-  //           cameFrom: 'MainDashboard',
-  //         });
-  //       } else if (menuItem.MenuId === 'GenericAdvanceSaveScreen') {
-  //         // This is the "Advance Salary" from dynamic menu
-  //         navigation.navigate('GenericAdvanceSaveScreen', {
-  //           ...navigationParams,
-  //           cameFrom: 'MainDashboard',
-  //           requestType: 'Advance',
-  //           advanceType: 1,
-  //           screenName: 'Advance Salary',
-  //         });
-  //       } else {
-  //         navigation.navigate(menuItem.MenuId, navigationParams);
-  //       }
-  //     },
-  //   }));
-
-  //   // Add Loan Request card manually (separate from Advance Salary)
-  //   const hasAdvanceSaveScreen = dashboardMenuItems.some(
-  //     item => item.MenuId === 'GenericAdvanceSaveScreen',
-  //   );
-
-  //   if (hasAdvanceSaveScreen) {
-  //     const loanCard = {
-  //       id: 'GenericLoanSaveScreen',
-  //       title: 'Loan Request',
-  //       description: 'Access Loan Request',
-  //       icon: require('../assets/Maindashboard/signing.png'),
-  //       menuItem: {MenuId: 'GenericAdvanceSaveScreen', requestType: 'Loan'},
-  //       onPress: () => {
-  //         const baseNavigationParams = getNavigationParams({
-  //           MenuId: 'GenericAdvanceSaveScreen',
-  //           Type: '1',
-  //         });
-
-  //         navigation.navigate('GenericAdvanceSaveScreen', {
-  //           ...baseNavigationParams,
-  //           cameFrom: 'MainDashboard',
-  //           requestType: 'Loan',
-  //           advanceType: 0,
-  //           screenName: 'Loan Request',
-  //         });
-  //       },
-  //     };
-
-  //     cards.push(loanCard);
-  //   }
-
-  //   return cards;
-  // };
-
   // GET DYNAMIC MENUS
   const dynamicMenus = getDynamicMenus();
   const pages = chunkArray(dynamicMenus, cardsPerPage);
@@ -656,6 +584,14 @@ const MainDashboard = () => {
                 </View>
               </View>
             </View>
+
+            {/* Attendance Calendar Section */}
+            <AttendanceCalendar
+              userData={userData}
+              navigation={navigation}
+              screenWidth={screenWidth}
+              H_PADDING={H_PADDING}
+            />
 
             {/* Main Section */}
             <View style={styles.mainContent}>
