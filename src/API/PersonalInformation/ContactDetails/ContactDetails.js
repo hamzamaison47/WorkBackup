@@ -1,34 +1,80 @@
-import {BASE_URL} from '@env';
+/* eslint-disable dot-notation */
+import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig'; // ✅ FIXED import
 
 const ContactDetails = async ({employeeId}) => {
-  const requestBody = {
-    _employeeId: employeeId,
-  };
   try {
-    const accessToken = await getToken();
-    const response = await fetch(
-      `${BASE_URL}/LogisticsElectronicAddressSvcGroup/LogisticsElectronicAddressSvc/findByEmployee`,
+    // ✅ FIXED function name
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
+    const token = await getToken();
+
+    const soapBody = `
+      <findByEmployee xmlns="http://tempuri.org">
+        <_employeeId>${employeeId}</_employeeId>
+      </findByEmployee>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
+
+    const {data: xml} = await axios.post(
+      `${config.resource}soap/services/LogisticsElectronicAddressSvcGroup`, // ✅ FIXED endpoint pattern
+      soapEnvelope,
       {
-        method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'text/xml;charset=utf-8',
+          SOAPAction:
+            'http://tempuri.org/LogisticsElectronicAddressSvc/findByEmployee',
         },
-        body: JSON.stringify(requestBody),
+        responseType: 'text',
       },
     );
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
-    }
-    const employeeData = await response.json();
-    console.log('Contact Details Data =================:', employeeData);
 
-    return employeeData;
-  } catch (error) {
-    console.error('Failed to fetch Contact Details:', error);
-    throw error;
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      attributeNamePrefix: '',
+      isArray: () => false,
+      parseTagValue: false,
+    });
+
+    const parsed = parser.parse(xml);
+    const rawData =
+      parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[
+        'result'
+      ]?.['a:LogisticsElectronicAddressSvcContract'];
+
+    if (!rawData) {
+      console.log('No contact details found');
+      return [];
+    }
+
+    const cleanObject = obj =>
+      Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [
+          key.replace(/^a:/, ''),
+          value,
+        ]),
+      );
+
+    const cleanedData = Array.isArray(rawData)
+      ? rawData.map(cleanObject)
+      : [cleanObject(rawData)];
+
+    return cleanedData;
+  } catch (err) {
+    console.error(
+      'ContactDetails SOAP error:',
+      err.response?.data || err.message,
+    );
+    throw err;
   }
 };
 

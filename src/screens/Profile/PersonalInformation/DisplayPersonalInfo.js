@@ -28,7 +28,7 @@ const DisplayPersonalInfo = () => {
       icon: 'phone',
       title: 'Contact Details',
       subtitle: 'Manage your phone numbers and email addresses',
-      screen: '',
+      screen: 'PersonalContacts',
     },
     {
       id: 'personalContacts',
@@ -45,11 +45,18 @@ const DisplayPersonalInfo = () => {
       screen: '',
     },
     {
-      id: 'paymentMethod',
-      icon: 'credit-card',
-      title: 'My Payment Method',
+      id: 'personalEducation',
+      icon: 'book',
+      title: 'Education',
+      subtitle: 'View or update your education details',
+      screen: 'PersonalEducation',
+    },
+    {
+      id: 'bankaccounts',
+      icon: 'dollar-sign',
+      title: 'Bank Account',
       subtitle: 'View or update your bank account details',
-      screen: '',
+      screen: 'BankAccountListPage',
     },
     {
       id: 'profileImage',
