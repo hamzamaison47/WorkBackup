@@ -23,16 +23,16 @@ import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import {FindIdentificationTypeRequest} from '../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
-import {CreateIdentityRequest} from '../../API/PersonalInformation/Identification/CreateIdentityRequest';
-import {UpdateIdentityRequest} from '../../API/PersonalInformation/Identification/UpdateIdentityRequest';
-import {SubmitIdentificationRequest} from '../../API/PersonalInformation/Identification/SubmitIdentificationRequest';
+import {CreateIdentityRequest} from '../../../../API/PersonalInformation/Identification/CreateIdentityRequest';
+import {UpdateIdentityRequest} from '../../../../API/PersonalInformation/Identification/UpdateIdentityRequest';
+import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/Identification/SubmitIdentificationRequest';
+import {FindIdentificationTypeRequest} from '../../../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
 
-import AlertModal from '../../components/Alert/AlertModal';
-import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import ActionPaneContainer from '../../components/ActionPaneContainer';
-import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
-import styles from '../../styles/styles';
+import AlertModal from '../../../../components/Alert/AlertModal';
+import ActionPaneContainer from '../../../../components/ActionPaneContainer';
+import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
+import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
+import styles from '../../../../styles/styles';
 
 const IdentificationNumberSaveRecord = () => {
   const route = useRoute();

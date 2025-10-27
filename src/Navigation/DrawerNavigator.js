@@ -37,8 +37,8 @@ import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEd
 import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
 import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
 import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
-import IdentificationListPage from '../screens/Identification/IdentificationNumberListPage';
-import IdentificationNumberSaveRecord from '../screens/Identification/IdentificationNumberSaveRecord';
+import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
+import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -449,8 +449,8 @@ const DrawerNavigator = () => {
       />
 
       <Drawer.Screen
-        name="IdentificationListPage"
-        component={IdentificationListPage}
+        name="IdentificationNumberListPage"
+        component={IdentificationNumberListPage}
         initialParams={{userData}}
         options={{
           title: 'IdentificationListPage',

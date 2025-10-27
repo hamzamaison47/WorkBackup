@@ -7,20 +7,21 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
-
-import AlertModal from '../../components/Alert/AlertModal';
-import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import ActionPaneContainer from '../../components/ActionPaneContainer';
-import styles from '../../styles/styles';
-import {IdentificationFindRequest} from '../../API/PersonalInformation/Identification/IdentificationFindRequest';
-import {isWorkflowConfigured} from '../../API/PersonalInformation/Identification/IsIdentificationWorkflowEnabled';
 import {useSelector} from 'react-redux';
-import {DeleteIdentityRequest} from '../../API/PersonalInformation/Identification/DeleteIdentityRequest';
-import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
-import {SubmitIdentificationRequest} from '../../API/PersonalInformation/Identification/SubmitIdentificationRequest';
-import IdentificationRequestCard from '../../components/IdentificationRequestCard';
 
-const IdentificationListPage = () => {
+import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/Identification/SubmitIdentificationRequest';
+import {isWorkflowConfigured} from '../../../../API/PersonalInformation/Identification/IsIdentificationWorkflowEnabled';
+import {IdentificationFindRequest} from '../../../../API/PersonalInformation/Identification/IdentificationFindRequest';
+import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identification/DeleteIdentityRequest';
+
+import IdentificationRequestCard from '../../../../components/IdentificationRequestCard';
+import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
+import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
+import ActionPaneContainer from '../../../../components/ActionPaneContainer';
+import AlertModal from '../../../../components/Alert/AlertModal';
+import styles from '../../../../styles/styles';
+
+const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -433,4 +434,4 @@ const IdentificationListPage = () => {
   );
 };
 
-export default IdentificationListPage;
+export default IdentificationNumberListPage;
