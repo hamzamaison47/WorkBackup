@@ -277,7 +277,17 @@ const PersonalEducationSaveRecord = () => {
 
       /* ---- submit if requested ---- */
       if (actionType === 'submit') {
-        await SubmitEducationRequest({recId});
+        try {
+          const submitRes = await SubmitEducationRequest({recId});
+          const submitOk =
+            submitRes?.IsSuccess === true || submitRes?.IsSuccess === 'true';
+          if (!submitOk) throw new Error(submitRes?.Message || 'Submit failed');
+        } catch (submitErr) {
+          // make sure the user sees the submit error
+          setAlertMessage(submitErr.message || 'Submit failed');
+          setAlertModal(true);
+          return; // stop the success flow
+        }
       }
 
       /* ---- success flow ---- */
@@ -481,10 +491,11 @@ const PersonalEducationSaveRecord = () => {
             <SaveRecordButtons
               mode={mode}
               processingButton={processingButton}
-              onSave={() => handleSave('save')}
-              onSubmit={() => handleSave('submit')}
+              onSave={handleSave}
               onCancel={goBack}
-              isDisabled={!!processingButton}
+              isDisabled={
+                processingButton === 'save' || processingButton === 'submit'
+              }
             />
           </KeyboardAvoidingView>
 

@@ -24,6 +24,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {createBankAccountRecord} from '../../../../API/PersonalInformation/BankAccounts/BankAccountCreate';
 import {UpdateBankAccountRecord} from '../../../../API/PersonalInformation/BankAccounts/BankAccountUpdate';
+import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -211,15 +212,36 @@ const BankAccountSaveRecord = () => {
         BankIBAN: data.BankIBAN,
         Name: data.Name,
         EmployeeId: data.employeeId,
-        RecId: data.recId === '' ? '0' : data.recId,
+        recId: data.recId === '' ? '0' : data.recId,
         Worker: data.WorkerRecId === '' ? '0' : data.WorkerRecId,
       };
+
+      // let response;
+      // if (modalMode === 'create') {
+      //   response = await createBankAccountRecord({
+      //     bankaccountdata: bankaccountsdata,
+      //   });
+      // }
 
       let response;
       if (modalMode === 'create') {
         response = await createBankAccountRecord({
           bankaccountdata: bankaccountsdata,
         });
+        if (actionType === 'submit') {
+          await SubmitBankAccountRecord({
+            recId: response.RecId,
+          });
+        }
+      } else {
+        response = await UpdateBankAccountRecord({
+          bankaccountdata: bankaccountsdata,
+        });
+        if (actionType === 'submit') {
+          await SubmitBankAccountRecord({
+            recId: response.RecId,
+          });
+        }
       }
 
       const isSuccess =
@@ -277,8 +299,6 @@ const BankAccountSaveRecord = () => {
           // Clear the form data
           clearFormData();
 
-          console.log('result-0-00-0-0-0-0-0-0-0-0-', result);
-
           // Navigate to BankAccountListPage after successful create/update
           navigation.navigate('BankAccountListPage', {
             employeeId: formData.employeeId,
@@ -289,7 +309,7 @@ const BankAccountSaveRecord = () => {
               employeeName: formData.employeeName,
               WorkerRecId: formData.WorkerRecId,
             },
-            highlightRecId: formData.recId,
+            highlightRecId: result.recId,
             cameFrom: originalCameFrom || 'DisplayListPage',
           });
         }, 2000);
@@ -338,8 +358,9 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.AccountId}
                 onChangeText={text => handleInputChange('AccountId', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter Account ID"
+                maxLength={10}
               />
 
               <Text style={styles.LReqSR_Label}>Name</Text>
@@ -347,7 +368,7 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.Name}
                 onChangeText={text => handleInputChange('Name', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter Name"
               />
 
@@ -356,7 +377,7 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.AccountNum}
                 onChangeText={text => handleInputChange('AccountNum', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter Account Number"
               />
 
@@ -365,7 +386,7 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.BankIBAN}
                 onChangeText={text => handleInputChange('BankIBAN', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter IBAN"
               />
 
@@ -374,7 +395,7 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.BranchNumber}
                 onChangeText={text => handleInputChange('BranchNumber', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter Branch number"
               />
 
@@ -383,7 +404,7 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.BranchName}
                 onChangeText={text => handleInputChange('BranchName', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter Branch name"
               />
 
@@ -392,7 +413,7 @@ const BankAccountSaveRecord = () => {
                 style={styles.LReqSR_Input}
                 value={formData.AccountHolder}
                 onChangeText={text => handleInputChange('AccountHolder', text)}
-                editable={mode === 'create'}
+                // editable={mode === 'create'}
                 placeholder="Enter Account Title"
               />
             </ScrollView>
