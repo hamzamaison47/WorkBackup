@@ -194,21 +194,21 @@ const PRSalarySlip = () => {
               selectedTextStyle={styles.SSlip_DropdownSelected}
             />
 
-            <LinearGradient
-              colors={['#0A66C2', '#0A66C2']}
-              style={[styles.SSlip_Button, sendingEmail && {opacity: 0.6}]}>
-              <TouchableOpacity
-                onPress={sendSalarySlip}
-                style={styles.SSlip_ButtonContent}
-                activeOpacity={0.7}
-                disabled={sendingEmail}>
+            <TouchableOpacity
+              onPress={sendSalarySlip}
+              style={[styles.SSlip_Button, sendingEmail && {opacity: 0.6}]}
+              activeOpacity={0.7}
+              disabled={sendingEmail}>
+              <LinearGradient
+                colors={['#0A66C2', '#0A66C2']}
+                style={styles.SSlip_ButtonContent}>
                 {sendingEmail ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={styles.SSlip_ButtonText}>Email Salary Slip</Text>
                 )}
-              </TouchableOpacity>
-            </LinearGradient>
+              </LinearGradient>
+            </TouchableOpacity>
 
             {/* Custom Alert Modal */}
             <AlertModal

@@ -1,14 +1,27 @@
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable no-bitwise */
 /* eslint-disable curly */
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {View, Text, StyleSheet, FlatList, RefreshControl} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  Modal,
+} from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
-import {useIsFocused} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
 import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents';
+
+/** <<< EDIT THIS IF YOUR SCREENS ARE IN A NESTED STACK >>> */
+const PARENT_STACK_NAME = null;
 
 /* ------------ utils ------------ */
 const parseISO = iso =>
@@ -53,7 +66,7 @@ const secToHHMMSS = sec => {
   ).padStart(2, '0')}`;
 };
 
-/** Convert 24h h:m(:s) to 12h with AM/PM */
+/** Convert 24h h:m to 12h with AM/PM */
 const to12h = (h24, m = 0) => {
   if (!Number.isFinite(h24) || !Number.isFinite(m)) return '--';
   const ampm = h24 >= 12 ? 'PM' : 'AM';
@@ -89,14 +102,14 @@ const formatDuration = value => {
   return secToHHMMSS(n);
 };
 
-/* ------------ color helpers (use API color for whole card) ------------ */
-const DEFAULT_COLOR = '#6ce66c'; // fallback green matching your API default
+/* ------------ color helpers ------------ */
+const DEFAULT_COLOR = '#6ce66c';
 
 const isHex = c => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || ''));
 const clamp01 = n => Math.max(0, Math.min(1, n));
 
 const hexToRgb = hex => {
-  if (!isHex(hex)) return {r: 108, g: 230, b: 108}; // default rgb of #6ce66c
+  if (!isHex(hex)) return {r: 108, g: 230, b: 108};
   let h = hex.replace('#', '');
   if (h.length === 3)
     h = h
@@ -111,13 +124,65 @@ const rgba = (hex, a) => {
   return `rgba(${r},${g},${b},${clamp01(a)})`;
 };
 const readableTextOn = hex => {
-  // luminance check to pick dark or white text on chip bg
   const {r, g, b} = hexToRgb(hex);
   const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return L > 0.7 ? '#1A1A1A' : '#0E1521';
 };
 
+/** Build a guaranteed-unique, stable key for FlatList */
+const buildKey = (d, idx) => {
+  const recId = d.RecId ?? d.RecID ?? d.recId ?? d.ID ?? d.Id ?? d.id ?? '';
+  const parts = [
+    d.AttendanceDate || 'NA',
+    d.ClockIn || 'NA',
+    d.ClockOut || 'NA',
+    recId || 'noid',
+    idx,
+  ];
+  return String(parts.join('|'));
+};
+
+/* ---------- robust normalizers for params ---------- */
+
+/** Normalize any date-ish value to "YYYY-MM-DD" (local) */
+const normalizeDateISO = v => {
+  if (!v) return '';
+  // If already YYYY-MM-DD
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  // ISO with time or other → moment
+  const m =
+    typeof v === 'string' && v.length >= 10 ? moment(v) : moment(parseISO(v));
+  if (!m || !m.isValid()) return '';
+  return m.local().format('YYYY-MM-DD');
+};
+
+/** Normalize mixed time formats to strict "HH:mm" (24h) */
+const normalizeTimeTo24h = v => {
+  if (isBlankTime(v)) return '';
+  // seconds (number or numeric string)
+  if (/^\d{1,5}$/.test(String(v))) {
+    const sec = Number(v);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  const sv = String(v).trim();
+
+  // 12h like "9:05 AM" / "09:05 pm"
+  const t12 = moment(sv, ['h:mm A', 'hh:mm A'], true);
+  if (t12.isValid()) return t12.format('HH:mm');
+
+  // 24h "HH:mm" or "HH:mm:ss"
+  const t24 = moment(sv, ['HH:mm', 'HH:mm:ss'], true);
+  if (t24.isValid()) return t24.format('HH:mm');
+
+  // Last resort: parse loosely
+  const mx = moment(sv);
+  return mx.isValid() ? mx.format('HH:mm') : '';
+};
+
 const AttendanceDetailsScreen = () => {
+  const navigation = useNavigation();
   const {userData} = useSelector(state => state.user || {});
   const [month, setMonth] = useState(moment());
   const [raw, setRaw] = useState([]);
@@ -125,6 +190,13 @@ const AttendanceDetailsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [alert, setAlert] = useState({visible: false, text: ''});
+  const [actionModal, setActionModal] = useState({
+    visible: false,
+    selectedItem: null,
+    leftButtonText: '',
+    isAbsent: false,
+    isEditableIssue: false,
+  });
 
   const isFocused = useIsFocused();
 
@@ -148,18 +220,16 @@ const AttendanceDetailsScreen = () => {
         toDate,
       });
 
-      const arr = normalizeArray(list).map((d, idx) => {
-        const dt = parseISO(d.AttendanceDate);
-        return {
-          ...d,
-          __parsedDate: dt,
-          id:
-            d.id ??
-            `${d.AttendanceDate || 'NA'}-${d.ClockIn ?? 'NA'}-${
-              d.ClockOut ?? 'NA'
-            }-${idx}`,
-        };
-      });
+      const arr = normalizeArray(list)
+        .filter(Boolean)
+        .map((d, idx) => {
+          const dt = parseISO(d.AttendanceDate);
+          return {
+            ...d,
+            __parsedDate: dt,
+            _key: buildKey(d, idx),
+          };
+        });
 
       setRaw(arr);
     } catch (e) {
@@ -173,23 +243,27 @@ const AttendanceDetailsScreen = () => {
     }
   }, [userData?.employeeId, fromDate, toDate]);
 
-  // fetch on focus
   useEffect(() => {
     if (isFocused) fetchData();
   }, [isFocused, fetchData]);
 
-  // fetch on month change (if focused)
   useEffect(() => {
     if (isFocused) fetchData();
   }, [month, isFocused, fetchData]);
 
-  // filter + sort newest first
   useEffect(() => {
     const filtered = raw
       .filter(it => it.__parsedDate && it.__parsedDate.isSame(month, 'month'))
-      .sort((a, b) => b.__parsedDate.valueOf() - a.__parsedDate.valueOf());
+      .sort((a, b) => a.__parsedDate.valueOf() - b.__parsedDate.valueOf());
     setData(filtered);
   }, [raw, month]);
+
+  useEffect(() => {
+    if (__DEV__) {
+      const s = [...new Set(raw.map(r => (r.Status || '').toString()))];
+      console.log('Sample statuses this month:', s);
+    }
+  }, [raw]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -199,6 +273,132 @@ const AttendanceDetailsScreen = () => {
       setRefreshing(false);
     }
   }, [fetchData]);
+
+  const goTo = useCallback(
+    (screenName, params) => {
+      if (PARENT_STACK_NAME) {
+        navigation.navigate(PARENT_STACK_NAME, {screen: screenName, params});
+      } else {
+        navigation.navigate(screenName, params);
+      }
+    },
+    [navigation],
+  );
+
+  const handleRowPress = useCallback(item => {
+    const rawStatus = (item.Status ?? '').toString().trim().toLowerCase();
+    const ABSENT_ALIASES = [
+      'absent',
+      'a',
+      'no in/out',
+      'no in out',
+      'missing',
+      'abs',
+      'leave without pay',
+    ];
+
+    const noIn =
+      isBlankTime(item.ClockIn) || looksLikeMissingDate(item.ClockInDate);
+    const noOut =
+      isBlankTime(item.ClockOut) || looksLikeMissingDate(item.ClockOutDate);
+    const computedAbsent = noIn && noOut;
+
+    const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+    const isPresent =
+      rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
+    const isEditableIssue = !isPresent && !isAbsent;
+
+    const isTouchable = isAbsent || isEditableIssue;
+
+    if (!isTouchable) return;
+
+    const leftButtonText = isAbsent ? 'Mark Present' : 'Edit Attendance';
+
+    setActionModal({
+      visible: true,
+      selectedItem: item,
+      leftButtonText,
+      isAbsent,
+      isEditableIssue,
+    });
+  }, []);
+
+  const handleLeftButtonPress = useCallback(() => {
+    const {selectedItem, isAbsent, isEditableIssue} = actionModal;
+
+    if (!selectedItem) return;
+
+    const selectedDateISO = selectedItem?.__parsedDate
+      ? selectedItem.__parsedDate.local().format('YYYY-MM-DD')
+      : normalizeDateISO(selectedItem.AttendanceDate);
+
+    const normalizedClockIn = normalizeTimeTo24h(selectedItem.ClockIn);
+    const normalizedClockOut = normalizeTimeTo24h(selectedItem.ClockOut);
+
+    if (isAbsent) {
+      goTo('MarkPresentScreen', {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        attendanceDate: selectedDateISO,
+        sourceScreen: 'AttendanceDetailsScreen',
+      });
+    } else if (isEditableIssue) {
+      goTo('EditAttendanceScreen', {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        attendanceDate: selectedDateISO,
+        clockIn: normalizedClockIn,
+        clockOut: normalizedClockOut,
+        remarks: selectedItem?.Remarks || '',
+        sourceScreen: 'AttendanceDetailsScreen',
+      });
+    }
+
+    setActionModal({
+      visible: false,
+      selectedItem: null,
+      leftButtonText: '',
+      isAbsent: false,
+      isEditableIssue: false,
+    });
+  }, [actionModal, userData, goTo]);
+
+  const handleLeaveRequest = useCallback(() => {
+    const {selectedItem} = actionModal;
+
+    if (!selectedItem) return;
+
+    const selectedDateISO = selectedItem?.__parsedDate
+      ? selectedItem.__parsedDate.local().format('YYYY-MM-DD')
+      : normalizeDateISO(selectedItem.AttendanceDate);
+
+    // Pass the correct cameFrom parameter to ensure proper navigation back
+    goTo('LeaveSaveRecord', {
+      employeeId: userData?.employeeId,
+      employeeName: userData?.employeeName,
+      attendanceDate: selectedDateISO,
+      cameFrom: 'AttendanceDetailsScreen', // This is the key fix
+      sourceScreen: 'AttendanceDetailsScreen',
+    });
+
+    setActionModal({
+      visible: false,
+      selectedItem: null,
+      leftButtonText: '',
+      isAbsent: false,
+      isEditableIssue: false,
+    });
+  }, [actionModal, userData, goTo]);
+
+  const closeActionModal = useCallback(() => {
+    setActionModal({
+      visible: false,
+      selectedItem: null,
+      leftButtonText: '',
+      isAbsent: false,
+      isEditableIssue: false,
+    });
+  }, []);
 
   const renderItem = ({item}) => {
     const dateLabel = item.__parsedDate
@@ -210,19 +410,44 @@ const AttendanceDetailsScreen = () => {
     const showClockOut =
       !looksLikeMissingDate(item.ClockOutDate) && !isBlankTime(item.ClockOut);
 
-    // Use API color for the whole row (fallback to default if invalid)
     const apiColor = isHex(item?.Color) ? item.Color : DEFAULT_COLOR;
-    const chipBg = rgba(apiColor, 0.14); // soft tint
-    const chipText = readableTextOn(apiColor); // dark text on light tint
-    const underline = rgba(apiColor, 0.45); // header underline/tint
+    const chipBg = rgba(apiColor, 0.14);
+    const chipText = readableTextOn(apiColor);
+    const underline = rgba(apiColor, 0.45);
+
+    const rawStatus = (item.Status ?? '').toString().trim().toLowerCase();
+    const ABSENT_ALIASES = [
+      'absent',
+      'a',
+      'no in/out',
+      'no in out',
+      'missing',
+      'abs',
+      'leave without pay',
+    ];
+
+    const noIn =
+      isBlankTime(item.ClockIn) || looksLikeMissingDate(item.ClockInDate);
+    const noOut =
+      isBlankTime(item.ClockOut) || looksLikeMissingDate(item.ClockOutDate);
+    const computedAbsent = noIn && noOut;
+
+    const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+    const isPresent =
+      rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
+    const isEditableIssue = !isPresent && !isAbsent;
+
+    const isTouchable = isAbsent || isEditableIssue;
 
     return (
-      <View
+      <TouchableOpacity
+        activeOpacity={isTouchable ? 0.7 : 1}
+        onPress={isTouchable ? () => handleRowPress(item) : undefined}
         style={[
           styles.rowCard,
           {borderLeftColor: apiColor, borderLeftWidth: 5},
         ]}>
-        {/* header with underline + status chip */}
+        {/* header */}
         <View style={[styles.cardHeader, {borderBottomColor: underline}]}>
           <Text style={styles.dateText}>{dateLabel}</Text>
           <View
@@ -238,7 +463,7 @@ const AttendanceDetailsScreen = () => {
           </View>
         </View>
 
-        {/* values row (neutral colors) */}
+        {/* values row */}
         <View style={styles.rowGrid}>
           <View style={styles.cell}>
             <Text style={styles.value}>
@@ -261,7 +486,7 @@ const AttendanceDetailsScreen = () => {
             <Text style={styles.label}>Working Hours</Text>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -286,7 +511,7 @@ const AttendanceDetailsScreen = () => {
           style={{flex: 1}}
           contentContainerStyle={styles.listContent}
           data={data}
-          keyExtractor={it => String(it.id)}
+          keyExtractor={(it, idx) => it._key || String(idx)}
           renderItem={renderItem}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -301,6 +526,49 @@ const AttendanceDetailsScreen = () => {
           }
         />
       </View>
+
+      {/* Action Modal */}
+      <Modal
+        visible={actionModal.visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeActionModal}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Action</Text>
+            <Text style={styles.modalSubtitle}>
+              Choose what you want to do for{' '}
+              {actionModal.selectedItem?.__parsedDate
+                ? actionModal.selectedItem.__parsedDate
+                    .local()
+                    .format('MMM D, YYYY')
+                : 'this date'}
+            </Text>
+
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.leftButton]}
+                onPress={handleLeftButtonPress}>
+                <Text style={styles.leftButtonText}>
+                  {actionModal.leftButtonText}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.rightButton]}
+                onPress={handleLeaveRequest}>
+                <Text style={styles.rightButtonText}>Leave Request</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={closeActionModal}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       <AlertModal
         visible={alert.visible}
@@ -332,7 +600,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  /* underline header */
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -343,7 +610,6 @@ const styles = StyleSheet.create({
   },
   dateText: {fontSize: 15, fontWeight: '700', color: '#263238'},
 
-  /* status chip (uses tinted API color) */
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -359,6 +625,81 @@ const styles = StyleSheet.create({
 
   empty: {alignItems: 'center', paddingTop: 36, paddingHorizontal: 12},
   emptyText: {color: '#78909C'},
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 320,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#263238',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#607D8B',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leftButton: {
+    backgroundColor: '#2196F3',
+  },
+  rightButton: {
+    backgroundColor: '#FF9800',
+  },
+  leftButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  rightButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#B0BEC5',
+  },
+  cancelButtonText: {
+    color: '#607D8B',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 export default AttendanceDetailsScreen;

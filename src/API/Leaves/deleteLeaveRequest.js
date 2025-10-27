@@ -1,5 +1,4 @@
 /* eslint-disable dot-notation */
-import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
@@ -76,4 +75,4 @@ const DeleteLeaveRequest = async ({recordsRecId}) => {
   }
 };
 
-export {DeleteLeaveRequest};
+export default DeleteLeaveRequest;

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -15,9 +15,9 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import styles from '../../styles/styles';
 
-import {DeleteLeaveRequest} from '../../API/Leaves/DeleteLeaveRequest';
-import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
+import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
+import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import {useSelector} from 'react-redux';
 
 const LeaveRequestListPage = () => {
@@ -350,27 +350,24 @@ const LeaveRequestListPage = () => {
     }
   };
 
+  /** FIXED: Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
-    setButtonProcessing(itemData.recId, 'submit', true);
+    setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
-      // Call the Submit API
       const response = await SubmitLeaveRequest({
-        recId: itemData.recId,
+        recId: Number(itemData.recId),
       });
+      const resObj = Array.isArray(response) ? response[0] : response;
 
-      if (
-        response &&
-        (Array.isArray(response) ? response[0] : response) &&
-        String(
-          (Array.isArray(response) ? response[0] : response).IsSuccess,
-        ).toLowerCase() === 'true'
-      ) {
-        setAlertMessage(`${itemData.leaveCode} is Submitted Successfully.`);
+      if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+        setAlertMessage(
+          `${itemData.leaveCode} Request Submitted Successfully.`,
+        );
         setAlertModal(true);
 
-        // Set highlighting for submitted record
-        setHighlightedRecId(itemData.recId);
+        // FIXED: Set highlighting for submitted record
+        setHighlightedRecId(itemData.RecId);
 
         // Set a timer to remove highlighting after 3 seconds
         setTimeout(() => {
@@ -381,20 +378,19 @@ const LeaveRequestListPage = () => {
           fetchLeavesData();
         }, 1000);
       } else {
-        const resObj = Array.isArray(response) ? response[0] : response;
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : 'Failed to Submit Leave Request';
+            : `Failed to Submit ${itemData.leaveCode} Request`;
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to Submit Leave Request');
+      setAlertMessage(`Failed to Submit ${itemData.leaveCode} Request`);
       setAlertModal(true);
     } finally {
-      setButtonProcessing(itemData.recId, 'submit', false);
+      setButtonProcessing(itemData.RecId, 'submit', false);
     }
   };
 
@@ -450,6 +446,9 @@ const LeaveRequestListPage = () => {
           }
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
         <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>

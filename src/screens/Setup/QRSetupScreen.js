@@ -9,14 +9,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
-  Pressable,
   Platform,
   Dimensions,
   Animated,
 } from 'react-native';
-import CryptoJS from 'crypto-js';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {launchImageLibrary} from 'react-native-image-picker';
+import RNQRGenerator from 'rn-qr-generator';
 import {
   getAllConfigs,
   saveConfig,
@@ -37,6 +37,8 @@ const QRSetupScreen = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [scanAnimation] = useState(new Animated.Value(0));
+  const [isProcessingGalleryImage, setIsProcessingGalleryImage] =
+    useState(false);
 
   const navigation = useNavigation();
   const route = useRoute();
@@ -89,14 +91,11 @@ const QRSetupScreen = () => {
     }
   };
 
-  const handleQRCodeRead = async e => {
-    setIsScanning(false);
-    console.log('QR Data scanned:', e);
-
+  const processQRData = async qrData => {
     try {
-      if (!e.data) throw new Error('No data found in QR code');
+      if (!qrData) throw new Error('No data found in QR code');
 
-      const parsedData = decryptQRData(e.data, secretKey);
+      const parsedData = decryptQRData(qrData, secretKey);
       console.log('QR decrypted successfully, keys:', Object.keys(parsedData));
 
       if (!parsedData || Object.keys(parsedData).length === 0) {
@@ -112,7 +111,6 @@ const QRSetupScreen = () => {
         const sameResource = configData.resource === parsedData.resource;
         const sameClientId = configData.client_id === parsedData.client_id;
         const sameGrantType = configData.grant_type === parsedData.grant_type;
-        const sameTokenUrl = configData.token_url === parsedData.token_url;
 
         // Consider it a duplicate if core properties match
         return sameResource && sameClientId && sameGrantType;
@@ -131,8 +129,7 @@ const QRSetupScreen = () => {
           }".`,
         );
         setAlertModal(true);
-        setTimeout(() => setIsScanning(true), 2000);
-        return;
+        return false;
       }
 
       if (isFromConfigSelection) {
@@ -149,11 +146,117 @@ const QRSetupScreen = () => {
         await saveConfig(parsedData);
         navigation.replace('Login');
       }
+
+      return true;
     } catch (err) {
       console.log('Error with QR data:', err.message);
       setAlertMessage('QR code not recognized. Please try again.');
       setAlertModal(true);
-    } finally {
+      return false;
+    }
+  };
+
+  const handleQRCodeRead = async e => {
+    setIsScanning(false);
+    console.log('QR Data scanned:', e);
+
+    await processQRData(e.data);
+    setTimeout(() => setIsScanning(true), 2000);
+  };
+
+  const handleScanFromGallery = async () => {
+    try {
+      // Check photo library permission
+      const permissionType =
+        Platform.OS === 'ios'
+          ? PERMISSIONS.IOS.PHOTO_LIBRARY
+          : Platform.Version >= 33
+          ? PERMISSIONS.ANDROID.READ_MEDIA_IMAGES
+          : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
+
+      const permissionResult = await check(permissionType);
+
+      if (permissionResult === RESULTS.DENIED) {
+        const requestResult = await request(permissionType);
+        if (requestResult !== RESULTS.GRANTED) {
+          setAlertMessage(
+            'Photo library permission is required to scan QR codes from images.',
+          );
+          setAlertModal(true);
+          return;
+        }
+      } else if (permissionResult === RESULTS.BLOCKED) {
+        setAlertMessage(
+          'Photo library permission is required. Please enable it from settings.',
+        );
+        setAlertModal(true);
+        return;
+      }
+
+      // Launch image picker
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+        quality: 1,
+        includeBase64: false,
+      });
+
+      if (result.didCancel) {
+        console.log('User cancelled image picker');
+        return;
+      }
+
+      if (result.errorCode) {
+        console.log('ImagePicker Error: ', result.errorMessage);
+        setAlertMessage('Failed to open image picker. Please try again.');
+        setAlertModal(true);
+        return;
+      }
+
+      if (result.assets && result.assets.length > 0) {
+        setIsProcessingGalleryImage(true);
+        setIsScanning(false);
+
+        const imageUri = result.assets[0].uri;
+        console.log('Selected image URI:', imageUri);
+
+        try {
+          // Detect QR code from the selected image
+          const response = await RNQRGenerator.detect({
+            uri: imageUri,
+          });
+
+          console.log('QR Detection Response:', response);
+
+          if (response && response.values && response.values.length > 0) {
+            const qrData = response.values[0];
+            console.log('QR Data from image:', qrData);
+
+            await processQRData(qrData);
+          } else {
+            setAlertMessage(
+              'No valid QR code found in the selected image. Please try another image.',
+            );
+            setAlertModal(true);
+          }
+        } catch (error) {
+          console.log('Error decoding QR from image:', error);
+          setAlertMessage(
+            'Failed to read QR code from image. Please ensure the image contains a valid QR code.',
+          );
+          setAlertModal(true);
+        } finally {
+          setIsProcessingGalleryImage(false);
+          setTimeout(() => setIsScanning(true), 2000);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleScanFromGallery:', error);
+      setAlertMessage(
+        'An error occurred while processing the image. Please try again.',
+      );
+      setAlertModal(true);
+      setIsProcessingGalleryImage(false);
       setTimeout(() => setIsScanning(true), 2000);
     }
   };
@@ -205,11 +308,6 @@ const QRSetupScreen = () => {
 
   const handleAlertPress = () => {
     setAlertModal(false);
-    if (isFromConfigSelection) {
-      navigation.navigate('ConfigSelectionScreen');
-    } else {
-      navigation.replace('Login');
-    }
   };
 
   const scanLineTranslate = scanAnimation.interpolate({
@@ -251,7 +349,7 @@ const QRSetupScreen = () => {
       <View style={styles.scannerWrapper}>
         <View style={styles.scannerContainer}>
           {hasPermission ? (
-            isScanning ? (
+            isScanning && !isProcessingGalleryImage ? (
               <>
                 <QRCodeScanner
                   onRead={handleQRCodeRead}
@@ -306,7 +404,11 @@ const QRSetupScreen = () => {
               <View style={styles.processingContainer}>
                 <View style={styles.processingCard}>
                   <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.processingText}>Processing QR Code</Text>
+                  <Text style={styles.processingText}>
+                    {isProcessingGalleryImage
+                      ? 'Processing Image'
+                      : 'Processing QR Code'}
+                  </Text>
                   <Text style={styles.processingSubtext}>
                     Please wait while we validate your configuration...
                   </Text>
@@ -334,6 +436,21 @@ const QRSetupScreen = () => {
       {/* Footer Actions */}
       <View style={styles.footer}>
         <View style={styles.footerContent}>
+          {/* Gallery Scan Button */}
+          <TouchableOpacity
+            style={styles.galleryButton}
+            onPress={handleScanFromGallery}
+            activeOpacity={0.8}
+            disabled={isProcessingGalleryImage}>
+            <Icon
+              name="picture-o"
+              size={16}
+              color="#fff"
+              style={styles.buttonIcon}
+            />
+            <Text style={styles.galleryButtonText}>Scan QR from Gallery</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.skipButton}
             onPress={handleSkipPress}
@@ -342,7 +459,7 @@ const QRSetupScreen = () => {
               name={isFromConfigSelection ? 'times' : 'forward'}
               size={16}
               color="#0A66C2"
-              style={styles.skipIcon}
+              style={styles.buttonIcon}
             />
             <Text style={styles.skipButtonText}>
               {isFromConfigSelection ? 'Cancel' : 'Skip for now'}
@@ -666,6 +783,26 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
   },
+  galleryButton: {
+    backgroundColor: '#0A66C2',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  galleryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
   skipButton: {
     backgroundColor: '#f0f8ff',
     paddingVertical: 16,
@@ -678,7 +815,7 @@ const styles = StyleSheet.create({
     borderColor: '#0A66C2',
     marginBottom: 16,
   },
-  skipIcon: {
+  buttonIcon: {
     marginRight: 8,
   },
   skipButtonText: {

@@ -29,6 +29,14 @@ import TabNavigator from './TabNavigator';
 import styles from '../styles/styles';
 import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayPersonalInfo';
 import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
+import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
+import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
+import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
+import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
+import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
+import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
+import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
+import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -137,6 +145,11 @@ const CustomDrawerContent = props => {
     return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
   });
 
+  const uniqueMenuItems = filteredMenuItems.filter(
+    (it, idx, arr) =>
+      !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
+  );
+
   return (
     <View style={{flex: 1, backgroundColor: '#FAFAFA'}}>
       {/* Header */}
@@ -190,9 +203,9 @@ const CustomDrawerContent = props => {
         />
 
         {/* Dynamic Menu Items */}
-        {filteredMenuItems.map(item => (
+        {uniqueMenuItems.map((item, idx) => (
           <CustomDrawerItem
-            key={item.Sequence}
+            key={`${item.MenuId}-${item.Sequence ?? idx}`} // ✅ unique, stable
             label={item.Label || item.MenuId}
             icon={
               iconMapping[item.MenuId] ||
@@ -256,6 +269,11 @@ const DrawerNavigator = () => {
     return screenMapping[item.MenuId];
   });
 
+  const uniqueMenuItems = filteredMenuItems.filter(
+    (it, idx, arr) =>
+      !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
+  );
+
   return (
     <Drawer.Navigator
       initialRouteName="TabNavigator"
@@ -280,12 +298,12 @@ const DrawerNavigator = () => {
       />
 
       {/* Dynamic Screens */}
-      {filteredMenuItems.map(item => {
+      {uniqueMenuItems.map((item, idx) => {
         const ScreenComponent = screenMapping[item.MenuId];
         return (
           <Drawer.Screen
-            key={item.Sequence}
-            name={item.MenuId}
+            key={`${item.MenuId}-${item.Sequence ?? idx}`} // ✅ unique, stable
+            name={item.MenuId} // keep route name as-is
             component={ScreenComponent}
             initialParams={{userData}}
             options={{
@@ -323,6 +341,108 @@ const DrawerNavigator = () => {
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
           headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="MarkPresentScreen"
+        component={MarkPresentScreen}
+        initialParams={{userData}}
+        options={{
+          title: 'MarkPresentScreen',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="EditAttendanceScreen"
+        component={EditAttendanceScreen}
+        initialParams={{userData}}
+        options={{
+          title: 'EditAttendanceScreen',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="ContactDetailsListPage"
+        component={ContactDetailsListPage}
+        initialParams={{userData}}
+        options={{
+          title: 'ContactDetailsListPage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="ContactDetailsSaveRecord"
+        component={ContactDetailsSaveRecord}
+        initialParams={{userData}}
+        options={{
+          title: 'ContactDetailsSaveRecord',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="PersonalEducation"
+        component={PersonalEducation}
+        initialParams={{userData}}
+        options={{
+          title: 'Education',
+          drawerIcon: () => (
+            <Ionicons name="school-outline" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="BankAccountListPage"
+        component={BankAccountListPage}
+        initialParams={{userData}}
+        options={{
+          title: 'Bank Account',
+          drawerIcon: () => (
+            <Ionicons name="school-outline" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="BankAccountSaveRecord"
+        component={BankAccountSaveRecord}
+        options={{
+          title: 'Add / Edit Bank Account Details',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
+        }}
+      />
+
+      <Drawer.Screen
+        name="PersonalEducationSaveRecord"
+        component={PersonalEducationSaveRecord}
+        options={{
+          title: 'Add / Edit Education',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
         }}
       />
     </Drawer.Navigator>

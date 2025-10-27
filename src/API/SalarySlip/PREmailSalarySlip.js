@@ -1,14 +1,29 @@
 /* eslint-disable dot-notation */
 import {getToken} from '../Token/getToken';
 import {XMLParser} from 'fast-xml-parser';
-// import {resource} from '@env';
 import axios from 'axios';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
-import {getActiveConfigData} from '../../../Controller/secureConfig';
+import {getActiveConfigData} from '../../Controller/secureConfig';
+
+const safeGetActiveConfigData = async () => {
+  try {
+    if (typeof getActiveConfigData === 'function') {
+      return await getActiveConfigData();
+    } else {
+      console.error('getActiveConfigData is not available');
+      return null; // or default config
+    }
+  } catch (error) {
+    console.error('Error getting config data:', error);
+    return null;
+  }
+};
 
 const PREmailSalarySlip = async ({payPeriodCode, employeeId}) => {
   try {
-    const config = await getActiveConfigData();
+    // const config = await getActiveConfigData();
+    // Use the safe function instead
+    const config = await safeGetActiveConfigData();
 
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');

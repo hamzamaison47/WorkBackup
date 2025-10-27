@@ -16,27 +16,27 @@ const DisplayPersonalInfo = () => {
   }, []);
 
   const destinations = [
-    {
-      id: 'addresses',
-      icon: 'map-pin',
-      title: 'Addresses',
-      subtitle: 'View and edit your current and permanent addresses',
-      screen: '',
-    },
+    // {
+    //   id: 'addresses',
+    //   icon: 'map-pin',
+    //   title: 'Addresses',
+    //   subtitle: 'View and edit your current and permanent addresses',
+    //   screen: '',
+    // },
     {
       id: 'contactDetails',
       icon: 'phone',
       title: 'Contact Details',
       subtitle: 'Manage your phone numbers and email addresses',
-      screen: '',
+      screen: 'ContactDetailsListPage',
     },
-    {
-      id: 'personalContacts',
-      icon: 'users',
-      title: 'Personal Contacts',
-      subtitle: 'Emergency contacts and dependents',
-      screen: '',
-    },
+    // {
+    //   id: 'personalContacts',
+    //   icon: 'users',
+    //   title: 'Personal Contacts',
+    //   subtitle: 'Emergency contacts and dependents',
+    //   screen: '',
+    // },
     {
       id: 'identification',
       icon: 'hash',
@@ -45,11 +45,18 @@ const DisplayPersonalInfo = () => {
       screen: '',
     },
     {
-      id: 'paymentMethod',
-      icon: 'credit-card',
-      title: 'My Payment Method',
+      id: 'personalEducation',
+      icon: 'book',
+      title: 'Education',
+      subtitle: 'View or update your education details',
+      screen: 'PersonalEducation',
+    },
+    {
+      id: 'bankaccounts',
+      icon: 'dollar-sign',
+      title: 'Bank Account',
       subtitle: 'View or update your bank account details',
-      screen: '',
+      screen: 'BankAccountListPage',
     },
     {
       id: 'profileImage',
