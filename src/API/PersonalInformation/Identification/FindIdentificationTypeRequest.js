@@ -1,29 +1,32 @@
-import {getToken} from '../../Token/getToken';
-import {resource} from '@env';
+/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const FindIdentificationTypeRequest = async () => {
   try {
-    const accessToken = await getToken();
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company></dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-       <soapenv:Body>
-        <retrieveAll xmlns = "http://tempuri.org"></retrieveAll>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
+    const token = await getToken();
+
+    const soapBody = `
+      <retrieveAll xmlns="http://tempuri.org"></retrieveAll>
+    `;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
+
     const {data: xml} = await axios.post(
-      `${resource}soap/services/HcmIdentificationTypeSvcGroup`,
+      `${config.resource}soap/services/HcmIdentificationTypeSvcGroup`,
       soapEnvelope,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction: 'http://tempuri.org/HcmIdentificationTypeSvc/retrieveAll',
         },
@@ -46,11 +49,10 @@ const FindIdentificationTypeRequest = async () => {
       ];
 
     if (!rawData) {
-      console.warn('No data found');
+      console.log('No identification types found');
       return [];
     }
 
-    // Normalize and remove "a:" prefix from keys
     const cleanObject = obj =>
       Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
@@ -64,9 +66,12 @@ const FindIdentificationTypeRequest = async () => {
       : [cleanObject(rawData)];
 
     return cleanedData;
-  } catch (error) {
-    console.error('Failed to fetch All employee IDs:', error);
-    throw error;
+  } catch (err) {
+    console.error(
+      'FindIdentificationTypeRequest SOAP error:',
+      err.response?.data || err.message,
+    );
+    throw err;
   }
 };
 

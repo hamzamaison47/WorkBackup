@@ -27,12 +27,12 @@ export const getToken = async () => {
       resource: resource,
     };
 
-    console.log('Config Token details:', {
-      tokenUrl,
-      client_id: client_id.substring(0, 8) + '...',
-      grant_type,
-      resource,
-    });
+    // console.log('Config Token details:', {
+    //   tokenUrl,
+    //   client_id: client_id.substring(0, 8) + '...',
+    //   grant_type,
+    //   resource,
+    // });
 
     let formBody = [];
     for (const property in details) {
@@ -63,7 +63,7 @@ export const getToken = async () => {
       throw new Error('No access token received from server');
     }
 
-    console.log('Access Token received successfully');
+    // console.log('Access Token received successfully');
     return accessToken;
   } catch (error) {
     console.error('Failed to fetch token:', error);

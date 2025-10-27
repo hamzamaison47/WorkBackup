@@ -1,33 +1,32 @@
-import {BASE_URL} from '@env';
-import {getToken} from '../../Token/getToken';
-import {resource} from '@env';
+/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
+const IdentificationFindRequest = async ({employeeId}) => {
   try {
-    const accessToken = await getToken();
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${defaultCompany}</dat:Company>
-          <dat:Language>en-us</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <findByEmployee xmlns = "http://tempuri.org">
-        <_employeeId>${employeeId}</_employeeId>
-        </findByEmployee>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+    const config = await getActiveConfigData();
 
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
+    const token = await getToken();
+
+    const soapBody = `
+      <findByEmployee xmlns="http://tempuri.org">
+        <_employeeId>${employeeId}</_employeeId>
+      </findByEmployee>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
     const {data: xml} = await axios.post(
-      `${resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
+      `${config.resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
       soapEnvelope,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction:
             'http://tempuri.org/HcmPersonIdentificationNumberSvc/findByEmployee',
@@ -35,7 +34,6 @@ const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
         responseType: 'text',
       },
     );
-
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -45,18 +43,16 @@ const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
     });
 
     const parsed = parser.parse(xml);
-
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[
         'result'
       ]?.['a:HcmPersonIdentificationNumberSvcContract'];
 
     if (!rawData) {
-      console.warn('No data found');
+      console.log('No identification data found');
       return [];
     }
 
-    // Normalize and remove "a:" prefix from keys
     const cleanObject = obj =>
       Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
@@ -70,12 +66,12 @@ const IdentificationFindRequest = async ({employeeId, defaultCompany}) => {
       : [cleanObject(rawData)];
 
     return cleanedData;
-  } catch (error) {
+  } catch (err) {
     console.error(
-      'Failed to fetch Identification Find Request Details:',
-      error,
+      'IdentificationFindRequest SOAP error:',
+      err.response?.data || err.message,
     );
-    throw error;
+    throw err;
   }
 };
 
