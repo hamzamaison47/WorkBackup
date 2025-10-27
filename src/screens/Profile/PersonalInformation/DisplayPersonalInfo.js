@@ -42,7 +42,7 @@ const DisplayPersonalInfo = () => {
       icon: 'hash',
       title: 'Identification Numbers',
       subtitle: 'Your CNIC, passport, and other IDs',
-      screen: '',
+      screen: 'IdentificationListPage',
     },
     {
       id: 'personalEducation',

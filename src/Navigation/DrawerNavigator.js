@@ -37,6 +37,8 @@ import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEd
 import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
 import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
 import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
+import IdentificationListPage from '../screens/Identification/IdentificationNumberListPage';
+import IdentificationNumberSaveRecord from '../screens/Identification/IdentificationNumberSaveRecord';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -443,6 +445,32 @@ const DrawerNavigator = () => {
           headerShown: true,
           headerStyle: {backgroundColor: '#0A66C2'},
           headerTintColor: '#fff',
+        }}
+      />
+
+      <Drawer.Screen
+        name="IdentificationListPage"
+        component={IdentificationListPage}
+        initialParams={{userData}}
+        options={{
+          title: 'IdentificationListPage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="IdentificationNumberSaveRecord"
+        component={IdentificationNumberSaveRecord}
+        initialParams={{userData}}
+        options={{
+          title: 'IdentificationNumberSaveRecord',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
         }}
       />
     </Drawer.Navigator>
