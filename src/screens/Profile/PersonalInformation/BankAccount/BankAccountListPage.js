@@ -113,31 +113,34 @@ const BankAccountListPage = () => {
   );
 
   // Handle back navigation
+  // const handleGoBack = () => {
+  //   let targetRoute = 'MainDashboard'; // default
+
+  //   switch (cameFrom) {
+  //     case 'MainDashboard':
+  //       targetRoute = 'MainDashboard';
+  //       break;
+  //     case 'DisplayListPage':
+  //       targetRoute = 'DisplayListPage';
+  //       break;
+  //     case 'DrawerNavigator':
+  //       targetRoute = 'MainDashboard';
+  //       break;
+  //     case 'WorkerAssignedToMe':
+  //       targetRoute = 'WorkerAssignedToMe';
+  //       break;
+  //     default:
+  //       navigation.goBack();
+  //       return; // exit early
+  //   }
+
+  //   navigation.reset({
+  //     index: 0, // top of the stack
+  //     routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+  //   });
+  // };
   const handleGoBack = () => {
-    let targetRoute = 'MainDashboard'; // default
-
-    switch (cameFrom) {
-      case 'MainDashboard':
-        targetRoute = 'MainDashboard';
-        break;
-      case 'DisplayListPage':
-        targetRoute = 'DisplayListPage';
-        break;
-      case 'DrawerNavigator':
-        targetRoute = 'MainDashboard';
-        break;
-      case 'WorkerAssignedToMe':
-        targetRoute = 'WorkerAssignedToMe';
-        break;
-      default:
-        navigation.goBack();
-        return; // exit early
-    }
-
-    navigation.reset({
-      index: 0, // top of the stack
-      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
-    });
+    navigation.navigate('DisplayPersonalInfo');
   };
 
   // Handle refresh

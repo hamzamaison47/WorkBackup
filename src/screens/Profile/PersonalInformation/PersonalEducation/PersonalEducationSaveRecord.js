@@ -243,6 +243,9 @@ const PersonalEducationSaveRecord = () => {
     if (!formData.EducationDisciplineId) missing.push('Education');
     if (!formData.Description.trim()) missing.push('Description');
     if (!formData.DurationUnit) missing.push('Duration Unit');
+    if (!formData.Duration) missing.push('Duration');
+    if (!formData.StartDate) missing.push('Start Date');
+    if (!formData.EndDate) missing.push('End Date');
     if (missing.length) {
       setAlertMessage(
         'Please fill in the following required fields:\n' + missing.join('\n'),

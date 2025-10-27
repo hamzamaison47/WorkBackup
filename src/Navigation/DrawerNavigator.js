@@ -31,8 +31,8 @@ import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayP
 import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
 import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
 import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
-import PersonalContacts from '../screens/Profile/PersonalInformation/PersonalContacts/PersonalContacts';
-import PersonalContactSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/PersonalContactSaveRecord';
+import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
+import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
 import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
 import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
 import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
@@ -371,11 +371,11 @@ const DrawerNavigator = () => {
       />
 
       <Drawer.Screen
-        name="PersonalContacts"
-        component={PersonalContacts}
+        name="ContactDetailsListPage"
+        component={ContactDetailsListPage}
         initialParams={{userData}}
         options={{
-          title: 'PersonalContacts',
+          title: 'ContactDetailsListPage',
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
@@ -384,11 +384,11 @@ const DrawerNavigator = () => {
       />
 
       <Drawer.Screen
-        name="PersonalContactSaveRecord"
-        component={PersonalContactSaveRecord}
+        name="ContactDetailsSaveRecord"
+        component={ContactDetailsSaveRecord}
         initialParams={{userData}}
         options={{
-          title: 'PersonalContactSaveRecord',
+          title: 'ContactDetailsSaveRecord',
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),

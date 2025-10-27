@@ -201,6 +201,19 @@ const BankAccountSaveRecord = () => {
     }));
   };
 
+  const validate = () => {
+    const missing = [];
+    if (!formData.AccountId) missing.push('Account identification');
+    if (missing.length) {
+      setAlertMessage(
+        'Please fill in the following required fields:\n' + missing.join('\n'),
+      );
+      setAlertModal(true);
+      return false;
+    }
+    return true;
+  };
+
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
       const bankaccountsdata = {
@@ -271,6 +284,7 @@ const BankAccountSaveRecord = () => {
 
   const handleSave = async actionType => {
     if (processingButton) return; // Prevent multiple clicks
+    if (!validate()) return;
 
     const missing = [];
     if (!formData.AccountId) missing.push('AccountId');
@@ -353,7 +367,7 @@ const BankAccountSaveRecord = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              <Text style={styles.LReqSR_Label}>Account identification</Text>
+              <Text style={styles.LReqSR_Label}>Account identification *</Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountId}

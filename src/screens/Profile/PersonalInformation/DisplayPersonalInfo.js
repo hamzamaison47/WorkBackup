@@ -16,27 +16,27 @@ const DisplayPersonalInfo = () => {
   }, []);
 
   const destinations = [
-    {
-      id: 'addresses',
-      icon: 'map-pin',
-      title: 'Addresses',
-      subtitle: 'View and edit your current and permanent addresses',
-      screen: '',
-    },
+    // {
+    //   id: 'addresses',
+    //   icon: 'map-pin',
+    //   title: 'Addresses',
+    //   subtitle: 'View and edit your current and permanent addresses',
+    //   screen: '',
+    // },
     {
       id: 'contactDetails',
       icon: 'phone',
       title: 'Contact Details',
       subtitle: 'Manage your phone numbers and email addresses',
-      screen: 'PersonalContacts',
+      screen: 'ContactDetailsListPage',
     },
-    {
-      id: 'personalContacts',
-      icon: 'users',
-      title: 'Personal Contacts',
-      subtitle: 'Emergency contacts and dependents',
-      screen: '',
-    },
+    // {
+    //   id: 'personalContacts',
+    //   icon: 'users',
+    //   title: 'Personal Contacts',
+    //   subtitle: 'Emergency contacts and dependents',
+    //   screen: '',
+    // },
     {
       id: 'identification',
       icon: 'hash',
