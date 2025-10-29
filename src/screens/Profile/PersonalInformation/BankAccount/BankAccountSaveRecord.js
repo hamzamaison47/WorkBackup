@@ -204,6 +204,8 @@ const BankAccountSaveRecord = () => {
   const validate = () => {
     const missing = [];
     if (!formData.AccountId) missing.push('Account identification');
+    if (!formData.Name) missing.push('Name');
+    if (!formData.AccountNum) missing.push('Bank Account Number');
     if (missing.length) {
       setAlertMessage(
         'Please fill in the following required fields:\n' + missing.join('\n'),
@@ -374,25 +376,28 @@ const BankAccountSaveRecord = () => {
                 onChangeText={text => handleInputChange('AccountId', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter Account ID"
+                placeholderTextColor="#888"
                 maxLength={10}
               />
 
-              <Text style={styles.LReqSR_Label}>Name</Text>
+              <Text style={styles.LReqSR_Label}>Name *</Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.Name}
                 onChangeText={text => handleInputChange('Name', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter Name"
+                placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Bank account number</Text>
+              <Text style={styles.LReqSR_Label}>Bank account number *</Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountNum}
                 onChangeText={text => handleInputChange('AccountNum', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter Account Number"
+                placeholderTextColor="#888"
               />
 
               <Text style={styles.LReqSR_Label}>IBAN</Text>
@@ -402,6 +407,7 @@ const BankAccountSaveRecord = () => {
                 onChangeText={text => handleInputChange('BankIBAN', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter IBAN"
+                placeholderTextColor="#888"
               />
 
               <Text style={styles.LReqSR_Label}>Branch number</Text>
@@ -411,6 +417,7 @@ const BankAccountSaveRecord = () => {
                 onChangeText={text => handleInputChange('BranchNumber', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter Branch number"
+                placeholderTextColor="#888"
               />
 
               <Text style={styles.LReqSR_Label}>Branch name</Text>
@@ -420,6 +427,7 @@ const BankAccountSaveRecord = () => {
                 onChangeText={text => handleInputChange('BranchName', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter Branch name"
+                placeholderTextColor="#888"
               />
 
               <Text style={styles.LReqSR_Label}>Account Title</Text>
@@ -429,6 +437,7 @@ const BankAccountSaveRecord = () => {
                 onChangeText={text => handleInputChange('AccountHolder', text)}
                 // editable={mode === 'create'}
                 placeholder="Enter Account Title"
+                placeholderTextColor="#888"
               />
             </ScrollView>
 

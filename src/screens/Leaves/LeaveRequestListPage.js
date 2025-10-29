@@ -1,7 +1,14 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
+import {
+  Text,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -451,7 +458,13 @@ const LeaveRequestListPage = () => {
           }
         />
       ) : (
-        <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        </ScrollView>
       )}
 
       {/* Alert Modal */}

@@ -1,7 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {View, Text, StyleSheet, FlatList, BackHandler} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -268,9 +276,18 @@ const ContactDetailsListPage = () => {
           }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
-        <Text style={styles.noDataText}>No Contacts Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        </ScrollView>
       )}
 
       {/* Alert Modal */}

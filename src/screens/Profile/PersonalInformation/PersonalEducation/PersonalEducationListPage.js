@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
@@ -7,6 +9,7 @@ import {
   FlatList,
   RefreshControl,
   BackHandler,
+  ScrollView,
 } from 'react-native';
 import {
   useNavigation,
@@ -361,7 +364,13 @@ const PersonalEducation = () => {
           }
         />
       ) : (
-        <Text style={styles.noDataText}>No Education Records Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.noDataText}>No Data Found</Text>
+        </ScrollView>
       )}
 
       <AlertModal

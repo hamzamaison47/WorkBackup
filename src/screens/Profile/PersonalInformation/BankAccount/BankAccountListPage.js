@@ -1,7 +1,8 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -19,6 +20,7 @@ import {retrieveAllBankAccounts} from '../../../../API/PersonalInformation/BankA
 import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts/BankAccountDelete';
 import {useSelector} from 'react-redux';
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
+import {ScrollView} from 'react-native-gesture-handler';
 
 const BankAccountListPage = () => {
   const navigation = useNavigation();
@@ -352,6 +354,9 @@ const BankAccountListPage = () => {
         recId: itemData.recId,
       });
 
+      console.log('itemData-0-0-0--0-0-0-0-0-0--', itemData);
+      console.log({response});
+
       if (
         response &&
         (Array.isArray(response) ? response[0] : response) &&
@@ -437,9 +442,18 @@ const BankAccountListPage = () => {
           }
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
-        <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        </ScrollView>
       )}
 
       <AlertModal

@@ -456,6 +456,7 @@ const MainDashboard = () => {
       justifyContent: 'center',
       marginTop: getResponsivePadding(12, screenWidth),
       paddingHorizontal: H_PADDING,
+      marginBottom: getResponsivePadding(20, screenWidth),
     },
     indicatorDot: {
       width: getResponsiveSize(8, screenWidth),

@@ -32,6 +32,8 @@ const SubmitBankAccountRecord = async ({recId}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    console.log('soapEnvelope-0-0-0-0-0--0-0-', soapEnvelope);
+
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,
@@ -87,6 +89,8 @@ const SubmitBankAccountRecord = async ({recId}) => {
     };
 
     const cleanedResult = cleanObject(result);
+
+    console.log('Result cleanedResult IN SUBMIT REQUEST', cleanedResult);
 
     return cleanedResult;
   } catch (error) {
