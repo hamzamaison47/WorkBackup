@@ -389,10 +389,12 @@ const PersonalEducation = () => {
 const styles = StyleSheet.create({
   listContent: {padding: 6},
   noDataText: {
+    flex: 1,
     textAlign: 'center',
+    textAlignVertical: 'center',
     fontSize: 16,
-    marginTop: 20,
-    color: '#9CA3AF',
+    fontWeight: 'bold',
+    color: '#999999',
   },
 });
 

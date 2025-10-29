@@ -1,43 +1,124 @@
-import {BASE_URL} from '@env';
+/* eslint-disable curly */
+/* eslint-disable dot-notation */
+import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-const UpdateIdentityRequest = async identityData => {
-  const requestBody = {
-    contract: identityData,
-  };
-
+const UpdateIdentityRequest = async ({identityData}) => {
   try {
-    // console.log('Update Identity Request', identityData);
-    const accessToken = await getToken();
-    // Make the POST request
-    const response = await fetch(
-      `${BASE_URL}HcmPersonIdentificationNumberSvcGroup/HcmPersonIdentificationNumberSvc/update`,
+    const config = await getActiveConfigData();
+    console.log('Identity Data in SOAP API:', identityData);
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
+    const token = await getToken();
+
+    const soapBody = `
+      <update xmlns="http://tempuri.org">
+        <contract xmlns:tem="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
+          ${buildContractXml(identityData)}
+        </contract>
+      </update>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
+    console.log('Soap Envelope :', soapEnvelope);
+    const {data: xml} = await axios.post(
+      `${config.resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
+      soapEnvelope,
       {
-        method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'text/xml;charset=utf-8',
+          SOAPAction:
+            'http://tempuri.org/HcmPersonIdentificationNumberSvc/update',
         },
-        body: JSON.stringify(requestBody), // Convert the request body to JSON string
+        responseType: 'text',
       },
     );
 
-    // Check if the response is successful
-    if (!response.ok) {
-      const errorText = await response.text(); // Fetch error details
-      throw new Error(`HTTP error! Status: ${response.status} - ${errorText}`);
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      attributeNamePrefix: '',
+      isArray: () => false,
+      parseTagValue: false,
+    });
+
+    const parsed = parser.parse(xml);
+    const result =
+      parsed?.['s:Envelope']?.['s:Body']?.['updateResponse']?.['result'] ||
+      parsed?.['soap:Envelope']?.['soap:Body']?.['updateResponse']?.['result'];
+
+    if (!result) {
+      console.log('No result found in Update SOAP response');
+      return null;
     }
 
-    // Parse the JSON response
-    const result = await response.json();
-    console.log('Identification Details Updated:', result);
-
-    // Return the response data
-    return result;
+    const cleanedResult = cleanObject(result);
+    return cleanedResult;
   } catch (error) {
-    console.error('Failed to Updated Identification Details:', error);
+    console.error(
+      'Failed to update Identification request:',
+      error.response?.data || error.message,
+    );
     throw error;
   }
+};
+
+const buildContractXml = contract => {
+  if (!contract) return '';
+
+  const ns = 'tem';
+  const fields = [
+    'Description',
+    'EmployeeId',
+    'ExpirationDate',
+    'IdentificationNumber',
+    'IdentificationType',
+    'IdentificationTypeId',
+    'IsPrimary',
+    'IssuedDate',
+    'IssuingAgency',
+    'IssuingAgencyId',
+    'PersonIdentificationNumberRecVersion',
+    'RecId',
+    'WorkflowOperation',
+  ];
+
+  return fields
+    .map(field => {
+      const value = contract[field];
+      if (value === null || value === undefined) {
+        return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
+      }
+      return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
+    })
+    .join('');
+};
+
+const escapeXmlValue = value => {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+const cleanObject = obj => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanObject);
+
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => [
+      key.replace(/^[a-zA-Z0-9]+:/, ''),
+      typeof value === 'object' ? cleanObject(value) : value,
+    ]),
+  );
 };
 
 export {UpdateIdentityRequest};

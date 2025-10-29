@@ -1,37 +1,36 @@
-import {getToken} from '../../Token/getToken';
-import {resource} from '@env';
+/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const DeleteIdentityRequest = async ({recordsRecId, defaultCompany}) => {
   try {
-    // Get the token from the separate token file
-    const accessToken = await getToken();
-    // Make the POST request
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-                  xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
-  <soapenv:Header>
-    <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-          <dat:Company>${defaultCompany}</dat:Company>
-      <dat:Language>en-us</dat:Language>
-    </dat:CallContext>
-  </soapenv:Header>
-  <soapenv:Body>
-    <delete xmlns="http://tempuri.org">
-      <_recordsRecId>
-          <arr:long>${recordsRecId}</arr:long>
-      </_recordsRecId>
-    </delete>
-  </soapenv:Body>
-</soapenv:Envelope>`;
-    console.log('soapEnvelope Delete Identity Request', soapEnvelope);
+    console.log('Records To Delete :', recordsRecId);
+    const config = await getActiveConfigData();
+
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
+    const token = await getToken();
+
+    const soapBody = `
+      <delete xmlns="http://tempuri.org">
+        <_recordsRecId xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+          ${recordsRecId.map(id => `<a:long>${id}</a:long>`).join('')}
+        </_recordsRecId>
+      </delete>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody, defaultCompany);
+
     const {data: xml} = await axios.post(
-      `${resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
+      `${config.resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
       soapEnvelope,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction:
             'http://tempuri.org/HcmPersonIdentificationNumberSvc/delete',
@@ -39,6 +38,7 @@ const DeleteIdentityRequest = async ({recordsRecId, defaultCompany}) => {
         responseType: 'text',
       },
     );
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -48,18 +48,16 @@ const DeleteIdentityRequest = async ({recordsRecId, defaultCompany}) => {
     });
 
     const parsed = parser.parse(xml);
-
-    const rawData =
+    const generalContracts =
       parsed?.['s:Envelope']?.['s:Body']?.['deleteResponse']?.['result']?.[
         'a:GeneralContract'
       ];
 
-    if (!rawData) {
-      console.warn('No data found');
+    if (!generalContracts) {
+      console.warn('No delete response data found');
       return [];
     }
 
-    // Normalize and remove "a:" prefix from keys
     const cleanObject = obj =>
       Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
@@ -68,14 +66,17 @@ const DeleteIdentityRequest = async ({recordsRecId, defaultCompany}) => {
         ]),
       );
 
-    const cleanedData = Array.isArray(rawData)
-      ? rawData.map(cleanObject)
-      : [cleanObject(rawData)];
-    console.log('Returnded Data Delete Identity Request', cleanedData);
+    const cleanedData = Array.isArray(generalContracts)
+      ? generalContracts.map(cleanObject)
+      : [cleanObject(generalContracts)];
+
     return cleanedData;
-  } catch (error) {
-    console.error('Failed to delete Identification Details:', error);
-    throw error;
+  } catch (err) {
+    console.error(
+      'Delete Identity SOAP error:',
+      err.response?.data || err.message,
+    );
+    throw err;
   }
 };
 

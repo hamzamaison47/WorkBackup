@@ -2641,6 +2641,115 @@ const styles = StyleSheet.create({
     color: '#cccccc',
   },
   // End of EntitlementBalance
+
+  //Start of IdentificationRequestCard
+  ID_CardContainer: {
+    borderRadius: 16,
+    padding: 16,
+    marginVertical: 10,
+    marginHorizontal: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  ID_CardHighlighted: {
+    borderWidth: 1.5,
+    borderColor: '#7bd98e',
+  },
+  ID_Header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ID_HeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  ID_ProfileImage: {
+    width: 45,
+    height: 45,
+    borderRadius: 22,
+  },
+  ID_ProfilePlaceholder: {
+    width: 45,
+    height: 45,
+    borderRadius: 22,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ID_HeaderTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  ID_HeaderSubtitle: {
+    fontSize: 13,
+    color: '#666',
+  },
+  ID_FieldsContainer: {
+    marginTop: 4,
+  },
+  ID_FieldRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 0.5,
+    borderColor: '#e2e2e2',
+  },
+  ID_FieldLabel: {
+    fontSize: 13,
+    color: '#444',
+    flex: 1,
+  },
+  ID_FieldValue: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#222',
+    flex: 1,
+    textAlign: 'right',
+  },
+  ID_ExpandableSection: {
+    marginTop: 8,
+    borderTopWidth: 0.5,
+    borderColor: '#ccc',
+    paddingTop: 8,
+  },
+  ID_Footer: {
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ID_ExpandToggle: {
+    padding: 4,
+  },
+  ID_FooterButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  ID_Button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#0A66C2',
+  },
+  ID_ButtonDisabled: {
+    opacity: 0.6,
+  },
+  ID_ButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  //End of IdentificationRequestCard
 });
 
 export default styles;

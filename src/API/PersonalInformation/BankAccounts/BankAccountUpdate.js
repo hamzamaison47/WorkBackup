@@ -3,11 +3,12 @@
 // import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
-import {getToken} from '../Token/getToken';
-import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
-import {getActiveConfigData} from '../../Controller/secureConfig';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const UpdateBankAccountRecord = async ({bankaccountdata}) => {
+  console.log('sending data', bankaccountdata);
   try {
     const config = await getActiveConfigData();
 
@@ -18,13 +19,15 @@ const UpdateBankAccountRecord = async ({bankaccountdata}) => {
     const token = await getToken();
 
     const soapBody = `
-          <Update xmlns="http://tempuri.org">
+          <update xmlns="http://tempuri.org">
             <contract xmlns:tem="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
               ${buildContractXml(bankaccountdata)}
             </contract>
-          </Update>`;
+          </update>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
+
+    console.log('envolpe-0-0-0-0-0-0-0-0', soapBody);
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/HcmWorkerESSBankAccountSvcGroup`,
@@ -93,7 +96,7 @@ const buildContractXml = contract => {
     'BranchName',
     'BranchNumber',
     'Name',
-    'RecId',
+    'recId',
     'Worker',
   ];
 

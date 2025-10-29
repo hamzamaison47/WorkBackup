@@ -1,43 +1,35 @@
-import {getToken} from '../../Token/getToken';
-import {XMLParser} from 'fast-xml-parser';
-import {resource} from '@env';
+/* eslint-disable curly */
+/* eslint-disable dot-notation */
 import axios from 'axios';
+import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-const CreateIdentityRequest = async ({identityData, defaultCompany}) => {
+const CreateIdentityRequest = async ({identityData}) => {
   try {
-    const accessToken = await getToken();
-    const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
-    <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
-      <soapenv:Header>
-        <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-            <dat:Company>${defaultCompany}</dat:Company>
-            <dat:Language>en-US</dat:Language>
-        </dat:CallContext>
-      </soapenv:Header>
-      <soapenv:Body>
-        <create xmlns = "http://tempuri.org">
-          <contract xmlns:tem="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
-            <Description>${identityData.Description}</Description>
-            <EmployeeId>${identityData.EmployeeId}</EmployeeId>
-            <ExpirationDate>${identityData.ExpirationDate}</ExpirationDate>
-            <IdentificationNumber>${identityData.IdentificationNumber}</IdentificationNumber>
-            <IdentificationType>${identityData.IdentificationType}</IdentificationType>
-            <IdentificationTypeId>${identityData.IdentificationTypeId}</IdentificationTypeId>
-            <IsPrimary>${identityData.IsPrimary}</IsPrimary>
-            <IssuingAgency>${identityData.IssuingAgency}</IssuingAgency>
-            <IssuingAgencyId>${identityData.IssuingAgencyId}</IssuingAgencyId>
-            <PersonIdentificationNumberRecVersion>${identityData.PersonIdentificationNumberRecVersion}</PersonIdentificationNumberRecVersion>
-        </contract>
-        </create>
-      </soapenv:Body>
-    </soapenv:Envelope>`;
+    const config = await getActiveConfigData();
 
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
+
+    const token = await getToken();
+
+    const soapBody = `
+      <create xmlns="http://tempuri.org">
+        <contract xmlns:tem="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
+          ${buildContractXml(identityData)}
+        </contract>
+      </create>`;
+
+    const soapEnvelope = createSoapEnvelope(soapBody);
     const {data: xml} = await axios.post(
-      `${resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
+      `${config.resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
       soapEnvelope,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction:
             'http://tempuri.org/HcmPersonIdentificationNumberSvc/create',
@@ -56,32 +48,75 @@ const CreateIdentityRequest = async ({identityData, defaultCompany}) => {
 
     const parsed = parser.parse(xml);
 
-    const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['createResponse']?.['result'];
+    const result =
+      parsed?.['s:Envelope']?.['s:Body']?.['createResponse']?.['result'] ||
+      parsed?.['soap:Envelope']?.['soap:Body']?.['createResponse']?.['result'];
 
-    if (!rawData) {
-      console.warn('No data found');
-      return [];
+    if (!result) {
+      console.log('No result found in SOAP response');
+      return null;
     }
 
-    // Normalize and remove "a:" prefix from keys
-    const cleanObject = obj =>
-      Object.fromEntries(
-        Object.entries(obj).map(([key, value]) => [
-          key.replace(/^a:/, ''),
-          value,
-        ]),
-      );
-
-    const cleanedData = Array.isArray(rawData)
-      ? rawData.map(cleanObject)
-      : [cleanObject(rawData)];
-
-    return cleanedData;
+    const cleanedResult = cleanObject(result);
+    return cleanedResult;
   } catch (error) {
-    console.error('Failed to create Identification request:', error);
+    console.error(
+      'Failed to create Identification request:',
+      error.response?.data || error.message,
+    );
     throw error;
   }
+};
+
+const buildContractXml = contract => {
+  if (!contract) return '';
+
+  const ns = 'tem';
+  const fields = [
+    'Description',
+    'EmployeeId',
+    'ExpirationDate',
+    'IdentificationNumber',
+    'IdentificationType',
+    'IdentificationTypeId',
+    'IsPrimary',
+    'IssuedDate',
+    'IssuingAgency',
+    'IssuingAgencyId',
+    'PersonIdentificationNumberRecVersion',
+  ];
+
+  return fields
+    .map(field => {
+      const value = contract[field];
+      if (value === null || value === undefined) {
+        return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
+      }
+      return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
+    })
+    .join('');
+};
+
+const escapeXmlValue = value => {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+const cleanObject = obj => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanObject);
+
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => [
+      key.replace(/^[a-zA-Z0-9]+:/, ''), // strip namespace prefix
+      typeof value === 'object' ? cleanObject(value) : value,
+    ]),
+  );
 };
 
 export {CreateIdentityRequest};
