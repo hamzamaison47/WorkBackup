@@ -192,7 +192,9 @@ const AttendanceCalendarScreen = () => {
   const isFocused = useIsFocused();
 
   const employeeId = userData?.employeeId;
-
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
   const getStatusDescription = useCallback((color, details) => {
     if (!details) return 'No Data';
     const apiStatus = pick(details, 'Status', 'status');
@@ -332,7 +334,18 @@ const AttendanceCalendarScreen = () => {
       setLoading(false);
     }
   }, [employeeId, currentMonth, processAttendanceData]);
+  // Add this useEffect to refresh when legal entity changes
+  useEffect(() => {
+    if (employeeId) {
+      // Clear all attendance data
+      setAttendanceData({});
+      setMarkedDates({});
+      setSelectedDayDetails(null);
 
+      // Refresh calendar data
+      fetchAttendanceData();
+    }
+  }, [employeeId, fetchAttendanceData, selectedLegalEntity]); // Add selectedLegalEntity as dependency
   useEffect(() => {
     if (isFocused && employeeId) fetchAttendanceData();
   }, [currentMonth, fetchAttendanceData, isFocused, employeeId]);

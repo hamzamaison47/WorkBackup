@@ -9,7 +9,7 @@ import GenericAdvanceListScreen from '../screens/EmployeeAdvanceRequest/GenericA
 import GenericAdvanceSaveScreen from '../screens/EmployeeAdvanceRequest/GenericAdvanceSaveScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 import AttendanceDetailsScreen from '../screens/Attendance/AttendanceDetailsScreen';
-import AttendanceCalendarScreen from '../screens/Attendance/AttendanceCalendarScreen';
+// import AttendanceCalendarScreen from '../screens/Attendance/AttendanceCalendarScreen';
 import EmploymentCertificate from '../screens/EmploymentCertificate/EmploymentCertificate';
 
 // Map MenuId from API → Screen component
@@ -24,7 +24,7 @@ export const screenMapping = {
   GenericAdvanceSaveScreen: GenericAdvanceSaveScreen,
   CreateAttendanceScreen: CreateAttendanceScreen,
   AttendanceDetailsScreen: AttendanceDetailsScreen,
-  AttendanceCalendarScreen: AttendanceCalendarScreen,
+  // AttendanceCalendarScreen: AttendanceCalendarScreen,
   EmploymentCertificate: EmploymentCertificate,
 };
 

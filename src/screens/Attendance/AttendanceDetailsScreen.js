@@ -199,7 +199,9 @@ const AttendanceDetailsScreen = () => {
   });
 
   const isFocused = useIsFocused();
-
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
   const fromDate = useMemo(
     () => moment(month).startOf('month').format('YYYY-MM-DD'),
     [month],
@@ -242,7 +244,17 @@ const AttendanceDetailsScreen = () => {
       setLoading(false);
     }
   }, [userData?.employeeId, fromDate, toDate]);
+  // Add this useEffect to refresh when legal entity changes
+  useEffect(() => {
+    if (userData?.employeeId) {
+      // Clear all data
+      setRaw([]);
+      setData([]);
 
+      // Refresh attendance details
+      fetchData();
+    }
+  }, [fetchData, selectedLegalEntity, userData?.employeeId]); // Add selectedLegalEntity as dependency
   useEffect(() => {
     if (isFocused) fetchData();
   }, [isFocused, fetchData]);
