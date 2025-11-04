@@ -31,6 +31,7 @@ import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayP
 import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
 import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
 import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
+import CreateEmployeeAdjustment from '../components/Attendance/CreateEmployeeAdjustment';
 import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
 import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
 import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
@@ -365,6 +366,18 @@ const DrawerNavigator = () => {
         initialParams={{userData}}
         options={{
           title: 'EditAttendanceScreen',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+      <Drawer.Screen
+        name="CreateEmployeeAdjustment"
+        component={CreateEmployeeAdjustment}
+        initialParams={{userData}}
+        options={{
+          title: 'CreateEmployeeAdjustment',
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
