@@ -11,13 +11,13 @@ import {
 } from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
-import {useIsFocused} from '@react-navigation/native';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
 import retrieveEmployeeAdjustments from '../../API/Attendance/retrieveEmployeeAdjustments';
 import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents';
-import EmployeeAdjustmentLineDetails from '../../components/Attendance/EmployeeAdjustmentLineDetails'; // We'll create this
+import EmployeeAdjustmentLineDetails from '../../components/Attendance/EmployeeAdjustmentLineDetails';
 
 /* ------------ utils ------------ */
 const parseISO = iso =>
@@ -52,6 +52,7 @@ const buildKey = (d, idx) => {
 };
 
 const EmployeeAdjustmentScreen = () => {
+  const navigation = useNavigation();
   const {userData} = useSelector(state => state.user || {});
   const [month, setMonth] = useState(moment());
   const [raw, setRaw] = useState([]);
@@ -59,7 +60,7 @@ const EmployeeAdjustmentScreen = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [alert, setAlert] = useState({visible: false, text: ''});
-  const [expandedId, setExpandedId] = useState(null); // Track which row is expanded
+  const [expandedId, setExpandedId] = useState(null);
 
   const isFocused = useIsFocused();
   const selectedLegalEntity = useSelector(
@@ -113,7 +114,7 @@ const EmployeeAdjustmentScreen = () => {
     if (userData?.employeeId) {
       setRaw([]);
       setData([]);
-      setExpandedId(null); // Reset expanded state
+      setExpandedId(null);
       fetchData();
     }
   }, [fetchData, selectedLegalEntity, userData?.employeeId]);
@@ -142,14 +143,11 @@ const EmployeeAdjustmentScreen = () => {
     }
   }, [fetchData]);
 
-  // Toggle expand/collapse
   const handleRowPress = useCallback(
     item => {
-      // If clicking the same row that's already expanded, collapse it
       if (expandedId === item._key) {
         setExpandedId(null);
       } else {
-        // Expand the clicked row
         setExpandedId(item._key);
       }
     },
@@ -157,7 +155,6 @@ const EmployeeAdjustmentScreen = () => {
   );
 
   const getStatusDisplayName = (registerStatus, wfStatus) => {
-    // Prefer WFStatus if available and meaningful
     if (wfStatus && wfStatus.trim() !== '') {
       return wfStatus;
     }
@@ -165,6 +162,10 @@ const EmployeeAdjustmentScreen = () => {
       return registerStatus;
     }
     return 'Adjustment';
+  };
+
+  const handleCreateAdjustment = () => {
+    navigation.navigate('CreateEmployeeAdjustment');
   };
 
   const renderItem = ({item}) => {
@@ -184,11 +185,7 @@ const EmployeeAdjustmentScreen = () => {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => handleRowPress(item)}
-          style={[
-            styles.rowCard,
-            isExpanded && styles.expandedRowCard, // Different style when expanded
-          ]}>
-          {/* Header with date and status */}
+          style={[styles.rowCard, isExpanded && styles.expandedRowCard]}>
           <View style={styles.cardHeader}>
             <Text style={styles.dateText}>{dateLabel}</Text>
             <View style={styles.headerRight}>
@@ -197,12 +194,10 @@ const EmployeeAdjustmentScreen = () => {
                   {displayStatus}
                 </Text>
               </View>
-              {/* Expand/collapse indicator */}
               <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
             </View>
           </View>
 
-          {/* Type and Shift Information */}
           <View style={styles.detailRow}>
             <View style={styles.detailItem}>
               <Text style={styles.detailLabel}>Type:</Text>
@@ -216,7 +211,6 @@ const EmployeeAdjustmentScreen = () => {
             )}
           </View>
 
-          {/* Status Information */}
           <View style={styles.detailRow}>
             {item.RegisterStatus && (
               <View style={styles.detailItem}>
@@ -227,7 +221,6 @@ const EmployeeAdjustmentScreen = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Expanded Details */}
         {isExpanded && (
           <View style={styles.expandedContent}>
             <EmployeeAdjustmentLineDetails
@@ -244,25 +237,33 @@ const EmployeeAdjustmentScreen = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Employee Adjustments"
+      pageTitle="Adjustments"
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}>
       <View style={styles.container}>
-        <View className="headerRow" style={styles.headerRow}>
+        <View style={styles.headerRow}>
           <Text style={styles.title} />
-          <MonthFilter
-            month={month}
-            onPrev={() => {
-              setMonth(m => moment(m).subtract(1, 'month'));
-              setExpandedId(null); // Collapse when changing month
-            }}
-            onNext={() => {
-              setMonth(m => moment(m).add(1, 'month'));
-              setExpandedId(null); // Collapse when changing month
-            }}
-          />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={handleCreateAdjustment}>
+              <Text style={styles.createButtonText}>Create Adjustment</Text>
+            </TouchableOpacity>
+
+            <MonthFilter
+              month={month}
+              onPrev={() => {
+                setMonth(m => moment(m).subtract(1, 'month'));
+                setExpandedId(null);
+              }}
+              onNext={() => {
+                setMonth(m => moment(m).add(1, 'month'));
+                setExpandedId(null);
+              }}
+            />
+          </View>
         </View>
 
         <FlatList
@@ -306,7 +307,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 2,
   },
+
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 60,
+  },
   title: {fontSize: 18, fontWeight: '800', color: '#263238'},
+  createButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  createButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   listContent: {paddingTop: 8, paddingBottom: 16},
 
   rowContainer: {
@@ -323,7 +342,7 @@ const styles = StyleSheet.create({
   },
 
   expandedRowCard: {
-    borderLeftColor: '#2196F3', // Blue border when expanded
+    borderLeftColor: '#2196F3',
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
