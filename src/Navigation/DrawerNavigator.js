@@ -37,6 +37,8 @@ import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEd
 import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
 import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
 import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
+import Preferences from '../screens/Profile/Preferences/Preferences';
+import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -443,6 +445,32 @@ const DrawerNavigator = () => {
           headerShown: true,
           headerStyle: {backgroundColor: '#0A66C2'},
           headerTintColor: '#fff',
+        }}
+      />
+
+      <Drawer.Screen
+        name="Preferences"
+        component={Preferences}
+        options={{
+          title: 'Add / Edit Education',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
+          headerShadowVisible: false,
+        }}
+      />
+
+      <Drawer.Screen
+        name="BiometricSettings"
+        component={BiometricSettings}
+        options={{
+          title: 'Biometric Settingsn',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
+          headerShadowVisible: false,
         }}
       />
     </Drawer.Navigator>
