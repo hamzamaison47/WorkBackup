@@ -185,6 +185,26 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
 
+  Login_FingerprintButton: {
+    position: 'absolute',
+    // top: 50,
+    // right: 20,
+    bottom: 120,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
   Login_StatusIndicator: {
     position: 'absolute',
     top: 120,
@@ -2750,6 +2770,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   //End of IdentificationRequestCard
+
+  // Biometric Login Styles
+  Login_Divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+    paddingHorizontal: 40,
+  },
+  Login_DividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#D1D5DB',
+  },
+  Login_DividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
 });
 
 export default styles;

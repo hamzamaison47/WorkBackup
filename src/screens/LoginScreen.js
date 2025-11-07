@@ -4,6 +4,7 @@ import {View, Text, TouchableOpacity, Image} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import PopupDialog from 'react-native-popup-dialog';
 import {useDispatch} from 'react-redux';
 
@@ -16,6 +17,15 @@ import {
   initializeLegalEntity,
 } from '../store/slices/companySlice';
 import {setMenuItems} from '../store/slices/menuItemSlice';
+import {
+  authenticateWithBiometrics,
+  getBiometricCredentials,
+  hasPersistentBiometricCredentials,
+} from '../store/utils/biometricUtils';
+import {
+  fetchEmployeeLegalEntities,
+  fetchEmployeeMenuItems,
+} from '../Controller/authUtils';
 import styles from '../styles/styles';
 
 const LoginScreen = () => {
@@ -27,6 +37,99 @@ const LoginScreen = () => {
   const [dialogMessage, setDialogMessage] = useState('');
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+
+  const handleProviderLogin = async provider => {
+    try {
+      handleLogin(
+        setLoading,
+        data => dispatch(setUserData(data)),
+        navigation,
+        setDialogVisible,
+        setDialogMessage,
+        setAlertModal,
+        setAlertMessage,
+        legalEntity => dispatch(initializeLegalEntity(legalEntity)),
+        list => dispatch(setLegalEntities(list)),
+        menus => dispatch(setMenuItems(menus)),
+        provider,
+      );
+    } catch (error) {
+      console.error('Error in handleProviderLogin:', error);
+      setAlertMessage('Login error. Please try again.');
+      setAlertModal(true);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    try {
+      const hasCredentials = await hasPersistentBiometricCredentials();
+
+      if (!hasCredentials) {
+        setAlertMessage(
+          'Biometric login is not configured.\nPlease login with Microsoft or Google first, then enable biometric in settings.',
+        );
+        setAlertModal(true);
+        return;
+      }
+
+      const credentials = await getBiometricCredentials();
+      if (
+        !credentials ||
+        !credentials.userData ||
+        !credentials.isBiometricEnabled
+      ) {
+        setAlertMessage(
+          'Biometric configuration is invalid.\nPlease login again and enable biometric in settings.',
+        );
+        setAlertModal(true);
+        return;
+      }
+
+      const biometricSuccess = await authenticateWithBiometrics();
+      if (!biometricSuccess) {
+        setAlertMessage('Authentication cancelled or failed');
+        setAlertModal(true);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      await loadUserDataFromBiometric(credentials);
+
+      navigation.navigate('DrawerNavigator');
+      setLoading(false);
+    } catch (error) {
+      console.error('Biometric login error:', error);
+      setAlertMessage('Biometric login failed. Please try again.');
+      setAlertModal(true);
+      setLoading(false);
+    }
+  };
+
+  const loadUserDataFromBiometric = async credentials => {
+    try {
+      const {userData, account} = credentials;
+
+      dispatch(setUserData(userData));
+
+      await dispatch(initializeLegalEntity(userData.defaultLegalEntity));
+
+      const legalEntities = await fetchEmployeeLegalEntities(
+        userData.employeeId,
+      );
+      const menus = await fetchEmployeeMenuItems(userData.employeeId);
+
+      dispatch(setLegalEntities(legalEntities));
+      dispatch(setMenuItems(menus));
+
+      console.log('Biometric login successful for:', account.email);
+      return true;
+    } catch (error) {
+      console.error('Error loading user data from biometric:', error);
+      throw error;
+    }
+  };
 
   return (
     <LinearGradient
@@ -41,6 +144,7 @@ const LoginScreen = () => {
             <Icon name="qrcode" size={24} color="#0A66C2" />
           </TouchableOpacity>
 
+          {/* Header */}
           <Image
             source={require('../assets/cloud.png')}
             style={styles.Login_Logo}
@@ -50,23 +154,10 @@ const LoginScreen = () => {
             Manage your HR services anytime, anywhere
           </Text>
 
+          {/* Login Button - Microsoft */}
           <TouchableOpacity
             style={styles.Login_Button}
-            onPress={() =>
-              handleLogin(
-                setLoading,
-                data => dispatch(setUserData(data)),
-                navigation,
-                setDialogVisible,
-                setDialogMessage,
-                setAlertModal,
-                setAlertMessage,
-                legalEntity => dispatch(initializeLegalEntity(legalEntity)),
-                list => dispatch(setLegalEntities(list)),
-                menus => dispatch(setMenuItems(menus)),
-                'Azure',
-              )
-            }
+            onPress={() => handleProviderLogin('Azure')}
             disabled={loading}>
             <Icon
               name="windows"
@@ -77,23 +168,10 @@ const LoginScreen = () => {
             <Text style={styles.Login_ButtonText}>Sign in with Microsoft</Text>
           </TouchableOpacity>
 
+          {/* Login Button - Google */}
           <TouchableOpacity
             style={styles.Login_Button}
-            onPress={() =>
-              handleLogin(
-                setLoading,
-                data => dispatch(setUserData(data)),
-                navigation,
-                setDialogVisible,
-                setDialogMessage,
-                setAlertModal,
-                setAlertMessage,
-                legalEntity => dispatch(initializeLegalEntity(legalEntity)),
-                list => dispatch(setLegalEntities(list)),
-                menus => dispatch(setMenuItems(menus)),
-                'Google',
-              )
-            }
+            onPress={() => handleProviderLogin('Google')}
             disabled={loading}>
             <Icon
               name="google"
@@ -102,6 +180,18 @@ const LoginScreen = () => {
               style={styles.Login_Icon}
             />
             <Text style={styles.Login_ButtonText}>Sign in with Google</Text>
+          </TouchableOpacity>
+
+          {/* Biometric button */}
+          <TouchableOpacity
+            style={styles.Login_FingerprintButton}
+            onPress={handleBiometricLogin}
+            disabled={loading}>
+            <MaterialCommunityIcons
+              name="fingerprint"
+              size={24}
+              color="#0A66C2"
+            />
           </TouchableOpacity>
         </>
       )}
@@ -155,7 +245,7 @@ const LoginScreen = () => {
           setAlertModal(false);
           if (global.onDialogOk) {
             global.onDialogOk();
-            global.onDialogOk = null; // clear after use
+            global.onDialogOk = null;
           }
         }}
       />
