@@ -131,7 +131,9 @@ const MarkPresentScreen = () => {
     today.getDate(),
   )}`;
   const initialAxDate = normalizeAxDateTime(routeAttendanceDate, todayISO);
-
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
   const [form, setForm] = useState({
     EmployeeName: employeeName,
     AttendanceDateUI: initialAxDate,
@@ -141,7 +143,15 @@ const MarkPresentScreen = () => {
   });
 
   const [axDateTime, setAxDateTime] = useState(initialAxDate);
-
+  // Add this useEffect to handle legal entity changes
+  useEffect(() => {
+    // When legal entity changes, navigate back to prevent data inconsistency
+    if (sourceScreen) {
+      navigation.navigate(sourceScreen, {refresh: true});
+    } else {
+      navigation.goBack();
+    }
+  }, [selectedLegalEntity, navigation, sourceScreen]);
   useEffect(() => {
     setForm(prev => ({...prev, EmployeeName: employeeName}));
     const normalized = normalizeAxDateTime(

@@ -146,7 +146,9 @@ const CreateAttendanceScreen = () => {
 
   const {userData} = useSelector(state => state.user || {});
   const navigation = useNavigation();
-
+  const selectedLegalEntity = useSelector(
+    state => state.company.selectedLegalEntity,
+  );
   // Location & geofence caches
   const lastCoordsRef = useRef(null);
   const watchIdRef = useRef(null);
@@ -172,6 +174,33 @@ const CreateAttendanceScreen = () => {
     const unsub = navigation.addListener('blur', () => setActiveTab('home'));
     return unsub;
   }, [navigation]);
+
+  // Add this useEffect to refresh data when legal entity changes
+  useEffect(() => {
+    if (userData?.employeeId) {
+      // Clear all cached data
+      lastCoordsRef.current = null;
+      geofenceCacheRef.current = {sites: [], ts: 0};
+
+      // Refresh all data
+      fetchAttendanceRegister();
+      fetchOverviewSummary();
+      getGeofencesCached(true); // Force refresh geofences
+
+      // If on summary tab, refresh monthly summary too
+      if (activeTab === 'summary') {
+        fetchMonthlySummary();
+      }
+    }
+  }, [
+    activeTab,
+    fetchAttendanceRegister,
+    fetchMonthlySummary,
+    fetchOverviewSummary,
+    getGeofencesCached,
+    selectedLegalEntity,
+    userData?.employeeId,
+  ]); // Add selectedLegalEntity as dependency
 
   // Helpers for UI
   const secondsTo12Hour = seconds => {

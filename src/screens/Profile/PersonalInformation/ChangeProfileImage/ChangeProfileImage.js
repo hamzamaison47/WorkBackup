@@ -12,6 +12,11 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import {useSelector} from 'react-redux';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 
 // Components
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
@@ -24,6 +29,7 @@ import {ProfilePicture} from '../../../../API/PersonalInformation/ProfilePicture
 import {UpdateByEmployeeId} from '../../../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
 
 const ChangeProfileImage = () => {
+  const navigation = useNavigation();
   const {userData} = useSelector(state => state.user);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -136,10 +142,15 @@ const ChangeProfileImage = () => {
     }
   };
 
+  const handleGoBack = () => {
+    navigation.navigate('DisplayPersonalInfo');
+  };
+
   return (
     <ActionPaneContainer
       pageTitle="Change Profile Image"
       isBackButton={true}
+      onBackPress={handleGoBack}
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}

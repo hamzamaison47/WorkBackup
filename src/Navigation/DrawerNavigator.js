@@ -31,12 +31,15 @@ import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayP
 import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
 import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
 import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
-import PersonalContacts from '../screens/Profile/PersonalInformation/PersonalContacts/PersonalContacts';
-import PersonalContactSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/PersonalContactSaveRecord';
+import CreateEmployeeAdjustment from '../components/Attendance/CreateEmployeeAdjustment';
+import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
+import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
 import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
 import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
 import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
 import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
+import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
+import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
 import Preferences from '../screens/Profile/Preferences/Preferences';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
 
@@ -371,13 +374,12 @@ const DrawerNavigator = () => {
           headerShown: true,
         }}
       />
-
       <Drawer.Screen
-        name="PersonalContacts"
-        component={PersonalContacts}
+        name="CreateEmployeeAdjustment"
+        component={CreateEmployeeAdjustment}
         initialParams={{userData}}
         options={{
-          title: 'PersonalContacts',
+          title: 'CreateEmployeeAdjustment',
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
@@ -386,11 +388,24 @@ const DrawerNavigator = () => {
       />
 
       <Drawer.Screen
-        name="PersonalContactSaveRecord"
-        component={PersonalContactSaveRecord}
+        name="ContactDetailsListPage"
+        component={ContactDetailsListPage}
         initialParams={{userData}}
         options={{
-          title: 'PersonalContactSaveRecord',
+          title: 'ContactDetailsListPage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="ContactDetailsSaveRecord"
+        component={ContactDetailsSaveRecord}
+        initialParams={{userData}}
+        options={{
+          title: 'ContactDetailsSaveRecord',
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
@@ -445,6 +460,32 @@ const DrawerNavigator = () => {
           headerShown: true,
           headerStyle: {backgroundColor: '#0A66C2'},
           headerTintColor: '#fff',
+        }}
+      />
+
+      <Drawer.Screen
+        name="IdentificationNumberListPage"
+        component={IdentificationNumberListPage}
+        initialParams={{userData}}
+        options={{
+          title: 'IdentificationListPage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="IdentificationNumberSaveRecord"
+        component={IdentificationNumberSaveRecord}
+        initialParams={{userData}}
+        options={{
+          title: 'IdentificationNumberSaveRecord',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
         }}
       />
 

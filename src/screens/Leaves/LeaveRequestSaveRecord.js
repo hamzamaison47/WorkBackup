@@ -799,6 +799,7 @@ const LeaveRequestSaveRecord = () => {
                 onChangeText={handleLeaveDaysChange}
                 keyboardType="numeric"
                 placeholder="Enter number of days"
+                placeholderTextColor="#888"
                 editable={!isLeaveDaysDisabled}
               />
 

@@ -1,7 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {View, Text, StyleSheet, FlatList} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -21,7 +29,7 @@ import {ContactDetails} from '../../../../API/PersonalInformation/ContactDetails
 import {DeleteContactDetails} from '../../../../API/PersonalInformation/ContactDetails/DeleteContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
 
-const PersonalContacts = () => {
+const ContactDetailsListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -65,18 +73,32 @@ const PersonalContacts = () => {
     }, [fetchContactsData]),
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleGoBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
+
   // 🔹 Handle refresh
   const handleRefresh = () => fetchContactsData();
 
   // 🔹 Handle Create Contact
   const handleCreateContact = () => {
-    navigation.navigate('PersonalContactSaveRecord', {
+    navigation.navigate('ContactDetailsSaveRecord', {
       mode: 'create',
       employeeId: effectiveEmployeeId,
       employeeName: effectiveEmployeeName,
       WorkerRecId: effectiveWorkerRecId,
       userData: effectiveUserData,
-      cameFrom: 'PersonalContacts',
+      cameFrom: 'ContactDetailsListPage',
       contactData: {
         Type: '',
         Locator: '',
@@ -135,6 +157,10 @@ const PersonalContacts = () => {
       }, 1000);
     }
   };
+  // Handle back navigation
+  const handleGoBack = () => {
+    navigation.navigate('DisplayPersonalInfo');
+  };
 
   // 🔹 Define Card Config
   const cardConfig = {
@@ -145,40 +171,40 @@ const PersonalContacts = () => {
     fields: [
       {key: 'Type', label: 'Type', type: 'text'},
       {key: 'IsPrimary', label: 'Primary Contact', type: 'text'},
-      {key: 'Locator', label: 'Email / Phone', type: 'text'},
+      {key: 'Locator', label: 'Contact number / address', type: 'text'},
     ],
   };
 
   // 🔹 Button Config
   const getButtonConfig = () => ({
-    edit: {
-      show: true,
-      position: 'header',
-      style: 'icon',
-      icon: 'edit',
-      iconSize: 20,
-      iconColor: '#fff',
-    },
-    delete: {
-      show: true,
-      position: 'header',
-      style: 'icon',
-      icon: 'trash',
-      iconSize: 20,
-      iconColor: '#fff',
-    },
+    // edit: {
+    //   show: true,
+    //   position: 'header',
+    //   style: 'icon',
+    //   icon: 'edit',
+    //   iconSize: 20,
+    //   iconColor: '#fff',
+    // },
+    // delete: {
+    //   show: true,
+    //   position: 'header',
+    //   style: 'icon',
+    //   icon: 'trash',
+    //   iconSize: 20,
+    //   iconColor: '#fff',
+    // },
   });
 
   // ✅ 🔹 EDIT LOGIC (taken from LeaveRequestListPage)
   const handleEditPress = itemData => {
     console.log('ItemData :', itemData);
-    navigation.navigate('PersonalContactSaveRecord', {
+    navigation.navigate('ContactDetailsSaveRecord', {
       mode: 'edit',
       employeeId: itemData.EmployeeId || effectiveEmployeeId,
       employeeName: itemData.EmployeeName || effectiveEmployeeName,
       WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
       userData: effectiveUserData,
-      cameFrom: 'PersonalContacts',
+      cameFrom: 'ContactDetailsListPage',
       contactData: {
         RecId: itemData.RecId,
         EmployeeId: itemData.EmployeeId || effectiveEmployeeId,
@@ -231,10 +257,10 @@ const PersonalContacts = () => {
   // 🔹 Main Render
   return (
     <ActionPaneContainer
-      pageTitle="Personal Contacts"
+      pageTitle="Contact Details"
       isBackButton={false}
       showFooter={false}
-      showFloatingButton={true}
+      showFloatingButton={false}
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateContact}
@@ -250,9 +276,18 @@ const PersonalContacts = () => {
           }
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
-        <Text style={styles.noDataText}>No Contacts Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        </ScrollView>
       )}
 
       {/* Alert Modal */}
@@ -290,4 +325,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PersonalContacts;
+export default ContactDetailsListPage;

@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
 });
 
 /* --------------  MAIN COMPONENT  -------------- */
-const PersonalContactSaveRecord = () => {
+const ContactDetailsSaveRecord = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const scrollViewRef = useRef(null);
@@ -132,13 +132,13 @@ const PersonalContactSaveRecord = () => {
         index: 0,
         routes: [{name: 'TabNavigator', params: {screen: 'MainDashboard'}}],
       });
-    } else if (cameFrom === 'PersonalContacts') {
+    } else if (cameFrom === 'ContactDetailsListPage') {
       const targetCameFrom = originalCameFrom || 'DisplayListPage';
       navigation.reset({
         index: 0,
         routes: [
           {
-            name: 'PersonalContacts',
+            name: 'ContactDetailsListPage',
             params: {
               employeeId,
               employeeName,
@@ -270,7 +270,7 @@ const PersonalContactSaveRecord = () => {
         setTimeout(() => {
           setAlertModal(false);
           clearFormData();
-          navigation.navigate('PersonalContacts', {
+          navigation.navigate('ContactDetailsListPage', {
             employeeId: formData.EmployeeId,
             employeeName,
             WorkerRecId,
@@ -427,4 +427,4 @@ const PersonalContactSaveRecord = () => {
   );
 };
 
-export default PersonalContactSaveRecord;
+export default ContactDetailsSaveRecord;

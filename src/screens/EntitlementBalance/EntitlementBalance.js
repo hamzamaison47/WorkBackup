@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList} from 'react-native';
+import {Text, FlatList, RefreshControl, ScrollView} from 'react-native';
 import {useSelector} from 'react-redux';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
@@ -91,9 +91,18 @@ const EntitlementBalance = () => {
           }
           contentContainerStyle={{flexGrow: 1}}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
-        <Text style={styles.EntBal_NoDataText}>No Data Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.EntBal_NoDataText}>No Data Found</Text>
+        </ScrollView>
       )}
 
       <AlertModal

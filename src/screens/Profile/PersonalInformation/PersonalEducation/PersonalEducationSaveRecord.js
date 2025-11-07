@@ -243,6 +243,9 @@ const PersonalEducationSaveRecord = () => {
     if (!formData.EducationDisciplineId) missing.push('Education');
     if (!formData.Description.trim()) missing.push('Description');
     if (!formData.DurationUnit) missing.push('Duration Unit');
+    if (!formData.Duration) missing.push('Duration');
+    if (!formData.StartDate) missing.push('Start Date');
+    if (!formData.EndDate) missing.push('End Date');
     if (missing.length) {
       setAlertMessage(
         'Please fill in the following required fields:\n' + missing.join('\n'),
@@ -277,7 +280,17 @@ const PersonalEducationSaveRecord = () => {
 
       /* ---- submit if requested ---- */
       if (actionType === 'submit') {
-        await SubmitEducationRequest({recId});
+        try {
+          const submitRes = await SubmitEducationRequest({recId});
+          const submitOk =
+            submitRes?.IsSuccess === true || submitRes?.IsSuccess === 'true';
+          if (!submitOk) throw new Error(submitRes?.Message || 'Submit failed');
+        } catch (submitErr) {
+          // make sure the user sees the submit error
+          setAlertMessage(submitErr.message || 'Submit failed');
+          setAlertModal(true);
+          return; // stop the success flow
+        }
       }
 
       /* ---- success flow ---- */
@@ -335,7 +348,7 @@ const PersonalEducationSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={mode === 'edit' ? 'Edit Education Record' : 'Add Education'}
+      pageTitle={mode === 'edit' ? 'Edit Education' : 'Create Education'}
       isBackButton
       showFooter={false}
       showFloatingButton={false}
@@ -398,6 +411,7 @@ const PersonalEducationSaveRecord = () => {
                 value={formData.Description}
                 onChangeText={t => handleInputChange('Description', t)}
                 placeholder="Enter Description"
+                placeholderTextColor="#888"
               />
 
               <Text style={styles.LReqSR_Label}>Duration Unit *</Text>
@@ -430,6 +444,7 @@ const PersonalEducationSaveRecord = () => {
                   handleInputChange('Duration', t.replace(/[^0-9]/g, ''))
                 }
                 placeholder="Enter Duration"
+                placeholderTextColor="#888"
                 keyboardType="numeric"
               />
 
@@ -473,6 +488,7 @@ const PersonalEducationSaveRecord = () => {
                 value={formData.Notes}
                 onChangeText={t => handleInputChange('Notes', t)}
                 placeholder="Enter Notes"
+                placeholderTextColor="#888"
                 multiline
                 numberOfLines={6}
               />
@@ -481,10 +497,11 @@ const PersonalEducationSaveRecord = () => {
             <SaveRecordButtons
               mode={mode}
               processingButton={processingButton}
-              onSave={() => handleSave('save')}
-              onSubmit={() => handleSave('submit')}
+              onSave={handleSave}
               onCancel={goBack}
-              isDisabled={!!processingButton}
+              isDisabled={
+                processingButton === 'save' || processingButton === 'submit'
+              }
             />
           </KeyboardAvoidingView>
 
