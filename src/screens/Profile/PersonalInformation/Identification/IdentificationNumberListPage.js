@@ -20,6 +20,7 @@ import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import styles from '../../../../styles/styles';
+import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 
 const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
@@ -85,40 +86,23 @@ const IdentificationNumberListPage = () => {
     }, []),
   );
 
-  // Handle hardware back button
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
         handleGoBack();
         return true;
       };
+
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation]),
   );
 
-  // Navigation handling
+  // Handle back navigation
   const handleGoBack = () => {
-    let targetRoute = 'MainDashboard';
-
-    switch (cameFrom) {
-      case 'MainDashboard':
-      case 'DrawerNavigator':
-        targetRoute = 'MainDashboard';
-        break;
-      case 'DisplayListPage':
-        targetRoute = 'DisplayListPage';
-        break;
-      default:
-        navigation.goBack();
-        return;
-    }
-
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
-    });
+    navigation.navigate('DisplayPersonalInfo');
   };
 
   // Refresh handler
@@ -141,25 +125,30 @@ const IdentificationNumberListPage = () => {
     expandableFields: [],
   };
   const getStatusLabel = status => {
+    if (!status) return '';
+    const normalizedStatus = status.replace(/\s+/g, '').toLowerCase(); // remove spaces & lowercase
+
     const statusMap = {
-      Draft: 'Draft',
-      InReview: 'In Review',
-      Approved: 'Approved Waiting',
-      Waiting: 'Waiting',
-      Canceled: 'Cancelled',
-      Rejected: 'Rejected',
-      Processing: 'Processing action',
-      WorkFlowComplete: 'WorkFlow Complete',
-      Failed: 'Failed',
-      Completed: 'Completed',
-      Error: 'Error',
-      Denied: 'Denied',
-      ChangeRequested: 'Change Requested',
-      TaskInReview: 'Task In Review',
-      TaskCompleted: 'Task Completed',
-      NoWorkflow: '',
+      draft: 'Draft',
+      inreview: 'In review',
+      approved: 'Approved Waiting',
+      waiting: 'Waiting',
+      cancelled: 'Canceled',
+      canceled: 'Cancelled',
+      rejected: 'Rejected',
+      processing: 'Processing action',
+      workflowcomplete: 'WorkFlow Complete',
+      failed: 'Failed',
+      completed: 'Completed',
+      error: 'Error',
+      denied: 'Denied',
+      changerequested: 'Change Requested',
+      taskinreview: 'Task In Review',
+      taskcompleted: 'Task Completed',
+      noworkflow: '',
     };
-    return statusMap[status] || '';
+
+    return statusMap[normalizedStatus] ?? '';
   };
 
   // Handle button presses
@@ -300,9 +289,16 @@ const IdentificationNumberListPage = () => {
         : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
   };
-  // Define button configuration
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
+    const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
+    console.log(
+      item.ApprovalStatus +
+        ' ' +
+        getStatusLabel(item.ApprovalStatus) +
+        ' ' +
+        isHCMRecord,
+    );
     const isCancelled = getStatusLabel(item.ApprovalStatus) === 'Cancelled';
     return {
       edit: {
@@ -312,7 +308,7 @@ const IdentificationNumberListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        disabled: !isDraft,
+        disabled: isHCMRecord ? false : !isDraft,
         customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
@@ -334,25 +330,37 @@ const IdentificationNumberListPage = () => {
         icon: 'send',
         iconSize: 16,
         text: 'Submit',
-        textColor: '#fff',
-        iconColor: '#fff',
+        textColor: '#0A66C2',
+        iconColor: '#0A66C2',
+        customStyle: {
+          transform: [{translateY: -30}],
+        },
       },
     };
   };
 
   // Render identification card
   const renderIdentificationCard = ({item}) => {
+    // const isHighlighted = highlightedRecId === item.recId;
     const itemProcessingButtons = processingButtons[item.recId] || [];
+
+    const processedItem = {
+      ...item,
+      employeeId: item.employeeId || employeeId,
+      employeeName: item.employeeName || employeeName,
+    };
     return (
-      <IdentificationRequestCard
-        data={item}
+      <DynamicRequestCard
+        data={processedItem}
         headerConfig={cardConfig.headerConfig}
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
         buttons={getButtonConfig(item)}
+        // isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
-        isExpandable={false}
+        isExpandable={true}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
+        highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
       />
     );
@@ -394,7 +402,6 @@ const IdentificationNumberListPage = () => {
       showFooter={true}
       showFloatingButton={workflowEnabled}
       isHeaderActive={true}
-      onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}>
       {isLoading ? (

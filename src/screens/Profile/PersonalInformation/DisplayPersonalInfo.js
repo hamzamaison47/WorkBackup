@@ -37,13 +37,13 @@ const DisplayPersonalInfo = () => {
     //   subtitle: 'Emergency contacts and dependents',
     //   screen: '',
     // },
-    // {
-    //   id: 'identification',
-    //   icon: 'hash',
-    //   title: 'Identification Numbers',
-    //   subtitle: 'Your CNIC, passport, and other IDs',
-    //   screen: 'IdentificationNumberListPage',
-    // },
+    {
+      id: 'identification',
+      icon: 'hash',
+      title: 'Identification Numbers',
+      subtitle: 'Your CNIC, passport, and other IDs',
+      screen: 'IdentificationNumberListPage',
+    },
     {
       id: 'personalEducation',
       icon: 'book',
