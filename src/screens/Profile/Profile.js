@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect} from 'react';
 import {
@@ -83,8 +85,8 @@ const Profile = () => {
       id: 'preferences',
       icon: 'settings',
       title: 'Preferences',
-      subtitle: 'Notifications, Appearance, Language',
-      screen: '',
+      subtitle: 'Biometric Settings, Notifications, Appearance, Language',
+      screen: 'Preferences',
     },
     {
       id: 'help',

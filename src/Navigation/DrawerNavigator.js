@@ -40,6 +40,8 @@ import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAc
 import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
 import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
 import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
+import Preferences from '../screens/Profile/Preferences/Preferences';
+import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -484,6 +486,32 @@ const DrawerNavigator = () => {
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
           headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
+        name="Preferences"
+        component={Preferences}
+        options={{
+          title: 'Add / Edit Education',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
+          headerShadowVisible: false,
+        }}
+      />
+
+      <Drawer.Screen
+        name="BiometricSettings"
+        component={BiometricSettings}
+        options={{
+          title: 'Biometric Settingsn',
+          drawerItemStyle: {display: 'none'}, // hides it from the drawer
+          headerShown: true,
+          headerStyle: {backgroundColor: '#0A66C2'},
+          headerTintColor: '#fff',
+          headerShadowVisible: false,
         }}
       />
     </Drawer.Navigator>

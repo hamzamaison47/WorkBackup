@@ -1,4 +1,17 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-shadow */
+/* eslint-disable no-undef */
 import {decode as atob, encode as btoa} from 'base-64';
+import {authorize} from 'react-native-app-auth';
+import {jwtDecode} from 'jwt-decode';
+import {getActiveConfigData} from './secureConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
+import {saveAccountAfterLogin} from '../store/utils/biometricUtils';
+
+import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
+import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
+import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
 
 // Polyfill at the top of your authUtils file
 if (typeof global.atob === 'undefined') {
@@ -8,24 +21,53 @@ if (typeof global.btoa === 'undefined') {
   global.btoa = btoa;
 }
 
-/* eslint-disable no-alert */
-import {authorize} from 'react-native-app-auth';
-import {jwtDecode} from 'jwt-decode';
-import {getActiveConfigData} from './secureConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
-
-import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
-import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
-import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
-
-export const handleLogoutauth = async () => {
+export const handleLogoutauth = async (navigation, dispatch) => {
   try {
-    await AsyncStorage.removeItem('accessToken');
-    await AsyncStorage.removeItem('idToken');
+    // Clear AsyncStorage tokens
+    await AsyncStorage.multiRemove(['accessToken', 'idToken', 'refreshToken']);
+
+    // Clear Redux store
+    dispatch(setUserData(null)); // Clear user data
+    dispatch(setLegalEntities([])); // Clear legal entities
+    dispatch(setMenuItems([])); // Clear menu items
+
+    // Clear accounts list but keep biometric credentials
+    // This ensures only current logged-in account shows in BiometricSettings
+    try {
+      const AsyncStorage = (
+        await import('@react-native-async-storage/async-storage')
+      ).default;
+
+      // Clear only the accounts list - biometric credentials stay in Keychain
+      await AsyncStorage.removeItem('accounts_list');
+
+      // // Clear any biometric credentials
+      // try {
+      //   const {disableBiometric} = await import(
+      //     '../store/utils/biometricUtils'
+      //   );
+      //   await disableBiometric();
+      // } catch (error) {
+      //   console.log('Error clearing biometric credentials:', error);
+      // }
+
+      // console.log('Logged out - Accounts list cleared');
+    } catch (error) {
+      console.log('Error clearing accounts list:', error);
+    }
+
+    // Navigate to Login screen
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'Login'}],
+    });
   } catch (error) {
     console.error('Logout error:', error);
-    alert('Logout failed. Please try again.');
+    // Fallback navigation
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'Login'}],
+    });
   }
 };
 
@@ -58,8 +100,6 @@ export const handleLogin = async (
         navigation.navigate('ConfigSelectionScreen'); // navigate to config screen
       };
       return;
-    } else {
-      console.log('Active config exists, proceed with login:', scan);
     }
 
     const config =
@@ -78,8 +118,10 @@ export const handleLogin = async (
         tokenToUse,
       );
 
+      // Pass the complete result object to handleSuccessfulLogin
       await handleSuccessfulLogin(
         tokenToUse,
+        result,
         setUserData,
         navigation,
         setDialogVisible,
@@ -104,6 +146,7 @@ export const handleLogin = async (
 
 export const handleSuccessfulLogin = async (
   accessToken,
+  authResult,
   setUserData,
   navigation,
   setDialogVisible,
@@ -133,10 +176,8 @@ export const handleSuccessfulLogin = async (
         "Incorrect Login Details.\nYour email isn't registered in our system. Would you like to create an account?",
       );
 
-      // Show popup
       setDialogVisible(true);
 
-      // Save callback for OK button
       global.onDialogOk = () => {
         setDialogVisible(false);
         navigation.navigate('RequestForRegistration');
@@ -158,8 +199,8 @@ export const handleSuccessfulLogin = async (
     setLegalEntities(legalEntities);
     setMenuItems(menus);
 
-    // Step 5: Set user data in Redux
-    setUserData({
+    // Step 5: Prepare complete user data object
+    const completeUserData = {
       userName: decodedAccessToken.name,
       employeeName: user.EmployeeName,
       employeeId: user.EmployeeId,
@@ -183,9 +224,22 @@ export const handleSuccessfulLogin = async (
       RecId: user.RecId,
       isDynamicsUser: user.isDynamicsUser,
       employeeFullInfo: user,
+    };
+
+    // Set user data in Redux
+    setUserData(completeUserData);
+
+    // Step 7: Save account with complete user data (not tokens)
+    const savedAccount = await saveAccountAfterLogin(userEmailOrUPN, provider, {
+      displayName: decodedAccessToken.name || user.EmployeeName,
+      employeeId: user.EmployeeId,
+      employeeName: user.EmployeeName,
+      userName: decodedAccessToken.name,
+      defaultLegalEntity: user.DefaultLegalEntity,
+      ...completeUserData, // Include all user data
     });
 
-    // Step 6: Navigate to main app
+    // Step 7: Navigate to main app
     navigation.navigate('DrawerNavigator', {
       userName: decodedAccessToken.name,
     });
@@ -275,7 +329,6 @@ export const fetchEmployeeMenuItems = async employeeId => {
     return data.map(entity => ({
       LegalEntity: entity.DataAreaId?.toString() ?? '',
       FullName: entity.FullName?.toString() ?? '',
-
       AccessLevel: entity.AccessLevel?.toString() ?? '',
       Image: entity.Image?.toString() ?? '',
       Label: entity.Label?.toString() ?? '',

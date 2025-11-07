@@ -29,6 +29,7 @@ import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/I
 import {FindIdentificationTypeRequest} from '../../../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
+import CalendarModal from '../../../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -61,6 +62,8 @@ const IdentificationNumberSaveRecord = () => {
   const [showExpirationPicker, setShowExpirationPicker] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarField, setCalendarField] = useState('');
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const createInitialFormData = () => ({
@@ -82,51 +85,42 @@ const IdentificationNumberSaveRecord = () => {
 
   const [formData, setFormData] = useState(() => createInitialFormData());
 
-  // Navigation setup
   const goBack = useCallback(() => {
-    if (cameFrom === 'MainDashboard') {
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'TabNavigator', params: {screen: 'MainDashboard'}}],
-      });
-    } else if (cameFrom === 'IdentificationListPage') {
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'IdentificationListPage',
-            params: {
-              employeeId,
-              employeeName,
-              WorkerRecId,
-              cameFrom: originalCameFrom || 'DisplayListPage',
-            },
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'IdentificationNumberListPage',
+          params: {
+            employeeId,
+            employeeName,
+            WorkerRecId,
+            cameFrom: originalCameFrom || 'DisplayListPage',
           },
-        ],
-      });
-    } else {
-      navigation.goBack();
-    }
-  }, [
-    navigation,
-    cameFrom,
-    originalCameFrom,
-    employeeId,
-    employeeName,
-    WorkerRecId,
-  ]);
+        },
+      ],
+    });
+  }, [navigation, employeeId, employeeName, WorkerRecId, originalCameFrom]);
 
-  // hardware back
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
         goBack();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
+    }, [goBack]),
+  );
+
+  useFocusEffect(
+    useCallback(
+      () => scrollViewRef.current?.scrollTo({y: 0, animated: false}),
+      [],
+    ),
   );
 
   // Load identification types
@@ -135,10 +129,14 @@ const IdentificationNumberSaveRecord = () => {
       const fetchIdentificationTypes = async () => {
         try {
           const response = await FindIdentificationTypeRequest();
+          console.log(
+            'RAW API RESPONSE -->',
+            JSON.stringify(response, null, 2),
+          );
           if (response && Array.isArray(response)) {
             setIdentTypes(
               response.map(item => ({
-                label: item.Description,
+                label: item.IdentificationTypeId, // or item.Description / item.Name
                 value: item.RecId,
               })),
             );
@@ -188,6 +186,19 @@ const IdentificationNumberSaveRecord = () => {
     }
   };
 
+  const convertDateFormat = date => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      '0',
+    )}-${String(d.getDate()).padStart(2, '0')}T12:00:00`;
+  };
+
+  const handleDateChange = date => {
+    setFormData(prev => ({...prev, [calendarField]: convertDateFormat(date)}));
+    setShowCalendar(false);
+  };
+
   const handleInputChange = (field, value) =>
     setFormData(prev => ({...prev, [field]: value}));
 
@@ -231,6 +242,8 @@ const IdentificationNumberSaveRecord = () => {
     if (!formData.employeeId) missing.push('Employee Id');
     if (!formData.IdentificationType) missing.push('Identification Type');
     if (!formData.IdentificationNumber) missing.push('Identification Number');
+    if (!formData.IssueDate) missing.push('Issue Date');
+    if (!formData.ExpirationDate) missing.push('Expiration Date');
     if (missing.length > 0) {
       setAlertMessage('Please fill in:\n' + missing.join('\n'));
       setAlertModal(true);
@@ -307,7 +320,7 @@ const IdentificationNumberSaveRecord = () => {
         setTimeout(() => {
           setAlertModal(false);
           setFormData(createInitialFormData());
-          navigation.navigate('IdentificationListPage', {
+          navigation.navigate('IdentificationNumberListPage', {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
             WorkerRecId: formData.WorkerRecId,
@@ -380,6 +393,9 @@ const IdentificationNumberSaveRecord = () => {
                   }))
                 }
                 placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                placeholderTextColor="#888"
+                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                itemTextStyle={styles.LReqSR_DropdownItemText}
               />
 
               <Text style={styles.LReqSR_Label}>Identification Number *</Text>
@@ -388,6 +404,7 @@ const IdentificationNumberSaveRecord = () => {
                 value={formData.IdentificationNumber}
                 onChangeText={v => handleInputChange('IdentificationNumber', v)}
                 placeholder="Enter Identification Number"
+                placeholderTextColor="#888"
               />
 
               <Text style={styles.LReqSR_Label}>Description</Text>
@@ -396,6 +413,7 @@ const IdentificationNumberSaveRecord = () => {
                 value={formData.Description}
                 onChangeText={v => handleInputChange('Description', v)}
                 placeholder="Enter Description"
+                placeholderTextColor="#888"
                 multiline
               />
 
@@ -407,7 +425,7 @@ const IdentificationNumberSaveRecord = () => {
                 placeholder="Enter Issuing Agency"
               /> */}
 
-              <Text style={styles.LReqSR_Label}>Issue Date</Text>
+              {/* <Text style={styles.LReqSR_Label}>Issue Date</Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
                 onPress={() => setShowIssuePicker(true)}>
@@ -430,10 +448,28 @@ const IdentificationNumberSaveRecord = () => {
                   mode="date"
                   display="default"
                   onChange={onIssueDateSelected}
+                  placeholderTextColor="#888"
                 />
-              )}
+              )} */}
 
-              <Text style={styles.LReqSR_Label}>Expiration Date</Text>
+              <Text style={styles.LReqSR_Label}>Issue Date *</Text>
+              <TouchableOpacity
+                style={styles.LReqSR_DateSelector}
+                onPress={() => {
+                  setCalendarField('IssueDate');
+                  setShowCalendar(true);
+                }}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.LReqSR_DateText}>
+                    {formData.IssueDate
+                      ? formatDate(formData.IssueDate)
+                      : 'Select Issue Date'}
+                  </Text>
+                </View>
+                <Icon name="calendar" size={20} color="#0A66C2" />
+              </TouchableOpacity>
+
+              {/* <Text style={styles.LReqSR_Label}>Expiration Date</Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
                 onPress={() => setShowExpirationPicker(true)}>
@@ -456,8 +492,26 @@ const IdentificationNumberSaveRecord = () => {
                   mode="date"
                   display="default"
                   onChange={onExpirationDateSelected}
+                  placeholderTextColor="#888"
                 />
-              )}
+              )} */}
+
+              <Text style={styles.LReqSR_Label}>Expiration Date *</Text>
+              <TouchableOpacity
+                style={styles.LReqSR_DateSelector}
+                onPress={() => {
+                  setCalendarField('ExpirationDate');
+                  setShowCalendar(true);
+                }}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.LReqSR_DateText}>
+                    {formData.ExpirationDate
+                      ? formatDate(formData.ExpirationDate)
+                      : 'Select Expiration Date'}
+                  </Text>
+                </View>
+                <Icon name="calendar" size={20} color="#0A66C2" />
+              </TouchableOpacity>
             </ScrollView>
 
             <SaveRecordButtons
@@ -476,6 +530,12 @@ const IdentificationNumberSaveRecord = () => {
             heading="Alert"
             text={alertMessage}
             onPress={() => setAlertModal(false)}
+          />
+          <CalendarModal
+            visible={showCalendar}
+            current={formData[calendarField]}
+            onDateSelected={handleDateChange}
+            onClose={() => setShowCalendar(false)}
           />
         </SafeAreaView>
       )}
