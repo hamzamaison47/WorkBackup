@@ -1020,7 +1020,8 @@
 
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {
   View,
   Text,
@@ -1028,6 +1029,7 @@ import {
   StyleSheet,
   FlatList,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -1066,10 +1068,29 @@ const BiometricSettings = () => {
   const [showEnableConfirm, setShowEnableConfirm] = useState(false);
 
   const userData = useSelector(state => state.user.userData);
+  const navigation = useNavigation();
 
   useEffect(() => {
     initializeBiometricSettings();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleGoBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
+
+  const handleGoBack = () => {
+    navigation.navigate('Preferences');
+  };
 
   const initializeBiometricSettings = async () => {
     try {
@@ -1136,7 +1157,7 @@ const BiometricSettings = () => {
       // Get current config data
       const sourceConfig = await getActiveConfigData();
 
-      // ✅ POINT 2: No need to manually disable - enableBiometric does it automatically
+      // No need to manually disable - enableBiometric does it automatically
       // Call enableBiometric with userData and config
       const success = await enableBiometric(
         selectedAccount,
@@ -1191,7 +1212,7 @@ const BiometricSettings = () => {
     setSelectedAccount(null);
   };
 
-  // ✅ POINT 2: Removed the condition to disable first
+  // Removed the condition to disable first
   const handleAccountSelection = async account => {
     if (
       biometricEnabled &&
@@ -1201,7 +1222,7 @@ const BiometricSettings = () => {
       // If clicking on currently enabled account, show disable confirmation
       handleShowDisableConfirm();
     } else {
-      // ✅ POINT 2: Allow direct enabling - it will auto-disable previous one
+      // Allow direct enabling - it will auto-disable previous one
       handleShowEnableConfirm(account);
     }
   };
