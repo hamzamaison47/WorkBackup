@@ -316,6 +316,7 @@ const IdentificationNumberSaveRecord = () => {
         mode === 'edit' ? 'update' : 'create',
         formData,
       );
+      console.log('Resut', result);
       if (result.success) {
         setTimeout(() => {
           setAlertModal(false);

@@ -212,7 +212,7 @@ const BankAccountListPage = () => {
       {key: 'BankIBAN', label: 'IBAN', type: 'text'},
       {key: 'BranchNumber', label: 'Branch Number', type: 'text'},
       {key: 'BranchName', label: 'Branch Name', type: 'text'},
-      {key: 'CreatedBy', label: 'Created By', type: 'text'},
+      // {key: 'CreatedBy', label: 'Created By', type: 'text'},
     ],
   };
 

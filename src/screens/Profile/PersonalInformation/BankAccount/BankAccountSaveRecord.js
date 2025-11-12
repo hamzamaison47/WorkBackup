@@ -205,7 +205,8 @@ const BankAccountSaveRecord = () => {
     const missing = [];
     if (!formData.AccountId) missing.push('Account identification');
     if (!formData.Name) missing.push('Name');
-    if (!formData.AccountNum) missing.push('Bank Account Number');
+    if (!formData.AccountNum && !formData.BankIBAN)
+      missing.push('Either Bank Account Number or IBAN must be filled');
     if (missing.length) {
       setAlertMessage(
         'Please fill in the following required fields:\n' + missing.join('\n'),
@@ -290,6 +291,10 @@ const BankAccountSaveRecord = () => {
 
     const missing = [];
     if (!formData.AccountId) missing.push('AccountId');
+    // Check if either AccountNum or BankIBAN is filled
+    if (!formData.AccountNum && !formData.BankIBAN) {
+      missing.push('Either Bank Account Number or IBAN');
+    }
     if (missing.length) {
       setAlertMessage(
         'Please fill in the following required fields:\n' + missing.join('\n'),
@@ -398,6 +403,7 @@ const BankAccountSaveRecord = () => {
                 // editable={mode === 'create'}
                 placeholder="Enter Account Number"
                 placeholderTextColor="#888"
+                keyboardType="numeric"
               />
 
               <Text style={styles.LReqSR_Label}>IBAN</Text>
