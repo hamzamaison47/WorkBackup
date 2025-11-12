@@ -27,6 +27,7 @@ import {
   fetchEmployeeMenuItems,
 } from '../Controller/authUtils';
 import styles from '../styles/styles';
+import {fontScale} from '../store/utils/scaling';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -141,46 +142,53 @@ const LoginScreen = () => {
           <TouchableOpacity
             style={styles.Login_QRButton}
             onPress={() => navigation.navigate('ConfigSelectionScreen')}>
-            <Icon name="qrcode" size={24} color="#0A66C2" />
+            <Icon name="qrcode" size={fontScale(25)} color="#0A66C2" />
           </TouchableOpacity>
 
           {/* Header */}
-          <Image
-            source={require('../assets/cloud.png')}
-            style={styles.Login_Logo}
-          />
-          <Text style={styles.Login_Title}>Welcome to Dynaface</Text>
-          <Text style={styles.Login_Subtitle}>
-            Manage your HR services anytime, anywhere
-          </Text>
-
-          {/* Login Button - Microsoft */}
-          <TouchableOpacity
-            style={styles.Login_Button}
-            onPress={() => handleProviderLogin('Azure')}
-            disabled={loading}>
-            <Icon
-              name="windows"
-              size={24}
-              color="#0A66C2"
-              style={styles.Login_Icon}
+          <View style={styles.Login_Header}>
+            <Image
+              source={require('../assets/cloud.png')}
+              style={styles.Login_Logo}
             />
-            <Text style={styles.Login_ButtonText}>Sign in with Microsoft</Text>
-          </TouchableOpacity>
+            <Text style={styles.Login_Title}>Welcome to Dynaface</Text>
+            <Text style={styles.Login_Subtitle}>
+              Manage your HR services anytime, anywhere
+            </Text>
+          </View>
 
-          {/* Login Button - Google */}
-          <TouchableOpacity
-            style={styles.Login_Button}
-            onPress={() => handleProviderLogin('Google')}
-            disabled={loading}>
-            <Icon
-              name="google"
-              size={24}
-              color="#0A66C2"
-              style={styles.Login_Icon}
-            />
-            <Text style={styles.Login_ButtonText}>Sign in with Google</Text>
-          </TouchableOpacity>
+          {/* Login Buttons Container */}
+          <View style={styles.Login_ButtonsContainer}>
+            {/* Login Button - Microsoft */}
+            <TouchableOpacity
+              style={styles.Login_Button}
+              onPress={() => handleProviderLogin('Azure')}
+              disabled={loading}>
+              <Icon
+                name="windows"
+                size={fontScale(20)}
+                color="#0A66C2"
+                style={styles.Login_Icon}
+              />
+              <Text style={styles.Login_ButtonText}>
+                Sign in with Microsoft
+              </Text>
+            </TouchableOpacity>
+
+            {/* Login Button - Google */}
+            <TouchableOpacity
+              style={styles.Login_Button}
+              onPress={() => handleProviderLogin('Google')}
+              disabled={loading}>
+              <Icon
+                name="google"
+                size={fontScale(20)}
+                color="#0A66C2"
+                style={styles.Login_Icon}
+              />
+              <Text style={styles.Login_ButtonText}>Sign in with Google</Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Biometric button */}
           <TouchableOpacity
@@ -189,7 +197,7 @@ const LoginScreen = () => {
             disabled={loading}>
             <MaterialCommunityIcons
               name="fingerprint"
-              size={24}
+              size={fontScale(32)}
               color="#0A66C2"
             />
           </TouchableOpacity>

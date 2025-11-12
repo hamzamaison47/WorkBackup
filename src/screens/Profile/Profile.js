@@ -82,19 +82,26 @@ const Profile = () => {
       screen: 'DisplayPersonalInfo',
     },
     {
-      id: 'preferences',
-      icon: 'settings',
-      title: 'Preferences',
-      subtitle: 'Biometric Settings, Notifications, Appearance, Language',
-      screen: 'Preferences',
+      id: 'BiometricSettings',
+      icon: 'shield',
+      title: 'Biometric Settings',
+      subtitle: 'Set up fingerprint authentication for quick access',
+      screen: 'BiometricSettings',
     },
-    {
-      id: 'help',
-      icon: 'help-circle',
-      title: 'Help & Support',
-      subtitle: 'FAQ, Contact us, Feedback',
-      screen: '',
-    },
+    // {
+    //   id: 'preferences',
+    //   icon: 'settings',
+    //   title: 'Preferences',
+    //   subtitle: 'Biometric Settings, Notifications, Appearance, Language',
+    //   screen: 'Preferences',
+    // },
+    // {
+    //   id: 'help',
+    //   icon: 'help-circle',
+    //   title: 'Help & Support',
+    //   subtitle: 'FAQ, Contact us, Feedback',
+    //   screen: '',
+    // },
   ];
 
   const renderSettingItem = item => (

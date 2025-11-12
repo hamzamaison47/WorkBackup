@@ -1,44 +1,86 @@
-import {StyleSheet, Dimensions} from 'react-native';
-import {moderateScale, fontScale} from '../Controller/scaling';
-
+import {StyleSheet, Dimensions, Platform} from 'react-native';
+import {
+  scale,
+  verticalScale,
+  moderateScale,
+  fontScale,
+} from '../store/utils/scaling';
 const {height, width} = Dimensions.get('window');
+
 const cardWidth = (width - 56) / 2;
 const PROFILE_IMAGE_SIZE = width * 0.35; // responsive image size
 const BORDER_WIDTH = 5;
 
 const styles = StyleSheet.create({
-  // start of  splash_ page name
+  // ============================================
+  // SPLASH SCREEN - RESPONSIVE STYLES
+  // ============================================
   splash_Container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   splash_Logo: {
-    width: 200,
-    height: 80,
-    marginBottom: 20,
+    width: scale(200),
+    height: verticalScale(80),
+    marginBottom: verticalScale(20),
   },
   splash_Text: {
-    fontSize: 30,
+    fontSize: fontScale(30),
     fontWeight: 'bold',
     color: '#FFFFFF',
     textShadowColor: 'rgba(0, 0, 0, 0.25)',
     textShadowOffset: {width: 2, height: 2},
     textShadowRadius: 4,
+    textAlign: 'center',
+    paddingHorizontal: scale(20),
+    lineHeight: fontScale(36),
   },
   splash_Tagline: {
-    fontSize: 18,
+    fontSize: fontScale(18),
     color: '#FFFFFF',
-    marginTop: 10,
+    marginTop: verticalScale(10),
     fontStyle: 'italic',
     fontWeight: '300',
+    textAlign: 'center',
+    paddingHorizontal: scale(20),
+    lineHeight: fontScale(22),
   },
   splash_Loader: {
-    marginTop: 20,
+    marginTop: verticalScale(20),
   },
-  // end of splash_ screen name
+  splash_Circle1: {
+    position: 'absolute',
+    width: scale(300),
+    height: scale(300),
+    borderRadius: scale(150),
+    backgroundColor: '#FFFFFF',
+    top: '-15%',
+    right: '-15%',
+  },
+  splash_Circle2: {
+    position: 'absolute',
+    width: scale(200),
+    height: scale(200),
+    borderRadius: scale(100),
+    backgroundColor: '#FFFFFF',
+    bottom: '-10%',
+    left: '-10%',
+  },
+  splash_Circle3: {
+    position: 'absolute',
+    width: scale(150),
+    height: scale(150),
+    borderRadius: scale(75),
+    backgroundColor: '#FFFFFF',
+    top: '60%',
+    right: '20%',
+  },
 
-  // Start of Maindashboard Screen
+  // ============================================
+  // MAINDASHBOARD SCREEN - RESPONSIVE STYLES
+  // ============================================
   Main_Container: {
     flex: 1,
     backgroundColor: '#F7F9FC',
@@ -159,250 +201,1723 @@ const styles = StyleSheet.create({
   },
   // End Of MainDashboard
 
-  // Start of Login_ Screen
+  // ============================================
+  // LOGIN SCREEN - RESPONSIVE STYLES
+  // ============================================
   Login_Container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(10),
   },
+
+  Login_Header: {
+    alignItems: 'center',
+    marginBottom: verticalScale(20),
+    width: '100%',
+  },
+
   Login_QRButton: {
     position: 'absolute',
-    top: 50,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    top: Platform.OS === 'ios' ? verticalScale(50) : verticalScale(50),
+    right: scale(20),
+    width: scale(50),
+    height: scale(50),
+    borderRadius: scale(28),
     backgroundColor: '#fff',
-    borderWidth: 2,
+    borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: moderateScale(2)},
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: moderateScale(3.84),
+    zIndex: 10,
   },
 
   Login_FingerprintButton: {
     position: 'absolute',
-    // top: 50,
-    // right: 20,
-    bottom: 120,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    bottom: verticalScale(50),
+    width: scale(70),
+    height: scale(70),
+    borderRadius: scale(40),
     backgroundColor: '#fff',
-    borderWidth: 2,
+    borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: {width: 0, height: moderateScale(2)},
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: moderateScale(3.84),
   },
 
-  Login_StatusIndicator: {
-    position: 'absolute',
-    top: 120,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-
-  Login_StatusIndicatorActive: {
-    backgroundColor: '#d4edda',
-    borderColor: '#c3e6cb',
-    borderWidth: 1,
-  },
-
-  Login_StatusIndicatorInactive: {
-    backgroundColor: '#f8d7da',
-    borderColor: '#f5c6cb',
-    borderWidth: 1,
-  },
-
-  Login_StatusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-
-  Login_StatusTextActive: {
-    color: '#155724',
-  },
-
-  Login_StatusTextInactive: {
-    color: '#721c24',
-  },
-
-  // Setup Message
-  Login_SetupMessage: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e6f3ff',
-    borderColor: '#0A66C2',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginHorizontal: 20,
-    marginBottom: 20,
-  },
-
-  Login_SetupMessageText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#0A66C2',
-    fontWeight: '500',
-  },
-
-  // Disabled Button Styles
-  Login_ButtonDisabled: {
-    backgroundColor: '#f8f9fa',
-    borderColor: '#e9ecef',
-  },
-
-  Login_ButtonTextDisabled: {
-    color: '#999',
-  },
-
-  // Setup Button
-  Login_SetupButton: {
-    backgroundColor: '#0A66C2',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginTop: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-
-  Login_SetupButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
   Login_Logo: {
-    width: 200,
-    height: 80,
-    marginBottom: 20,
+    width: scale(210),
+    height: verticalScale(100),
+    marginBottom: verticalScale(20),
+    resizeMode: 'contain',
   },
+
   Login_Title: {
-    fontSize: 26,
+    fontSize: fontScale(24),
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: verticalScale(8),
     color: '#333333',
     textAlign: 'center',
+    lineHeight: fontScale(30),
   },
+
   Login_Subtitle: {
-    fontSize: 18,
-    color: '#333333',
-    marginBottom: 30,
+    fontSize: fontScale(14),
+    color: '#666666',
+    // marginBottom: verticalScale(10),
     textAlign: 'center',
-    paddingHorizontal: 15,
-    fontStyle: 'italic',
+    paddingHorizontal: scale(20),
+    lineHeight: fontScale(20),
+    maxWidth: scale(300),
   },
+
+  Login_ButtonsContainer: {
+    width: '100%',
+    alignItems: 'center',
+    // marginBottom: verticalScale(20),
+  },
+
   Login_Button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: width * 0.8, // 80% of screen width
-    height: 55, // Fixed height
-    borderRadius: 50,
-    borderWidth: 2,
+    width: '85%',
+    maxWidth: scale(320),
+    height: verticalScale(52),
+    borderRadius: moderateScale(25),
+    borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
-    marginVertical: 8,
-    paddingHorizontal: 10,
+    marginVertical: verticalScale(8),
+    paddingHorizontal: scale(20),
     backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
+
   Login_ButtonText: {
     color: '#0A66C2',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: fontScale(15),
+    fontWeight: '600',
   },
+
   Login_Icon: {
-    marginRight: 10,
+    marginRight: scale(12),
   },
 
   Login_LoadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: moderateScale(20),
   },
+
   Login_LoadingText: {
-    marginTop: 10,
-    fontSize: 16,
+    marginTop: verticalScale(16),
+    fontSize: fontScale(15),
     color: '#333',
     textAlign: 'center',
+    lineHeight: fontScale(20),
+    paddingHorizontal: scale(20),
   },
+
   Login_DialogContainer: {
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: moderateScale(16),
+    padding: moderateScale(20),
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   Login_DialogTitle: {
-    fontSize: 20,
+    fontSize: fontScale(18),
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: verticalScale(12),
   },
-  Login_DialogContent: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   Login_DialogMessage: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: fontScale(14),
+    color: '#666',
     textAlign: 'center',
-    marginBottom: 25,
-    paddingHorizontal: 10,
+    marginBottom: verticalScale(20),
+    paddingHorizontal: scale(10),
+    lineHeight: fontScale(20),
   },
+
   Login_DialogButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 20,
+    gap: scale(10),
   },
+
   Login_DialogButton: {
     flex: 1,
-    backgroundColor: '#0A66C2',
-    borderRadius: 6,
-    paddingVertical: 10,
-    marginHorizontal: 5,
+    borderRadius: moderateScale(8),
+    paddingVertical: verticalScale(12),
     alignItems: 'center',
+    minHeight: verticalScale(44),
   },
+
   Login_DialogButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: fontScale(14),
+    fontWeight: '600',
   },
-  // End Of Login_
+
+  Login_Divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: verticalScale(20),
+    width: '100%',
+    maxWidth: scale(300),
+  },
+
+  Login_DividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#D1D5DB',
+  },
+
+  Login_DividerText: {
+    marginHorizontal: scale(16),
+    fontSize: fontScale(13),
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+
+  // ============================================
+  // CONFIG SELECTION SCREEN - RESPONSIVE STYLES
+  // ============================================
+  ConfigSelection_Container: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
+
+  ConfigSelection_Header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(16),
+    paddingTop: verticalScale(20),
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e8eaed',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+
+  ConfigSelection_HeaderButton: {
+    width: scale(44),
+    height: scale(44),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: scale(22),
+    backgroundColor: '#f0f8ff',
+  },
+
+  ConfigSelection_HeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  ConfigSelection_HeaderTitle: {
+    fontSize: fontScale(20),
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+
+  ConfigSelection_HeaderSubtitle: {
+    fontSize: fontScale(12),
+    color: '#666',
+    marginTop: verticalScale(2),
+  },
+
+  ConfigSelection_ListContainer: {
+    padding: scale(16),
+    paddingBottom: verticalScale(32),
+  },
+
+  ConfigSelection_ConfigCard: {
+    backgroundColor: '#fff',
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    borderWidth: 2,
+    borderColor: '#e8eaed',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: verticalScale(16),
+  },
+
+  ConfigSelection_ActiveConfigCard: {
+    borderColor: '#0A66C2',
+    backgroundColor: '#f8fbff',
+  },
+
+  ConfigSelection_ActiveBadge: {
+    position: 'absolute',
+    top: moderateScale(12),
+    right: moderateScale(12),
+    backgroundColor: '#0A66C2',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: moderateScale(12),
+    gap: scale(4),
+  },
+
+  ConfigSelection_ActiveBadgeText: {
+    color: '#fff',
+    fontSize: fontScale(10),
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+
+  ConfigSelection_CardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(16),
+  },
+
+  ConfigSelection_CardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  ConfigSelection_IconContainer: {
+    width: scale(44),
+    height: scale(44),
+    borderRadius: moderateScale(12),
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scale(12),
+  },
+
+  ConfigSelection_ActiveIconContainer: {
+    backgroundColor: '#0A66C2',
+  },
+
+  ConfigSelection_ConfigTitle: {
+    fontSize: fontScale(18),
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: verticalScale(4),
+  },
+
+  ConfigSelection_ConfigSubtitle: {
+    fontSize: fontScale(12),
+    color: '#666',
+  },
+
+  ConfigSelection_CardActions: {
+    marginTop: verticalScale(24),
+    flexDirection: 'row',
+    gap: scale(8),
+  },
+
+  ConfigSelection_ActionButton: {
+    width: scale(36),
+    height: scale(36),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: moderateScale(8),
+    backgroundColor: '#f5f7fa',
+  },
+
+  ConfigSelection_CardDetails: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: moderateScale(12),
+    padding: moderateScale(12),
+    gap: verticalScale(10),
+  },
+
+  ConfigSelection_DetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  ConfigSelection_DetailIcon: {
+    marginRight: scale(8),
+    width: scale(16),
+  },
+
+  ConfigSelection_DetailLabel: {
+    fontSize: fontScale(12),
+    color: '#666',
+    fontWeight: '600',
+    width: scale(90),
+  },
+
+  ConfigSelection_DetailValue: {
+    fontSize: fontScale(12),
+    color: '#1a1a1a',
+    flex: 1,
+    fontWeight: '500',
+  },
+
+  ConfigSelection_EmptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(40),
+  },
+
+  ConfigSelection_EmptyIconContainer: {
+    width: scale(120),
+    height: scale(120),
+    borderRadius: scale(60),
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: verticalScale(24),
+  },
+
+  ConfigSelection_EmptyStateTitle: {
+    fontSize: fontScale(24),
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: verticalScale(12),
+  },
+
+  ConfigSelection_EmptyStateSubtitle: {
+    fontSize: fontScale(15),
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: fontScale(22),
+    marginBottom: verticalScale(32),
+    paddingHorizontal: scale(20),
+  },
+
+  ConfigSelection_PrimaryButton: {
+    backgroundColor: '#0A66C2',
+    paddingHorizontal: scale(28),
+    paddingVertical: verticalScale(14),
+    borderRadius: moderateScale(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
+  ConfigSelection_ButtonIcon: {
+    marginRight: scale(8),
+  },
+
+  ConfigSelection_PrimaryButtonText: {
+    color: '#fff',
+    fontSize: fontScale(16),
+    fontWeight: '700',
+  },
+
+  // Modal Styles
+  ConfigSelection_ModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(20),
+  },
+
+  ConfigSelection_ModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: moderateScale(20),
+    width: '100%',
+    maxWidth: scale(400),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+
+  ConfigSelection_ModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: moderateScale(20),
+    borderBottomWidth: 1,
+    borderBottomColor: '#e8eaed',
+  },
+
+  ConfigSelection_ModalTitle: {
+    fontSize: fontScale(20),
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+
+  ConfigSelection_ModalCloseButton: {
+    width: scale(32),
+    height: scale(32),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: scale(16),
+    backgroundColor: '#f5f7fa',
+  },
+
+  ConfigSelection_ModalBody: {
+    padding: moderateScale(20),
+  },
+
+  ConfigSelection_InputLabel: {
+    fontSize: fontScale(14),
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: verticalScale(8),
+  },
+
+  ConfigSelection_Input: {
+    borderWidth: 2,
+    borderColor: '#e8eaed',
+    borderRadius: moderateScale(12),
+    padding: moderateScale(14),
+    fontSize: fontScale(16),
+    color: '#1a1a1a',
+    backgroundColor: '#f8f9fa',
+  },
+
+  ConfigSelection_ModalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: moderateScale(20),
+    gap: scale(12),
+    borderTopWidth: 1,
+    borderTopColor: '#e8eaed',
+  },
+
+  ConfigSelection_SecondaryButton: {
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(10),
+    backgroundColor: '#f5f7fa',
+  },
+
+  ConfigSelection_SecondaryButtonText: {
+    color: '#666',
+    fontSize: fontScale(15),
+    fontWeight: '600',
+  },
+
+  ConfigSelection_PrimaryButtonModal: {
+    backgroundColor: '#0A66C2',
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(10),
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  // ============================================
+  // QR SETUP SCREEN - RESPONSIVE STYLES
+  // ============================================
+  QRSetup_Container: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
+
+  QRSetup_Header: {
+    paddingTop: Platform.OS === 'ios' ? verticalScale(60) : verticalScale(40),
+    paddingBottom: verticalScale(24),
+    paddingHorizontal: scale(20),
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: moderateScale(24),
+    borderBottomRightRadius: moderateScale(24),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+
+  QRSetup_BackButton: {
+    position: 'absolute',
+    left: scale(20),
+    top: Platform.OS === 'ios' ? verticalScale(60) : verticalScale(40),
+    width: scale(44),
+    height: scale(44),
+    borderRadius: scale(22),
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+
+  QRSetup_HeaderContent: {
+    alignItems: 'center',
+  },
+
+  QRSetup_IconBackground: {
+    width: scale(80),
+    height: scale(80),
+    borderRadius: moderateScale(20),
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: verticalScale(16),
+  },
+
+  QRSetup_Title: {
+    fontSize: fontScale(24), // Reduced from 26 for better scaling
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: verticalScale(8),
+    textAlign: 'center',
+  },
+
+  QRSetup_Subtitle: {
+    fontSize: fontScale(14), // Reduced from 15 for better scaling
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: fontScale(20),
+    maxWidth: '85%',
+  },
+
+  QRSetup_ScannerWrapper: {
+    flex: 1,
+    padding: scale(16),
+  },
+
+  QRSetup_ScannerContainer: {
+    flex: 1,
+    borderRadius: moderateScale(20), // Reduced from 24
+    overflow: 'hidden',
+    backgroundColor: '#000',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+
+  QRSetup_Camera: {
+    height: '100%',
+  },
+
+  QRSetup_Overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+
+  QRSetup_OverlaySection: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+
+  QRSetup_MiddleSection: {
+    flexDirection: 'row',
+    height: verticalScale(250), // Added fixed height for scanner frame area
+  },
+
+  QRSetup_ScannerFrame: {
+    width: scale(250), // Reduced from 280 for better small screen support
+    height: verticalScale(250),
+    position: 'relative',
+    alignSelf: 'center', // Center the frame
+  },
+
+  QRSetup_Corner: {
+    position: 'absolute',
+    width: scale(25), // Reduced from 30
+    height: scale(25), // Reduced from 30
+    borderColor: '#0A66C2',
+  },
+
+  QRSetup_TopLeft: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 3, // Reduced from 4
+    borderLeftWidth: 3, // Reduced from 4
+    borderTopLeftRadius: moderateScale(6),
+  },
+
+  QRSetup_TopRight: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 3, // Reduced from 4
+    borderRightWidth: 3, // Reduced from 4
+    borderTopRightRadius: moderateScale(6),
+  },
+
+  QRSetup_BottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 3, // Reduced from 4
+    borderLeftWidth: 3, // Reduced from 4
+    borderBottomLeftRadius: moderateScale(6),
+  },
+
+  QRSetup_BottomRight: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 3, // Reduced from 4
+    borderRightWidth: 3, // Reduced from 4
+    borderBottomRightRadius: moderateScale(6),
+  },
+
+  QRSetup_ScanLine: {
+    width: '100%',
+    height: 2,
+    backgroundColor: '#0A66C2',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  QRSetup_InstructionsContainer: {
+    position: 'absolute',
+    bottom: verticalScale(10), // Increased from 5 for better spacing
+    left: scale(20),
+    right: scale(20),
+    alignItems: 'center',
+  },
+
+  QRSetup_InstructionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(12),
+    borderRadius: moderateScale(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+
+  QRSetup_InstructionText: {
+    fontSize: fontScale(14), // Reduced from 15
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginLeft: scale(8),
+  },
+
+  QRSetup_ProcessingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+  },
+
+  QRSetup_ProcessingCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    padding: moderateScale(24),
+    borderRadius: moderateScale(16),
+    alignItems: 'center',
+    minWidth: scale(250), // Reduced from 280
+    margin: scale(20),
+  },
+
+  QRSetup_ProcessingText: {
+    fontSize: fontScale(16), // Reduced from 18
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(8),
+    textAlign: 'center',
+  },
+
+  QRSetup_ProcessingSubtext: {
+    fontSize: fontScale(13), // Reduced from 14
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: fontScale(18),
+  },
+
+  QRSetup_PermissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(20),
+  },
+
+  QRSetup_PermissionCard: {
+    backgroundColor: '#fff',
+    padding: moderateScale(24),
+    borderRadius: moderateScale(16),
+    alignItems: 'center',
+    maxWidth: scale(300), // Reduced from 320
+    margin: scale(20),
+  },
+
+  QRSetup_PermissionIcon: {
+    width: scale(80), // Reduced from 100
+    height: scale(80), // Reduced from 100
+    borderRadius: scale(40),
+    backgroundColor: '#f5f7fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: verticalScale(16),
+  },
+
+  QRSetup_PermissionTitle: {
+    fontSize: fontScale(18), // Reduced from 20
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: verticalScale(8),
+    textAlign: 'center',
+  },
+
+  QRSetup_PermissionText: {
+    fontSize: fontScale(14), // Reduced from 15
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: fontScale(20),
+  },
+
+  QRSetup_Footer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: moderateScale(20),
+    borderTopRightRadius: moderateScale(20),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -4},
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+
+  QRSetup_FooterContent: {
+    padding: scale(20),
+    paddingBottom:
+      Platform.OS === 'ios' ? verticalScale(30) : verticalScale(20),
+  },
+
+  QRSetup_GalleryButton: {
+    backgroundColor: '#0A66C2',
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(20),
+    borderRadius: moderateScale(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: verticalScale(12),
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  QRSetup_GalleryButtonText: {
+    color: '#fff',
+    fontSize: fontScale(15), // Reduced from 16
+    fontWeight: '700',
+  },
+
+  QRSetup_SkipButton: {
+    backgroundColor: '#f0f8ff',
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(20),
+    borderRadius: moderateScale(12),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+    marginBottom: verticalScale(16),
+  },
+
+  QRSetup_ButtonIcon: {
+    marginRight: scale(8),
+  },
+
+  QRSetup_SkipButtonText: {
+    color: '#0A66C2',
+    fontSize: fontScale(15), // Reduced from 16
+    fontWeight: '700',
+  },
+
+  QRSetup_HelpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(8),
+  },
+
+  QRSetup_HelpText: {
+    fontSize: fontScale(12), // Reduced from 13
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: fontScale(16),
+  },
+
+  // Modal Styles
+  QRSetup_ModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(16),
+  },
+
+  QRSetup_ModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: moderateScale(20),
+    padding: moderateScale(24),
+    width: '100%',
+    maxWidth: scale(340), // Reduced from 380
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+
+  QRSetup_ModalIconContainer: {
+    width: scale(70), // Reduced from 80
+    height: scale(70), // Reduced from 80
+    borderRadius: scale(35),
+    backgroundColor: '#fff3e0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: verticalScale(16),
+  },
+
+  QRSetup_ModalTitle: {
+    fontSize: fontScale(20), // Reduced from 22
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: verticalScale(12),
+    textAlign: 'center',
+  },
+
+  QRSetup_ModalMessage: {
+    fontSize: fontScale(14), // Reduced from 15
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: fontScale(20),
+    marginBottom: verticalScale(24),
+  },
+
+  QRSetup_ModalButtons: {
+    flexDirection: 'column',
+    width: '100%',
+    gap: verticalScale(12),
+  },
+
+  QRSetup_ModalButtonPrimary: {
+    backgroundColor: '#0A66C2',
+    paddingVertical: verticalScale(14),
+    borderRadius: moderateScale(10),
+    alignItems: 'center',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  QRSetup_ModalButtonPrimaryText: {
+    color: '#fff',
+    fontSize: fontScale(15), // Reduced from 16
+    fontWeight: '700',
+  },
+
+  QRSetup_ModalButtonSecondary: {
+    backgroundColor: '#f5f7fa',
+    paddingVertical: verticalScale(14),
+    borderRadius: moderateScale(10),
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e8eaed',
+  },
+
+  QRSetup_ModalButtonSecondaryText: {
+    color: '#666',
+    fontSize: fontScale(15), // Reduced from 16
+    fontWeight: '600',
+  },
+
+  // ============================================
+  // BIOMETRIC SETTINGS SCREEN - RESPONSIVE STYLES
+  // ============================================
+  Biometric_container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  Biometric_scrollView: {
+    flex: 1,
+  },
+
+  Biometric_scrollContent: {
+    flexGrow: 1,
+    paddingTop: 0,
+  },
+
+  Biometric_headerContainer: {
+    paddingTop: verticalScale(40),
+    paddingBottom: verticalScale(30),
+    paddingHorizontal: scale(24),
+    borderBottomLeftRadius: moderateScale(24),
+    borderBottomRightRadius: moderateScale(24),
+    elevation: 8,
+    shadowColor: '#0A66C2',
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(12),
+    shadowOffset: {width: 0, height: verticalScale(6)},
+    marginBottom: verticalScale(8),
+  },
+
+  Biometric_headerContent: {
+    gap: verticalScale(16),
+  },
+
+  Biometric_headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(12),
+  },
+
+  Biometric_headerIconContainer: {
+    width: scale(52),
+    height: scale(52),
+    borderRadius: scale(26),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: moderateScale(1.5),
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+
+  Biometric_headerIconSize: fontScale(28),
+
+  Biometric_headerTitle: {
+    fontSize: fontScale(24),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    flex: 1,
+  },
+
+  Biometric_headerSubtitle: {
+    fontSize: fontScale(15),
+    color: '#E0E7FF',
+    lineHeight: fontScale(22),
+    marginTop: verticalScale(4),
+  },
+
+  Biometric_statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(8),
+    borderRadius: moderateScale(20),
+    gap: scale(6),
+    borderWidth: moderateScale(1),
+  },
+
+  Biometric_statusActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+
+  Biometric_statusInactive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+
+  Biometric_statusIconSize: fontScale(14),
+
+  Biometric_statusText: {
+    fontSize: fontScale(13),
+    fontWeight: '600',
+  },
+
+  Biometric_statusTextActive: {
+    color: '#10B981',
+  },
+
+  Biometric_statusTextInactive: {
+    color: '#E0E7FF',
+  },
+
+  Biometric_unavailableContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: scale(40),
+    backgroundColor: '#FFFFFF',
+  },
+
+  Biometric_unavailableIconSize: scale(64),
+
+  Biometric_unavailableTitle: {
+    fontSize: fontScale(20),
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginTop: verticalScale(24),
+    marginBottom: verticalScale(8),
+  },
+
+  Biometric_unavailableText: {
+    fontSize: fontScale(15),
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: fontScale(22),
+    paddingHorizontal: scale(20),
+  },
+
+  Biometric_sectionAccount: {
+    padding: scale(24),
+  },
+
+  Biometric_sectionHeader: {
+    marginBottom: verticalScale(16),
+  },
+
+  Biometric_sectionTitle: {
+    fontSize: fontScale(18),
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+
+  Biometric_accountsContainer: {
+    gap: verticalScale(20),
+  },
+
+  Biometric_providerSection: {
+    gap: verticalScale(8),
+  },
+
+  Biometric_accountItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: scale(16),
+    backgroundColor: '#F8F9FA',
+    borderRadius: moderateScale(12),
+    borderWidth: moderateScale(1),
+    borderColor: 'transparent',
+  },
+
+  Biometric_selectedAccountItem: {
+    backgroundColor: '#E3F2FD',
+    borderColor: '#007AFF',
+  },
+
+  Biometric_accountIcon: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: scale(12),
+    borderWidth: moderateScale(1),
+    borderColor: '#F2F2F7',
+  },
+
+  Biometric_accountIconSize: fontScale(20),
+
+  Biometric_accountInfo: {
+    flex: 1,
+  },
+
+  Biometric_accountEmail: {
+    fontSize: fontScale(16),
+    fontWeight: '500',
+    color: '#1C1C1E',
+    marginBottom: verticalScale(2),
+  },
+
+  Biometric_selectedAccountEmail: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+
+  Biometric_accountName: {
+    fontSize: fontScale(14),
+    color: '#8E8E93',
+  },
+
+  Biometric_enabledBadge: {
+    fontSize: fontScale(12),
+    color: '#10B981',
+    fontWeight: '600',
+    marginTop: verticalScale(4),
+  },
+
+  Biometric_checkIconSize: fontScale(20),
+
+  Biometric_emptyState: {
+    alignItems: 'center',
+    padding: scale(40),
+  },
+
+  Biometric_emptyStateIconSize: scale(48),
+
+  Biometric_emptyStateText: {
+    fontSize: fontScale(16),
+    fontWeight: '500',
+    color: '#8E8E93',
+    marginTop: verticalScale(16),
+    marginBottom: verticalScale(8),
+  },
+
+  Biometric_emptyStateSubtext: {
+    fontSize: fontScale(14),
+    color: '#C7C7CC',
+    textAlign: 'center',
+    lineHeight: fontScale(20),
+    paddingHorizontal: scale(20),
+  },
+
+  // ============================================
+  // CONFIRMATION ALERT - RESPONSIVE STYLES
+  // ============================================
+  ConfAlert_overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: scale(20),
+  },
+
+  ConfAlert_modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: moderateScale(24),
+    paddingVertical: verticalScale(28),
+    paddingHorizontal: scale(24),
+    width: Math.min(width * 0.85, scale(340)),
+    maxWidth: scale(340),
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: verticalScale(20),
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: moderateScale(25),
+    elevation: 25,
+  },
+
+  ConfAlert_iconContainer: {
+    alignItems: 'center',
+    marginBottom: verticalScale(20),
+  },
+
+  ConfAlert_iconBackground: {
+    width: scale(64),
+    height: scale(64),
+    borderRadius: scale(32),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: moderateScale(2),
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+
+  ConfAlert_iconSize: fontScale(32),
+
+  ConfAlert_contentContainer: {
+    alignItems: 'center',
+    marginBottom: verticalScale(24),
+  },
+
+  ConfAlert_heading: {
+    fontSize: fontScale(20),
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: verticalScale(12),
+    lineHeight: fontScale(26),
+  },
+
+  ConfAlert_description: {
+    fontSize: fontScale(15),
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: fontScale(22),
+  },
+
+  ConfAlert_buttonContainer: {
+    flexDirection: 'row',
+    gap: scale(12),
+  },
+
+  ConfAlert_button: {
+    flex: 1,
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(20),
+    borderRadius: moderateScale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: verticalScale(48),
+  },
+
+  ConfAlert_secondaryButton: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: moderateScale(1.5),
+    borderColor: '#E5E7EB',
+  },
+
+  ConfAlert_primaryButton: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: verticalScale(4),
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+  },
+
+  ConfAlert_secondaryButtonText: {
+    fontSize: fontScale(15),
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+
+  ConfAlert_primaryButtonText: {
+    fontSize: fontScale(15),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // // ============================================
+  // // CALENDAR MODAL - RESPONSIVE STYLES
+  // // ============================================
+  // CustomDatePicker_ModalContainer: {
+  //   flex: 1,
+  //   backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   padding: scale(20),
+  // },
+
+  // CustomDatePicker_Container: {
+  //   backgroundColor: '#FFFFFF',
+  //   borderRadius: moderateScale(12),
+  //   width: '100%',
+  //   maxWidth: scale(350),
+  //   padding: scale(20),
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: scale(4)},
+  //   shadowOpacity: 0.3,
+  //   shadowRadius: scale(8),
+  //   elevation: 10,
+  // },
+
+  // CustomDatePicker_Header: {
+  //   alignItems: 'center',
+  //   marginBottom: verticalScale(20),
+  //   paddingVertical: verticalScale(15),
+  //   backgroundColor: '#F8F9FA',
+  //   borderRadius: moderateScale(8),
+  // },
+
+  // CustomDatePicker_SelectedDate: {
+  //   fontSize: fontScale(18),
+  //   fontWeight: '600',
+  //   color: '#333333',
+  //   textAlign: 'center',
+  //   lineHeight: fontScale(24),
+  // },
+
+  // CustomDatePicker_Navigation: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   alignItems: 'center',
+  //   marginBottom: verticalScale(15),
+  // },
+
+  // CustomDatePicker_NavButton: {
+  //   width: scale(40),
+  //   height: scale(40),
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   borderRadius: moderateScale(20),
+  //   backgroundColor: '#F8F9FA',
+  // },
+
+  // CustomDatePicker_NavText: {
+  //   fontSize: fontScale(18),
+  //   fontWeight: 'bold',
+  //   color: '#0A66C2',
+  // },
+
+  // CustomDatePicker_MonthYear: {
+  //   flex: 1,
+  //   alignItems: 'center',
+  // },
+
+  // CustomDatePicker_MonthYearText: {
+  //   fontSize: fontScale(18),
+  //   fontWeight: '600',
+  //   color: '#333333',
+  // },
+
+  // CustomDatePicker_WeekDays: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-around',
+  //   marginBottom: verticalScale(10),
+  //   borderBottomWidth: moderateScale(1),
+  //   borderBottomColor: '#E9ECEF',
+  //   paddingBottom: verticalScale(8),
+  // },
+
+  // CustomDatePicker_WeekDayText: {
+  //   fontSize: fontScale(14),
+  //   fontWeight: '600',
+  //   color: '#666666',
+  //   width: scale(32),
+  //   textAlign: 'center',
+  // },
+
+  // CustomDatePicker_CalendarGrid: {
+  //   flexDirection: 'row',
+  //   flexWrap: 'wrap',
+  //   justifyContent: 'space-between',
+  //   marginBottom: verticalScale(20),
+  // },
+
+  // CustomDatePicker_DayCell: {
+  //   width: scale(32),
+  //   height: scale(32),
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   marginVertical: verticalScale(4),
+  //   borderRadius: moderateScale(16),
+  // },
+
+  // CustomDatePicker_EmptyDay: {
+  //   backgroundColor: 'transparent',
+  // },
+
+  // CustomDatePicker_SelectedDay: {
+  //   backgroundColor: '#0A66C2',
+  // },
+
+  // CustomDatePicker_DayText: {
+  //   fontSize: fontScale(14),
+  //   fontWeight: '500',
+  //   color: '#333333',
+  // },
+
+  // CustomDatePicker_SelectedDayText: {
+  //   color: '#FFFFFF',
+  //   fontWeight: '600',
+  // },
+
+  // CustomDatePicker_Footer: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   borderTopWidth: moderateScale(1),
+  //   borderTopColor: '#E9ECEF',
+  //   paddingTop: verticalScale(15),
+  // },
+
+  // CustomDatePicker_CancelButton: {
+  //   paddingHorizontal: scale(25),
+  //   paddingVertical: verticalScale(10),
+  //   borderRadius: moderateScale(6),
+  //   borderWidth: moderateScale(1),
+  //   borderColor: '#6C757D',
+  // },
+
+  // CustomDatePicker_CancelButtonText: {
+  //   fontSize: fontScale(14),
+  //   fontWeight: '600',
+  //   color: '#6C757D',
+  // },
+
+  // CustomDatePicker_OKButton: {
+  //   paddingHorizontal: scale(25),
+  //   paddingVertical: verticalScale(10),
+  //   borderRadius: moderateScale(6),
+  //   backgroundColor: '#0A66C2',
+  // },
+
+  // CustomDatePicker_OKButtonDisabled: {
+  //   backgroundColor: '#C7C7CC',
+  // },
+
+  // CustomDatePicker_OKButtonText: {
+  //   fontSize: fontScale(14),
+  //   fontWeight: '600',
+  //   color: '#FFFFFF',
+  // },
+
+  // // Start of Login_ Screen
+  // Login_Container: {
+  //   flex: 1,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   padding: 20,
+  // },
+  // Login_QRButton: {
+  //   position: 'absolute',
+  //   top: 50,
+  //   right: 20,
+  //   width: 50,
+  //   height: 50,
+  //   borderRadius: 25,
+  //   backgroundColor: '#fff',
+  //   borderWidth: 2,
+  //   borderColor: '#0A66C2',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   elevation: 5,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.25,
+  //   shadowRadius: 3.84,
+  // },
+
+  // Login_FingerprintButton: {
+  //   position: 'absolute',
+  //   // top: 50,
+  //   // right: 20,
+  //   bottom: 120,
+  //   width: 70,
+  //   height: 70,
+  //   borderRadius: 35,
+  //   backgroundColor: '#fff',
+  //   borderWidth: 2,
+  //   borderColor: '#0A66C2',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   elevation: 5,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.25,
+  //   shadowRadius: 3.84,
+  // },
+
+  // Login_StatusIndicator: {
+  //   position: 'absolute',
+  //   top: 120,
+  //   left: 20,
+  //   right: 20,
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   paddingHorizontal: 16,
+  //   paddingVertical: 8,
+  //   borderRadius: 20,
+  //   elevation: 2,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 1},
+  //   shadowOpacity: 0.1,
+  //   shadowRadius: 2,
+  // },
+
+  // Login_StatusIndicatorActive: {
+  //   backgroundColor: '#d4edda',
+  //   borderColor: '#c3e6cb',
+  //   borderWidth: 1,
+  // },
+
+  // Login_StatusIndicatorInactive: {
+  //   backgroundColor: '#f8d7da',
+  //   borderColor: '#f5c6cb',
+  //   borderWidth: 1,
+  // },
+
+  // Login_StatusText: {
+  //   fontSize: 12,
+  //   fontWeight: '600',
+  //   marginLeft: 6,
+  // },
+
+  // Login_StatusTextActive: {
+  //   color: '#155724',
+  // },
+
+  // Login_StatusTextInactive: {
+  //   color: '#721c24',
+  // },
+
+  // // Setup Message
+  // Login_SetupMessage: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   backgroundColor: '#e6f3ff',
+  //   borderColor: '#0A66C2',
+  //   borderWidth: 1,
+  //   borderRadius: 8,
+  //   paddingHorizontal: 16,
+  //   paddingVertical: 12,
+  //   marginHorizontal: 20,
+  //   marginBottom: 20,
+  // },
+
+  // Login_SetupMessageText: {
+  //   flex: 1,
+  //   fontSize: 14,
+  //   color: '#0A66C2',
+  //   fontWeight: '500',
+  // },
+
+  // // Disabled Button Styles
+  // Login_ButtonDisabled: {
+  //   backgroundColor: '#f8f9fa',
+  //   borderColor: '#e9ecef',
+  // },
+
+  // Login_ButtonTextDisabled: {
+  //   color: '#999',
+  // },
+
+  // // Setup Button
+  // Login_SetupButton: {
+  //   backgroundColor: '#0A66C2',
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   paddingVertical: 16,
+  //   paddingHorizontal: 20,
+  //   borderRadius: 12,
+  //   marginHorizontal: 20,
+  //   marginTop: 20,
+  //   elevation: 3,
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.1,
+  //   shadowRadius: 4,
+  // },
+
+  // Login_SetupButtonText: {
+  //   color: '#fff',
+  //   fontSize: 16,
+  //   fontWeight: '600',
+  // },
+  // Login_Logo: {
+  //   width: 200,
+  //   height: 80,
+  //   marginBottom: 20,
+  // },
+  // Login_Title: {
+  //   fontSize: 26,
+  //   fontWeight: 'bold',
+  //   marginBottom: 10,
+  //   color: '#333333',
+  //   textAlign: 'center',
+  // },
+  // Login_Subtitle: {
+  //   fontSize: 18,
+  //   color: '#333333',
+  //   marginBottom: 30,
+  //   textAlign: 'center',
+  //   paddingHorizontal: 15,
+  //   fontStyle: 'italic',
+  // },
+  // Login_Button: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   width: width * 0.8, // 80% of screen width
+  //   height: 55, // Fixed height
+  //   borderRadius: 50,
+  //   borderWidth: 2,
+  //   borderColor: '#0A66C2',
+  //   marginVertical: 8,
+  //   paddingHorizontal: 10,
+  //   backgroundColor: '#fff',
+  // },
+  // Login_ButtonText: {
+  //   color: '#0A66C2',
+  //   fontSize: 16,
+  //   fontWeight: 'bold',
+  // },
+  // Login_Icon: {
+  //   marginRight: 10,
+  // },
+
+  // Login_LoadingContainer: {
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   padding: 20,
+  // },
+  // Login_LoadingText: {
+  //   marginTop: 10,
+  //   fontSize: 16,
+  //   color: '#333',
+  //   textAlign: 'center',
+  // },
+  // Login_DialogContainer: {
+  //   borderRadius: 12,
+  //   padding: 20,
+  //   backgroundColor: '#fff',
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  // },
+  // Login_DialogTitle: {
+  //   fontSize: 20,
+  //   fontWeight: 'bold',
+  //   color: '#333',
+  //   textAlign: 'center',
+  //   marginBottom: 15,
+  // },
+  // Login_DialogContent: {
+  //   flex: 1,
+  //   width: '100%',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+  // Login_DialogMessage: {
+  //   fontSize: 16,
+  //   color: '#333',
+  //   textAlign: 'center',
+  //   marginBottom: 25,
+  //   paddingHorizontal: 10,
+  // },
+  // Login_DialogButtonsRow: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   width: '100%',
+  //   paddingHorizontal: 20,
+  // },
+  // Login_DialogButton: {
+  //   flex: 1,
+  //   backgroundColor: '#0A66C2',
+  //   borderRadius: 6,
+  //   paddingVertical: 10,
+  //   marginHorizontal: 5,
+  //   alignItems: 'center',
+  // },
+  // Login_DialogButtonText: {
+  //   color: '#fff',
+  //   fontSize: 16,
+  //   fontWeight: 'bold',
+  // },
+  // // End Of Login_
 
   //WorkAssigned
   Team_Container: {
@@ -1230,8 +2745,8 @@ const styles = StyleSheet.create({
   // end of custom indicator component
 
   // start of leaves component
-  // start of calender modal
 
+  // start of calender modal
   CalMod_ModalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -2771,24 +4286,34 @@ const styles = StyleSheet.create({
   },
   //End of IdentificationRequestCard
 
-  // Biometric Login Styles
-  Login_Divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    paddingHorizontal: 40,
-  },
-  Login_DividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#D1D5DB',
-  },
-  Login_DividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
+  // // Biometric Login Styles
+  // Login_Divider: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   marginVertical: 20,
+  //   paddingHorizontal: 40,
+  // },
+  // Login_DividerLine: {
+  //   flex: 1,
+  //   height: 1,
+  //   backgroundColor: '#D1D5DB',
+  // },
+  // Login_DividerText: {
+  //   marginHorizontal: 16,
+  //   fontSize: 14,
+  //   color: '#6B7280',
+  //   fontWeight: '600',
+  // },
 });
 
 export default styles;
+
+// export {
+//   scale,
+//   verticalScale,
+//   moderateScale,
+//   fontScale,
+//   isSmallScreen,
+//   isLargeScreen,
+//   isTablet,
+// };
