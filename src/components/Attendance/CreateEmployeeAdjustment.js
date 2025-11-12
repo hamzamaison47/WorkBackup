@@ -479,6 +479,7 @@ const CreateEmployeeAdjustment = ({
           ) : (
             <View>
               <TouchableOpacity
+                // style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
                 style={[
                   styles.LReqSR_Input,
                   {
@@ -486,10 +487,13 @@ const CreateEmployeeAdjustment = ({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     paddingVertical: 12,
+                    backgroundColor: '#f1f1f1',
+                    color: '#999',
                   },
                 ]}
                 onPress={toggleShiftDropdown}
-                disabled={shiftOptions.length === 0}>
+                // disabled={shiftOptions.length === 0}>s
+                disabled={true}>
                 <Text
                   style={{
                     color: form.shiftId ? '#000' : '#999',
@@ -497,7 +501,7 @@ const CreateEmployeeAdjustment = ({
                   }}>
                   {form.shiftId || 'Select Shift'}
                 </Text>
-                <Text style={{color: '#999', fontSize: 16}}>▼</Text>
+                {/* <Text style={{color: '#999', fontSize: 16}}>▼</Text> */}
               </TouchableOpacity>
 
               {showShiftDropdown && shiftOptions.length > 0 && (

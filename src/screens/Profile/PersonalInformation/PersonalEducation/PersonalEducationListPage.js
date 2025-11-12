@@ -63,6 +63,7 @@ const PersonalEducation = () => {
       });
       // newest record on top
       data.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
+      console.log('Education Data : ', data);
       setEducationData(data);
     } catch (error) {
       console.log('Failed to fetch education details:', error);
@@ -153,25 +154,29 @@ const PersonalEducation = () => {
 
   /* ---------- status ---------- */
   const getStatusLabel = status => {
+    if (!status) return '';
+    const normalizedStatus = status.replace(/\s+/g, '').toLowerCase(); // remove spaces & lowercase
+
     const map = {
-      Draft: 'Draft',
-      Inreview: 'In review',
-      Approved: 'Approved',
-      Waiting: 'Waiting',
-      Cancelled: 'Cancelled',
-      Rejected: 'Rejected',
-      Processing: 'Processing',
-      WorkFlowComplete: 'WorkFlow Complete',
-      Failed: 'Failed',
-      Completed: 'Completed',
-      Error: 'Error',
-      Denied: 'Denied',
-      ChangeRequested: 'Change Requested',
-      TaskInReview: 'Task In Review',
-      TaskCompleted: 'Task Completed',
-      NoWorkflow: 'No Workflow',
+      draft: 'Draft',
+      inreview: 'In review',
+      approved: 'Approved Waiting',
+      waiting: 'Waiting',
+      cancelled: 'Canceled',
+      canceled: 'Cancelled',
+      rejected: 'Rejected',
+      processing: 'Processing action',
+      workflowcomplete: 'WorkFlow Complete',
+      failed: 'Failed',
+      completed: 'Completed',
+      error: 'Error',
+      denied: 'Denied',
+      changerequested: 'Change Requested',
+      taskinreview: 'Task In Review',
+      taskcompleted: 'Task Completed',
+      noworkflow: '',
     };
-    return map[status] || 'Unknown';
+    return map[normalizedStatus] || 'Unknown';
   };
 
   /* ---------- buttons ---------- */
@@ -185,7 +190,10 @@ const PersonalEducation = () => {
   };
 
   const getButtonConfig = item => {
+    console.log(item.ApprovalStatus);
+    console.log(getStatusLabel(item.ApprovalStatus));
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
+    const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
     return {
       edit: {
         show: true,
@@ -194,8 +202,8 @@ const PersonalEducation = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: isHCMRecord ? false : !isDraft,
+        customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: true,
@@ -314,7 +322,7 @@ const PersonalEducation = () => {
       {key: 'StartDate', label: 'Start Date', type: 'date'},
       {key: 'EndDate', label: 'End Date', type: 'date'},
       {key: 'Notes', label: 'Notes', type: 'text'},
-      {key: 'WorkflowOperation', label: 'Workflow Operation', type: 'text'},
+      // {key: 'WorkflowOperation', label: 'Workflow Operation', type: 'text'},
     ],
   };
 
