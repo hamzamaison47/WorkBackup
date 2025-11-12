@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable no-shadow */
 /* eslint-disable no-undef */
 import {decode as atob, encode as btoa} from 'base-64';
@@ -6,6 +7,7 @@ import {jwtDecode} from 'jwt-decode';
 import {getActiveConfigData} from './secureConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
+import {saveAccountAfterLogin} from '../store/utils/biometricUtils';
 
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
@@ -227,15 +229,15 @@ export const handleSuccessfulLogin = async (
     // Set user data in Redux
     setUserData(completeUserData);
 
-    // Save account with complete user data (not tokens)
-    // const savedAccount = await saveAccountAfterLogin(userEmailOrUPN, provider, {
-    //   displayName: decodedAccessToken.name || user.EmployeeName,
-    //   employeeId: user.EmployeeId,
-    //   employeeName: user.EmployeeName,
-    //   userName: decodedAccessToken.name,
-    //   defaultLegalEntity: user.DefaultLegalEntity,
-    //   ...completeUserData, // Include all user data
-    // });
+    // Step 7: Save account with complete user data (not tokens)
+    const savedAccount = await saveAccountAfterLogin(userEmailOrUPN, provider, {
+      displayName: decodedAccessToken.name || user.EmployeeName,
+      employeeId: user.EmployeeId,
+      employeeName: user.EmployeeName,
+      userName: decodedAccessToken.name,
+      defaultLegalEntity: user.DefaultLegalEntity,
+      ...completeUserData, // Include all user data
+    });
 
     // Step 7: Navigate to main app
     navigation.navigate('DrawerNavigator', {

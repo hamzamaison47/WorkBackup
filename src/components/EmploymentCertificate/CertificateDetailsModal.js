@@ -115,9 +115,7 @@ const CertificateDetailsModal = ({
                 onPress={onCancel}
                 disabled={processingButton === 'send'} // Disable when processing
               >
-                <Text style={styles.cancelButtonText}>
-                  {processingButton === 'send' ? 'Processing...' : 'Cancel'}
-                </Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

@@ -1,5 +1,7 @@
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
   StyleSheet,
@@ -9,14 +11,11 @@ import {
   RefreshControl,
   Text,
   TouchableOpacity,
+  BackHandler,
 } from 'react-native';
 import * as ImagePicker from 'react-native-image-picker';
 import {useSelector} from 'react-redux';
-import {
-  useNavigation,
-  useRoute,
-  useFocusEffect,
-} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 
 // Components
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
@@ -42,6 +41,20 @@ const ChangeProfileImage = () => {
   useEffect(() => {
     fetchProfilePicture();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleGoBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
 
   const fetchProfilePicture = async () => {
     try {

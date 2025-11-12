@@ -1,5 +1,4 @@
 /* eslint-disable curly */
-/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
@@ -22,7 +21,7 @@ const SOAP_ACTION =
  * @param {string} employeeId
  * @returns {Promise<string[]>} Array of shift IDs (e.g. ["DAY","NIGHT"])
  */
-export const retrieveEmployeeShiftIds = async employeeId => {
+const retrieveEmployeeShiftIds = async ({employeeId}) => {
   try {
     const config = await getActiveConfigData();
     if (!config || !config.resource) {
@@ -34,16 +33,16 @@ export const retrieveEmployeeShiftIds = async employeeId => {
     if (!employeeId) throw new Error('Employee ID is required.');
 
     /* -------------------------------------------------------------- */
-    /* Build SOAP body – the contract only needs the employee id    */
+    /* Build SOAP body - FIXED VERSION                               */
     /* -------------------------------------------------------------- */
     const soapBody = `
       <retrieveEmployeeShiftId xmlns="http://tempuri.org">
-        <_employeeID xmlns="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">${escapeXml(
-          employeeId,
-        )}</_employeeID>
+        <_employeeID>${escapeXml(employeeId)}</_employeeID>
       </retrieveEmployeeShiftId>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
+
+    console.log('SOAP Request:', {soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/${SVC_GROUP}`,
@@ -59,82 +58,123 @@ export const retrieveEmployeeShiftIds = async employeeId => {
       },
     );
 
+    console.log('SOAP Response:', xml);
+
     /* -------------------------------------------------------------- */
-    /* Parse SOAP response                                            */
+    /* Parse SOAP response - FIXED PARSING                           */
     /* -------------------------------------------------------------- */
     const parser = new XMLParser({
       ignoreAttributes: false,
-      ignoreNameSpace: false,
-      attributeNamePrefix: '',
-      isArray: () => false,
-      parseTagValue: false,
+      ignoreNameSpace: false, // Changed to false to handle namespaces properly
+      removeNSPrefix: false, // Keep namespace prefixes
+      attributeNamePrefix: '@_',
+      allowBooleanAttributes: false,
+      parseTagValue: true,
+      parseAttributeValue: false,
+      trimValues: true,
+      isArray: (name, jpath, isLeafNode, isAttribute) => {
+        // Make TASAttendanceItemsContract always an array
+        if (
+          name === 'TASAttendanceItemsContract' ||
+          jpath.endsWith('/TASAttendanceItemsContract')
+        ) {
+          return true;
+        }
+        return false;
+      },
     });
 
     const parsed = parser.parse(xml);
+    console.log('Full parsed XML:', JSON.stringify(parsed, null, 2));
 
     const body =
-      parsed?.['s:Envelope']?.['s:Body'] ||
-      parsed?.['soap:Envelope']?.['soap:Body'] ||
-      {};
+      parsed['s:Envelope']?.['s:Body'] || parsed.Envelope?.Body || {};
 
-    const fault = body?.['s:Fault'] || body?.['soap:Fault'];
+    const fault = body.Fault || body['s:Fault'];
     if (fault) {
-      throw new Error(fault.faultstring || 'SOAP Fault occurred');
+      throw new Error(
+        fault.faultstring || fault.faultstring || 'SOAP Fault occurred',
+      );
     }
 
+    // Handle different possible response structures with namespaces
     const responseNode =
       body.retrieveEmployeeShiftIdResponse ||
-      body['retrieveEmployeeShiftIdResponse'] ||
+      body['ns0:retrieveEmployeeShiftIdResponse'] ||
+      body.retrieveEmployeeShiftIdResponse ||
       {};
 
-    const resultNode =
-      responseNode.retrieveEmployeeShiftIdResult ||
-      responseNode['retrieveEmployeeShiftIdResult'] ||
-      responseNode.result ||
-      responseNode['result'];
+    console.log('Response node:', JSON.stringify(responseNode, null, 2));
 
-    if (!resultNode) {
-      console.warn('No result node found in response', parsed);
+    let resultNode =
+      responseNode.result ||
+      responseNode['ns0:result'] ||
+      responseNode.return ||
+      {};
+
+    console.log('Result node:', JSON.stringify(resultNode, null, 2));
+
+    if (!resultNode || Object.keys(resultNode).length === 0) {
+      console.warn('No result node found in response');
       return [];
     }
 
     /* -------------------------------------------------------------- */
-    /* Clean namespace prefixes (same helper as CreateAdjustment)    */
+    /* Handle the response data - IMPROVED PARSING                   */
     /* -------------------------------------------------------------- */
-    const cleanObject = obj => {
-      if (!obj || typeof obj !== 'object') return obj;
-      if (Array.isArray(obj)) return obj.map(cleanObject);
-      return Object.fromEntries(
-        Object.entries(obj).map(([k, v]) => [
-          k.replace(/^[a-zA-Z0-9]+:/, ''),
-          cleanObject(v),
-        ]),
-      );
-    };
+    let rawList = [];
 
-    const cleaned = cleanObject(resultNode);
+    // Try multiple possible paths to find TASAttendanceItemsContract
+    if (resultNode['a:TASAttendanceItemsContract']) {
+      rawList = Array.isArray(resultNode['a:TASAttendanceItemsContract'])
+        ? resultNode['a:TASAttendanceItemsContract']
+        : [resultNode['a:TASAttendanceItemsContract']];
+    } else if (resultNode.TASAttendanceItemsContract) {
+      rawList = Array.isArray(resultNode.TASAttendanceItemsContract)
+        ? resultNode.TASAttendanceItemsContract
+        : [resultNode.TASAttendanceItemsContract];
+    } else if (resultNode['ns0:TASAttendanceItemsContract']) {
+      rawList = Array.isArray(resultNode['ns0:TASAttendanceItemsContract'])
+        ? resultNode['ns0:TASAttendanceItemsContract']
+        : [resultNode['ns0:TASAttendanceItemsContract']];
+    }
+    // Check if resultNode itself is the array/object we need
+    else if (resultNode['a:ShiftId'] || resultNode.ShiftId) {
+      rawList = [resultNode];
+    }
 
-    /* -------------------------------------------------------------- */
-    /* The service returns a list of TASAttendanceItemsContract      */
-    /* each containing a ShiftId field.                               */
-    /* -------------------------------------------------------------- */
-    const rawList = cleaned?.TASAttendanceItemsContract || [];
-    const list = Array.isArray(rawList) ? rawList : rawList ? [rawList] : [];
+    console.log('Raw list:', rawList);
 
-    const shiftIds = list.map(item => item?.ShiftId).filter(s => s); // remove empty/null
+    // Extract shift IDs with multiple possible property names
+    const shiftIds = rawList
+      .map(item => {
+        // Try all possible property names due to namespaces
+        const shiftId =
+          item['a:ShiftId'] ||
+          item.ShiftId ||
+          item['ns0:ShiftId'] ||
+          item.ShiftId ||
+          item.shiftId;
 
+        console.log('Item:', item, 'Extracted ShiftId:', shiftId);
+        return shiftId;
+      })
+      .filter(s => s && s !== '' && s !== null && s !== undefined);
+
+    console.log('Final shift IDs:', shiftIds);
     return shiftIds;
   } catch (error) {
     console.error(
       'Failed to retrieve employee shift IDs:',
       error.response?.data || error.message,
+      error.stack,
     );
-    throw error; // let the UI handle the error
+    throw error;
   }
 };
 
 /* ------------------------------------------------------------------ */
-/* Helper – XML escape (same as in CreateAdjustment)                  */
+/* Helper – XML escape                                                */
 /* ------------------------------------------------------------------ */
 const escapeXml = str => {
   return String(str)
@@ -144,4 +184,5 @@ const escapeXml = str => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 };
+
 export default retrieveEmployeeShiftIds;
