@@ -129,6 +129,7 @@ const buildContractXml = (c, nsPrefix = 'tem') => {
     ClockOut: secOut,
     EMPLOYEEID: c?.EmployeeId ?? '',
     EmployeeName: c?.EmployeeName ?? '',
+    GenerationType: 'MobileApp',
     Remarks: sanitizeRemarks(c?.Remarks),
   };
 
@@ -148,6 +149,7 @@ const buildContractXml = (c, nsPrefix = 'tem') => {
     'ClockOut',
     'EMPLOYEEID',
     'EmployeeName',
+    'GenerationType',
     'Remarks',
   ];
 
@@ -176,6 +178,8 @@ const EditAdjustment = async ({contract}) => {
     `;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
+
+    console.log({soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/${SVC_GROUP}`,

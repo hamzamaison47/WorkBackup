@@ -186,6 +186,7 @@ const buildContractXml = ({
     ClockIn: clockIn,
     ClockOut: clockOut,
     EmployeeId: employeeId,
+    GenerationType: 'MobileApp',
     Remarks: remarks || '',
     ShiftId: shiftId,
   };

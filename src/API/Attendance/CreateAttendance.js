@@ -27,6 +27,8 @@ const CreateAttendance = async ({employeeId, punchDateTime}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    console.log({soapEnvelope});
+
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/TASEmployeeTimeLogSVCGroup`,
       soapEnvelope,
@@ -104,6 +106,7 @@ const buildContractXml = ({employeeId, punchDateTime}) => {
   const ns = 'tem';
   const fields = {
     EmployeeId: employeeId,
+    GenerationType: 'MobileApp',
     PunchDate: punchDateTime,
   };
 
