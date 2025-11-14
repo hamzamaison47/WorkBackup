@@ -1018,6 +1018,696 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// /* eslint-disable curly */
+// /* eslint-disable react-hooks/exhaustive-deps */
+// import React, {useState, useEffect, useCallback} from 'react';
+// import {useFocusEffect, useNavigation} from '@react-navigation/native';
+// import {
+//   View,
+//   Text,
+//   TouchableOpacity,
+//   StyleSheet,
+//   FlatList,
+//   ScrollView,
+//   BackHandler,
+// } from 'react-native';
+// import LinearGradient from 'react-native-linear-gradient';
+// import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+// import {useSelector} from 'react-redux';
+// import {getActiveConfigData} from '../../../../Controller/secureConfig';
+
+// import {
+//   checkBiometricAvailability,
+//   enableBiometric,
+//   disableBiometric,
+//   isBiometricEnabled,
+//   getSelectedAccount,
+//   getAccountsByProvider,
+//   hasPersistentBiometricCredentials,
+//   getBiometricCredentials,
+// } from '../../../../store/utils/biometricUtils';
+
+// import AlertModal from '../../../../components/Alert/AlertModal';
+// import ActionPaneContainer from '../../../../components/ActionPaneContainer';
+// import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
+// import ConfirmationAlert from '../../../../components/Alert/ConfirmationAlert';
+
+// const BiometricSettings = () => {
+//   const [isLoading, setIsLoading] = useState(true);
+//   const [alertModal, setAlertModal] = useState(false);
+//   const [alertMessage, setAlertMessage] = useState('');
+//   const [biometricAvailable, setBiometricAvailable] = useState(false);
+//   const [biometricType, setBiometricType] = useState(null);
+//   const [biometricEnabled, setBiometricEnabled] = useState(false);
+//   const [selectedAccount, setSelectedAccount] = useState(null);
+//   const [groupedAccounts, setGroupedAccounts] = useState({
+//     Azure: [],
+//     Google: [],
+//   });
+//   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+//   const [showEnableConfirm, setShowEnableConfirm] = useState(false);
+
+//   const userData = useSelector(state => state.user.userData);
+//   const navigation = useNavigation();
+
+//   useEffect(() => {
+//     initializeBiometricSettings();
+//   }, []);
+
+//   useFocusEffect(
+//     useCallback(() => {
+//       const onBackPress = () => {
+//         handleGoBack();
+//         return true;
+//       };
+
+//       BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+//       return () =>
+//         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+//     }, [navigation]),
+//   );
+
+//   const handleGoBack = () => {
+//     navigation.navigate('Preferences');
+//   };
+
+//   const initializeBiometricSettings = async () => {
+//     try {
+//       setIsLoading(true);
+
+//       const {available, biometryType} = await checkBiometricAvailability();
+//       setBiometricAvailable(available);
+//       setBiometricType(biometryType);
+
+//       // Check persistent storage first
+//       const hasPersistentCredentials =
+//         await hasPersistentBiometricCredentials();
+
+//       if (hasPersistentCredentials) {
+//         const credentials = await getBiometricCredentials();
+//         setBiometricEnabled(true);
+//         setSelectedAccount(credentials.account);
+//       } else {
+//         // Fallback to AsyncStorage for UI state
+//         const enabled = await isBiometricEnabled();
+//         setBiometricEnabled(enabled);
+
+//         if (enabled) {
+//           const selected = await getSelectedAccount();
+//           setSelectedAccount(selected);
+//         }
+//       }
+
+//       const accounts = await getAccountsByProvider();
+//       setGroupedAccounts(accounts);
+//     } catch (error) {
+//       console.error('Error initializing biometric settings:', error);
+//       showAlert('Failed to load biometric settings');
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   const showAlert = message => {
+//     setAlertMessage(message);
+//     setAlertModal(true);
+//   };
+
+//   const handleShowDisableConfirm = () => {
+//     setShowDisableConfirm(true);
+//   };
+
+//   const handleShowEnableConfirm = account => {
+//     setSelectedAccount(account);
+//     setShowEnableConfirm(true);
+//   };
+
+//   const handleEnableBiometric = async () => {
+//     try {
+//       // Check if user is logged in
+//       if (!userData || !userData.employeeId) {
+//         showAlert(
+//           'No active session found. Please login first to enable biometric.',
+//         );
+//         setShowEnableConfirm(false);
+//         return;
+//       }
+
+//       // Get current config data
+//       const sourceConfig = await getActiveConfigData();
+
+//       // No need to manually disable - enableBiometric does it automatically
+//       // Call enableBiometric with userData and config
+//       const success = await enableBiometric(
+//         selectedAccount,
+//         userData,
+//         sourceConfig,
+//       );
+
+//       if (success) {
+//         setBiometricEnabled(true);
+//         setShowEnableConfirm(false);
+//         showAlert(
+//           `${getBiometricDisplayName()} enabled for\n${selectedAccount.email}`,
+//         );
+
+//         // Refresh the settings to show updated state
+//         await initializeBiometricSettings();
+//       } else {
+//         showAlert('Failed to enable biometric authentication');
+//       }
+//     } catch (error) {
+//       console.error('Error enabling biometric:', error);
+//       showAlert('Failed to enable biometric authentication');
+//     }
+//   };
+
+//   const handleDisableBiometric = async () => {
+//     try {
+//       const success = await disableBiometric();
+//       if (success) {
+//         setBiometricEnabled(false);
+//         setSelectedAccount(null);
+//         setShowDisableConfirm(false);
+//         showAlert(`${getBiometricDisplayName()} has been disabled`);
+
+//         // Refresh the settings to show updated state
+//         await initializeBiometricSettings();
+//       } else {
+//         showAlert('Failed to disable biometric authentication');
+//       }
+//     } catch (error) {
+//       console.error('Error disabling biometric:', error);
+//       showAlert('Failed to disable biometric authentication');
+//     }
+//   };
+
+//   const handleCancelDisable = () => {
+//     setShowDisableConfirm(false);
+//   };
+
+//   const handleCancelEnable = () => {
+//     setShowEnableConfirm(false);
+//     setSelectedAccount(null);
+//   };
+
+//   // Removed the condition to disable first
+//   const handleAccountSelection = async account => {
+//     if (
+//       biometricEnabled &&
+//       selectedAccount &&
+//       selectedAccount.id === account.id
+//     ) {
+//       // If clicking on currently enabled account, show disable confirmation
+//       handleShowDisableConfirm();
+//     } else {
+//       // Allow direct enabling - it will auto-disable previous one
+//       handleShowEnableConfirm(account);
+//     }
+//   };
+
+//   const getBiometricIcon = () => {
+//     switch (biometricType) {
+//       case 'FaceID':
+//       case 'Face':
+//         return 'face-recognition';
+//       case 'Fingerprint':
+//       case 'TouchID':
+//         return 'fingerprint';
+//       default:
+//         return 'shield-check';
+//     }
+//   };
+
+//   const getBiometricDisplayName = () => {
+//     switch (biometricType) {
+//       case 'FaceID':
+//         return 'Face ID';
+//       case 'TouchID':
+//         return 'Touch ID';
+//       case 'Fingerprint':
+//         return 'Fingerprint';
+//       case 'Face':
+//         return 'Face Recognition';
+//       default:
+//         return biometricType || 'Biometric';
+//     }
+//   };
+
+//   const getProviderIcon = provider => {
+//     return provider === 'Azure' ? 'microsoft' : 'google';
+//   };
+
+//   const getProviderColor = provider => {
+//     return provider === 'Azure' ? '#0078D4' : '#EA4335';
+//   };
+
+//   const getSectionTitle = () => {
+//     return biometricEnabled
+//       ? 'Select Account to Change/Disable Biometric'
+//       : 'Select Account to Enable Biometric';
+//   };
+
+//   const renderAccountItem = ({item}) => {
+//     const isSelected = selectedAccount && selectedAccount.id === item.id;
+//     const isEnabled = biometricEnabled && isSelected;
+
+//     // Only highlight if biometric is enabled and this is the selected account
+//     const shouldHighlight = isEnabled;
+
+//     return (
+//       <TouchableOpacity
+//         style={[
+//           styles.accountItem,
+//           shouldHighlight && styles.selectedAccountItem,
+//         ]}
+//         onPress={() => handleAccountSelection(item)}>
+//         <View
+//           style={[
+//             styles.accountIcon,
+//             shouldHighlight && {
+//               backgroundColor: `${getProviderColor(item.provider)}15`,
+//             },
+//           ]}>
+//           <MaterialCommunityIcons
+//             name={getProviderIcon(item.provider)}
+//             size={20}
+//             color={getProviderColor(item.provider)}
+//           />
+//         </View>
+//         <View style={styles.accountInfo}>
+//           <Text
+//             style={[
+//               styles.accountEmail,
+//               shouldHighlight && styles.selectedAccountEmail,
+//             ]}>
+//             {item.email}
+//           </Text>
+//           {item.displayName && (
+//             <Text style={styles.accountName}>{item.displayName}</Text>
+//           )}
+//           {isEnabled && (
+//             <Text style={styles.enabledBadge}>Biometric Enabled</Text>
+//           )}
+//         </View>
+//         {shouldHighlight && (
+//           <MaterialCommunityIcons
+//             name="check-circle"
+//             size={20}
+//             color="#007AFF"
+//           />
+//         )}
+//       </TouchableOpacity>
+//     );
+//   };
+
+//   const renderProviderSection = (provider, accounts) => {
+//     if (accounts.length === 0) return null;
+
+//     return (
+//       <View key={provider} style={styles.providerSection}>
+//         <FlatList
+//           data={accounts}
+//           renderItem={renderAccountItem}
+//           keyExtractor={item => item.id}
+//           scrollEnabled={false}
+//         />
+//       </View>
+//     );
+//   };
+
+//   if (isLoading) {
+//     return (
+//       <ActionPaneContainer
+//         pageTitle="Biometric Settings"
+//         isBackButton={false}
+//         showFooter={false}
+//         showFloatingButton={false}
+//         isHeaderActive={true}
+//         showTabNavigator={true}>
+//         <CustomIndicator />
+//       </ActionPaneContainer>
+//     );
+//   }
+
+//   if (!biometricAvailable) {
+//     return (
+//       <ActionPaneContainer
+//         pageTitle="Biometric Settings"
+//         isBackButton={false}
+//         showFooter={false}
+//         showFloatingButton={false}
+//         isHeaderActive={true}
+//         showTabNavigator={true}>
+//         <View style={styles.unavailableContainer}>
+//           <MaterialCommunityIcons
+//             name="alert-circle-outline"
+//             size={64}
+//             color="#FF9500"
+//           />
+//           <Text style={styles.unavailableTitle}>Biometric Not Available</Text>
+//           <Text style={styles.unavailableText}>
+//             Your device doesn't support biometric authentication or it's not set
+//             up.
+//           </Text>
+//         </View>
+//       </ActionPaneContainer>
+//     );
+//   }
+
+//   const totalAccounts =
+//     groupedAccounts.Azure.length + groupedAccounts.Google.length;
+
+//   return (
+//     <ActionPaneContainer
+//       pageTitle="Biometric Settings"
+//       isBackButton={false}
+//       showFooter={false}
+//       showFloatingButton={false}
+//       isHeaderActive={true}
+//       showTabNavigator={true}>
+//       <View style={styles.container}>
+//         <ScrollView
+//           style={styles.scrollView}
+//           showsVerticalScrollIndicator={false}
+//           contentContainerStyle={styles.scrollContent}>
+//           <LinearGradient
+//             colors={['#0A66C2', '#0A66C2']}
+//             start={{x: 0, y: 0}}
+//             end={{x: 1, y: 1}}
+//             style={styles.headerContainer}>
+//             <View style={styles.headerContent}>
+//               <View style={styles.headerTitleRow}>
+//                 <View style={styles.headerIconContainer}>
+//                   <MaterialCommunityIcons
+//                     name={getBiometricIcon()}
+//                     size={28}
+//                     color="#FFFFFF"
+//                   />
+//                 </View>
+//                 <Text style={styles.headerTitle}>Biometric Login</Text>
+//               </View>
+
+//               <Text style={styles.headerSubtitle}>
+//                 Use {getBiometricDisplayName().toLowerCase()} for faster, more
+//                 secure access to your accounts
+//               </Text>
+
+//               <View
+//                 style={[
+//                   styles.statusBadge,
+//                   biometricEnabled
+//                     ? styles.statusActive
+//                     : styles.statusInactive,
+//                 ]}>
+//                 <MaterialCommunityIcons
+//                   name={biometricEnabled ? 'shield-check' : 'shield-off'}
+//                   size={14}
+//                   color={biometricEnabled ? '#10B981' : '#6B7280'}
+//                 />
+//                 <Text
+//                   style={[
+//                     styles.statusText,
+//                     biometricEnabled
+//                       ? styles.statusTextActive
+//                       : styles.statusTextInactive,
+//                   ]}>
+//                   {biometricEnabled
+//                     ? `${getBiometricDisplayName()} Active`
+//                     : `${getBiometricDisplayName()} Inactive`}
+//                 </Text>
+//               </View>
+//             </View>
+//           </LinearGradient>
+
+//           <View style={styles.sectionAccount}>
+//             {/* Dynamic Section Title */}
+//             <View style={styles.sectionHeader}>
+//               <Text style={styles.sectionTitle}>{getSectionTitle()}</Text>
+//             </View>
+
+//             {totalAccounts > 0 ? (
+//               <View style={styles.accountsContainer}>
+//                 {renderProviderSection('Azure', groupedAccounts.Azure)}
+//                 {renderProviderSection('Google', groupedAccounts.Google)}
+//               </View>
+//             ) : (
+//               <View style={styles.emptyState}>
+//                 <MaterialCommunityIcons
+//                   name="account-multiple-outline"
+//                   size={48}
+//                   color="#C7C7CC"
+//                 />
+//                 <Text style={styles.emptyStateText}>No accounts added</Text>
+//                 <Text style={styles.emptyStateSubtext}>
+//                   Sign in with Microsoft or Google to get started
+//                 </Text>
+//               </View>
+//             )}
+//           </View>
+//         </ScrollView>
+//       </View>
+
+//       <AlertModal
+//         visible={alertModal}
+//         heading="Alert"
+//         text={alertMessage}
+//         onPress={() => setAlertModal(false)}
+//       />
+
+//       <ConfirmationAlert
+//         visible={showEnableConfirm}
+//         heading={`Enable ${getBiometricDisplayName()}`}
+//         text={`${
+//           biometricEnabled
+//             ? 'This will replace your current biometric configuration.\n\n'
+//             : ''
+//         }Enable ${getBiometricDisplayName()} authentication for\n${
+//           selectedAccount?.email
+//         }?`}
+//         primaryButtonText="Enable"
+//         secondaryButtonText="Cancel"
+//         onPrimaryPress={handleEnableBiometric}
+//         onSecondaryPress={handleCancelEnable}
+//         type="info"
+//       />
+
+//       <ConfirmationAlert
+//         visible={showDisableConfirm}
+//         heading={`Disable ${getBiometricDisplayName()}`}
+//         text={`Are you sure you want to disable ${getBiometricDisplayName()} authentication for\n${
+//           selectedAccount?.email
+//         }\nYou'll need to use your password to sign in.`}
+//         primaryButtonText="Disable"
+//         secondaryButtonText="Cancel"
+//         onPrimaryPress={handleDisableBiometric}
+//         onSecondaryPress={handleCancelDisable}
+//         type="warning"
+//       />
+//     </ActionPaneContainer>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#FFFFFF',
+//   },
+//   scrollView: {
+//     flex: 1,
+//   },
+//   scrollContent: {
+//     flexGrow: 1,
+//     paddingTop: 0,
+//   },
+//   headerContainer: {
+//     paddingTop: 30,
+//     paddingBottom: 30,
+//     paddingHorizontal: 24,
+//     borderBottomLeftRadius: 24,
+//     borderBottomRightRadius: 24,
+//     elevation: 8,
+//     shadowColor: '#0A66C2',
+//     shadowOpacity: 0.3,
+//     shadowRadius: 12,
+//     shadowOffset: {width: 0, height: 6},
+//     marginBottom: 8,
+//   },
+//   headerContent: {
+//     gap: 16,
+//   },
+//   headerTitleRow: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     gap: 12,
+//   },
+//   headerIconContainer: {
+//     width: 52,
+//     height: 52,
+//     borderRadius: 26,
+//     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     borderWidth: 1.5,
+//     borderColor: 'rgba(255, 255, 255, 0.3)',
+//   },
+//   headerTitle: {
+//     fontSize: 28,
+//     fontWeight: '700',
+//     color: '#FFFFFF',
+//     flex: 1,
+//   },
+//   headerSubtitle: {
+//     fontSize: 16,
+//     color: '#E0E7FF',
+//     lineHeight: 22,
+//     marginTop: 4,
+//   },
+//   statusBadge: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     alignSelf: 'flex-start',
+//     paddingHorizontal: 14,
+//     paddingVertical: 8,
+//     borderRadius: 20,
+//     gap: 6,
+//     borderWidth: 1,
+//   },
+//   statusActive: {
+//     backgroundColor: 'rgba(16, 185, 129, 0.15)',
+//     borderColor: 'rgba(16, 185, 129, 0.3)',
+//   },
+//   statusInactive: {
+//     backgroundColor: 'rgba(255, 255, 255, 0.15)',
+//     borderColor: 'rgba(255, 255, 255, 0.3)',
+//   },
+//   statusText: {
+//     fontSize: 14,
+//     fontWeight: '600',
+//   },
+//   statusTextActive: {
+//     color: '#10B981',
+//   },
+//   statusTextInactive: {
+//     color: '#E0E7FF',
+//   },
+//   unavailableContainer: {
+//     flex: 1,
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     padding: 40,
+//     backgroundColor: '#FFFFFF',
+//   },
+//   unavailableTitle: {
+//     fontSize: 20,
+//     fontWeight: '600',
+//     color: '#1C1C1E',
+//     marginTop: 24,
+//     marginBottom: 8,
+//   },
+//   unavailableText: {
+//     fontSize: 16,
+//     color: '#8E8E93',
+//     textAlign: 'center',
+//     lineHeight: 22,
+//   },
+//   sectionAccount: {
+//     padding: 24,
+//   },
+//   sectionHeader: {
+//     marginBottom: 16,
+//   },
+//   sectionTitle: {
+//     fontSize: 18,
+//     fontWeight: '600',
+//     color: '#1C1C1E',
+//   },
+//   accountsContainer: {
+//     gap: 20,
+//   },
+//   providerSection: {
+//     gap: 8,
+//   },
+//   accountItem: {
+//     flexDirection: 'row',
+//     alignItems: 'center',
+//     padding: 16,
+//     backgroundColor: '#F8F9FA',
+//     borderRadius: 12,
+//     borderWidth: 1,
+//     borderColor: 'transparent',
+//   },
+//   selectedAccountItem: {
+//     backgroundColor: '#E3F2FD',
+//     borderColor: '#007AFF',
+//   },
+//   accountIcon: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: '#FFFFFF',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     marginRight: 12,
+//     borderWidth: 1,
+//     borderColor: '#F2F2F7',
+//   },
+//   accountInfo: {
+//     flex: 1,
+//   },
+//   accountEmail: {
+//     fontSize: 16,
+//     fontWeight: '500',
+//     color: '#1C1C1E',
+//     marginBottom: 2,
+//   },
+//   selectedAccountEmail: {
+//     color: '#007AFF',
+//     fontWeight: '600',
+//   },
+//   accountName: {
+//     fontSize: 14,
+//     color: '#8E8E93',
+//   },
+//   enabledBadge: {
+//     fontSize: 12,
+//     color: '#10B981',
+//     fontWeight: '600',
+//     marginTop: 4,
+//   },
+//   emptyState: {
+//     alignItems: 'center',
+//     padding: 40,
+//   },
+//   emptyStateText: {
+//     fontSize: 16,
+//     fontWeight: '500',
+//     color: '#8E8E93',
+//     marginTop: 16,
+//     marginBottom: 8,
+//   },
+//   emptyStateSubtext: {
+//     fontSize: 14,
+//     color: '#C7C7CC',
+//     textAlign: 'center',
+//     lineHeight: 20,
+//   },
+// });
+
+// export default BiometricSettings;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useCallback} from 'react';
@@ -1026,7 +1716,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   FlatList,
   ScrollView,
   BackHandler,
@@ -1051,6 +1740,7 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ConfirmationAlert from '../../../../components/Alert/ConfirmationAlert';
+import styles from '../../../../styles/styles';
 
 const BiometricSettings = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -1089,7 +1779,7 @@ const BiometricSettings = () => {
   );
 
   const handleGoBack = () => {
-    navigation.navigate('Preferences');
+    navigation.navigate('Profile');
   };
 
   const initializeBiometricSettings = async () => {
@@ -1240,8 +1930,26 @@ const BiometricSettings = () => {
     }
   };
 
+  // const getBiometricDisplayName = () => {
+  //   switch (biometricType) {
+  //     case 'FaceID':
+  //       return 'Face ID';
+  //     case 'TouchID':
+  //       return 'Touch ID';
+  //     case 'Fingerprint':
+  //       return 'Fingerprint';
+  //     case 'Face':
+  //       return 'Face Recognition';
+  //     default:
+  //       return biometricType || 'Biometric';
+  //   }
+  // };
   const getBiometricDisplayName = () => {
-    switch (biometricType) {
+    // Normalize the biometric type first
+    const normalizedType =
+      biometricType === 'Biometrics' ? 'Biometric' : biometricType;
+
+    switch (normalizedType) {
       case 'FaceID':
         return 'Face ID';
       case 'TouchID':
@@ -1251,7 +1959,7 @@ const BiometricSettings = () => {
       case 'Face':
         return 'Face Recognition';
       default:
-        return biometricType || 'Biometric';
+        return normalizedType || 'Biometric';
     }
   };
 
@@ -1279,42 +1987,42 @@ const BiometricSettings = () => {
     return (
       <TouchableOpacity
         style={[
-          styles.accountItem,
-          shouldHighlight && styles.selectedAccountItem,
+          styles.Biometric_accountItem,
+          shouldHighlight && styles.Biometric_selectedAccountItem,
         ]}
         onPress={() => handleAccountSelection(item)}>
         <View
           style={[
-            styles.accountIcon,
+            styles.Biometric_accountIcon,
             shouldHighlight && {
               backgroundColor: `${getProviderColor(item.provider)}15`,
             },
           ]}>
           <MaterialCommunityIcons
             name={getProviderIcon(item.provider)}
-            size={20}
+            size={styles.Biometric_accountIconSize}
             color={getProviderColor(item.provider)}
           />
         </View>
-        <View style={styles.accountInfo}>
+        <View style={styles.Biometric_accountInfo}>
           <Text
             style={[
-              styles.accountEmail,
-              shouldHighlight && styles.selectedAccountEmail,
+              styles.Biometric_accountEmail,
+              shouldHighlight && styles.Biometric_selectedAccountEmail,
             ]}>
             {item.email}
           </Text>
           {item.displayName && (
-            <Text style={styles.accountName}>{item.displayName}</Text>
+            <Text style={styles.Biometric_accountName}>{item.displayName}</Text>
           )}
           {isEnabled && (
-            <Text style={styles.enabledBadge}>Biometric Enabled</Text>
+            <Text style={styles.Biometric_enabledBadge}>Biometric Enabled</Text>
           )}
         </View>
         {shouldHighlight && (
           <MaterialCommunityIcons
             name="check-circle"
-            size={20}
+            size={styles.Biometric_checkIconSize}
             color="#007AFF"
           />
         )}
@@ -1326,7 +2034,7 @@ const BiometricSettings = () => {
     if (accounts.length === 0) return null;
 
     return (
-      <View key={provider} style={styles.providerSection}>
+      <View key={provider} style={styles.Biometric_providerSection}>
         <FlatList
           data={accounts}
           renderItem={renderAccountItem}
@@ -1360,14 +2068,16 @@ const BiometricSettings = () => {
         showFloatingButton={false}
         isHeaderActive={true}
         showTabNavigator={true}>
-        <View style={styles.unavailableContainer}>
+        <View style={styles.Biometric_unavailableContainer}>
           <MaterialCommunityIcons
             name="alert-circle-outline"
-            size={64}
+            size={styles.Biometric_unavailableIconSize}
             color="#FF9500"
           />
-          <Text style={styles.unavailableTitle}>Biometric Not Available</Text>
-          <Text style={styles.unavailableText}>
+          <Text style={styles.Biometric_unavailableTitle}>
+            Biometric Not Available
+          </Text>
+          <Text style={styles.Biometric_unavailableText}>
             Your device doesn't support biometric authentication or it's not set
             up.
           </Text>
@@ -1387,51 +2097,53 @@ const BiometricSettings = () => {
       showFloatingButton={false}
       isHeaderActive={true}
       showTabNavigator={true}>
-      <View style={styles.container}>
+      <View style={styles.Biometric_container}>
         <ScrollView
-          style={styles.scrollView}
+          style={styles.Biometric_scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}>
+          contentContainerStyle={styles.Biometric_scrollContent}>
           <LinearGradient
             colors={['#0A66C2', '#0A66C2']}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
-            style={styles.headerContainer}>
-            <View style={styles.headerContent}>
-              <View style={styles.headerTitleRow}>
-                <View style={styles.headerIconContainer}>
+            style={styles.Biometric_headerContainer}>
+            <View style={styles.Biometric_headerContent}>
+              <View style={styles.Biometric_headerTitleRow}>
+                <View style={styles.Biometric_headerIconContainer}>
                   <MaterialCommunityIcons
                     name={getBiometricIcon()}
-                    size={28}
+                    size={styles.Biometric_headerIconSize}
                     color="#FFFFFF"
                   />
                 </View>
-                <Text style={styles.headerTitle}>Biometric Login</Text>
+                <Text style={styles.Biometric_headerTitle}>
+                  Biometric Login
+                </Text>
               </View>
 
-              <Text style={styles.headerSubtitle}>
+              <Text style={styles.Biometric_headerSubtitle}>
                 Use {getBiometricDisplayName().toLowerCase()} for faster, more
                 secure access to your accounts
               </Text>
 
               <View
                 style={[
-                  styles.statusBadge,
+                  styles.Biometric_statusBadge,
                   biometricEnabled
-                    ? styles.statusActive
-                    : styles.statusInactive,
+                    ? styles.Biometric_statusActive
+                    : styles.Biometric_statusInactive,
                 ]}>
                 <MaterialCommunityIcons
                   name={biometricEnabled ? 'shield-check' : 'shield-off'}
-                  size={14}
+                  size={styles.Biometric_statusIconSize}
                   color={biometricEnabled ? '#10B981' : '#6B7280'}
                 />
                 <Text
                   style={[
-                    styles.statusText,
+                    styles.Biometric_statusText,
                     biometricEnabled
-                      ? styles.statusTextActive
-                      : styles.statusTextInactive,
+                      ? styles.Biometric_statusTextActive
+                      : styles.Biometric_statusTextInactive,
                   ]}>
                   {biometricEnabled
                     ? `${getBiometricDisplayName()} Active`
@@ -1441,26 +2153,30 @@ const BiometricSettings = () => {
             </View>
           </LinearGradient>
 
-          <View style={styles.sectionAccount}>
+          <View style={styles.Biometric_sectionAccount}>
             {/* Dynamic Section Title */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{getSectionTitle()}</Text>
+            <View style={styles.Biometric_sectionHeader}>
+              <Text style={styles.Biometric_sectionTitle}>
+                {getSectionTitle()}
+              </Text>
             </View>
 
             {totalAccounts > 0 ? (
-              <View style={styles.accountsContainer}>
+              <View style={styles.Biometric_accountsContainer}>
                 {renderProviderSection('Azure', groupedAccounts.Azure)}
                 {renderProviderSection('Google', groupedAccounts.Google)}
               </View>
             ) : (
-              <View style={styles.emptyState}>
+              <View style={styles.Biometric_emptyState}>
                 <MaterialCommunityIcons
                   name="account-multiple-outline"
-                  size={48}
+                  size={styles.Biometric_emptyStateIconSize}
                   color="#C7C7CC"
                 />
-                <Text style={styles.emptyStateText}>No accounts added</Text>
-                <Text style={styles.emptyStateSubtext}>
+                <Text style={styles.Biometric_emptyStateText}>
+                  No accounts added
+                </Text>
+                <Text style={styles.Biometric_emptyStateSubtext}>
                   Sign in with Microsoft or Google to get started
                 </Text>
               </View>
@@ -1508,191 +2224,5 @@ const BiometricSettings = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingTop: 0,
-  },
-  headerContainer: {
-    paddingTop: 30,
-    paddingBottom: 30,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    elevation: 8,
-    shadowColor: '#0A66C2',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: {width: 0, height: 6},
-    marginBottom: 8,
-  },
-  headerContent: {
-    gap: 16,
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  headerIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    flex: 1,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#E0E7FF',
-    lineHeight: 22,
-    marginTop: 4,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-    borderWidth: 1,
-  },
-  statusActive: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  statusInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  statusTextActive: {
-    color: '#10B981',
-  },
-  statusTextInactive: {
-    color: '#E0E7FF',
-  },
-  unavailableContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-    backgroundColor: '#FFFFFF',
-  },
-  unavailableTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1C1C1E',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  unavailableText: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  sectionAccount: {
-    padding: 24,
-  },
-  sectionHeader: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
-  },
-  accountsContainer: {
-    gap: 20,
-  },
-  providerSection: {
-    gap: 8,
-  },
-  accountItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  selectedAccountItem: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#007AFF',
-  },
-  accountIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#F2F2F7',
-  },
-  accountInfo: {
-    flex: 1,
-  },
-  accountEmail: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1C1C1E',
-    marginBottom: 2,
-  },
-  selectedAccountEmail: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  accountName: {
-    fontSize: 14,
-    color: '#8E8E93',
-  },
-  enabledBadge: {
-    fontSize: 12,
-    color: '#10B981',
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  emptyState: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#8E8E93',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#C7C7CC',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
 
 export default BiometricSettings;

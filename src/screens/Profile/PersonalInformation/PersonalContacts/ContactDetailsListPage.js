@@ -58,6 +58,7 @@ const ContactDetailsListPage = () => {
     setIsLoading(true);
     try {
       const data = await ContactDetails({employeeId: effectiveEmployeeId});
+      console.log({data});
       setContactsData(data);
     } catch (error) {
       console.log('Failed to fetch contacts:', error);
@@ -165,8 +166,8 @@ const ContactDetailsListPage = () => {
   // 🔹 Define Card Config
   const cardConfig = {
     headerConfig: {
-      title: {key: 'Type'},
-      subtitle: {key: 'Description'},
+      title: {key: 'Type', label: 'Type'},
+      // subtitle: {key: 'Description'},
     },
     fields: [
       {key: 'Type', label: 'Type', type: 'text'},
@@ -238,6 +239,8 @@ const ContactDetailsListPage = () => {
   // 🔹 Render Each Contact Card
   const renderContactCard = ({item}) => {
     const itemProcessingButtons = processingButtons[item.RecId] || [];
+
+    console.log({item});
 
     return (
       <DynamicRequestCard
