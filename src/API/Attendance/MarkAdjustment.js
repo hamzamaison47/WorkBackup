@@ -114,6 +114,7 @@ const buildContractXml = c => {
     ClockIn: c?.ClockIn, // seconds
     ClockOut: c?.ClockOut, // seconds
     AttendanceDate: c?.AttendanceDate, // ✅ single correct field only
+    GenerationType: 'MobileApp',
     Remarks: sanitizeRemarks(c?.Remarks),
   };
 
@@ -130,6 +131,7 @@ const buildContractXml = c => {
     'ClockOut',
     'EMPLOYEEID',
     'EmployeeName',
+    'GenerationType',
     'Remarks',
   ];
 

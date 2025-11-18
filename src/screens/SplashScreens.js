@@ -1,31 +1,73 @@
-import React, {useEffect} from 'react';
-import {Text, Animated, ActivityIndicator} from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {Animated, Easing} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {getToken} from '../API/Token/getToken';
 import styles from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
-  const logoOpacity = new Animated.Value(0);
+  // Animations
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
+  const circlePulse1 = useRef(new Animated.Value(0)).current;
+  const circlePulse2 = useRef(new Animated.Value(0)).current;
+  const circlePulse3 = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const fadeInLogo = () => {
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 3000,
-        useNativeDriver: true,
-      }).start();
+    const fadeInContent = () => {
+      // Staggered fade in for logo and text
+      Animated.stagger(300, [
+        // Logo fade in
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        // Main text fade in
+        Animated.timing(textOpacity, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        // Tagline fade in
+        Animated.timing(taglineOpacity, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
     };
+
+    // Staggered circle animations
+    Animated.stagger(400, [
+      Animated.timing(circlePulse1, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(circlePulse2, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(circlePulse3, {
+        toValue: 1,
+        duration: 2000,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
     const checkAuthStatus = async () => {
       try {
-        const token = await getToken();
-        fadeInLogo();
+        // const token = await getToken();
+        fadeInContent();
         setTimeout(() => {
-          if (token) {
-            navigation.replace('Login');
-          } else {
-            navigation.replace('Login');
-          }
+          navigation.replace('Login');
         }, 3000);
       } catch (error) {
         console.log(error);
@@ -34,25 +76,95 @@ const SplashScreens = ({navigation}) => {
     };
 
     checkAuthStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigation]);
+  }, [
+    navigation,
+    logoOpacity,
+    textOpacity,
+    taglineOpacity,
+    circlePulse1,
+    circlePulse2,
+    circlePulse3,
+  ]);
+
+  // Circle scale interpolations
+  const circle1Scale = circlePulse1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 1],
+  });
+
+  const circle2Scale = circlePulse2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 1],
+  });
+
+  const circle3Scale = circlePulse3.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 1],
+  });
+
+  const circle1Opacity = circlePulse1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.15],
+  });
+
+  const circle2Opacity = circlePulse2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.1],
+  });
+
+  const circle3Opacity = circlePulse3.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.08],
+  });
 
   return (
     <LinearGradient
       colors={['#0A66C2', '#bddeff']}
       style={styles.splash_Container}>
+      {/* Background Circles */}
+      <Animated.View
+        style={[
+          styles.splash_Circle1,
+          {
+            opacity: circle1Opacity,
+            transform: [{scale: circle1Scale}],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.splash_Circle2,
+          {
+            opacity: circle2Opacity,
+            transform: [{scale: circle2Scale}],
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.splash_Circle3,
+          {
+            opacity: circle3Opacity,
+            transform: [{scale: circle3Scale}],
+          },
+        ]}
+      />
+
+      {/* Logo with fade animation */}
       <Animated.Image
         source={require('../assets/cloud.png')}
         style={[styles.splash_Logo, {opacity: logoOpacity}]}
         resizeMode="contain"
       />
-      <Text style={styles.splash_Text}>Dynaface ESS By Maison</Text>
-      <Text style={styles.splash_Tagline}>Your Technology Partner</Text>
-      <ActivityIndicator
-        size="large"
-        color="#0A66C2"
-        style={styles.splash_Loader}
-      />
+
+      {/* Text with fade animations */}
+      <Animated.Text style={[styles.splash_Text, {opacity: textOpacity}]}>
+        Dynaface ESS By Maison
+      </Animated.Text>
+
+      <Animated.Text style={[styles.splash_Tagline, {opacity: taglineOpacity}]}>
+        Your Technology Partner
+      </Animated.Text>
     </LinearGradient>
   );
 };

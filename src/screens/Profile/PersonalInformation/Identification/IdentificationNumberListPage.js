@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -21,6 +21,7 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import styles from '../../../../styles/styles';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
+import {ScrollView} from 'react-native-gesture-handler';
 
 const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
@@ -31,6 +32,7 @@ const IdentificationNumberListPage = () => {
     employeeName,
     WorkerRecId,
     cameFrom,
+    highlightRecId,
     userData: routeUserData,
   } = route.params || {};
 
@@ -46,6 +48,7 @@ const IdentificationNumberListPage = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [workflowEnabled, setWorkflowEnabled] = useState(false);
+  const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
 
   const [deleteModal, setDeleteModal] = useState(false);
@@ -59,6 +62,15 @@ const IdentificationNumberListPage = () => {
       const data = await IdentificationFindRequest({
         employeeId: effectiveEmployeeId,
       });
+      // ✅ Sort newest record on top
+      data.sort(
+        (a, b) =>
+          new Date(b.CreatedDateTime).getTime() -
+          new Date(a.CreatedDateTime).getTime(),
+      );
+
+      console.log('Data from aPI', data);
+
       setIdentificationsData(data);
     } catch (error) {
       console.error('Failed to fetch identification data:', error);
@@ -84,6 +96,22 @@ const IdentificationNumberListPage = () => {
       };
       checkWorkflow();
     }, []),
+  );
+
+  // Handle highlighting of records
+  useFocusEffect(
+    useCallback(() => {
+      if (highlightRecId) {
+        setHighlightedRecId(highlightRecId);
+        fetchIdentifications();
+
+        const timer = setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+      }
+    }, [highlightRecId, fetchIdentifications]),
   );
 
   useFocusEffect(
@@ -258,6 +286,11 @@ const IdentificationNumberListPage = () => {
           `${itemData.IdentificationTypeId} is Submitted Successfully.`,
         );
         setAlertModal(true);
+        setHighlightedRecId(itemData.recId);
+
+        setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
 
         setTimeout(() => {
           fetchIdentifications();
@@ -342,6 +375,7 @@ const IdentificationNumberListPage = () => {
   // Render identification card
   const renderIdentificationCard = ({item}) => {
     // const isHighlighted = highlightedRecId === item.recId;
+    const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.recId] || [];
 
     const processedItem = {
@@ -356,7 +390,7 @@ const IdentificationNumberListPage = () => {
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
         buttons={getButtonConfig(item)}
-        // isHighlighted={isHighlighted}
+        isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
         isExpandable={true}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
@@ -402,7 +436,7 @@ const IdentificationNumberListPage = () => {
       showFooter={true}
       showFloatingButton={workflowEnabled}
       isHeaderActive={true}
-      onRefresh={handleRefresh}
+      onRefresh={fetchIdentifications}
       onFloatingButtonPress={handleCreateRequest}>
       {isLoading ? (
         <CustomIndicator />
@@ -415,10 +449,20 @@ const IdentificationNumberListPage = () => {
           }
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
         />
       ) : (
-        <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+        <ScrollView
+          contentContainerStyle={{flexGrow: 1}}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }>
+          <Text style={styles.noDataText}>No Data Found</Text>
+        </ScrollView>
       )}
+
       {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
