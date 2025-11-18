@@ -129,10 +129,7 @@ const IdentificationNumberSaveRecord = () => {
       const fetchIdentificationTypes = async () => {
         try {
           const response = await FindIdentificationTypeRequest();
-          console.log(
-            'RAW API RESPONSE -->',
-            JSON.stringify(response, null, 2),
-          );
+
           if (response && Array.isArray(response)) {
             setIdentTypes(
               response.map(item => ({
@@ -255,6 +252,7 @@ const IdentificationNumberSaveRecord = () => {
   // 🔧 Centralized Save/Update/Submit logic
   const handleAction = async (actionType, modalMode, data) => {
     try {
+      console.log('Handle Action Data : ', data);
       const contract = {
         RecId: data.recId || '',
         Description: data.Description || null,
@@ -309,7 +307,7 @@ const IdentificationNumberSaveRecord = () => {
     if (processingButton) return;
     if (!validateFields()) return;
     setProcessingButton(actionType);
-
+    console.log('Form Data : ', formData);
     try {
       const result = await handleAction(
         actionType,

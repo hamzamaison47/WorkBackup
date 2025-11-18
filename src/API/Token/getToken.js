@@ -1,10 +1,13 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getActiveConfigData} from '../../Controller/secureConfig';
+import {store} from '../../store';
+import {refresh} from 'react-native-app-auth';
+import {getAzureConfigurationV2} from '../../Controller/configuration';
 
 export const getToken = async () => {
   try {
     // Get configuration from secure storage instead of env
     const config = await getActiveConfigData();
-
     if (!config) {
       throw new Error('No configuration found. Please scan QR code first.');
     }
@@ -33,6 +36,27 @@ export const getToken = async () => {
     //   grant_type,
     //   resource,
     // });
+
+    const storeState = store.getState();
+    const userData = storeState.user.userData; // 👈 access user slice data
+    if (userData != null) {
+      if (userData.isDynamicsUser === 'Yes') {
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+
+        if (refreshToken != null || refreshToken !== 'undefined') {
+          const refreshResult = await refresh(await getAzureConfigurationV2(), {
+            refreshToken: refreshToken,
+          });
+
+          await AsyncStorage.setItem('accessToken', refreshResult.accessToken);
+          await AsyncStorage.setItem(
+            'refreshToken',
+            refreshResult.refreshToken,
+          );
+          return refreshResult.accessToken;
+        }
+      }
+    }
 
     let formBody = [];
     for (const property in details) {
@@ -63,7 +87,7 @@ export const getToken = async () => {
       throw new Error('No access token received from server');
     }
 
-    // console.log('Access Token received successfully');
+    // console.log('Access Token received successfully', accessToken);
     return accessToken;
   } catch (error) {
     console.error('Failed to fetch token:', error);

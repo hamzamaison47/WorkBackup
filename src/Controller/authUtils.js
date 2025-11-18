@@ -104,7 +104,7 @@ export const handleLogin = async (
 
     const config =
       provider === 'Azure'
-        ? getAzureConfigurationV2()
+        ? await getAzureConfigurationV2()
         : getGoogleConfiguration();
 
     const result = await authorize(config);
@@ -117,6 +117,8 @@ export const handleLogin = async (
         provider === 'Azure' ? 'accessToken' : 'idToken',
         tokenToUse,
       );
+
+      await AsyncStorage.setItem('refreshToken', result.refreshToken);
 
       // Pass the complete result object to handleSuccessfulLogin
       await handleSuccessfulLogin(

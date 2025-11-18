@@ -79,7 +79,6 @@ const RetrieveByEmail = async ({email}) => {
         responseType: 'text',
       },
     );
-
     // XML parser
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -90,12 +89,10 @@ const RetrieveByEmail = async ({email}) => {
     });
 
     const parsed = parser.parse(xml);
-
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveByEmailResponse']?.[
         'result'
-      ]?.['a:WorkflowTrackingStatusTableSvcContract'];
-
+      ]?.['a:WorkflowTrackingStatusTableContract'];
     if (!rawData) {
       console.log('No workflow data found');
       return [];
@@ -113,8 +110,6 @@ const RetrieveByEmail = async ({email}) => {
     const cleanedData = Array.isArray(rawData)
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
-
-    console.log('Workflow Tracking Status Data (cleaned): ', cleanedData);
 
     return cleanedData;
   } catch (error) {
