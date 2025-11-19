@@ -11,6 +11,7 @@ import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen
 import AttendanceDetailsScreen from '../screens/Attendance/AttendanceDetailsScreen';
 import EmployeeAdjustmentScreen from '../screens/Attendance/EmployeeAdjustmentScreen';
 import EmploymentCertificate from '../screens/EmploymentCertificate/EmploymentCertificate';
+import RosterDetailsScreen from '../screens/Attendance/RosterDetailsScreen';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -26,6 +27,7 @@ export const screenMapping = {
   AttendanceDetailsScreen: AttendanceDetailsScreen,
   EmployeeAdjustmentScreen: EmployeeAdjustmentScreen,
   EmploymentCertificate: EmploymentCertificate,
+  RosterDetailsScreen: RosterDetailsScreen,
 };
 
 // Map Images → Screen component
@@ -41,6 +43,6 @@ export const iconMapping = {
   CreateAttendanceScreen: require('../assets/immigration.png'),
   AttendanceDetailsScreen: require('../assets/calendar.png'),
   EmployeeAdjustmentScreen: require('../assets/machine.png'),
-
+  RosterDetailsScreen: require('../assets/OJ91AO0.jpg'),
   EmploymentCertificate: require('..//assets/Certificate/certificate.png'),
 };
