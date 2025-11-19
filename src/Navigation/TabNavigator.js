@@ -107,6 +107,7 @@ import {Animated} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import MainDashboard from '../screens/Maindasboard';
+import WorkItemAssignedToMe from '../screens/WorkItemsAssignedToMe/WorkItemAssignedToMe';
 import DisplayListPage from '../screens/TabListPage/DisplayListPage';
 import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
 import Profile from '../screens/Profile/Profile';
@@ -143,6 +144,8 @@ const TabNavigator = () => {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'WorkerAssignedToMe') {
             iconName = focused ? 'people' : 'people-outline';
+          } else if (route.name === 'WorkItemAssignedToMe') {
+            iconName = focused ? 'clipboard' : 'clipboard-outline';
           }
 
           return (
@@ -162,6 +165,11 @@ const TabNavigator = () => {
         component={MainDashboard}
         options={{tabBarLabel: 'Home'}}
       />
+      {/* <Tab.Screen
+        name="WorkItemAssignedToMe"
+        component={WorkItemAssignedToMe}
+        options={{tabBarLabel: 'Work Items'}}
+      /> */}
       <Tab.Screen
         name="WorkerAssignedToMe"
         component={WorkerAssignedToMe}
