@@ -10,7 +10,7 @@ import {useDispatch} from 'react-redux';
 
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../components/Alert/AlertModal';
-import {handleLogin} from '../Controller/authUtils';
+import {fetchUserInfo} from '../Controller/authUtils';
 import {setUserData} from '../store/slices/userSlice';
 import {
   setLegalEntities,
@@ -25,7 +25,9 @@ import {
 import {
   fetchEmployeeLegalEntities,
   fetchEmployeeMenuItems,
+  handleLogin,
 } from '../Controller/authUtils';
+import {getActiveConfigData, getActiveConfig} from '../Controller/secureConfig';
 import styles from '../styles/styles';
 import {fontScale} from '../store/utils/scaling';
 
@@ -63,6 +65,7 @@ const LoginScreen = () => {
 
   const handleBiometricLogin = async () => {
     try {
+      // Check if biometric credentials exist
       const hasCredentials = await hasPersistentBiometricCredentials();
 
       if (!hasCredentials) {
@@ -73,10 +76,25 @@ const LoginScreen = () => {
         return;
       }
 
+      // Check if there's an active configuration
+      const activeConfigId = await getActiveConfig();
+      if (!activeConfigId) {
+        setAlertMessage(
+          'No active configuration found.\nPlease select a configuration first.',
+        );
+        setAlertModal(true);
+        global.onDialogOk = () => {
+          setAlertModal(false);
+          navigation.navigate('ConfigSelectionScreen');
+        };
+        return;
+      }
+
+      // Get the stored credentials (only email and provider)
       const credentials = await getBiometricCredentials();
       if (
         !credentials ||
-        !credentials.userData ||
+        !credentials.email ||
         !credentials.isBiometricEnabled
       ) {
         setAlertMessage(
@@ -86,17 +104,29 @@ const LoginScreen = () => {
         return;
       }
 
+      // Authenticate with biometrics
       const biometricSuccess = await authenticateWithBiometrics();
       if (!biometricSuccess) {
         setAlertMessage('Authentication cancelled or failed');
         setAlertModal(true);
-        setLoading(false);
         return;
       }
 
       setLoading(true);
 
-      await loadUserDataFromBiometric(credentials);
+      // Get active configuration (fetched fresh at login time)
+      const activeConfig = await getActiveConfigData();
+      if (!activeConfig) {
+        setAlertMessage(
+          'Failed to load configuration.\nPlease check your configuration settings.',
+        );
+        setAlertModal(true);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch user data fresh using the email
+      await loadUserDataFromBiometric(credentials.email, credentials.provider);
 
       navigation.navigate('DrawerNavigator');
       setLoading(false);
@@ -108,23 +138,63 @@ const LoginScreen = () => {
     }
   };
 
-  const loadUserDataFromBiometric = async credentials => {
+  const loadUserDataFromBiometric = async (email, provider) => {
     try {
-      const {userData, account} = credentials;
+      // Fetch fresh user data from API using email
+      const userInfo = await fetchUserInfo(email);
 
-      dispatch(setUserData(userData));
+      if (
+        !userInfo.length ||
+        !userInfo[0].EmployeeName ||
+        !userInfo[0].EmployeeId ||
+        userInfo[0].WorkerRecId === 0
+      ) {
+        throw new Error('User data not found or invalid');
+      }
 
-      await dispatch(initializeLegalEntity(userData.defaultLegalEntity));
+      const user = userInfo[0];
 
-      const legalEntities = await fetchEmployeeLegalEntities(
-        userData.employeeId,
-      );
-      const menus = await fetchEmployeeMenuItems(userData.employeeId);
+      // Prepare complete user data object
+      const completeUserData = {
+        userName: user.EmployeeName,
+        employeeName: user.EmployeeName,
+        employeeId: user.EmployeeId,
+        WorkerRecId: user.WorkerRecId,
+        email: email,
+        jobId: user.JobId,
+        department: user.Department,
+        defaultLegalEntity: user.DefaultLegalEntity,
+        PositionDescription: user.PositionDescription,
+        CreatedBy: user.CreatedBy,
+        CreatedDateTime: user.CreatedDateTime,
+        DataAreaId: user.DataAreaId,
+        IsEnrolledInPayroll: user.IsEnrolledInPayroll,
+        JobDescription: user.JobDescription,
+        ModifiedBy: user.ModifiedBy,
+        ModifiedDateTime: user.ModifiedDateTime,
+        OriginalHireDate: user.OriginalHireDate,
+        Partition: user.Partition,
+        Person: user.Person,
+        Positionid: user.Positionid,
+        RecId: user.RecId,
+        isDynamicsUser: user.isDynamicsUser,
+        employeeFullInfo: user,
+      };
+
+      // Set user data in Redux
+      dispatch(setUserData(completeUserData));
+
+      // Initialize legal entity
+      await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
+
+      // Fetch legal entities and menu items
+      const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+      const menus = await fetchEmployeeMenuItems(user.EmployeeId);
 
       dispatch(setLegalEntities(legalEntities));
       dispatch(setMenuItems(menus));
 
-      console.log('Biometric login successful for:', account.email);
+      console.log('Biometric login successful for:', email);
       return true;
     } catch (error) {
       console.error('Error loading user data from biometric:', error);

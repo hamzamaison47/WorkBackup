@@ -229,14 +229,14 @@ export const handleSuccessfulLogin = async (
     // Set user data in Redux
     setUserData(completeUserData);
 
-    // Step 7: Save account with complete user data (not tokens)
+    // Step 6: Save account with complete user data (NO tokens, NO config)
     const savedAccount = await saveAccountAfterLogin(userEmailOrUPN, provider, {
       displayName: decodedAccessToken.name || user.EmployeeName,
       employeeId: user.EmployeeId,
       employeeName: user.EmployeeName,
       userName: decodedAccessToken.name,
       defaultLegalEntity: user.DefaultLegalEntity,
-      ...completeUserData, // Include all user data
+      ...completeUserData,
     });
 
     // Step 7: Navigate to main app

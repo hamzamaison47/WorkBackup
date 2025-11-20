@@ -1,4 +1,4 @@
-// biometricUtils.js - Updated version with fixes
+// biometricUtils.js
 import ReactNativeBiometrics from 'react-native-biometrics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Keychain from 'react-native-keychain';
@@ -11,26 +11,20 @@ const SELECTED_ACCOUNT_KEY = 'selected_account';
 const ACCOUNTS_LIST_KEY = 'accounts_list';
 const BIOMETRIC_CREDENTIALS_SERVICE = 'biometric_credentials';
 
-// Store only userData and config, NO tokens
-export const storeBiometricCredentials = async (
-  account,
-  userData,
-  sourceConfig,
-) => {
+// Store ONLY email and provider, nothing else
+export const storeBiometricCredentials = async (email, provider) => {
   try {
-    // Store in Keychain which persists until app deletion
     await Keychain.setGenericPassword(
-      `biometric_${account.id}`,
+      'biometric_email',
       JSON.stringify({
-        account,
-        userData, // Complete user data for login
-        sourceConfig, // Store config data if needed
+        email,
+        provider,
         isBiometricEnabled: true,
         timestamp: Date.now(),
       }),
       {
         service: BIOMETRIC_CREDENTIALS_SERVICE,
-        accessible: Keychain.ACCESSIBLE.AFTER_FIRST_UNLOCK, // Persists
+        accessible: Keychain.ACCESSIBLE.AFTER_FIRST_UNLOCK,
       },
     );
     return true;
@@ -58,7 +52,6 @@ export const getBiometricCredentials = async () => {
  */
 export const saveAccountAfterLogin = async (email, provider, userData = {}) => {
   try {
-    // Clear all previous accounts first
     await AsyncStorage.removeItem(ACCOUNTS_LIST_KEY);
 
     const newAccount = {
@@ -71,7 +64,6 @@ export const saveAccountAfterLogin = async (email, provider, userData = {}) => {
       employeeId: userData.employeeId,
       userName: userData.userName,
       defaultLegalEntity: userData.defaultLegalEntity,
-      ...userData,
     };
 
     await AsyncStorage.setItem(ACCOUNTS_LIST_KEY, JSON.stringify([newAccount]));
@@ -158,7 +150,6 @@ export const removeAccount = async accountId => {
       JSON.stringify(updatedAccounts),
     );
 
-    // If the removed account was selected, clear selection
     const selectedAccount = await getSelectedAccount();
     if (selectedAccount && selectedAccount.id === accountId) {
       await AsyncStorage.removeItem(SELECTED_ACCOUNT_KEY);
@@ -176,7 +167,6 @@ export const removeAccount = async accountId => {
  */
 export const clearAllAccounts = async () => {
   try {
-    // Clear all stored accounts and settings
     await AsyncStorage.multiRemove([
       ACCOUNTS_LIST_KEY,
       SELECTED_ACCOUNT_KEY,
@@ -202,29 +192,15 @@ export const checkBiometricAvailability = async () => {
   }
 };
 
-// Auto-disable previous account and enable new one
-export const enableBiometric = async (
-  account,
-  userData,
-  sourceConfig = null,
-) => {
+// Enable biometric - only store email and provider
+export const enableBiometric = async (email, provider) => {
   try {
-    //  Automatically disable any existing biometric first
     await disableBiometric();
 
-    // Store new credentials in Keychain (persists until app deletion)
-    const success = await storeBiometricCredentials(
-      account,
-      userData,
-      sourceConfig,
-    );
+    const success = await storeBiometricCredentials(email, provider);
 
     if (success) {
-      // Update both Keychain and AsyncStorage immediately
       await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
-      await AsyncStorage.setItem(SELECTED_ACCOUNT_KEY, JSON.stringify(account));
-
-      // console.log('Biometric enabled successfully for:', account.email);
       return true;
     }
     return false;
@@ -237,16 +213,13 @@ export const enableBiometric = async (
 // Complete cleanup
 export const disableBiometric = async () => {
   try {
-    // Remove from secure storage (Keychain)
     await Keychain.resetGenericPassword({
       service: BIOMETRIC_CREDENTIALS_SERVICE,
     });
 
-    // Clear UI state (AsyncStorage)
     await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
     await AsyncStorage.removeItem(SELECTED_ACCOUNT_KEY);
 
-    // console.log('Biometric disabled successfully');
     return true;
   } catch (error) {
     console.error('Error disabling biometric:', error);
@@ -257,10 +230,7 @@ export const disableBiometric = async () => {
 // Check both Keychain and AsyncStorage
 export const hasPersistentBiometricCredentials = async () => {
   try {
-    // Check Keychain first
     const credentials = await getBiometricCredentials();
-
-    // Also verify AsyncStorage flag
     const enabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
 
     return (
@@ -297,7 +267,7 @@ export const authenticateWithBiometrics = async () => {
   }
 };
 
-// Legacy support - keeping these for backward compatibility
+// Legacy support
 export const saveSelectedEmail = async email => {
   try {
     const accounts = await getAccounts();

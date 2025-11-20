@@ -1723,14 +1723,13 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useSelector} from 'react-redux';
-import {getActiveConfigData} from '../../../../Controller/secureConfig';
+import {getActiveConfig} from '../../../../Controller/secureConfig';
 
 import {
   checkBiometricAvailability,
   enableBiometric,
   disableBiometric,
   isBiometricEnabled,
-  getSelectedAccount,
   getAccountsByProvider,
   hasPersistentBiometricCredentials,
   getBiometricCredentials,
@@ -1750,6 +1749,7 @@ const BiometricSettings = () => {
   const [biometricType, setBiometricType] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [biometricEmail, setBiometricEmail] = useState(null);
   const [groupedAccounts, setGroupedAccounts] = useState({
     Azure: [],
     Google: [],
@@ -1790,23 +1790,24 @@ const BiometricSettings = () => {
       setBiometricAvailable(available);
       setBiometricType(biometryType);
 
-      // Check persistent storage first
       const hasPersistentCredentials =
         await hasPersistentBiometricCredentials();
 
       if (hasPersistentCredentials) {
         const credentials = await getBiometricCredentials();
         setBiometricEnabled(true);
-        setSelectedAccount(credentials.account);
+        setBiometricEmail(credentials.email);
+
+        // Find matching account from accounts list
+        const accounts = await getAccountsByProvider();
+        const allAccounts = [...accounts.Azure, ...accounts.Google];
+        const matchingAccount = allAccounts.find(
+          acc => acc.email === credentials.email,
+        );
+        setSelectedAccount(matchingAccount);
       } else {
-        // Fallback to AsyncStorage for UI state
         const enabled = await isBiometricEnabled();
         setBiometricEnabled(enabled);
-
-        if (enabled) {
-          const selected = await getSelectedAccount();
-          setSelectedAccount(selected);
-        }
       }
 
       const accounts = await getAccountsByProvider();
@@ -1835,7 +1836,6 @@ const BiometricSettings = () => {
 
   const handleEnableBiometric = async () => {
     try {
-      // Check if user is logged in
       if (!userData || !userData.employeeId) {
         showAlert(
           'No active session found. Please login first to enable biometric.',
@@ -1844,25 +1844,29 @@ const BiometricSettings = () => {
         return;
       }
 
-      // Get current config data
-      const sourceConfig = await getActiveConfigData();
+      const activeConfigId = await getActiveConfig();
+      if (!activeConfigId) {
+        showAlert(
+          'No active configuration found.\nPlease select a configuration first from the Configuration screen.',
+        );
+        setShowEnableConfirm(false);
+        return;
+      }
 
-      // No need to manually disable - enableBiometric does it automatically
-      // Call enableBiometric with userData and config
+      // Only store email and provider
       const success = await enableBiometric(
-        selectedAccount,
-        userData,
-        sourceConfig,
+        selectedAccount.email,
+        selectedAccount.provider,
       );
 
       if (success) {
         setBiometricEnabled(true);
+        setBiometricEmail(selectedAccount.email);
         setShowEnableConfirm(false);
         showAlert(
           `${getBiometricDisplayName()} enabled for\n${selectedAccount.email}`,
         );
 
-        // Refresh the settings to show updated state
         await initializeBiometricSettings();
       } else {
         showAlert('Failed to enable biometric authentication');
@@ -1879,10 +1883,10 @@ const BiometricSettings = () => {
       if (success) {
         setBiometricEnabled(false);
         setSelectedAccount(null);
+        setBiometricEmail(null);
         setShowDisableConfirm(false);
         showAlert(`${getBiometricDisplayName()} has been disabled`);
 
-        // Refresh the settings to show updated state
         await initializeBiometricSettings();
       } else {
         showAlert('Failed to disable biometric authentication');
@@ -1902,17 +1906,10 @@ const BiometricSettings = () => {
     setSelectedAccount(null);
   };
 
-  // Removed the condition to disable first
   const handleAccountSelection = async account => {
-    if (
-      biometricEnabled &&
-      selectedAccount &&
-      selectedAccount.id === account.id
-    ) {
-      // If clicking on currently enabled account, show disable confirmation
+    if (biometricEnabled && biometricEmail === account.email) {
       handleShowDisableConfirm();
     } else {
-      // Allow direct enabling - it will auto-disable previous one
       handleShowEnableConfirm(account);
     }
   };
@@ -1930,22 +1927,7 @@ const BiometricSettings = () => {
     }
   };
 
-  // const getBiometricDisplayName = () => {
-  //   switch (biometricType) {
-  //     case 'FaceID':
-  //       return 'Face ID';
-  //     case 'TouchID':
-  //       return 'Touch ID';
-  //     case 'Fingerprint':
-  //       return 'Fingerprint';
-  //     case 'Face':
-  //       return 'Face Recognition';
-  //     default:
-  //       return biometricType || 'Biometric';
-  //   }
-  // };
   const getBiometricDisplayName = () => {
-    // Normalize the biometric type first
     const normalizedType =
       biometricType === 'Biometrics' ? 'Biometric' : biometricType;
 
@@ -1978,10 +1960,7 @@ const BiometricSettings = () => {
   };
 
   const renderAccountItem = ({item}) => {
-    const isSelected = selectedAccount && selectedAccount.id === item.id;
-    const isEnabled = biometricEnabled && isSelected;
-
-    // Only highlight if biometric is enabled and this is the selected account
+    const isEnabled = biometricEnabled && biometricEmail === item.email;
     const shouldHighlight = isEnabled;
 
     return (
@@ -2154,7 +2133,6 @@ const BiometricSettings = () => {
           </LinearGradient>
 
           <View style={styles.Biometric_sectionAccount}>
-            {/* Dynamic Section Title */}
             <View style={styles.Biometric_sectionHeader}>
               <Text style={styles.Biometric_sectionTitle}>
                 {getSectionTitle()}
@@ -2201,7 +2179,7 @@ const BiometricSettings = () => {
             : ''
         }Enable ${getBiometricDisplayName()} authentication for\n${
           selectedAccount?.email
-        }?`}
+        }?\n\nNote: Biometric will work with the currently active configuration.`}
         primaryButtonText="Enable"
         secondaryButtonText="Cancel"
         onPrimaryPress={handleEnableBiometric}
@@ -2212,9 +2190,7 @@ const BiometricSettings = () => {
       <ConfirmationAlert
         visible={showDisableConfirm}
         heading={`Disable ${getBiometricDisplayName()}`}
-        text={`Are you sure you want to disable ${getBiometricDisplayName()} authentication for\n${
-          selectedAccount?.email
-        }\nYou'll need to use your password to sign in.`}
+        text={`Are you sure you want to disable ${getBiometricDisplayName()} authentication for\n${biometricEmail}\nYou'll need to use your password to sign in.`}
         primaryButtonText="Disable"
         secondaryButtonText="Cancel"
         onPrimaryPress={handleDisableBiometric}

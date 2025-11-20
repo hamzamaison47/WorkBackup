@@ -66,6 +66,7 @@
     "react-native-screens": "^3.34.0",
     "react-native-soap-request": "^0.0.2",
     "react-native-splash-screen": "^3.3.0",
+    "react-native-svg": "^15.12.1",
     "react-native-tab-view": "^3.5.2",
     "react-native-table-component": "^1.2.2",
     "react-native-vector-icons": "^10.1.0",

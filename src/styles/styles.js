@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {StyleSheet, Dimensions, Platform} from 'react-native';
 import {
   scale,
@@ -79,127 +80,208 @@ const styles = StyleSheet.create({
   },
 
   // ============================================
-  // MAINDASHBOARD SCREEN - RESPONSIVE STYLES
+  // MAIN DASHBOARD - RESPONSIVE STYLES (DETAILED)
   // ============================================
-  Main_Container: {
+  MainDash_Container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#FAFAFA',
   },
-  Main_ScrollView: {
+
+  MainDash_ScrollView: {
     flex: 1,
   },
-  Main_ScrollContainer: {
-    flexGrow: 1,
-    paddingBottom: height * 0.1, // Extra padding for fixed button
-  },
-  Main_HeaderContainer: {
-    width: width * 0.9,
-    alignSelf: 'center',
-    marginTop: height * 0.03,
-    // marginBottom: height * 0.001,
-  },
-  Main_WelcomeCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 15,
+
+  MainDash_HeaderContainer: {
+    paddingHorizontal: scale(20),
+    paddingTop: verticalScale(10),
+    paddingBottom: verticalScale(20),
+    borderBottomLeftRadius: moderateScale(32),
+    borderBottomRightRadius: moderateScale(32),
+    backgroundColor: '#0A66C2',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 6},
-    shadowRadius: 8,
-    elevation: 8,
-    marginBottom: height * 0.035,
+    shadowOffset: {width: 0, height: 3},
+    shadowRadius: 6,
+    elevation: 4,
   },
-  Main_HeaderRow: {
+
+  MainDash_HeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  Main_ProfilePicture: {
-    width: height * 0.1,
-    height: height * 0.1,
-    borderRadius: height * 0.125,
-    marginRight: width * 0.02,
-    borderWidth: 4,
-    borderColor: '#0A66C2',
-  },
-  Main_TextColumn: {
+
+  MainDash_HeaderContentSmall: {
     flexDirection: 'column',
-    flex: 1,
-  },
-  Main_WelcomeText: {
-    fontSize: height * 0.0235,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    // marginBottom: height * 0.008,
-    textAlign: 'left',
-  },
-  Main_NameText: {
-    fontSize: height * 0.022,
-    color: '#0A66C2',
-    fontWeight: '600',
-    textAlign: 'left',
-    // marginBottom: height * 0.005,
-  },
-  Main_EmailText: {
-    fontSize: height * 0.015,
-    color: '#5A5A5A',
-    textAlign: 'left',
-  },
-  Main_Grid: {
-    paddingHorizontal: 20,
-    // paddingTop: 10,
-    paddingBottom: 40,
-  },
-  Main_Row: {
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  Main_Card: {
-    width: cardWidth,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: {width: 0, height: 4},
-    shadowRadius: 6,
-    elevation: 5,
+    justifyContent: 'center',
   },
-  Main_IconWrapper: {
-    backgroundColor: '#0A66C2',
-    padding: 12,
-    borderRadius: 50,
-    marginBottom: 12,
-    shadowColor: '#0A66C2',
-    shadowOpacity: 0.2,
-    shadowOffset: {width: 0, height: 2},
-    shadowRadius: 4,
+
+  MainDash_ProfilePicture: {
+    width: scale(90),
+    height: scale(90),
+    borderRadius: scale(45),
+    borderWidth: scale(3),
+    borderColor: '#fff',
+    backgroundColor: '#EAF2FB',
   },
-  Main_CardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  Main_ModalOverlay: {
-    flex: 1,
+
+  MainDash_AvatarContainer: {
+    width: scale(90),
+    height: scale(90),
+    borderRadius: scale(45),
+    borderWidth: scale(3),
+    borderColor: '#fff',
+    backgroundColor: '#bed8f6ff',
+    marginRight: scale(12),
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
-  Main_ModalContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
+
+  MainDash_AvatarContainerSmall: {
+    width: scale(90),
+    height: scale(90),
+    borderRadius: scale(45),
+    borderWidth: scale(3),
+    borderColor: '#fff',
+    backgroundColor: '#bed8f6ff',
+    marginRight: 0,
+    marginBottom: verticalScale(12),
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  Main_ModalImage: {
-    width: width * 0.08,
-    height: height * 0.06,
-    borderRadius: 10,
+
+  MainDash_AvatarText: {
+    fontSize: fontScale(28),
+    fontWeight: '700',
+    color: '#0A66C2',
   },
-  // End Of MainDashboard
+
+  MainDash_TextColumn: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+
+  MainDash_TextColumnSmall: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  MainDash_NameText: {
+    fontSize: fontScale(20),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: verticalScale(2),
+    textAlign: 'left',
+  },
+
+  MainDash_NameTextSmall: {
+    fontSize: fontScale(20),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: verticalScale(2),
+    textAlign: 'center',
+  },
+
+  MainDash_EmailText: {
+    fontSize: fontScale(13),
+    color: '#DCE6F5',
+    textAlign: 'left',
+    lineHeight: fontScale(16),
+  },
+
+  MainDash_EmailTextSmall: {
+    fontSize: fontScale(13),
+    color: '#DCE6F5',
+    textAlign: 'center',
+    lineHeight: fontScale(16),
+  },
+
+  MainDash_BoldText: {
+    fontSize: fontScale(13),
+    color: '#DCE6F5',
+    fontWeight: 'bold',
+  },
+
+  MainDash_MainContent: {
+    flex: 1,
+    paddingTop: verticalScale(22),
+  },
+
+  MainDash_SectionTitle: {
+    fontSize: fontScale(18),
+    fontWeight: '700',
+    color: '#2C3E50',
+    marginBottom: verticalScale(18),
+    paddingHorizontal: scale(20),
+  },
+
+  MainDash_Card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: moderateScale(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: moderateScale(10),
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowOffset: {width: 0, height: 3},
+    shadowRadius: 6,
+    elevation: 2,
+  },
+
+  MainDash_CardTitle: {
+    fontSize: fontScale(12),
+    fontWeight: '700',
+    color: '#2C3E50',
+    textAlign: 'center',
+    lineHeight: fontScale(14),
+    marginTop: verticalScale(8),
+  },
+
+  MainDash_IndicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: verticalScale(12),
+    paddingHorizontal: scale(20),
+    marginBottom: verticalScale(20),
+  },
+
+  MainDash_IndicatorDot: {
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
+    backgroundColor: '#0A66C2',
+    marginHorizontal: scale(4),
+  },
+
+  MainDash_IndicatorDotInactive: {
+    opacity: 0.3,
+  },
+
+  MainDash_NoMenuContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: verticalScale(40),
+    paddingHorizontal: scale(20),
+  },
+
+  MainDash_NoMenuText: {
+    fontSize: fontScale(16),
+    color: '#6B7280',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  MainDash_CardIcon: {
+    resizeMode: 'contain',
+  },
+
+  MainDash_PageContainer: {
+    paddingHorizontal: scale(20),
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
 
   // ============================================
   // LOGIN SCREEN - RESPONSIVE STYLES
