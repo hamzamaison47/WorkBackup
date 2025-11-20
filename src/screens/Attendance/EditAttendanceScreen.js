@@ -151,16 +151,7 @@ const EditAttendanceScreen = () => {
 
   // Canonical date/datetime to send to API
   const [axDateTime, setAxDateTime] = useState(initialAxDate);
-  // Add this useEffect to handle legal entity changes
-  useEffect(() => {
-    // When legal entity changes, navigate back to prevent data inconsistency
-    if (sourceScreen) {
-      // navigation.navigate(sourceScreen, {refresh: true});
-      navigation.navigate('MainDashboard', {refresh: true});
-    } else {
-      navigation.goBack();
-    }
-  }, [selectedLegalEntity, navigation, sourceScreen]);
+
   useEffect(() => {
     setForm(prev => ({...prev, EmployeeName: employeeName}));
     const normalized = normalizeAxDateTime(
@@ -338,6 +329,7 @@ const EditAttendanceScreen = () => {
                 value={form.AttendanceDateUI}
                 onChange={onDateChange}
                 uiFormat="12h"
+                disabled={true}
               />
 
               <TimeFlicker

@@ -51,7 +51,15 @@ const toTime12Label = hhmm24 => {
  *  - onChange: (newStr) => void   (returns date as 'YYYY-MM-DD' or time as 'HH:mm' 24h)
  *  - presets?: string[]           (time presets in 24h 'HH:mm'; for date, presets are ignored)
  */
-const TimeFlicker = ({mode = 'date', label, value, onChange, presets = []}) => {
+// const TimeFlicker = ({mode = 'date', label, value, onChange, presets = []}) => {
+const TimeFlicker = ({
+  mode = 'date',
+  label,
+  value,
+  onChange,
+  presets = [],
+  disabled = false,
+}) => {
   const [visible, setVisible] = useState(false);
 
   const seed = useMemo(() => {
@@ -86,7 +94,7 @@ const TimeFlicker = ({mode = 'date', label, value, onChange, presets = []}) => {
         </Text>
       ) : null}
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={() => setVisible(true)}
         style={{
           flexDirection: 'row',
@@ -98,6 +106,21 @@ const TimeFlicker = ({mode = 'date', label, value, onChange, presets = []}) => {
           paddingHorizontal: 14,
           paddingVertical: 13,
           backgroundColor: '#FFFFFF',
+        }}> */}
+      <TouchableOpacity
+        disabled={disabled}
+        onPress={() => !disabled && setVisible(true)}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderWidth: 1,
+          borderColor: '#D0D7DE',
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 13,
+          backgroundColor: disabled ? '#F0F0F0' : '#FFFFFF',
+          opacity: disabled ? 0.6 : 1,
         }}>
         <Text style={{fontSize: 15, color: '#0E1521', fontWeight: '600'}}>
           {display}

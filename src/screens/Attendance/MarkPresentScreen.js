@@ -2,7 +2,7 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, View} from 'react';
 import {
   Text,
   TextInput,
@@ -143,15 +143,7 @@ const MarkPresentScreen = () => {
   });
 
   const [axDateTime, setAxDateTime] = useState(initialAxDate);
-  // Add this useEffect to handle legal entity changes
-  useEffect(() => {
-    // When legal entity changes, navigate back to prevent data inconsistency
-    if (sourceScreen) {
-      navigation.navigate(sourceScreen, {refresh: true});
-    } else {
-      navigation.goBack();
-    }
-  }, [selectedLegalEntity, navigation, sourceScreen]);
+
   useEffect(() => {
     setForm(prev => ({...prev, EmployeeName: employeeName}));
     const normalized = normalizeAxDateTime(
@@ -322,6 +314,7 @@ const MarkPresentScreen = () => {
                 value={form.AttendanceDateUI}
                 onChange={onDateChange}
                 uiFormat="12h"
+                disabled={true}
               />
 
               <TimeFlicker

@@ -288,11 +288,11 @@ const CreateEmployeeAdjustment = ({
   }, [navigation, hasFetchedShifts, targetEmployeeId, fetchEmployeeShiftIds]);
 
   // Handle legal entity change
-  useEffect(() => {
-    if (selectedLegalEntity) {
-      handleCancel();
-    }
-  }, [selectedLegalEntity, handleCancel]);
+  // useEffect(() => {
+  //   if (selectedLegalEntity) {
+  //     handleCancel();
+  //   }
+  // }, [selectedLegalEntity, handleCancel]);
 
   // Handlers
   const onDateChange = v => {
