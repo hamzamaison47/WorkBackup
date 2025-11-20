@@ -64,7 +64,6 @@ const FindIdentificationTypeRequest = async () => {
     const cleanedData = Array.isArray(rawData)
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
-    console.log('response', cleanedData);
 
     return cleanedData;
   } catch (err) {
