@@ -170,9 +170,9 @@ const ContactDetailsListPage = () => {
       // subtitle: {key: 'Description'},
     },
     fields: [
-      {key: 'Type', label: 'Type', type: 'text'},
+      // {key: 'Type', label: 'Type', type: 'text'},
       {key: 'IsPrimary', label: 'Primary Contact', type: 'text'},
-      {key: 'Locator', label: 'Contact number / address', type: 'text'},
+      {key: 'Locator', label: 'Address', type: 'text'},
     ],
   };
 
