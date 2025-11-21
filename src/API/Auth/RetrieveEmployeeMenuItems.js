@@ -77,7 +77,7 @@ const RetrieveEmployeeMenuItems = async ({employeeId}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
-    // console.log('cleanedData in Retrieve Employee Menu Items', cleanedData);
+    console.log('cleanedData in Retrieve Employee Menu Items', cleanedData);
 
     return cleanedData;
   } catch (err) {

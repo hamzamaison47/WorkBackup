@@ -146,8 +146,15 @@ const CustomDrawerContent = props => {
   };
 
   // Filter menuItems (Type === 0 and in screenMapping)
+  // const filteredMenuItems = menuItems.filter(item => {
+  //   return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
+  // });
   const filteredMenuItems = menuItems.filter(item => {
-    return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
+    return (
+      screenMapping[item.MenuId] &&
+      [0, 2, 3].includes(Number(item.Type)) &&
+      item.Visible === '1'
+    );
   });
 
   const uniqueMenuItems = filteredMenuItems.filter(
@@ -278,6 +285,8 @@ const DrawerNavigator = () => {
     (it, idx, arr) =>
       !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
   );
+
+  console.log({uniqueMenuItems});
 
   return (
     <Drawer.Navigator

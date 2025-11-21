@@ -1,9 +1,9 @@
 /* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
-import {getToken} from '../Token/getToken';
-import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
-import {getActiveConfigData} from '../../Controller/secureConfig';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const GetAllExpenseReports = async ({employeeId, legalEntity}) => {
   try {

@@ -102,8 +102,15 @@ const DisplayListPage = () => {
   const isMediumScreen = screenWidth >= 360 && screenWidth <= 414;
 
   // Filter menuItems like drawer (Type === 0 and in screenMapping)
+  // const filteredMenuItems = menuItems.filter(item => {
+  //   return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
+  // });
   const filteredMenuItems = menuItems.filter(item => {
-    return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
+    return (
+      screenMapping[item.MenuId] &&
+      [0, 2, 3].includes(Number(item.Type)) &&
+      item.Visible === '1'
+    );
   });
 
   // Add refresh handler
