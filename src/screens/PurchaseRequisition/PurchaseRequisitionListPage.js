@@ -138,12 +138,14 @@ const PurchaseRequisitionListPage = () => {
       },
     });
   };
-  const leftFields = ['PurchReqId', 'PurchReqName', 'Originator'];
-  const rightFields = [
-    'RequisitionPurpose', // top
-    'CreatedDateTime', // middle
-    'RequisitionStatus', // bottom
+  const leftFields = [
+    'PurchReqId',
+    'PurchReqName',
+    'Originator',
+    'RequisitionPurpose',
+    'CreatedDateTime',
   ];
+  const rightFields = ['RequisitionStatus'];
 
   const labels = {
     PurchReqId: 'Requisition ID',
@@ -154,7 +156,7 @@ const PurchaseRequisitionListPage = () => {
     RequisitionStatus: 'Status',
   };
 
-  const renderPurchaseRequisitionCard = ({item, index}) => {
+  const renderPurchaseRequisitionCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
     const processedItem = {
       ...item,
@@ -165,10 +167,26 @@ const PurchaseRequisitionListPage = () => {
     return (
       <PRHeaderList
         item={processedItem}
-        index={index}
         leftFields={leftFields}
         rightFields={rightFields}
         labels={labels}
+        onEdit={item => {
+          // Handle edit action
+          console.log('Edit item:', item);
+          navigation.navigate('PurchaseRequisitionSaveRecord', {
+            mode: 'edit',
+            PurchaseRequisitiondata: item,
+            employeeId: effectiveEmployeeId,
+            employeeName: effectiveEmployeeName,
+            WorkerRecId: effectiveWorkerRecId,
+          });
+        }}
+        onDelete={item => {
+          // Handle delete action
+          console.log('Delete item:', item);
+          setItemToDelete(item);
+          setDeleteModal(true);
+        }}
       />
     );
   };

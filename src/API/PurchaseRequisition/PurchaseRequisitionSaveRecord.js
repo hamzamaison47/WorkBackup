@@ -3,9 +3,9 @@
 // import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
-import {getToken} from '../../Token/getToken';
-import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
-import {getActiveConfigData} from '../../../Controller/secureConfig';
+import {getToken} from '../Token/getToken';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const createPurchaseRequisition = async ({PurchaseRequisitiondata}) => {
   try {
@@ -76,7 +76,7 @@ const createPurchaseRequisition = async ({PurchaseRequisitiondata}) => {
     return cleanedResult;
   } catch (error) {
     console.error(
-      'Failed to create bank account record:',
+      'Failed to create Purchase Requisition record:',
       error.response?.data || error.message,
     );
     throw error;
@@ -88,13 +88,15 @@ const buildContractXml = contract => {
 
   const ns = 'tem';
   const fields = [
+    'Originator',
     'PurchReqId',
     'PurchReqName',
-    'TransDate',
     'RequiredDate',
     'RecId',
+    'TransDate',
     'Worker',
   ];
+  console.log('This is the data received in request', contract);
 
   return fields
     .map(field => {
