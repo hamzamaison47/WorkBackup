@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 import React, {useCallback, useState} from 'react';
@@ -8,9 +9,14 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
+  BackHandler,
 } from 'react-native';
 import {useSelector} from 'react-redux';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 
 import {GetAllExpenseReports} from '../../../API/ExpenseManagment/Headers/GetAllExpenseReports';
 import {DeleteExpenseReports} from '../../../API/ExpenseManagment/Headers/DeleteExpenseReports';
@@ -23,6 +29,29 @@ import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 
 const ExpenseManagmentListPage = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  const {
+    employeeId,
+    employeeName,
+    WorkerRecId,
+    cameFrom,
+    highlightRecId,
+    userData: routeUserData,
+  } = route.params || {};
+
+  // Get userData from Redux as fallback
+  const reduxUserData = useSelector(state => state.user.userData);
+  const {selectedLegalEntity} = useSelector(state => state.company);
+
+  const effectiveUserData = routeUserData || reduxUserData;
+
+  // Use effective user data for all operations
+  const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
+  const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
+  const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
+
   // State Management
   const [isLoading, setIsLoading] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
@@ -32,11 +61,6 @@ const ExpenseManagmentListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
-
-  // Redux Selectors
-  const navigation = useNavigation();
-  const {userData} = useSelector(state => state.user);
-  const {selectedLegalEntity} = useSelector(state => state.company);
 
   // Constants
   const CARD_CONFIG = {
@@ -101,7 +125,7 @@ const ExpenseManagmentListPage = () => {
 
   // Data Fetching
   const fetchExpenseData = useCallback(async () => {
-    if (!userData?.employeeId) {
+    if (!effectiveEmployeeId) {
       console.log('No employee ID found');
       return;
     }
@@ -109,7 +133,7 @@ const ExpenseManagmentListPage = () => {
     setIsLoading(true);
     try {
       const myExpenseHeaderData = await GetAllExpenseReports({
-        employeeId: userData.employeeId,
+        employeeId: effectiveEmployeeId,
         legalEntity: selectedLegalEntity,
       });
 
@@ -125,22 +149,111 @@ const ExpenseManagmentListPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userData?.employeeId, selectedLegalEntity]);
+  }, [effectiveEmployeeId, selectedLegalEntity]);
 
+  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchExpenseData();
     }, [fetchExpenseData]),
   );
 
+  // Handle highlighting of records
+  useFocusEffect(
+    useCallback(() => {
+      if (highlightRecId) {
+        setHighlightedRecId(highlightRecId);
+        fetchExpenseData();
+
+        const timer = setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
+
+        return () => clearTimeout(timer);
+      }
+    }, [highlightRecId, fetchExpenseData]),
+  );
+
+  // Handle back navigation
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        handleGoBack();
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
+
+  // Handle back navigation
+  const handleGoBack = () => {
+    let targetRoute = 'MainDashboard'; // default
+
+    switch (cameFrom) {
+      case 'MainDashboard':
+        targetRoute = 'MainDashboard';
+        break;
+      case 'DisplayListPage':
+        targetRoute = 'DisplayListPage';
+        break;
+      case 'DrawerNavigator':
+        targetRoute = 'MainDashboard';
+        break;
+      case 'WorkerAssignedToMe':
+        targetRoute = 'WorkerAssignedToMe';
+        break;
+      default:
+        navigation.goBack();
+        return; // exit early
+    }
+
+    navigation.reset({
+      index: 0, // top of the stack
+      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+    });
+  };
+
   // Card Click Handler
   const handleCardPress = itemData => {
     // Navigate to ExpenseManagmentLinesListPage with the selected expense report data
     navigation.navigate('ExpenseManagmentLinesListPage', {
       expenseReportNumber: itemData.ExpenseReportNumber,
-      employeeId: userData.employeeId,
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
       legalEntity: selectedLegalEntity,
-      expenseReportData: itemData, // Pass the entire item data if needed
+      expenseReportData: itemData,
+      userData: effectiveUserData,
+      cameFrom: 'ExpenseManagmentListPage',
+      originalCameFrom: cameFrom,
+    });
+  };
+
+  // Handle create Expense
+  const handleCreateExpense = () => {
+    navigation.navigate('ExpenseManagementHeaderSaveRecord', {
+      mode: 'create',
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
+      cameFrom: 'ExpenseManagmentListPage',
+      originalCameFrom: cameFrom,
+      expenseData: {
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
+        recId: '',
+        legalEntity: selectedLegalEntity || '',
+        location: '',
+        purpose: '',
+        expenseDate: '',
+        description: '',
+      },
     });
   };
 
@@ -152,7 +265,7 @@ const ExpenseManagmentListPage = () => {
 
     return {
       edit: {
-        show: isDraft,
+        show: true,
         position: 'header',
         style: 'icon',
         icon: 'edit',
@@ -162,7 +275,7 @@ const ExpenseManagmentListPage = () => {
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
-        show: isDraft,
+        show: true,
         position: 'header',
         style: 'icon',
         icon: 'trash',
@@ -186,6 +299,9 @@ const ExpenseManagmentListPage = () => {
 
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
+      case 'edit':
+        handleEditPress(itemData);
+        break;
       case 'delete':
         handleDeletePress(itemData);
         break;
@@ -195,6 +311,30 @@ const ExpenseManagmentListPage = () => {
       default:
         console.log('Unknown button pressed:', buttonType);
     }
+  };
+
+  const handleEditPress = itemData => {
+    navigation.navigate('ExpenseManagementHeaderSaveRecord', {
+      mode: 'edit',
+      employeeId: itemData.employeeId || effectiveEmployeeId,
+      employeeName: itemData.employeeName || effectiveEmployeeName,
+      WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
+      userData: route.params?.userData || effectiveUserData,
+      cameFrom: 'ExpenseManagmentListPage',
+      originalCameFrom: cameFrom,
+      expenseData: {
+        recId: itemData.recId,
+        employeeId: itemData.employeeId || effectiveEmployeeId,
+        employeeName: itemData.employeeName || effectiveEmployeeName,
+        WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
+        legalEntity: itemData.LegalEntity || selectedLegalEntity,
+        location: itemData.Location,
+        purpose: itemData.Purpose,
+        expenseDate: itemData.ExpenseDate,
+        description: itemData.Description,
+        ExpenseReportNumber: itemData.ExpenseReportNumber,
+      },
+    });
   };
 
   const handleDeletePress = itemData => {
@@ -216,6 +356,7 @@ const ExpenseManagmentListPage = () => {
           `Expense report ${itemData.ExpenseReportNumber} submitted successfully`,
         );
 
+        // Set highlighting for submitted record
         if (itemData.recId) {
           setHighlightedRecId(itemData.recId);
         }
@@ -243,7 +384,7 @@ const ExpenseManagmentListPage = () => {
 
     try {
       const result = await DeleteExpenseReports({
-        employeeId: userData.employeeId,
+        employeeId: effectiveEmployeeId,
         expenseReportNumbers: [itemToDelete.ExpenseReportNumber],
         legalEntity: selectedLegalEntity,
       });
@@ -273,6 +414,10 @@ const ExpenseManagmentListPage = () => {
     }
   };
 
+  const handleRefresh = () => {
+    fetchExpenseData();
+  };
+
   // Component Renderers
   const renderExpenseCard = ({item}) => {
     const itemProcessingButtons = processingButtons[item.recId] || [];
@@ -295,6 +440,8 @@ const ExpenseManagmentListPage = () => {
         : '$0.00',
       PaymentDate: formatDate(item.PaymentDate),
       createdDateTime: formatDate(item.createdDateTime),
+      employeeId: item.employeeId || effectiveEmployeeId,
+      employeeName: item.employeeName || effectiveEmployeeName,
     };
 
     return (
@@ -316,29 +463,23 @@ const ExpenseManagmentListPage = () => {
           highlightGradientColors={['#E8F5E8', '#F0FFF0']}
           processingButtons={itemProcessingButtons}
           isHighlighted={isHighlighted}
-          isClickable={true} // Make card clickable
+          isClickable={true}
         />
       </Pressable>
     );
-  };
-
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
-
-  const handleRefresh = () => {
-    fetchExpenseData();
   };
 
   // Main Render
   return (
     <ActionPaneContainer
       pageTitle="Expense Management"
-      showFooter
-      showFloatingButton={false}
-      isHeaderActive
+      isBackButton={false}
+      showFooter={true}
+      showFloatingButton={true}
+      isHeaderActive={true}
       onBackPress={handleGoBack}
-      onRefresh={handleRefresh}>
+      onRefresh={handleRefresh}
+      onFloatingButtonPress={handleCreateExpense}>
       {/* Loading State */}
       {isLoading && <CustomIndicator />}
 
@@ -396,6 +537,9 @@ const ExpenseManagmentListPage = () => {
 const styles = StyleSheet.create({
   listContainer: {
     padding: 10,
+  },
+  cardContainer: {
+    marginBottom: 10,
   },
   noDataContainer: {
     flex: 1,

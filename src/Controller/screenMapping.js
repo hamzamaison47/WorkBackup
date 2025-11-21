@@ -16,6 +16,7 @@ import PurchaseRequisitionListPage from '../screens/PurchaseRequisition/Purchase
 import PurchaseRequisitionSaveRecord from '../screens/PurchaseRequisition/PurchaseRequisitionSaveRecord';
 import ExpenseManagmentListPage from '../screens/ExpenseManagment/Header/ExpenseManagmentListPage';
 import ExpenseManagmentLinesListPage from '../screens/ExpenseManagment/Lines/ExpenseManagmentLinesListPage';
+import ExpenseManagementHeaderSaveRecord from '../screens/ExpenseManagment/Header/ExpenseManagmentHeaderSaveRecord';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -35,6 +36,7 @@ export const screenMapping = {
   PurchaseRequisitionListPage: PurchaseRequisitionListPage,
   PurchaseRequisitionSaveRecord: PurchaseRequisitionSaveRecord,
   ExpenseManagmentListPage: ExpenseManagmentListPage,
+  ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
   ExpenseManagmentLinesListPage: ExpenseManagmentLinesListPage,
 };
 
