@@ -14,7 +14,9 @@ import EmploymentCertificate from '../screens/EmploymentCertificate/EmploymentCe
 import RosterDetailsScreen from '../screens/Attendance/RosterDetailsScreen';
 import PurchaseRequisitionListPage from '../screens/PurchaseRequisition/PurchaseRequisitionListPage';
 import PurchaseRequisitionSaveRecord from '../screens/PurchaseRequisition/PurchaseRequisitionSaveRecord';
-import ExpenseManagmentListPage from '../screens/ExpenseManagment/ExpenseManagmentListPage';
+import ExpenseManagmentListPage from '../screens/ExpenseManagment/Header/ExpenseManagmentListPage';
+import ExpenseManagmentLinesListPage from '../screens/ExpenseManagment/Lines/ExpenseManagmentLinesListPage';
+import ExpenseManagementHeaderSaveRecord from '../screens/ExpenseManagment/Header/ExpenseManagmentHeaderSaveRecord';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -33,7 +35,9 @@ export const screenMapping = {
   RosterDetailsScreen: RosterDetailsScreen,
   PurchaseRequisitionListPage: PurchaseRequisitionListPage,
   PurchaseRequisitionSaveRecord: PurchaseRequisitionSaveRecord,
-  // ExpenseManagmentListPage: ExpenseManagmentListPage,
+  ExpenseManagmentListPage: ExpenseManagmentListPage,
+  ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
+  ExpenseManagmentLinesListPage: ExpenseManagmentLinesListPage,
 };
 
 // Map Images → Screen component
@@ -52,5 +56,5 @@ export const iconMapping = {
   RosterDetailsScreen: require('../assets/OJ91AO0.jpg'),
   EmploymentCertificate: require('..//assets/Certificate/certificate.png'),
   PurchaseRequisitionListPage: require('..//assets//Maindashboard/PurchaseRequisition.png'),
-  // ExpenseManagmentListPage: require('../assets/Maindashboard/Expense.png'),
+  ExpenseManagmentListPage: require('../assets/Maindashboard/Expense.png'),
 };

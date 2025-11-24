@@ -17,12 +17,6 @@ export default function CustomTabBar(props) {
       iconUnfocused: 'home-outline',
     },
     {
-      name: 'WorkItemAssignedToMe',
-      label: 'Work items',
-      iconFocused: 'clipboard',
-      iconUnfocused: 'clipboard-outline',
-    },
-    {
       name: 'WorkerAssignedToMe',
       label: 'My Team',
       iconFocused: 'people',
