@@ -10,6 +10,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
+  Animated,
 } from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
@@ -181,14 +183,67 @@ const normalizeTimeTo24h = v => {
   return mx.isValid() ? mx.format('HH:mm') : '';
 };
 
+// Skeleton Loading Component
+const SkeletonLoader = () => {
+  const opacity = useState(new Animated.Value(0.3))[0];
+
+  useEffect(() => {
+    const animate = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 0.7,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    };
+    animate();
+  }, [opacity]);
+
+  return (
+    <View style={styles.skeletonContainer}>
+      {[1, 2, 3].map(item => (
+        <Animated.View key={item} style={[styles.skeletonCard, {opacity}]}>
+          <View style={styles.skeletonHeader}>
+            <View style={styles.skeletonDate} />
+            <View style={styles.skeletonChip} />
+          </View>
+          <View style={styles.skeletonRow}>
+            <View style={styles.skeletonCell}>
+              <View style={styles.skeletonValue} />
+              <View style={styles.skeletonLabel} />
+            </View>
+            <View style={styles.skeletonCell}>
+              <View style={styles.skeletonValue} />
+              <View style={styles.skeletonLabel} />
+            </View>
+            <View style={styles.skeletonCell}>
+              <View style={styles.skeletonValue} />
+              <View style={styles.skeletonLabel} />
+            </View>
+          </View>
+        </Animated.View>
+      ))}
+    </View>
+  );
+};
+
 const AttendanceDetailsScreen = () => {
   const navigation = useNavigation();
   const {userData} = useSelector(state => state.user || {});
   const [month, setMonth] = useState(moment());
   const [raw, setRaw] = useState([]);
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to show loader immediately
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true); // Track initial load separately
   const [alert, setAlert] = useState({visible: false, text: ''});
   const [actionModal, setActionModal] = useState({
     visible: false,
@@ -211,56 +266,65 @@ const AttendanceDetailsScreen = () => {
     [month],
   );
 
-  const fetchData = useCallback(async () => {
-    if (!userData?.employeeId) return;
-    try {
-      setLoading(true);
+  const fetchData = useCallback(
+    async (isRefresh = false) => {
+      if (!userData?.employeeId) return;
+      try {
+        // Only show full loading on initial load, not on refreshes
+        if (!isRefresh) {
+          setLoading(true);
+        }
 
-      const list = await getRegisterDetailsByDate({
-        employeeId: userData.employeeId,
-        fromDate,
-        toDate,
-      });
-
-      const arr = normalizeArray(list)
-        .filter(Boolean)
-        .map((d, idx) => {
-          const dt = parseISO(d.AttendanceDate);
-          return {
-            ...d,
-            __parsedDate: dt,
-            _key: buildKey(d, idx),
-          };
+        const list = await getRegisterDetailsByDate({
+          employeeId: userData.employeeId,
+          fromDate,
+          toDate,
         });
 
-      setRaw(arr);
-    } catch (e) {
-      setAlert({
-        visible: true,
-        text: e?.message || 'Failed to load attendance details.',
-      });
-      setRaw([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [userData?.employeeId, fromDate, toDate]);
+        const arr = normalizeArray(list)
+          .filter(Boolean)
+          .map((d, idx) => {
+            const dt = parseISO(d.AttendanceDate);
+            return {
+              ...d,
+              __parsedDate: dt,
+              _key: buildKey(d, idx),
+            };
+          });
+
+        setRaw(arr);
+        setInitialLoad(false);
+      } catch (e) {
+        setAlert({
+          visible: true,
+          text: e?.message || 'Failed to load attendance details.',
+        });
+        setRaw([]);
+        setInitialLoad(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userData?.employeeId, fromDate, toDate],
+  );
+
   // Add this useEffect to refresh when legal entity changes
   useEffect(() => {
     if (userData?.employeeId) {
-      // Clear all data
-      setRaw([]);
-      setData([]);
-
-      // Refresh attendance details
       fetchData();
     }
-  }, [fetchData, selectedLegalEntity, userData?.employeeId]); // Add selectedLegalEntity as dependency
+  }, [fetchData, selectedLegalEntity, userData?.employeeId]);
+
   useEffect(() => {
-    if (isFocused) fetchData();
+    if (isFocused) {
+      fetchData();
+    }
   }, [isFocused, fetchData]);
 
   useEffect(() => {
-    if (isFocused) fetchData();
+    if (isFocused) {
+      fetchData();
+    }
   }, [month, isFocused, fetchData]);
 
   useEffect(() => {
@@ -280,7 +344,7 @@ const AttendanceDetailsScreen = () => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await fetchData();
+      await fetchData(true); // Pass true to indicate this is a refresh
     } finally {
       setRefreshing(false);
     }
@@ -502,6 +566,20 @@ const AttendanceDetailsScreen = () => {
     );
   };
 
+  // Render loading state
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <SkeletonLoader />
+    </View>
+  );
+
+  // Render empty state (only when not loading and no data)
+  const renderEmptyState = () => (
+    <View style={styles.empty}>
+      <Text style={styles.emptyText}>No records for this month</Text>
+    </View>
+  );
+
   return (
     <ActionPaneContainer
       pageTitle="Attendance Detail"
@@ -519,24 +597,30 @@ const AttendanceDetailsScreen = () => {
           />
         </View>
 
-        <FlatList
-          style={{flex: 1}}
-          contentContainerStyle={styles.listContent}
-          data={data}
-          keyExtractor={(it, idx) => it._key || String(idx)}
-          renderItem={renderItem}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          nestedScrollEnabled
-          ListEmptyComponent={
-            !loading ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No records for this month</Text>
-              </View>
-            ) : null
-          }
-        />
+        {loading && initialLoad ? (
+          renderLoadingState()
+        ) : (
+          <FlatList
+            style={{flex: 1}}
+            contentContainerStyle={styles.listContent}
+            data={data}
+            keyExtractor={(it, idx) => it._key || String(idx)}
+            renderItem={renderItem}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            nestedScrollEnabled
+            ListEmptyComponent={!loading ? renderEmptyState() : null}
+            ListFooterComponent={
+              loading && !initialLoad ? (
+                <View style={styles.footerLoader}>
+                  <ActivityIndicator size="small" color="#2196F3" />
+                  <Text style={styles.footerLoaderText}>Updating...</Text>
+                </View>
+              ) : null
+            }
+          />
+        )}
       </View>
 
       {/* Action Modal */}
@@ -604,6 +688,73 @@ const styles = StyleSheet.create({
   title: {fontSize: 18, fontWeight: '800', color: '#263238'},
   listContent: {paddingTop: 8, paddingBottom: 16},
 
+  // Loading styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  skeletonContainer: {
+    paddingTop: 8,
+  },
+  skeletonCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    marginBottom: 10,
+  },
+  skeletonDate: {
+    height: 16,
+    width: 150,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+  },
+  skeletonChip: {
+    height: 20,
+    width: 60,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 10,
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    columnGap: 10,
+  },
+  skeletonCell: {
+    flex: 1,
+  },
+  skeletonValue: {
+    height: 18,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonLabel: {
+    height: 12,
+    width: 60,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  footerLoaderText: {
+    color: '#607D8B',
+    fontSize: 14,
+  },
+
   rowCard: {
     backgroundColor: '#FFF',
     borderRadius: 14,
@@ -636,7 +787,7 @@ const styles = StyleSheet.create({
   label: {fontSize: 11, color: '#607D8B', marginTop: 2},
 
   empty: {alignItems: 'center', paddingTop: 36, paddingHorizontal: 12},
-  emptyText: {color: '#78909C'},
+  emptyText: {color: '#78909C', fontSize: 16},
 
   // Modal Styles
   modalOverlay: {

@@ -12,17 +12,17 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  ActivityIndicator,
+  Animated,
 } from 'react-native';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
 import getRosterDetailsByDate from '../../API/Attendance/TASEmployeeRosterAPI';
-
-/** <<< EDIT THIS IF YOUR SCREENS ARE IN A NESTED STACK >>> */
+import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents'; // ← Same filter as AttendanceDetailsScreen
 
 /* ------------ utils ------------ */
 const parseISO = iso =>
@@ -62,7 +62,7 @@ const to12h = (h24, m = 0) => {
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 };
 
-/** Accepts "HH:MM(:SS)" or seconds. Returns 12h with AM/PM for shift time display */
+/** Accepts "HH:MM(:SS)" or seconds → 12h with AM/PM */
 const formatShiftTime12h = value => {
   if (isBlankTime(value)) return '--';
   if (typeof value === 'string' && value.includes(':')) {
@@ -114,14 +114,73 @@ const normalizeDateISO = v => {
   return m.local().format('YYYY-MM-DD');
 };
 
+// Skeleton Loading Component
+const SkeletonLoader = () => {
+  const opacity = useState(new Animated.Value(0.3))[0];
+
+  useEffect(() => {
+    const animate = () => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 0.7,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    };
+    animate();
+  }, [opacity]);
+
+  return (
+    <View style={styles.skeletonContainer}>
+      {[1, 2, 3].map(item => (
+        <Animated.View key={item} style={[styles.skeletonCard, {opacity}]}>
+          <View style={styles.skeletonHeader}>
+            <View style={styles.skeletonDateContainer}>
+              <View style={styles.skeletonDate} />
+              <View style={styles.skeletonDay} />
+            </View>
+            <View style={styles.skeletonShiftContainer}>
+              <View style={styles.skeletonShiftCode} />
+              <View style={styles.skeletonTypeChip} />
+            </View>
+          </View>
+          <View style={styles.skeletonRowGrid}>
+            <View style={styles.skeletonCell}>
+              <View style={styles.skeletonValue} />
+              <View style={styles.skeletonLabel} />
+            </View>
+            <View style={styles.skeletonCell}>
+              <View style={styles.skeletonValue} />
+              <View style={styles.skeletonLabel} />
+            </View>
+            <View style={styles.skeletonCell}>
+              <View style={styles.skeletonValue} />
+              <View style={styles.skeletonLabel} />
+            </View>
+          </View>
+        </Animated.View>
+      ))}
+    </View>
+  );
+};
+
 const RosterDetailsScreen = () => {
   const navigation = useNavigation();
   const {userData} = useSelector(state => state.user || {});
   const [month, setMonth] = useState(moment());
   const [raw, setRaw] = useState([]);
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with true to show loader immediately
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true); // Track initial load separately
   const [alert, setAlert] = useState({visible: false, text: ''});
   const [detailModal, setDetailModal] = useState({
     visible: false,
@@ -132,6 +191,7 @@ const RosterDetailsScreen = () => {
   const selectedLegalEntity = useSelector(
     state => state.company.selectedLegalEntity,
   );
+
   const fromDate = useMemo(
     () => moment(month).startOf('month').format('YYYY-MM-DD'),
     [month],
@@ -141,44 +201,50 @@ const RosterDetailsScreen = () => {
     [month],
   );
 
-  const fetchData = useCallback(async () => {
-    if (!userData?.employeeId) return;
-    try {
-      setLoading(true);
+  const fetchData = useCallback(
+    async (isRefresh = false) => {
+      if (!userData?.employeeId) return;
+      try {
+        // Only show full loading on initial load, not on refreshes
+        if (!isRefresh) {
+          setLoading(true);
+        }
 
-      const list = await getRosterDetailsByDate({
-        employeeId: userData.employeeId,
-        fromDate,
-        toDate,
-      });
-
-      const arr = normalizeArray(list)
-        .filter(Boolean)
-        .map((d, idx) => {
-          const dt = parseISO(d.ShiftDate);
-          return {
-            ...d,
-            __parsedDate: dt,
-            _key: buildKey(d, idx),
-          };
+        const list = await getRosterDetailsByDate({
+          employeeId: userData.employeeId,
+          fromDate,
+          toDate,
         });
 
-      setRaw(arr);
-    } catch (e) {
-      setAlert({
-        visible: true,
-        text: e?.message || 'Failed to load roster details.',
-      });
-      setRaw([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [userData?.employeeId, fromDate, toDate]);
+        const arr = normalizeArray(list)
+          .filter(Boolean)
+          .map((d, idx) => {
+            const dt = parseISO(d.ShiftDate);
+            return {
+              ...d,
+              __parsedDate: dt,
+              _key: buildKey(d, idx),
+            };
+          });
+
+        setRaw(arr);
+        setInitialLoad(false);
+      } catch (e) {
+        setAlert({
+          visible: true,
+          text: e?.message || 'Failed to load roster details.',
+        });
+        setRaw([]);
+        setInitialLoad(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userData?.employeeId, fromDate, toDate],
+  );
 
   useEffect(() => {
     if (userData?.employeeId) {
-      setRaw([]);
-      setData([]);
       fetchData();
     }
   }, [fetchData, selectedLegalEntity, userData?.employeeId]);
@@ -201,38 +267,12 @@ const RosterDetailsScreen = () => {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await fetchData();
+      await fetchData(true); // Pass true to indicate this is a refresh
     } finally {
       setRefreshing(false);
     }
   }, [fetchData]);
 
-  /* ===================== MonthFilter ===================== */
-  const MonthFilter = memo(function MonthFilter({month, onPrev, onNext}) {
-    return (
-      <View style={styles.monthSelector}>
-        <TouchableOpacity
-          onPress={onPrev}
-          activeOpacity={0.8}
-          style={styles.monthBtn}>
-          <Text style={styles.monthBtnText}>{'<'}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.monthPill}>
-          <Text style={styles.monthText}>
-            {moment(month).format('MMM').toUpperCase()}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={onNext}
-          activeOpacity={0.8}
-          style={styles.monthBtn}>
-          <Text style={styles.monthBtnText}>{'>'}</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  });
   const handleRowPress = useCallback(item => {
     setDetailModal({
       visible: true,
@@ -246,6 +286,20 @@ const RosterDetailsScreen = () => {
       selectedItem: null,
     });
   }, []);
+
+  // Render loading state
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <SkeletonLoader />
+    </View>
+  );
+
+  // Render empty state (only when not loading and no data)
+  const renderEmptyState = () => (
+    <View style={styles.empty}>
+      <Text style={styles.emptyText}>No roster records for this month</Text>
+    </View>
+  );
 
   const renderItem = ({item}) => {
     const dateLabel = item.__parsedDate
@@ -267,11 +321,11 @@ const RosterDetailsScreen = () => {
         style={[
           styles.rowCard,
           {
-            borderLeftColor: isOffDay,
-            //   ? '#FF6B6B'
-            //   : isGazettedDay
-            //   ? '#4ECDC4'
-            //   : '#6ce66c',
+            borderLeftColor: isOffDay
+              ? '#FF6B6B'
+              : isGazettedDay
+              ? '#4ECDC4'
+              : '#6ce66c',
             borderLeftWidth: 5,
           },
         ]}>
@@ -348,6 +402,7 @@ const RosterDetailsScreen = () => {
             </View>
 
             <ScrollView style={styles.detailScrollView}>
+              {/* Same detail rows as before */}
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>Basic Information</Text>
                 <DetailRow label="Shift Code" value={item.ShiftCode} />
@@ -417,24 +472,6 @@ const RosterDetailsScreen = () => {
                 <Text style={styles.sectionTitle}>Additional Info</Text>
                 <DetailRow label="Off Day" value={item.OffDay} />
                 <DetailRow label="Gazetted Day" value={item.GazettedDay} />
-                {/* <DetailRow label="Created By" value={item.CreatedBy} />
-                <DetailRow label="Modified By" value={item.ModifiedBy} />
-                {item.CreatedDateTime && (
-                  <DetailRow
-                    label="Created"
-                    value={moment(item.CreatedDateTime)
-                      .local()
-                      .format('MMM D, YYYY HH:mm')}
-                  />
-                )}
-                {item.ModifiedDateTime && (
-                  <DetailRow
-                    label="Modified"
-                    value={moment(item.ModifiedDateTime)
-                      .local()
-                      .format('MMM D, YYYY HH:mm')}
-                  />
-                )} */}
               </View>
             </ScrollView>
 
@@ -466,6 +503,8 @@ const RosterDetailsScreen = () => {
       <View style={styles.container}>
         <View className="headerRow" style={styles.headerRow}>
           <Text style={styles.title}>Monthly Roster</Text>
+
+          {/* ← SAME FILTER AS ATTENDANCE DETAILS SCREEN */}
           <MonthFilter
             month={month}
             onPrev={() => setMonth(m => moment(m).subtract(1, 'month'))}
@@ -473,26 +512,30 @@ const RosterDetailsScreen = () => {
           />
         </View>
 
-        <FlatList
-          style={{flex: 1}}
-          contentContainerStyle={styles.listContent}
-          data={data}
-          keyExtractor={(it, idx) => it._key || String(idx)}
-          renderItem={renderItem}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          nestedScrollEnabled
-          ListEmptyComponent={
-            !loading ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>
-                  No roster records for this month
-                </Text>
-              </View>
-            ) : null
-          }
-        />
+        {loading && initialLoad ? (
+          renderLoadingState()
+        ) : (
+          <FlatList
+            style={{flex: 1}}
+            contentContainerStyle={styles.listContent}
+            data={data}
+            keyExtractor={(it, idx) => it._key || String(idx)}
+            renderItem={renderItem}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            nestedScrollEnabled
+            ListEmptyComponent={!loading ? renderEmptyState() : null}
+            ListFooterComponent={
+              loading && !initialLoad ? (
+                <View style={styles.footerLoader}>
+                  <ActivityIndicator size="small" color="#2196F3" />
+                  <Text style={styles.footerLoaderText}>Updating...</Text>
+                </View>
+              ) : null
+            }
+          />
+        )}
       </View>
 
       {renderDetailModal()}
@@ -518,43 +561,93 @@ const styles = StyleSheet.create({
   },
   title: {fontSize: 18, fontWeight: '800', color: '#263238'},
   listContent: {paddingTop: 8, paddingBottom: 16},
-  //
-  monthSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 4,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  monthBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
+
+  // Loading styles
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: '#F8F9FA',
   },
-  monthBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E88E5',
+  skeletonContainer: {
+    paddingTop: 8,
   },
-  monthPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+  skeletonCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 2,
+    borderLeftWidth: 5,
+    borderLeftColor: '#E0E0E0',
   },
-  monthText: {
+  skeletonHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+    marginBottom: 10,
+  },
+  skeletonDateContainer: {
+    flex: 1,
+  },
+  skeletonDate: {
+    height: 16,
+    width: 150,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonDay: {
+    height: 12,
+    width: 100,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+  },
+  skeletonShiftContainer: {
+    alignItems: 'flex-end',
+  },
+  skeletonShiftCode: {
+    height: 14,
+    width: 80,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonTypeChip: {
+    height: 16,
+    width: 60,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+  },
+  skeletonRowGrid: {
+    flexDirection: 'row',
+    columnGap: 10,
+  },
+  skeletonCell: {
+    flex: 1,
+  },
+  skeletonValue: {
+    height: 18,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  skeletonLabel: {
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+  },
+  footerLoader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  footerLoaderText: {
+    color: '#607D8B',
     fontSize: 14,
-    fontWeight: '700',
-    color: '#263238',
   },
 
-  //
   rowCard: {
     backgroundColor: '#FFF',
     borderRadius: 14,
@@ -570,15 +663,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     marginBottom: 10,
   },
-  dateContainer: {
-    flex: 1,
-  },
+  dateContainer: {flex: 1},
   dateText: {fontSize: 15, fontWeight: '700', color: '#263238'},
   dayText: {fontSize: 13, color: '#607D8B', marginTop: 2},
 
-  shiftCodeContainer: {
-    alignItems: 'flex-end',
-  },
+  shiftCodeContainer: {alignItems: 'flex-end'},
   shiftCodeText: {fontSize: 14, fontWeight: '700', color: '#2196F3'},
 
   typeChip: {
@@ -587,10 +676,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 4,
   },
-  typeChipText: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
+  typeChipText: {fontSize: 10, fontWeight: '600'},
 
   rowGrid: {flexDirection: 'row', columnGap: 10},
   cell: {flex: 1},
@@ -598,13 +684,10 @@ const styles = StyleSheet.create({
   label: {fontSize: 11, color: '#607D8B', marginTop: 2},
 
   empty: {alignItems: 'center', paddingTop: 36, paddingHorizontal: 12},
-  emptyText: {color: '#78909C'},
+  emptyText: {color: '#78909C', fontSize: 16},
 
   // Detail Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
+  modalOverlay: {flex: 1, backgroundColor: 'rgba(0,0,0,0.5)'},
   modalContent: {
     flex: 1,
     backgroundColor: 'white',
@@ -626,17 +709,9 @@ const styles = StyleSheet.create({
     color: '#263238',
     marginBottom: 4,
   },
-  modalSubtitle: {
-    fontSize: 16,
-    color: '#607D8B',
-    textAlign: 'center',
-  },
-  detailScrollView: {
-    flex: 1,
-  },
-  detailSection: {
-    marginBottom: 24,
-  },
+  modalSubtitle: {fontSize: 16, color: '#607D8B', textAlign: 'center'},
+  detailScrollView: {flex: 1},
+  detailSection: {marginBottom: 24},
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -674,11 +749,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  closeButtonText: {color: 'white', fontSize: 16, fontWeight: '600'},
 });
 
 export default RosterDetailsScreen;
