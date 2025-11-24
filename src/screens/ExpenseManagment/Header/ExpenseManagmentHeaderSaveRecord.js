@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
@@ -20,7 +19,9 @@ import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 
 import {ExpenseLocationLookup} from '../../../API/ExpenseManagment/Headers/ExpenseLocationLookup';
-import {ExpensePurposeLookup} from '../../../API/ExpenseManagment/Headers/ExpensePurposeLookup';
+import ExpensePurposeLookup from '../../../API/ExpenseManagment/Headers/ExpensePurposeLookup';
+import {CreateExpenseReport} from '../../../API/ExpenseManagment/Headers/CreateExpenseReport';
+import {UpdateExpenseReport} from '../../../API/ExpenseManagment/Headers/UpdateExpenseReport';
 
 import AlertModal from '../../../components/Alert/AlertModal';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
@@ -40,7 +41,6 @@ const ExpenseManagementHeaderSaveRecord = () => {
     state => state.company,
   );
 
-  // Get effective user data and legal entity
   const effectiveUserData = route.params?.userData || userData || {};
   const effectiveLegalEntity =
     selectedLegalEntity ||
@@ -48,7 +48,6 @@ const ExpenseManagementHeaderSaveRecord = () => {
     effectiveUserData?.defaultLegalEntity ||
     '';
 
-  // Navigation params with safe defaults
   const {
     mode = 'create',
     expenseData = {},
@@ -63,37 +62,84 @@ const ExpenseManagementHeaderSaveRecord = () => {
     originalCameFrom = null,
   } = route.params || {};
 
-  // State declarations
   const [locationOptions, setLocationOptions] = useState([]);
   const [purposeOptions, setPurposeOptions] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
 
-  // Create initial form data
   const createInitialFormData = () => ({
     recId:
-      !expenseData.recId || expenseData.recId === '0' ? '' : expenseData.recId,
+      !expenseData.recId || expenseData.recId === '0'
+        ? expenseData.RecId || ''
+        : expenseData.recId,
     employeeId: employeeId,
     employeeName: employeeName,
     WorkerRecId: WorkerRecId,
     legalEntity: effectiveLegalEntity,
     location: '',
     purpose: '',
-    expenseDate: '',
-    description: '',
+    ExpenseReportNumber: expenseData.ExpenseReportNumber || '',
   });
 
   const [formData, setFormData] = useState(() => createInitialFormData());
 
-  const goBack = () => navigation.navigate('ExpenseManagmentListPage');
+  // const goBack = () => {
+  //   clearAllStates();
+  //   navigation.navigate('ExpenseManagmentListPage');
+  // };
+  const goBack = useCallback(() => {
+    if (cameFrom === 'MainDashboard') {
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'TabNavigator',
+            params: {screen: 'MainDashboard'},
+          },
+        ],
+      });
+    } else if (cameFrom === 'ExpenseManagmentListPage') {
+      const targetCameFrom = originalCameFrom || 'DisplayListPage';
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'ExpenseManagmentListPage',
+            params: {
+              employeeId,
+              employeeName,
+              WorkerRecId,
+              cameFrom: targetCameFrom,
+            },
+          },
+        ],
+      });
+    } else {
+      navigation.goBack();
+    }
+  }, [
+    navigation,
+    cameFrom,
+    originalCameFrom,
+    employeeId,
+    employeeName,
+    WorkerRecId,
+  ]);
+
+  const clearAllStates = useCallback(() => {
+    setLocationOptions([]);
+    setPurposeOptions([]);
+    setDataFetched(false);
+    setFormData(createInitialFormData());
+  }, []);
 
   const clearFormData = useCallback(() => {
     setFormData(createInitialFormData());
   }, []);
 
-  // Back handler and scroll reset
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -114,33 +160,54 @@ const ExpenseManagementHeaderSaveRecord = () => {
     }, []),
   );
 
-  // Initialize form data based on mode
   useFocusEffect(
     useCallback(() => {
-      if (mode === 'create') {
-        setFormData(createInitialFormData());
-        fetchLocationOptions();
-        fetchPurposeOptions();
-      } else if (mode === 'edit' && expenseData?.recId) {
-        setFormData({
-          ...createInitialFormData(),
-          ...expenseData,
-          employeeId: expenseData.employeeId || employeeId,
-          employeeName: expenseData.employeeName || employeeName,
-          WorkerRecId: expenseData.WorkerRecId || WorkerRecId,
-        });
-        fetchLocationOptions();
-        fetchPurposeOptions();
-      }
-    }, [mode, expenseData?.recId, employeeId, employeeName, WorkerRecId]),
+      const initializeData = async () => {
+        if (!dataFetched) {
+          setIsLoading(true);
+          try {
+            await Promise.all([fetchLocationOptions(), fetchPurposeOptions()]);
+            setDataFetched(true);
+          } catch (error) {
+            console.error('Error initializing data:', error);
+            setAlertMessage('Failed to initialize data.');
+            setAlertModal(true);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+
+        if (mode === 'create') {
+          setFormData(createInitialFormData());
+        } else if (mode === 'edit' && expenseData?.recId) {
+          setFormData({
+            ...createInitialFormData(),
+            ...expenseData,
+            employeeId: expenseData.employeeId || employeeId,
+            employeeName: expenseData.employeeName || employeeName,
+            WorkerRecId: expenseData.WorkerRecId || WorkerRecId,
+          });
+        }
+      };
+
+      initializeData();
+    }, [
+      mode,
+      expenseData?.recId,
+      employeeId,
+      employeeName,
+      WorkerRecId,
+      dataFetched,
+    ]),
   );
 
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
       clearFormData();
-      await fetchLocationOptions();
-      await fetchPurposeOptions();
+      await fetchLocationOptions(true);
+      await fetchPurposeOptions(true);
+      setDataFetched(true);
     } catch (error) {
       console.error('Error in Save Record Screen', error);
     } finally {
@@ -148,19 +215,19 @@ const ExpenseManagementHeaderSaveRecord = () => {
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({...prev, [field]: value}));
-  };
-
-  const fetchLocationOptions = async () => {
+  const fetchLocationOptions = async (forceRefresh = false) => {
     try {
+      if (locationOptions.length > 0 && !forceRefresh) {
+        return;
+      }
+
       const locations = await ExpenseLocationLookup({
         legalEntity: effectiveLegalEntity,
       });
 
       const formatted = locations.map(loc => ({
-        label: loc.Location || loc.location || 'Unknown Location',
-        value: loc.Location || loc.location || '',
+        label: loc.location || 'Unknown Location',
+        value: loc.location || '',
       }));
 
       setLocationOptions(formatted);
@@ -171,15 +238,19 @@ const ExpenseManagementHeaderSaveRecord = () => {
     }
   };
 
-  const fetchPurposeOptions = async () => {
+  const fetchPurposeOptions = async (forceRefresh = false) => {
     try {
-      const purposes = await ExpensePurposeLookup({
+      if (purposeOptions.length > 0 && !forceRefresh) {
+        return;
+      }
+
+      const response = await ExpensePurposeLookup({
         legalEntity: effectiveLegalEntity,
       });
 
-      const formatted = purposes.map(purp => ({
-        label: purp.Purpose || purp.purpose || 'Unknown Purpose',
-        value: purp.Purpose || purp.purpose || '',
+      const formatted = response.data.map(purp => ({
+        label: purp.purpose || 'Unknown Purpose',
+        value: purp.purpose || '',
       }));
 
       setPurposeOptions(formatted);
@@ -187,6 +258,18 @@ const ExpenseManagementHeaderSaveRecord = () => {
       console.error('Error fetching purposes:', error);
       setAlertMessage('Failed to fetch purpose options.');
       setAlertModal(true);
+    }
+  };
+
+  const handleLocationDropdownFocus = () => {
+    if (locationOptions.length === 0) {
+      fetchLocationOptions();
+    }
+  };
+
+  const handlePurposeDropdownFocus = () => {
+    if (purposeOptions.length === 0) {
+      fetchPurposeOptions();
     }
   };
 
@@ -198,35 +281,114 @@ const ExpenseManagementHeaderSaveRecord = () => {
     setFormData(prev => ({...prev, purpose: item.value}));
   };
 
+  const handleAction = async (actionType, modalMode, data = {}) => {
+    try {
+      const expenseReportFields = [
+        {
+          FieldName: 'Purpose',
+          FieldValue: data.purpose,
+          FieldType: 'String',
+        },
+        {
+          FieldName: 'Location',
+          FieldValue: data.location,
+          FieldType: 'String',
+        },
+      ];
+
+      let response;
+
+      if (modalMode === 'create') {
+        console.log('Calling CreateExpenseReport with:', {
+          expenseReportFields,
+          employeeId: data.employeeId || employeeId,
+          legalEntity: data.legalEntity || effectiveLegalEntity,
+        });
+
+        response = await CreateExpenseReport({
+          expenseReportFields,
+          employeeId: data.employeeId || employeeId,
+          legalEntity: data.legalEntity || effectiveLegalEntity,
+        });
+      } else {
+        console.log('Calling UpdateExpenseReport with:', {
+          expenseReportFields,
+          employeeId: data.employeeId || employeeId,
+          legalEntity: data.legalEntity || effectiveLegalEntity,
+          expenseReportNumber: data.ExpenseReportNumber,
+        });
+
+        response = await UpdateExpenseReport({
+          expenseReportFields,
+          employeeId: data.employeeId || employeeId,
+          legalEntity: effectiveLegalEntity,
+          expenseReportNumber: data.ExpenseReportNumber,
+        });
+      }
+
+      console.log('Expense Report Response:', response);
+
+      const isSuccess =
+        response?.IsSuccess === true ||
+        response?.IsSuccess === 'true' ||
+        response?.AlertType === 'Success';
+
+      if (isSuccess) {
+        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        setAlertMessage(
+          response?.Message || `Expense Report ${actionText} Successfully`,
+        );
+        setAlertModal(true);
+
+        // FIXED: Handle both RecId (capital R) and recId (lowercase r)
+        const recId = response?.RecId || response?.recId || data.recId || '';
+
+        return {
+          success: true,
+          recId: recId,
+          RecId: recId, // Add both for consistency
+          expenseReportNum:
+            response?.ExpenseReportNumber || data.ExpenseReportNumber || '',
+        };
+      } else {
+        const errorMessage =
+          response?.Message ||
+          `Error ${modalMode === 'create' ? 'Creating' : 'Updating'} Record`;
+        setAlertMessage(errorMessage);
+        setAlertModal(true);
+        return {success: false, message: errorMessage};
+      }
+    } catch (error) {
+      console.error('Error in handleAction:', error);
+      setAlertMessage('An error occurred while processing the request.');
+      setAlertModal(true);
+      return {success: false, message: 'Network or server error'};
+    }
+  };
+
   const handleSave = async actionType => {
     if (processingButton) return;
-
-    const missingFields = [];
-    if (!formData.location) missingFields.push('Location');
-    if (!formData.purpose) missingFields.push('Purpose');
-    if (!formData.expenseDate) missingFields.push('Expense Date');
-
-    if (missingFields.length > 0) {
-      setAlertMessage(
-        'Please fill in the following required fields:\n' +
-          missingFields.join('\n'),
-      );
-      setAlertModal(true);
-      return;
-    }
 
     setProcessingButton(actionType);
 
     try {
-      // Simulated API call
-      setTimeout(() => {
-        setAlertMessage('Expense saved successfully');
-        setAlertModal(true);
+      const result = await handleAction(
+        actionType,
+        mode === 'edit' ? 'update' : 'create',
+        formData,
+      );
 
+      if (result.success) {
         setTimeout(() => {
           setAlertModal(false);
-          clearFormData();
-          navigation.navigate('ExpenseManagementListPage', {
+          clearAllStates();
+
+          // FIXED: Use the RecId from response (capital R)
+          const highlightRecId = result.recId || result.RecId;
+
+          console.log('Navigating back with highlightRecId:', highlightRecId);
+
+          navigation.navigate('ExpenseManagmentListPage', {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
             WorkerRecId: formData.WorkerRecId,
@@ -235,10 +397,11 @@ const ExpenseManagementHeaderSaveRecord = () => {
               employeeName: formData.employeeName,
               WorkerRecId: formData.WorkerRecId,
             },
-            cameFrom: originalCameFrom || 'DisplayListPage',
+            highlightRecId: highlightRecId, // This should now be correct
+            cameFrom: originalCameFrom || 'ExpenseManagmentListPage',
           });
         }, 2000);
-      }, 1000);
+      }
     } catch (error) {
       console.error('Error saving expense:', error);
       setAlertMessage('Failed to save expense. Please try again.');
@@ -251,7 +414,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        mode === 'edit' ? 'Edit Expense Report' : 'Create Expense Report'
+        mode === 'edit' ? 'Update Expense Report' : 'Create Expense Report'
       }
       isBackButton={true}
       showFooter={false}
@@ -273,7 +436,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              <Text style={styles.LReqSR_Label}>Location *</Text>
+              <Text style={styles.LReqSR_Label}>Location</Text>
               <Dropdown
                 style={styles.LReqSR_Input}
                 data={locationOptions}
@@ -281,7 +444,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
                 valueField="value"
                 placeholder="Select Location"
                 value={formData.location}
-                onFocus={fetchLocationOptions}
+                onFocus={handleLocationDropdownFocus}
                 onChange={handleLocationChange}
                 placeholderStyle={styles.LReqSR_DropdownPlaceholder}
                 selectedTextStyle={styles.LReqSR_DropdownSelectedText}
@@ -304,7 +467,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
                 keyboardAvoiding={true}
               />
 
-              <Text style={styles.LReqSR_Label}>Purpose *</Text>
+              <Text style={styles.LReqSR_Label}>Purpose</Text>
               <Dropdown
                 style={styles.LReqSR_Input}
                 data={purposeOptions}
@@ -312,7 +475,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
                 valueField="value"
                 placeholder="Select Purpose"
                 value={formData.purpose}
-                onFocus={fetchPurposeOptions}
+                onFocus={handlePurposeDropdownFocus}
                 onChange={handlePurposeChange}
                 placeholderStyle={styles.LReqSR_DropdownPlaceholder}
                 selectedTextStyle={styles.LReqSR_DropdownSelectedText}
