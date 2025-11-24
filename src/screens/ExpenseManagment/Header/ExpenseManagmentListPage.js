@@ -137,7 +137,14 @@ const ExpenseManagmentListPage = () => {
         legalEntity: selectedLegalEntity,
       });
 
-      setExpenseData(myExpenseHeaderData || []);
+      // Sort by createdDateTime descending (newest first)
+      const sortedData = (myExpenseHeaderData || []).sort((a, b) => {
+        const dateA = new Date(a.createdDateTime || a.CreatedDate || 0);
+        const dateB = new Date(b.createdDateTime || b.CreatedDate || 0);
+        return dateB - dateA; // Descending order
+      });
+
+      setExpenseData(sortedData);
 
       if (!myExpenseHeaderData || myExpenseHeaderData.length === 0) {
         console.log('No expense reports found for this user');
@@ -158,6 +165,7 @@ const ExpenseManagmentListPage = () => {
     }, [fetchExpenseData]),
   );
 
+  // Handle highlighting of records
   // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
@@ -330,9 +338,7 @@ const ExpenseManagmentListPage = () => {
         legalEntity: itemData.LegalEntity || selectedLegalEntity,
         location: itemData.Location,
         purpose: itemData.Purpose,
-        expenseDate: itemData.ExpenseDate,
-        description: itemData.Description,
-        ExpenseReportNumber: itemData.ExpenseReportNumber,
+        ExpenseReportNumber: itemData.ExpenseReportNumber, // Important for update
       },
     });
   };
@@ -356,12 +362,14 @@ const ExpenseManagmentListPage = () => {
           `Expense report ${itemData.ExpenseReportNumber} submitted successfully`,
         );
 
-        // Set highlighting for submitted record
-        if (itemData.recId) {
-          setHighlightedRecId(itemData.recId);
-        }
+        // FIXED: Use correct recId field name
+        setHighlightedRecId(itemData.recId || itemData.RecId);
 
-        setTimeout(() => setHighlightedRecId(null), 3000);
+        // Set a timer to remove highlighting after 3 seconds
+        setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
+
         setTimeout(() => fetchExpenseData(), 1000);
       } else {
         setAlertMessage(
@@ -370,6 +378,7 @@ const ExpenseManagmentListPage = () => {
         );
       }
     } catch (error) {
+      console.error('Submit error:', error);
       setAlertMessage(`Failed to submit expense report: ${error.message}`);
     } finally {
       setButtonProcessing(itemData.recId, 'submit', false);
@@ -420,8 +429,10 @@ const ExpenseManagmentListPage = () => {
 
   // Component Renderers
   const renderExpenseCard = ({item}) => {
-    const itemProcessingButtons = processingButtons[item.recId] || [];
-    const isHighlighted = highlightedRecId === item.recId;
+    // FIXED: Handle both recId and RecId field names
+    const itemRecId = item.recId || item.RecId;
+    const itemProcessingButtons = processingButtons[itemRecId] || [];
+    const isHighlighted = highlightedRecId === itemRecId;
 
     const processedItem = {
       ...item,
@@ -442,11 +453,13 @@ const ExpenseManagmentListPage = () => {
       createdDateTime: formatDate(item.createdDateTime),
       employeeId: item.employeeId || effectiveEmployeeId,
       employeeName: item.employeeName || effectiveEmployeeName,
+      // FIXED: Ensure recId is consistently available
+      recId: itemRecId,
     };
 
     return (
       <Pressable
-        onPress={() => handleCardPress(item)}
+        onPress={() => handleCardPress(processedItem)}
         style={({pressed}) => [
           styles.cardContainer,
           {opacity: pressed ? 0.8 : 1},
@@ -488,11 +501,14 @@ const ExpenseManagmentListPage = () => {
         <FlatList
           data={expenseData}
           renderItem={renderExpenseCard}
-          keyExtractor={(item, index) =>
-            item.recId?.toString() ||
-            item.ExpenseReportNumber?.toString() ||
-            index.toString()
-          }
+          keyExtractor={(item, index) => {
+            const itemRecId = item.recId || item.RecId;
+            return (
+              itemRecId?.toString() ||
+              item.ExpenseReportNumber?.toString() ||
+              index.toString()
+            );
+          }}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={

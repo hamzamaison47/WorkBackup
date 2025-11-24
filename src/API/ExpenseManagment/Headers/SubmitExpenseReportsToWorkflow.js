@@ -1,4 +1,4 @@
-/* eslint-disable curly */
+/* eslint-disable radix */
 /* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
@@ -29,23 +29,51 @@ const SubmitExpenseReportsToWorkflow = async ({
       ? expenseReportNumberList
       : [expenseReportNumberList];
 
+    // Build expense report numbers XML with proper indentation
     const expenseReportNumbersXml = reportNumbers
-      .map(n => `<a:string>${n}</a:string>`)
-      .join('');
+      .map(n => `        <a:string>${escapeXml(n)}</a:string>`)
+      .join('\n');
 
-    const soapBody = `
-      <SubmitExpenseReportsToWorkflow xmlns="http://tempuri.org">
-        <expenseReportNumberList xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
-          ${expenseReportNumbersXml}
-        </expenseReportNumberList>
-        <legalEntity>${legalEntity}</legalEntity>
-      </SubmitExpenseReportsToWorkflow>
-    `;
+    // Log input parameters for debugging
+    console.log('Submit Input Parameters:', {
+      expenseReportNumberList: reportNumbers,
+      legalEntity,
+    });
+
+    // Build SOAP Envelope with proper structure matching CreateExpenseReport pattern
+    // Parameter order from WSDL: expenseReportNumberList, legalEntity
+
+    const soapBody = `<SubmitExpenseReportsToWorkflow xmlns="http://tempuri.org">
+          <expenseReportNumberList xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+            ${expenseReportNumbersXml}
+          </expenseReportNumberList>
+          <legalEntity>${escapeXml(legalEntity)}</legalEntity>
+        </SubmitExpenseReportsToWorkflow>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
+    // const soapEnvelope = `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+    //   <s:Header>
+    //     <h:CallContext xmlns:h="http://schemas.microsoft.com/dynamics/2013/01/datacontracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+    //       <h:Company>${escapeXml(legalEntity)}</h:Company>
+    //       <h:Language i:nil="true"></h:Language>
+    //       <h:MessageId>${generateGuid()}</h:MessageId>
+    //       <h:PartitionKey i:nil="true"></h:PartitionKey>
+    //     </h:CallContext>
+    //   </s:Header>
+    //   <s:Body>
+    //     <SubmitExpenseReportsToWorkflow xmlns="http://tempuri.org">
+    //       <expenseReportNumberList xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+    // ${expenseReportNumbersXml}
+    //       </expenseReportNumberList>
+    //       <legalEntity>${escapeXml(legalEntity)}</legalEntity>
+    //     </SubmitExpenseReportsToWorkflow>
+    //   </s:Body>
+    // </s:Envelope>`;
 
-    const response = await axios.post(
-      `${config.resource}soap/services/ExpenseManagmentSvcGroup/ExpenseReportsServiceSvc`,
+    console.log('SOAP Submit Request:', soapEnvelope);
+
+    const {data: xml} = await axios.post(
+      `${config.resource}soap/services/ExpenseManagmentSvcGroup`,
       soapEnvelope,
       {
         headers: {
@@ -54,38 +82,70 @@ const SubmitExpenseReportsToWorkflow = async ({
           SOAPAction:
             'http://tempuri.org/ExpenseReportsServiceSvc/SubmitExpenseReportsToWorkflow',
         },
+        responseType: 'text',
+        timeout: 30000,
       },
     );
 
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      ignoreNameSpace: false,
-      parseTagValue: true,
-      trimValues: true,
-    });
+    console.log('SOAP Submit Response:', xml);
 
-    const parsed = parser.parse(response.data);
+    // Check for SOAP Fault first
+    if (xml.includes('s:Fault') || xml.includes('faultstring')) {
+      const parser = new XMLParser({
+        ignoreAttributes: false,
+        attributeNamePrefix: '',
+      });
+      const errorParsed = parser.parse(xml);
+      const fault = errorParsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
 
-    // Check for SOAP faults
-    const fault = parsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
-    if (fault) {
-      const faultString = fault?.faultstring || 'Unknown SOAP fault';
+      let errorMessage = 'SOAP Fault occurred';
 
-      const infolog = parsed?.['s:Envelope']?.['s:Header']?.['Infolog'];
-      const entries = infolog?.Entries?.InfologEntry;
+      if (fault?.faultstring) {
+        if (typeof fault.faultstring === 'string') {
+          errorMessage = fault.faultstring;
+        } else if (fault.faultstring['#text']) {
+          errorMessage = fault.faultstring['#text'];
+        }
+      } else if (fault?.detail?.Fault?.ExceptionMessage) {
+        errorMessage = fault.detail.Fault.ExceptionMessage;
+      } else if (fault?.detail?.['s:message']) {
+        errorMessage = fault.detail['s:message'];
+      }
 
-      let detailed = faultString;
-
-      if (entries) {
-        const msg = Array.isArray(entries)
+      // Check for Infolog entries with additional error details
+      const infolog = errorParsed?.['s:Envelope']?.['s:Header']?.['Infolog'];
+      if (infolog?.Entries?.InfologEntry) {
+        const entries = infolog.Entries.InfologEntry;
+        const messages = Array.isArray(entries)
           ? entries.map(e => e.Message).join('; ')
           : entries.Message;
 
-        detailed = `${faultString} - ${msg}`;
+        if (messages) {
+          errorMessage = `${errorMessage} - ${messages}`;
+        }
       }
 
-      throw new Error(`Submit operation failed: ${detailed}`);
+      console.error('SOAP Fault:', fault);
+
+      return {
+        success: false,
+        message: errorMessage,
+        submittedReports: reportNumbers,
+      };
     }
+
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '',
+      parseTagValue: true,
+      trimValues: true,
+      allowBooleanAttributes: true,
+      parseAttributeValue: true,
+    });
+
+    const parsed = parser.parse(xml);
+
+    console.log('Parsed Submit Response:', JSON.stringify(parsed, null, 2));
 
     // Extract submit response
     const submitResponse =
@@ -103,7 +163,7 @@ const SubmitExpenseReportsToWorkflow = async ({
       };
     }
 
-    // Extract GeneralContract
+    // Extract GeneralContract - handle both array and single object
     let contracts = result['a:GeneralContract'];
     if (!contracts) {
       return {
@@ -113,14 +173,21 @@ const SubmitExpenseReportsToWorkflow = async ({
       };
     }
 
-    if (!Array.isArray(contracts)) contracts = [contracts];
+    // Ensure array format
+    if (!Array.isArray(contracts)) {
+      contracts = [contracts];
+    }
 
+    // Process contracts and extract data
     const processed = contracts.map(c => ({
-      IsSuccess: c['a:IsSuccess'],
-      Message: c['a:Message'],
-      RecId: c['a:RecId'],
+      IsSuccess: c['a:IsSuccess'] === true || c['a:IsSuccess'] === 'true',
+      Message: c['a:Message'] || '',
+      RecId: parseInt(c['a:RecId']) || 0,
     }));
 
+    console.log('Processed Contracts:', JSON.stringify(processed, null, 2));
+
+    // Find summary (RecId = 0) and detail records
     const summary = processed.find(c => c.RecId === 0);
     const details = processed.filter(c => c.RecId !== 0);
 
@@ -134,7 +201,10 @@ const SubmitExpenseReportsToWorkflow = async ({
 
     // Handle "0 records submitted" scenario
     if (summary.Message?.includes('0 Record(s) submitted')) {
-      const detailMessages = details.map(d => d.Message).join('; ');
+      const detailMessages = details
+        .map(d => d.Message)
+        .filter(Boolean)
+        .join('; ');
       return {
         success: false,
         message:
@@ -158,13 +228,57 @@ const SubmitExpenseReportsToWorkflow = async ({
       individualResults: details,
     };
   } catch (error) {
-    console.error('SOAP Submit Error:', error?.message);
-    throw new Error(
-      error.response?.data
-        ? 'Server error occurred while submitting expense reports'
-        : `Failed to submit expense reports: ${error.message}`,
-    );
+    console.error('SOAP Submit Error:', error);
+    console.error('Error details:', {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+    });
+
+    let errorMessage = 'Failed to submit expense reports';
+
+    if (error?.response?.data) {
+      try {
+        const parser = new XMLParser({
+          ignoreAttributes: false,
+          attributeNamePrefix: '',
+        });
+        const errorParsed = parser.parse(error.response.data);
+        const fault = errorParsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
+
+        if (fault) {
+          if (fault?.faultstring) {
+            if (typeof fault.faultstring === 'string') {
+              errorMessage = fault.faultstring;
+            } else if (fault.faultstring['#text']) {
+              errorMessage = fault.faultstring['#text'];
+            }
+          } else if (fault?.detail?.Fault?.ExceptionMessage) {
+            errorMessage = fault.detail.Fault.ExceptionMessage;
+          }
+        }
+      } catch (parseErr) {
+        console.error('Error parsing SOAP fault:', parseErr);
+      }
+    }
+
+    return {
+      success: false,
+      message: errorMessage,
+      submittedReports: Array.isArray(expenseReportNumberList)
+        ? expenseReportNumberList
+        : [expenseReportNumberList],
+    };
   }
 };
+
+// XML escape to prevent breaking
+const escapeXml = value =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 
 export default SubmitExpenseReportsToWorkflow;

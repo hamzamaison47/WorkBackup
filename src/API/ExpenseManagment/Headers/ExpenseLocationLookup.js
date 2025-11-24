@@ -1,4 +1,3 @@
-/* eslint-disable curly */
 /* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
@@ -17,14 +16,14 @@ const ExpenseLocationLookup = async ({legalEntity}) => {
     const token = await getToken();
 
     const soapBody = `
-        <LocationLookup xmlns="http://tempuri.org">
-            <legalEntity>${legalEntity}</legalEntity>
-        </LocationLookup>`;
+      <LocationLookup xmlns="http://tempuri.org">
+          <legalEntity>${legalEntity}</legalEntity>
+      </LocationLookup>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const {data: xml} = await axios.post(
-      `${config.resource}ExpenseReportsServiceSvc/LocationLookup`,
+      `${config.resource}soap/services/ExpenseManagmentSvcGroup`,
       soapEnvelope,
       {
         headers: {
@@ -38,49 +37,54 @@ const ExpenseLocationLookup = async ({legalEntity}) => {
       },
     );
 
+    // Parse XML with better configuration
     const parser = new XMLParser({
       ignoreAttributes: false,
-      ignoreNameSpace: false,
+      ignoreNameSpace: true,
+      removeNSPrefix: true,
       attributeNamePrefix: '',
-      isArray: () => false,
-      parseTagValue: false,
+      isArray: (name, jpath, isLeafNode, isAttribute) => {
+        return name === 'ExpenseReportLookupSvcContract';
+      },
+      parseTagValue: true,
+      trimValues: true,
     });
 
     const parsed = parser.parse(xml);
-    const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['LocationLookupResponse']?.[
-        'result'
-      ]?.['a:ExpenseReportLookupSvcContract'];
+
+    // Navigate to the result array (without namespace prefixes)
+    const responseBody = parsed?.Envelope?.Body?.[0];
+    const lookupResponse = responseBody?.LocationLookupResponse?.[0];
+    const result = lookupResponse?.result?.[0];
+
+    let rawData = result?.ExpenseReportLookupSvcContract;
 
     if (!rawData) {
+      rawData =
+        parsed?.Envelope?.Body?.LocationLookupResponse?.result
+          ?.ExpenseReportLookupSvcContract;
+    }
+
+    if (!rawData) {
+      rawData =
+        parsed?.['s:Envelope']?.['s:Body']?.['LocationLookupResponse']?.[
+          'result'
+        ]?.['a:ExpenseReportLookupSvcContract'];
+    }
+
+    if (!rawData || (Array.isArray(rawData) && rawData.length === 0)) {
       console.log('No location data found');
       return [];
     }
 
-    // Simple key-value pair extraction if needed
-    const extractFields = obj => {
-      const fields = obj?.['a:fields']?.['b:KeyValueOfanyTypeanyType'];
-      if (!fields) return obj;
+    // Ensure rawData is an array
+    const dataArray = Array.isArray(rawData) ? rawData : [rawData];
 
-      const cleanObj = {};
-      const fieldArray = Array.isArray(fields) ? fields : [fields];
-
-      fieldArray.forEach(field => {
-        const key = field?.['b:Key']?.['#text'] || field?.['b:Key'];
-        const value = field?.['b:Value']?.['#text'] || field?.['b:Value'];
-        if (key) {
-          cleanObj[key.replace(/^[a-z]:/, '')] = value;
-        }
-      });
-
-      return cleanObj;
-    };
-
-    const processData = Array.isArray(rawData)
-      ? rawData.map(extractFields)
-      : [extractFields(rawData)];
-
-    console.log({processData});
+    // Map data into a simple JSON array
+    const processData = dataArray.map(item => ({
+      location: item['__k_parmLocation'] || item['locations'] || '',
+      purpose: item['__k_parmPurpose'] || item['purpose'] || '',
+    }));
 
     return processData;
   } catch (err) {
