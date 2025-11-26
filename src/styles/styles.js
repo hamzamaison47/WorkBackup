@@ -2417,6 +2417,24 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: '#333',
   },
+  formHeader: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0A66C2',
+    borderRadius: 8,
+  },
+  formHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0A66C2',
+    marginBottom: 4,
+  },
+  formHeaderSubtext: {
+    fontSize: 14,
+    color: '#666',
+  },
   // LReqSR_Footer: {
   //   flexDirection: 'row',
   //   justifyContent: 'space-between',
@@ -3085,6 +3103,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A66C2',
     borderRadius: 50,
     alignSelf: 'center',
+  },
+
+  // Add these to your existing styles
+  DRC_NavigationArrow: {
+    position: 'absolute',
+    right: 5,
+    top: '60%',
+    width: 24,
+    height: 24,
+    // Optional: Add background for better visibility
+    // backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    // borderRadius: 12,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    // borderWidth: 1,
+    // borderColor: '#0A66C2',
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: {width: 0, height: 2},
+    // shadowOpacity: 0.2,
+    // shadowRadius: 3,
+  },
+  DRC_ClickableContainer: {
+    position: 'relative',
+  },
+  // DRC_NavigationArrow: {
+  //   position: 'absolute',
+  //   right: 0,
+  //   top: '60%',
+  //   width: 24,
+  //   height: 24,
+  // },
+  DRC_HeaderContentWithArrow: {
+    flex: 1,
+    marginRight: 10,
+  },
+  DRC_ButtonsContainerWithArrow: {
+    marginRight: 30,
+  },
+  DRC_ValueWithArrow: {
+    marginRight: 30,
+  },
+  DRC_BottomButtonsContainerWithArrow: {
+    right: 30,
   },
   // end of dyanmic request card and also leaves component
 
