@@ -17,7 +17,7 @@ import {useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import AttendanceFormButtons from '../../components/Buttons/AttendanceFormButtons';
+import AttendanceFormButtons from '../../components/Buttons/SaveRecordButtons';
 import AlertModal from '../../components/Alert/AlertModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import TimeFlicker from '../../components/Attendance/TimeFlicker';

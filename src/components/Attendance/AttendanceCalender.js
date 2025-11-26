@@ -341,8 +341,32 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
     return 'none';
   }, []);
 
+  // Check if date should be clickable
+  const isDateClickable = useCallback(
+    dateKey => {
+      const details = attendanceData[dateKey];
+      if (!details) return true; // No data - allow click to show "No attendance data"
+
+      const color = details.color || determineColor(details);
+
+      // Don't open modal for records with no color or #6ce66c color
+      if (!color || color.toLowerCase() === '#6ce66c') {
+        return false;
+      }
+
+      return true;
+    },
+    [attendanceData],
+  );
+
   const handleDateSelect = day => {
     const key = day?.dateString;
+
+    // Check if date should be clickable
+    if (!isDateClickable(key)) {
+      return; // Don't open modal for records with no color or #6ce66c color
+    }
+
     setSelectedDate(key);
     setSelectedDayDetails(attendanceData[key]);
     setAttendanceModalVisible(true);
