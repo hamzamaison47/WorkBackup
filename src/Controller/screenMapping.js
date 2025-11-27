@@ -16,6 +16,8 @@ import PurchaseRequisitionListPage from '../screens/PurchaseRequisition/Purchase
 import PurchaseRequisitionSaveRecord from '../screens/PurchaseRequisition/PurchaseRequisitionSaveRecord';
 import ExpenseManagmentListPage from '../screens/ExpenseManagment/Header/ExpenseManagmentListPage';
 import ExpenseManagmentLinesListPage from '../screens/ExpenseManagment/Lines/ExpenseManagmentLinesListPage';
+import ExpenseManagementHeaderSaveRecord from '../screens/ExpenseManagment/Header/ExpenseManagmentHeaderSaveRecord';
+import ExpenseManagmentLinesSaveRecord from '../screens/ExpenseManagment/Lines/ExpenseManagmentLinesSaveRecord';
 import PurchaseRequisitionLinesListPage from '../screens/PurchaseRequisitionLines/PurchaseRequisitionLinesListPage';
 import PurchaseRequisitionLinesSaveRecord from '../screens/PurchaseRequisitionLines/PurchaseRequisitionLinesSaveRecord';
 
@@ -37,7 +39,9 @@ export const screenMapping = {
   PurchaseRequisitionListPage: PurchaseRequisitionListPage,
   PurchaseRequisitionSaveRecord: PurchaseRequisitionSaveRecord,
   ExpenseManagmentListPage: ExpenseManagmentListPage,
+  ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
   ExpenseManagmentLinesListPage: ExpenseManagmentLinesListPage,
+  ExpenseManagmentLinesSaveRecord: ExpenseManagmentLinesSaveRecord,
   PurchaseRequisitionLinesListPage: PurchaseRequisitionLinesListPage,
   PurchaseRequisitionLinesSaveRecord: PurchaseRequisitionLinesSaveRecord,
 };

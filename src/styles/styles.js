@@ -5,10 +5,13 @@ import {
   verticalScale,
   moderateScale,
   fontScale,
+  isSmallScreen,
+  isTablet,
+  conditionalScale,
+  conditionalValue,
 } from '../store/utils/scaling';
 const {height, width} = Dimensions.get('window');
 
-const cardWidth = (width - 56) / 2;
 const PROFILE_IMAGE_SIZE = width * 0.35; // responsive image size
 const BORDER_WIDTH = 5;
 
@@ -1592,6 +1595,112 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
+  // ============================================
+  // SAVE RECORD BUTTONS - RESPONSIVE STYLES
+  // ============================================
+  SRBtn_Footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: conditionalScale(8, 12, 16),
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    backgroundColor: '#fff',
+    position: 'relative',
+    minHeight: verticalScale(70),
+    gap: conditionalScale(6, 8, 12),
+  },
+
+  SRBtn_SingleButtonFooter: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  SRBtn_Button: {
+    borderWidth: conditionalValue(1, 2, 2),
+    borderColor: '#0A66C2',
+    borderRadius: moderateScale(20),
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    minWidth: conditionalScale(80, 100, 120),
+    minHeight: verticalScale(44),
+  },
+
+  SRBtn_SingleButton: {
+    flex: 0.5,
+    alignSelf: 'center',
+    maxWidth: conditionalScale(200, 250, 300),
+  },
+
+  SRBtn_SubmitButton: {
+    borderColor: '#0A66C2',
+    backgroundColor: '#0A66C2',
+  },
+
+  SRBtn_CancelButton: {
+    borderColor: '#cccccc',
+    backgroundColor: 'transparent',
+  },
+
+  SRBtn_DisabledButton: {
+    opacity: 0.6,
+  },
+
+  SRBtn_ButtonText: {
+    fontWeight: conditionalValue('600', 'bold', 'bold'),
+    fontSize: fontScale(conditionalValue(12, 14, 16)),
+    color: '#0A66C2',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+
+  SRBtn_SubmitButtonText: {
+    fontWeight: conditionalValue('600', 'bold', 'bold'),
+    fontSize: fontScale(conditionalValue(12, 13, 15)),
+    color: '#fff',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+
+  SRBtn_CancelButtonText: {
+    fontWeight: conditionalValue('600', 'bold', 'bold'),
+    fontSize: fontScale(conditionalValue(12, 14, 16)),
+    color: '#666666',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+
+  SRBtn_SingleButtonText: {
+    fontSize: fontScale(conditionalValue(14, 16, 18)),
+    fontWeight: 'bold',
+  },
+
+  SRBtn_PressedButton: {
+    backgroundColor: '#0A66C2',
+    transform: [{scale: 0.98}],
+  },
+
+  SRBtn_pressedSubmitButton: {
+    backgroundColor: '#3d95edff',
+    borderColor: '#3d95edff',
+    transform: [{scale: 0.98}],
+  },
+
+  SRBtn_pressedCancelButton: {
+    backgroundColor: '#e6e6e6',
+    transform: [{scale: 0.98}],
+  },
+
+  SRBtn_pressedText: {
+    color: '#fff',
+  },
+
+  SRBtn_pressedCancelText: {
+    color: '#959595ff',
+  },
+
   // // ============================================
   // // CALENDAR MODAL - RESPONSIVE STYLES
   // // ============================================
@@ -2308,73 +2417,91 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: '#333',
   },
-  LReqSR_Footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: moderateScale(10),
-    borderColor: '#eee',
-    backgroundColor: '#fff',
-    position: 'relative',
+  formHeader: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0A66C2',
+    borderRadius: 8,
   },
-  LReqSR_Button: {
-    flex: 1,
-    borderWidth: 2,
-    borderColor: '#0A66C2',
-    borderRadius: moderateScale(20),
-    paddingVertical: moderateScale(12),
-    marginHorizontal: moderateScale(4),
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  LReqSR_SubmitButton: {
-    borderColor: '#0A66C2',
-    backgroundColor: '#0A66C2',
-  },
-  LReqSR_DisabledButton: {
-    opacity: 0.6,
-  },
-  LReqSR_ButtonText: {
-    fontWeight: 'bold',
-    fontSize: fontScale(14),
+  formHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
     color: '#0A66C2',
+    marginBottom: 4,
   },
-  LReqSR_SubmitButtonText: {
-    fontWeight: 'bold',
-    fontSize: fontScale(13),
-    color: '#fff',
+  formHeaderSubtext: {
+    fontSize: 14,
+    color: '#666',
   },
-  LReqSR_PressedButton: {
-    backgroundColor: '#0A66C2',
-  },
-  LReqSR_pressedSubmitButton: {
-    backgroundColor: '#3d95edff',
-    borderColor: '#3d95edff',
-  },
-  LReqSR_pressedText: {
-    color: '#fff',
-  },
-  LReqSR_CancelButton: {
-    borderWidth: 2,
-    borderColor: '#cccccc',
-    backgroundColor: 'transparent',
-    borderRadius: moderateScale(20),
-    paddingVertical: moderateScale(12),
-    marginHorizontal: moderateScale(4),
-    alignItems: 'center',
-    flex: 1,
-  },
-  LReqSR_CancelButtonText: {
-    fontWeight: 'bold',
-    fontSize: fontScale(14),
-    color: '#666666',
-  },
-  LReqSR_pressedCancelButton: {
-    backgroundColor: '#e6e6e6',
-  },
-  LReqSR_pressedCancelText: {
-    color: '#959595ff',
-  },
-  // // End oF Leave Req Save Record
+  // LReqSR_Footer: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   paddingVertical: moderateScale(10),
+  //   borderColor: '#eee',
+  //   backgroundColor: '#fff',
+  //   position: 'relative',
+  // },
+  // LReqSR_Button: {
+  //   flex: 1,
+  //   borderWidth: 2,
+  //   borderColor: '#0A66C2',
+  //   borderRadius: moderateScale(20),
+  //   paddingVertical: moderateScale(12),
+  //   marginHorizontal: moderateScale(4),
+  //   alignItems: 'center',
+  //   backgroundColor: 'transparent',
+  // },
+  // LReqSR_SubmitButton: {
+  //   borderColor: '#0A66C2',
+  //   backgroundColor: '#0A66C2',
+  // },
+  // LReqSR_DisabledButton: {
+  //   opacity: 0.6,
+  // },
+  // LReqSR_ButtonText: {
+  //   fontWeight: 'bold',
+  //   fontSize: fontScale(14),
+  //   color: '#0A66C2',
+  // },
+  // LReqSR_SubmitButtonText: {
+  //   fontWeight: 'bold',
+  //   fontSize: fontScale(13),
+  //   color: '#fff',
+  // },
+  // LReqSR_PressedButton: {
+  //   backgroundColor: '#0A66C2',
+  // },
+  // LReqSR_pressedSubmitButton: {
+  //   backgroundColor: '#3d95edff',
+  //   borderColor: '#3d95edff',
+  // },
+  // LReqSR_pressedText: {
+  //   color: '#fff',
+  // },
+  // LReqSR_CancelButton: {
+  //   borderWidth: 2,
+  //   borderColor: '#cccccc',
+  //   backgroundColor: 'transparent',
+  //   borderRadius: moderateScale(20),
+  //   paddingVertical: moderateScale(12),
+  //   marginHorizontal: moderateScale(4),
+  //   alignItems: 'center',
+  //   flex: 1,
+  // },
+  // LReqSR_CancelButtonText: {
+  //   fontWeight: 'bold',
+  //   fontSize: fontScale(14),
+  //   color: '#666666',
+  // },
+  // LReqSR_pressedCancelButton: {
+  //   backgroundColor: '#e6e6e6',
+  // },
+  // LReqSR_pressedCancelText: {
+  //   color: '#959595ff',
+  // },
+  // // End oF Leave Req Save Record here???
 
   // Start oF Leave Req List Page
   LReqLP_ListContainer: {
@@ -2976,6 +3103,50 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A66C2',
     borderRadius: 50,
     alignSelf: 'center',
+  },
+
+  // Add these to your existing styles
+  DRC_NavigationArrow: {
+    position: 'absolute',
+    right: 5,
+    top: '60%',
+    width: 24,
+    height: 24,
+    // Optional: Add background for better visibility
+    // backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    // borderRadius: 12,
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    // borderWidth: 1,
+    // borderColor: '#0A66C2',
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: {width: 0, height: 2},
+    // shadowOpacity: 0.2,
+    // shadowRadius: 3,
+  },
+  DRC_ClickableContainer: {
+    position: 'relative',
+  },
+  // DRC_NavigationArrow: {
+  //   position: 'absolute',
+  //   right: 0,
+  //   top: '60%',
+  //   width: 24,
+  //   height: 24,
+  // },
+  DRC_HeaderContentWithArrow: {
+    flex: 1,
+    marginRight: 10,
+  },
+  DRC_ButtonsContainerWithArrow: {
+    marginRight: 30,
+  },
+  DRC_ValueWithArrow: {
+    marginRight: 30,
+  },
+  DRC_BottomButtonsContainerWithArrow: {
+    right: 30,
   },
   // end of dyanmic request card and also leaves component
 

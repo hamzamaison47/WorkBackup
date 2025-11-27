@@ -307,54 +307,6 @@
 
 // export default ConfirmationAlert;
 
-// /*
-// 1. Basic Confirmation:
-// <ConfirmationAlert
-//   visible={showConfirm}
-//   heading="Enable Biometric Login"
-//   text="Are you sure you want to enable Face ID for your account?"
-//   primaryButtonText="Enable"
-//   onPrimaryPress={handleEnable}
-//   onSecondaryPress={handleCancel}
-//   type="info"
-// />
-
-// 2. Warning/Delete Confirmation:
-// <ConfirmationAlert
-//   visible={showDeleteConfirm}
-//   heading="Delete Account"
-//   text="This action cannot be undone. All your data will be permanently removed."
-//   primaryButtonText="Delete"
-//   onPrimaryPress={handleDelete}
-//   onSecondaryPress={handleCancel}
-//   type="error"
-// />
-
-// 3. Success Confirmation:
-// <ConfirmationAlert
-//   visible={showSuccess}
-//   heading="Success!"
-//   text="Your changes have been saved successfully."
-//   primaryButtonText="OK"
-//   secondaryButtonText={null} // Hide secondary button
-//   onPrimaryPress={handleOK}
-//   type="success"
-// />
-
-// 4. Custom Icon and Colors:
-// <ConfirmationAlert
-//   visible={showCustom}
-//   heading="Custom Alert"
-//   text="This is a custom alert with specific icon and colors."
-//   primaryButtonText="Proceed"
-//   iconName="shield-check"
-//   iconColor="#8B5CF6"
-//   primaryButtonColor="#8B5CF6"
-//   onPrimaryPress={handleProceed}
-//   onSecondaryPress={handleCancel}
-// />
-// */
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -587,3 +539,51 @@ const ConfirmationAlert = ({
 };
 
 export default ConfirmationAlert;
+
+/*
+1. Basic Confirmation:
+<ConfirmationAlert
+  visible={showConfirm}
+  heading="Enable Biometric Login"
+  text="Are you sure you want to enable Face ID for your account?"
+  primaryButtonText="Enable"
+  onPrimaryPress={handleEnable}
+  onSecondaryPress={handleCancel}
+  type="info"
+/>
+
+2. Warning/Delete Confirmation:
+<ConfirmationAlert
+  visible={showDeleteConfirm}
+  heading="Delete Account"
+  text="This action cannot be undone. All your data will be permanently removed."
+  primaryButtonText="Delete"
+  onPrimaryPress={handleDelete}
+  onSecondaryPress={handleCancel}
+  type="error"
+/>
+
+3. Success Confirmation:
+<ConfirmationAlert
+  visible={showSuccess}
+  heading="Success!"
+  text="Your changes have been saved successfully."
+  primaryButtonText="OK"
+  secondaryButtonText={null} // Hide secondary button
+  onPrimaryPress={handleOK}
+  type="success"
+/>
+
+4. Custom Icon and Colors:
+<ConfirmationAlert
+  visible={showCustom}
+  heading="Custom Alert"
+  text="This is a custom alert with specific icon and colors."
+  primaryButtonText="Proceed"
+  iconName="shield-check"
+  iconColor="#8B5CF6"
+  primaryButtonColor="#8B5CF6"
+  onPrimaryPress={handleProceed}
+  onSecondaryPress={handleCancel}
+/>
+*/

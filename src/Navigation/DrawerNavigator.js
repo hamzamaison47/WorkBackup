@@ -286,8 +286,6 @@ const DrawerNavigator = () => {
       !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
   );
 
-  console.log({uniqueMenuItems});
-
   return (
     <Drawer.Navigator
       initialRouteName="TabNavigator"

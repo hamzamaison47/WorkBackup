@@ -64,7 +64,8 @@ export const useMenuBuilder = (userData, selectedLegalEntity, navigation) => {
     const filtered = menuItems.filter(item => {
       const hasScreen = screenMapping[item.MenuId];
       const validType = [1, 2, 3].includes(Number(item.Type));
-      return hasScreen && validType;
+      const isVisible = item.Visible === '1';
+      return hasScreen && validType && isVisible;
     });
 
     if (filtered.length === 0) return [];
