@@ -91,8 +91,8 @@ const buildContractXml = contract => {
     'Originator',
     'PurchReqId',
     'PurchReqName',
-    'RequiredDate',
     'RecId',
+    'RequiredDate',
     'TransDate',
     'Worker',
   ];

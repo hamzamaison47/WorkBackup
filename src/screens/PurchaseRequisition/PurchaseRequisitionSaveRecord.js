@@ -22,6 +22,7 @@ import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {createPurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseRequisitionSaveRecord';
+import {updatePurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseRequisitionUpdateRecord';
 import {retrievePurchId} from '../../API/PurchaseRequisition/PurchaseRequisitionRetrievePurchId';
 
 import AlertModal from '../../components/Alert/AlertModal';
@@ -41,12 +42,10 @@ const PurchaseRequisitionSaveRecord = () => {
 
   const {
     mode = 'create',
-    PurchaseRequisitiondata = {},
+    purchaseRequisitiondata = {},
     employeeId = effectiveUserData?.employeeId || '',
     employeeName = effectiveUserData?.employeeName || '',
     WorkerRecId = effectiveUserData?.WorkerRecId || '',
-    cameFrom = 'MainDashboard',
-    originalCameFrom = null,
   } = route.params || {};
 
   const [alertModal, setAlertModal] = useState(false);
@@ -56,13 +55,29 @@ const PurchaseRequisitionSaveRecord = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarField, setCalendarField] = useState('');
 
-  // Only 4 Required Fields
+  const formatDate = date => {
+    if (!date) return '';
+    const d = new Date(date);
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(
+      d.getDate(),
+    ).padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
+  const convertDateFormat = date => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      '0',
+    )}-${String(d.getDate()).padStart(2, '0')}T12:00:00`;
+  };
+
+  const todayISO = new Date().toISOString(); // Full ISO string
   const createInitialFormData = () => ({
-    recId: '',
+    RecId: '',
     PurchReqId: '',
     PurchReqName: '',
-    RequiredDate: '',
-    TransDate: '',
+    RequiredDate: convertDateFormat(todayISO), // default to today
+    TransDate: convertDateFormat(todayISO), // default to today
     employeeId,
     employeeName,
     WorkerRecId,
@@ -81,20 +96,14 @@ const PurchaseRequisitionSaveRecord = () => {
   const handleRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Clear existing form data
       setFormData(createInitialFormData());
-
-      // Fetch new PurchReqId
       const data = await retrievePurchId();
       if (Array.isArray(data) && data.length > 0) {
         const firstRecord = data[0];
         setFormData(prev => ({
-          ...createInitialFormData(), // Start with fresh form
-          PurchReqId: firstRecord.PurchReqId || '', // auto-populate only PurchReqId
+          ...createInitialFormData(),
+          PurchReqId: firstRecord.PurchReqId || '',
         }));
-      } else {
-        console.warn('No PurchReqId returned from service');
-        setFormData(createInitialFormData());
       }
     } catch (error) {
       console.error('Error refreshing form:', error);
@@ -104,10 +113,9 @@ const PurchaseRequisitionSaveRecord = () => {
     }
   }, [employeeId, employeeName, WorkerRecId]);
 
-  // Refresh form every time screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      handleRefresh();
+      if (mode === 'create') handleRefresh();
 
       const onBackPress = () => {
         goBack();
@@ -115,27 +123,22 @@ const PurchaseRequisitionSaveRecord = () => {
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-      return () => {
+      return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
-    }, [handleRefresh, goBack]),
+    }, [mode, handleRefresh, goBack]),
   );
 
   useEffect(() => {
     const fetchPurchReqId = async () => {
       try {
         setIsLoading(true);
-
-        const data = await retrievePurchId(); // returns array
+        const data = await retrievePurchId();
         if (Array.isArray(data) && data.length > 0) {
           const firstRecord = data[0];
           setFormData(prev => ({
             ...prev,
-            PurchReqId: firstRecord.PurchReqId || '', // auto-populate
+            PurchReqId: firstRecord.PurchReqId || '',
           }));
-        } else {
-          console.warn('No PurchReqId returned from service');
         }
       } catch (error) {
         console.error('Error retrieving PurchReqId:', error);
@@ -144,29 +147,13 @@ const PurchaseRequisitionSaveRecord = () => {
       }
     };
 
-    fetchPurchReqId();
-  }, []);
+    if (mode === 'create') fetchPurchReqId();
+    if (mode === 'edit' && purchaseRequisitiondata)
+      setFormData(purchaseRequisitiondata);
+  }, [mode, purchaseRequisitiondata]);
 
   const clearFormData = () => setFormData(createInitialFormData());
 
-  /* ---------- helpers ---------- */
-  const formatDate = date => {
-    if (!date) return '';
-    const d = new Date(date);
-    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(
-      d.getDate(),
-    ).padStart(2, '0')}/${d.getFullYear()}`;
-  };
-
-  const convertDateFormat = date => {
-    const d = new Date(date);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-      2,
-      '0',
-    )}-${String(d.getDate()).padStart(2, '0')}T12:00:00`;
-  };
-
-  /* ---------- input ---------- */
   const handleInputChange = (field, value) =>
     setFormData(prev => ({...prev, [field]: value}));
 
@@ -192,7 +179,6 @@ const PurchaseRequisitionSaveRecord = () => {
 
   const handleCreate = async () => {
     if (!validate()) return;
-
     setProcessingButton('create');
 
     try {
@@ -202,35 +188,46 @@ const PurchaseRequisitionSaveRecord = () => {
         RequiredDate: formData.RequiredDate,
         TransDate: formData.TransDate,
         Originator: employeeId,
-        recId: '0',
+        RecId: formData.RecId || '0',
         Worker: WorkerRecId,
       };
-      console.log('Here we gooooodeodo', payload);
 
-      const response = await createPurchaseRequisition({
-        PurchaseRequisitiondata: payload,
-      });
+      console.log('Lets check recid for create', payload);
+
+      let response;
+      if (mode === 'create') {
+        response = await createPurchaseRequisition({
+          PurchaseRequisitiondata: payload,
+        });
+      } else {
+        response = await updatePurchaseRequisition({
+          PurchaseRequisitiondata: payload,
+        });
+      }
 
       if (response.IsSuccess) {
-        setAlertMessage('Purchase Requisition Created Successfully');
+        setAlertMessage(
+          mode === 'create'
+            ? 'Purchase Requisition Created Successfully'
+            : 'Purchase Requisition Updated Successfully',
+        );
         setAlertModal(true);
 
         setTimeout(() => {
           setAlertModal(false);
-
           navigation.navigate('PurchaseRequisitionListPage', {
             employeeId,
             employeeName,
             WorkerRecId,
-            highlightRecId: response.RecId,
+            highlightRecId: mode === 'create' ? response.RecId : formData.RecId, // ✅ fixed RecId reference
           });
         }, 1500);
       } else {
-        setAlertMessage(response.Message || 'Creation failed');
+        setAlertMessage(response.Message || 'Operation failed');
         setAlertModal(true);
       }
     } catch (err) {
-      setAlertMessage('Error creating requisition');
+      setAlertMessage('Error processing requisition');
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -240,10 +237,10 @@ const PurchaseRequisitionSaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle="Create Purchase Requisition"
-      isBackButton={true}
+      isBackButton
       showFooter={false}
       showFloatingButton={false}
-      isHeaderActive={true}
+      isHeaderActive
       onBackPress={goBack}
       onRefresh={clearFormData}>
       {isLoading ? (
@@ -263,7 +260,7 @@ const PurchaseRequisitionSaveRecord = () => {
               <TextInput
                 style={[
                   styles.LReqSR_Input,
-                  {backgroundColor: '#f5f5f5', color: '#888'}, // Direct grayed out styles
+                  {backgroundColor: '#f5f5f5', color: '#888'},
                 ]}
                 value={formData.PurchReqId}
                 onChangeText={text => handleInputChange('PurchReqId', text)}
@@ -319,13 +316,14 @@ const PurchaseRequisitionSaveRecord = () => {
                 <Icon name="calendar" size={20} color="#0A66C2" />
               </TouchableOpacity>
             </ScrollView>
+
             <View
               style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 margin: 20,
               }}>
-              {/* OK BUTTON (LEFT SIDE) */}
+              {/* OK BUTTON */}
               <TouchableOpacity
                 onPress={handleCreate}
                 disabled={processingButton === 'create'}
@@ -341,7 +339,7 @@ const PurchaseRequisitionSaveRecord = () => {
                 </Text>
               </TouchableOpacity>
 
-              {/* CANCEL BUTTON (RIGHT SIDE) */}
+              {/* CANCEL BUTTON */}
               <TouchableOpacity
                 onPress={goBack}
                 style={{
@@ -357,6 +355,7 @@ const PurchaseRequisitionSaveRecord = () => {
                 </Text>
               </TouchableOpacity>
             </View>
+
             <AlertModal
               visible={alertModal}
               heading="Alert"
@@ -364,6 +363,7 @@ const PurchaseRequisitionSaveRecord = () => {
               onPress={() => setAlertModal(false)}
             />
           </KeyboardAvoidingView>
+
           <CalendarModal
             visible={showCalendar}
             current={formData[calendarField]}
