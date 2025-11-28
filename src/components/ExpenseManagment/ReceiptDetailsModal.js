@@ -81,7 +81,6 @@ const ReceiptDetailsModal = ({
               isExisting: true,
             }))
           : [];
-        // console.log({formattedReceipts});
         setReceipts(formattedReceipts);
       }
     } catch (error) {
@@ -103,10 +102,55 @@ const ReceiptDetailsModal = ({
     }
   };
 
+  // const getFileExtension = filename => {
+  //   return filename.split('.').pop().toLowerCase();
+  // };
   const getFileExtension = filename => {
-    return filename.split('.').pop().toLowerCase();
+    const parts = filename.split('.');
+
+    if (parts.length <= 1) return '';
+
+    const extension = parts.pop().toLowerCase();
+
+    if (!extension && parts.length > 0) {
+      return parts.pop().toLowerCase();
+    }
+
+    return extension;
   };
 
+  // const takePhoto = async () => {
+  //   try {
+  //     const options = {
+  //       mediaType: 'photo',
+  //       quality: 0.8,
+  //       maxWidth: 1024,
+  //       maxHeight: 1024,
+  //     };
+
+  //     const result = await launchCamera(options);
+
+  //     if (result.assets && result.assets.length > 0) {
+  //       const asset = result.assets[0];
+  //       const base64 = await convertToBase64(asset.uri);
+
+  //       const newReceipt = {
+  //         id: `temp_${Date.now()}`,
+  //         uri: asset.uri,
+  //         name: `receipt_${Date.now()}.jpg`,
+  //         base64: base64,
+  //         type: 'image/jpeg',
+  //         extension: 'jpg',
+  //         isNew: true,
+  //       };
+  //       setReceipts(prev => [...prev, newReceipt]);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error taking photo:', error);
+  //     setAlertMessage('Failed to take photo');
+  //     setAlertModal(true);
+  //   }
+  // };
   const takePhoto = async () => {
     try {
       const options = {
@@ -122,13 +166,17 @@ const ReceiptDetailsModal = ({
         const asset = result.assets[0];
         const base64 = await convertToBase64(asset.uri);
 
+        // FIX: Ensure clean filename with single extension
+        const timestamp = Date.now();
+        const fileName = `receipt_${timestamp}.jpg`;
+
         const newReceipt = {
-          id: `temp_${Date.now()}`,
+          id: `temp_${timestamp}`,
           uri: asset.uri,
-          name: `receipt_${Date.now()}.jpg`,
+          name: fileName,
           base64: base64,
           type: 'image/jpeg',
-          extension: 'jpg',
+          extension: 'jpg', // Without dot
           isNew: true,
         };
         setReceipts(prev => [...prev, newReceipt]);
@@ -140,6 +188,7 @@ const ReceiptDetailsModal = ({
     }
   };
 
+  // FIX #2: Handle delete for new receipts without modal/API call
   const handleDeleteReceipt = async () => {
     if (!receiptToDelete) return;
 
@@ -178,18 +227,27 @@ const ReceiptDetailsModal = ({
     } else {
       // Just remove from local state for new receipts
       setReceipts(prev => prev.filter(r => r.id !== receiptToDelete));
-      setAlertMessage('Receipt removed');
-      setAlertModal(true);
+      setIsDeleteProcessing(false);
+      setDeleteModal(false);
       setReceiptToDelete(null);
     }
   };
 
+  // FIX #2: Modified removeReceipt to handle new vs existing receipts differently
   const removeReceipt = receiptId => {
+    const receipt = receipts.find(r => r.id === receiptId);
+
+    // If it's a new receipt, just remove it immediately without confirmation
+    if (receipt && receipt.isNew) {
+      setReceipts(prev => prev.filter(r => r.id !== receiptId));
+      return;
+    }
+
+    // For existing receipts, show confirmation modal
     setReceiptToDelete(receiptId);
     setDeleteModal(true);
   };
 
-  // 1. Update the getContentType function to support all file types:
   const getContentType = filename => {
     const extension = filename.split('.').pop().toLowerCase();
 
@@ -225,7 +283,46 @@ const ReceiptDetailsModal = ({
     return contentTypeMap[extension] || 'application/octet-stream';
   };
 
-  // 2. Update pickDocument to accept all document types:
+  // const pickDocument = async () => {
+  //   try {
+  //     const result = await DocumentPicker.pick({
+  //       type: [
+  //         DocumentPicker.types.images,
+  //         DocumentPicker.types.pdf,
+  //         DocumentPicker.types.doc,
+  //         DocumentPicker.types.docx,
+  //         DocumentPicker.types.xls,
+  //         DocumentPicker.types.xlsx,
+  //         DocumentPicker.types.ppt,
+  //         DocumentPicker.types.pptx,
+  //         DocumentPicker.types.plainText,
+  //         DocumentPicker.types.allFiles,
+  //       ],
+  //     });
+
+  //     const file = result[0];
+  //     const base64 = await convertToBase64(file.uri);
+  //     const extension = getFileExtension(file.name);
+
+  //     const newReceipt = {
+  //       id: `temp_${Date.now()}`,
+  //       uri: file.uri,
+  //       name: file.name,
+  //       base64: base64,
+  //       type: file.type,
+  //       extension: extension,
+  //       isNew: true,
+  //     };
+  //     setReceipts(prev => [...prev, newReceipt]);
+  //   } catch (error) {
+  //     if (!DocumentPicker.isCancel(error)) {
+  //       console.error('Error picking document:', error);
+  //       setAlertMessage('Failed to pick document');
+  //       setAlertModal(true);
+  //     }
+  //   }
+  // };
+
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.pick({
@@ -245,15 +342,34 @@ const ReceiptDetailsModal = ({
 
       const file = result[0];
       const base64 = await convertToBase64(file.uri);
-      const extension = getFileExtension(file.name);
+
+      // FIX: Get extension properly and ensure no duplication
+      const originalExtension = getFileExtension(file.name);
+      let finalExtension = originalExtension;
+
+      // If the file.name already ends with the extension, use that
+      // Otherwise, use the type to determine extension
+      if (!originalExtension && file.type) {
+        finalExtension = file.type.split('/').pop();
+      }
+
+      // Clean the filename - remove any duplicate extensions
+      let cleanFileName = file.name;
+      if (originalExtension && file.name.endsWith(`.${originalExtension}`)) {
+        // File already has proper extension, use as is
+        cleanFileName = file.name;
+      } else if (finalExtension && !file.name.includes('.')) {
+        // File has no extension, add it
+        cleanFileName = `${file.name}.${finalExtension}`;
+      }
 
       const newReceipt = {
         id: `temp_${Date.now()}`,
         uri: file.uri,
-        name: file.name,
+        name: cleanFileName, // Use cleaned filename
         base64: base64,
         type: file.type,
-        extension: extension,
+        extension: finalExtension, // Use final extension without dot
         isNew: true,
       };
       setReceipts(prev => [...prev, newReceipt]);
@@ -266,7 +382,7 @@ const ReceiptDetailsModal = ({
     }
   };
 
-  // 3. CRITICAL FIX: Update downloadReceipt to preserve file extension:
+  // FIX #3: Modified downloadReceipt to set processing action properly
   const downloadReceipt = async receipt => {
     if (!receipt.docuRefRecId) {
       setAlertMessage('Cannot download: missing document reference');
@@ -274,7 +390,9 @@ const ReceiptDetailsModal = ({
       return;
     }
 
+    // Set processing action to disable all buttons
     setProcessingAction(`download_${receipt.id}`);
+
     try {
       console.log('=== Starting Download ===');
       console.log('Receipt info:', {
@@ -297,29 +415,21 @@ const ReceiptDetailsModal = ({
       });
 
       if (result.success && result.base64) {
-        // Clean the base64 string
         let cleanBase64 = result.base64.trim();
 
-        // Remove any XML tags that might be present
         if (cleanBase64.includes('<')) {
           cleanBase64 = cleanBase64.replace(/<[^>]*>/g, '');
         }
 
-        // Remove any whitespace
         cleanBase64 = cleanBase64.replace(/\s/g, '');
 
-        // Ensure it's a valid base64 string with proper padding
         if (cleanBase64.length % 4 !== 0) {
           cleanBase64 = cleanBase64 + '='.repeat(4 - (cleanBase64.length % 4));
         }
 
-        // CRITICAL: Preserve the original file name with its extension
-        // Priority: 1. Server fileName, 2. Receipt name, 3. Generate with type
         let fileName = result.fileName || receipt.name;
 
-        // Only add extension if the filename doesn't have one
         if (!fileName.includes('.')) {
-          // Try to get extension from: 1. Server fileType, 2. Receipt type
           const serverType = result.fileType || receipt.type;
           const extension =
             serverType?.split('/').pop()?.split('.').pop() || 'bin';
@@ -336,10 +446,8 @@ const ReceiptDetailsModal = ({
 
         console.log('Writing file to:', filePath);
 
-        // Write the file directly - RNFS.writeFile handles base64 decoding
         await RNFS.writeFile(filePath, cleanBase64, 'base64');
 
-        // Check if file was written successfully
         const fileExists = await RNFS.exists(filePath);
         const fileInfo = await RNFS.stat(filePath);
 
@@ -350,7 +458,6 @@ const ReceiptDetailsModal = ({
         });
 
         if (fileExists && fileInfo.size > 0) {
-          // SUCCESS - Show push notification
           notificationService.showReceiptDownloadNotification(
             fileName,
             filePath,
@@ -363,7 +470,6 @@ const ReceiptDetailsModal = ({
           setAlertModal(true);
         }
       } else {
-        // ERROR - Show error notification with debug info
         let errorMsg =
           result.message || 'No attachment content received from server';
 
@@ -384,7 +490,6 @@ const ReceiptDetailsModal = ({
     } catch (error) {
       console.error('Error downloading receipt:', error);
 
-      // ERROR - Show error notification
       notificationService.showErrorNotification(
         `Download failed: ${error.message}`,
       );
@@ -392,78 +497,209 @@ const ReceiptDetailsModal = ({
       setAlertMessage(`Download failed: ${error.message}`);
       setAlertModal(true);
     } finally {
+      // Clear processing action to re-enable all buttons
       setProcessingAction(null);
     }
   };
 
-  // 4. Update handleSave to properly pass file type information:
+  // const handleSave = async () => {
+  //   const newReceipts = receipts.filter(r => r.isNew);
+
+  //   if (newReceipts.length === 0) {
+  //     setAlertMessage('No new receipts to upload');
+  //     setAlertModal(true);
+  //     return;
+  //   }
+
+  //   setProcessingAction('save');
+
+  //   try {
+  //     for (const receipt of newReceipts) {
+  //       const uploadResult = await UploadReceipt({
+  //         legalEntity: legalEntity,
+  //         fileName: receipt.name,
+  //         capturedReceipt: receipt.base64,
+  //         contentType: getContentType(receipt.name),
+  //         fileExtension: receipt.extension,
+  //         employeeId: employeeId,
+  //       });
+
+  //       if (!uploadResult.IsSuccess || !uploadResult.Receipts?.length) {
+  //         throw new Error(uploadResult.Message || 'Failed to upload receipt');
+  //       }
+
+  //       const uploadedReceipt = uploadResult.Receipts[0];
+  //       const attachResult = await AttachReceiptToExpenseLine({
+  //         docuRefRecId: uploadedReceipt.RecId || uploadedReceipt.recId,
+  //         expenseTransactionNumber: expenseLine.ExpenseTransactionNumber,
+  //         legalEntity: legalEntity,
+  //         employeeId: employeeId,
+  //         isAttach: true,
+  //       });
+
+  //       if (!attachResult.IsSuccess) {
+  //         throw new Error(
+  //           attachResult.Message || 'Failed to attach receipt to expense line',
+  //         );
+  //       }
+  //     }
+
+  //     notificationService.showReceiptUploadNotification(newReceipts.length);
+
+  //     setAlertMessage(`${newReceipts.length} receipt(s) uploaded successfully`);
+  //     setAlertModal(true);
+
+  //     if (onSave) {
+  //       onSave();
+  //     }
+
+  //     await loadExistingReceipts();
+  //   } catch (error) {
+  //     console.error('Error saving receipts:', error);
+  //     setAlertMessage(error.message || 'Failed to save receipts');
+  //     setAlertModal(true);
+  //   } finally {
+  //     setProcessingAction(null);
+  //   }
+  // };
   const handleSave = async () => {
+    console.log('🔵 [handleSave] START - Saving receipts...');
     const newReceipts = receipts.filter(r => r.isNew);
+    console.log('🔵 [handleSave] New receipts to upload:', newReceipts.length);
+    console.log(
+      '🔵 [handleSave] Receipts details:',
+      newReceipts.map(r => ({
+        name: r.name,
+        extension: r.extension,
+        base64Length: r.base64?.length,
+      })),
+    );
 
     if (newReceipts.length === 0) {
+      console.log('❌ [handleSave] No new receipts to upload');
       setAlertMessage('No new receipts to upload');
       setAlertModal(true);
       return;
     }
 
     setProcessingAction('save');
+    console.log('🔵 [handleSave] Processing action set to "save"');
 
     try {
-      for (const receipt of newReceipts) {
-        // Step 1: Upload the receipt with proper content type
+      for (const [index, receipt] of newReceipts.entries()) {
+        console.log(
+          `🔵 [handleSave] Processing receipt ${index + 1}/${
+            newReceipts.length
+          }:`,
+          receipt.name,
+        );
+
+        console.log('🔵 [handleSave] Calling UploadReceipt with:', {
+          legalEntity,
+          fileName: receipt.name,
+          contentType: getContentType(receipt.name),
+          fileExtension: receipt.extension,
+          employeeId,
+          base64Length: receipt.base64?.length,
+        });
+
         const uploadResult = await UploadReceipt({
           legalEntity: legalEntity,
           fileName: receipt.name,
           capturedReceipt: receipt.base64,
-          contentType: getContentType(receipt.name), // Use filename instead of type
+          contentType: getContentType(receipt.name),
           fileExtension: receipt.extension,
           employeeId: employeeId,
         });
 
+        console.log('🔵 [handleSave] UploadReceipt result:', uploadResult);
+
         if (!uploadResult.IsSuccess || !uploadResult.Receipts?.length) {
+          console.log(
+            '❌ [handleSave] UploadReceipt failed:',
+            uploadResult.Message,
+          );
           throw new Error(uploadResult.Message || 'Failed to upload receipt');
         }
 
-        // Step 2: Attach to expense line
         const uploadedReceipt = uploadResult.Receipts[0];
+        console.log(
+          '🔵 [handleSave] Uploaded receipt details:',
+          uploadedReceipt,
+        );
+        console.log(
+          '🔵 [handleSave] Using docuRefRecId:',
+          uploadedReceipt.RecId || uploadedReceipt.recId,
+        );
+
+        console.log(
+          '🔵 [handleSave] Calling AttachReceiptToExpenseLine with:',
+          {
+            docuRefRecId: uploadedReceipt.RecId || uploadedReceipt.recId,
+            expenseTransactionNumber: expenseLine.ExpenseTransactionNumber,
+            legalEntity,
+            employeeId,
+            isAttach: true,
+          },
+        );
+
         const attachResult = await AttachReceiptToExpenseLine({
-          docuRefRecId: uploadedReceipt.RecId || uploadedReceipt.recId,
+          docuRefRecId: uploadedReceipt.docuRefRecId,
           expenseTransactionNumber: expenseLine.ExpenseTransactionNumber,
           legalEntity: legalEntity,
           employeeId: employeeId,
           isAttach: true,
         });
 
+        console.log(
+          '🔵 [handleSave] AttachReceiptToExpenseLine result:',
+          attachResult,
+        );
+
         if (!attachResult.IsSuccess) {
+          console.log(
+            '❌ [handleSave] AttachReceiptToExpenseLine failed:',
+            attachResult.Message,
+          );
           throw new Error(
             attachResult.Message || 'Failed to attach receipt to expense line',
           );
         }
+
+        console.log(
+          `✅ [handleSave] Successfully processed receipt ${index + 1}:`,
+          receipt.name,
+        );
       }
 
-      // SUCCESS - Show upload notification
+      console.log('✅ [handleSave] ALL receipts processed successfully');
       notificationService.showReceiptUploadNotification(newReceipts.length);
 
       setAlertMessage(`${newReceipts.length} receipt(s) uploaded successfully`);
       setAlertModal(true);
 
       if (onSave) {
+        console.log('🔵 [handleSave] Calling onSave callback');
         onSave();
       }
 
-      // Reload receipts to get updated list
+      console.log('🔵 [handleSave] Reloading existing receipts...');
       await loadExistingReceipts();
     } catch (error) {
-      console.error('Error saving receipts:', error);
+      console.error('❌ [handleSave] CATCH ERROR:', error);
+      console.error('❌ [handleSave] Error stack:', error.stack);
       setAlertMessage(error.message || 'Failed to save receipts');
       setAlertModal(true);
     } finally {
+      console.log('🔵 [handleSave] Clearing processing action');
       setProcessingAction(null);
     }
   };
 
+  // FIX #3: Check if any processing is happening (including downloads)
+  const isAnyProcessing = processingAction !== null;
   const isSaveDisabled =
-    processingAction === 'save' || receipts.filter(r => r.isNew).length === 0;
+    isAnyProcessing || receipts.filter(r => r.isNew).length === 0;
 
   return (
     <Modal
@@ -479,7 +715,7 @@ const ReceiptDetailsModal = ({
             <TouchableOpacity
               onPress={onCancel}
               style={styles.closeButton}
-              disabled={processingAction !== null}>
+              disabled={isAnyProcessing}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
@@ -523,16 +759,22 @@ const ReceiptDetailsModal = ({
 
             <View style={styles.addButtonContainer}>
               <TouchableOpacity
-                style={styles.addButton}
+                style={[
+                  styles.addButton,
+                  isAnyProcessing && styles.disabledButton,
+                ]}
                 onPress={takePhoto}
-                disabled={processingAction !== null}>
+                disabled={isAnyProcessing}>
                 <Text style={styles.addButtonText}>📸 Take Photo</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.addButton}
+                style={[
+                  styles.addButton,
+                  isAnyProcessing && styles.disabledButton,
+                ]}
                 onPress={pickDocument}
-                disabled={processingAction !== null}>
+                disabled={isAnyProcessing}>
                 <Text style={styles.addButtonText}>📁 Choose File</Text>
               </TouchableOpacity>
             </View>
@@ -563,9 +805,16 @@ const ReceiptDetailsModal = ({
                       key={receipt.id || `receipt-${index}-${Date.now()}`}
                       style={styles.receiptItem}>
                       <View style={styles.receiptInfo}>
+                        {/* <Text style={styles.receiptName} numberOfLines={2}>
+                          {receipt.name && receipt.type
+                            ? `${receipt.name}.${
+                                receipt.extension ||
+                                receipt.type.split('/').pop()
+                              }`
+                            : `Receipt ${index + 1}`}
+                        </Text> */}
                         <Text style={styles.receiptName} numberOfLines={2}>
-                          {`${receipt.name}.${receipt.type}` ||
-                            `Receipt ${index + 1}`}
+                          {receipt.name || `Receipt ${index + 1}`}
                         </Text>
                         {receipt.isNew && (
                           <Text style={styles.newBadge}>New</Text>
@@ -577,11 +826,14 @@ const ReceiptDetailsModal = ({
                       <View style={styles.receiptActions}>
                         {receipt.isExisting && (
                           <TouchableOpacity
-                            style={styles.downloadButton}
+                            style={[
+                              styles.downloadButton,
+                              isAnyProcessing && styles.disabledActionButton,
+                            ]}
                             onPress={() => downloadReceipt(receipt)}
-                            disabled={processingAction !== null}>
+                            disabled={isAnyProcessing}>
                             {processingAction === `download_${receipt.id}` ? (
-                              <ActivityIndicator size="small" color="#2563eb" />
+                              <ActivityIndicator size="small" color="#fff" />
                             ) : (
                               <FontAwesome
                                 name="download"
@@ -592,9 +844,12 @@ const ReceiptDetailsModal = ({
                           </TouchableOpacity>
                         )}
                         <TouchableOpacity
-                          style={styles.removeButton}
+                          style={[
+                            styles.removeButton,
+                            isAnyProcessing && styles.disabledActionButton,
+                          ]}
                           onPress={() => removeReceipt(receipt.id)}
-                          disabled={processingAction !== null}>
+                          disabled={isAnyProcessing}>
                           {processingAction === `delete_${receipt.id}` ? (
                             <ActivityIndicator size="small" color="#fff" />
                           ) : (
@@ -618,10 +873,10 @@ const ReceiptDetailsModal = ({
             <TouchableOpacity
               style={[
                 styles.cancelButton,
-                processingAction !== null && styles.disabledButton,
+                isAnyProcessing && styles.disabledButton,
               ]}
               onPress={onCancel}
-              disabled={processingAction !== null}>
+              disabled={isAnyProcessing}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
@@ -841,6 +1096,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     minWidth: 30,
     alignItems: 'center',
+  },
+  disabledActionButton: {
+    backgroundColor: '#cbd5e1',
+    opacity: 0.6,
   },
   buttonContainer: {
     flexDirection: 'row',
