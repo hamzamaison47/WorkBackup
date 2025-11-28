@@ -104,10 +104,13 @@ const CreateExpenseReport = async ({
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '',
-      parseTagValue: true,
+      parseTagValue: false,
       trimValues: true,
       allowBooleanAttributes: true,
-      parseAttributeValue: true,
+      parseAttributeValue: false,
+      tagValueProcessor: (tagName, tagValue) => {
+        return tagValue;
+      },
     });
 
     const parsed = parser.parse(xml);
@@ -186,7 +189,7 @@ const CreateExpenseReport = async ({
         Message: 'Records Created Successfully',
         AlertType: 'Success',
         RecId: String(cleanedResult.RecId || ''),
-        ExpenseReportNumber: String(cleanedResult.ExpenseReportNumber || ''),
+        ExpenseReportNumber: cleanedResult.ExpenseReportNumber || '',
         EmployeePersonnelNumber: String(
           cleanedResult.EmployeePersonnelNumber || employeeId,
         ),
@@ -231,7 +234,7 @@ const CreateExpenseReport = async ({
     let errorMessage = 'Error Creating Record';
 
     if (err?.response?.data) {
-      console.log('Raw error response:', err.response.data);
+      // console.log('Raw error response:', err.response.data);
 
       try {
         const parser = new XMLParser({
@@ -251,7 +254,7 @@ const CreateExpenseReport = async ({
             fault?.detail?.message ||
             'SOAP Fault occurred';
 
-          console.log('SOAP Fault Details:', JSON.stringify(fault, null, 2));
+          // console.log('SOAP Fault Details:', JSON.stringify(fault, null, 2));
         }
       } catch (parseErr) {
         console.error('Error parsing SOAP fault:', parseErr);

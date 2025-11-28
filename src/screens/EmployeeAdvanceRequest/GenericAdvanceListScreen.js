@@ -591,7 +591,7 @@ const GenericAdvanceListScreen = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Loan & Advance Requests"
+      pageTitle="Loan Request"
       showFooter
       showFloatingButton
       isHeaderActive

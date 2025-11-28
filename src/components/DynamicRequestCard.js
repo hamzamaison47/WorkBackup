@@ -199,8 +199,6 @@
 //   );
 // };
 
-// export default DynamicRequestCard;
-
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 import React, {useState, useEffect, useRef} from 'react';
@@ -225,6 +223,7 @@ const DynamicRequestCard = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const arrowAnim = useRef(new Animated.Value(0)).current;
+  const animationIntervalRef = useRef(null);
 
   useEffect(() => {
     if (isHighlighted) {
@@ -232,26 +231,54 @@ const DynamicRequestCard = ({
     }
   }, [isHighlighted]);
 
-  // Animate arrow when showNavigationArrow changes
+  // Continuous arrow animation every 5 seconds
   useEffect(() => {
     if (showNavigationArrow) {
-      // Pop animation: scale up then settle
-      Animated.sequence([
-        Animated.timing(arrowAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.spring(arrowAnim, {
-          toValue: 0.8,
-          friction: 3,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      const startAnimation = () => {
+        // Bounce animation sequence
+        Animated.sequence([
+          Animated.timing(arrowAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(arrowAnim, {
+            toValue: 0.8,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(arrowAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(arrowAnim, {
+            toValue: 0.8,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      };
+
+      // Start immediately
+      startAnimation();
+
+      // Set interval for continuous animation
+      animationIntervalRef.current = setInterval(() => {
+        startAnimation();
+      }, 3000); // Repeat every 3 seconds
+
+      return () => {
+        if (animationIntervalRef.current) {
+          clearInterval(animationIntervalRef.current);
+        }
+      };
     } else {
       // Reset animation when arrow is hidden
       arrowAnim.setValue(0);
+      if (animationIntervalRef.current) {
+        clearInterval(animationIntervalRef.current);
+      }
     }
   }, [showNavigationArrow, arrowAnim]);
 
@@ -359,7 +386,7 @@ const DynamicRequestCard = ({
     );
   };
 
-  // Render navigation arrow with animation
+  // Render navigation arrow with continuous animation
   const renderNavigationArrow = () => {
     if (!showNavigationArrow) return null;
 
@@ -368,19 +395,19 @@ const DynamicRequestCard = ({
         {
           translateX: arrowAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [0, 8], // Pop to the right
+            outputRange: [0, 8], // Move to the right
           }),
         },
         {
           scale: arrowAnim.interpolate({
-            inputRange: [0, 0.8, 1],
-            outputRange: [0.8, 1.1, 1], // Scale up then settle
+            inputRange: [0, 1],
+            outputRange: [1, 1.2], // Scale up
           }),
         },
       ],
       opacity: arrowAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, 1], // Fade in
+        outputRange: [1, 0.9], // Slight opacity change
       }),
     };
 
@@ -460,7 +487,7 @@ const DynamicRequestCard = ({
               style={styles.DRC_ExpandToggle}>
               <FontAwesome
                 name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={18}
+                size={14}
                 color="#fff"
               />
             </TouchableOpacity>
