@@ -1,6 +1,5 @@
 /* eslint-disable quotes */
 /* eslint-disable curly */
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
 import {
@@ -10,20 +9,19 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Image,
   ActivityIndicator,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import DocumentPicker from 'react-native-document-picker';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import {launchCamera} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
-import {Buffer} from 'buffer';
 
 import {RetrieveReceipts} from '../../API/ExpenseManagment/Receipt/RetrieveReciepts';
 import {DeleteReceipts} from '../../API/ExpenseManagment/Receipt/DeleteReceipts';
 import {RetrieveAttachment} from '../../API/ExpenseManagment/Receipt/RetrieveAttachment';
 import {UploadReceipt} from '../../API/ExpenseManagment/Receipt/UploadReceipt';
 import {AttachReceiptToExpenseLine} from '../../API/ExpenseManagment/Receipt/AttachReceiptToExpenseLine';
+
 import AlertDeleteModal from '../Alert/AlertDeleteModal';
 import AlertModal from '../Alert/AlertModal';
 import notificationService from '../../Controller/notificationService';

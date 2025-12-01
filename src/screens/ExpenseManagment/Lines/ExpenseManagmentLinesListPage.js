@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
@@ -49,6 +50,9 @@ const ExpenseManagmentLinesListPage = () => {
 
   const reduxUserData = useSelector(state => state.user.userData);
   const {selectedLegalEntity} = useSelector(state => state.company);
+  const {menuItems} = useSelector(state => state.menuItem);
+
+  // console.log(menuItems);
 
   const effectiveUserData = routeUserData || reduxUserData;
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
