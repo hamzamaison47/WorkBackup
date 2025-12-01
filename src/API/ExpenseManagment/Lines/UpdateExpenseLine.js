@@ -46,7 +46,7 @@ const UpdateExpenseLine = async ({
       a.FieldName.localeCompare(b.FieldName),
     );
 
-    console.log('Sorted fields for update:', sortedFields);
+    // console.log('Sorted fields for update:', sortedFields);
 
     // Fix date format - should be YYYY-MM-DD, not MM/DD/YY
     const fixedFields = sortedFields.map(f => {
@@ -91,7 +91,7 @@ const UpdateExpenseLine = async ({
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log('UpdateExpenseLine SOAP Request:', {soapEnvelope});
+    // console.log('UpdateExpenseLine SOAP Request:', {soapEnvelope});
 
     const response = await axios.post(
       `${config.resource}soap/services/ExpenseManagmentSvcGroup`,
@@ -112,8 +112,8 @@ const UpdateExpenseLine = async ({
     );
 
     const xml = response.data;
-    console.log('Response Status:', response.status);
-    console.log('SOAP Response:', xml);
+    // console.log('Response Status:', response.status);
+    // console.log('SOAP Response:', xml);
 
     // Check for completely empty response
     if (!xml || xml.trim() === '') {
@@ -156,7 +156,7 @@ const UpdateExpenseLine = async ({
 
     const cleaned = extractKeyValuePairs(result);
 
-    console.log('Parsed result:', cleaned);
+    // console.log('Parsed result:', cleaned);
 
     if (cleaned.ExpenseLineNumber || cleaned.RecId || cleaned.LineNumber) {
       return {

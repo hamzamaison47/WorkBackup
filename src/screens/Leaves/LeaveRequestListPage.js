@@ -433,7 +433,7 @@ const LeaveRequestListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Employee Leave Requests"
+      pageTitle="Leave Requests"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
