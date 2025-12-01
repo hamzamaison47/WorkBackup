@@ -30,6 +30,9 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import styles from '../../styles/styles';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../components/Buttons/SaveRecordButtons';
 
 const PurchaseRequisitionSaveRecord = () => {
   const route = useRoute();
@@ -317,44 +320,16 @@ const PurchaseRequisitionSaveRecord = () => {
               </TouchableOpacity>
             </ScrollView>
 
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                margin: 20,
-              }}>
-              {/* OK BUTTON */}
-              <TouchableOpacity
-                onPress={handleCreate}
-                disabled={processingButton === 'create'}
-                style={{
-                  backgroundColor: '#0275d8',
-                  paddingVertical: 12,
-                  paddingHorizontal: 25,
-                  borderRadius: 8,
-                  opacity: processingButton === 'create' ? 0.7 : 1,
-                }}>
-                <Text style={{color: '#fff', fontSize: 16, fontWeight: 'bold'}}>
-                  {processingButton === 'create' ? 'Please Wait...' : 'OK'}
-                </Text>
-              </TouchableOpacity>
-
-              {/* CANCEL BUTTON */}
-              <TouchableOpacity
-                onPress={goBack}
-                style={{
-                  backgroundColor: '#fff',
-                  paddingVertical: 12,
-                  paddingHorizontal: 25,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: '#170a09ff',
-                }}>
-                <Text style={{color: '#000', fontSize: 16, fontWeight: 'bold'}}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleCreate}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'save' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            />
 
             <AlertModal
               visible={alertModal}

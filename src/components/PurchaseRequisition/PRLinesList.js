@@ -96,40 +96,6 @@ const PRLinesList = ({
           ))}
         </View>
 
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            onPress={() => onEdit(item)}
-            style={[
-              styles.editButton,
-              isActionsDisabled && styles.disabledButton,
-            ]}
-            disabled={isActionsDisabled}>
-            <Text
-              style={[
-                styles.buttonText,
-                isActionsDisabled && styles.disabledButtonText,
-              ]}>
-              Edit
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => onDelete(item)}
-            style={[
-              styles.deleteButton,
-              isActionsDisabled && styles.disabledButton,
-            ]}
-            disabled={isActionsDisabled}>
-            <Text
-              style={[
-                styles.buttonText,
-                isActionsDisabled && styles.disabledButtonText,
-              ]}>
-              Delete
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* MENU BUTTON */}
         <TouchableOpacity
           ref={dotsRef}

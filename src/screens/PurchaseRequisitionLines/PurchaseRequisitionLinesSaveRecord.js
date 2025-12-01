@@ -37,17 +37,19 @@ import {retrieveColorIdPurchaseRequisitionLines} from '../../API/PurchaseRequisi
 import {retrieveStyleIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveStyleId';
 import {retrieveSerialIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveSerialId';
 import {retrieveBatchIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveBatchId';
-import {retrieveWMSLocationIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveWMSLocationId';
-import {retrieveWMSPalletPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveWMSPalletId';
 
 import {retrieveSiteIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveSiteId';
 import {retrieveLocationIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveLocationId';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../components/Buttons/SaveRecordButtons';
 
 const PurchaseRequisitionLinesSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
 
   const userData = useSelector(state => state.user.userData);
+  const {menuItems} = useSelector(state => state.menuItem);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
 
@@ -74,6 +76,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
   );
 
   const [isLoading, setIsLoading] = useState(false);
+  const [processingButton, setProcessingButton] = useState('');
   const [alertModal, setAlertModal] = useState(false);
   const [quantity, setQuantity] = useState('0.00');
   const [alertMessage, setAlertMessage] = useState('');
@@ -395,13 +398,26 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       .filter(Boolean); // Remove null entries
   };
 
+  const validate = () => {
+    const missing = [];
+    if (!selectedItem) missing.push('Item Number');
+    if (!quantity || parseFloat(quantity) <= 0)
+      missing.push('Enter Valid Quantity');
+
+    if (missing.length) {
+      setAlertMessage(
+        'Please fill in the following fields:\n' + missing.join('\n'),
+      );
+      setAlertModal(true);
+      return false;
+    }
+    return true;
+  };
+
   /** ✅ Handle create */
   const handleCreate = async () => {
-    if (!selectedItem) {
-      setAlertMessage('Please select an Item Id');
-      setAlertModal(true);
-      return;
-    }
+    if (!validate()) return;
+    setProcessingButton('create');
 
     if (!quantity || parseFloat(quantity) <= 0) {
       setAlertMessage('Please enter a valid quantity');
@@ -455,6 +471,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setIsLoading(false);
+      setProcessingButton('');
     }
   };
 
@@ -731,7 +748,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
 
                   {/* SITE DROPDOWN */}
                   <View style={styles.LReqSR_FieldWrapper}>
-                    <Text style={styles.LReqSR_Label}>Site*</Text>
+                    <Text style={styles.LReqSR_Label}>Site</Text>
                     <Dropdown
                       style={styles.LReqSR_Input}
                       data={siteList}
@@ -765,14 +782,14 @@ const PurchaseRequisitionLinesSaveRecord = () => {
 
                   {/* LOCATION DROPDOWN */}
                   <View style={styles.LReqSR_FieldWrapper}>
-                    <Text style={styles.LReqSR_Label}>Location*</Text>
+                    <Text style={styles.LReqSR_Label}>Warehouse</Text>
                     <Dropdown
                       style={styles.LReqSR_Input}
                       data={locationList}
                       labelField="label"
                       valueField="value"
                       placeholder={
-                        selectedSite ? 'Select Location' : 'Select Site First'
+                        selectedSite ? 'Select Warehouse' : 'Select Site First'
                       }
                       value={selectedLocation}
                       onChange={item => setSelectedLocation(item.value)}
@@ -802,7 +819,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   {/* CONFIGURATION DROPDOWN */}
                   {configList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Configuration*</Text>
+                      <Text style={styles.LReqSR_Label}>Configuration</Text>
                       <Dropdown
                         style={styles.LReqSR_Input}
                         data={configList}
@@ -838,7 +855,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   {/* SIZE DROPDOWN */}
                   {sizeList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Size*</Text>
+                      <Text style={styles.LReqSR_Label}>Size</Text>
                       <Dropdown
                         style={styles.LReqSR_Input}
                         data={sizeList}
@@ -874,7 +891,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   {/* COLOR DROPDOWN */}
                   {colorList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Color*</Text>
+                      <Text style={styles.LReqSR_Label}>Color</Text>
                       <Dropdown
                         style={styles.LReqSR_Input}
                         data={colorList}
@@ -910,7 +927,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   {/* STYLE DROPDOWN */}
                   {styleList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Style*</Text>
+                      <Text style={styles.LReqSR_Label}>Style</Text>
                       <Dropdown
                         style={styles.LReqSR_Input}
                         data={styleList}
@@ -946,7 +963,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   {/* BATCH DROPDOWN */}
                   {batchList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Batch*</Text>
+                      <Text style={styles.LReqSR_Label}>Batch</Text>
                       <Dropdown
                         style={styles.LReqSR_Input}
                         data={batchList}
@@ -982,7 +999,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   {/* SERIAL DROPDOWN */}
                   {serialList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Serial*</Text>
+                      <Text style={styles.LReqSR_Label}>Serial</Text>
                       <Dropdown
                         style={styles.LReqSR_Input}
                         data={serialList}
@@ -1018,7 +1035,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
               )}
             </ScrollView>
 
-            {/* ACTION BUTTONS */}
+            {/* ACTION BUTTONS
             <View
               style={{
                 flexDirection: 'row',
@@ -1052,7 +1069,18 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   Cancel
                 </Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
+
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleOkPress}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'save' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            />
 
             <AlertModal
               visible={alertModal}
