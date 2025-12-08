@@ -408,7 +408,7 @@ const RosterDetailsScreen = () => {
                 <DetailRow label="Shift Code" value={item.ShiftCode} />
                 <DetailRow label="Shift Day" value={item.ShiftDay} />
                 <DetailRow label="Employee" value={item.EmployeeName} />
-                <DetailRow label="Location" value={item.Location} />
+                {/* <DetailRow label="Location" value={item.Location} /> */}
                 <DetailRow
                   label="Generation Type"
                   value={item.GenerationType}
@@ -426,14 +426,14 @@ const RosterDetailsScreen = () => {
                   label="End Time"
                   value={formatShiftTime12h(item.ShiftEndTime)}
                 />
-                <DetailRow
+                {/* <DetailRow
                   label="Break Time"
                   value={formatDuration(item.ShiftBreakTime)}
                 />
                 <DetailRow
                   label="Grace Time"
                   value={formatDuration(item.ShiftGraceTime)}
-                />
+                /> */}
                 <DetailRow
                   label="Shift Hours"
                   value={formatDuration(item.ShiftHours)}
