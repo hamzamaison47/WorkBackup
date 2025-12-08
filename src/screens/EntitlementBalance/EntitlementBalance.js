@@ -72,7 +72,7 @@ const EntitlementBalance = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Entitlement Balance"
+      pageTitle="Leave Balance"
       showFooter
       showFloatingButton={false}
       isHeaderActive

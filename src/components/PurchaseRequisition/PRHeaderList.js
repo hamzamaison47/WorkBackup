@@ -1,5 +1,16 @@
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Animated} from 'react-native';
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable curly */
+import React, {useState, useRef} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Modal,
+  Pressable,
+  ActivityIndicator,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const PRHeaderList = ({
@@ -9,11 +20,24 @@ const PRHeaderList = ({
   rightFields = [],
   labels = {},
   onPress = null,
+  onSubmit = null, // ✅ Added Submit prop
   onEdit = null,
   onDelete = null,
+  processingButtons = {},
 }) => {
   const [menuVisible, setMenuVisible] = useState(false);
-  const scaleAnim = new Animated.Value(0);
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const threeDotsRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
+  const isDraft = item.RequisitionStatus?.toUpperCase() === 'DRAFT';
+
+  const submitLoading =
+    processingButtons[item.RecId]?.includes('submit') || false;
+
+  const editLoading = processingButtons[item.RecId]?.includes('edit') || false;
+
+  const deleteLoading =
+    processingButtons[item.RecId]?.includes('delete') || false;
 
   const formatValue = (key, value) => {
     if (!value && value !== 0) return '-';
@@ -28,7 +52,15 @@ const PRHeaderList = ({
     return value.toString();
   };
 
-  const toggleMenu = () => {
+  const measureButton = () => {
+    return new Promise(resolve => {
+      threeDotsRef.current?.measure((fx, fy, width, height, px, py) => {
+        resolve({x: px, y: py, width, height});
+      });
+    });
+  };
+
+  const toggleMenu = async () => {
     if (menuVisible) {
       Animated.timing(scaleAnim, {
         toValue: 0,
@@ -36,6 +68,11 @@ const PRHeaderList = ({
         useNativeDriver: true,
       }).start(() => setMenuVisible(false));
     } else {
+      const position = await measureButton();
+      setMenuPosition({
+        x: position.x,
+        y: position.y + position.height + 8,
+      });
       setMenuVisible(true);
       Animated.timing(scaleAnim, {
         toValue: 1,
@@ -43,6 +80,12 @@ const PRHeaderList = ({
         useNativeDriver: true,
       }).start();
     }
+  };
+
+  const handleSubmit = () => {
+    // ✅ Added handler
+    toggleMenu();
+    onSubmit && onSubmit(item);
   };
 
   const handleEdit = () => {
@@ -73,9 +116,8 @@ const PRHeaderList = ({
         onPress={() => onPress && onPress(item)}
         style={styles.mainContent}>
         <View style={styles.card}>
-          {/* LEFT SIDE - Creative layout with highlights */}
+          {/* LEFT SIDE */}
           <View style={styles.left}>
-            {/* Main Title Row */}
             <View style={styles.titleRow}>
               <View style={styles.idBadge}>
                 <Text style={styles.idText} numberOfLines={1}>
@@ -87,7 +129,6 @@ const PRHeaderList = ({
               </Text>
             </View>
 
-            {/* Details Row */}
             <View style={styles.detailsContainer}>
               {leftThird && (
                 <View style={styles.detailItem}>
@@ -133,7 +174,7 @@ const PRHeaderList = ({
             </View>
           </View>
 
-          {/* RIGHT SIDE - Compact status field */}
+          {/* RIGHT SIDE */}
           <View style={styles.rightContent}>
             {rightTop && (
               <View
@@ -142,19 +183,23 @@ const PRHeaderList = ({
                   {
                     backgroundColor:
                       item[rightTop]?.toUpperCase() === 'APPROVED'
-                        ? '#E8F5E8'
+                        ? '#FFEBEE' // Red background
                         : item[rightTop]?.toUpperCase() === 'IN REVIEW'
-                        ? '#FFF3E0'
+                        ? '#FFF9C4' // Yellow background
+                        : item[rightTop]?.toUpperCase() === 'CLOSED'
+                        ? '#E8F5E8' // Green background
                         : item[rightTop]?.toUpperCase() === 'DRAFT'
-                        ? '#F3F4F6'
+                        ? '#F3F4F6' // Grey background
                         : '#F5F5F5',
                     borderColor:
                       item[rightTop]?.toUpperCase() === 'APPROVED'
-                        ? '#4CAF50'
+                        ? '#F44336' // Red border
                         : item[rightTop]?.toUpperCase() === 'IN REVIEW'
-                        ? '#FF9800'
+                        ? '#FBC02D' // Yellow border
+                        : item[rightTop]?.toUpperCase() === 'CLOSED'
+                        ? '#4CAF50' // Green border
                         : item[rightTop]?.toUpperCase() === 'DRAFT'
-                        ? '#9E9E9E'
+                        ? '#9E9E9E' // Grey border
                         : '#9E9E9E',
                   },
                 ]}>
@@ -164,11 +209,13 @@ const PRHeaderList = ({
                     {
                       color:
                         item[rightTop]?.toUpperCase() === 'APPROVED'
-                          ? '#2E7D32'
+                          ? '#D32F2F' // Red text
                           : item[rightTop]?.toUpperCase() === 'IN REVIEW'
-                          ? '#EF6C00'
+                          ? '#F57F17' // Yellow text
+                          : item[rightTop]?.toUpperCase() === 'CLOSED'
+                          ? '#2E7D32' // Green text
                           : item[rightTop]?.toUpperCase() === 'DRAFT'
-                          ? '#616161'
+                          ? '#616161' // Grey text
                           : '#616161',
                     },
                   ]}
@@ -180,6 +227,7 @@ const PRHeaderList = ({
 
             {/* THREE DOTS MENU */}
             <TouchableOpacity
+              ref={threeDotsRef}
               style={styles.menuButton}
               onPress={toggleMenu}
               hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
@@ -189,36 +237,94 @@ const PRHeaderList = ({
         </View>
       </TouchableOpacity>
 
-      {/* DROPDOWN MENU */}
-      {menuVisible && (
-        <Animated.View
-          style={[
-            styles.menuContainer,
-            {
-              transform: [{scale: scaleAnim}],
-              opacity: scaleAnim,
-            },
-          ]}>
-          <TouchableOpacity style={styles.menuItem} onPress={handleEdit}>
-            <Icon name="edit" size={18} color="#2196F3" />
-            <Text style={[styles.menuText, {color: '#2196F3'}]}>Edit</Text>
-          </TouchableOpacity>
+      {/* ✅ MODAL DROPDOWN - With Submit button added */}
+      <Modal
+        transparent={true}
+        visible={menuVisible}
+        animationType="none"
+        onRequestClose={toggleMenu}>
+        <Pressable style={styles.modalOverlay} onPress={toggleMenu}>
+          <Animated.View
+            style={[
+              styles.menuContainer,
+              {
+                position: 'absolute',
+                top: menuPosition.y,
+                right: 16,
+                transform: [{scale: scaleAnim}],
+                opacity: scaleAnim,
+              },
+            ]}
+            onStartShouldSetResponder={() => true}>
+            {/* ✅ SUBMIT BUTTON - Added at top */}
+            <TouchableOpacity
+              disabled={!isDraft || submitLoading}
+              style={[
+                styles.menuItem,
+                (!isDraft || submitLoading) && styles.disabledMenuItem,
+              ]}
+              onPress={isDraft && !submitLoading ? handleSubmit : undefined}>
+              {submitLoading ? (
+                <ActivityIndicator size={16} color="#4CAF50" />
+              ) : (
+                <>
+                  <Icon name="send" size={18} color="#4CAF50" />
+                  <Text style={[styles.menuText, {color: '#4CAF50'}]}>
+                    Submit
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-          <View style={styles.menuDivider} />
+            <View style={styles.menuDivider} />
 
-          <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
-            <Icon name="delete" size={18} color="#F44336" />
-            <Text style={[styles.menuText, {color: '#F44336'}]}>Delete</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
+            <TouchableOpacity
+              disabled={!isDraft || editLoading}
+              style={[
+                styles.menuItem,
+                (!isDraft || editLoading) && styles.disabledMenuItem,
+              ]}
+              onPress={isDraft && !editLoading ? handleEdit : undefined}>
+              {editLoading ? (
+                <ActivityIndicator size={16} color="#2196F3" />
+              ) : (
+                <>
+                  <Icon name="edit" size={18} color="#2196F3" />
+                  <Text style={[styles.menuText, {color: '#2196F3'}]}>
+                    Edit
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              disabled={!isDraft || deleteLoading}
+              style={[
+                styles.menuItem,
+                (!isDraft || deleteLoading) && styles.disabledMenuItem,
+              ]}
+              onPress={isDraft && !deleteLoading ? handleDelete : undefined}>
+              {deleteLoading ? (
+                <ActivityIndicator size={16} color="#F44336" />
+              ) : (
+                <>
+                  <Icon name="delete" size={18} color="#F44336" />
+                  <Text style={[styles.menuText, {color: '#F44336'}]}>
+                    Delete
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        </Pressable>
+      </Modal>
 
       <View style={styles.divider} />
     </View>
   );
 };
-
-export default PRHeaderList;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -312,11 +418,13 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: 4,
+    zIndex: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   menuContainer: {
-    position: 'absolute',
-    right: 26,
-    top: 50,
     backgroundColor: '#fff',
     borderRadius: 8,
     paddingVertical: 8,
@@ -324,11 +432,10 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.15,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 8,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     minWidth: 120,
-    zIndex: 1000,
   },
   menuItem: {
     flexDirection: 'row',
@@ -351,4 +458,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
     marginTop: 8,
   },
+  disabledMenuItem: {
+    opacity: 0.5,
+  },
 });
+
+export default PRHeaderList;

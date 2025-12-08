@@ -58,7 +58,7 @@ const CreateExpenseReport = async ({
       </s:Body>
     </s:Envelope>`;
 
-    console.log('SOAP Request Envelope:', soapEnvelope);
+    // console.log('SOAP Request Envelope:', soapEnvelope);
 
     // CRITICAL: The service group name has a typo - it's "Managment" not "Management"
     const {data: xml} = await axios.post(
@@ -76,7 +76,7 @@ const CreateExpenseReport = async ({
       },
     );
 
-    console.log('SOAP Response:', xml);
+    // console.log('SOAP Response:', xml);
 
     // Check for SOAP Fault first
     if (xml.includes('s:Fault') || xml.includes('faultstring')) {
@@ -104,10 +104,13 @@ const CreateExpenseReport = async ({
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '',
-      parseTagValue: true,
+      parseTagValue: false,
       trimValues: true,
       allowBooleanAttributes: true,
-      parseAttributeValue: true,
+      parseAttributeValue: false,
+      tagValueProcessor: (tagName, tagValue) => {
+        return tagValue;
+      },
     });
 
     const parsed = parser.parse(xml);
@@ -121,7 +124,7 @@ const CreateExpenseReport = async ({
         'CreateExpenseReportResult'
       ];
 
-    console.log('Raw parsed result:', JSON.stringify(result, null, 2));
+    // console.log('Raw parsed result:', JSON.stringify(result, null, 2));
 
     if (!result) {
       throw new Error('No response data received from server');
@@ -172,7 +175,7 @@ const CreateExpenseReport = async ({
 
     const cleanedResult = extractKeyValuePairs(result);
 
-    console.log('Converted Result:', JSON.stringify(cleanedResult, null, 2));
+    // console.log('Converted Result:', JSON.stringify(cleanedResult, null, 2));
 
     // Check if we have valid data - look for the actual fields from your response
     const hasValidData =
@@ -186,7 +189,7 @@ const CreateExpenseReport = async ({
         Message: 'Records Created Successfully',
         AlertType: 'Success',
         RecId: String(cleanedResult.RecId || ''),
-        ExpenseReportNumber: String(cleanedResult.ExpenseReportNumber || ''),
+        ExpenseReportNumber: cleanedResult.ExpenseReportNumber || '',
         EmployeePersonnelNumber: String(
           cleanedResult.EmployeePersonnelNumber || employeeId,
         ),
@@ -231,7 +234,7 @@ const CreateExpenseReport = async ({
     let errorMessage = 'Error Creating Record';
 
     if (err?.response?.data) {
-      console.log('Raw error response:', err.response.data);
+      // console.log('Raw error response:', err.response.data);
 
       try {
         const parser = new XMLParser({
@@ -240,7 +243,7 @@ const CreateExpenseReport = async ({
         });
         const errorParsed = parser.parse(err.response.data);
 
-        console.log('Parsed error:', JSON.stringify(errorParsed, null, 2));
+        // console.log('Parsed error:', JSON.stringify(errorParsed, null, 2));
 
         const fault = errorParsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
         if (fault) {
@@ -251,7 +254,7 @@ const CreateExpenseReport = async ({
             fault?.detail?.message ||
             'SOAP Fault occurred';
 
-          console.log('SOAP Fault Details:', JSON.stringify(fault, null, 2));
+          // console.log('SOAP Fault Details:', JSON.stringify(fault, null, 2));
         }
       } catch (parseErr) {
         console.error('Error parsing SOAP fault:', parseErr);

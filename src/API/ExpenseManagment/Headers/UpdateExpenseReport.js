@@ -76,7 +76,7 @@ const UpdateExpenseReport = async ({
       </s:Body>
     </s:Envelope>`;
 
-    console.log('SOAP Request Envelope:', soapEnvelope);
+    // console.log('SOAP Request Envelope:', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/ExpenseManagmentSvcGroup`,
@@ -93,7 +93,7 @@ const UpdateExpenseReport = async ({
       },
     );
 
-    console.log('SOAP Response:', xml);
+    // console.log('SOAP Response:', xml);
 
     // Check for SOAP Fault first
     if (xml.includes('s:Fault') || xml.includes('faultstring')) {
@@ -147,7 +147,7 @@ const UpdateExpenseReport = async ({
         'UpdateExpenseReportResult'
       ];
 
-    console.log('Raw parsed result:', JSON.stringify(result, null, 2));
+    // console.log('Raw parsed result:', JSON.stringify(result, null, 2));
 
     if (!result) {
       throw new Error('No response data received from server');
@@ -196,7 +196,7 @@ const UpdateExpenseReport = async ({
 
     const cleanedResult = extractKeyValuePairs(result);
 
-    console.log('Converted Result:', JSON.stringify(cleanedResult, null, 2));
+    // console.log('Converted Result:', JSON.stringify(cleanedResult, null, 2));
 
     // Check if we have valid data
     const hasValidData =
@@ -256,7 +256,7 @@ const UpdateExpenseReport = async ({
     let errorMessage = 'Error Updating Record';
 
     if (err?.response?.data) {
-      console.log('Raw error response:', err.response.data);
+      // console.log('Raw error response:', err.response.data);
 
       try {
         const parser = new XMLParser({
@@ -265,7 +265,7 @@ const UpdateExpenseReport = async ({
         });
         const errorParsed = parser.parse(err.response.data);
 
-        console.log('Parsed error:', JSON.stringify(errorParsed, null, 2));
+        // console.log('Parsed error:', JSON.stringify(errorParsed, null, 2));
 
         const fault = errorParsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
         if (fault) {
@@ -281,7 +281,7 @@ const UpdateExpenseReport = async ({
             errorMessage = fault.detail['s:message'];
           }
 
-          console.log('SOAP Fault Details:', JSON.stringify(fault, null, 2));
+          // console.log('SOAP Fault Details:', JSON.stringify(fault, null, 2));
         }
       } catch (parseErr) {
         console.error('Error parsing SOAP fault:', parseErr);

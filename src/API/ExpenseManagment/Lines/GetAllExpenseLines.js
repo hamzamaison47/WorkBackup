@@ -164,6 +164,8 @@ const GetAllExpenseLines = async ({
 
     const cleanList = expenseLinesArray.map(processLine).filter(Boolean);
 
+    // console.log({cleanList});
+
     return cleanList;
   } catch (err) {
     console.error('GetAllExpenseLines SOAP Error:', err.message);

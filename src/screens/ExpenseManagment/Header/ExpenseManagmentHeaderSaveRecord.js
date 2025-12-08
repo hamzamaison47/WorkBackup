@@ -1,7 +1,7 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   Text,
   KeyboardAvoidingView,
@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   BackHandler,
   Platform,
+  Animated,
 } from 'react-native';
 import {
   useNavigation,
@@ -43,6 +44,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
 
   const effectiveUserData = route.params?.userData || userData || {};
   const effectiveLegalEntity =
+    route.params?.legalEntity ||
     selectedLegalEntity ||
     defaultLegalEntity ||
     effectiveUserData?.defaultLegalEntity ||
@@ -62,35 +64,39 @@ const ExpenseManagementHeaderSaveRecord = () => {
     originalCameFrom = null,
   } = route.params || {};
 
+  // State Management
   const [locationOptions, setLocationOptions] = useState([]);
   const [purposeOptions, setPurposeOptions] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
 
   const createInitialFormData = () => ({
-    recId:
-      !expenseData.recId || expenseData.recId === '0'
-        ? expenseData.RecId || ''
-        : expenseData.recId,
+    recId: expenseData.recId || expenseData.RecId || '',
     employeeId: employeeId,
     employeeName: employeeName,
     WorkerRecId: WorkerRecId,
     legalEntity: effectiveLegalEntity,
     location: '',
     purpose: '',
-    ExpenseReportNumber: expenseData.ExpenseReportNumber || '',
+    ExpenseReportNumber: '',
   });
 
   const [formData, setFormData] = useState(() => createInitialFormData());
 
-  // const goBack = () => {
-  //   clearAllStates();
-  //   navigation.navigate('ExpenseManagmentListPage');
-  // };
+  // Clear all states when component unmounts
+  useEffect(() => {
+    return () => {
+      clearAllStates();
+    };
+  }, []);
+
   const goBack = useCallback(() => {
+    clearAllStates();
+
     if (cameFrom === 'MainDashboard') {
       navigation.reset({
         index: 0,
@@ -112,6 +118,11 @@ const ExpenseManagementHeaderSaveRecord = () => {
               employeeId,
               employeeName,
               WorkerRecId,
+              userData: {
+                employeeId,
+                employeeName,
+                WorkerRecId,
+              },
               cameFrom: targetCameFrom,
             },
           },
@@ -134,6 +145,9 @@ const ExpenseManagementHeaderSaveRecord = () => {
     setPurposeOptions([]);
     setDataFetched(false);
     setFormData(createInitialFormData());
+    setAlertModal(false);
+    setAlertMessage('');
+    setProcessingButton('');
   }, []);
 
   const clearFormData = useCallback(() => {
@@ -163,48 +177,80 @@ const ExpenseManagementHeaderSaveRecord = () => {
   useFocusEffect(
     useCallback(() => {
       const initializeData = async () => {
-        if (!dataFetched) {
-          setIsLoading(true);
-          try {
-            await Promise.all([fetchLocationOptions(), fetchPurposeOptions()]);
-            setDataFetched(true);
-          } catch (error) {
-            console.error('Error initializing data:', error);
-            setAlertMessage('Failed to initialize data.');
-            setAlertModal(true);
-          } finally {
-            setIsLoading(false);
-          }
-        }
-
+        setIsLoading(true);
         if (mode === 'create') {
           setFormData(createInitialFormData());
-        } else if (mode === 'edit' && expenseData?.recId) {
+        } else if (mode === 'edit' && expenseData) {
           setFormData({
-            ...createInitialFormData(),
-            ...expenseData,
+            recId: expenseData.recId || expenseData.RecId || '',
             employeeId: expenseData.employeeId || employeeId,
             employeeName: expenseData.employeeName || employeeName,
             WorkerRecId: expenseData.WorkerRecId || WorkerRecId,
+            legalEntity: expenseData.legalEntity || effectiveLegalEntity,
+            location: expenseData.location || '',
+            purpose: expenseData.purpose || '',
+            ExpenseReportNumber: expenseData.ExpenseReportNumber || '',
           });
+        }
+
+        setAlertModal(false);
+        setAlertMessage('');
+        setProcessingButton('');
+
+        if (!dataFetched) {
+          // setIsLoading(true);
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 150,
+            useNativeDriver: true,
+          }).start();
+
+          try {
+            Promise.all([fetchLocationOptions(), fetchPurposeOptions()])
+              .then(() => {
+                setDataFetched(true);
+                Animated.timing(fadeAnim, {
+                  toValue: 1,
+                  duration: 300,
+                  useNativeDriver: true,
+                }).start();
+              })
+              .catch(error => {
+                console.error('Error fetching lookup data:', error);
+              })
+              .finally(() => {
+                setIsLoading(false);
+              });
+          } catch (error) {
+            console.error('Error initializing data:', error);
+            setIsLoading(false);
+          }
+        } else {
+          setIsLoading(false);
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
         }
       };
 
       initializeData();
-    }, [
-      mode,
-      expenseData?.recId,
-      employeeId,
-      employeeName,
-      WorkerRecId,
-      dataFetched,
-    ]),
+
+      return () => {
+        // Cleanup only what's necessary
+      };
+    }, [mode, dataFetched, expenseData]),
   );
 
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
+      setLocationOptions([]);
+      setPurposeOptions([]);
+      setDataFetched(false);
       clearFormData();
+
       await fetchLocationOptions(true);
       await fetchPurposeOptions(true);
       setDataFetched(true);
@@ -262,7 +308,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
   };
 
   const handleLocationDropdownFocus = () => {
-    if (locationOptions.length === 0) {
+    if (locationOptions.length === 0 && !dataFetched) {
       fetchLocationOptions();
     }
   };
@@ -299,25 +345,12 @@ const ExpenseManagementHeaderSaveRecord = () => {
       let response;
 
       if (modalMode === 'create') {
-        console.log('Calling CreateExpenseReport with:', {
-          expenseReportFields,
-          employeeId: data.employeeId || employeeId,
-          legalEntity: data.legalEntity || effectiveLegalEntity,
-        });
-
         response = await CreateExpenseReport({
           expenseReportFields,
           employeeId: data.employeeId || employeeId,
           legalEntity: data.legalEntity || effectiveLegalEntity,
         });
       } else {
-        console.log('Calling UpdateExpenseReport with:', {
-          expenseReportFields,
-          employeeId: data.employeeId || employeeId,
-          legalEntity: data.legalEntity || effectiveLegalEntity,
-          expenseReportNumber: data.ExpenseReportNumber,
-        });
-
         response = await UpdateExpenseReport({
           expenseReportFields,
           employeeId: data.employeeId || employeeId,
@@ -325,8 +358,6 @@ const ExpenseManagementHeaderSaveRecord = () => {
           expenseReportNumber: data.ExpenseReportNumber,
         });
       }
-
-      console.log('Expense Report Response:', response);
 
       const isSuccess =
         response?.IsSuccess === true ||
@@ -340,15 +371,16 @@ const ExpenseManagementHeaderSaveRecord = () => {
         );
         setAlertModal(true);
 
-        // FIXED: Handle both RecId (capital R) and recId (lowercase r)
         const recId = response?.RecId || response?.recId || data.recId || '';
+        const expenseReportNumber =
+          response?.ExpenseReportNumber || data.ExpenseReportNumber || '';
 
         return {
           success: true,
           recId: recId,
-          RecId: recId, // Add both for consistency
-          expenseReportNum:
-            response?.ExpenseReportNumber || data.ExpenseReportNumber || '',
+          RecId: recId,
+          expenseReportNum: expenseReportNumber,
+          ExpenseReportNumber: expenseReportNumber,
         };
       } else {
         const errorMessage =
@@ -379,28 +411,67 @@ const ExpenseManagementHeaderSaveRecord = () => {
       );
 
       if (result.success) {
-        setTimeout(() => {
-          setAlertModal(false);
-          clearAllStates();
+        if (mode === 'create') {
+          setTimeout(() => {
+            setAlertModal(false);
+            clearAllStates();
 
-          // FIXED: Use the RecId from response (capital R)
-          const highlightRecId = result.recId || result.RecId;
+            const RecId = result.recId || result.RecId;
+            const ExpenseReportNumber =
+              result.ExpenseReportNumber || result.expenseReportNum;
 
-          console.log('Navigating back with highlightRecId:', highlightRecId);
-
-          navigation.navigate('ExpenseManagmentListPage', {
-            employeeId: formData.employeeId,
-            employeeName: formData.employeeName,
-            WorkerRecId: formData.WorkerRecId,
-            userData: route.params?.userData || {
+            navigation.navigate('ExpenseManagmentLinesSaveRecord', {
+              mode: 'create',
               employeeId: formData.employeeId,
               employeeName: formData.employeeName,
               WorkerRecId: formData.WorkerRecId,
-            },
-            highlightRecId: highlightRecId, // This should now be correct
-            cameFrom: originalCameFrom || 'ExpenseManagmentListPage',
-          });
-        }, 2000);
+              userData: {
+                employeeId: formData.employeeId,
+                employeeName: formData.employeeName,
+                WorkerRecId: formData.WorkerRecId,
+              },
+              legalEntity: formData.legalEntity,
+              cameFrom: 'ExpenseManagementHeaderSaveRecord',
+              originalCameFrom: originalCameFrom || cameFrom,
+              expenseData: {
+                recId: RecId,
+                RecId: RecId,
+                ExpenseReportNumber: ExpenseReportNumber, // Use raw value
+                employeeId: formData.employeeId,
+                employeeName: formData.employeeName,
+                WorkerRecId: formData.WorkerRecId,
+                legalEntity: formData.legalEntity,
+              },
+            });
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            setAlertModal(false);
+            clearAllStates();
+
+            const targetCameFrom = originalCameFrom || cameFrom;
+
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: 'ExpenseManagmentListPage',
+                  params: {
+                    employeeId: formData.employeeId,
+                    employeeName: formData.employeeName,
+                    WorkerRecId: formData.WorkerRecId,
+                    userData: {
+                      employeeId: formData.employeeId,
+                      employeeName: formData.employeeName,
+                      WorkerRecId: formData.WorkerRecId,
+                    },
+                    cameFrom: targetCameFrom,
+                  },
+                },
+              ],
+            });
+          }, 1500);
+        }
       }
     } catch (error) {
       console.error('Error saving expense:', error);
@@ -425,99 +496,101 @@ const ExpenseManagementHeaderSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.LReqSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled={true}>
-              <Text style={styles.LReqSR_Label}>Location</Text>
-              <Dropdown
-                style={styles.LReqSR_Input}
-                data={locationOptions}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Location"
-                value={formData.location}
-                onFocus={handleLocationDropdownFocus}
-                onChange={handleLocationChange}
-                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                itemTextStyle={styles.LReqSR_DropdownItemText}
-                activeColor="#E6F0FF"
-                containerStyle={[
-                  styles.LReqSR_DropdownContainer,
-                  {
-                    marginTop: Platform.OS === 'ios' ? 5 : 2,
-                    zIndex: 1000,
-                  },
-                ]}
-                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
-                maxHeight={280}
-                dropdownPosition="auto"
-                search
-                searchPlaceholder="Search Location"
-                inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                iconStyle={styles.LReqSR_DropdownIcon}
-                keyboardAvoiding={true}
-              />
+        <Animated.View style={{flex: 1, opacity: fadeAnim}}>
+          <SafeAreaView style={styles.LReqSR_SafeArea}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.LReqSR_ContentWrapper}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+              <ScrollView
+                ref={scrollViewRef}
+                contentContainerStyle={styles.LReqSR_FormContainer}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled={true}>
+                <Text style={styles.LReqSR_Label}>Location</Text>
+                <Dropdown
+                  style={styles.LReqSR_Input}
+                  data={locationOptions}
+                  labelField="label"
+                  valueField="value"
+                  placeholder="Select Location"
+                  value={formData.location}
+                  onFocus={handleLocationDropdownFocus}
+                  onChange={handleLocationChange}
+                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  activeColor="#E6F0FF"
+                  containerStyle={[
+                    styles.LReqSR_DropdownContainer,
+                    {
+                      marginTop: Platform.OS === 'ios' ? 5 : 2,
+                      zIndex: 1000,
+                    },
+                  ]}
+                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  maxHeight={280}
+                  dropdownPosition="auto"
+                  search
+                  searchPlaceholder="Search Location"
+                  inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                  iconStyle={styles.LReqSR_DropdownIcon}
+                  keyboardAvoiding={true}
+                />
 
-              <Text style={styles.LReqSR_Label}>Purpose</Text>
-              <Dropdown
-                style={styles.LReqSR_Input}
-                data={purposeOptions}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Purpose"
-                value={formData.purpose}
-                onFocus={handlePurposeDropdownFocus}
-                onChange={handlePurposeChange}
-                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                itemTextStyle={styles.LReqSR_DropdownItemText}
-                activeColor="#E6F0FF"
-                containerStyle={[
-                  styles.LReqSR_DropdownContainer,
-                  {
-                    marginTop: Platform.OS === 'ios' ? 5 : 2,
-                    zIndex: 999,
-                  },
-                ]}
-                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
-                maxHeight={280}
-                dropdownPosition="auto"
-                search
-                searchPlaceholder="Search Purpose"
-                inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                iconStyle={styles.LReqSR_DropdownIcon}
-                keyboardAvoiding={true}
-              />
-            </ScrollView>
+                <Text style={styles.LReqSR_Label}>Purpose</Text>
+                <Dropdown
+                  style={styles.LReqSR_Input}
+                  data={purposeOptions}
+                  labelField="label"
+                  valueField="value"
+                  placeholder="Select Purpose"
+                  value={formData.purpose}
+                  onFocus={handlePurposeDropdownFocus}
+                  onChange={handlePurposeChange}
+                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  activeColor="#E6F0FF"
+                  containerStyle={[
+                    styles.LReqSR_DropdownContainer,
+                    {
+                      marginTop: Platform.OS === 'ios' ? 5 : 2,
+                      zIndex: 999,
+                    },
+                  ]}
+                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  maxHeight={280}
+                  dropdownPosition="auto"
+                  search
+                  searchPlaceholder="Search Purpose"
+                  inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                  iconStyle={styles.LReqSR_DropdownIcon}
+                  keyboardAvoiding={true}
+                />
+              </ScrollView>
 
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'save' || processingButton === 'submit'
-              }
-              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              <SaveRecordButtons
+                mode={mode}
+                processingButton={processingButton}
+                onSave={handleSave}
+                onCancel={goBack}
+                isDisabled={
+                  processingButton === 'save' || processingButton === 'submit'
+                }
+                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              />
+            </KeyboardAvoidingView>
+
+            <AlertModal
+              visible={alertModal}
+              heading="Alert"
+              text={alertMessage}
+              onPress={() => setAlertModal(false)}
             />
-          </KeyboardAvoidingView>
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => setAlertModal(false)}
-          />
-        </SafeAreaView>
+          </SafeAreaView>
+        </Animated.View>
       )}
     </ActionPaneContainer>
   );

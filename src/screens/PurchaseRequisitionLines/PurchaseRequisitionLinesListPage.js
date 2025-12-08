@@ -1,0 +1,361 @@
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable curly */
+import React, {useState, useCallback} from 'react';
+import {FlatList, BackHandler, RefreshControl, Text, View} from 'react-native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
+
+import ActionPaneContainer from '../../components/ActionPaneContainer';
+import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+import PRLinesList from '../../components/PurchaseRequisition/PRLinesList';
+import AlertModal from '../../components/Alert/AlertModal';
+import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
+import AlertSubmitModal from '../../components/PurchaseRequisition/AlertSubmitModal';
+
+import {retrievePurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrievebyPurchId';
+import deletePurchaseRequisitionLineRecord from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesDeleteRecord';
+
+import {useSelector} from 'react-redux';
+
+const PurchaseRequisitionLinesListPage = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  const {
+    PurchReqId,
+    PurchReqName,
+    RequiredDate,
+    RequisitionStatus,
+    item,
+    employeeId,
+    employeeName,
+    cameFrom,
+    WorkerRecId,
+    userData: routeUserData,
+  } = route.params;
+
+  const [lines, setLines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const reduxUserData = useSelector(state => state.user.userData);
+  const effectiveUserData = routeUserData || reduxUserData;
+
+  const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
+  const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
+  const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [submitModal, setSubmitModal] = useState(false);
+  const [itemToSubmit, setItemToSubmit] = useState(null);
+  const [deletingItemId, setDeletingItemId] = useState(null); // Track which item is being deleted
+  const isActionsDisabled = RequisitionStatus && RequisitionStatus !== 'Draft';
+
+  const leftFields = ['ItemId', 'ItemName'];
+  const rightFields = [
+    'PurchQty',
+    'PurchUnitofMeasureCode',
+    'PurchPrice',
+    'LineAmount',
+  ];
+  const labels = {
+    ItemId: 'Item Code',
+    ItemName: 'Item Name',
+    PurchQty: 'Qty',
+    PurchUnitofMeasureCode: 'Unit',
+    PurchPrice: 'Unit Price',
+    LineAmount: 'Net Amount',
+  };
+
+  const fetchLines = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await retrievePurchaseRequisitionLines({
+        _purchReqId: PurchReqId,
+      });
+      setLines(Array.isArray(response) ? response : []);
+    } catch (error) {
+      console.log('Error fetching PR lines:', error);
+      setLines([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [PurchReqId]); // Add PurchReqId as dependency
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('PurchaseRequisitionLinesListPage focused');
+      fetchLines();
+
+      const onBackPress = () => {
+        console.log('⬅️ Hardware Back Pressed');
+        console.log('➡️ Calling handleGoBack()');
+        handleGoBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+
+      return () => {
+        console.log('Cleaning up BackHandler in LinesListPage');
+        subscription.remove();
+      };
+    }, [fetchLines, handleGoBack]),
+  );
+
+  const handleGoBack = useCallback(() => {
+    console.log('🔙 handleGoBack TRIGGERED');
+
+    console.log('🔙 Navigation Reset Payload:', {
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
+      cameFrom: cameFrom || 'MainDashboard',
+    });
+
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'PurchaseRequisitionListPage',
+          params: {
+            employeeId: effectiveEmployeeId,
+            employeeName: effectiveEmployeeName,
+            WorkerRecId: effectiveWorkerRecId,
+            userData: effectiveUserData,
+            cameFrom: cameFrom || 'MainDashboard',
+          },
+        },
+      ],
+    });
+  }, [
+    navigation,
+    effectiveEmployeeId,
+    effectiveEmployeeName,
+    effectiveWorkerRecId,
+    effectiveUserData,
+    cameFrom,
+  ]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchLines();
+    setRefreshing(false);
+  };
+
+  const handleEdit = line => {
+    if (isActionsDisabled) {
+      return;
+    }
+    console.log('✏️ Navigating to SaveRecord for editing');
+    navigation.navigate('PurchaseRequisitionLinesSaveRecord', {
+      mode: 'edit',
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
+      cameFrom: 'PurchaseRequisitionLinesListPage',
+      PurchReqId,
+      PurchReqName,
+      RequiredDate,
+      lineToEdit: line,
+      purchaseRequisitiondata: {
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
+        RecId: line.RecId,
+        ItemId: line.ItemId || '',
+        PurchQty: line.PurchQty || '',
+        InventBatchId: line.InventBatchId || '',
+        WMSLocationId: line.WMSLocationId || '',
+        InventSerialId: line.InventSerialId || '',
+        ConfigId: line.ConfigId || '',
+        InventSizeId: line.InventSizeId || '',
+        InventColorId: line.InventColorId || '',
+        InventStyle: line.InventStyle || '',
+        WMSPalletId: line.WMSPalletId || '',
+        InventSiteId: line.InventSiteId || '',
+        InventLocationId: line.InventLocationId || '',
+        PurchUnitofMeasureCode: line.PurchUnitofMeasureCode || '',
+        PurchPrice: line.PurchPrice || '',
+        LineAmount: line.LineAmount || '',
+        ItemName: line.ItemName || '',
+      },
+    });
+  };
+
+  const handleDelete = line => {
+    if (isActionsDisabled) {
+      return;
+    }
+    setItemToDelete(line);
+    setDeleteModal(true);
+  };
+
+  const handleCreate = () => {
+    navigation.navigate('PurchaseRequisitionLinesFormPage', {
+      mode: 'create',
+      PurchReqId,
+    });
+  };
+
+  const handlePurchaseRequisitionLinesRecordCreation = () => {
+    if (isActionsDisabled) {
+      return;
+    }
+    console.log('🔄 Navigating to SaveRecord');
+    navigation.navigate('PurchaseRequisitionLinesSaveRecord', {
+      mode: 'create',
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
+      cameFrom: 'PurchaseRequisitionLinesListPage',
+      PurchReqId,
+      PurchReqName,
+      RequiredDate,
+      purchaseRequisitiondata: {
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
+        ItemId: '',
+        PurchQty: '',
+        InventBatchId: '',
+        WMSLocationId: '',
+        InventSerialId: '',
+        ConfigId: '',
+        InventSizeId: '',
+        InventColorId: '',
+        InventStyle: '',
+        WMSPalletId: '',
+        InventSiteId: '',
+        InventLocationId: '',
+      },
+    });
+  };
+
+  const renderLineCard = ({item, index}) => (
+    <PRLinesList
+      item={item}
+      index={index}
+      leftFields={leftFields}
+      rightFields={rightFields}
+      labels={labels}
+      onPress={() => {}}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      isActionsDisabled={isActionsDisabled}
+    />
+  );
+
+  return (
+    <ActionPaneContainer
+      pageTitle={`${PurchReqId || ''} : ${PurchReqName || ''}`}
+      isBackButton
+      showFooter={false}
+      showFloatingButton
+      isHeaderActive
+      onBackPress={handleGoBack}
+      onRefresh={onRefresh}
+      onFloatingButtonPress={handlePurchaseRequisitionLinesRecordCreation}
+      floatingButtonDisabled={isActionsDisabled} // Disable floating button
+    >
+      {loading ? (
+        <CustomIndicator />
+      ) : (
+        <FlatList
+          data={lines}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={renderLineCard}
+          contentContainerStyle={{paddingBottom: 20}}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={{paddingTop: 350, alignItems: 'center'}}>
+              <Text style={{fontSize: 16, color: '#999'}}>No Data Found</Text>
+            </View>
+          }
+        />
+      )}
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
+      <AlertDeleteModal
+        visible={deleteModal}
+        heading="Confirm Deletion"
+        text="Are you sure you want to delete this record?"
+        onPress={async () => {
+          if (!itemToDelete?.RecId) {
+            setAlertMessage('Invalid record selected for deletion');
+            setAlertModal(true);
+            setDeleteModal(false);
+            setItemToDelete(null);
+            return;
+          }
+
+          try {
+            setIsLoading(true);
+
+            await deletePurchaseRequisitionLineRecord({
+              recordsRecId: [itemToDelete.RecId],
+            });
+
+            setLines(prev =>
+              prev.filter(item => item.RecId !== itemToDelete.RecId),
+            );
+
+            setAlertMessage(
+              `Purchase requisition "${
+                itemToDelete.ItemId || 'Unknown'
+              }" deleted successfully`,
+            );
+            setAlertModal(true);
+          } catch (error) {
+            console.error('Delete error:', error);
+            setAlertMessage(
+              error.response?.data ||
+                'Failed to delete record. Please try again.',
+            );
+            setAlertModal(true);
+          } finally {
+            setIsLoading(false);
+            setDeleteModal(false);
+            setItemToDelete(null);
+          }
+        }}
+        onCancel={() => {
+          setDeleteModal(false);
+          setItemToDelete(null);
+        }}
+      />
+      <AlertSubmitModal
+        visible={submitModal}
+        heading="Confirm Submission"
+        text={`Are you sure you want to submit "${itemToSubmit?.PurchReqId}"?`}
+        onPress={0}
+        onCancel={() => {
+          setSubmitModal(false);
+          setItemToSubmit(null);
+        }}
+      />
+    </ActionPaneContainer>
+  );
+};
+
+export default PurchaseRequisitionLinesListPage;

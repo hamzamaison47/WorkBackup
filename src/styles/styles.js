@@ -1701,414 +1701,220 @@ const styles = StyleSheet.create({
     color: '#959595ff',
   },
 
-  // // ============================================
-  // // CALENDAR MODAL - RESPONSIVE STYLES
-  // // ============================================
-  // CustomDatePicker_ModalContainer: {
-  //   flex: 1,
-  //   backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   padding: scale(20),
-  // },
+  // ============================================
+  // DYNAMIC REQUEST CARD - RESPONSIVE STYLES
+  // ============================================
+  DRC_CardContainer: {
+    marginVertical: verticalScale(8),
+    marginHorizontal: scale(8),
+  },
 
-  // CustomDatePicker_Container: {
-  //   backgroundColor: '#FFFFFF',
-  //   borderRadius: moderateScale(12),
-  //   width: '100%',
-  //   maxWidth: scale(350),
-  //   padding: scale(20),
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: scale(4)},
-  //   shadowOpacity: 0.3,
-  //   shadowRadius: scale(8),
-  //   elevation: 10,
-  // },
+  DRC_HighlightedContainer: {
+    borderWidth: moderateScale(2),
+    borderColor: '#4CAF50',
+    borderRadius: moderateScale(16),
+    elevation: 8,
+    shadowColor: '#4CAF50',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
 
-  // CustomDatePicker_Header: {
-  //   alignItems: 'center',
-  //   marginBottom: verticalScale(20),
-  //   paddingVertical: verticalScale(15),
-  //   backgroundColor: '#F8F9FA',
-  //   borderRadius: moderateScale(8),
-  // },
+  DRC_Card: {
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
 
-  // CustomDatePicker_SelectedDate: {
-  //   fontSize: fontScale(18),
-  //   fontWeight: '600',
-  //   color: '#333333',
-  //   textAlign: 'center',
-  //   lineHeight: fontScale(24),
-  // },
+  DRC_CardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(12),
+  },
 
-  // CustomDatePicker_Navigation: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'center',
-  //   marginBottom: verticalScale(15),
-  // },
+  DRC_CardHeaderText: {
+    fontSize: fontScale(18),
+    fontWeight: '700',
+    color: '#37474F',
+    lineHeight: fontScale(22),
+  },
 
-  // CustomDatePicker_NavButton: {
-  //   width: scale(40),
-  //   height: scale(40),
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   borderRadius: moderateScale(20),
-  //   backgroundColor: '#F8F9FA',
-  // },
+  DRC_CardSubHeaderText: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
+    marginTop: verticalScale(2),
+  },
 
-  // CustomDatePicker_NavText: {
-  //   fontSize: fontScale(18),
-  //   fontWeight: 'bold',
-  //   color: '#0A66C2',
-  // },
+  DRC_ButtonsContainer: {
+    flexDirection: 'row',
+    gap: scale(8),
+    flexShrink: 1,
+  },
 
-  // CustomDatePicker_MonthYear: {
-  //   flex: 1,
-  //   alignItems: 'center',
-  // },
+  DRC_IconButton: {
+    backgroundColor: '#0A66C2',
+    borderRadius: moderateScale(20),
+    padding: moderateScale(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: moderateScale(36),
+    minHeight: moderateScale(36),
+  },
 
-  // CustomDatePicker_MonthYearText: {
-  //   fontSize: fontScale(18),
-  //   fontWeight: '600',
-  //   color: '#333333',
-  // },
+  DRC_TextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#0A66C2',
+    borderWidth: moderateScale(2),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(20),
+  },
 
-  // CustomDatePicker_WeekDays: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-around',
-  //   marginBottom: verticalScale(10),
-  //   borderBottomWidth: moderateScale(1),
-  //   borderBottomColor: '#E9ECEF',
-  //   paddingBottom: verticalScale(8),
-  // },
+  DRC_Disabled: {
+    backgroundColor: '#BDBDBD',
+    borderColor: '#BDBDBD',
+  },
 
-  // CustomDatePicker_WeekDayText: {
-  //   fontSize: fontScale(14),
-  //   fontWeight: '600',
-  //   color: '#666666',
-  //   width: scale(32),
-  //   textAlign: 'center',
-  // },
+  DRC_DisabledText: {
+    color: '#999',
+  },
 
-  // CustomDatePicker_CalendarGrid: {
-  //   flexDirection: 'row',
-  //   flexWrap: 'wrap',
-  //   justifyContent: 'space-between',
-  //   marginBottom: verticalScale(20),
-  // },
+  DRC_IconButtonText: {
+    color: '#fff',
+    fontSize: fontScale(12),
+    marginLeft: scale(4),
+    fontWeight: '600',
+  },
 
-  // CustomDatePicker_DayCell: {
-  //   width: scale(32),
-  //   height: scale(32),
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   marginVertical: verticalScale(4),
-  //   borderRadius: moderateScale(16),
-  // },
+  DRC_TextButtonText: {
+    color: '#0A66C2',
+    fontWeight: '600',
+    fontSize: fontScale(14),
+    marginLeft: scale(6),
+  },
 
-  // CustomDatePicker_EmptyDay: {
-  //   backgroundColor: 'transparent',
-  // },
+  DRC_InfoBlock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(8),
+    flexWrap: 'wrap',
+  },
 
-  // CustomDatePicker_SelectedDay: {
-  //   backgroundColor: '#0A66C2',
-  // },
+  DRC_Label: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
+    flex: 1,
+  },
 
-  // CustomDatePicker_DayText: {
-  //   fontSize: fontScale(14),
-  //   fontWeight: '500',
-  //   color: '#333333',
-  // },
+  DRC_Value: {
+    color: '#263238',
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
+    flex: 1,
+    textAlign: 'right',
+    flexWrap: 'wrap',
+  },
 
-  // CustomDatePicker_SelectedDayText: {
-  //   color: '#FFFFFF',
-  //   fontWeight: '600',
-  // },
+  DRC_StatusText: {
+    fontWeight: '700',
+    fontSize: fontScale(14),
+    color: '#112936',
+    textAlign: 'center',
+    // paddingVertical: verticalScale(4),
+    // paddingHorizontal: scale(12),
+    // backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    // borderRadius: moderateScale(12),
+    // overflow: 'hidden',
+  },
 
-  // CustomDatePicker_Footer: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   borderTopWidth: moderateScale(1),
-  //   borderTopColor: '#E9ECEF',
-  //   paddingTop: verticalScale(15),
-  // },
+  DRC_SectionDivider: {
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: 'rgba(85, 85, 85, 0.3)',
+    marginVertical: verticalScale(8),
+  },
 
-  // CustomDatePicker_CancelButton: {
-  //   paddingHorizontal: scale(25),
-  //   paddingVertical: verticalScale(10),
-  //   borderRadius: moderateScale(6),
-  //   borderWidth: moderateScale(1),
-  //   borderColor: '#6C757D',
-  // },
+  DRC_BottomContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    position: 'relative',
+    // marginTop: verticalScale(12),
+    // minHeight: verticalScale(40),
+  },
 
-  // CustomDatePicker_CancelButtonText: {
-  //   fontSize: fontScale(14),
-  //   fontWeight: '600',
-  //   color: '#6C757D',
-  // },
+  DRC_BottomButtonsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    flexDirection: 'row',
+    gap: scale(8),
+  },
 
-  // CustomDatePicker_OKButton: {
-  //   paddingHorizontal: scale(25),
-  //   paddingVertical: verticalScale(10),
-  //   borderRadius: moderateScale(6),
-  //   backgroundColor: '#0A66C2',
-  // },
+  DRC_ExpandToggle: {
+    alignItems: 'center',
+    padding: moderateScale(4),
+    backgroundColor: '#0A66C2',
+    borderRadius: moderateScale(15),
+    alignSelf: 'center',
+    minWidth: moderateScale(30),
+    minHeight: moderateScale(30),
+    justifyContent: 'center',
+  },
 
-  // CustomDatePicker_OKButtonDisabled: {
-  //   backgroundColor: '#C7C7CC',
-  // },
+  DRC_NavigationArrow: {
+    position: 'absolute',
+    right: scale(12),
+    top: '50%',
+    transform: [{translateY: -12}],
+    width: scale(24),
+    height: scale(24),
+    justifyContent: 'center',
+    alignItems: 'center',
+    // backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    // borderRadius: scale(12),
+    // borderWidth: moderateScale(1),
+    // borderColor: '#0A66C2',
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: {width: 0, height: 2},
+    // shadowOpacity: 0.2,
+    // shadowRadius: 3,
+  },
 
-  // CustomDatePicker_OKButtonText: {
-  //   fontSize: fontScale(14),
-  //   fontWeight: '600',
-  //   color: '#FFFFFF',
-  // },
+  DRC_ClickableContainer: {
+    position: 'relative',
+  },
 
-  // // Start of Login_ Screen
-  // Login_Container: {
-  //   flex: 1,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   padding: 20,
-  // },
-  // Login_QRButton: {
-  //   position: 'absolute',
-  //   top: 50,
-  //   right: 20,
-  //   width: 50,
-  //   height: 50,
-  //   borderRadius: 25,
-  //   backgroundColor: '#fff',
-  //   borderWidth: 2,
-  //   borderColor: '#0A66C2',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   elevation: 5,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.25,
-  //   shadowRadius: 3.84,
-  // },
+  DRC_HeaderContentWithArrow: {
+    flex: 1,
+    marginRight: scale(40),
+  },
 
-  // Login_FingerprintButton: {
-  //   position: 'absolute',
-  //   // top: 50,
-  //   // right: 20,
-  //   bottom: 120,
-  //   width: 70,
-  //   height: 70,
-  //   borderRadius: 35,
-  //   backgroundColor: '#fff',
-  //   borderWidth: 2,
-  //   borderColor: '#0A66C2',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   elevation: 5,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.25,
-  //   shadowRadius: 3.84,
-  // },
+  DRC_ButtonsContainerWithArrow: {
+    marginRight: scale(30),
+  },
 
-  // Login_StatusIndicator: {
-  //   position: 'absolute',
-  //   top: 120,
-  //   left: 20,
-  //   right: 20,
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   paddingHorizontal: 16,
-  //   paddingVertical: 8,
-  //   borderRadius: 20,
-  //   elevation: 2,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 1},
-  //   shadowOpacity: 0.1,
-  //   shadowRadius: 2,
-  // },
+  DRC_ValueWithArrow: {
+    marginRight: scale(30),
+  },
 
-  // Login_StatusIndicatorActive: {
-  //   backgroundColor: '#d4edda',
-  //   borderColor: '#c3e6cb',
-  //   borderWidth: 1,
-  // },
+  DRC_BottomButtonsContainerWithArrow: {
+    right: scale(30),
+  },
 
-  // Login_StatusIndicatorInactive: {
-  //   backgroundColor: '#f8d7da',
-  //   borderColor: '#f5c6cb',
-  //   borderWidth: 1,
-  // },
-
-  // Login_StatusText: {
-  //   fontSize: 12,
-  //   fontWeight: '600',
-  //   marginLeft: 6,
-  // },
-
-  // Login_StatusTextActive: {
-  //   color: '#155724',
-  // },
-
-  // Login_StatusTextInactive: {
-  //   color: '#721c24',
-  // },
-
-  // // Setup Message
-  // Login_SetupMessage: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   backgroundColor: '#e6f3ff',
-  //   borderColor: '#0A66C2',
-  //   borderWidth: 1,
-  //   borderRadius: 8,
-  //   paddingHorizontal: 16,
-  //   paddingVertical: 12,
-  //   marginHorizontal: 20,
-  //   marginBottom: 20,
-  // },
-
-  // Login_SetupMessageText: {
-  //   flex: 1,
-  //   fontSize: 14,
-  //   color: '#0A66C2',
-  //   fontWeight: '500',
-  // },
-
-  // // Disabled Button Styles
-  // Login_ButtonDisabled: {
-  //   backgroundColor: '#f8f9fa',
-  //   borderColor: '#e9ecef',
-  // },
-
-  // Login_ButtonTextDisabled: {
-  //   color: '#999',
-  // },
-
-  // // Setup Button
-  // Login_SetupButton: {
-  //   backgroundColor: '#0A66C2',
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   paddingVertical: 16,
-  //   paddingHorizontal: 20,
-  //   borderRadius: 12,
-  //   marginHorizontal: 20,
-  //   marginTop: 20,
-  //   elevation: 3,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.1,
-  //   shadowRadius: 4,
-  // },
-
-  // Login_SetupButtonText: {
-  //   color: '#fff',
-  //   fontSize: 16,
-  //   fontWeight: '600',
-  // },
-  // Login_Logo: {
-  //   width: 200,
-  //   height: 80,
-  //   marginBottom: 20,
-  // },
-  // Login_Title: {
-  //   fontSize: 26,
-  //   fontWeight: 'bold',
-  //   marginBottom: 10,
-  //   color: '#333333',
-  //   textAlign: 'center',
-  // },
-  // Login_Subtitle: {
-  //   fontSize: 18,
-  //   color: '#333333',
-  //   marginBottom: 30,
-  //   textAlign: 'center',
-  //   paddingHorizontal: 15,
-  //   fontStyle: 'italic',
-  // },
-  // Login_Button: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   width: width * 0.8, // 80% of screen width
-  //   height: 55, // Fixed height
-  //   borderRadius: 50,
-  //   borderWidth: 2,
-  //   borderColor: '#0A66C2',
-  //   marginVertical: 8,
-  //   paddingHorizontal: 10,
-  //   backgroundColor: '#fff',
-  // },
-  // Login_ButtonText: {
-  //   color: '#0A66C2',
-  //   fontSize: 16,
-  //   fontWeight: 'bold',
-  // },
-  // Login_Icon: {
-  //   marginRight: 10,
-  // },
-
-  // Login_LoadingContainer: {
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   padding: 20,
-  // },
-  // Login_LoadingText: {
-  //   marginTop: 10,
-  //   fontSize: 16,
-  //   color: '#333',
-  //   textAlign: 'center',
-  // },
-  // Login_DialogContainer: {
-  //   borderRadius: 12,
-  //   padding: 20,
-  //   backgroundColor: '#fff',
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  // },
-  // Login_DialogTitle: {
-  //   fontSize: 20,
-  //   fontWeight: 'bold',
-  //   color: '#333',
-  //   textAlign: 'center',
-  //   marginBottom: 15,
-  // },
-  // Login_DialogContent: {
-  //   flex: 1,
-  //   width: '100%',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // Login_DialogMessage: {
-  //   fontSize: 16,
-  //   color: '#333',
-  //   textAlign: 'center',
-  //   marginBottom: 25,
-  //   paddingHorizontal: 10,
-  // },
-  // Login_DialogButtonsRow: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   width: '100%',
-  //   paddingHorizontal: 20,
-  // },
-  // Login_DialogButton: {
-  //   flex: 1,
-  //   backgroundColor: '#0A66C2',
-  //   borderRadius: 6,
-  //   paddingVertical: 10,
-  //   marginHorizontal: 5,
-  //   alignItems: 'center',
-  // },
-  // Login_DialogButtonText: {
-  //   color: '#fff',
-  //   fontSize: 16,
-  //   fontWeight: 'bold',
-  // },
-  // // End Of Login_
+  // ============================================
+  // ??? - RESPONSIVE STYLES
+  // ============================================
 
   //WorkAssigned
   Team_Container: {
@@ -2417,72 +2223,25 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: '#333',
   },
-  // LReqSR_Footer: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   paddingVertical: moderateScale(10),
-  //   borderColor: '#eee',
-  //   backgroundColor: '#fff',
-  //   position: 'relative',
-  // },
-  // LReqSR_Button: {
-  //   flex: 1,
-  //   borderWidth: 2,
-  //   borderColor: '#0A66C2',
-  //   borderRadius: moderateScale(20),
-  //   paddingVertical: moderateScale(12),
-  //   marginHorizontal: moderateScale(4),
-  //   alignItems: 'center',
-  //   backgroundColor: 'transparent',
-  // },
-  // LReqSR_SubmitButton: {
-  //   borderColor: '#0A66C2',
-  //   backgroundColor: '#0A66C2',
-  // },
-  // LReqSR_DisabledButton: {
-  //   opacity: 0.6,
-  // },
-  // LReqSR_ButtonText: {
-  //   fontWeight: 'bold',
-  //   fontSize: fontScale(14),
-  //   color: '#0A66C2',
-  // },
-  // LReqSR_SubmitButtonText: {
-  //   fontWeight: 'bold',
-  //   fontSize: fontScale(13),
-  //   color: '#fff',
-  // },
-  // LReqSR_PressedButton: {
-  //   backgroundColor: '#0A66C2',
-  // },
-  // LReqSR_pressedSubmitButton: {
-  //   backgroundColor: '#3d95edff',
-  //   borderColor: '#3d95edff',
-  // },
-  // LReqSR_pressedText: {
-  //   color: '#fff',
-  // },
-  // LReqSR_CancelButton: {
-  //   borderWidth: 2,
-  //   borderColor: '#cccccc',
-  //   backgroundColor: 'transparent',
-  //   borderRadius: moderateScale(20),
-  //   paddingVertical: moderateScale(12),
-  //   marginHorizontal: moderateScale(4),
-  //   alignItems: 'center',
-  //   flex: 1,
-  // },
-  // LReqSR_CancelButtonText: {
-  //   fontWeight: 'bold',
-  //   fontSize: fontScale(14),
-  //   color: '#666666',
-  // },
-  // LReqSR_pressedCancelButton: {
-  //   backgroundColor: '#e6e6e6',
-  // },
-  // LReqSR_pressedCancelText: {
-  //   color: '#959595ff',
-  // },
+  formHeader: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0A66C2',
+    borderRadius: 8,
+  },
+  formHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#0A66C2',
+    marginBottom: 4,
+  },
+  formHeaderSubtext: {
+    fontSize: 14,
+    color: '#666',
+  },
+
   // // End oF Leave Req Save Record here???
 
   // Start oF Leave Req List Page
@@ -2656,26 +2415,6 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: '#333',
   },
-  // TCert_Button: {
-  //   borderRadius: 8,
-  //   paddingVertical: height * 0.015,
-  //   paddingHorizontal: width * 0.05,
-  //   elevation: 4,
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   marginTop: height * 0.025,
-  //   width: '100%',
-  // },
-  // TCert_ButtonContent: {
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // TCert_ButtonText: {
-  //   color: '#FFFFFF',
-  //   fontSize: width * 0.045,
-  //   fontWeight: 'bold',
-  //   textAlign: 'center',
-  // },
   // end of tax certificate
 
   // start of display list page
@@ -2963,130 +2702,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   // end of calendar modal
-
-  // start of dynamic request card
-
-  DRC_CardContainer: {
-    marginVertical: height * 0.01,
-    marginHorizontal: width * 0.01,
-  },
-  DRC_HighlightedContainer: {
-    borderWidth: 2,
-    borderColor: '#4CAF50',
-    borderRadius: width * 0.045,
-    elevation: 8,
-    shadowColor: '#4CAF50',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  DRC_Card: {
-    borderRadius: width * 0.04,
-    padding: width * 0.045,
-    elevation: 3,
-  },
-  DRC_CardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: height * 0.015,
-  },
-  DRC_CardHeaderText: {
-    fontSize: width * 0.05,
-    fontWeight: 'bold',
-    color: '#37474F',
-  },
-  DRC_CardSubHeaderText: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: width * 0.035,
-  },
-  DRC_ButtonsContainer: {
-    flexDirection: 'row',
-    gap: width * 0.025,
-  },
-  DRC_IconButton: {
-    backgroundColor: '#0A66C2',
-    borderRadius: 20,
-    padding: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  DRC_TextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#0A66C2',
-    borderWidth: 2,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  DRC_Disabled: {
-    backgroundColor: '#BDBDBD',
-    borderColor: '#BDBDBD',
-  },
-  DRC_DisabledText: {
-    color: '#999',
-  },
-  DRC_IconButtonText: {
-    color: '#fff',
-    fontSize: width * 0.025,
-    marginLeft: 4,
-  },
-  DRC_TextButtonText: {
-    color: '#0A66C2',
-    fontWeight: '600',
-    fontSize: width * 0.03,
-    marginLeft: 6,
-  },
-  DRC_InfoBlock: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: height * 0.008,
-  },
-  DRC_Label: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: width * 0.035,
-  },
-  DRC_Value: {
-    color: '#263238',
-    fontSize: Math.min(width * 0.035, 16), // max 16px
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    textAlign: 'right',
-  },
-  DRC_StatusText: {
-    fontWeight: '900',
-    fontSize: width * 0.036,
-    color: '#112936ff',
-  },
-  DRC_SectionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#555555',
-    marginVertical: 8,
-  },
-  DRC_BottomContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    position: 'relative',
-    marginTop: height * 0.01,
-  },
-  DRC_BottomButtonsContainer: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  DRC_ExpandToggle: {
-    alignItems: 'center',
-    padding: 5,
-    backgroundColor: '#0A66C2',
-    borderRadius: 50,
-    alignSelf: 'center',
-  },
-  // end of dyanmic request card and also leaves component
 
   // start of page header component
   // start of company dropdown
@@ -4476,35 +4091,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   //End of IdentificationRequestCard
-
-  // // Biometric Login Styles
-  // Login_Divider: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   marginVertical: 20,
-  //   paddingHorizontal: 40,
-  // },
-  // Login_DividerLine: {
-  //   flex: 1,
-  //   height: 1,
-  //   backgroundColor: '#D1D5DB',
-  // },
-  // Login_DividerText: {
-  //   marginHorizontal: 16,
-  //   fontSize: 14,
-  //   color: '#6B7280',
-  //   fontWeight: '600',
-  // },
 });
 
 export default styles;
-
-// export {
-//   scale,
-//   verticalScale,
-//   moderateScale,
-//   fontScale,
-//   isSmallScreen,
-//   isLargeScreen,
-//   isTablet,
-// };

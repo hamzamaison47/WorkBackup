@@ -34,15 +34,6 @@ const SubmitExpenseReportsToWorkflow = async ({
       .map(n => `        <a:string>${escapeXml(n)}</a:string>`)
       .join('\n');
 
-    // Log input parameters for debugging
-    console.log('Submit Input Parameters:', {
-      expenseReportNumberList: reportNumbers,
-      legalEntity,
-    });
-
-    // Build SOAP Envelope with proper structure matching CreateExpenseReport pattern
-    // Parameter order from WSDL: expenseReportNumberList, legalEntity
-
     const soapBody = `<SubmitExpenseReportsToWorkflow xmlns="http://tempuri.org">
           <expenseReportNumberList xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
             ${expenseReportNumbersXml}
@@ -51,26 +42,8 @@ const SubmitExpenseReportsToWorkflow = async ({
         </SubmitExpenseReportsToWorkflow>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-    // const soapEnvelope = `<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-    //   <s:Header>
-    //     <h:CallContext xmlns:h="http://schemas.microsoft.com/dynamics/2013/01/datacontracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-    //       <h:Company>${escapeXml(legalEntity)}</h:Company>
-    //       <h:Language i:nil="true"></h:Language>
-    //       <h:MessageId>${generateGuid()}</h:MessageId>
-    //       <h:PartitionKey i:nil="true"></h:PartitionKey>
-    //     </h:CallContext>
-    //   </s:Header>
-    //   <s:Body>
-    //     <SubmitExpenseReportsToWorkflow xmlns="http://tempuri.org">
-    //       <expenseReportNumberList xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-    // ${expenseReportNumbersXml}
-    //       </expenseReportNumberList>
-    //       <legalEntity>${escapeXml(legalEntity)}</legalEntity>
-    //     </SubmitExpenseReportsToWorkflow>
-    //   </s:Body>
-    // </s:Envelope>`;
 
-    console.log('SOAP Submit Request:', soapEnvelope);
+    // console.log('SOAP Submit Request:', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/ExpenseManagmentSvcGroup`,
@@ -87,7 +60,7 @@ const SubmitExpenseReportsToWorkflow = async ({
       },
     );
 
-    console.log('SOAP Submit Response:', xml);
+    // console.log('SOAP Submit Response:', xml);
 
     // Check for SOAP Fault first
     if (xml.includes('s:Fault') || xml.includes('faultstring')) {
@@ -145,7 +118,7 @@ const SubmitExpenseReportsToWorkflow = async ({
 
     const parsed = parser.parse(xml);
 
-    console.log('Parsed Submit Response:', JSON.stringify(parsed, null, 2));
+    // console.log('Parsed Submit Response:', JSON.stringify(parsed, null, 2));
 
     // Extract submit response
     const submitResponse =
@@ -185,7 +158,7 @@ const SubmitExpenseReportsToWorkflow = async ({
       RecId: parseInt(c['a:RecId']) || 0,
     }));
 
-    console.log('Processed Contracts:', JSON.stringify(processed, null, 2));
+    // console.log('Processed Contracts:', JSON.stringify(processed, null, 2));
 
     // Find summary (RecId = 0) and detail records
     const summary = processed.find(c => c.RecId === 0);
