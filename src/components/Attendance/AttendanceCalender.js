@@ -310,36 +310,66 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
     warmLoadMonth(nextMoment);
   };
 
-  const getRecordActionType = useCallback(details => {
-    if (!details) return 'none';
-    const rawStatus = (details.Status ?? '').toString().trim().toLowerCase();
-    const ABSENT_ALIASES = [
-      'absent',
-      'a',
-      'no in/out',
-      'no in out',
-      'missing',
-      'abs',
-      'leave without pay',
-    ];
-    const offDay = bool(pick(details, 'offDay', 'OffDay'));
-    const gazettedDay = bool(pick(details, 'gazettedDay', 'GazettedDay'));
-    const noIn =
-      isBlankTime(details.ClockIn) || looksLikeMissingDate(details.ClockInDate);
-    const noOut =
-      isBlankTime(details.ClockOut) ||
-      looksLikeMissingDate(details.ClockOutDate);
-    const computedAbsent = noIn && noOut;
-    const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
-    const isPresent =
-      rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
-    if (offDay || gazettedDay || isAbsent) {
-      return 'markPresent';
-    } else if (!isPresent) {
-      return 'edit';
-    }
-    return 'none';
-  }, []);
+  // Check if date has color (attendance record exists)
+  const hasColor = useCallback(
+    dateKey => {
+      const details = attendanceData[dateKey];
+      if (!details) return false;
+
+      const color = details.color || determineColor(details);
+      // Check if color exists and is not the default #f0f0f0
+      return color && color.toLowerCase() !== '#f0f0f0';
+    },
+    [attendanceData],
+  );
+
+  const getRecordActionType = useCallback(
+    details => {
+      if (!details) return 'noRecord'; // No attendance record at all
+
+      const hasRecordColor = hasColor(
+        moment(details.attendanceDate || details.AttendanceDate).format(
+          'YYYY-MM-DD',
+        ),
+      );
+
+      if (!hasRecordColor) {
+        return 'noRecord'; // No color means no attendance record
+      }
+
+      // If we have color (attendance record exists), check status
+      const rawStatus = (details.Status ?? '').toString().trim().toLowerCase();
+      const ABSENT_ALIASES = [
+        'absent',
+        'a',
+        'no in/out',
+        'no in out',
+        'missing',
+        'abs',
+        'leave without pay',
+      ];
+      const offDay = bool(pick(details, 'offDay', 'OffDay'));
+      const gazettedDay = bool(pick(details, 'gazettedDay', 'GazettedDay'));
+      const noIn =
+        isBlankTime(details.ClockIn) ||
+        looksLikeMissingDate(details.ClockInDate);
+      const noOut =
+        isBlankTime(details.ClockOut) ||
+        looksLikeMissingDate(details.ClockOutDate);
+      const computedAbsent = noIn && noOut;
+      const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+      const isPresent =
+        rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
+
+      if (offDay || gazettedDay || isAbsent) {
+        return 'markPresent';
+      } else if (!isPresent) {
+        return 'edit';
+      }
+      return 'none';
+    },
+    [hasColor],
+  );
 
   // Check if date should be clickable
   const isDateClickable = useCallback(
@@ -693,9 +723,25 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
                 </View>
                 {/* Action Buttons */}
                 <View style={detailStyles.actionButtonsContainer}>
+                  {getRecordActionType(selectedDayDetails) === 'noRecord' && (
+                    <>
+                      {/* No color - only Leave Request button */}
+                      <TouchableOpacity
+                        style={[
+                          detailStyles.actionButton,
+                          detailStyles.leaveRequestButton,
+                        ]}
+                        onPress={handleLeaveRequest}>
+                        <Text style={detailStyles.actionButtonText}>
+                          Leave Request
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
                   {getRecordActionType(selectedDayDetails) ===
                     'markPresent' && (
                     <>
+                      {/* Has color - show Mark Present and Leave Request */}
                       <TouchableOpacity
                         style={[
                           detailStyles.actionButton,
@@ -720,6 +766,7 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
                   )}
                   {getRecordActionType(selectedDayDetails) === 'edit' && (
                     <>
+                      {/* Has color with existing data - show Edit and Short Leave */}
                       <TouchableOpacity
                         style={[
                           detailStyles.actionButton,
@@ -742,7 +789,8 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
                       </TouchableOpacity>
                     </>
                   )}
-                  {(getRecordActionType(selectedDayDetails) === 'markPresent' ||
+                  {(getRecordActionType(selectedDayDetails) === 'noRecord' ||
+                    getRecordActionType(selectedDayDetails) === 'markPresent' ||
                     getRecordActionType(selectedDayDetails) === 'edit') && (
                     <TouchableOpacity
                       style={[
@@ -767,17 +815,7 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
                   No attendance data for this date
                 </Text>
                 <View style={detailStyles.noDataButtons}>
-                  <TouchableOpacity
-                    style={[
-                      detailStyles.actionButton,
-                      detailStyles.markPresentButton,
-                      detailStyles.fullWidthButton,
-                    ]}
-                    onPress={handleMarkPresent}>
-                    <Text style={detailStyles.actionButtonText}>
-                      Mark Present
-                    </Text>
-                  </TouchableOpacity>
+                  {/* No record at all - only Leave Request button */}
                   <TouchableOpacity
                     style={[
                       detailStyles.actionButton,

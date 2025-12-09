@@ -2,7 +2,7 @@
 /* eslint-disable no-useless-escape */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useState, useCallback, View} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   Text,
   TextInput,
@@ -11,7 +11,11 @@ import {
   SafeAreaView,
   Platform,
 } from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
@@ -24,30 +28,25 @@ import styles from '../../styles/styles';
 import {MarkAdjustment} from '../../API/Attendance/MarkAdjustment';
 import {SubmitAdjustment} from '../../API/Attendance/SubmitAdjustment';
 
-const TIME_HINT = 'hh:mm AM/PM or HH:mm'; // UI hint; API expects seconds for times
+const TIME_HINT = 'hh:mm AM/PM or HH:mm';
 
-/* ---------------- helpers ---------------- */
 const isBlank = v =>
   v === null || v === undefined || v === '' || v === '0' || v === 0;
 const pad2 = n => String(n).padStart(2, '0');
 const valOf = v => (v && typeof v === 'object' && 'value' in v ? v.value : v);
 
-/** Accepts seconds | HH:mm[:ss] | h:mm AM/PM -> returns seconds (number) or null */
 const toSecondsFromAnyTime = raw => {
   if (isBlank(raw)) return null;
   const s = String(valOf(raw)).trim();
 
-  if (/^\d+$/.test(s)) return Number(s); // already seconds
+  if (/^\d+$/.test(s)) return Number(s);
 
-  // 24h with seconds
   let m = s.match(/^([01]?\d|2[0-3]):([0-5]\d):([0-5]\d)$/);
   if (m) return +m[1] * 3600 + +m[2] * 60 + +m[3];
 
-  // 24h, no seconds
   m = s.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
   if (m) return +m[1] * 3600 + +m[2] * 60;
 
-  // 12h h:mm AM/PM
   m = s.match(/^(\d{1,2}):([0-5]\d)\s*(AM|PM)$/i);
   if (m) {
     let h = +m[1];
@@ -64,21 +63,15 @@ const toSecondsFromAnyTime = raw => {
   return null;
 };
 
-/** Normalize date/datetime string for AX:
- * - keep 'YYYY-MM-DDTHH:mm:ssZ' (literal Z)
- * - accept pure 'YYYY-MM-DD'
- * - accept ISO with timezone offsets like '+05:00' or '+0500'
- * - if value looks like only time, keep previous ISO date/datetime
- */
 const normalizeAxDateTime = (raw, fallbackIso) => {
   const s = String(valOf(raw) ?? '').trim();
   if (!s) return fallbackIso || '';
 
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(s)) return s; // full ISO Z
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s; // date only
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+\-]\d{2}:\d{2})$/.test(s))
-    return s; // ISO with :offset
-  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+\-]\d{4})$/.test(s)) return s; // ISO with compact offset
+    return s;
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+\-]\d{4})$/.test(s)) return s;
 
   if (
     /^\d{1,2}:[0-5]\d(\s*[AP]M)?$/i.test(s) ||
@@ -121,46 +114,46 @@ const MarkPresentScreen = () => {
   const {
     employeeId: paramEmpId,
     employeeName = userData?.employeeName || '',
-    attendanceDate: routeAttendanceDate = '', // e.g., 'YYYY-MM-DD' or ISO
+    attendanceDate: routeAttendanceDate = '',
     sourceScreen = 'AttendanceDetailsScreen',
   } = route.params || {};
 
-  // Build a safe initial date/datetime
   const today = new Date();
   const todayISO = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(
     today.getDate(),
   )}`;
-  const initialAxDate = normalizeAxDateTime(routeAttendanceDate, todayISO);
-  const selectedLegalEntity = useSelector(
-    state => state.company.selectedLegalEntity,
-  );
+
+  const [axDateTime, setAxDateTime] = useState('');
   const [form, setForm] = useState({
     EmployeeName: employeeName,
-    AttendanceDateUI: initialAxDate,
+    AttendanceDateUI: '',
     ClockInUI: '',
     ClockOutUI: '',
     Remarks: '',
   });
 
-  const [axDateTime, setAxDateTime] = useState(initialAxDate);
-
-  useEffect(() => {
-    setForm(prev => ({...prev, EmployeeName: employeeName}));
-    const normalized = normalizeAxDateTime(
-      routeAttendanceDate,
-      axDateTime || todayISO,
-    );
-    setAxDateTime(normalized || todayISO);
-    setForm(prev => ({
-      ...prev,
-      AttendanceDateUI: normalized || prev.AttendanceDateUI,
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employeeName, routeAttendanceDate]);
-
   const [processing, setProcessing] = useState('');
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({visible: false, text: ''});
+
+  // Reset form every time screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      const normalizedDate = normalizeAxDateTime(routeAttendanceDate, todayISO);
+
+      setAxDateTime(normalizedDate || todayISO);
+      setForm({
+        EmployeeName: employeeName,
+        AttendanceDateUI: normalizedDate || todayISO,
+        ClockInUI: '', // Always fresh
+        ClockOutUI: '', // Always fresh
+        Remarks: '',
+      });
+
+      // Optional: cleanup on unmount
+      return () => {};
+    }, [routeAttendanceDate, employeeName, todayISO]),
+  );
 
   const onDateChange = v => {
     const next = normalizeAxDateTime(v, axDateTime);
@@ -176,8 +169,6 @@ const MarkPresentScreen = () => {
   const onChangeText = (field, v) => setForm(prev => ({...prev, [field]: v}));
 
   const doCreate = async () => {
-    const employeeId = userData?.employeeId || paramEmpId || '';
-
     const clockInSec = toSecondsFromAnyTime(form.ClockInUI);
     const clockOutSec = toSecondsFromAnyTime(form.ClockOutUI);
 
@@ -201,21 +192,18 @@ const MarkPresentScreen = () => {
   const onSave = async actionType => {
     if (processing) return;
 
-    const employeeId = userData?.employeeId || paramEmpId || '';
     const missing = [];
-    if (!employeeId) missing.push('EmployeeId (not found in userData)');
+    if (!userData?.employeeId && !paramEmpId) missing.push('Employee');
     if (!axDateTime) missing.push('Attendance Date');
-
-    const cin = toSecondsFromAnyTime(form.ClockInUI);
-    const cout = toSecondsFromAnyTime(form.ClockOutUI);
-    if (cin === null) missing.push('Clock In (' + TIME_HINT + ' → seconds)');
-    if (cout === null) missing.push('Clock Out (' + TIME_HINT + ' → seconds)');
+    if (toSecondsFromAnyTime(form.ClockInUI) === null) missing.push('Clock In');
+    if (toSecondsFromAnyTime(form.ClockOutUI) === null)
+      missing.push('Clock Out');
     if (!cleanRemarks(form.Remarks)) missing.push('Remarks');
 
     if (missing.length) {
       setAlert({
         visible: true,
-        text: 'Please fill:\n' + missing.join('\n'),
+        text: 'Please fill required fields:\n• ' + missing.join('\n• '),
       });
       return;
     }
@@ -228,45 +216,41 @@ const MarkPresentScreen = () => {
       if (!ok) {
         setAlert({
           visible: true,
-          text: res?.message || res?.Message || 'Create failed',
+          text: res?.message || res?.Message || 'Failed to save.',
         });
         return;
       }
 
       if (actionType === 'save') {
-        setAlert({visible: true, text: 'Attendance created successfully.'});
+        setAlert({visible: true, text: 'Attendance marked successfully.'});
       } else if (actionType === 'submit') {
         const recId = extractRecId(res);
         if (!recId) {
           setAlert({
             visible: true,
-            text: 'Created, but recId not returned — cannot submit.',
+            text: 'Saved but cannot submit (no record ID).',
           });
           return;
         }
+
         const submitRes = await SubmitAdjustment({recIds: [recId]});
         const submitOk =
           submitRes?.IsSuccess === true ||
-          String(submitRes?.IsSuccess).toLowerCase() === 'true' ||
-          submitRes?.isSuccess === true;
-        if (!submitOk) {
-          setAlert({
-            visible: true,
-            text: submitRes?.Message || submitRes?.message || 'Submit failed',
-          });
-          return;
-        }
+          String(submitRes?.IsSuccess).toLowerCase() === 'true';
+
         setAlert({
           visible: true,
-          text: 'Attendance created & submitted successfully.',
+          text: submitOk
+            ? 'Attendance created & submitted!'
+            : submitRes?.Message || 'Submit failed',
         });
+        if (!submitOk) return;
       }
 
       setTimeout(() => {
         setAlert(s => ({...s, visible: false}));
-        if (sourceScreen) navigation.navigate(sourceScreen, {refresh: true});
-        else navigation.goBack();
-      }, 900);
+        navigation.navigate(sourceScreen, {refresh: true});
+      }, 1000);
     } catch (e) {
       setAlert({visible: true, text: e?.message || 'Network error'});
     } finally {
@@ -276,8 +260,7 @@ const MarkPresentScreen = () => {
   };
 
   const onBack = useCallback(() => {
-    if (sourceScreen) navigation.navigate(sourceScreen);
-    else navigation.goBack();
+    navigation.navigate(sourceScreen);
   }, [navigation, sourceScreen]);
 
   return (
@@ -301,11 +284,10 @@ const MarkPresentScreen = () => {
             <ScrollView
               contentContainerStyle={styles.LReqSR_FormContainer}
               showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled>
+              keyboardShouldPersistTaps="handled">
               <Text style={styles.LReqSR_Label}>Employee</Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
-                {form.EmployeeName || (userData?.employeeId ?? '')}
+                {form.EmployeeName || userData?.employeeId}
               </Text>
 
               <TimeFlicker
@@ -323,13 +305,16 @@ const MarkPresentScreen = () => {
                 value={form.ClockInUI}
                 onChange={v => onTimeChange('ClockInUI', v)}
                 uiFormat="12h"
+                placeholder={TIME_HINT}
               />
+
               <TimeFlicker
                 mode="time"
                 label="Clock Out *"
                 value={form.ClockOutUI}
                 onChange={v => onTimeChange('ClockOutUI', v)}
                 uiFormat="12h"
+                placeholder={TIME_HINT}
               />
 
               <Text style={[styles.LReqSR_Label, {marginTop: 12}]}>
@@ -350,7 +335,7 @@ const MarkPresentScreen = () => {
               processingButton={processing}
               onSave={onSave}
               onCancel={onBack}
-              isDisabled={processing === 'save' || processing === 'submit'}
+              isDisabled={!!processing}
             />
           </KeyboardAvoidingView>
 
@@ -358,7 +343,7 @@ const MarkPresentScreen = () => {
             visible={alert.visible}
             heading="Alert"
             text={alert.text}
-            onPress={() => setAlert(s => ({...s, visible: false}))}
+            onPress={() => setAlert({visible: false})}
           />
         </SafeAreaView>
       )}
