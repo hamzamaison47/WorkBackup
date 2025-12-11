@@ -571,7 +571,6 @@ const CreateEmployeeAdjustment = ({
             value={form.attendanceDate}
             onChange={onDateChange}
             uiFormat="12h"
-            disabled={true}
           />
 
           <TimeFlicker

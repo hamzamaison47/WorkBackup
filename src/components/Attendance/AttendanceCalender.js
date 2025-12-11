@@ -559,7 +559,7 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
                 textDisabledColor: '#C7CED6',
                 selectedDayTextColor: '#0F172A',
                 textMonthFontWeight: '800',
-                textMonthFontSize: 30,
+                textMonthFontSize: 20,
                 textDayFontSize: 14,
                 textDayHeaderFontSize: 12,
               }}
