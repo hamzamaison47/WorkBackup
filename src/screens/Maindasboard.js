@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useCallback} from 'react';
+import React, {useEffect, useCallback, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -13,9 +13,9 @@ import ActionPaneContainer from '../components/ActionPaneContainer';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import AttendanceCalendar from '../components/Attendance/AttendanceCalender';
-
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
+import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
 
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {useDashboardDimensions} from '../hooks/useDashboardDimensions';
@@ -25,6 +25,7 @@ import {useMenuBuilder} from '../hooks/useMenuBuilder';
 import styles from '../styles/styles';
 import AttendanceSummary from '../components/MainDashboard/AttendanceSummary';
 import LeaveEntitlementProgress from '../components/MainDashboard/LeaveEntitlementProgress';
+import AIChatbot from '../components/AIChatbot/AIChatbot';
 
 const MainDashboard = () => {
   const dispatch = useDispatch();
@@ -96,6 +97,10 @@ const MainDashboard = () => {
 
   const cancelLogout = () => setModalVisible(false);
 
+  const [chatVisible, setChatVisible] = useState(false);
+  const [chatInitialMessages, setChatInitialMessages] = useState([]);
+  // No always-listening wake-word; assistant opens only from floating button
+
   return (
     <ActionPaneContainer
       pageTitle="Dynaface"
@@ -163,6 +168,23 @@ const MainDashboard = () => {
         text="Are you sure you want to logout?"
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
+      />
+      <AIChatbot
+        visible={chatVisible}
+        onClose={() => setChatVisible(false)}
+        initialMessages={chatInitialMessages}
+      />
+      <AIFloatingButton
+        onPress={() => {
+          setChatInitialMessages([
+            {
+              id: String(Date.now()),
+              from: 'bot',
+              text: 'Hey! How may I help you?',
+            },
+          ]);
+          setChatVisible(true);
+        }}
       />
     </ActionPaneContainer>
   );

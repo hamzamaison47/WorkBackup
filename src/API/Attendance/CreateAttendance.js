@@ -53,6 +53,9 @@ const CreateAttendance = async ({employeeId, punchDateTime}) => {
 
     const parsed = parser.parse(xml);
 
+    console.log('🔹 Raw XML Response:', xml);
+    console.log('🔹 Parsed SOAP Response:', JSON.stringify(parsed, null, 2));
+
     // ✅ Response should be inside <createAttendanceResponse><result>
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.['createAttendanceResponse']?.[
@@ -82,14 +85,19 @@ const CreateAttendance = async ({employeeId, punchDateTime}) => {
 
     const cleanedResult = cleanObject(result);
 
+    console.log('🔹 Cleaned Result:', cleanedResult);
+
     // ✅ return normalized result
-    return {
+    const returnObj = {
       recId: cleanedResult?.RecId,
       isSuccess:
         String(cleanedResult?.IsSuccess).toLowerCase() === 'true' ||
         cleanedResult?.IsSuccess === true,
       message: cleanedResult?.Message || 'No message returned',
     };
+    console.log('🔹 Final Return Object:', returnObj);
+
+    return returnObj;
   } catch (error) {
     console.error(
       '❌ Failed to create Attendance:',
