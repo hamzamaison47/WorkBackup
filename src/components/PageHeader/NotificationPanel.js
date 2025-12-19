@@ -9,11 +9,11 @@ import {
   Modal,
   ActivityIndicator,
   FlatList,
-  StyleSheet,
   RefreshControl,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {updateNotificationByRecID} from '../../API/Notification/UpdateNotificationByRecID';
+import styles from '../../styles/styles';
 
 const NotificationPanel = ({
   visible,
@@ -172,33 +172,33 @@ const NotificationPanel = ({
   const renderNotificationItem = ({item}) => (
     <View
       style={[
-        styles.notificationItem,
-        item.isToday && styles.notificationItemToday,
-        item.isRead && styles.notificationItemRead,
+        styles.notif_NotificationItem,
+        item.isToday && styles.notif_NotificationItemToday,
+        item.isRead && styles.notif_NotificationItemRead,
       ]}>
       {/* Left Logo Container with overlapping button */}
       <TouchableOpacity
-        style={styles.logoContainer}
+        style={styles.notif_LogoContainer}
         onPress={() => handleMarkAsRead(item)}
         disabled={item.isRead || loadingStates[item.RecId]}>
-        <View style={styles.iconContainer}>
+        <View style={styles.notif_IconContainer}>
           <FontAwesome
             name={getIconName(item.EmailLogType)}
             style={[
-              styles.notificationIcon,
-              item.isToday && styles.notificationIconToday,
+              styles.notif_NotificationIcon,
+              item.isToday && styles.notif_NotificationIconToday,
             ]}
           />
         </View>
 
         {/* Mark as read button positioned at bottom-right of logo */}
-        <View style={styles.markReadButtonContainer}>
+        <View style={styles.notif_MarkReadButtonContainer}>
           <TouchableOpacity
             style={[
-              styles.markReadButton,
-              item.isToday && styles.markReadButtonToday,
-              item.isRead && styles.markReadButtonRead,
-              loadingStates[item.RecId] && styles.markReadButtonDisabled,
+              styles.notif_MarkReadButton,
+              item.isToday && styles.notif_MarkReadButtonToday,
+              item.isRead && styles.notif_MarkReadButtonRead,
+              loadingStates[item.RecId] && styles.notif_MarkReadButtonDisabled,
             ]}
             onPress={() => handleMarkAsRead(item)}
             disabled={item.isRead || loadingStates[item.RecId]}>
@@ -211,9 +211,9 @@ const NotificationPanel = ({
               <FontAwesome
                 name={item.isRead ? 'check-circle' : 'circle'}
                 style={[
-                  styles.markReadIcon,
-                  item.isToday && styles.markReadIconToday,
-                  item.isRead && styles.markReadIconRead,
+                  styles.notif_MarkReadIcon,
+                  item.isToday && styles.notif_MarkReadIconToday,
+                  item.isRead && styles.notif_MarkReadIconRead,
                 ]}
               />
             )}
@@ -222,25 +222,18 @@ const NotificationPanel = ({
       </TouchableOpacity>
 
       {/* Content Container */}
-      <View style={styles.contentContainer}>
-        {/* <Text
-          style={[
-            styles.notificationTitle,
-            item.isToday && styles.notificationTitleToday,
-          ]}>
-          {'Notification'}
-        </Text> */}
+      <View style={styles.notif_ContentContainer}>
         <Text
           style={[
-            styles.notificationMessage,
-            item.isToday && styles.notificationMessageToday,
+            styles.notif_NotificationMessage,
+            item.isToday && styles.notif_NotificationMessageToday,
           ]}>
           {item.notificationText}
         </Text>
         <Text
           style={[
-            styles.notificationTime,
-            item.isToday && styles.notificationTimeToday,
+            styles.notif_NotificationTime,
+            item.isToday && styles.notif_NotificationTimeToday,
           ]}>
           {formatTime(item.CreatedDateTime)}
         </Text>
@@ -249,10 +242,10 @@ const NotificationPanel = ({
   );
 
   const renderSectionHeader = (title, count) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.countBadge}>
-        <Text style={styles.countText}>{count}</Text>
+    <View style={styles.notif_SectionHeader}>
+      <Text style={styles.notif_SectionTitle}>{title}</Text>
+      <View style={styles.notif_CountBadge}>
+        <Text style={styles.notif_CountText}>{count}</Text>
       </View>
     </View>
   );
@@ -265,41 +258,44 @@ const NotificationPanel = ({
       transparent
       animationType="none"
       onRequestClose={onClose}>
-      <Animated.View style={[styles.overlay, {opacity: fadeAnim}]}>
+      <Animated.View style={[styles.notif_Overlay, {opacity: fadeAnim}]}>
         <TouchableOpacity
-          style={styles.overlayTouchable}
+          style={styles.notif_OverlayTouchable}
           activeOpacity={1}
           onPress={onClose}
         />
 
-        <Animated.View style={[styles.panel, {transform: [{translateX}]}]}>
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <FontAwesome name="bell" style={styles.bellIcon} />
+        <Animated.View
+          style={[styles.notif_Panel, {transform: [{translateX}]}]}>
+          <View style={styles.notif_Header}>
+            <View style={styles.notif_HeaderLeft}>
+              <FontAwesome name="bell" style={styles.notif_BellIcon} />
               <View>
-                <Text style={styles.headerTitle}>Notifications</Text>
-                <Text style={styles.headerCount}>
+                <Text style={styles.notif_HeaderTitle}>Notifications</Text>
+                <Text style={styles.notif_HeaderCount}>
                   {unreadCount} unread
-                  {/* • {processedNotifications.length} total */}
                 </Text>
               </View>
             </View>
 
-            <View style={styles.headerRight}>
+            <View style={styles.notif_HeaderRight}>
               {/* Mark All as Read Button */}
               <TouchableOpacity
                 onPress={handleMarkAllAsRead}
                 style={[
-                  styles.markAllButton,
-                  markAllLoading && styles.markAllButtonDisabled,
+                  styles.notif_MarkAllButton,
+                  markAllLoading && styles.notif_MarkAllButtonDisabled,
                 ]}
                 disabled={unreadCount === 0 || markAllLoading}>
                 {markAllLoading ? (
                   <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <>
-                    <FontAwesome name="check" style={styles.markAllIcon} />
-                    <Text style={styles.markAllText}>Mark all read</Text>
+                    <FontAwesome
+                      name="check"
+                      style={styles.notif_MarkAllIcon}
+                    />
+                    <Text style={styles.notif_MarkAllText}>Mark all read</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -307,7 +303,7 @@ const NotificationPanel = ({
           </View>
 
           <ScrollView
-            style={styles.scrollView}
+            style={styles.notif_ScrollView}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -316,9 +312,9 @@ const NotificationPanel = ({
               />
             }>
             {processedNotifications.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <FontAwesome name="bell-slash" style={styles.emptyIcon} />
-                <Text style={styles.emptyText}>No notifications</Text>
+              <View style={styles.notif_EmptyContainer}>
+                <FontAwesome name="bell-slash" style={styles.notif_EmptyIcon} />
+                <Text style={styles.notif_EmptyText}>No notifications</Text>
               </View>
             ) : (
               <>
@@ -349,8 +345,8 @@ const NotificationPanel = ({
             )}
           </ScrollView>
 
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <FontAwesome name="times" style={styles.closeIcon} />
+          <TouchableOpacity onPress={onClose} style={styles.notif_CloseButton}>
+            <FontAwesome name="times" style={styles.notif_CloseIcon} />
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>
@@ -389,266 +385,5 @@ const formatTime = dateString => {
   if (diffDays < 7) return `${diffDays}d ago`;
   return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-  },
-  overlayTouchable: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  panel: {
-    width: 350,
-    height: '100%',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {width: -4, height: 0},
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#0A66C2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#0c5298',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  bellIcon: {
-    fontSize: 24,
-    color: '#ffffff',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  headerCount: {
-    fontSize: 12,
-    color: '#e2e8f0',
-    marginTop: 2,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  markAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-    marginRight: 45,
-  },
-  markAllButtonDisabled: {
-    opacity: 0.5,
-  },
-  markAllIcon: {
-    fontSize: 14,
-    color: '#ffffff',
-  },
-  markAllText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  refreshButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  refreshIcon: {
-    fontSize: 20,
-    color: '#ffffff',
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#f8fafc',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  countBadge: {
-    backgroundColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    minWidth: 24,
-  },
-  countText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#475569',
-    textAlign: 'center',
-  },
-  notificationItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    backgroundColor: '#fff',
-  },
-  notificationItemToday: {
-    backgroundColor: '#f0f9ff',
-    borderLeftWidth: 2,
-    borderLeftColor: '#0A66C2',
-  },
-  notificationItemRead: {
-    backgroundColor: '#fafafa',
-    opacity: 0.8,
-  },
-  logoContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#e0f2fe',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationIcon: {
-    fontSize: 20,
-    color: '#0A66C2',
-  },
-  notificationIconToday: {
-    color: '#0369a1',
-  },
-  markReadButtonContainer: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    zIndex: 1,
-  },
-  markReadButton: {
-    width: 12,
-    height: 12,
-    borderRadius: 11,
-    backgroundColor: '#0A66C2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  markReadButtonToday: {
-    backgroundColor: '#0A66C2',
-  },
-  markReadButtonRead: {
-    backgroundColor: '#94a3b8',
-  },
-  markReadButtonDisabled: {
-    opacity: 0.5,
-  },
-  markReadIcon: {
-    fontSize: 4,
-    color: '#ffffff',
-  },
-  markReadIconToday: {
-    color: '#ffffff',
-  },
-  markReadIconRead: {
-    color: '#ffffff',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 4,
-  },
-  notificationTitleToday: {
-    color: '#0A66C2',
-  },
-  notificationMessage: {
-    fontSize: 14,
-    color: '#64748b',
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  notificationMessageToday: {
-    color: '#475569',
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: '#94a3b8',
-  },
-  notificationTimeToday: {
-    color: '#0A66C2',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 80,
-  },
-  emptyIcon: {
-    fontSize: 56,
-    color: '#cbd5e1',
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#64748b',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 20,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  closeIcon: {
-    fontSize: 16,
-    color: '#64748b',
-  },
-});
 
 export default NotificationPanel;
