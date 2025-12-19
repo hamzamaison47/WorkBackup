@@ -1,5 +1,4 @@
 /* eslint-disable no-unused-vars */
-/* eslint-disable no-shadow */
 /* eslint-disable no-undef */
 import {decode as atob, encode as btoa} from 'base-64';
 import {authorize} from 'react-native-app-auth';
@@ -8,6 +7,7 @@ import {getActiveConfigData} from './secureConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 import {saveAccountAfterLogin} from '../store/utils/biometricUtils';
+import firebaseService from '../store/FirebaseService';
 
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
@@ -21,37 +21,79 @@ if (typeof global.btoa === 'undefined') {
   global.btoa = btoa;
 }
 
+// export const handleLogoutauth = async (navigation, dispatch) => {
+//   try {
+//     // Clear AsyncStorage tokens
+//     await AsyncStorage.multiRemove(['accessToken', 'idToken', 'refreshToken']);
+
+//     // Clear Redux store
+//     dispatch(setUserData(null)); // Clear user data
+//     dispatch(setLegalEntities([])); // Clear legal entities
+//     dispatch(setMenuItems([])); // Clear menu items
+
+//     // Clear accounts list but keep biometric credentials
+//     // This ensures only current logged-in account shows in BiometricSettings
+//     try {
+//       const AsyncStorage = (
+//         await import('@react-native-async-storage/async-storage')
+//       ).default;
+
+//       // Clear only the accounts list - biometric credentials stay in Keychain
+//       await AsyncStorage.removeItem('accounts_list');
+
+//       // // Clear any biometric credentials
+//       // try {
+//       //   const {disableBiometric} = await import(
+//       //     '../store/utils/biometricUtils'
+//       //   );
+//       //   await disableBiometric();
+//       // } catch (error) {
+//       //   console.log('Error clearing biometric credentials:', error);
+//       // }
+
+//       // console.log('Logged out - Accounts list cleared');
+//     } catch (error) {
+//       console.log('Error clearing accounts list:', error);
+//     }
+
+//     // Navigate to Login screen
+//     navigation.reset({
+//       index: 0,
+//       routes: [{name: 'Login'}],
+//     });
+//   } catch (error) {
+//     console.error('Logout error:', error);
+//     // Fallback navigation
+//     navigation.reset({
+//       index: 0,
+//       routes: [{name: 'Login'}],
+//     });
+//   }
+// };
 export const handleLogoutauth = async (navigation, dispatch) => {
   try {
+    // Cleanup Firebase service
+    await firebaseService.cleanup();
+
     // Clear AsyncStorage tokens
-    await AsyncStorage.multiRemove(['accessToken', 'idToken', 'refreshToken']);
+    await AsyncStorage.multiRemove([
+      'accessToken',
+      'idToken',
+      'refreshToken',
+      'user_email',
+      'employeeId',
+      'employeeName',
+      'defaultLegalEntity',
+    ]);
 
     // Clear Redux store
-    dispatch(setUserData(null)); // Clear user data
-    dispatch(setLegalEntities([])); // Clear legal entities
-    dispatch(setMenuItems([])); // Clear menu items
+    dispatch(setUserData(null));
+    dispatch(setLegalEntities([]));
+    dispatch(setMenuItems([]));
 
-    // Clear accounts list but keep biometric credentials
-    // This ensures only current logged-in account shows in BiometricSettings
+    // Clear accounts list
     try {
-      const AsyncStorage = (
-        await import('@react-native-async-storage/async-storage')
-      ).default;
-
-      // Clear only the accounts list - biometric credentials stay in Keychain
       await AsyncStorage.removeItem('accounts_list');
-
-      // // Clear any biometric credentials
-      // try {
-      //   const {disableBiometric} = await import(
-      //     '../store/utils/biometricUtils'
-      //   );
-      //   await disableBiometric();
-      // } catch (error) {
-      //   console.log('Error clearing biometric credentials:', error);
-      // }
-
-      // console.log('Logged out - Accounts list cleared');
     } catch (error) {
       console.log('Error clearing accounts list:', error);
     }
@@ -63,7 +105,6 @@ export const handleLogoutauth = async (navigation, dispatch) => {
     });
   } catch (error) {
     console.error('Logout error:', error);
-    // Fallback navigation
     navigation.reset({
       index: 0,
       routes: [{name: 'Login'}],
@@ -231,7 +272,37 @@ export const handleSuccessfulLogin = async (
     // Set user data in Redux
     setUserData(completeUserData);
 
-    // Step 6: Save account with complete user data (NO tokens, NO config)
+    // Step 6: Save user data to AsyncStorage for Firebase service
+    await AsyncStorage.setItem('user_email', userEmailOrUPN);
+    await AsyncStorage.setItem('employeeId', user.EmployeeId);
+    await AsyncStorage.setItem('employeeName', user.EmployeeName);
+    await AsyncStorage.setItem('defaultLegalEntity', user.DefaultLegalEntity);
+
+    // Step 7: Register device with Dynamics for push notifications (PHASE 1)
+    try {
+      console.log('Starting Firebase device registration...');
+      // const registrationResult =
+      //   await firebaseService.registerDeviceWithDynamics();
+      const registrationResult = await firebaseService.syncDeviceAfterLogin();
+
+      if (registrationResult.success) {
+        console.log(
+          'Firebase registration successful:',
+          registrationResult.message,
+        );
+      } else {
+        console.warn(
+          'Firebase registration warning:',
+          registrationResult.message,
+        );
+        // Don't block login, just log warning
+      }
+    } catch (firebaseError) {
+      console.error('Firebase registration error:', firebaseError);
+      // Don't block login on Firebase errors
+    }
+
+    // Step 8: Save account with complete user data
     const savedAccount = await saveAccountAfterLogin(userEmailOrUPN, provider, {
       displayName: decodedAccessToken.name || user.EmployeeName,
       employeeId: user.EmployeeId,
@@ -241,7 +312,7 @@ export const handleSuccessfulLogin = async (
       ...completeUserData,
     });
 
-    // Step 7: Navigate to main app
+    // Step 9: Navigate to main app
     navigation.navigate('DrawerNavigator', {
       userName: decodedAccessToken.name,
     });

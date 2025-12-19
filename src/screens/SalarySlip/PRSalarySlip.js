@@ -56,7 +56,7 @@ const PRSalarySlip = () => {
         employeeId: userData.employeeId,
       });
 
-      console.log('Fetching Pay Periods', data);
+      // console.log('Fetching Pay Periods', data);
 
       if (data && data.length > 0) {
         setPayPeriods(
@@ -102,7 +102,7 @@ const PRSalarySlip = () => {
         employeeId: userData.employeeId,
       });
 
-      console.log('Send Salary Slip by Email', response);
+      // console.log('Send Salary Slip by Email', response);
 
       // Show the actual response message from API
       if (response === 'Email sent Successfully') {

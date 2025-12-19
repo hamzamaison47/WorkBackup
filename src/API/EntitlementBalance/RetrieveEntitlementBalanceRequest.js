@@ -23,6 +23,8 @@ const RetrieveEntitlementBalanceRequest = async ({employeeId}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    // console.log({soapEnvelope});
+
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/PREntitlementBalanceSvcGroup`,
       soapEnvelope,
@@ -35,6 +37,8 @@ const RetrieveEntitlementBalanceRequest = async ({employeeId}) => {
         responseType: 'text',
       },
     );
+
+    // console.log({xml});
 
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -66,6 +70,8 @@ const RetrieveEntitlementBalanceRequest = async ({employeeId}) => {
     const cleanedData = Array.isArray(rawData)
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
+
+    // console.log({cleanedData});
 
     return cleanedData;
   } catch (err) {
