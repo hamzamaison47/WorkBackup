@@ -1,14 +1,20 @@
 // biometricUtils.js
 import ReactNativeBiometrics from 'react-native-biometrics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Keychain from 'react-native-keychain';
+import {store} from '../index';
+import {
+  setBiometricEnabled,
+  setSelectedAccount,
+  setAccounts,
+  addAccount as addAccountAction,
+  removeAccount as removeAccountAction,
+  setBiometricCredentials,
+  clearBiometric,
+} from '../slices/biometricSlice';
 
 const rnBiometrics = new ReactNativeBiometrics({allowDeviceCredentials: true});
 
-// Storage keys
-const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
-const SELECTED_ACCOUNT_KEY = 'selected_account';
-const ACCOUNTS_LIST_KEY = 'accounts_list';
+// Keychain service for secure credential storage
 const BIOMETRIC_CREDENTIALS_SERVICE = 'biometric_credentials';
 
 // Store ONLY email and provider, nothing else
@@ -50,9 +56,10 @@ export const getBiometricCredentials = async () => {
  * Save account only for currently logged-in user
  * Clear previous accounts and only keep the current one
  */
-export const saveAccountAfterLogin = async (email, provider, userData = {}) => {
+export const saveAccountAfterLogin = (email, provider, userData = {}) => {
   try {
-    await AsyncStorage.removeItem(ACCOUNTS_LIST_KEY);
+    // Clear previous accounts from Redux
+    store.dispatch(setAccounts([]));
 
     const newAccount = {
       email,
@@ -66,7 +73,8 @@ export const saveAccountAfterLogin = async (email, provider, userData = {}) => {
       defaultLegalEntity: userData.defaultLegalEntity,
     };
 
-    await AsyncStorage.setItem(ACCOUNTS_LIST_KEY, JSON.stringify([newAccount]));
+    // Set the new account in Redux
+    store.dispatch(setAccounts([newAccount]));
 
     return newAccount;
   } catch (error) {
@@ -76,12 +84,12 @@ export const saveAccountAfterLogin = async (email, provider, userData = {}) => {
 };
 
 /**
- * Get all saved accounts
+ * Get all saved accounts from Redux
  */
-export const getAccounts = async () => {
+export const getAccounts = () => {
   try {
-    const accounts = await AsyncStorage.getItem(ACCOUNTS_LIST_KEY);
-    return accounts ? JSON.parse(accounts) : [];
+    const state = store.getState();
+    return state.biometric.accounts || [];
   } catch (error) {
     console.error('Error getting accounts:', error);
     return [];
@@ -91,9 +99,9 @@ export const getAccounts = async () => {
 /**
  * Get accounts grouped by provider
  */
-export const getAccountsByProvider = async () => {
+export const getAccountsByProvider = () => {
   try {
-    const accounts = await getAccounts();
+    const accounts = getAccounts();
     const grouped = {
       Azure: [],
       Google: [],
@@ -115,9 +123,9 @@ export const getAccountsByProvider = async () => {
 /**
  * Save selected account for biometric login
  */
-export const saveSelectedAccount = async account => {
+export const saveSelectedAccount = account => {
   try {
-    await AsyncStorage.setItem(SELECTED_ACCOUNT_KEY, JSON.stringify(account));
+    store.dispatch(setSelectedAccount(account));
     return true;
   } catch (error) {
     console.error('Error saving selected account:', error);
@@ -126,12 +134,12 @@ export const saveSelectedAccount = async account => {
 };
 
 /**
- * Get selected account
+ * Get selected account from Redux
  */
-export const getSelectedAccount = async () => {
+export const getSelectedAccount = () => {
   try {
-    const account = await AsyncStorage.getItem(SELECTED_ACCOUNT_KEY);
-    return account ? JSON.parse(account) : null;
+    const state = store.getState();
+    return state.biometric.selectedAccount;
   } catch (error) {
     console.error('Error getting selected account:', error);
     return null;
@@ -141,18 +149,15 @@ export const getSelectedAccount = async () => {
 /**
  * Remove an account
  */
-export const removeAccount = async accountId => {
+export const removeAccount = accountId => {
   try {
-    const accounts = await getAccounts();
+    const accounts = getAccounts();
     const updatedAccounts = accounts.filter(acc => acc.id !== accountId);
-    await AsyncStorage.setItem(
-      ACCOUNTS_LIST_KEY,
-      JSON.stringify(updatedAccounts),
-    );
+    store.dispatch(setAccounts(updatedAccounts));
 
-    const selectedAccount = await getSelectedAccount();
+    const selectedAccount = getSelectedAccount();
     if (selectedAccount && selectedAccount.id === accountId) {
-      await AsyncStorage.removeItem(SELECTED_ACCOUNT_KEY);
+      store.dispatch(setSelectedAccount(null));
     }
 
     return true;
@@ -165,15 +170,10 @@ export const removeAccount = async accountId => {
 /**
  * Clear all accounts and reset biometric settings
  */
-export const clearAllAccounts = async () => {
+export const clearAllAccounts = () => {
   try {
-    await AsyncStorage.multiRemove([
-      ACCOUNTS_LIST_KEY,
-      SELECTED_ACCOUNT_KEY,
-      BIOMETRIC_ENABLED_KEY,
-    ]);
-
-    console.log('All accounts cleared successfully');
+    store.dispatch(clearBiometric());
+    console.log('All accounts cleared successfully from Redux');
     return true;
   } catch (error) {
     console.error('Error clearing accounts:', error);
@@ -192,7 +192,7 @@ export const checkBiometricAvailability = async () => {
   }
 };
 
-// Enable biometric - only store email and provider
+// Enable biometric - only store email and provider in Keychain
 export const enableBiometric = async (email, provider) => {
   try {
     await disableBiometric();
@@ -200,7 +200,7 @@ export const enableBiometric = async (email, provider) => {
     const success = await storeBiometricCredentials(email, provider);
 
     if (success) {
-      await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
+      store.dispatch(setBiometricEnabled(true));
       return true;
     }
     return false;
@@ -217,8 +217,8 @@ export const disableBiometric = async () => {
       service: BIOMETRIC_CREDENTIALS_SERVICE,
     });
 
-    await AsyncStorage.removeItem(BIOMETRIC_ENABLED_KEY);
-    await AsyncStorage.removeItem(SELECTED_ACCOUNT_KEY);
+    store.dispatch(setBiometricEnabled(false));
+    store.dispatch(setSelectedAccount(null));
 
     return true;
   } catch (error) {
@@ -227,16 +227,17 @@ export const disableBiometric = async () => {
   }
 };
 
-// Check both Keychain and AsyncStorage
+// Check both Keychain and Redux
 export const hasPersistentBiometricCredentials = async () => {
   try {
     const credentials = await getBiometricCredentials();
-    const enabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
+    const state = store.getState();
+    const enabled = state.biometric.enabled;
 
     return (
       credentials !== null &&
       credentials.isBiometricEnabled === true &&
-      enabled === 'true'
+      enabled === true
     );
   } catch (error) {
     console.error('Error checking biometric credentials:', error);
@@ -244,10 +245,10 @@ export const hasPersistentBiometricCredentials = async () => {
   }
 };
 
-export const isBiometricEnabled = async () => {
+export const isBiometricEnabled = () => {
   try {
-    const enabled = await AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY);
-    return enabled === 'true';
+    const state = store.getState();
+    return state.biometric.enabled === true;
   } catch (error) {
     console.error('Error checking biometric status:', error);
     return false;
@@ -268,12 +269,12 @@ export const authenticateWithBiometrics = async () => {
 };
 
 // Legacy support
-export const saveSelectedEmail = async email => {
+export const saveSelectedEmail = email => {
   try {
-    const accounts = await getAccounts();
+    const accounts = getAccounts();
     const account = accounts.find(acc => acc.email === email);
     if (account) {
-      return await saveSelectedAccount(account);
+      return saveSelectedAccount(account);
     }
     return false;
   } catch (error) {
@@ -282,9 +283,9 @@ export const saveSelectedEmail = async email => {
   }
 };
 
-export const getSelectedEmail = async () => {
+export const getSelectedEmail = () => {
   try {
-    const account = await getSelectedAccount();
+    const account = getSelectedAccount();
     return account ? account.email : null;
   } catch (error) {
     console.error('Error getting selected email:', error);
@@ -292,9 +293,9 @@ export const getSelectedEmail = async () => {
   }
 };
 
-export const getCachedEmails = async () => {
+export const getCachedEmails = () => {
   try {
-    const accounts = await getAccounts();
+    const accounts = getAccounts();
     return accounts.map(acc => acc.email);
   } catch (error) {
     console.error('Error getting cached emails:', error);

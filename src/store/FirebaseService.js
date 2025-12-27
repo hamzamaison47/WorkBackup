@@ -2,38 +2,31 @@
 /* eslint-disable no-unused-vars */
 import messaging from '@react-native-firebase/messaging';
 import {Platform, Alert, AppState} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import DeviceInfo from 'react-native-device-info';
 import {UpdateFirebaseToken} from '../API/RequestForRegistration/UpdateFirebaseToken';
+import {store} from './index';
+import {
+  setFirebaseToken,
+  setLastSyncedToken,
+  setDynamicsSynced,
+  clearFirebaseData,
+  setFirebaseInitialized,
+} from './slices/firebaseSlice';
 
 class FirebaseService {
   constructor() {
-    this.userEmail = null;
-    this.employeeId = null;
-    this.company = null;
-    this.isInitialized = false;
+    // NO instance variables for user data - always read from Redux
   }
 
-  // Initialize with user data
-  async initializeUserData() {
-    try {
-      this.userEmail = await AsyncStorage.getItem('user_email');
-      this.employeeId = await AsyncStorage.getItem('employeeId');
-      this.company = await AsyncStorage.getItem('defaultLegalEntity');
-
-      this.isInitialized = true;
-
-      console.log('FirebaseService initialized:', {
-        email: this.userEmail,
-        employeeId: this.employeeId,
-        company: this.company,
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Error initializing FirebaseService:', error);
-      return false;
-    }
+  // Helper to get current user data from Redux
+  getUserDataFromRedux() {
+    const state = store.getState();
+    return {
+      userEmail: state.firebase.userEmail,
+      employeeId: state.firebase.employeeId,
+      company: state.firebase.company,
+      isInitialized: state.firebase.isInitialized,
+    };
   }
 
   // Check and request notification permissions
@@ -66,10 +59,13 @@ class FirebaseService {
         return null;
       }
 
-      const savedToken = await AsyncStorage.getItem('fcm_token');
+      // Get saved token from Redux
+      const state = store.getState();
+      const savedToken = state.firebase.fcmToken;
+
       if (savedToken) {
         console.log(
-          'Using saved FCM token:',
+          'Using saved FCM token from Redux:',
           savedToken.substring(0, 20) + '...',
         );
         return savedToken;
@@ -77,7 +73,8 @@ class FirebaseService {
 
       const token = await messaging().getToken();
       console.log('New FCM Token obtained:', token.substring(0, 20) + '...');
-      await AsyncStorage.setItem('fcm_token', token);
+      // Save to Redux
+      store.dispatch(setFirebaseToken(token));
       return token;
     } catch (error) {
       console.error('Error getting FCM token:', error);
@@ -85,33 +82,20 @@ class FirebaseService {
     }
   }
 
-  // Get Device ID
-  // async getDeviceId() {
-  //   try {
-  //     let deviceId = await AsyncStorage.getItem('device_id');
-  //     if (!deviceId) {
-  //       deviceId = await DeviceInfo.getUniqueId();
-  //       await AsyncStorage.setItem('device_id', deviceId);
-  //     }
-  //     console.log('Device ID:', deviceId);
-  //     return deviceId;
-  //   } catch (error) {
-  //     console.error('Error getting device ID:', error);
-  //     const fallbackId = `device_${Date.now()}`;
-  //     await AsyncStorage.setItem('device_id', fallbackId);
-  //     return fallbackId;
-  //   }
-  // }
-
   // Sync device with Dynamics after login (UPDATE only)
   async syncDeviceAfterLogin() {
     try {
-      // Step 1: Ensure user data is loaded
-      if (!this.isInitialized) {
-        await this.initializeUserData();
-      }
+      // Step 1: Get FRESH user data from Redux
+      const {userEmail, employeeId, company, isInitialized} =
+        this.getUserDataFromRedux();
 
-      if (!this.userEmail || !this.employeeId || !this.company) {
+      console.log('FirebaseService syncing with data from Redux:', {
+        userEmail,
+        employeeId,
+        company,
+      });
+
+      if (!userEmail || !employeeId || !company) {
         console.error('User data not complete for sync');
         return {success: false, message: 'User data not complete'};
       }
@@ -122,11 +106,10 @@ class FirebaseService {
         return {success: false, message: 'Failed to get Firebase token'};
       }
 
-      // Step 3: Get device ID
-      // const deviceId = await this.getDeviceId();
+      // Step 3: Check if token is already synced
+      const state = store.getState();
+      const lastSyncedToken = state.firebase.lastSyncedToken;
 
-      // Step 4: Check if token is already synced
-      const lastSyncedToken = await AsyncStorage.getItem('last_dynamics_token');
       if (lastSyncedToken === firebaseToken) {
         console.log('Device token already synced with current token');
         return {success: true, message: 'Already synced'};
@@ -134,23 +117,23 @@ class FirebaseService {
 
       console.log('Syncing device token with Dynamics via SOAP...');
 
-      // Step 5: Prepare update data for SOAP service
+      // Step 4: Prepare update data for SOAP service
       const updateData = {
-        Email: this.userEmail,
-        EmployeeID: this.employeeId,
+        Email: userEmail, // Use fresh data from Redux
+        EmployeeID: employeeId, // Use fresh data from Redux
         FirebaseToken: firebaseToken,
-        Company: this.company || '',
+        Company: company || '', // Use fresh data from Redux
       };
 
       console.log('Sending token update to SOAP service');
 
-      // Step 6: Update token in Dynamics
-      // const result = await UpdateFirebaseToken({registerData: updateData});
+      // Step 5: Update token in Dynamics
       const result = await UpdateFirebaseToken({updateData: updateData});
 
       if (result && result.parmIsSuccess) {
-        await AsyncStorage.setItem('last_dynamics_token', firebaseToken);
-        await AsyncStorage.setItem('dynamics_synced', 'true');
+        // Update Redux with synced token
+        store.dispatch(setLastSyncedToken(firebaseToken));
+        store.dispatch(setDynamicsSynced(true));
 
         console.log('Device token synced successfully');
 
@@ -176,31 +159,28 @@ class FirebaseService {
   // Update token in Dynamics (for token refresh)
   async updateTokenInDynamics(newToken) {
     try {
-      if (!this.isInitialized) {
-        await this.initializeUserData();
-      }
+      // Get FRESH user data from Redux
+      const {userEmail, employeeId, company} = this.getUserDataFromRedux();
 
-      if (!this.employeeId) {
+      if (!employeeId) {
         console.log('No employee ID found, skipping token update');
         return {success: false, message: 'User not logged in'};
       }
 
-      // const deviceId = await this.getDeviceId();
-
       console.log('Updating Firebase token in Dynamics via SOAP');
 
       const updateData = {
-        Email: this.userEmail,
-        EmployeeID: this.employeeId,
+        Email: userEmail,
+        EmployeeID: employeeId,
         FirebaseToken: newToken,
-        Company: this.company || '',
+        Company: company || '',
       };
 
-      // const result = await UpdateFirebaseToken({registerData: updateData});
       const result = await UpdateFirebaseToken({updateData: updateData});
 
       if (result && result.parmIsSuccess) {
-        await AsyncStorage.setItem('last_dynamics_token', newToken);
+        // Update Redux
+        store.dispatch(setLastSyncedToken(newToken));
         console.log('Token updated successfully in Dynamics');
         return {
           success: true,
@@ -215,8 +195,8 @@ class FirebaseService {
       }
     } catch (error) {
       console.error('Error updating token:', error);
-      // Still save token locally for retry
-      await AsyncStorage.setItem('last_dynamics_token', newToken);
+      // Still save token locally in Redux for retry
+      store.dispatch(setLastSyncedToken(newToken));
       return {
         success: false,
         message: `Token update error: ${error.message}`,
@@ -256,10 +236,12 @@ class FirebaseService {
     const unsubscribeTokenRefresh = messaging().onTokenRefresh(
       async newToken => {
         console.log('FCM token refreshed:', newToken.substring(0, 20) + '...');
-        await AsyncStorage.setItem('fcm_token', newToken);
+        // Update Redux
+        store.dispatch(setFirebaseToken(newToken));
 
         // Update token in Dynamics if user is logged in
-        if (this.isInitialized && this.userEmail) {
+        const {userEmail} = this.getUserDataFromRedux();
+        if (userEmail) {
           await this.updateTokenInDynamics(newToken);
         }
       },
@@ -273,25 +255,6 @@ class FirebaseService {
     };
   }
 
-  // Show foreground notification
-  // showForegroundNotification(remoteMessage, navigation) {
-  //   const title = remoteMessage.notification?.title || 'Dynamics 365';
-  //   const body =
-  //     remoteMessage.notification?.body ||
-  //     remoteMessage.data?.body ||
-  //     'New notification';
-
-  //   Alert.alert(title, body, [
-  //     {text: 'Cancel', style: 'cancel'},
-  //     {
-  //       text: 'View',
-  //       onPress: () => {
-  //         this.handleNotificationTap(remoteMessage, navigation);
-  //       },
-  //     },
-  //   ]);
-  // }
-
   // Handle notification tap
   handleNotificationTap(remoteMessage, navigation) {
     if (!navigation) return;
@@ -304,21 +267,13 @@ class FirebaseService {
     }
   }
 
-  // Cleanup on logout
+  // Cleanup on logout - clear Redux state
   async cleanup() {
     try {
-      await AsyncStorage.multiRemove([
-        'fcm_token',
-        'last_dynamics_token',
-        'dynamics_synced',
-      ]);
+      // Clear Redux state
+      store.dispatch(clearFirebaseData());
 
-      this.userEmail = null;
-      this.employeeId = null;
-      this.company = null;
-      this.isInitialized = false;
-
-      console.log('Firebase service cleaned up');
+      console.log('Firebase service cleaned up - Redux state cleared');
     } catch (error) {
       console.error('Error during cleanup:', error);
     }
@@ -352,13 +307,14 @@ class FirebaseService {
   }
 
   // Helper to check if device is already synced
-  async isDeviceSynced() {
+  isDeviceSynced() {
     try {
-      const synced = await AsyncStorage.getItem('dynamics_synced');
-      const lastToken = await AsyncStorage.getItem('last_dynamics_token');
-      const currentToken = await AsyncStorage.getItem('fcm_token');
+      const state = store.getState();
+      const synced = state.firebase.dynamicsSynced;
+      const lastToken = state.firebase.lastSyncedToken;
+      const currentToken = state.firebase.fcmToken;
 
-      return synced === 'true' && lastToken === currentToken;
+      return synced && lastToken === currentToken;
     } catch (error) {
       console.error('Error checking sync status:', error);
       return false;

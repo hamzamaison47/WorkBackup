@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 import {store} from '../../store';
+import {setAccessToken, setRefreshToken} from '../../store/slices/authSlice';
 import {refresh} from 'react-native-app-auth';
 import {getAzureConfigurationV2} from '../../Controller/configuration';
 
@@ -30,29 +30,21 @@ export const getToken = async () => {
       resource: resource,
     };
 
-    // console.log('Config Token details:', {
-    //   tokenUrl,
-    //   client_id: client_id.substring(0, 8) + '...',
-    //   grant_type,
-    //   resource,
-    // });
-
     const storeState = store.getState();
     const userData = storeState.user.userData; // 👈 access user slice data
+    const refreshToken = storeState.auth.refreshToken; // Get from Redux
+
     if (userData != null) {
       if (userData.isDynamicsUser === 'Yes') {
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-
         if (refreshToken != null || refreshToken !== 'undefined') {
           const refreshResult = await refresh(await getAzureConfigurationV2(), {
             refreshToken: refreshToken,
           });
 
-          await AsyncStorage.setItem('accessToken', refreshResult.accessToken);
-          await AsyncStorage.setItem(
-            'refreshToken',
-            refreshResult.refreshToken,
-          );
+          // Update Redux state with new tokens
+          store.dispatch(setAccessToken(refreshResult.accessToken));
+          store.dispatch(setRefreshToken(refreshResult.refreshToken));
+
           return refreshResult.accessToken;
         }
       }

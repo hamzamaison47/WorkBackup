@@ -547,7 +547,6 @@ import {
 } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSelector, useDispatch} from 'react-redux';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {screenMapping, iconMapping} from '../Controller/screenMapping';
 import {

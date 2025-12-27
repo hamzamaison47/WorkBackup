@@ -10,11 +10,17 @@ import {
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Feather';
 import RNRestart from 'react-native-restart';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  setLanguage,
+  setSkipLoginAfterRestart,
+} from '../../store/slices/languageSlice';
 
 const LanguageModal = ({visible, onClose}) => {
   const {t, i18n} = useTranslation();
-  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language);
+  const dispatch = useDispatch();
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
+  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
 
   const languages = [
     {
@@ -31,25 +37,27 @@ const LanguageModal = ({visible, onClose}) => {
     },
   ];
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language);
+  const currentLang = languages.find(lang => lang.code === currentLanguage);
   const selectedLang = languages.find(lang => lang.code === selectedLanguage);
 
   const handleLanguageChange = async () => {
-    if (selectedLanguage === i18n.language) {
+    if (selectedLanguage === currentLanguage) {
       onClose();
       return;
     }
 
-    const willChangeDirection = selectedLang.isRTL !== currentLanguage.isRTL;
+    const willChangeDirection = selectedLang.isRTL !== currentLang.isRTL;
 
     try {
-      // Change language
+      // Change language in i18n
       await i18n.changeLanguage(selectedLanguage);
-      await AsyncStorage.setItem('@app_language', selectedLanguage);
+
+      // Update Redux state
+      dispatch(setLanguage(selectedLanguage));
 
       if (willChangeDirection) {
         // Set flag to skip login after restart
-        await AsyncStorage.setItem('@skip_login_after_restart', 'true');
+        dispatch(setSkipLoginAfterRestart(true));
 
         // Force RTL
         I18nManager.forceRTL(selectedLang.isRTL);

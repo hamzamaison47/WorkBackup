@@ -51,7 +51,7 @@
 
 import React, {useEffect, useState} from 'react';
 import {createStackNavigator} from '@react-navigation/stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useSelector} from 'react-redux';
 
 import SplashScreens from '../screens/SplashScreens';
 import LoginScreen from '../screens/LoginScreen';
@@ -63,21 +63,18 @@ import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 const Stack = createStackNavigator();
 
 const AppNavigator = () => {
+  const userToken = useSelector(state => state.auth.userToken);
+  const appRestarting = useSelector(state => state.language.appRestarting);
   const [initialRoute, setInitialRoute] = useState('SplashScreen');
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     checkAuthState();
-  }, []);
+  }, [userToken, appRestarting]);
 
-  const checkAuthState = async () => {
+  const checkAuthState = () => {
     try {
-      // Check if user is logged in
-      const userToken = await AsyncStorage.getItem('@user_token');
-      const isRestarting = await AsyncStorage.getItem('@app_restarting');
-
       // If we just restarted for language change and user was logged in
-      if (isRestarting === 'true' && userToken) {
+      if (appRestarting && userToken) {
         setInitialRoute('DrawerNavigator');
       } else {
         setInitialRoute('SplashScreen');
@@ -85,14 +82,8 @@ const AppNavigator = () => {
     } catch (error) {
       console.error('Error checking auth state:', error);
       setInitialRoute('SplashScreen');
-    } finally {
-      setIsChecking(false);
     }
   };
-
-  if (isChecking) {
-    return null; // Or show a loading indicator
-  }
 
   return (
     <Stack.Navigator initialRouteName={initialRoute}>

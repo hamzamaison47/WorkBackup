@@ -1,10 +1,14 @@
 import React, {useEffect, useRef} from 'react';
 import {Animated, Easing} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useSelector, useDispatch} from 'react-redux';
+import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
 import styles from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
+  const dispatch = useDispatch();
+  const skipLogin = useSelector(state => state.language.skipLoginAfterRestart);
+
   // Animations
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -60,18 +64,13 @@ const SplashScreens = ({navigation}) => {
       }),
     ]).start();
 
-    const checkAuthStatus = async () => {
+    const checkAuthStatus = () => {
       try {
         fadeInContent();
 
-        // Check if we're returning from a language restart
-        const skipLogin = await AsyncStorage.getItem(
-          '@skip_login_after_restart',
-        );
-
-        if (skipLogin === 'true') {
+        if (skipLogin) {
           // Clear the flag immediately
-          await AsyncStorage.removeItem('@skip_login_after_restart');
+          dispatch(setSkipLoginAfterRestart(false));
 
           // Go directly to DrawerNavigator (skip Login)
           setTimeout(() => {
@@ -99,6 +98,8 @@ const SplashScreens = ({navigation}) => {
     circlePulse1,
     circlePulse2,
     circlePulse3,
+    skipLogin,
+    dispatch,
   ]);
 
   // Circle scale interpolations

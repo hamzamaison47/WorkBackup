@@ -75,14 +75,14 @@
 
 /* eslint-disable curly */
 import React, {useEffect} from 'react';
-import {Provider} from 'react-redux';
+import {Provider, useSelector} from 'react-redux';
 import {NavigationContainer} from '@react-navigation/native';
 import {I18nManager} from 'react-native';
 import RNRestart from 'react-native-restart';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {PersistGate} from 'redux-persist/integration/react';
 
 import './src/i18n';
-import {store} from './src/store';
+import {store, persistor} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
 import useSessionTimeout from './src/hooks/useSessionTimeout';
 import AlertModal from './src/components/Alert/AlertModal';
@@ -104,24 +104,21 @@ const AppWrapper = () => {
   );
 };
 
-const App = () => {
+const AppContent = () => {
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
+
   useEffect(() => {
     // Setup Firebase message handlers
     const cleanup = firebaseService.setupMessageHandlers();
 
     // Check if RTL is correctly set on app start
-    const checkRTL = async () => {
+    const checkRTL = () => {
       try {
-        const language = await AsyncStorage.getItem('@app_language');
-        const shouldBeRTL = language === 'ur';
+        const shouldBeRTL = currentLanguage === 'ur';
 
         // Only restart if RTL setting doesn't match current language
         if (shouldBeRTL !== I18nManager.isRTL) {
           console.log('RTL mismatch detected. Restarting app...');
-
-          // Mark that we're restarting for language (not logout)
-          await AsyncStorage.setItem('@language_restart', 'true');
-
           I18nManager.forceRTL(shouldBeRTL);
           RNRestart.Restart();
         }
@@ -145,13 +142,21 @@ const App = () => {
     return () => {
       if (cleanup) cleanup();
     };
-  }, []);
+  }, [currentLanguage]);
 
   return (
+    <NavigationContainer>
+      <AppWrapper />
+    </NavigationContainer>
+  );
+};
+
+const App = () => {
+  return (
     <Provider store={store}>
-      <NavigationContainer>
-        <AppWrapper />
-      </NavigationContainer>
+      <PersistGate loading={null} persistor={persistor}>
+        <AppContent />
+      </PersistGate>
     </Provider>
   );
 };

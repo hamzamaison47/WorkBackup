@@ -1,17 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {store} from './index';
+import {setUserData, clearUserData} from './slices/userSlice';
+import {setFirebaseUserData, clearFirebaseData} from './slices/firebaseSlice';
 
 class ApiService {
   constructor() {
     // No baseURL needed since SOAP services handle their own URLs
   }
 
-  // Get user info (for other parts of your app)
-  async getUserInfo() {
+  // Get user info from Redux (for other parts of your app)
+  getUserInfo() {
     try {
-      const email = await AsyncStorage.getItem('user_email');
-      const employeeId = await AsyncStorage.getItem('employeeId');
-      const name = await AsyncStorage.getItem('employeeName');
-      const company = await AsyncStorage.getItem('defaultLegalEntity');
+      const state = store.getState();
+      const email = state.firebase.userEmail;
+      const employeeId = state.firebase.employeeId;
+      const name = state.user.userData?.employeeName;
+      const company = state.firebase.company;
 
       return {email, employeeId, name, company};
     } catch (error) {
@@ -20,31 +23,23 @@ class ApiService {
     }
   }
 
-  // Logout
+  // Logout - clear Redux state
   async logout() {
     try {
-      await AsyncStorage.multiRemove([
-        'user_email',
-        'employeeId',
-        'employeeName',
-        'defaultLegalEntity',
-        'fcm_token',
-        'device_id',
-        'last_dynamics_token',
-        'dynamics_synced',
-      ]);
-
-      console.log('User logged out and data cleared');
+      store.dispatch(clearUserData());
+      store.dispatch(clearFirebaseData());
+      console.log('User logged out and Redux state cleared');
     } catch (error) {
       console.error('Logout error:', error);
     }
   }
 
   // Check if user is logged in
-  async isLoggedIn() {
+  isLoggedIn() {
     try {
-      const email = await AsyncStorage.getItem('user_email');
-      const employeeId = await AsyncStorage.getItem('employeeId');
+      const state = store.getState();
+      const email = state.firebase.userEmail;
+      const employeeId = state.firebase.employeeId;
       return !!(email && employeeId);
     } catch (error) {
       console.error('Error checking login status:', error);
@@ -53,14 +48,17 @@ class ApiService {
   }
 
   // Save user data after login (called from your authUtils)
-  async saveUserData(userData) {
+  saveUserData(userData) {
     try {
-      await AsyncStorage.setItem('user_email', userData.email || '');
-      await AsyncStorage.setItem('employeeId', userData.employeeId || '');
-      await AsyncStorage.setItem('employeeName', userData.employeeName || '');
-      await AsyncStorage.setItem('defaultLegalEntity', userData.company || '');
+      store.dispatch(
+        setFirebaseUserData({
+          userEmail: userData.email || '',
+          employeeId: userData.employeeId || '',
+          company: userData.company || '',
+        }),
+      );
 
-      console.log('User data saved for Firebase sync');
+      console.log('User data saved to Redux for Firebase sync');
       return true;
     } catch (error) {
       console.error('Error saving user data:', error);

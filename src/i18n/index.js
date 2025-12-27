@@ -1,33 +1,37 @@
 /* eslint-disable no-unused-vars */
 import i18n from 'i18next';
 import {initReactI18next} from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {I18nManager} from 'react-native';
+import {store} from '../store';
+import {setLanguage} from '../store/slices/languageSlice';
 
 import en from './locales/en.json';
 import ur from './locales/ur.json';
 
-const LANGUAGE_KEY = '@app_language';
-
 const languageDetector = {
   type: 'languageDetector',
   async: true,
-  detect: async callback => {
+  detect: callback => {
     try {
-      const language = await AsyncStorage.getItem(LANGUAGE_KEY);
+      // Get language from Redux store
+      const state = store.getState();
+      const language = state.language.currentLanguage;
+
       if (language) {
         callback(language);
       } else {
         callback('en');
       }
     } catch (error) {
+      console.error('Error detecting language:', error);
       callback('en');
     }
   },
   init: () => {},
-  cacheUserLanguage: async language => {
+  cacheUserLanguage: language => {
     try {
-      await AsyncStorage.setItem(LANGUAGE_KEY, language);
+      // Update Redux store
+      store.dispatch(setLanguage(language));
     } catch (error) {
       console.error('Error saving language', error);
     }

@@ -4,10 +4,23 @@ import {decode as atob, encode as btoa} from 'base-64';
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
 import {getActiveConfigData} from './secureConfig';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getAzureConfigurationV2, getGoogleConfiguration} from './configuration';
 import {saveAccountAfterLogin} from '../store/utils/biometricUtils';
 import firebaseService from '../store/FirebaseService';
+import {store} from '../store';
+import {
+  setAccessToken,
+  setIdToken,
+  setRefreshToken,
+  clearAuthTokens,
+} from '../store/slices/authSlice';
+import {
+  setFirebaseUserData,
+  clearFirebaseData,
+  setFirebaseInitialized,
+} from '../store/slices/firebaseSlice';
+import {clearBiometric} from '../store/slices/biometricSlice';
+import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
 
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
@@ -75,29 +88,16 @@ export const handleLogoutauth = async (navigation, dispatch) => {
     // Cleanup Firebase service
     await firebaseService.cleanup();
 
-    // Clear AsyncStorage tokens and user data
-    await AsyncStorage.multiRemove([
-      'accessToken',
-      'idToken',
-      'refreshToken',
-      'user_email',
-      'employeeId',
-      'employeeName',
-      'defaultLegalEntity',
-      '@skip_login_after_restart', // IMPORTANT: Clear this on logout
-    ]);
-
-    // Clear Redux store
+    // Clear Redux store - all state management now via Redux
+    dispatch(clearAuthTokens());
     dispatch(setUserData(null));
     dispatch(setLegalEntities([]));
     dispatch(setMenuItems([]));
+    dispatch(clearFirebaseData());
+    dispatch(clearBiometric());
+    dispatch(setSkipLoginAfterRestart(false));
 
-    // Clear accounts list
-    try {
-      await AsyncStorage.removeItem('accounts_list');
-    } catch (error) {
-      console.log('Error clearing accounts list:', error);
-    }
+    console.log('User logged out and Redux state cleared');
 
     // Navigate to Login screen
     navigation.reset({
@@ -155,12 +155,13 @@ export const handleLogin = async (
       const tokenToUse =
         provider === 'Azure' ? result.accessToken : result.idToken;
 
-      await AsyncStorage.setItem(
-        provider === 'Azure' ? 'accessToken' : 'idToken',
-        tokenToUse,
-      );
-
-      await AsyncStorage.setItem('refreshToken', result.refreshToken);
+      // Store tokens in Redux
+      if (provider === 'Azure') {
+        store.dispatch(setAccessToken(tokenToUse));
+      } else {
+        store.dispatch(setIdToken(tokenToUse));
+      }
+      store.dispatch(setRefreshToken(result.refreshToken));
 
       // Pass the complete result object to handleSuccessfulLogin
       await handleSuccessfulLogin(
@@ -202,7 +203,8 @@ export const handleSuccessfulLogin = async (
 ) => {
   try {
     const decodedAccessToken = jwtDecode(accessToken);
-    await AsyncStorage.setItem('accessToken', accessToken);
+    // Store access token in Redux
+    store.dispatch(setAccessToken(accessToken));
 
     const userEmailOrUPN =
       provider === 'Azure' ? decodedAccessToken.upn : decodedAccessToken.email;
@@ -273,11 +275,26 @@ export const handleSuccessfulLogin = async (
     // Set user data in Redux
     setUserData(completeUserData);
 
-    // Step 6: Save user data to AsyncStorage for Firebase service
-    await AsyncStorage.setItem('user_email', userEmailOrUPN);
-    await AsyncStorage.setItem('employeeId', user.EmployeeId);
-    await AsyncStorage.setItem('employeeName', user.EmployeeName);
-    await AsyncStorage.setItem('defaultLegalEntity', user.DefaultLegalEntity);
+    // Step 6: CRITICAL - Clear previous user's Firebase data FIRST
+    console.log('Clearing previous Firebase data before setting new user data');
+    store.dispatch(clearFirebaseData());
+
+    // Then save NEW user's Firebase data to Redux
+    console.log(
+      'Setting Firebase user data for:',
+      userEmailOrUPN,
+      user.EmployeeId,
+    );
+    store.dispatch(
+      setFirebaseUserData({
+        userEmail: userEmailOrUPN,
+        employeeId: user.EmployeeId,
+        company: user.DefaultLegalEntity,
+      }),
+    );
+
+    // Mark Firebase as initialized
+    store.dispatch(setFirebaseInitialized(true));
 
     // Step 7: Register device with Dynamics for push notifications (PHASE 1)
     try {
