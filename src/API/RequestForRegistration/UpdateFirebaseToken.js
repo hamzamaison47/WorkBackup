@@ -10,6 +10,10 @@ const UpdateFirebaseToken = async ({updateData}) => {
     const accessToken = await getToken();
     const config = await getActiveConfigData();
 
+    console.log({accessToken});
+    console.log({config});
+    console.log({updateData});
+
     const response = await fetch(
       `${config.resource}/api/services/DynafaceTableSvcGroup/DynafaceTableSvc/updateFirebaseToken`,
       {

@@ -1,6 +1,7 @@
 import React, {useEffect, useRef} from 'react';
 import {Animated, Easing} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
@@ -16,21 +17,18 @@ const SplashScreens = ({navigation}) => {
     const fadeInContent = () => {
       // Staggered fade in for logo and text
       Animated.stagger(300, [
-        // Logo fade in
         Animated.timing(logoOpacity, {
           toValue: 1,
           duration: 1000,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        // Main text fade in
         Animated.timing(textOpacity, {
           toValue: 1,
           duration: 800,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        // Tagline fade in
         Animated.timing(taglineOpacity, {
           toValue: 1,
           duration: 600,
@@ -64,13 +62,30 @@ const SplashScreens = ({navigation}) => {
 
     const checkAuthStatus = async () => {
       try {
-        // const token = await getToken();
         fadeInContent();
+
+        // Check if we're returning from a language restart
+        const skipLogin = await AsyncStorage.getItem(
+          '@skip_login_after_restart',
+        );
+
+        if (skipLogin === 'true') {
+          // Clear the flag immediately
+          await AsyncStorage.removeItem('@skip_login_after_restart');
+
+          // Go directly to DrawerNavigator (skip Login)
+          setTimeout(() => {
+            navigation.replace('DrawerNavigator');
+          }, 2000);
+          return;
+        }
+
+        // Normal flow - go to Login
         setTimeout(() => {
           navigation.replace('Login');
         }, 3000);
       } catch (error) {
-        console.log(error);
+        console.log('Splash screen error:', error);
         navigation.replace('Login');
       }
     };

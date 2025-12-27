@@ -8,18 +8,21 @@ import {
   BackHandler,
   RefreshControl,
   ScrollView,
+  I18nManager,
 } from 'react-native';
 import {
   useNavigation,
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
+import {useDynamicTranslation} from '../../hooks/useDynamicTranslation';
 import styles from '../../styles/styles';
 
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
@@ -30,6 +33,16 @@ import {useSelector} from 'react-redux';
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const {t} = useTranslation();
+  const {
+    translateLeaveType,
+    translateLeaveCategory,
+    translateWorkflowStatus,
+    translateFieldLabel,
+  } = useDynamicTranslation();
+
+  const isRTL = I18nManager.isRTL;
+  // const styles = createDynamicStyles(isRTL);
 
   const {
     employeeId,
@@ -40,11 +53,9 @@ const LeaveRequestListPage = () => {
     userData: routeUserData,
   } = route.params || {};
 
-  // Get userData from Redux as fallback
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = routeUserData || reduxUserData;
 
-  // Use effective user data for all operations
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
@@ -56,11 +67,9 @@ const LeaveRequestListPage = () => {
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
 
-  // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
-  // Fetch leaves data
   const fetchLeavesData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
 
@@ -69,21 +78,19 @@ const LeaveRequestListPage = () => {
       const LeaveData = await fetchLeaves(effectiveEmployeeId);
       setLeavesData(LeaveData);
     } catch (error) {
-      setAlertMessage('Failed to fetch data.');
+      setAlertMessage(t('leaveRequest.fetchFailed'));
       setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveEmployeeId]);
+  }, [effectiveEmployeeId, t]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchLeavesData();
     }, [fetchLeavesData]),
   );
 
-  // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
       if (highlightRecId) {
@@ -113,9 +120,8 @@ const LeaveRequestListPage = () => {
     }, [navigation]),
   );
 
-  // Handle back navigation
   const handleGoBack = () => {
-    let targetRoute = 'MainDashboard'; // default
+    let targetRoute = 'MainDashboard';
 
     switch (cameFrom) {
       case 'MainDashboard':
@@ -132,21 +138,19 @@ const LeaveRequestListPage = () => {
         break;
       default:
         navigation.goBack();
-        return; // exit early
+        return;
     }
 
     navigation.reset({
-      index: 0, // top of the stack
+      index: 0,
       routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
     });
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     fetchLeavesData();
   };
 
-  // Handle create leave
   const handleCreateLeave = () => {
     navigation.navigate('LeaveSaveRecord', {
       mode: 'create',
@@ -172,63 +176,65 @@ const LeaveRequestListPage = () => {
     });
   };
 
-  // Utility functions
-  const getLeaveCategory = category => {
-    return category === 'FullLeave'
-      ? 'Full Day Leave'
-      : category === 'HalfLeave'
-      ? 'Half Day Leave'
-      : 'Invalid Category';
-  };
-
-  const getStatusLabel = status => {
-    const statusMap = {
-      NotSubmitted: 'Draft',
-      Approved: 'Approved',
-      Cancelled: 'Cancelled',
-      Rejected: 'Rejected',
-      Submitted: 'Submitted',
-      ChangeRequest: 'Change Request',
-      PendingCancellation: 'Pending Cancellation',
-      Returned: 'Returned',
-      PendingApproval: 'Pending Approval',
-      PendingComplete: 'Pending Complete',
-      WorkflowCompleted: 'Workflow Completed',
-      Completed: 'Completed',
-      Failed: 'Failed',
-    };
-    return statusMap[status] || 'Draft';
-  };
-
-  // Card Configuration
   const cardConfig = {
-    // Header configuration
     headerConfig: {
       title: {key: 'leaveCode'},
       subtitle: {key: 'employeeName'},
     },
 
-    // Main fields to display (always visible)
     fields: [
-      {key: 'leaveStartDate', label: 'Leave Start Date', type: 'date'},
-      {key: 'leaveEndDate', label: 'Leave End Date', type: 'date'},
-      {key: 'leaveDays', label: 'Leave Days', type: 'text'},
-      {key: 'wfStatus', label: '', type: 'status'}, // No label for status
+      {
+        key: 'leaveStartDate',
+        label: translateFieldLabel('Leave Start Date'),
+        type: 'date',
+      },
+      {
+        key: 'leaveEndDate',
+        label: translateFieldLabel('Leave End Date'),
+        type: 'date',
+      },
+      {
+        key: 'leaveDays',
+        label: translateFieldLabel('Leave Days'),
+        type: 'text',
+      },
+      {key: 'wfStatus', label: '', type: 'status'},
     ],
 
-    // Expandable fields (shown when expanded)
     expandableFields: [
-      {key: 'leaveReqId', label: 'Leave Request ID', type: 'text'},
-      {key: 'leaveCategory', label: 'Leave Category', type: 'text'},
-      {key: 'leaveReqDate', label: 'Leave Request Date', type: 'date'},
-      {key: 'balance', label: 'Balance', type: 'currency'},
-      {key: 'reason', label: 'Reason', type: 'text'},
+      {
+        key: 'leaveReqId',
+        label: translateFieldLabel('Leave Request ID'),
+        type: 'text',
+      },
+      {
+        key: 'leaveCategory',
+        label: translateFieldLabel('Leave Category'),
+        type: 'text',
+      },
+      {
+        key: 'leaveReqDate',
+        label: translateFieldLabel('Leave Request Date'),
+        type: 'date',
+      },
+      {
+        key: 'balance',
+        label: translateFieldLabel('Balance'),
+        type: 'currency',
+      },
+      {
+        key: 'reason',
+        label: translateFieldLabel('Reason'),
+        type: 'text',
+      },
     ],
+    isRTL: isRTL,
   };
 
-  // Define button configuration
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.wfStatus) === 'Draft';
+    const isDraft =
+      translateWorkflowStatus(item.wfStatus) ===
+      translateWorkflowStatus('NotSubmitted');
 
     return {
       edit: {
@@ -257,14 +263,13 @@ const LeaveRequestListPage = () => {
         style: 'text',
         icon: 'send',
         iconSize: 16,
-        text: 'Submit',
+        text: t('buttons.submit'),
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },
     };
   };
 
-  // Helper function to set button processing state
   const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
       ...prev,
@@ -274,7 +279,6 @@ const LeaveRequestListPage = () => {
     }));
   };
 
-  // Handle button presses
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
       case 'edit':
@@ -301,7 +305,7 @@ const LeaveRequestListPage = () => {
         employeeId,
         employeeName,
         WorkerRecId,
-      }, // Ensure userData is passed
+      },
       cameFrom: 'LeavesListPage',
       originalCameFrom: cameFrom,
       leaveData: {
@@ -336,15 +340,15 @@ const LeaveRequestListPage = () => {
       });
 
       if (response[0].IsSuccess) {
-        setAlertMessage('Leave Request Deleted Successfully.');
+        setAlertMessage(t('leaveRequest.deleteSuccess'));
         setLeavesData(prev =>
           prev.filter(leave => leave.recId !== itemToDelete.recId),
         );
       } else {
-        setAlertMessage('Unable to Delete Leave Request.');
+        setAlertMessage(t('leaveRequest.deleteFailed'));
       }
     } catch (error) {
-      setAlertMessage('Failed to Delete Leave Request');
+      setAlertMessage(t('leaveRequest.deleteFailed'));
       console.log('Delete Leave Request response', error);
     } finally {
       setButtonProcessing(itemToDelete.recId, 'delete', false);
@@ -357,9 +361,8 @@ const LeaveRequestListPage = () => {
     }
   };
 
-  /** FIXED: Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
-    setButtonProcessing(itemData.RecId, 'submit', true);
+    setButtonProcessing(itemData.recId, 'submit', true);
 
     try {
       const response = await SubmitLeaveRequest({
@@ -369,14 +372,12 @@ const LeaveRequestListPage = () => {
 
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
         setAlertMessage(
-          `${itemData.leaveCode} Request Submitted Successfully.`,
+          t('leaveRequest.submitSuccess', {leaveCode: itemData.leaveCode}),
         );
         setAlertModal(true);
 
-        // FIXED: Set highlighting for submitted record
-        setHighlightedRecId(itemData.RecId);
+        setHighlightedRecId(itemData.recId);
 
-        // Set a timer to remove highlighting after 3 seconds
         setTimeout(() => {
           setHighlightedRecId(null);
         }, 3000);
@@ -388,28 +389,30 @@ const LeaveRequestListPage = () => {
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : `Failed to Submit ${itemData.leaveCode} Request`;
+            : t('leaveRequest.submitFailed', {leaveCode: itemData.leaveCode});
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage(`Failed to Submit ${itemData.leaveCode} Request`);
+      setAlertMessage(
+        t('leaveRequest.submitFailed', {leaveCode: itemData.leaveCode}),
+      );
       setAlertModal(true);
     } finally {
-      setButtonProcessing(itemData.RecId, 'submit', false);
+      setButtonProcessing(itemData.recId, 'submit', false);
     }
   };
 
-  // Render leave card
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.recId;
     const itemProcessingButtons = processingButtons[item.recId] || [];
 
     const processedItem = {
       ...item,
-      leaveCategory: getLeaveCategory(item.leaveCategory),
-      wfStatus: getStatusLabel(item.wfStatus),
+      leaveCode: translateLeaveType(item.leaveCode),
+      leaveCategory: translateLeaveCategory(item.leaveCategory),
+      wfStatus: translateWorkflowStatus(item.wfStatus),
       employeeId: item.employeeId || employeeId,
       employeeName: item.employeeName || employeeName,
     };
@@ -427,13 +430,14 @@ const LeaveRequestListPage = () => {
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
+        isRTL={isRTL}
       />
     );
   };
 
   return (
     <ActionPaneContainer
-      pageTitle="Leave Requests"
+      pageTitle={t('leaveRequest.pageTitle')}
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
@@ -441,7 +445,6 @@ const LeaveRequestListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}>
-      {/* Main content */}
       {isLoading ? (
         <CustomIndicator />
       ) : leavesData.length > 0 ? (
@@ -463,23 +466,23 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.LReqLP_NoDataText}>
+            {t('leaveRequest.noDataFound')}
+          </Text>
         </ScrollView>
       )}
 
-      {/* Alert Modal */}
       <AlertModal
         visible={alertModal}
-        heading="Alert"
+        heading={t('common.alert')}
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
 
-      {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
-        heading="Confirm Deletion"
-        text="Are you sure you want to delete this Leave request?"
+        heading={t('leaveRequest.deleteConfirmTitle')}
+        text={t('leaveRequest.deleteConfirmMessage')}
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

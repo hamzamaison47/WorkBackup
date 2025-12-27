@@ -75,7 +75,7 @@ export const handleLogoutauth = async (navigation, dispatch) => {
     // Cleanup Firebase service
     await firebaseService.cleanup();
 
-    // Clear AsyncStorage tokens
+    // Clear AsyncStorage tokens and user data
     await AsyncStorage.multiRemove([
       'accessToken',
       'idToken',
@@ -84,6 +84,7 @@ export const handleLogoutauth = async (navigation, dispatch) => {
       'employeeId',
       'employeeName',
       'defaultLegalEntity',
+      '@skip_login_after_restart', // IMPORTANT: Clear this on logout
     ]);
 
     // Clear Redux store
