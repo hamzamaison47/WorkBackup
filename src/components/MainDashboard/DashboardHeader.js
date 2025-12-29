@@ -16,6 +16,37 @@ const DashboardHeader = ({
   isSmallScreen,
   onProfilePress,
 }) => {
+  // If userData is null/undefined, show a loading state
+  if (!userData) {
+    return (
+      <View style={styles.MainDash_HeaderContainer}>
+        <View
+          style={
+            isSmallScreen
+              ? styles.MainDash_HeaderContentSmall
+              : styles.MainDash_HeaderContent
+          }>
+          <ActivityIndicator size="large" color="#fff" />
+          <View
+            style={
+              isSmallScreen
+                ? styles.MainDash_TextColumnSmall
+                : styles.MainDash_TextColumn
+            }>
+            <Text
+              style={
+                isSmallScreen
+                  ? styles.MainDash_NameTextSmall
+                  : styles.MainDash_NameText
+              }>
+              Loading...
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   const yearsWorked = calculateYearsSinceHire(userData?.OriginalHireDate);
 
   return (
@@ -63,7 +94,7 @@ const DashboardHeader = ({
                 ? styles.MainDash_NameTextSmall
                 : styles.MainDash_NameText
             }>
-            {userData.employeeName}
+            {userData?.employeeName || 'Loading...'}
           </Text>
 
           <Text
@@ -73,7 +104,7 @@ const DashboardHeader = ({
                 : styles.MainDash_EmailText
             }>
             <Text style={styles.MainDash_BoldText}>Department: </Text>
-            {userData.department || 'N/A'}
+            {userData?.department || 'N/A'}
           </Text>
 
           <Text
@@ -83,7 +114,7 @@ const DashboardHeader = ({
                 : styles.MainDash_EmailText
             }>
             <Text style={styles.MainDash_BoldText}>Position: </Text>
-            {userData.PositionDescription || 'N/A'}
+            {userData?.PositionDescription || 'N/A'}
           </Text>
 
           <Text
@@ -93,7 +124,7 @@ const DashboardHeader = ({
                 : styles.MainDash_EmailText
             }>
             <Text style={styles.MainDash_BoldText}>Years of Service: </Text>
-            {yearsWorked} years
+            {yearsWorked || 0} years
           </Text>
         </View>
       </View>

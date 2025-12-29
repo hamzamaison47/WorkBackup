@@ -23,7 +23,7 @@ import {useDashboardData} from '../hooks/useDashboardData';
 import {useMenuBuilder} from '../hooks/useMenuBuilder';
 
 import styles from '../styles/styles';
-import AttendanceSummary from '../components/MainDashboard/AttendanceSummary';
+// import AttendanceSummary from '../components/MainDashboard/AttendanceSummary';
 import LeaveEntitlementProgress from '../components/MainDashboard/LeaveEntitlementProgress';
 import AIChatbot from '../components/AIChatbot/AIChatbot';
 
@@ -141,10 +141,10 @@ const MainDashboard = () => {
             />
 
             {/* Attendance Summary */}
-            <AttendanceSummary
+            {/* <AttendanceSummary
               userData={userData}
               screenWidth={dimensions.screenWidth}
-            />
+            /> */}
 
             {/* Leave Balance Progress Summary */}
             <LeaveEntitlementProgress

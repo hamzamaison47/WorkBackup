@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 import PushNotification from 'react-native-push-notification';
 import {PermissionsAndroid, Platform, Alert} from 'react-native';
 import FileViewer from 'react-native-file-viewer';
@@ -328,12 +329,12 @@ class NotificationService {
   };
 
   showReceiptDownloadNotification = (fileName, filePath) => {
-    console.log('🎯 Showing notification for:', fileName);
-    console.log('📁 File path:', filePath);
-    console.log('🔔 Channel ready:', this.isChannelReady);
+    // console.log('🎯 Showing notification for:', fileName);
+    // console.log('📁 File path:', filePath);
+    // console.log('🔔 Channel ready:', this.isChannelReady);
 
     if (!this.isChannelReady) {
-      console.warn('Channel not ready, attempting to ensure channel exists...');
+      // console.warn('Channel not ready, attempting to ensure channel exists...');
       this.ensureNotificationChannel().then(() => {
         // Retry after ensuring channel exists
         setTimeout(() => {

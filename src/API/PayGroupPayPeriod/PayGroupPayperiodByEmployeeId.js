@@ -47,15 +47,15 @@ const PayGroupPayperiodByEmployeeId = async ({employeeId}) => {
 
     const parsed = parser.parse(xml);
 
-    console.log('xml In Email Salary Slip', xml);
-    console.log('Parsed In Email Salary Slip', parsed);
+    // console.log('xml In Email Salary Slip', xml);
+    // console.log('Parsed In Email Salary Slip', parsed);
 
     const rawData =
       parsed?.['s:Envelope']?.['s:Body']?.['findByEmployeeResponse']?.[
         'result'
       ]?.['a:PRPayGroupPayPeriodSvcContract'];
 
-    console.log('Raw Data In Email Salary Slip', rawData);
+    // console.log('Raw Data In Email Salary Slip', rawData);
 
     if (!rawData) {
       console.warn('No Pay Periods found');
@@ -74,7 +74,7 @@ const PayGroupPayperiodByEmployeeId = async ({employeeId}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
-    console.log('Cleaned Data In Email Salary Slip', rawData);
+    // console.log('Cleaned Data In Email Salary Slip', cleanedData);
 
     return cleanedData;
   } catch (error) {

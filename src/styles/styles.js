@@ -1913,6 +1913,268 @@ const styles = StyleSheet.create({
   },
 
   // ============================================
+  // NOTIFICATION PANEL - RESPONSIVE STYLES
+  // ============================================
+  notif_Overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+  },
+  notif_OverlayTouchable: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  notif_Panel: {
+    width: conditionalScale(300, 350, 400),
+    height: '100%',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {width: scale(-4), height: 0},
+    shadowOpacity: 0.1,
+    shadowRadius: scale(12),
+    elevation: 20,
+  },
+  notif_Header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(16),
+    backgroundColor: '#0A66C2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#0c5298',
+  },
+  notif_HeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(12),
+  },
+  notif_BellIcon: {
+    fontSize: fontScale(24),
+    color: '#ffffff',
+  },
+  notif_HeaderTitle: {
+    fontSize: fontScale(18),
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  notif_HeaderCount: {
+    fontSize: fontScale(12),
+    color: '#e2e8f0',
+    marginTop: verticalScale(2),
+  },
+  notif_HeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(12),
+  },
+  notif_MarkAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
+    borderRadius: scale(16),
+    gap: scale(6),
+    marginRight: scale(45),
+  },
+  notif_MarkAllButtonDisabled: {
+    opacity: 0.5,
+  },
+  notif_MarkAllIcon: {
+    fontSize: fontScale(14),
+    color: '#ffffff',
+  },
+  notif_MarkAllText: {
+    fontSize: fontScale(12),
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  notif_RefreshButton: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notif_RefreshIcon: {
+    fontSize: fontScale(20),
+    color: '#ffffff',
+  },
+  notif_ScrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  notif_SectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(12),
+    backgroundColor: '#f8fafc',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  notif_SectionTitle: {
+    fontSize: fontScale(14),
+    fontWeight: '600',
+    color: '#475569',
+  },
+  notif_CountBadge: {
+    backgroundColor: '#e2e8f0',
+    borderRadius: scale(12),
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(2),
+    minWidth: scale(24),
+  },
+  notif_CountText: {
+    fontSize: fontScale(12),
+    fontWeight: '600',
+    color: '#475569',
+    textAlign: 'center',
+  },
+  notif_NotificationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: scale(20),
+    paddingVertical: verticalScale(16),
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#fff',
+  },
+  notif_NotificationItemToday: {
+    backgroundColor: '#f0f9ff',
+    borderLeftWidth: 2,
+    borderLeftColor: '#0A66C2',
+  },
+  notif_NotificationItemRead: {
+    backgroundColor: '#fafafa',
+    opacity: 0.8,
+  },
+  notif_LogoContainer: {
+    position: 'relative',
+    marginRight: scale(12),
+  },
+  notif_IconContainer: {
+    width: scale(44),
+    height: scale(44),
+    borderRadius: scale(22),
+    backgroundColor: '#e0f2fe',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notif_NotificationIcon: {
+    fontSize: fontScale(20),
+    color: '#0A66C2',
+  },
+  notif_NotificationIconToday: {
+    color: '#0369a1',
+  },
+  notif_MarkReadButtonContainer: {
+    position: 'absolute',
+    bottom: verticalScale(-4),
+    right: scale(-4),
+    zIndex: 1,
+  },
+  notif_MarkReadButton: {
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(11),
+    backgroundColor: '#0A66C2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  notif_MarkReadButtonToday: {
+    backgroundColor: '#0A66C2',
+  },
+  notif_MarkReadButtonRead: {
+    backgroundColor: '#94a3b8',
+  },
+  notif_MarkReadButtonDisabled: {
+    opacity: 0.5,
+  },
+  notif_MarkReadIcon: {
+    fontSize: fontScale(4),
+    color: '#ffffff',
+  },
+  notif_MarkReadIconToday: {
+    color: '#ffffff',
+  },
+  notif_MarkReadIconRead: {
+    color: '#ffffff',
+  },
+  notif_ContentContainer: {
+    flex: 1,
+  },
+  notif_NotificationTitle: {
+    fontSize: fontScale(15),
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: verticalScale(4),
+  },
+  notif_NotificationTitleToday: {
+    color: '#0A66C2',
+  },
+  notif_NotificationMessage: {
+    fontSize: fontScale(14),
+    color: '#64748b',
+    lineHeight: fontScale(20),
+    marginBottom: verticalScale(4),
+  },
+  notif_NotificationMessageToday: {
+    color: '#475569',
+  },
+  notif_NotificationTime: {
+    fontSize: fontScale(12),
+    color: '#94a3b8',
+  },
+  notif_NotificationTimeToday: {
+    color: '#0A66C2',
+  },
+  notif_EmptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: verticalScale(80),
+  },
+  notif_EmptyIcon: {
+    fontSize: fontScale(56),
+    color: '#cbd5e1',
+    marginBottom: verticalScale(16),
+  },
+  notif_EmptyText: {
+    fontSize: fontScale(16),
+    color: '#64748b',
+  },
+  notif_CloseButton: {
+    position: 'absolute',
+    top: verticalScale(16),
+    right: scale(20),
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  notif_CloseIcon: {
+    fontSize: fontScale(16),
+    color: '#64748b',
+  },
+
+  // ============================================
   // ??? - RESPONSIVE STYLES
   // ============================================
 
@@ -2138,18 +2400,19 @@ const styles = StyleSheet.create({
   LReqSR_ContentWrapper: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: width * 0.04, // responsive padding
+    paddingHorizontal: width * 0.04,
     paddingTop: height * 0.015,
   },
   LReqSR_FormContainer: {
     padding: width * 0.01,
-    paddingBottom: height * 0.02, // spacing relative to screen
+    paddingBottom: height * 0.02,
   },
   LReqSR_Label: {
-    fontSize: width * 0.038, // scales with width
+    fontSize: width * 0.038,
     marginTop: height * 0.015,
     fontWeight: '600',
     color: '#444',
+    //   textAlign: isRTL ? 'right' : 'left',
   },
   LReqSR_Input: {
     borderWidth: 1,
@@ -2160,19 +2423,24 @@ const styles = StyleSheet.create({
     fontSize: width * 0.04,
     color: '#333',
     backgroundColor: '#fff',
+    //   textAlign: isRTL ? 'right' : 'left',
+    //   writingDirection: isRTL ? 'rtl' : 'ltr',
   },
   LReqSR_DropdownPlaceholder: {
     color: '#444',
     fontSize: width * 0.038,
+    //   textAlign: isRTL ? 'right' : 'left',
   },
   LReqSR_DropdownSelectedText: {
     color: '#444',
     fontWeight: '400',
     fontSize: width * 0.038,
+    //   textAlign: isRTL ? 'right' : 'left',
   },
   LReqSR_DropdownItemText: {
     color: '#444',
     fontSize: width * 0.038,
+    //   textAlign: isRTL ? 'right' : 'left',
   },
   LReqSR_DropdownContainer: {
     borderWidth: 1.5,
@@ -2192,6 +2460,7 @@ const styles = StyleSheet.create({
     color: '#444',
     backgroundColor: '#fff',
     fontSize: width * 0.038,
+    //   textAlign: isRTL ? 'right' : 'left',
   },
   LReqSR_DropdownIcon: {
     width: width * 0.055,
@@ -2206,11 +2475,8 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     fontSize: width * 0.04,
   },
-  LReqSR_CharCount: {
-    fontSize: width * 0.034,
-    color: '#333',
-  },
   LReqSR_DateSelector: {
+    // flexDirection: isRTL ? 'row-reverse' : 'row',
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -2222,7 +2488,100 @@ const styles = StyleSheet.create({
   LReqSR_DateText: {
     fontSize: width * 0.04,
     color: '#333',
+    //   textAlign: isRTL ? 'right' : 'left',
   },
+  // LReqSR_SafeArea: {
+  //   flex: 1,
+  //   backgroundColor: '#fefefe',
+  // },
+  // LReqSR_ContentWrapper: {
+  //   flex: 1,
+  //   justifyContent: 'space-between',
+  //   paddingHorizontal: width * 0.04, // responsive padding
+  //   paddingTop: height * 0.015,
+  // },
+  // LReqSR_FormContainer: {
+  //   padding: width * 0.01,
+  //   paddingBottom: height * 0.02, // spacing relative to screen
+  // },
+  // LReqSR_Label: {
+  //   fontSize: width * 0.038, // scales with width
+  //   marginTop: height * 0.015,
+  //   fontWeight: '600',
+  //   color: '#444',
+  // },
+  // LReqSR_Input: {
+  //   borderWidth: 1,
+  //   borderColor: '#ddd',
+  //   borderRadius: width * 0.02,
+  //   padding: width * 0.025,
+  //   marginTop: height * 0.007,
+  //   fontSize: width * 0.04,
+  //   color: '#333',
+  //   backgroundColor: '#fff',
+  // },
+  // LReqSR_DropdownPlaceholder: {
+  //   color: '#444',
+  //   fontSize: width * 0.038,
+  // },
+  // LReqSR_DropdownSelectedText: {
+  //   color: '#444',
+  //   fontWeight: '400',
+  //   fontSize: width * 0.038,
+  // },
+  // LReqSR_DropdownItemText: {
+  //   color: '#444',
+  //   fontSize: width * 0.038,
+  // },
+  // LReqSR_DropdownContainer: {
+  //   borderWidth: 1.5,
+  //   borderColor: '#4A90E2',
+  //   borderRadius: width * 0.025,
+  //   backgroundColor: '#fff',
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOpacity: 0.25,
+  //   shadowRadius: 6,
+  //   elevation: 6,
+  // },
+  // LReqSR_DropdownItemContainer: {
+  //   paddingHorizontal: width * 0.03,
+  // },
+  // LReqSR_DropdownSearchInput: {
+  //   color: '#444',
+  //   backgroundColor: '#fff',
+  //   fontSize: width * 0.038,
+  // },
+  // LReqSR_DropdownIcon: {
+  //   width: width * 0.055,
+  //   height: width * 0.055,
+  // },
+  // LReqSR_Disabled: {
+  //   backgroundColor: '#f1f1f1',
+  //   color: '#999',
+  // },
+  // LReqSR_TextArea: {
+  //   height: height * 0.15,
+  //   textAlignVertical: 'top',
+  //   fontSize: width * 0.04,
+  // },
+  LReqSR_CharCount: {
+    fontSize: width * 0.034,
+    color: '#333',
+  },
+  // LReqSR_DateSelector: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   borderWidth: 1,
+  //   borderColor: '#ddd',
+  //   borderRadius: width * 0.02,
+  //   padding: width * 0.025,
+  //   marginTop: height * 0.007,
+  // },
+  // LReqSR_DateText: {
+  //   fontSize: width * 0.04,
+  //   color: '#333',
+  // },
   formHeader: {
     backgroundColor: '#f8f9fa',
     padding: 16,
@@ -2258,6 +2617,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#999999',
   },
+  // LReqLP_ListContainer: {
+  //   paddingBottom: height * 0.05,
+  //   paddingHorizontal: width * 0.03,
+  //   paddingTop: height * 0.01,
+  // },
+  // LReqLP_NoDataText: {
+  //   flex: 1,
+  //   textAlign: 'center',
+  //   textAlignVertical: 'center',
+  //   fontSize: width * 0.04,
+  //   fontWeight: 'bold',
+  //   color: '#999999',
+  // },
   // End Of Leave Req List Page
 
   // Start Of Display Personal Info

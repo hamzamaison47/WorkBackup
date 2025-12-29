@@ -1,9 +1,14 @@
 import React, {useEffect, useRef} from 'react';
 import {Animated, Easing} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import {useSelector, useDispatch} from 'react-redux';
+import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
 import styles from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
+  const dispatch = useDispatch();
+  const skipLogin = useSelector(state => state.language.skipLoginAfterRestart);
+
   // Animations
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
@@ -16,21 +21,18 @@ const SplashScreens = ({navigation}) => {
     const fadeInContent = () => {
       // Staggered fade in for logo and text
       Animated.stagger(300, [
-        // Logo fade in
         Animated.timing(logoOpacity, {
           toValue: 1,
           duration: 1000,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        // Main text fade in
         Animated.timing(textOpacity, {
           toValue: 1,
           duration: 800,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-        // Tagline fade in
         Animated.timing(taglineOpacity, {
           toValue: 1,
           duration: 600,
@@ -62,15 +64,27 @@ const SplashScreens = ({navigation}) => {
       }),
     ]).start();
 
-    const checkAuthStatus = async () => {
+    const checkAuthStatus = () => {
       try {
-        // const token = await getToken();
         fadeInContent();
+
+        if (skipLogin) {
+          // Clear the flag immediately
+          dispatch(setSkipLoginAfterRestart(false));
+
+          // Go directly to DrawerNavigator (skip Login)
+          setTimeout(() => {
+            navigation.replace('DrawerNavigator');
+          }, 2000);
+          return;
+        }
+
+        // Normal flow - go to Login
         setTimeout(() => {
           navigation.replace('Login');
         }, 3000);
       } catch (error) {
-        console.log(error);
+        console.log('Splash screen error:', error);
         navigation.replace('Login');
       }
     };
@@ -84,6 +98,8 @@ const SplashScreens = ({navigation}) => {
     circlePulse1,
     circlePulse2,
     circlePulse3,
+    skipLogin,
+    dispatch,
   ]);
 
   // Circle scale interpolations

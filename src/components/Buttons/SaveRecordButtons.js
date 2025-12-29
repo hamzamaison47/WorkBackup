@@ -1,6 +1,7 @@
 /* eslint-disable curly */
 import React from 'react';
 import {View, Text, Pressable} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import styles from '../../styles/styles';
 
 // Button type constants
@@ -18,8 +19,10 @@ const SaveRecordButtons = ({
   isDisabled = false,
   showButtons = [BUTTON_TYPES.CREATE, BUTTON_TYPES.SUBMIT, BUTTON_TYPES.CANCEL],
 }) => {
+  const {t} = useTranslation();
+
   const handleCreatePress = () => {
-    onSave?.('save');
+    onSave?.('create');
   };
 
   const handleSubmitPress = () => {
@@ -40,11 +43,42 @@ const SaveRecordButtons = ({
   const buttonFlex = getButtonFlex();
   const isSingleButton = showButtons.length === 1;
 
+  // Helper function to get button text based on mode
+  const getButtonText = (buttonType, isProcessing) => {
+    if (isProcessing) {
+      return buttonType === 'create'
+        ? t('common.processing', {defaultValue: 'Processing...'})
+        : t('common.processing', {defaultValue: 'Processing...'});
+    }
+
+    if (buttonType === 'CREATE') {
+      return mode === 'edit'
+        ? t('buttons.edit', {defaultValue: 'Update'})
+        : t('buttons.create', {defaultValue: 'Create'});
+    }
+
+    if (buttonType === 'SUBMIT') {
+      return mode === 'edit'
+        ? t('leaveSaveRecord.updatedAndSubmitted', {
+            defaultValue: 'Update & Submit',
+          })
+        : t('leaveSaveRecord.createdAndSubmitted', {
+            defaultValue: 'Create & Submit',
+          });
+    }
+
+    if (buttonType === 'CANCEL') {
+      return t('buttons.cancel', {defaultValue: 'Cancel'});
+    }
+
+    return '';
+  };
+
   return (
     <View
       style={[
         styles.SRBtn_Footer,
-        isSingleButton && styles.SRBtn_SingleButtonFooter, // Add this style for single button
+        isSingleButton && styles.SRBtn_SingleButtonFooter,
       ]}>
       {/* Create Button */}
       {showButtons.includes(BUTTON_TYPES.CREATE) && (
@@ -65,11 +99,10 @@ const SaveRecordButtons = ({
                 pressed && styles.SRBtn_pressedText,
                 isSingleButton && styles.SRBtn_SingleButtonText,
               ]}>
-              {processingButton === 'save'
-                ? 'Processing...'
-                : mode === 'edit'
-                ? 'Update'
-                : 'Create'}
+              {getButtonText(
+                BUTTON_TYPES.CREATE,
+                processingButton === 'sacreateve',
+              )}
             </Text>
           )}
         </Pressable>
@@ -95,11 +128,10 @@ const SaveRecordButtons = ({
                 pressed && styles.SRBtn_pressedText,
                 isSingleButton && styles.SRBtn_SingleButtonText,
               ]}>
-              {processingButton === 'submit'
-                ? 'Processing...'
-                : mode === 'edit'
-                ? 'Update & Submit'
-                : 'Create & Submit'}
+              {getButtonText(
+                BUTTON_TYPES.SUBMIT,
+                processingButton === 'submit',
+              )}
             </Text>
           )}
         </Pressable>
@@ -125,7 +157,7 @@ const SaveRecordButtons = ({
                 pressed && styles.SRBtn_pressedCancelText,
                 isSingleButton && styles.SRBtn_SingleButtonText,
               ]}>
-              Cancel
+              {getButtonText(BUTTON_TYPES.CANCEL, false)}
             </Text>
           )}
         </Pressable>

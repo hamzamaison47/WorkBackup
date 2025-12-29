@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   BackHandler,
   Platform,
+  I18nManager,
 } from 'react-native';
 import {
   useNavigation,
@@ -21,13 +22,13 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {useTranslation} from 'react-i18next';
 
 import {
   fetchLeaveBalance,
   fetchLeaveCodes,
 } from '../../Controller/leaveRequestApiService';
 import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
-// import {SubmitLeaveRequest} from '../../API/Leaves/SubmitLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import {UpdateLeaveRequest} from '../../API/Leaves/UpdateLeaveRequest';
 
@@ -36,18 +37,22 @@ import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import {useDynamicTranslation} from '../../hooks/useDynamicTranslation';
 import styles from '../../styles/styles';
 
 const LeaveRequestSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
+  const {t, i18n} = useTranslation();
+  const {translateLeaveCategory} = useDynamicTranslation();
+
+  const isRTL = i18n.language === 'ur';
 
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
 
-  // Navigation params with safe defaults
   const {
     mode = 'create',
     leaveData = {},
@@ -60,7 +65,6 @@ const LeaveRequestSaveRecord = () => {
     originalCameFrom = null,
   } = route.params || {};
 
-  // State declarations
   const [LeaveCodesForEmployee, setLeaveCodesForEmployee] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
@@ -69,7 +73,6 @@ const LeaveRequestSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [originalBalance, setOriginalBalance] = useState(null);
 
-  // Create initial form data function
   const createInitialFormData = () => ({
     recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
     employeeId: employeeId,
@@ -84,39 +87,8 @@ const LeaveRequestSaveRecord = () => {
     reason: '',
   });
 
-  // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
 
-  // const goBack = useCallback(() => {
-  //   if (cameFrom === 'MainDashboard') {
-  //     // Reset stack so only MainDashboard remains
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [
-  //         {
-  //           name: 'TabNavigator',
-  //           params: {screen: 'MainDashboard'},
-  //         },
-  //       ],
-  //     });
-  //   } else if (cameFrom === 'LeavesListPage') {
-  //     // Reset stack so only LeavesListPage remains
-  //     const targetCameFrom = originalCameFrom || 'DisplayListPage';
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [
-  //         {
-  //           name: 'LeavesListPage',
-  //           params: {
-  //             employeeId,
-  //             employeeName,
-  //             WorkerRecId,
-  //             cameFrom: targetCameFrom,
-  //           },
-  //         },
-  //       ],
-  //     });
-  //   } else {
   const goBack = useCallback(() => {
     if (cameFrom === 'AttendanceCalendarScreen') {
       navigation.navigate('AttendanceCalendarScreen');
@@ -125,7 +97,6 @@ const LeaveRequestSaveRecord = () => {
       navigation.navigate('AttendanceDetailsScreen');
       return;
     } else if (cameFrom === 'MainDashboard') {
-      // Reset stack so only MainDashboard remains
       navigation.reset({
         index: 0,
         routes: [
@@ -136,7 +107,6 @@ const LeaveRequestSaveRecord = () => {
         ],
       });
     } else if (cameFrom === 'LeavesListPage') {
-      // Reset stack so only LeavesListPage remains
       const targetCameFrom = originalCameFrom || 'DisplayListPage';
       navigation.reset({
         index: 0,
@@ -153,7 +123,6 @@ const LeaveRequestSaveRecord = () => {
         ],
       });
     } else {
-      // Default: just go back one screen in the stack
       navigation.goBack();
     }
   }, [
@@ -165,11 +134,9 @@ const LeaveRequestSaveRecord = () => {
     WorkerRecId,
   ]);
 
-  // Function to normalize leave category for display
   const normalizeLeaveCategoryForDisplay = category => {
-    if (!category) return 'Full Day Leave'; // Default to Full Day Leave
+    if (!category) return 'Full Day Leave';
 
-    // Handle different formats from API
     switch (category.toLowerCase()) {
       case 'fullleave':
       case 'full leave':
@@ -184,11 +151,10 @@ const LeaveRequestSaveRecord = () => {
     }
   };
 
-  // Function to clear form data
   const clearFormData = useCallback(() => {
     const clearedForm = createInitialFormData();
     setFormData(clearedForm);
-    setOriginalBalance(null); // Clear original balance
+    setOriginalBalance(null);
   }, []);
 
   useFocusEffect(
@@ -205,32 +171,27 @@ const LeaveRequestSaveRecord = () => {
     }, [navigation]),
   );
 
-  // Reset scroll position when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      // Scroll to top when screen comes into focus
       if (scrollViewRef.current) {
         scrollViewRef.current.scrollTo({y: 0, animated: false});
       }
     }, []),
   );
 
-  // Reset form data when screen comes into focus and mode changes
   useFocusEffect(
     React.useCallback(() => {
       if (mode === 'create') {
         const freshFormData = createInitialFormData();
         setFormData(freshFormData);
-        setOriginalBalance(null); // Clear original balance for create mode
+        setOriginalBalance(null);
       } else if (mode === 'edit' && leaveData?.recId) {
         const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
           leaveData.leaveCategory,
         );
 
-        // Store the original balance to preserve it during updates
         setOriginalBalance(leaveData.balance);
 
-        // Set leaveDays correctly for edit mode
         const editFormData = {
           ...createInitialFormData(),
           ...leaveData,
@@ -243,7 +204,6 @@ const LeaveRequestSaveRecord = () => {
 
         setFormData(editFormData);
 
-        // Fetch leave codes first, then balance
         fetchLeaveCodesForEmployee().then(() => {
           if (mode === 'edit' && leaveData?.balance) {
             setFormData(prev => ({
@@ -288,8 +248,14 @@ const LeaveRequestSaveRecord = () => {
   };
 
   const leaveCategoryOptions = [
-    {label: 'Full Day Leave', value: 'Full Day Leave'},
-    {label: 'Half Day Leave', value: 'Half Day Leave'},
+    {
+      label: translateLeaveCategory('FullLeave'),
+      value: 'Full Day Leave',
+    },
+    {
+      label: translateLeaveCategory('HalfLeave'),
+      value: 'Half Day Leave',
+    },
   ];
 
   const formatToISOWithTime = date => {
@@ -308,7 +274,6 @@ const LeaveRequestSaveRecord = () => {
       leaveStartDate: formatted,
     }));
 
-    // Only fetch balance for create mode, not edit mode
     if (mode === 'create' && formData.employeeId && formData.leaveCode) {
       try {
         const balanceData = await fetchLeaveBalance(
@@ -342,7 +307,6 @@ const LeaveRequestSaveRecord = () => {
         }));
       }
     } else if (mode === 'edit') {
-      // For edit mode, preserve the original balance and just recalculate end date
       if (formData.leaveDays) {
         setFormData(prev => ({
           ...prev,
@@ -392,21 +356,18 @@ const LeaveRequestSaveRecord = () => {
           : {}),
       }));
     } else {
-      setAlertMessage('Leave Days cannot exceed the available balance.');
+      setAlertMessage(t('leaveSaveRecord.leaveDaysExceedBalance'));
       setAlertModal(true);
     }
   };
 
-  // Updated function to handle leave category change and prevent balance modification
   const handleLeaveCategoryChange = async item => {
     const newLeaveCategory = item.value;
 
-    // Store current balance and other important data to preserve them
-    const currentBalance = originalBalance || formData.balance; // Use original balance if available
+    const currentBalance = originalBalance || formData.balance;
     const currentLeaveCode = formData.leaveCode;
     const currentStartDate = formData.leaveStartDate;
 
-    // Reset form to default state but keep employee info and selected category
     const resetForm = {
       ...createInitialFormData(),
       employeeId: formData.employeeId,
@@ -421,12 +382,11 @@ const LeaveRequestSaveRecord = () => {
 
     setFormData(resetForm);
 
-    // Calculate end date if we have all required data and preserve balance
     if (currentStartDate && newLeaveCategory === 'Half Day Leave') {
       setFormData(prev => ({
         ...prev,
         leaveEndDate: calculateEndDate(currentStartDate, '0.5'),
-        balance: currentBalance || prev.balance, // Ensure balance is preserved
+        balance: currentBalance || prev.balance,
       }));
     }
   };
@@ -434,7 +394,6 @@ const LeaveRequestSaveRecord = () => {
   const handleLeaveCodeChange = async item => {
     const newLeaveCode = item.value;
 
-    // Store current values to preserve them if needed
     const currentCategory = formData.leaveCategory;
     const currentStartDate = formData.leaveStartDate;
     const currentBalance = originalBalance || formData.balance;
@@ -453,7 +412,6 @@ const LeaveRequestSaveRecord = () => {
 
     setFormData(resetForm);
 
-    // Only fetch balance for create mode
     if (mode === 'create') {
       const effectiveStartDate =
         currentStartDate || new Date().toISOString().split('T')[0];
@@ -465,7 +423,6 @@ const LeaveRequestSaveRecord = () => {
           effectiveStartDate,
         );
 
-        // Set balance and ensure it doesn't get modified by half leave selection
         const newBalance = balanceData || '0.00';
         setFormData(prev => ({
           ...prev,
@@ -479,7 +436,6 @@ const LeaveRequestSaveRecord = () => {
         }));
       }
     } else {
-      // For edit mode, preserve the original balance
       setFormData(prev => ({
         ...prev,
         balance: currentBalance || '0.00',
@@ -492,7 +448,7 @@ const LeaveRequestSaveRecord = () => {
       const codes = await fetchLeaveCodes(leaveData?.employeeId || employeeId);
       setLeaveCodesForEmployee(codes);
     } catch (error) {
-      setAlertMessage('Failed to fetch leave codes.');
+      setAlertMessage(t('leaveSaveRecord.fetchLeaveCodesFailed'));
       setAlertModal(true);
     }
   };
@@ -502,7 +458,7 @@ const LeaveRequestSaveRecord = () => {
     const d = new Date(date);
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear(); // always 4 digits
+    const year = d.getFullYear();
     return `${month}/${day}/${year}`;
   };
 
@@ -527,7 +483,6 @@ const LeaveRequestSaveRecord = () => {
         new Date().toISOString().split('T')[0]
       }T12:00:00`;
 
-      // For edit mode, preserve the original balance instead of current form balance
       const balanceToUse =
         mode === 'edit' && originalBalance ? originalBalance : data.balance;
 
@@ -545,7 +500,7 @@ const LeaveRequestSaveRecord = () => {
       };
 
       if (!leavesData.LeaveCode || !leavesData.LeaveEndDate) {
-        setAlertMessage('Leave Code and End Date are required.');
+        setAlertMessage(t('leaveSaveRecord.requiredFields'));
         setAlertModal(true);
         return false;
       }
@@ -575,45 +530,55 @@ const LeaveRequestSaveRecord = () => {
         response.IsSuccess === true || response.IsSuccess === 'true';
 
       if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-        const submitText = actionType === 'submit' ? ' and Submitted' : '';
+        const actionText =
+          modalMode === 'create'
+            ? t('leaveSaveRecord.created')
+            : t('leaveSaveRecord.updated');
+        const submitText =
+          actionType === 'submit'
+            ? ` ${t('leaveSaveRecord.andSubmitted')}`
+            : '';
         setAlertMessage(
-          `${data.leaveCode} is ${actionText}${submitText} Successfully`,
+          t('leaveSaveRecord.successMessage', {
+            leaveCode: data.leaveCode,
+            action: actionText + submitText,
+          }),
         );
         setAlertModal(true);
         return {success: true, recId: response.RecId};
       } else {
-        const errorMessage = response.Message || 'Operation Failed';
+        const errorMessage =
+          response.Message || t('leaveSaveRecord.operationFailed');
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};
       }
     } catch (error) {
       console.error('Error in handleAction:', error);
-      setAlertMessage('An error occurred while processing the request.');
+      setAlertMessage(t('leaveSaveRecord.errorOccurred'));
       setAlertModal(true);
       return {success: false, message: 'Network or server error'};
     }
   };
 
   const handleSave = async actionType => {
-    if (processingButton) return; // Prevent multiple clicks
+    if (processingButton) return;
 
     const missingFields = [];
-    // const listPageCameFrom = originalCameFrom || 'DisplayListPage';
 
-    if (!formData.leaveCode) missingFields.push('Leave Code');
-    if (!formData.leaveStartDate) missingFields.push('Leave Start Date');
+    if (!formData.leaveCode) missingFields.push(t('leaveSaveRecord.leaveCode'));
+    if (!formData.leaveStartDate)
+      missingFields.push(t('leaveSaveRecord.leaveStartDate'));
     if (!formData.leaveDays) {
-      missingFields.push('Leave Days');
+      missingFields.push(t('leaveSaveRecord.leaveDays'));
     } else if (Number(formData.leaveDays) === 0) {
-      missingFields.push('Leave Days cannot be 0');
+      missingFields.push(t('leaveSaveRecord.leaveDaysCannotBeZero'));
     }
 
-    // Leave Category validation as it will always have a default value
     if (missingFields.length > 0) {
       const message =
-        'Please fill in the following required fields:\n' +
+        t('leaveSaveRecord.fillRequiredFields') +
+        '\n' +
         missingFields.join('\n');
       setAlertMessage(message);
       setAlertModal(true);
@@ -630,14 +595,11 @@ const LeaveRequestSaveRecord = () => {
       );
 
       if (result.success) {
-        // Clear form data after successful operation
         setTimeout(() => {
           setAlertModal(false);
 
-          // Clear the form data
           clearFormData();
 
-          // Navigate to LeavesListPage after successful create/update
           navigation.navigate('LeavesListPage', {
             employeeId: formData.employeeId,
             employeeName: formData.employeeName,
@@ -654,7 +616,7 @@ const LeaveRequestSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving leave request:', error);
-      setAlertMessage('Failed to save leave request. Please try again.');
+      setAlertMessage(t('leaveSaveRecord.saveFailed'));
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -667,7 +629,9 @@ const LeaveRequestSaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        mode === 'edit' ? 'Edit Leave Request' : 'Create Leave Request'
+        mode === 'edit'
+          ? t('leaveSaveRecord.editTitle')
+          : t('leaveSaveRecord.createTitle')
       }
       isBackButton={true}
       showFooter={false}
@@ -676,7 +640,6 @@ const LeaveRequestSaveRecord = () => {
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
-      {/* Show loading indicator when isLoading is true */}
       {isLoading ? (
         <CustomIndicator />
       ) : (
@@ -687,35 +650,60 @@ const LeaveRequestSaveRecord = () => {
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
             <ScrollView
               ref={scrollViewRef}
-              contentContainerStyle={[
-                styles.LReqSR_FormContainer,
-                // {paddingBottom: 20},
-              ]}
+              contentContainerStyle={styles.LReqSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              <Text style={styles.LReqSR_Label}>Employee Name</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              {/* Employee Name */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.employeeName')}
+              </Text>
+              <Text
+                style={[
+                  styles.LReqSR_Input,
+                  styles.LReqSR_Disabled,
+                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                ]}>
                 {formData.employeeName}
               </Text>
 
-              <Text style={styles.LReqSR_Label}>Request Date</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              {/* Request Date */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.requestDate')}
+              </Text>
+              <Text
+                style={[
+                  styles.LReqSR_Input,
+                  styles.LReqSR_Disabled,
+                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                ]}>
                 {formatDate(today)}
               </Text>
 
-              <Text style={styles.LReqSR_Label}>Leave Category</Text>
+              {/* Leave Category Label */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.leaveCategoryLabel')}
+              </Text>
               <Dropdown
-                style={styles.LReqSR_Input}
+                style={[styles.LReqSR_Input, isRTL && {textAlign: 'left'}]}
                 data={leaveCategoryOptions}
                 labelField="label"
                 valueField="value"
-                placeholder="Select Leave Category"
+                placeholder={t('leaveSaveRecord.selectLeaveCategory')}
                 value={formData.leaveCategory}
                 onChange={handleLeaveCategoryChange}
-                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                itemTextStyle={styles.LReqSR_DropdownItemText}
+                placeholderStyle={[
+                  styles.LReqSR_DropdownPlaceholder,
+                  isRTL && {textAlign: 'left'},
+                ]}
+                selectedTextStyle={[
+                  styles.LReqSR_DropdownSelectedText,
+                  isRTL && {textAlign: 'left'},
+                ]}
+                itemTextStyle={[
+                  styles.LReqSR_DropdownItemText,
+                  isRTL && {textAlign: 'left'},
+                ]}
                 activeColor="#E6F0FF"
                 containerStyle={[
                   styles.LReqSR_DropdownContainer,
@@ -724,60 +712,137 @@ const LeaveRequestSaveRecord = () => {
                     zIndex: 1000,
                   },
                 ]}
+                renderLeftIcon={
+                  isRTL
+                    ? () => (
+                        <Icon
+                          name="chevron-down"
+                          size={10}
+                          color="#8b8b8bff"
+                          style={{marginHorizontal: 8}}
+                        />
+                      )
+                    : null
+                }
+                renderRightIcon={
+                  !isRTL
+                    ? () => (
+                        <Icon
+                          name="chevron-down"
+                          size={10}
+                          color="#8b8b8bff"
+                          style={{marginHorizontal: 8}}
+                        />
+                      )
+                    : null
+                }
+                iconStyle={{width: 0, height: 0}}
                 itemContainerStyle={styles.LReqSR_DropdownItemContainer}
                 maxHeight={280}
                 dropdownPosition="auto"
-                // search
-                // searchPlaceholder="Search Leave Category"
-                // inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                // iconStyle={styles.LReqSR_DropdownIcon}
+                inverted={isRTL}
               />
 
-              <Text style={styles.LReqSR_Label}>Leave Code *</Text>
+              {/* Leave Code */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.leaveCode')} *
+              </Text>
               <Dropdown
-                style={styles.LReqSR_Input}
+                style={[styles.LReqSR_Input, isRTL && {textAlign: 'left'}]}
                 data={LeaveCodesForEmployee}
                 labelField="label"
                 valueField="value"
-                placeholder="Select Leave Code"
+                placeholder={t('leaveSaveRecord.selectLeaveCode')}
                 value={formData.leaveCode}
                 onFocus={fetchLeaveCodesForEmployee}
                 onChange={handleLeaveCodeChange}
-                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                itemTextStyle={styles.LReqSR_DropdownItemText}
+                placeholderStyle={[
+                  styles.LReqSR_DropdownPlaceholder,
+                  isRTL && {textAlign: 'left'},
+                ]}
+                selectedTextStyle={[
+                  styles.LReqSR_DropdownSelectedText,
+                  isRTL && {textAlign: 'left'},
+                ]}
+                itemTextStyle={[
+                  styles.LReqSR_DropdownItemText,
+                  isRTL && {textAlign: 'left'},
+                ]}
                 activeColor="#E6F0FF"
                 containerStyle={[
                   styles.LReqSR_DropdownContainer,
-                  {
-                    marginTop: Platform.OS === 'ios' ? 5 : 2,
-                    zIndex: 999,
-                  },
+                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
                 ]}
                 itemContainerStyle={styles.LReqSR_DropdownItemContainer}
                 maxHeight={280}
                 dropdownPosition="auto"
                 search
-                searchPlaceholder="Search Leave Code"
-                inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                iconStyle={styles.LReqSR_DropdownIcon}
-                keyboardAvoiding={true}
+                searchPlaceholder={t('leaveSaveRecord.searchLeaveCode')}
+                inputSearchStyle={[
+                  styles.LReqSR_DropdownSearchInput,
+                  isRTL && {textAlign: 'right'},
+                ]}
+                renderLeftIcon={
+                  isRTL
+                    ? () => (
+                        <Icon
+                          name="chevron-down"
+                          size={10}
+                          color="#8b8b8bff"
+                          style={{marginHorizontal: 8}}
+                        />
+                      )
+                    : null
+                }
+                renderRightIcon={
+                  !isRTL
+                    ? () => (
+                        <Icon
+                          name="chevron-down"
+                          size={10}
+                          color="#8b8b8bff"
+                          style={{marginHorizontal: 8}}
+                        />
+                      )
+                    : null
+                }
+                iconStyle={{width: 0, height: 0}}
+                keyboardAvoiding
+                inverted={isRTL}
               />
 
-              <Text style={styles.LReqSR_Label}>Balance</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              {/* Balance */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.balance')}
+              </Text>
+              <Text
+                style={[
+                  styles.LReqSR_Input,
+                  styles.LReqSR_Disabled,
+                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                ]}>
                 {formData.balance}
               </Text>
 
-              <Text style={styles.LReqSR_Label}>Leave Start Date *</Text>
+              {/* Leave Start Date */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.leaveStartDate')} *
+              </Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={[
+                  styles.LReqSR_DateSelector,
+                  isRTL && {flexDirection: 'row'},
+                ]}
                 onPress={() => setShowCalendar(true)}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text
+                    style={[
+                      styles.LReqSR_DateText,
+                      isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                    ]}>
                     {formData.leaveStartDate
                       ? formatDate(formData.leaveStartDate)
-                      : 'Select Start Date'}
+                      : t('leaveSaveRecord.selectStartDate')}
                   </Text>
                 </View>
                 <Icon name="calendar" size={20} color="#0A66C2" />
@@ -789,33 +854,52 @@ const LeaveRequestSaveRecord = () => {
                 onClose={() => setShowCalendar(false)}
               />
 
-              <Text style={styles.LReqSR_Label}>Leave Days *</Text>
+              {/* Leave Days */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.leaveDays')} *
+              </Text>
               <TextInput
                 style={[
                   styles.LReqSR_Input,
                   isLeaveDaysDisabled && styles.LReqSR_Disabled,
+                  isRTL && {textAlign: 'right', writingDirection: 'rtl'},
                 ]}
                 value={formData.leaveDays.toString()}
                 onChangeText={handleLeaveDaysChange}
                 keyboardType="numeric"
-                placeholder="Enter number of days"
+                placeholder={t('leaveSaveRecord.enterDays')}
                 placeholderTextColor="#888"
                 editable={!isLeaveDaysDisabled}
               />
 
-              <Text style={styles.LReqSR_Label}>Leave End Date</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              {/* Leave End Date */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.leaveEndDate')}
+              </Text>
+              <Text
+                style={[
+                  styles.LReqSR_Input,
+                  styles.LReqSR_Disabled,
+                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                ]}>
                 {formData.leaveEndDate
                   ? formatDate(formData.leaveEndDate)
-                  : 'End date will be calculated'}
+                  : t('leaveSaveRecord.endDateCalculated')}
               </Text>
 
-              <Text style={styles.LReqSR_Label}>Reason</Text>
+              {/* Reason */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {t('leaveSaveRecord.reason')}
+              </Text>
               <TextInput
-                style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
+                style={[
+                  styles.LReqSR_Input,
+                  styles.LReqSR_TextArea,
+                  isRTL && {textAlign: 'right', writingDirection: 'rtl'},
+                ]}
                 value={formData.reason}
                 onChangeText={value => handleInputChange('reason', value)}
-                placeholder="Enter reason for leave"
+                placeholder={t('leaveSaveRecord.enterReason')}
                 multiline
                 numberOfLines={6}
               />
@@ -834,7 +918,7 @@ const LeaveRequestSaveRecord = () => {
 
           <AlertModal
             visible={alertModal}
-            heading="Alert"
+            heading={t('common.alert')}
             text={alertMessage}
             onPress={() => {
               setAlertModal(false);

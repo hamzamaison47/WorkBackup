@@ -6,7 +6,7 @@ import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-const PREmailTaxCertificate = async ({employeeId, startDate, endDate}) => {
+const PREmailTaxCertificate = async ({employeeId, PRPayPeriodYear}) => {
   try {
     const config = await safeGetActiveConfigData();
 
@@ -19,8 +19,7 @@ const PREmailTaxCertificate = async ({employeeId, startDate, endDate}) => {
     const soapBody = `
       <sendTaxCertificateEmail xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
-        <_endDate>${endDate}</_endDate>
-        <_startDate>${startDate}</_startDate>
+        <_payPeriodYear>${PRPayPeriodYear}</_payPeriodYear>
       </sendTaxCertificateEmail>
     `;
 
@@ -54,6 +53,8 @@ const PREmailTaxCertificate = async ({employeeId, startDate, endDate}) => {
       parsed?.['s:Envelope']?.['s:Body']?.['sendTaxCertificateEmailResponse']?.[
         'result'
       ];
+
+    // console.log({result});
 
     if (!result) {
       console.log('No Tax Certificate data found');

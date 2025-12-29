@@ -1,7 +1,12 @@
 import {useState, useEffect, useRef} from 'react';
 import {AppState} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useNavigation} from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  setLastBackgroundTime,
+  clearAuthTokens,
+} from '../store/slices/authSlice';
+import {clearUserData} from '../store/slices/userSlice';
 
 const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
@@ -10,10 +15,16 @@ const useSessionTimeout = () => {
   const [initialized, setInitialized] = useState(false); // ✅ Track initial run
   const appState = useRef(AppState.currentState);
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const lastBackgroundTime = useSelector(
+    state => state.auth.lastBackgroundTime,
+  );
 
-  const handleOkPress = async () => {
+  const handleOkPress = () => {
     setShowModal(false);
-    await AsyncStorage.multiRemove(['userToken', 'lastBackgroundTime']);
+    // Clear auth tokens and user data from Redux
+    dispatch(clearAuthTokens());
+    dispatch(clearUserData());
     navigation.reset({
       index: 0,
       routes: [{name: 'Login'}],
@@ -27,7 +38,7 @@ const useSessionTimeout = () => {
         // When app goes to background
         if (appState.current.match(/active/) && nextAppState === 'background') {
           const timeNow = new Date().getTime();
-          await AsyncStorage.setItem('lastBackgroundTime', timeNow.toString());
+          dispatch(setLastBackgroundTime(timeNow));
         }
 
         // When app comes to foreground
@@ -41,9 +52,8 @@ const useSessionTimeout = () => {
             return;
           }
 
-          const storedTime = await AsyncStorage.getItem('lastBackgroundTime');
-          if (storedTime) {
-            const diff = new Date().getTime() - parseInt(storedTime, 10);
+          if (lastBackgroundTime) {
+            const diff = new Date().getTime() - lastBackgroundTime;
             if (diff > SESSION_TIMEOUT) {
               setShowModal(true);
             }
@@ -55,7 +65,7 @@ const useSessionTimeout = () => {
     );
 
     return () => subscription.remove();
-  }, [initialized]);
+  }, [initialized, lastBackgroundTime, dispatch]);
 
   return {showModal, handleOkPress};
 };

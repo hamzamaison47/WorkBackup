@@ -15,13 +15,13 @@ import {setMenuItems} from '../store/slices/menuItemSlice';
 import AlertModal from './Alert/AlertModal';
 import LogoutAlertModal from './Alert/LogoutAlertModal';
 import MainPageHeader from './PageHeader/MainPageHeader';
-import NotificationDropdown from './PageHeader/NotificationDropdown';
+import NotificationPanel from './PageHeader/NotificationPanel';
 import CompanyDropdown from './PageHeader/CompanyDropdown';
 
 import CustomTabBar from '../Controller/CustomTabBar';
 import {fetchEmployeeMenuItemsByCompany} from '../Controller/authUtils';
 
-import {retrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
+import {RetrieveEmployeeNotification} from '../API/Notification/RetriveEmployeeNotification';
 import styles from '../styles/styles';
 
 const ActionPaneContainer = ({
@@ -31,7 +31,7 @@ const ActionPaneContainer = ({
   isHeaderActive = true,
   showTabNavigator = true,
   onFloatingButtonPress,
-  onRefresh, // Add onRefresh prop to handle refresh functionality
+  onRefresh,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -90,28 +90,31 @@ const ActionPaneContainer = ({
     }, [navigation]),
   );
 
-  // Fetch notifications
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const data = await retrieveByEmail({email: userData?.email});
-        if (Array.isArray(data)) {
-          const formatted = data.map(n => ({
-            document: n.Document,
-            documentType: n.DocumentType,
-            correlationId: n.CorrelationId,
-          }));
-          setNotifications(formatted);
-          setNotificationCount(formatted.length);
-        }
-      } catch (err) {
-        // console.error('Error fetching notifications:', err);
+  // ✅ Fetch notifications using RetriveEmployeeNotification
+  const fetchNotifications = useCallback(async () => {
+    try {
+      if (!userData?.employeeId) return;
+
+      const data = await RetrieveEmployeeNotification({
+        employeeId: userData.employeeId,
+      });
+
+      // console.log({data});
+
+      if (Array.isArray(data)) {
+        setNotifications(data);
+        setNotificationCount(data.length);
       }
-    };
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    }
+  }, [userData?.employeeId]);
+
+  useEffect(() => {
     const interval = setInterval(fetchNotifications, 30000);
     fetchNotifications();
     return () => clearInterval(interval);
-  }, [userData?.email]);
+  }, [fetchNotifications]);
 
   // Header config
   useEffect(() => {
@@ -143,53 +146,28 @@ const ActionPaneContainer = ({
   const handleCompanySelect = async newLegalEntity => {
     setDropdownVisible(false);
 
-    // Show loading state if needed
-    // eslint-disable-next-line no-unused-vars
-    const currentMenus = [...notifications]; // Store current state for rollback if needed
-
     try {
-      // Update the selected legal entity
       dispatch(setSelectedLegalEntity(newLegalEntity));
 
-      // Fetch new menu items for the selected company
       const newMenuItems = await fetchEmployeeMenuItemsByCompany(
         userData?.employeeId,
         newLegalEntity,
       );
 
-      // Update menu items in Redux
       dispatch(setMenuItems(newMenuItems));
 
-      // Trigger refresh if callback is provided
       if (onRefresh) {
         await onRefresh();
       }
     } catch (error) {
       console.error('Error updating data after company change:', error);
 
-      // Rollback on error
-      dispatch(setSelectedLegalEntity(selectedLegalEntity)); // Revert to previous selection
+      dispatch(setSelectedLegalEntity(selectedLegalEntity));
 
       setAlertMessage('Failed to update menu items for the selected company.');
       setAlertModal(true);
     }
   };
-  // const handleCompanySelect = async newLegalEntity => {
-  //   dispatch(setSelectedLegalEntity(newLegalEntity));
-
-  //   try {
-  //     // Trigger refresh if callback is provided
-  //     if (onRefresh) {
-  //       await onRefresh();
-  //     }
-  //   } catch (error) {
-  //     console.error('Error updating data after company change:', error);
-  //     setAlertMessage('Failed to refresh data after company change.');
-  //     setAlertModal(true);
-  //   } finally {
-  //     setDropdownVisible(false);
-  //   }
-  // };
 
   const toggleDrawer = () => {
     closeAllOverlays();
@@ -217,7 +195,6 @@ const ActionPaneContainer = ({
     navigation.navigate('Login');
   };
 
-  // ✅ When tab is pressed
   const handleTabPress = tabName => {
     setActiveTab(tabName);
     navigation.navigate('TabNavigator', {
@@ -231,7 +208,7 @@ const ActionPaneContainer = ({
       {/* Main content */}
       <View style={styles.APCont_content}>{children}</View>
 
-      {/* ✅ Reusable Custom Tab Bar */}
+      {/* Custom Tab Bar */}
       {showTabNavigator && (
         <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
       )}
@@ -263,13 +240,14 @@ const ActionPaneContainer = ({
         onCancel={() => setModalVisible(false)}
       />
 
-      {notificationVisible && (
-        <NotificationDropdown
-          visible={notificationVisible}
-          notifications={notifications}
-          onClose={() => setNotificationVisible(false)}
-        />
-      )}
+      {/* ✅ Updated Notification Panel */}
+      <NotificationPanel
+        visible={notificationVisible}
+        notifications={notifications}
+        onClose={() => setNotificationVisible(false)}
+        onRefresh={fetchNotifications}
+        employeeId={userData?.employeeId}
+      />
 
       {dropdownVisible && (
         <CompanyDropdown
@@ -277,7 +255,7 @@ const ActionPaneContainer = ({
           onClose={() => setDropdownVisible(false)}
           legalEntities={legalEntities}
           selectedLegalEntity={selectedLegalEntity}
-          onSelect={handleCompanySelect} // Use the enhanced handler with refresh
+          onSelect={handleCompanySelect}
         />
       )}
     </View>
