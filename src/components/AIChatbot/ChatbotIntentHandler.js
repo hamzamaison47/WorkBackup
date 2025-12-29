@@ -1,4 +1,6 @@
+/* eslint-disable curly */
 /* eslint-disable no-unused-vars */
+
 import {RetrieveLeaveCodes} from '../../API/Leaves/LeaveCodes';
 import {createLeaveRequest} from '../../API/Leaves/CreateLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
@@ -11,7 +13,6 @@ import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 const DynafaceInfo = {
   description:
     'Dynaface is a comprehensive mobile application designed for employee ease and efficiency. It connects with Microsoft D365 to manage various HR operations smoothly and securely.',
-
   key_features: [
     '📋 Attendance Management - Mark attendance with GPS verification, view attendance history',
     '🎯 Leave Management - Request, approve, and track leaves with real-time balance updates',
@@ -22,7 +23,6 @@ const DynafaceInfo = {
     '📑 Purchase Requisitions - Create and manage purchase requests',
     '🏢 Employee Certificates - Request and download employment certificates',
   ],
-
   supported_operations: [
     'Mark Attendance - "mark attendance", "punch in", "punch out"',
     'Request Leave - "request leave", "apply for leave", "leave request"',
@@ -31,7 +31,6 @@ const DynafaceInfo = {
     'Track Request Status - "track request", "request status"',
     'Employee Info - "my profile", "employee information"',
   ],
-
   how_to_use: `1. Use natural language to interact
 2. Ask for specific operations (e.g., "I want to request leave")
 3. Provide information when prompted
@@ -46,8 +45,7 @@ const DynafaceInfo = {
  */
 class LeaveRequestHandler {
   constructor() {
-    this.state = null;
-    this.leaveData = {};
+    this.reset();
   }
 
   reset() {
@@ -55,10 +53,8 @@ class LeaveRequestHandler {
     this.leaveData = {};
   }
 
-  // State: Awaiting leave type selection
   async askForLeaveType(userData) {
     this.state = 'awaiting_leave_type';
-
     try {
       const leaveCodes = await RetrieveLeaveCodes({
         employeeId: userData.employeeId,
@@ -76,9 +72,7 @@ class LeaveRequestHandler {
       const codesList = leaveCodes
         .map(
           (code, idx) =>
-            `${idx + 1}. ${code.LeaveName || code.leaveCode} (${
-              code.leaveCode
-            })`,
+            `${idx + 1}. ${code.LeaveDescription} (${code.LeaveCode})`,
         )
         .join('\n');
 
@@ -95,39 +89,37 @@ class LeaveRequestHandler {
     }
   }
 
-  // Parse leave type selection
   parseLeaveTypeSelection(userInput, availableLeaveCodes) {
     const input = userInput.toLowerCase().trim();
 
-    // Try to match by number
+    // Match by number
     const numMatch = userInput.match(/^(\d+)$/);
     if (numMatch) {
       const idx = parseInt(numMatch[1], 10) - 1;
       if (idx >= 0 && idx < availableLeaveCodes.length) {
         const selected = availableLeaveCodes[idx];
-        this.leaveData.leaveCode = selected.leaveCode;
-        this.leaveData.leaveName = selected.LeaveName || selected.leaveCode;
+        this.leaveData.leaveCode = selected.LeaveCode;
+        this.leaveData.leaveName = selected.LeaveDescription;
         return {success: true, selected};
       }
     }
 
-    // Try to match by name
+    // Match by name
     const found = availableLeaveCodes.find(
       code =>
-        code.leaveCode.toLowerCase() === input ||
-        (code.LeaveName && code.LeaveName.toLowerCase().includes(input)),
+        code.LeaveCode.toLowerCase() === input ||
+        code.LeaveDescription.toLowerCase().includes(input),
     );
 
     if (found) {
-      this.leaveData.leaveCode = found.leaveCode;
-      this.leaveData.leaveName = found.LeaveName || found.leaveCode;
+      this.leaveData.leaveCode = found.LeaveCode;
+      this.leaveData.leaveName = found.LeaveDescription;
       return {success: true, selected: found};
     }
 
     return {success: false};
   }
 
-  // State: Awaiting leave category (Full Day / Half Day)
   askForLeaveCategory() {
     this.state = 'awaiting_leave_category';
     return {
@@ -139,17 +131,24 @@ class LeaveRequestHandler {
 
   parseLeaveCategory(userInput) {
     const input = userInput.trim();
+
     if (input === '1' || input.toLowerCase().includes('full')) {
-      this.leaveData.leaveCategory = 'Full Day Leave';
-      return {success: true, category: 'Full Day Leave'};
-    } else if (input === '2' || input.toLowerCase().includes('half')) {
-      this.leaveData.leaveCategory = 'Half Day Leave';
-      return {success: true, category: 'Half Day Leave'};
+      this.leaveData.leaveCategoryLabel = 'Full Day Leave';
+      this.leaveData.leaveCategory = 'FullLeave';
+      this.state = 'awaiting_start_date';
+      return {success: true};
     }
+
+    if (input === '2' || input.toLowerCase().includes('half')) {
+      this.leaveData.leaveCategoryLabel = 'Half Day Leave';
+      this.leaveData.leaveCategory = 'HalfLeave';
+      this.state = 'awaiting_start_date';
+      return {success: true};
+    }
+
     return {success: false};
   }
 
-  // State: Awaiting start date
   askForStartDate() {
     this.state = 'awaiting_start_date';
     return {
@@ -170,9 +169,8 @@ class LeaveRequestHandler {
     return {success: false};
   }
 
-  // State: Awaiting number of days (skip for half day)
   askForNumberOfDays() {
-    if (this.leaveData.leaveCategory === 'Half Day Leave') {
+    if (this.leaveData.leaveCategory === 'HalfLeave') {
       this.leaveData.leaveDays = '0.5';
       this.state = 'awaiting_reason';
       const startDate = this.leaveData.leaveStartDate.split('T')[0];
@@ -197,19 +195,17 @@ class LeaveRequestHandler {
       if (days > 0 && days <= 30) {
         this.leaveData.leaveDays = days.toString();
         return {success: true, days};
-      } else if (days > 30) {
-        return {success: false, error: 'Leave days cannot exceed 30 days'};
       }
+      return {success: false, error: 'Leave days cannot exceed 30 days'};
     }
     return {success: false, error: 'Invalid number of days'};
   }
 
-  // State: Awaiting reason
   askForReason() {
     this.state = 'awaiting_reason';
     const startDate = this.leaveData.leaveStartDate.split('T')[0];
     return {
-      response: `Now, please provide a reason for your ${this.leaveData.leaveCategory.toLowerCase()} on ${startDate} for ${
+      response: `Now, please provide a reason for your ${this.leaveData.leaveCategoryLabel.toLowerCase()} on ${startDate} for ${
         this.leaveData.leaveDays
       } day(s).`,
       next_state: 'awaiting_reason',
@@ -225,13 +221,12 @@ class LeaveRequestHandler {
     return {success: false, error: 'Reason must be 3-500 characters'};
   }
 
-  // State: Confirmation
   askForConfirmation() {
     this.state = 'awaiting_confirmation';
     const summary = `
-📋 **Leave Request Summary:**
+📋 Leave Request Summary:
 - Leave Type: ${this.leaveData.leaveName}
-- Category: ${this.leaveData.leaveCategory}
+- Category: ${this.leaveData.leaveCategoryLabel}
 - Start Date: ${this.leaveData.leaveStartDate.split('T')[0]}
 - Number of Days: ${this.leaveData.leaveDays}
 - Reason: ${this.leaveData.reason}
@@ -246,12 +241,33 @@ Is this correct? (Reply with "yes" to submit or "no" to cancel)
 
   async submitLeave(userData) {
     try {
+      // Ensure LeaveEndDate is always set
+      let leaveEndDate = this.leaveData.leaveEndDate;
+      if (!leaveEndDate) {
+        const start = new Date(this.leaveData.leaveStartDate);
+        if (this.leaveData.leaveCategory === 'HalfLeave') {
+          leaveEndDate = `${
+            this.leaveData.leaveStartDate.split('T')[0]
+          }T12:00:00`;
+        } else {
+          const days = parseFloat(this.leaveData.leaveDays || 1);
+          const endDate = new Date(start);
+          endDate.setDate(start.getDate() + days - 1);
+          const yyyy = endDate.getFullYear();
+          const mm = String(endDate.getMonth() + 1).padStart(2, '0');
+          const dd = String(endDate.getDate()).padStart(2, '0');
+          leaveEndDate = `${yyyy}-${mm}-${dd}T12:00:00`;
+        }
+        this.leaveData.leaveEndDate = leaveEndDate;
+      }
+
       const payload = {
         leaveData: {
           employeeId: userData.employeeId,
           LeaveCode: this.leaveData.leaveCode,
           LeaveCategory: this.leaveData.leaveCategory,
           LeaveStartDate: this.leaveData.leaveStartDate,
+          LeaveEndDate: leaveEndDate,
           LeaveDays: this.leaveData.leaveDays,
           Reason: this.leaveData.reason,
           Balance: '0',
@@ -259,35 +275,32 @@ Is this correct? (Reply with "yes" to submit or "no" to cancel)
         },
       };
 
+      // Call D365 API to create leave
       const result = await createLeaveRequest(payload);
 
       if (result && result.RecId) {
         this.leaveData.recordId = result.RecId;
 
-        // Try to submit
         try {
-          const submitResult = await SubmitLeaveRequest({
-            recordId: result.RecId,
-          });
-
+          await SubmitLeaveRequest({recordId: result.RecId});
           this.reset();
           return {
             success: true,
             message: `✅ Leave request submitted successfully!\n\nYour request ID: ${result.RecId}\nStatus: Submitted for approval`,
           };
-        } catch (submitErr) {
+        } catch {
           this.reset();
           return {
             success: true,
             message: `✅ Leave request created successfully!\n\nYour request ID: ${result.RecId}\nStatus: Draft (Ready to submit)`,
           };
         }
-      } else {
-        return {
-          success: false,
-          message: 'Failed to create leave request. Please try again.',
-        };
       }
+
+      return {
+        success: false,
+        message: 'Failed to create leave request. Please try again.',
+      };
     } catch (error) {
       console.error('Error submitting leave:', error);
       return {
@@ -300,58 +313,159 @@ Is this correct? (Reply with "yes" to submit or "no" to cancel)
 
 /**
  * ==========================================
- * INTENT DETECTION & ROUTING (INTELLIGENT)
+ * INTENT DETECTION & ROUTING
  * ==========================================
  */
+const normalize = text =>
+  text
+    .toLowerCase()
+    .replace(/[^\w\s\u0600-\u06FF]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const fuzzyIncludes = (text, keyword) => {
+  if (text.includes(keyword)) return true;
+  const simplify = s => s.replace(/[aeiou]/gi, '');
+  return simplify(text).includes(simplify(keyword));
+};
+
+const ATTENDANCE_KEYWORDS = [
+  'attendance',
+  'attendence',
+  'attandance',
+  'mark attendance',
+  'punch',
+  'punch in',
+  'punch out',
+  'punchin',
+  'punchout',
+  'clock',
+  'clock in',
+  'clock out',
+  'clockin',
+  'clockout',
+  'clokin',
+  'clokout',
+  'clok in',
+  'clok out',
+  'check in',
+  'check out',
+  'time in',
+  'time out',
+  'present',
+  'mark present',
+  'attendance laga do',
+  'attendance lagao',
+  'attendans lagao',
+  'hazri',
+  'hazri lagao',
+  'hazri laga do',
+  'hazri mark',
+  'haziri',
+  'office punch',
+  'office hazri',
+  'punch time',
+  'time punch',
+  'حاضری',
+  'حاضری لگاؤ',
+  'حاضری لگا دو',
+  'حاضری مارک',
+  'حضری',
+];
+
+const LEAVE_KEYWORDS = [
+  'leave',
+  'leav',
+  'apply leave',
+  'request leave',
+  'time off',
+  'vacation',
+  'vaction',
+  'day off',
+  'days off',
+  'apply for leave',
+  'leave request',
+  'chutti',
+  'chuti',
+  'leave chahiye',
+  'chutti chahiye',
+  'chuti chahiye',
+  'leave apply',
+  'off chahiye',
+  'rukhsat',
+  'rukhset',
+  'چھٹی',
+  'چھٹی چاہیے',
+  'رخصت',
+  'رخصت چاہیے',
+];
+
+const INFO_KEYWORDS = [
+  'about dynaface',
+  'what is dynaface',
+  'dynaface info',
+  'app features',
+  'how to use',
+  'guide',
+  'app guide',
+  'dynaface',
+  'dynaface kya hai',
+  'dynaface ke bare mein',
+  'app ki malumat',
+  'ڈائنافیس کیا ہے',
+  'ڈائنافیس کے بارے میں',
+  'ایپ کی معلومات',
+];
+
 const detectIntent = userInput => {
-  const input = userInput.toLowerCase();
+  if (!userInput) return 'unknown';
+  const text = normalize(userInput);
 
-  // Leave-related intents
-  if (/leave|request|apply|vacation|time off|days off/i.test(input)) {
-    return 'request_leave';
-  }
+  const scores = {
+    mark_attendance: ATTENDANCE_KEYWORDS.filter(k =>
+      fuzzyIncludes(text, normalize(k)),
+    ).length,
+    request_leave: LEAVE_KEYWORDS.filter(k => fuzzyIncludes(text, normalize(k)))
+      .length,
+    info_dynaface: INFO_KEYWORDS.filter(k => fuzzyIncludes(text, normalize(k)))
+      .length,
+  };
 
-  // Attendance-related intents
-  if (/attendance|punch|clock|mark|check in|in|out/i.test(input)) {
-    return 'mark_attendance';
-  }
+  const maxScore = Math.max(
+    scores.mark_attendance,
+    scores.request_leave,
+    scores.info_dynaface,
+  );
+  if (maxScore === 0) return 'unknown';
 
-  // ONLY Dynaface info if specifically asking about Dynaface app itself
-  if (
-    /(dynaface|about.*app|how.*dynaface|what.*dynaface|app.*features|guide.*app)/i.test(
-      input,
-    )
-  ) {
-    return 'info_dynaface';
-  }
+  if (scores.mark_attendance === maxScore) return 'mark_attendance';
+  if (scores.request_leave === maxScore) return 'request_leave';
+  if (scores.info_dynaface === maxScore) return 'info_dynaface';
 
-  // Default: use AI for ALL other questions (salary, profile, weather, etc.)
-  return 'ai_response';
+  return 'unknown';
 };
 
 /**
  * ==========================================
- * INTELLIGENT RESPONSE GENERATOR (SIMPLIFIED)
+ * INTELLIGENT RESPONSE GENERATOR
  * ==========================================
  */
 const generateIntelligentResponse = intent => {
   const responses = {
-    info_dynaface: `📱 **About Dynaface**\n\n${
+    info_dynaface: `📱 About Dynaface\n\n${
       DynafaceInfo.description
-    }\n\n**Key Features:**\n${DynafaceInfo.key_features.join('\n')}`,
-
+    }\n\nKey Features:\n${DynafaceInfo.key_features.join(
+      '\n',
+    )}\n\nHow to Use:\n${DynafaceInfo.how_to_use}`,
     request_leave:
       "Let me help you request a leave. I'll guide you through the process step by step.",
-
     mark_attendance:
       'I can help you mark your attendance. This requires location access to verify your office location.',
+    unknown:
+      'Please ask me about:\n\n1️⃣ Mark Attendance\n2️⃣ Request Leave\n3️⃣ About Dynaface',
   };
 
-  if (responses[intent]) {
-    return responses[intent];
-  }
-
-  return 'Please ask me about:\n\n1️⃣ Mark Attendance\n2️⃣ Request Leave\n3️⃣ About Dynaface';
+  return responses[intent] || responses.unknown;
 };
 
 export {
