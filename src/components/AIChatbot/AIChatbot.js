@@ -21,12 +21,11 @@ import moment from 'moment';
 import {CreateAttendance} from '../../API/Attendance/CreateAttendance';
 import {GetGPSCoordinates} from '../../API/Attendance/GetGPSCoordinates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {LeaveRequestHandler} from './ChatbotIntentHandler';
 import {
-  LeaveRequestHandler,
   detectIntent,
   generateIntelligentResponse,
 } from './ChatbotIntentHandler';
-// import {ScrollView} from 'react-native'; // Not needed but safe
 
 /* -------------------- Geofence / Location Helpers -------------------- */
 const GEO_TTL_MS = 30 * 60 * 1000;
@@ -117,7 +116,6 @@ const AIChatbot = ({visible, onClose}) => {
   const permissionStatusRef = useRef(null);
   const flatListRef = useRef(null);
   const leaveHandlerRef = useRef(new LeaveRequestHandler());
-  const currentIntentRef = useRef(null);
 
   /* -------------------- Welcome Message -------------------- */
   useEffect(() => {
@@ -135,6 +133,7 @@ const AIChatbot = ({visible, onClose}) => {
       setMessages([]);
       setInput('');
       stopListening();
+      leaveHandlerRef.current = new LeaveRequestHandler(); // Reset on close
     }
   }, [messages.length, visible]);
 
@@ -189,7 +188,8 @@ const AIChatbot = ({visible, onClose}) => {
 
   const speak = text => {
     try {
-      const TTS = require('react-native-tts');
+      const TTS =
+        require('react-native-tts').default || require('react-native-tts');
       TTS.stop();
       TTS.speak(String(text));
     } catch (e) {
@@ -197,9 +197,7 @@ const AIChatbot = ({visible, onClose}) => {
     }
   };
 
-  /* -------------------- Location Helpers (unchanged) -------------------- */
-  // ... [All location functions remain exactly the same: ensureLocationPermission, getCurrentLocationFast, getGeofencesCached, markAttendance]
-
+  /* -------------------- Location Helpers -------------------- */
   const ensureLocationPermission = useCallback(async () => {
     if (permissionStatusRef.current !== null)
       return permissionStatusRef.current;
@@ -357,38 +355,12 @@ const AIChatbot = ({visible, onClose}) => {
     setIsTyping(true);
 
     try {
-      // ========== ATTENDANCE FLOW ==========
-      if (
-        /(mark|punch|clock|create|record).*(attendance|in|out|present)/i.test(
-          text,
-        ) ||
-        /attendance/i.test(text)
-      ) {
-        setIsTyping(false);
-        processingRef.current = false;
-        Alert.alert(
-          'Confirm Attendance',
-          'Do you want me to mark your attendance now?',
-          [
-            {text: 'Cancel', style: 'cancel'},
-            {text: 'Yes', onPress: markAttendance},
-          ],
-        );
-        return;
-      }
+      const leaveHandler = leaveHandlerRef.current;
 
-      // ========== LEAVE REQUEST FLOW ==========
-      if (currentIntentRef.current === 'request_leave') {
-        const leaveHandler = leaveHandlerRef.current;
-
-        if (leaveHandler.state === null) {
-          // Start leave request flow
-          const result = await leaveHandler.askForLeaveType(userData);
-          setIsTyping(false);
-          addMessage(result.response, 'bot');
-          speak(result.response);
-          currentIntentRef.current = 'request_leave';
-        } else if (leaveHandler.state === 'awaiting_leave_type') {
+      // Check for ongoing leave flow first
+      if (leaveHandler.state !== null) {
+        // Handle continuation of leave flow
+        if (leaveHandler.state === 'awaiting_leave_type') {
           // Parse leave type
           const parseResult = leaveHandler.parseLeaveTypeSelection(
             text,
@@ -491,12 +463,10 @@ const AIChatbot = ({visible, onClose}) => {
               addMessage(submitResult.message, 'bot');
               speak(submitResult.message);
               leaveHandlerRef.current = new LeaveRequestHandler();
-              currentIntentRef.current = null;
             } else {
               addMessage(submitResult.message, 'bot');
               speak(submitResult.message);
               leaveHandlerRef.current = new LeaveRequestHandler();
-              currentIntentRef.current = null;
             }
           } else if (
             confirmText.includes('no') ||
@@ -509,7 +479,6 @@ const AIChatbot = ({visible, onClose}) => {
             );
             speak('Leave request cancelled');
             leaveHandlerRef.current = new LeaveRequestHandler();
-            currentIntentRef.current = null;
           } else {
             setIsTyping(false);
             addMessage(
@@ -520,54 +489,35 @@ const AIChatbot = ({visible, onClose}) => {
           }
         }
       } else {
-        // ========== INTENT DETECTION & ROUTING ==========
+        // No ongoing flow, detect new intent
         const intent = detectIntent(text);
-        currentIntentRef.current = intent;
 
-        if (intent === 'request_leave') {
-          // Start leave request flow
-          const leaveHandler = leaveHandlerRef.current;
+        if (intent === 'mark_attendance') {
+          setIsTyping(false);
+          Alert.alert(
+            'Confirm Attendance',
+            'Do you want me to mark your attendance now?',
+            [
+              {text: 'Cancel', style: 'cancel'},
+              {text: 'Yes', onPress: markAttendance},
+            ],
+          );
+        } else if (intent === 'request_leave') {
           const result = await leaveHandler.askForLeaveType(userData);
           setIsTyping(false);
           addMessage(result.response, 'bot');
           speak(result.response);
-        } else if (intent === 'ai_response') {
-          // Use AI model for general questions
-          try {
-            const mod = require('./openai');
-            const reply =
-              typeof mod.getOpenAIReply === 'function'
-                ? await mod.getOpenAIReply(text)
-                : `You asked: ${text}`;
-            setIsTyping(false);
-            addMessage(reply, 'bot');
-            speak(reply);
-          } catch (err) {
-            setIsTyping(false);
-            addMessage(
-              'Sorry, AI service is unavailable. Please ask about Dynaface features.',
-              'bot',
-            );
-            speak('Sorry, AI service is unavailable');
-          }
-          currentIntentRef.current = null;
-        } else {
-          // Generate intelligent response for Dynaface features
+        } else if (intent === 'info_dynaface') {
           const response = generateIntelligentResponse(intent);
           setIsTyping(false);
-          if (response && response.trim()) {
-            addMessage(response, 'bot');
-            speak(response);
-          } else {
-            addMessage(
-              'Please ask me about:\n\n1️⃣ Mark Attendance\n2️⃣ Request Leave\n3️⃣ About Dynaface',
-              'bot',
-            );
-            speak(
-              'Please ask about mark attendance, request leave, or about dynaface',
-            );
-          }
-          currentIntentRef.current = null;
+          addMessage(response, 'bot');
+          speak(response);
+        } else {
+          // Fallback
+          const response = generateIntelligentResponse('unknown');
+          setIsTyping(false);
+          addMessage(response, 'bot');
+          speak(response);
         }
       }
     } catch (err) {
@@ -575,7 +525,6 @@ const AIChatbot = ({visible, onClose}) => {
       setIsTyping(false);
       addMessage('Sorry, something went wrong. Please try again.', 'bot');
       speak('Sorry, something went wrong');
-      currentIntentRef.current = null;
     } finally {
       processingRef.current = false;
     }
