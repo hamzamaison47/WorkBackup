@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
@@ -15,23 +16,24 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 import {useTranslation} from 'react-i18next';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
-import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
+import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
-import {useDynamicTranslation} from '../../hooks/useDynamicTranslation';
-import styles from '../../styles/styles';
+import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 import {fetchLeaves} from '../../Controller/leaveRequestApiService';
 import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
-import {useSelector} from 'react-redux';
-import ReceiptAttachmentModal from '../../components/Leaves/ReceiptAttachmentModal';
+
+import {useDynamicTranslation} from '../../hooks/useDynamicTranslation';
+import styles from '../../styles/styles';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
@@ -58,6 +60,9 @@ const LeaveRequestListPage = () => {
 
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = routeUserData || reduxUserData;
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
 
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
@@ -69,9 +74,8 @@ const LeaveRequestListPage = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
-  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
-  const [selectedReceiptItem, setSelectedReceiptItem] = useState(null);
-  const [receiptAttachments, setReceiptAttachments] = useState([]);
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -184,19 +188,10 @@ const LeaveRequestListPage = () => {
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
-      // Set the selected item for context
-      setSelectedReceiptItem(itemData);
-
-      // Fetch attachments for this leave request
-      // You'll need to implement this API call based on your backend
-      // const attachments = await fetchLeaveAttachments(itemData.recId);
-      // setReceiptAttachments(attachments || []);
-      setReceiptAttachments([]);
-
-      // Show the modal
-      setReceiptModalVisible(true);
+      setSelectedLeaveItem(itemData);
+      setAttachmentModalVisible(true);
     } catch (error) {
-      console.error('Error fetching attachments:', error);
+      console.error('Error opening attachments:', error);
       setAlertMessage(t('leaveRequest.fetchAttachmentsFailed'));
       setAlertModal(true);
     }
@@ -290,7 +285,8 @@ const LeaveRequestListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#FFFFFF', // White icon on blue background
-        customStyle: {},
+        disabled: !isDraft,
+        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
       submit: {
         show: isDraft,
@@ -526,29 +522,58 @@ const LeaveRequestListPage = () => {
         </ScrollView>
       )}
 
-      <ReceiptAttachmentModal
-        visible={receiptModalVisible}
-        onClose={() => setReceiptModalVisible(false)}
-        attachments={receiptAttachments}
-        recordId={selectedReceiptItem?.recId}
-        entityType="LeaveRequest"
-        entityId={selectedReceiptItem?.recId}
-        allowUpload={true} // Set based on permissions/status
-        title={`${t('leaveRequest.attachments')} - ${
-          selectedReceiptItem?.leaveCode || ''
-        }`}
-        onUploadSuccess={() => {
-          // Refresh attachments after successful upload
-          if (selectedReceiptItem) {
-            handleReceiptAttachmentPress(selectedReceiptItem);
-          }
+      {/* <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedLeaveItem}
+        tableName="PREmployeeLeaveRequests"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedLeaveItem(null);
         }}
-        onDeleteSuccess={() => {
-          // Refresh attachments after successful delete
-          if (selectedReceiptItem) {
-            handleReceiptAttachmentPress(selectedReceiptItem);
-          }
+        onSave={() => {
+          fetchLeavesData();
         }}
+        legalEntity={
+          effectiveUserData?.legalEntity || effectiveUserData?.company
+        }
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Leave Attachments"
+        // Simple configuration - no details shown
+        showDetails={true}
+        showTakePhoto={true}
+        showChooseFile={true}
+        showDownload={true}
+        showDelete={true}
+      /> */}
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedLeaveItem}
+        tableName="PREmployeeLeaveRequest"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedLeaveItem(null);
+        }}
+        onSave={() => {
+          fetchLeavesData();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Leave Attachments"
+        // Add detail configuration for leaves
+        showDetails={true}
+        detailFields={[
+          {key: 'leaveCode', label: 'Leave Type'},
+          {key: 'leaveCategory', label: 'Category'},
+          {key: 'leaveStartDate', label: 'Start Date'},
+          {key: 'leaveEndDate', label: 'End Date'},
+        ]}
+        detailData={selectedLeaveItem || {}}
+        showTakePhoto={true}
+        showChooseFile={true}
+        showDownload={true}
+        showDelete={true}
       />
 
       <AlertModal
