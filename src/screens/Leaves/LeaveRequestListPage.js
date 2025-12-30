@@ -21,7 +21,9 @@ import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import DynamicRequestCard from '../../components/DynamicRequestCard';
+import DynamicRequestCard, {
+  BUTTON_TYPES,
+} from '../../components/DynamicRequestCard';
 import {useDynamicTranslation} from '../../hooks/useDynamicTranslation';
 import styles from '../../styles/styles';
 
@@ -29,6 +31,7 @@ import {fetchLeaves} from '../../Controller/leaveRequestApiService';
 import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import {useSelector} from 'react-redux';
+import ReceiptAttachmentModal from '../../components/Leaves/ReceiptAttachmentModal';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
@@ -66,6 +69,9 @@ const LeaveRequestListPage = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
+  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
+  const [selectedReceiptItem, setSelectedReceiptItem] = useState(null);
+  const [receiptAttachments, setReceiptAttachments] = useState([]);
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -176,6 +182,26 @@ const LeaveRequestListPage = () => {
     });
   };
 
+  const handleReceiptAttachmentPress = async itemData => {
+    try {
+      // Set the selected item for context
+      setSelectedReceiptItem(itemData);
+
+      // Fetch attachments for this leave request
+      // You'll need to implement this API call based on your backend
+      // const attachments = await fetchLeaveAttachments(itemData.recId);
+      // setReceiptAttachments(attachments || []);
+      setReceiptAttachments([]);
+
+      // Show the modal
+      setReceiptModalVisible(true);
+    } catch (error) {
+      console.error('Error fetching attachments:', error);
+      setAlertMessage(t('leaveRequest.fetchAttachmentsFailed'));
+      setAlertModal(true);
+    }
+  };
+
   const cardConfig = {
     headerConfig: {
       title: {key: 'leaveCode'},
@@ -243,7 +269,7 @@ const LeaveRequestListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: '#FFFFFF', // White icon on blue background
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -253,9 +279,18 @@ const LeaveRequestListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: '#FFFFFF', // White icon on blue background
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+      },
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
+        icon: 'paperclip',
+        iconSize: 20,
+        iconColor: '#FFFFFF', // White icon on blue background
+        customStyle: {},
       },
       submit: {
         show: isDraft,
@@ -281,14 +316,17 @@ const LeaveRequestListPage = () => {
 
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
-      case 'edit':
+      case BUTTON_TYPES.EDIT:
         handleEditPress(itemData);
         break;
-      case 'delete':
+      case BUTTON_TYPES.DELETE:
         handleDeletePress(itemData);
         break;
-      case 'submit':
+      case BUTTON_TYPES.SUBMIT:
         handleSubmitPress(itemData);
+        break;
+      case BUTTON_TYPES.ATTACHMENT:
+        handleReceiptAttachmentPress(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);
@@ -417,13 +455,29 @@ const LeaveRequestListPage = () => {
       employeeName: item.employeeName || employeeName,
     };
 
+    // Get button configuration
+    const buttonConfig = getButtonConfig(item);
+
+    // Determine which header buttons to show
+    const headerButtons = [];
+    if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
+    if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
+    if (buttonConfig.attachment?.show)
+      headerButtons.push(BUTTON_TYPES.ATTACHMENT);
+
+    // Determine which bottom buttons to show
+    const bottomButtons = [];
+    if (buttonConfig.submit?.show) bottomButtons.push(BUTTON_TYPES.SUBMIT);
+
     return (
       <DynamicRequestCard
         data={processedItem}
         headerConfig={cardConfig.headerConfig}
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
-        buttons={getButtonConfig(item)}
+        headerButtons={headerButtons}
+        bottomButtons={bottomButtons}
+        buttons={buttonConfig}
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
         isExpandable={true}
@@ -471,6 +525,31 @@ const LeaveRequestListPage = () => {
           </Text>
         </ScrollView>
       )}
+
+      <ReceiptAttachmentModal
+        visible={receiptModalVisible}
+        onClose={() => setReceiptModalVisible(false)}
+        attachments={receiptAttachments}
+        recordId={selectedReceiptItem?.recId}
+        entityType="LeaveRequest"
+        entityId={selectedReceiptItem?.recId}
+        allowUpload={true} // Set based on permissions/status
+        title={`${t('leaveRequest.attachments')} - ${
+          selectedReceiptItem?.leaveCode || ''
+        }`}
+        onUploadSuccess={() => {
+          // Refresh attachments after successful upload
+          if (selectedReceiptItem) {
+            handleReceiptAttachmentPress(selectedReceiptItem);
+          }
+        }}
+        onDeleteSuccess={() => {
+          // Refresh attachments after successful delete
+          if (selectedReceiptItem) {
+            handleReceiptAttachmentPress(selectedReceiptItem);
+          }
+        }}
+      />
 
       <AlertModal
         visible={alertModal}

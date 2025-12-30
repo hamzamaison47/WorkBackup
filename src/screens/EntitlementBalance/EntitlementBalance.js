@@ -45,7 +45,7 @@ const EntitlementBalance = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userData.employeeId]);
+  }, [userData?.employeeId]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(

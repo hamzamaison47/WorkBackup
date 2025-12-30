@@ -9,7 +9,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
     // Get configuration from secure storage
     const config = await getActiveConfigData();
 
-    console.log({config});
+    // console.log({config});
 
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
@@ -31,7 +31,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
       </soapenv:Body>
     </soapenv:Envelope>`;
 
-    console.log({soapEnvelope});
+    // console.log({soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/DFUserInfoSvcGroup`,
@@ -47,7 +47,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
       },
     );
 
-    console.log({xml});
+    // console.log({xml});
 
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -79,7 +79,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
 
     const cleanedData = [cleanObject(rawData)];
 
-    console.log({cleanedData});
+    // console.log({cleanedData});
 
     return cleanedData;
   } catch (error) {

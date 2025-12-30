@@ -354,8 +354,8 @@ const BankAccountListPage = () => {
         recId: itemData.recId,
       });
 
-      console.log('itemData-0-0-0--0-0-0-0-0-0--', itemData);
-      console.log({response});
+      // console.log('itemData-0-0-0--0-0-0-0-0-0--', itemData);
+      // console.log({response});
 
       if (
         response &&

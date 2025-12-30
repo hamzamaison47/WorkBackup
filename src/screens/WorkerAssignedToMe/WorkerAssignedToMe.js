@@ -529,7 +529,7 @@ const WorkerAssignedToMe = () => {
       fetchEmployeeReportToMe(userData, true);
       fetchProfilePictureForRoot(getEmployeeId(userData));
     }
-  }, [userData.employeeId]);
+  }, [userData?.employeeId]);
 
   // Responsive styles
   const getResponsiveStyles = () => ({

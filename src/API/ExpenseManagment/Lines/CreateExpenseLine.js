@@ -384,7 +384,7 @@ const CreateExpenseLine = async ({
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log({soapEnvelope});
+    // console.log({soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/ExpenseManagmentSvcGroup`,

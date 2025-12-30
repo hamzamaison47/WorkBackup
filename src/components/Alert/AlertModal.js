@@ -10,7 +10,6 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import styles from '../../styles/styles';
 
 const {width, height} = Dimensions.get('window');
 

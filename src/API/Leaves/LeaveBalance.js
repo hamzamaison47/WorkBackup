@@ -1,12 +1,17 @@
 /* eslint-disable dot-notation */
-import {resource} from '@env';
+// import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-const GetLeaveBalance = async ({employeeId, leaveCode, leaveStartDate}) => {
+const GetLeaveBalance = async ({
+  employeeId,
+  leaveCode,
+  leaveStartDate,
+  leaveRequestId = '',
+}) => {
   try {
     const config = await getActiveConfigData();
 
@@ -21,6 +26,7 @@ const GetLeaveBalance = async ({employeeId, leaveCode, leaveStartDate}) => {
         <_employeeId>${employeeId}</_employeeId>
         <_leaveCode>${leaveCode}</_leaveCode>
         <_leaveStartDate>${leaveStartDate}</_leaveStartDate>
+        <_leaveRequestId>${leaveRequestId}</_leaveRequestId>
       </getLeaveBalance>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

@@ -58,7 +58,7 @@ const ContactDetailsListPage = () => {
     setIsLoading(true);
     try {
       const data = await ContactDetails({employeeId: effectiveEmployeeId});
-      console.log({data});
+      // console.log({data});
       setContactsData(data);
     } catch (error) {
       console.log('Failed to fetch contacts:', error);
@@ -240,7 +240,7 @@ const ContactDetailsListPage = () => {
   const renderContactCard = ({item}) => {
     const itemProcessingButtons = processingButtons[item.RecId] || [];
 
-    console.log({item});
+    // console.log({item});
 
     return (
       <DynamicRequestCard

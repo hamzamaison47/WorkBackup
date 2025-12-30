@@ -67,6 +67,8 @@ const RetrieveLeaveCodes = async ({employeeId}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
+    console.log({cleanedData});
+
     return cleanedData;
   } catch (err) {
     console.error('RetrieveAll SOAP error:', err.response?.data || err.message);

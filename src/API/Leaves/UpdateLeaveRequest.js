@@ -39,7 +39,7 @@ const UpdateLeaveRequest = async ({leaveData}) => {
       },
     );
 
-    // console.log('soap envelope data', soapEnvelope);
+    console.log('soap envelope data', soapEnvelope);
     // console.log('soap body data', soapBody);
 
     const parser = new XMLParser({
@@ -90,6 +90,7 @@ const buildContractXml = contract => {
   const ns = 'tem';
   const fields = [
     'Balance',
+    'Eligibility',
     'EmployeeId',
     'LeaveCategory',
     'LeaveCode',
@@ -97,6 +98,7 @@ const buildContractXml = contract => {
     'LeaveEndDate',
     'LeaveReqDate',
     'LeaveStartDate',
+    'Quota',
     'Reason',
     'RecId',
   ];
