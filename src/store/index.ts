@@ -10,12 +10,21 @@ import languageReducer from './slices/languageSlice';
 import biometricReducer from './slices/biometricSlice';
 import firebaseReducer from './slices/firebaseSlice';
 import authReducer from './slices/authSlice';
+import chatbotReducer from './slices/chatbotSlice'; // ✅ ADD THIS
 
 // Redux Persist configuration
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['language', 'biometric', 'firebase', 'auth', 'user', 'company'], // Persist these reducers
+  whitelist: [
+    'language',
+    'biometric',
+    'firebase',
+    'auth',
+    'user',
+    'company',
+    'chatbot',
+  ], // Persist these reducers
   blacklist: [], // Don't persist these reducers
 };
 
@@ -28,6 +37,7 @@ const rootReducer = combineReducers({
   biometric: biometricReducer,
   firebase: firebaseReducer,
   auth: authReducer,
+  chatbot: chatbotReducer, // ✅ ADD THIS
 });
 
 // Create persisted reducer
