@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 import React, {useEffect, useState, useRef, useCallback} from 'react';
@@ -14,18 +15,26 @@ import {
   Alert,
   KeyboardAvoidingView,
 } from 'react-native';
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import Voice from '@react-native-voice/voice';
 import Geolocation from '@react-native-community/geolocation';
 import moment from 'moment';
 import {CreateAttendance} from '../../API/Attendance/CreateAttendance';
 import {GetGPSCoordinates} from '../../API/Attendance/GetGPSCoordinates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import {LeaveRequestHandler} from './ChatbotIntentHandler';
 import {
   detectIntent,
   generateIntelligentResponse,
 } from './ChatbotIntentHandler';
+
+import {
+  chatbotAddMessage,
+  chatbotSetMessages,
+  chatbotSetLeaveFlow,
+  chatbotClearChat,
+} from '../../store/slices/chatbotSlice';
 
 /* -------------------- Geofence / Location Helpers -------------------- */
 const GEO_TTL_MS = 30 * 60 * 1000;
@@ -105,37 +114,49 @@ const nearestWithEffective = (userLat, userLon, accuracy, points) => {
 
 /* -------------------- Chatbot Component -------------------- */
 const AIChatbot = ({visible, onClose}) => {
+  const dispatch = useDispatch();
   const {userData} = useSelector(s => s.user || {});
-  const [messages, setMessages] = useState([]);
+
+  const messages = useSelector(s => s.chatbot?.messages || []);
+  const leaveFlow = useSelector(s => s.chatbot?.leaveFlow || null);
+
   const [input, setInput] = useState('');
   const [listening, setListening] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+
   const processingRef = useRef(false);
   const lastCoordsRef = useRef(null);
   const geofenceCacheRef = useRef({sites: [], ts: 0});
   const permissionStatusRef = useRef(null);
   const flatListRef = useRef(null);
+
   const leaveHandlerRef = useRef(new LeaveRequestHandler());
+
+  /* -------------------- Restore Leave Flow From Redux -------------------- */
+  useEffect(() => {
+    const h = new LeaveRequestHandler();
+    if (leaveFlow) {
+      console.log('🔄 RESTORING from Redux:', leaveFlow);
+      h.fromJSON(leaveFlow);
+    }
+    leaveHandlerRef.current = h;
+  }, [leaveFlow]);
 
   /* -------------------- Welcome Message -------------------- */
   useEffect(() => {
-    if (visible && messages.length === 0) {
+    if (!visible) return;
+
+    if (!messages || messages.length === 0) {
       const welcomeMsg = {
         id: 'welcome-1',
         text: "👋 Hey there! I'm Dynaface AI Assistant.\nHow may I help you today?",
         from: 'bot',
         timestamp: Date.now(),
       };
-      setMessages([welcomeMsg]);
+      dispatch(chatbotSetMessages([welcomeMsg]));
       speak(welcomeMsg.text);
     }
-    if (!visible) {
-      setMessages([]);
-      setInput('');
-      stopListening();
-      leaveHandlerRef.current = new LeaveRequestHandler(); // Reset on close
-    }
-  }, [messages.length, visible]);
+  }, [visible, messages.length, dispatch, messages]);
 
   /* -------------------- Voice Cleanup -------------------- */
   useEffect(() => {
@@ -176,11 +197,13 @@ const AIChatbot = ({visible, onClose}) => {
   const addMessage = (text, from) => {
     const newMsg = {
       id: `${Date.now()}-${Math.random()}`,
-      text,
+      text: String(text),
       from,
       timestamp: Date.now(),
     };
-    setMessages(prev => [...prev, newMsg]);
+
+    dispatch(chatbotAddMessage(newMsg));
+
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({animated: true});
     }, 100);
@@ -193,7 +216,7 @@ const AIChatbot = ({visible, onClose}) => {
       TTS.stop();
       TTS.speak(String(text));
     } catch (e) {
-      console.log('TTS not available');
+      // no-op
     }
   };
 
@@ -346,9 +369,21 @@ const AIChatbot = ({visible, onClose}) => {
     }
   };
 
+  const persistFlowToRedux = () => {
+    try {
+      const h = leaveHandlerRef.current;
+      const flowData = h.toJSON();
+      console.log('💾 SAVING to Redux:', flowData);
+      dispatch(chatbotSetLeaveFlow(flowData));
+    } catch (error) {
+      console.error('Error persisting flow:', error);
+    }
+  };
+
   const handleSend = async textOverride => {
     const text = (textOverride || input).trim();
     if (!text || processingRef.current) return;
+
     processingRef.current = true;
     setInput('');
     addMessage(text, 'user');
@@ -356,121 +391,238 @@ const AIChatbot = ({visible, onClose}) => {
 
     try {
       const leaveHandler = leaveHandlerRef.current;
+      const lower = text.toLowerCase();
 
-      // Check for ongoing leave flow first
+      console.log('📝 Processing:', text);
+      console.log('📊 Current state:', leaveHandler.state);
+      console.log('📦 Current leave data:', leaveHandler.leaveData);
+
+      // Global cancel
+      if (
+        leaveHandler.state !== null &&
+        (lower.includes('cancel') || lower.includes('stop'))
+      ) {
+        setIsTyping(false);
+        addMessage('❌ Cancelled. How else can I help?', 'bot');
+        speak('Cancelled');
+        leaveHandler.reset();
+        persistFlowToRedux();
+        processingRef.current = false;
+        return;
+      }
+
+      // Continue leave flow
       if (leaveHandler.state !== null) {
-        // Handle continuation of leave flow
+        console.log(`🔍 Processing in state: ${leaveHandler.state}`);
+
         if (leaveHandler.state === 'awaiting_leave_type') {
-          // Parse leave type
-          const parseResult = leaveHandler.parseLeaveTypeSelection(
-            text,
-            leaveHandler.leaveData.availableLeaveCodes,
-          );
+          const parsed = leaveHandler.parseLeaveTypeSelection(text);
+          console.log('✅ Parsed leave type result:', parsed);
 
-          if (parseResult.success) {
-            const categoryResult = leaveHandler.askForLeaveCategory();
-            setIsTyping(false);
-            addMessage(categoryResult.response, 'bot');
-            speak(categoryResult.response);
-          } else {
+          if (!parsed.success) {
             setIsTyping(false);
             addMessage(
-              '❌ Please select a valid leave type from the list.',
+              '❌ Please select a valid leave type from the list above. Reply with the number or name.',
               'bot',
             );
-            speak('Please select a valid leave type from the list');
-          }
-        } else if (leaveHandler.state === 'awaiting_leave_category') {
-          // Parse leave category
-          const parseResult = leaveHandler.parseLeaveCategory(text);
-
-          if (parseResult.success) {
-            const dateResult = leaveHandler.askForStartDate();
-            setIsTyping(false);
-            addMessage(dateResult.response, 'bot');
-            speak(dateResult.response);
+            speak('Please select a valid leave type');
           } else {
+            console.log('🎯 Selected leave:', parsed.selected);
+            console.log('📋 Now leaveData is:', leaveHandler.leaveData);
+
+            // IMMEDIATELY SAVE TO REDUX after selection
+            persistFlowToRedux();
+
+            if (leaveHandler.leaveData.mode === 'leave_balance') {
+              addMessage('⏳ Checking your balance…', 'bot');
+              await leaveHandler.buildBalanceOnly(userData);
+              const resp = leaveHandler.askForConfirmation();
+              setIsTyping(false);
+              addMessage(resp.response, 'bot');
+              speak('Here is your leave balance');
+            } else {
+              const resp = leaveHandler.askForLeaveCategory();
+              setIsTyping(false);
+              addMessage(resp.response, 'bot');
+              speak(resp.response);
+            }
+          }
+          persistFlowToRedux(); // Save again
+          processingRef.current = false;
+          return;
+        }
+
+        if (leaveHandler.state === 'awaiting_leave_category') {
+          const parsed = leaveHandler.parseLeaveCategory(text);
+          if (!parsed.success) {
+            setIsTyping(false);
+            addMessage('❌ Reply 1 for Full Day or 2 for Half Day.', 'bot');
+            speak('Reply 1 for Full Day or 2 for Half Day');
+          } else {
+            const resp = leaveHandler.askForStartDate();
+            setIsTyping(false);
+            addMessage(resp.response, 'bot');
+            speak(resp.response);
+          }
+          persistFlowToRedux();
+          processingRef.current = false;
+          return;
+        }
+
+        if (leaveHandler.state === 'awaiting_start_date') {
+          const parsed = leaveHandler.parseStartDate(text);
+          if (!parsed.success) {
             setIsTyping(false);
             addMessage(
-              '❌ Please reply with 1 for Full Day or 2 for Half Day.',
+              '❌ Please provide a valid date (YYYY-MM-DD or DD/MM/YYYY). Example: 2025-12-30',
               'bot',
             );
-            speak('Please reply with 1 for Full Day or 2 for Half Day');
-          }
-        } else if (leaveHandler.state === 'awaiting_start_date') {
-          // Parse start date
-          const parseResult = leaveHandler.parseStartDate(text);
-
-          if (parseResult.success) {
-            const daysResult = leaveHandler.askForNumberOfDays();
-            setIsTyping(false);
-            addMessage(daysResult.response, 'bot');
-            speak(daysResult.response);
+            speak('Please provide a valid date');
           } else {
-            setIsTyping(false);
-            addMessage(
-              '❌ Please provide a valid date in YYYY-MM-DD format.',
-              'bot',
-            );
-            speak('Please provide a valid date in YYYY-MM-DD format');
+            if (parsed.autoEndDate) {
+              addMessage('⏳ Calculating leave details…', 'bot');
+              await leaveHandler.fetchLeaveDaysBalanceQuotaEligibility(
+                userData,
+              );
+              const resp = leaveHandler.askForReason();
+              setIsTyping(false);
+              addMessage(resp.response, 'bot');
+              speak(resp.response);
+            } else {
+              const resp = leaveHandler.askForEndDate();
+              setIsTyping(false);
+              addMessage(resp.response, 'bot');
+              speak(resp.response);
+            }
           }
-        } else if (leaveHandler.state === 'awaiting_days') {
-          // Parse leave days
-          const parseResult = leaveHandler.parseLeaveDays(text);
+          persistFlowToRedux();
+          processingRef.current = false;
+          return;
+        }
 
-          if (parseResult.success) {
-            const reasonResult = leaveHandler.askForReason();
-            setIsTyping(false);
-            addMessage(reasonResult.response, 'bot');
-            speak(reasonResult.response);
-          } else {
+        if (leaveHandler.state === 'awaiting_end_date') {
+          const parsed = leaveHandler.parseEndDate(text);
+          if (!parsed.success) {
             setIsTyping(false);
             addMessage(
               `❌ ${
-                parseResult.error ||
-                'Please enter a valid number of days (1-30).'
+                parsed.error ||
+                'Invalid end date. Please use format YYYY-MM-DD or DD/MM/YYYY.'
               }`,
               'bot',
             );
-            speak(parseResult.error || 'Please enter a valid number of days');
-          }
-        } else if (leaveHandler.state === 'awaiting_reason') {
-          // Parse reason
-          const parseResult = leaveHandler.parseReason(text);
-
-          if (parseResult.success) {
-            const confirmResult = leaveHandler.askForConfirmation();
-            setIsTyping(false);
-            addMessage(confirmResult.response, 'bot');
-            speak('Please confirm the details');
+            speak('Invalid end date');
           } else {
+            addMessage('⏳ Calculating leave details…', 'bot');
+            await leaveHandler.fetchLeaveDaysBalanceQuotaEligibility(userData);
+            const resp = leaveHandler.askForReason();
             setIsTyping(false);
-            addMessage('❌ Please provide a reason (3-500 characters).', 'bot');
-            speak('Please provide a reason');
+            addMessage(resp.response, 'bot');
+            speak(resp.response);
           }
-        } else if (leaveHandler.state === 'awaiting_confirmation') {
-          // Handle confirmation
-          const confirmText = text.toLowerCase();
+          persistFlowToRedux();
+          processingRef.current = false;
+          return;
+        }
 
-          if (confirmText.includes('yes') || confirmText.includes('confirm')) {
-            addMessage('⏳ Submitting your leave request...', 'bot');
+        if (leaveHandler.state === 'awaiting_reason') {
+          const parsed = leaveHandler.parseReason(text);
+          if (!parsed.success) {
+            setIsTyping(false);
+            addMessage(
+              `❌ ${
+                parsed.error ||
+                'Please provide a valid reason (3-500 characters).'
+              }`,
+              'bot',
+            );
+            speak('Please provide a valid reason');
+          } else {
+            const resp = leaveHandler.askForConfirmation();
+            setIsTyping(false);
+            addMessage(resp.response, 'bot');
+            speak(resp.response);
+          }
+          persistFlowToRedux();
+          processingRef.current = false;
+          return;
+        }
+
+        if (leaveHandler.state === 'awaiting_confirmation') {
+          // Balance mode
+          if (leaveHandler.leaveData.mode === 'leave_balance') {
+            const parsed = leaveHandler.parseLeaveTypeSelection(text);
+            if (parsed.success) {
+              addMessage('⏳ Checking your balance…', 'bot');
+              await leaveHandler.buildBalanceOnly(userData);
+              const resp = leaveHandler.askForConfirmation();
+              setIsTyping(false);
+              addMessage(resp.response, 'bot');
+              speak('Here is your leave balance');
+            } else {
+              setIsTyping(false);
+              addMessage(
+                'Type a leave type (number or name) to check again, or type "cancel".',
+                'bot',
+              );
+              speak('Type a leave type to check again or cancel');
+            }
+            persistFlowToRedux();
+            processingRef.current = false;
+            return;
+          }
+
+          // Leave request mode - FINAL CONFIRMATION
+          if (
+            lower.includes('save') ||
+            lower === '1' ||
+            (lower.includes('yes') && lower.includes('save'))
+          ) {
+            addMessage('⏳ Saving your leave request…', 'bot');
+            speak('Saving your leave request');
+
+            console.log('🔄 Final data before save:', leaveHandler.leaveData);
+
+            const res = await leaveHandler.createOrSubmitLeave(
+              userData,
+              'save',
+            );
+            setIsTyping(false);
+            addMessage(res.message, 'bot');
+            speak(res.message);
+            leaveHandler.reset();
+            persistFlowToRedux();
+            processingRef.current = false;
+            return;
+          }
+
+          if (
+            lower.includes('submit') ||
+            lower === '2' ||
+            (lower.includes('yes') && lower.includes('submit'))
+          ) {
+            addMessage('⏳ Submitting your leave request…', 'bot');
             speak('Submitting your leave request');
 
-            const submitResult = await leaveHandler.submitLeave(userData);
+            console.log('🔄 Final data before submit:', leaveHandler.leaveData);
 
+            const res = await leaveHandler.createOrSubmitLeave(
+              userData,
+              'submit',
+            );
             setIsTyping(false);
-            if (submitResult.success) {
-              addMessage(submitResult.message, 'bot');
-              speak(submitResult.message);
-              leaveHandlerRef.current = new LeaveRequestHandler();
-            } else {
-              addMessage(submitResult.message, 'bot');
-              speak(submitResult.message);
-              leaveHandlerRef.current = new LeaveRequestHandler();
-            }
-          } else if (
-            confirmText.includes('no') ||
-            confirmText.includes('cancel')
+            addMessage(res.message, 'bot');
+            speak(res.message);
+            leaveHandler.reset();
+            persistFlowToRedux();
+            processingRef.current = false;
+            return;
+          }
+
+          if (
+            lower.includes('cancel') ||
+            lower === '3' ||
+            lower.includes('no')
           ) {
             setIsTyping(false);
             addMessage(
@@ -478,50 +630,77 @@ const AIChatbot = ({visible, onClose}) => {
               'bot',
             );
             speak('Leave request cancelled');
-            leaveHandlerRef.current = new LeaveRequestHandler();
-          } else {
-            setIsTyping(false);
-            addMessage(
-              'Please reply with "yes" to confirm or "no" to cancel.',
-              'bot',
-            );
-            speak('Please reply with yes or no');
+            leaveHandler.reset();
+            persistFlowToRedux();
+            processingRef.current = false;
+            return;
           }
-        }
-      } else {
-        // No ongoing flow, detect new intent
-        const intent = detectIntent(text);
 
-        if (intent === 'mark_attendance') {
           setIsTyping(false);
-          Alert.alert(
-            'Confirm Attendance',
-            'Do you want me to mark your attendance now?',
-            [
-              {text: 'Cancel', style: 'cancel'},
-              {text: 'Yes', onPress: markAttendance},
-            ],
+          addMessage(
+            'Please reply with "save" (1), "submit" (2), or "cancel" (3).',
+            'bot',
           );
-        } else if (intent === 'request_leave') {
-          const result = await leaveHandler.askForLeaveType(userData);
-          setIsTyping(false);
-          addMessage(result.response, 'bot');
-          speak(result.response);
-        } else if (intent === 'info_dynaface') {
-          const response = generateIntelligentResponse(intent);
-          setIsTyping(false);
-          addMessage(response, 'bot');
-          speak(response);
-        } else {
-          // Fallback
-          const response = generateIntelligentResponse('unknown');
-          setIsTyping(false);
-          addMessage(response, 'bot');
-          speak(response);
+          speak('Please reply with save submit or cancel');
+          persistFlowToRedux();
+          processingRef.current = false;
+          return;
         }
       }
+
+      // No ongoing flow -> detect intent
+      const intent = detectIntent(text);
+      console.log('🎯 Detected intent:', intent);
+
+      if (intent === 'mark_attendance') {
+        setIsTyping(false);
+        Alert.alert(
+          'Confirm Attendance',
+          'Do you want me to mark your attendance now?',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Yes', onPress: markAttendance},
+          ],
+        );
+        processingRef.current = false;
+        return;
+      }
+
+      if (intent === 'request_leave') {
+        const resp = await leaveHandler.startLeaveRequestFlow(userData);
+        setIsTyping(false);
+        addMessage(resp.response, 'bot');
+        speak(resp.response);
+        persistFlowToRedux();
+        processingRef.current = false;
+        return;
+      }
+
+      if (intent === 'check_leave_balance') {
+        const resp = await leaveHandler.startLeaveBalanceFlow(userData);
+        setIsTyping(false);
+        addMessage(resp.response, 'bot');
+        speak(resp.response);
+        persistFlowToRedux();
+        processingRef.current = false;
+        return;
+      }
+
+      if (intent === 'info_dynaface') {
+        const response = generateIntelligentResponse(intent);
+        setIsTyping(false);
+        addMessage(response, 'bot');
+        speak(response);
+        processingRef.current = false;
+        return;
+      }
+
+      const fallback = generateIntelligentResponse('unknown');
+      setIsTyping(false);
+      addMessage(fallback, 'bot');
+      speak(fallback);
     } catch (err) {
-      console.error('Chat error:', err);
+      console.error('❌ Chat error:', err);
       setIsTyping(false);
       addMessage('Sorry, something went wrong. Please try again.', 'bot');
       speak('Sorry, something went wrong');
@@ -597,9 +776,12 @@ const AIChatbot = ({visible, onClose}) => {
                 <Text style={styles.status}>Online • Ready to help</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.close}>✕</Text>
-            </TouchableOpacity>
+
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <TouchableOpacity onPress={onClose}>
+                <Text style={styles.close}>✕</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Messages */}
