@@ -11,6 +11,7 @@ import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Feather';
 import RNRestart from 'react-native-restart';
 import {useDispatch, useSelector} from 'react-redux';
+import {persistor} from '../../store';
 import {
   setLanguage,
   setSkipLoginAfterRestart,
@@ -20,6 +21,10 @@ const LanguageModal = ({visible, onClose}) => {
   const {t, i18n} = useTranslation();
   const dispatch = useDispatch();
   const currentLanguage = useSelector(state => state.language.currentLanguage);
+  const accessToken = useSelector(state => state.auth.accessToken);
+  const idToken = useSelector(state => state.auth.idToken);
+  const userToken = useSelector(state => state.auth.userToken);
+  const userData = useSelector(state => state.user.userData);
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
 
   const languages = [
@@ -49,28 +54,43 @@ const LanguageModal = ({visible, onClose}) => {
     const willChangeDirection = selectedLang.isRTL !== currentLang.isRTL;
 
     try {
-      // Change language in i18n
-      await i18n.changeLanguage(selectedLanguage);
-
-      // Update Redux state
+      // Update Redux FIRST
       dispatch(setLanguage(selectedLanguage));
 
+      // Then change language in i18n
+      await i18n.changeLanguage(selectedLanguage);
+
       if (willChangeDirection) {
-        // Set flag to skip login after restart
-        dispatch(setSkipLoginAfterRestart(true));
-
-        // Force RTL
+        const hasSession = Boolean(
+          accessToken || idToken || userToken || userData?.employeeId,
+        );
+        console.log('LanguageModal RTL restart:', {
+          currentLanguage,
+          selectedLanguage,
+          hasSession,
+          hasAccessToken: Boolean(accessToken),
+          hasIdToken: Boolean(idToken),
+          hasUserToken: Boolean(userToken),
+          hasUserData: Boolean(userData?.employeeId),
+        });
+        dispatch(setSkipLoginAfterRestart(hasSession));
         I18nManager.forceRTL(selectedLang.isRTL);
-
-        // Close modal first
         onClose();
 
-        // Restart after a short delay (so modal closes first)
         setTimeout(() => {
-          RNRestart.Restart();
+          const persistAndRestart = async () => {
+            try {
+              await persistor.flush();
+              console.log('LanguageModal persistor.flush complete');
+            } catch (e) {}
+
+            RNRestart.Restart();
+          };
+
+          persistAndRestart();
         }, 300);
       } else {
-        // Just close if direction doesn't change
+        // For same direction, just close and let re-render happen
         onClose();
       }
     } catch (error) {

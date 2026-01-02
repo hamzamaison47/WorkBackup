@@ -546,15 +546,10 @@ import {
   DrawerContentScrollView,
 } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {useSelector, useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
 
 import {screenMapping, iconMapping} from '../Controller/screenMapping';
-import {
-  handleLogoutauth,
-  fetchUserInfo,
-  fetchEmployeeLegalEntities,
-  fetchEmployeeMenuItems,
-} from '../Controller/authUtils';
+import {handleLogoutauth} from '../Controller/authUtils';
 
 import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfilePicture';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
@@ -576,15 +571,6 @@ import IdentificationNumberListPage from '../screens/Profile/PersonalInformation
 import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
 import Preferences from '../screens/Profile/Preferences/Preferences';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
-
-// Import Redux actions
-import {setUserData} from '../store/slices/userSlice';
-import {
-  setLegalEntities,
-  initializeLegalEntity,
-} from '../store/slices/companySlice';
-import {setMenuItems} from '../store/slices/menuItemSlice';
-import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
@@ -805,102 +791,8 @@ const CustomDrawerContent = props => {
 };
 
 const DrawerNavigator = () => {
-  const dispatch = useDispatch();
   const userData = useSelector(state => state.user.userData);
   const {menuItems} = useSelector(state => state.menuItem);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Restore user data from AsyncStorage if Redux is empty
-  useEffect(() => {
-    const restoreUserData = async () => {
-      try {
-        // If userData already exists in Redux, no need to restore
-        if (userData && userData.employeeId) {
-          setIsLoading(false);
-          return;
-        }
-
-        // Check if we have stored user data
-        const storedEmail = await AsyncStorage.getItem('user_email');
-
-        if (!storedEmail) {
-          // No stored data, something went wrong
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('Restoring user data for:', storedEmail);
-
-        // Fetch fresh user data from API
-        const userInfo = await fetchUserInfo(storedEmail);
-
-        if (!userInfo.length || !userInfo[0].EmployeeId) {
-          console.error('Failed to restore user data');
-          setIsLoading(false);
-          return;
-        }
-
-        const user = userInfo[0];
-
-        // Prepare complete user data
-        const completeUserData = {
-          userName: user.EmployeeName,
-          employeeName: user.EmployeeName,
-          employeeId: user.EmployeeId,
-          WorkerRecId: user.WorkerRecId,
-          email: storedEmail,
-          jobId: user.JobId,
-          department: user.Department,
-          defaultLegalEntity: user.DefaultLegalEntity,
-          PositionDescription: user.PositionDescription,
-          CreatedBy: user.CreatedBy,
-          CreatedDateTime: user.CreatedDateTime,
-          DataAreaId: user.DataAreaId,
-          IsEnrolledInPayroll: user.IsEnrolledInPayroll,
-          JobDescription: user.JobDescription,
-          ModifiedBy: user.ModifiedBy,
-          ModifiedDateTime: user.ModifiedDateTime,
-          OriginalHireDate: user.OriginalHireDate,
-          Partition: user.Partition,
-          Person: user.Person,
-          Positionid: user.Positionid,
-          RecId: user.RecId,
-          isDynamicsUser: user.isDynamicsUser,
-          employeeFullInfo: user,
-        };
-
-        // Restore Redux state
-        dispatch(setUserData(completeUserData));
-        await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
-
-        // Fetch and restore legal entities and menu items
-        const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
-        const menus = await fetchEmployeeMenuItems(user.EmployeeId);
-
-        dispatch(setLegalEntities(legalEntities));
-        dispatch(setMenuItems(menus));
-
-        console.log('User data restored successfully');
-      } catch (error) {
-        console.error('Error restoring user data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    restoreUserData();
-  }, []);
-
-  // Show loading while restoring data
-  if (isLoading) {
-    return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        {/* <ActivityIndicator size="large" color="#0A66C2" /> */}
-        <CustomIndicator />
-        {/* <Text style={{marginTop: 10, color: '#666'}}>Loading...</Text> */}
-      </View>
-    );
-  }
 
   const filteredMenuItems = menuItems.filter(item => {
     return screenMapping[item.MenuId];

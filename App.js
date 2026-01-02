@@ -70,9 +70,6 @@
 //     </Provider>
 //   );
 // };
-
-// export default App;
-
 /* eslint-disable curly */
 import React, {useEffect} from 'react';
 import {Provider, useSelector} from 'react-redux';
@@ -81,7 +78,7 @@ import {I18nManager} from 'react-native';
 import RNRestart from 'react-native-restart';
 import {PersistGate} from 'redux-persist/integration/react';
 
-import './src/i18n';
+import i18n from './src/i18n';
 import {store, persistor} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
 import useSessionTimeout from './src/hooks/useSessionTimeout';
@@ -111,6 +108,16 @@ const AppContent = () => {
     // Setup Firebase message handlers
     const cleanup = firebaseService.setupMessageHandlers();
 
+    const syncLanguage = async () => {
+      try {
+        if (currentLanguage && i18n.language !== currentLanguage) {
+          await i18n.changeLanguage(currentLanguage);
+        }
+      } catch (error) {
+        console.error('Error syncing i18n language:', error);
+      }
+    };
+
     // Check if RTL is correctly set on app start
     const checkRTL = () => {
       try {
@@ -137,6 +144,7 @@ const AppContent = () => {
     };
 
     requestPermissions();
+    syncLanguage();
     checkRTL();
 
     return () => {

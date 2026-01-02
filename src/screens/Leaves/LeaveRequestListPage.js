@@ -38,7 +38,7 @@ import styles from '../../styles/styles';
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {t} = useTranslation();
+  // const {t} = useTranslation();
   const {
     translateLeaveType,
     translateLeaveCategory,
@@ -48,6 +48,8 @@ const LeaveRequestListPage = () => {
 
   const isRTL = I18nManager.isRTL;
   // const styles = createDynamicStyles(isRTL);
+  const {t, i18n} = useTranslation();
+  const currentLanguage = i18n.language;
 
   const {
     employeeId,
@@ -506,6 +508,7 @@ const LeaveRequestListPage = () => {
           }
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
+          extraData={currentLanguage} // Add this line
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }
