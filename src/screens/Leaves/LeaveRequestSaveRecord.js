@@ -93,41 +93,71 @@ const LeaveRequestSaveRecord = () => {
 
   const [formData, setFormData] = useState(() => createInitialFormData());
 
+  // Define navigation constants (could be in a separate file)
+  const NAVIGATION_SCREENS = {
+    ATTENDANCE_CALENDAR: 'AttendanceCalendarScreen',
+    ATTENDANCE_DETAILS: 'AttendanceDetailsScreen',
+    MAIN_DASHBOARD: 'MainDashboard',
+    LEAVES_LIST: 'LeavesListPage',
+    TAB_NAVIGATOR: 'TabNavigator',
+    DISPLAY_LIST: 'DisplayListPage',
+  };
+
   const goBack = useCallback(() => {
-    if (cameFrom === 'AttendanceCalendarScreen') {
-      navigation.navigate('AttendanceCalendarScreen');
-      return;
-    } else if (cameFrom === 'AttendanceDetailsScreen') {
-      navigation.navigate('AttendanceDetailsScreen');
-      return;
-    } else if (cameFrom === 'MainDashboard') {
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'TabNavigator',
-            params: {screen: 'MainDashboard'},
-          },
-        ],
-      });
-    } else if (cameFrom === 'LeavesListPage') {
-      const targetCameFrom = originalCameFrom || 'DisplayListPage';
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'LeavesListPage',
-            params: {
-              employeeId,
-              employeeName,
-              WorkerRecId,
-              cameFrom: targetCameFrom,
-            },
-          },
-        ],
-      });
-    } else {
-      navigation.goBack();
+    try {
+      switch (cameFrom) {
+        case NAVIGATION_SCREENS.ATTENDANCE_CALENDAR:
+        case NAVIGATION_SCREENS.ATTENDANCE_DETAILS:
+          navigation.navigate(cameFrom);
+          break;
+
+        case NAVIGATION_SCREENS.MAIN_DASHBOARD:
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: NAVIGATION_SCREENS.TAB_NAVIGATOR,
+                params: {screen: NAVIGATION_SCREENS.MAIN_DASHBOARD},
+              },
+            ],
+          });
+          break;
+
+        case NAVIGATION_SCREENS.LEAVES_LIST:
+          navigation.reset({
+            index: 0,
+            routes: [
+              {
+                name: NAVIGATION_SCREENS.LEAVES_LIST,
+                params: {
+                  employeeId,
+                  employeeName,
+                  WorkerRecId,
+                  cameFrom: originalCameFrom || NAVIGATION_SCREENS.DISPLAY_LIST,
+                },
+              },
+            ],
+          });
+          break;
+
+        default:
+          // Check if we can actually go back
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            // Navigate to a safe default screen
+            navigation.navigate(NAVIGATION_SCREENS.MAIN_DASHBOARD);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error('Navigation error in goBack:', error);
+      // Last resort fallback
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate(NAVIGATION_SCREENS.MAIN_DASHBOARD);
+      }
     }
   }, [
     navigation,
@@ -137,6 +167,51 @@ const LeaveRequestSaveRecord = () => {
     employeeName,
     WorkerRecId,
   ]);
+
+  // const goBack = useCallback(() => {
+  //   if (cameFrom === 'AttendanceCalendarScreen') {
+  //     navigation.navigate('AttendanceCalendarScreen');
+  //     return;
+  //   } else if (cameFrom === 'AttendanceDetailsScreen') {
+  //     navigation.navigate('AttendanceDetailsScreen');
+  //     return;
+  //   } else if (cameFrom === 'MainDashboard') {
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [
+  //         {
+  //           name: 'TabNavigator',
+  //           params: {screen: 'MainDashboard'},
+  //         },
+  //       ],
+  //     });
+  //   } else if (cameFrom === 'LeavesListPage') {
+  //     const targetCameFrom = originalCameFrom || 'DisplayListPage';
+  //     navigation.reset({
+  //       index: 0,
+  //       routes: [
+  //         {
+  //           name: 'LeavesListPage',
+  //           params: {
+  //             employeeId,
+  //             employeeName,
+  //             WorkerRecId,
+  //             cameFrom: targetCameFrom,
+  //           },
+  //         },
+  //       ],
+  //     });
+  //   } else {
+  //     navigation.goBack();
+  //   }
+  // }, [
+  //   navigation,
+  //   cameFrom,
+  //   originalCameFrom,
+  //   employeeId,
+  //   employeeName,
+  //   WorkerRecId,
+  // ]);
 
   const normalizeLeaveCategoryForDisplay = category => {
     if (!category) return 'Full Day Leave';

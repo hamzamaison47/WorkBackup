@@ -128,7 +128,7 @@ const LeaveRequestListPage = () => {
 
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+    }, [handleGoBack, navigation]),
   );
 
   // Handle back navigation
@@ -149,7 +149,12 @@ const LeaveRequestListPage = () => {
         targetRoute = 'WorkerAssignedToMe';
         break;
       default:
-        navigation.goBack();
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+          return;
+        } else {
+          targetRoute = 'MainDashboard';
+        }
         return; // exit early
     }
 
