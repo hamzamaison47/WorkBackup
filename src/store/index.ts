@@ -10,7 +10,7 @@ import languageReducer from './slices/languageSlice';
 import biometricReducer from './slices/biometricSlice';
 import firebaseReducer from './slices/firebaseSlice';
 import authReducer from './slices/authSlice';
-import chatbotReducer from './slices/chatbotSlice'; // ✅ ADD THIS
+import chatbotReducer from './slices/chatbotSlice';
 
 // Redux Persist configuration
 const persistConfig = {
