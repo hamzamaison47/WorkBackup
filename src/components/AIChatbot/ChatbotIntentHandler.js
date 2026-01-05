@@ -212,7 +212,7 @@ class LeaveRequestHandler {
           : 'Reply with the number or name (e.g., "1" or "annual"). Type "cancel" to stop.';
 
       return {
-        response: `${intro}\n\n**Available leave types:**\n\n${codesList}\n\n${instructions}`,
+        response: `${intro}\n\nAvailable leave types:\n\n${codesList}\n\n${instructions}`,
         next_state: 'awaiting_leave_type',
       };
     } catch (error) {
@@ -344,7 +344,7 @@ class LeaveRequestHandler {
     this.state = 'awaiting_leave_category';
     return {
       response:
-        '**Select leave category:**\n\n1) Full Day Leave\n2) Half Day Leave\n\nReply 1 or 2.',
+        'Select leave category:\n\n1) Full Day Leave\n2) Half Day Leave\n\nReply 1 or 2.',
       next_state: 'awaiting_leave_category',
     };
   }
@@ -375,7 +375,7 @@ class LeaveRequestHandler {
     this.state = 'awaiting_start_date';
     return {
       response:
-        '**Please provide Start Date**\n\nFormat: YYYY-MM-DD or DD/MM/YYYY\n\nExample: 2025-12-30 or 30/12/2025',
+        'Please provide Start Date\n\nFormat: YYYY-MM-DD or DD/MM/YYYY\n\nExample: 2025-12-30 or 30/12/2025',
       next_state: 'awaiting_start_date',
     };
   }
@@ -539,7 +539,7 @@ class LeaveRequestHandler {
     const start = formatDisplayDate(this.leaveData.leaveStartDate);
     const end = formatDisplayDate(this.leaveData.leaveEndDate);
     return {
-      response: `**Please provide a reason for your leave**\n\nLeave Period: ${start} to ${end}\n\nType your reason (3-500 characters):`,
+      response: `Please provide a reason for your leave\n\nLeave Period: ${start} to ${end}\n\nType your reason (3-500 characters):`,
       next_state: 'awaiting_reason',
     };
   }
@@ -600,7 +600,7 @@ class LeaveRequestHandler {
 
     if (this.leaveData.mode === 'leave_balance') {
       return {
-        response: `📊 **Leave Balance**\n\n• **Leave Type:** ${this.leaveData.leaveName} (${this.leaveData.leaveCode})\n• **Balance:** ${this.leaveData.balance}\n• **Quota:** ${this.leaveData.quota}\n• **Eligibility:** ${this.leaveData.eligibility}\n\nType another leave type (number or name) to check again, or type "cancel".`,
+        response: `📊 Leave Balance\n\n• Leave Type: ${this.leaveData.leaveName} (${this.leaveData.leaveCode})\n• Balance: ${this.leaveData.balance}\n• Quota: ${this.leaveData.quota}\n• Eligibility: ${this.leaveData.eligibility}\n\nType another leave type (number or name) to check again, or type "cancel".`,
         next_state: 'awaiting_confirmation',
       };
     }
@@ -661,21 +661,21 @@ class LeaveRequestHandler {
 
     // All fields are present, show confirmation
     return {
-      response: `📝 **Leave Request Summary**\n\n• **Leave Type:** ${
+      response: `📝 Leave Request Summary\n\n• Leave Type: ${
         this.leaveData.leaveName
-      } (${this.leaveData.leaveCode})\n• **Category:** ${
+      } (${this.leaveData.leaveCode})\n• Category: ${
         this.leaveData.leaveCategoryLabel
-      }\n• **Start Date:** ${formatDisplayDate(
+      }\n• Start Date: ${formatDisplayDate(
         this.leaveData.leaveStartDate,
-      )}\n• **End Date:** ${formatDisplayDate(
+      )}\n• End Date: ${formatDisplayDate(
         this.leaveData.leaveEndDate,
-      )}\n• **Leave Days:** ${this.leaveData.leaveDays}\n• **Balance:** ${
+      )}\n• Leave Days: ${this.leaveData.leaveDays}\n• Balance: ${
         this.leaveData.balance
-      }\n• **Quota:** ${this.leaveData.quota}\n• **Eligibility:** ${
+      }\n• Quota: ${this.leaveData.quota}\n• Eligibility: ${
         this.leaveData.eligibility
-      }\n• **Reason:** ${
+      }\n• Reason: ${
         this.leaveData.reason
-      }\n\n**Please confirm:**\n1) **Save** (Save as Draft)\n2) **Submit** (Submit for Approval)\n3) **Cancel** (Cancel Request)`,
+      }\n\nPlease confirm:\n1) Save (Save as Draft)\n2) Submit (Submit for Approval)\n3) Cancel (Cancel Request)`,
       next_state: 'awaiting_confirmation',
     };
   }
@@ -896,13 +896,13 @@ const detectIntent = userInput => {
 
 const generateIntelligentResponse = intent => {
   const responses = {
-    info_dynaface: `🤖 **About Dynaface**\n\n${
+    info_dynaface: `🤖 About Dynaface\n\n${
       DynafaceInfo.description
-    }\n\n**Key Features:**\n${DynafaceInfo.key_features
+    }\n\nKey Features:\n${DynafaceInfo.key_features
       .map((f, i) => `${i + 1}. ${f}`)
-      .join('\n')}\n\n**How to Use:**\n${
+      .join('\n')}\n\nHow to Use:\n${
       DynafaceInfo.how_to_use
-    }\n\n**Supported Operations:**\n${DynafaceInfo.supported_operations.join(
+    }\n\nSupported Operations:\n${DynafaceInfo.supported_operations.join(
       '\n',
     )}`,
     request_leave:
@@ -912,7 +912,7 @@ const generateIntelligentResponse = intent => {
     mark_attendance:
       'I can help you mark your attendance. This requires location access to verify your office location.',
     unknown:
-      'I can help you with:\n\n1) **Mark Attendance** - "mark attendance", "punch in"\n2) **Request Leave** - "apply for leave", "request leave"\n3) **Check Leave Balance** - "check my balance", "how many leaves"\n4) **About Dynaface** - "what is dynaface", "app features"\n\nWhat would you like to do?',
+      'I can help you with:\n\n1) Mark Attendance \n2) Leave Request \n3) Check Leave Balance \n4) About Dynaface \n\nWhat would you like to do?',
   };
 
   return responses[intent] || responses.unknown;
