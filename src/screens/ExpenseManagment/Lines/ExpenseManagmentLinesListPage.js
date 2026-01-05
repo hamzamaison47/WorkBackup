@@ -25,7 +25,9 @@ import {DeleteExpenseLines} from '../../../API/ExpenseManagment/Lines/DeleteExpe
 import {GetAllExpenseReports} from '../../../API/ExpenseManagment/Headers/GetAllExpenseReports';
 
 import AlertModal from '../../../components/Alert/AlertModal';
-import DynamicRequestCard from '../../../components/DynamicRequestCard';
+import DynamicRequestCard, {
+  BUTTON_TYPES,
+} from '../../../components/DynamicRequestCard';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
@@ -295,15 +297,14 @@ const ExpenseManagmentLinesListPage = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      receipts: {
-        show: isDraft,
-        position: 'bottom',
-        style: 'text',
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
         icon: 'paperclip',
-        iconSize: 16,
-        text: 'Receipts',
-        textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        iconSize: 20,
+        iconColor: '#FFFFFF',
+        customStyle: {},
       },
     };
   };
@@ -316,7 +317,7 @@ const ExpenseManagmentLinesListPage = () => {
       case 'delete':
         handleDeletePress(itemData);
         break;
-      case 'receipts':
+      case 'attachment':
         handleReceiptPress(itemData);
         break;
       default:
@@ -471,6 +472,14 @@ const ExpenseManagmentLinesListPage = () => {
     const itemRecId = normalizeRecId(item);
     const itemProcessingButtons = processingButtons[itemRecId] || [];
 
+    const buttonConfig = getButtonConfig(item);
+
+    const headerButtons = [];
+    if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
+    if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
+    if (buttonConfig.attachment?.show)
+      headerButtons.push(BUTTON_TYPES.ATTACHMENT);
+
     const processedItem = {
       ...item,
       recId: itemRecId,
@@ -495,11 +504,11 @@ const ExpenseManagmentLinesListPage = () => {
         headerConfig={CARD_CONFIG.headerConfig}
         fields={CARD_CONFIG.fields}
         expandableFields={CARD_CONFIG.expandableFields}
-        buttons={getButtonConfig(item)}
+        headerButtons={headerButtons}
+        buttons={buttonConfig}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#f0f8ff', '#e6f3ff', '#d9edff']}
-        isClickable={false}
+        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         processingButtons={itemProcessingButtons}
       />
     );

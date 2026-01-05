@@ -3,11 +3,35 @@ import {Animated, Easing} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {useSelector, useDispatch} from 'react-redux';
 import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
+import {jwtDecode} from 'jwt-decode';
+import {
+  fetchUserInfo,
+  fetchEmployeeLegalEntities,
+  fetchEmployeeMenuItems,
+} from '../Controller/authUtils';
+import {setUserData} from '../store/slices/userSlice';
+import {
+  initializeLegalEntity,
+  setLegalEntities,
+} from '../store/slices/companySlice';
+import {setMenuItems} from '../store/slices/menuItemSlice';
+import {setFirebaseUserData} from '../store/slices/firebaseSlice';
 import styles from '../styles/styles';
 
 const SplashScreens = ({navigation}) => {
   const dispatch = useDispatch();
   const skipLogin = useSelector(state => state.language.skipLoginAfterRestart);
+  const accessToken = useSelector(state => state.auth.accessToken);
+  const idToken = useSelector(state => state.auth.idToken);
+  const userToken = useSelector(state => state.auth.userToken);
+  const rehydrated = useSelector(state => state._persist?.rehydrated);
+  const userData = useSelector(state => state.user.userData);
+  const menuItems = useSelector(state => state.menuItem.menuItems);
+  const company = useSelector(state => state.company);
+  const didBootstrapRef = useRef(false);
+  const loginTimeoutRef = useRef(null);
+  const drawerTimeoutRef = useRef(null);
+  const waitForSessionTimeoutRef = useRef(null);
 
   // Animations
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -64,23 +88,164 @@ const SplashScreens = ({navigation}) => {
       }),
     ]).start();
 
+    const clearPendingNavigation = () => {
+      if (loginTimeoutRef.current) {
+        clearTimeout(loginTimeoutRef.current);
+        loginTimeoutRef.current = null;
+      }
+      if (drawerTimeoutRef.current) {
+        clearTimeout(drawerTimeoutRef.current);
+        drawerTimeoutRef.current = null;
+      }
+      if (waitForSessionTimeoutRef.current) {
+        clearTimeout(waitForSessionTimeoutRef.current);
+        waitForSessionTimeoutRef.current = null;
+      }
+    };
+
     const checkAuthStatus = () => {
       try {
         fadeInContent();
 
-        if (skipLogin) {
-          // Clear the flag immediately
-          dispatch(setSkipLoginAfterRestart(false));
+        // Wait until redux-persist finishes rehydration; otherwise tokens/flags may
+        // not be available yet (common after RTL restart).
+        if (!rehydrated) {
+          return;
+        }
 
-          // Go directly to DrawerNavigator (skip Login)
-          setTimeout(() => {
-            navigation.replace('DrawerNavigator');
-          }, 2000);
+        clearPendingNavigation();
+
+        const hasSession = Boolean(
+          accessToken || idToken || userToken || userData?.employeeId,
+        );
+
+        console.log('Splash auth check:', {
+          rehydrated,
+          skipLogin,
+          hasSession,
+          hasAccessToken: Boolean(accessToken),
+          hasIdToken: Boolean(idToken),
+          hasUserToken: Boolean(userToken),
+          hasUserData: Boolean(userData?.employeeId),
+        });
+
+        const bootstrapSessionIfNeeded = async () => {
+          if (!hasSession) {
+            return;
+          }
+          if (didBootstrapRef.current) {
+            return;
+          }
+
+          const missingUser = !userData?.employeeId;
+          const missingMenus =
+            !Array.isArray(menuItems) || menuItems.length === 0;
+          const missingCompany =
+            !company?.selectedLegalEntity ||
+            !Array.isArray(company?.legalEntities) ||
+            company.legalEntities.length === 0;
+
+          if (!missingUser && !missingMenus && !missingCompany) {
+            return;
+          }
+
+          didBootstrapRef.current = true;
+
+          try {
+            const token = accessToken || idToken || userToken;
+            const decoded = jwtDecode(token);
+            const email = decoded?.upn || decoded?.email;
+
+            if (!email) {
+              return;
+            }
+
+            const userInfo = await fetchUserInfo(email);
+            if (!userInfo.length || !userInfo[0]?.EmployeeId) {
+              return;
+            }
+
+            const user = userInfo[0];
+            const completeUserData = {
+              userName: decoded?.name || user.EmployeeName,
+              employeeName: user.EmployeeName,
+              employeeId: user.EmployeeId,
+              WorkerRecId: user.WorkerRecId,
+              email: email,
+              jobId: user.JobId,
+              department: user.Department,
+              defaultLegalEntity: user.DefaultLegalEntity,
+              PositionDescription: user.PositionDescription,
+              CreatedBy: user.CreatedBy,
+              CreatedDateTime: user.CreatedDateTime,
+              DataAreaId: user.DataAreaId,
+              IsEnrolledInPayroll: user.IsEnrolledInPayroll,
+              JobDescription: user.JobDescription,
+              ModifiedBy: user.ModifiedBy,
+              ModifiedDateTime: user.ModifiedDateTime,
+              OriginalHireDate: user.OriginalHireDate,
+              Partition: user.Partition,
+              Person: user.Person,
+              Positionid: user.Positionid,
+              RecId: user.RecId,
+              isDynamicsUser: user.isDynamicsUser,
+              employeeFullInfo: user,
+            };
+
+            dispatch(setUserData(completeUserData));
+            dispatch(initializeLegalEntity(user.DefaultLegalEntity));
+
+            const [legalEntities, menus] = await Promise.all([
+              fetchEmployeeLegalEntities(user.EmployeeId),
+              fetchEmployeeMenuItems(user.EmployeeId),
+            ]);
+
+            if (Array.isArray(legalEntities)) {
+              dispatch(setLegalEntities(legalEntities));
+            }
+            if (Array.isArray(menus)) {
+              dispatch(setMenuItems(menus));
+            }
+
+            dispatch(
+              setFirebaseUserData({
+                userEmail: email,
+                employeeId: user.EmployeeId,
+                company: user.DefaultLegalEntity,
+              }),
+            );
+          } catch (e) {
+            console.log('Splash session bootstrap error:', e);
+          }
+        };
+
+        if (skipLogin) {
+          if (hasSession) {
+            // Only skip Login during the language-change restart case
+            drawerTimeoutRef.current = setTimeout(() => {
+              dispatch(setSkipLoginAfterRestart(false));
+              Promise.resolve(bootstrapSessionIfNeeded()).finally(() => {
+                navigation.replace('DrawerNavigator');
+              });
+            }, 2000);
+            return;
+          }
+
+          // Language restart was requested, but session data hasn't rehydrated yet.
+          // Wait a bit instead of routing to Login immediately.
+          console.log('Splash waiting for session after language restart...');
+          waitForSessionTimeoutRef.current = setTimeout(() => {
+            console.log(
+              'Splash wait expired; sending user to Login (no session after restart)',
+            );
+            dispatch(setSkipLoginAfterRestart(false));
+            navigation.replace('Login');
+          }, 4000);
           return;
         }
 
         // Normal flow - go to Login
-        setTimeout(() => {
+        loginTimeoutRef.current = setTimeout(() => {
           navigation.replace('Login');
         }, 3000);
       } catch (error) {
@@ -90,6 +255,10 @@ const SplashScreens = ({navigation}) => {
     };
 
     checkAuthStatus();
+
+    return () => {
+      clearPendingNavigation();
+    };
   }, [
     navigation,
     logoOpacity,
@@ -99,6 +268,14 @@ const SplashScreens = ({navigation}) => {
     circlePulse2,
     circlePulse3,
     skipLogin,
+    accessToken,
+    idToken,
+    userToken,
+    rehydrated,
+    userData?.employeeId,
+    menuItems,
+    company.selectedLegalEntity,
+    company.legalEntities,
     dispatch,
   ]);
 

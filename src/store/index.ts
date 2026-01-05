@@ -1,7 +1,7 @@
 import {configureStore} from '@reduxjs/toolkit';
 import {persistStore, persistReducer} from 'redux-persist';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {combineReducers} from '@reduxjs/toolkit';
+import RNFS from 'react-native-fs';
 
 import companyReducer from './slices/companySlice';
 import userReducer from './slices/userSlice';
@@ -10,12 +10,34 @@ import languageReducer from './slices/languageSlice';
 import biometricReducer from './slices/biometricSlice';
 import firebaseReducer from './slices/firebaseSlice';
 import authReducer from './slices/authSlice';
-import chatbotReducer from './slices/chatbotSlice'; // ✅ ADD THIS
+import chatbotReducer from './slices/chatbotSlice';
 
 // Redux Persist configuration
 const persistConfig = {
   key: 'root',
-  storage: AsyncStorage,
+  storage: {
+    setItem: async (key: string, value: string) => {
+      const safeKey = key.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${RNFS.DocumentDirectoryPath}/${safeKey}.json`;
+      await RNFS.writeFile(path, value, 'utf8');
+    },
+    getItem: async (key: string) => {
+      try {
+        const safeKey = key.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${RNFS.DocumentDirectoryPath}/${safeKey}.json`;
+        return await RNFS.readFile(path, 'utf8');
+      } catch (e) {
+        return null;
+      }
+    },
+    removeItem: async (key: string) => {
+      try {
+        const safeKey = key.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `${RNFS.DocumentDirectoryPath}/${safeKey}.json`;
+        await RNFS.unlink(path);
+      } catch (e) {}
+    },
+  },
   whitelist: [
     'language',
     'biometric',
@@ -23,6 +45,7 @@ const persistConfig = {
     'auth',
     'user',
     'company',
+    'menuItem',
     'chatbot',
   ], // Persist these reducers
   blacklist: [], // Don't persist these reducers

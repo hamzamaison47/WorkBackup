@@ -1,7 +1,6 @@
 /* eslint-disable curly */
 import React from 'react';
 import {View, Text, Pressable} from 'react-native';
-import {useTranslation} from 'react-i18next';
 import styles from '../../styles/styles';
 
 // Button type constants
@@ -19,8 +18,6 @@ const SaveRecordButtons = ({
   isDisabled = false,
   showButtons = [BUTTON_TYPES.CREATE, BUTTON_TYPES.SUBMIT, BUTTON_TYPES.CANCEL],
 }) => {
-  const {t} = useTranslation();
-
   const handleCreatePress = () => {
     onSave?.('create');
   };
@@ -46,29 +43,19 @@ const SaveRecordButtons = ({
   // Helper function to get button text based on mode
   const getButtonText = (buttonType, isProcessing) => {
     if (isProcessing) {
-      return buttonType === 'create'
-        ? t('common.processing', {defaultValue: 'Processing...'})
-        : t('common.processing', {defaultValue: 'Processing...'});
+      return 'Processing...';
     }
 
     if (buttonType === 'CREATE') {
-      return mode === 'edit'
-        ? t('buttons.edit', {defaultValue: 'Update'})
-        : t('buttons.create', {defaultValue: 'Create'});
+      return mode === 'edit' ? 'Update' : 'Create';
     }
 
     if (buttonType === 'SUBMIT') {
-      return mode === 'edit'
-        ? t('leaveSaveRecord.updatedAndSubmitted', {
-            defaultValue: 'Update & Submit',
-          })
-        : t('leaveSaveRecord.createdAndSubmitted', {
-            defaultValue: 'Create & Submit',
-          });
+      return mode === 'edit' ? 'Update & Submit' : 'Create & Submit';
     }
 
     if (buttonType === 'CANCEL') {
-      return t('buttons.cancel', {defaultValue: 'Cancel'});
+      return 'Cancel';
     }
 
     return '';

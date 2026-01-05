@@ -1,6 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback} from 'react';
 import {
   Text,
@@ -15,7 +16,7 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
-import {useTranslation} from 'react-i18next';
+import {useSelector} from 'react-redux';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
@@ -24,28 +25,17 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
-import {useDynamicTranslation} from '../../hooks/useDynamicTranslation';
 import styles from '../../styles/styles';
 
-import {fetchLeaves} from '../../Controller/leaveRequestApiService';
+import {RetrieveAllLeaves} from '../../API/Leaves/RetrieveAllLeaves';
+import {GetLeaveLabels} from '../../API/Leaves/GetLeaveLabels';
 import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
-import {useSelector} from 'react-redux';
-import ReceiptAttachmentModal from '../../components/Leaves/ReceiptAttachmentModal';
+import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {t} = useTranslation();
-  const {
-    translateLeaveType,
-    translateLeaveCategory,
-    translateWorkflowStatus,
-    translateFieldLabel,
-  } = useDynamicTranslation();
-
-  const isRTL = I18nManager.isRTL;
-  // const styles = createDynamicStyles(isRTL);
 
   const {
     employeeId,
@@ -56,47 +46,62 @@ const LeaveRequestListPage = () => {
     userData: routeUserData,
   } = route.params || {};
 
+  // Get userData from Redux as fallback
   const reduxUserData = useSelector(state => state.user.userData);
+  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
+    state => state.company,
+  );
   const effectiveUserData = routeUserData || reduxUserData;
+  const isRTL = I18nManager.isRTL;
 
+  // Use effective user data for all operations
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
 
   const [isLoading, setIsLoading] = useState(false);
   const [leavesData, setLeavesData] = useState([]);
+  const [leaveLabelsData, setLeaveLabelsData] = useState({});
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
-  const [receiptModalVisible, setReceiptModalVisible] = useState(false);
-  const [selectedReceiptItem, setSelectedReceiptItem] = useState(null);
-  const [receiptAttachments, setReceiptAttachments] = useState([]);
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
 
+  // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  // Fetch leaves data
   const fetchLeavesData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
 
     setIsLoading(true);
     try {
-      const LeaveData = await fetchLeaves(effectiveEmployeeId);
+      const LeaveData = await RetrieveAllLeaves({
+        employeeId: effectiveEmployeeId,
+      });
+      const LeaveLabelData = await GetLeaveLabels();
+
       setLeavesData(LeaveData);
+      setLeaveLabelsData(LeaveLabelData);
     } catch (error) {
-      setAlertMessage(t('leaveRequest.fetchFailed'));
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveEmployeeId, t]);
+  }, [effectiveEmployeeId]);
 
+  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchLeavesData();
     }, [fetchLeavesData]),
   );
 
+  // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
       if (highlightRecId) {
@@ -126,8 +131,9 @@ const LeaveRequestListPage = () => {
     }, [navigation]),
   );
 
+  // Handle back navigation
   const handleGoBack = () => {
-    let targetRoute = 'MainDashboard';
+    let targetRoute = 'MainDashboard'; // default
 
     switch (cameFrom) {
       case 'MainDashboard':
@@ -144,19 +150,21 @@ const LeaveRequestListPage = () => {
         break;
       default:
         navigation.goBack();
-        return;
+        return; // exit early
     }
 
     navigation.reset({
-      index: 0,
+      index: 0, // top of the stack
       routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
     });
   };
 
+  // Handle refresh
   const handleRefresh = () => {
     fetchLeavesData();
   };
 
+  // Handle create leave
   const handleCreateLeave = () => {
     navigation.navigate('LeaveSaveRecord', {
       mode: 'create',
@@ -182,85 +190,107 @@ const LeaveRequestListPage = () => {
     });
   };
 
+  // Utility functions
+  const getLeaveCategory = category => {
+    return category === 'FullLeave'
+      ? 'Full Day Leave'
+      : category === 'HalfLeave'
+      ? 'Half Day Leave'
+      : 'Invalid Category';
+  };
+
+  const getStatusLabel = status => {
+    const statusMap = {
+      NotSubmitted: 'Draft',
+      Approved: 'Approved',
+      Cancelled: 'Cancelled',
+      Rejected: 'Rejected',
+      Submitted: 'Submitted',
+      ChangeRequest: 'Change Request',
+      PendingCancellation: 'Pending Cancellation',
+      Returned: 'Returned',
+      PendingApproval: 'Pending Approval',
+      PendingComplete: 'Pending Complete',
+      WorkflowCompleted: 'Workflow Completed',
+      Completed: 'Completed',
+      Failed: 'Failed',
+    };
+    return statusMap[status] || 'Draft';
+  };
+
   const handleReceiptAttachmentPress = async itemData => {
     try {
-      // Set the selected item for context
-      setSelectedReceiptItem(itemData);
-
-      // Fetch attachments for this leave request
-      // You'll need to implement this API call based on your backend
-      // const attachments = await fetchLeaveAttachments(itemData.recId);
-      // setReceiptAttachments(attachments || []);
-      setReceiptAttachments([]);
-
-      // Show the modal
-      setReceiptModalVisible(true);
+      setSelectedLeaveItem(itemData);
+      setAttachmentModalVisible(true);
     } catch (error) {
-      console.error('Error fetching attachments:', error);
-      setAlertMessage(t('leaveRequest.fetchAttachmentsFailed'));
+      console.error('Error opening attachments:', error);
+      setAlertMessage('Failed to Attach Receipt');
       setAlertModal(true);
     }
   };
 
+  // Card Configuration
   const cardConfig = {
+    // Header configuration
     headerConfig: {
-      title: {key: 'leaveCode'},
-      subtitle: {key: 'employeeName'},
+      title: {key: 'LeaveCode'},
+      subtitle: {key: 'EmployeeName'},
     },
 
+    // Main fields to display (always visible)
     fields: [
       {
-        key: 'leaveStartDate',
-        label: translateFieldLabel('Leave Start Date'),
+        key: 'LeaveStartDate',
+        label: leaveLabelsData?.LeaveStartDateLabel || 'Leave Start Date',
         type: 'date',
       },
       {
-        key: 'leaveEndDate',
-        label: translateFieldLabel('Leave End Date'),
+        key: 'LeaveEndDate',
+        label: leaveLabelsData?.LeaveEndDateLabel || 'Leave End Date',
         type: 'date',
       },
       {
-        key: 'leaveDays',
-        label: translateFieldLabel('Leave Days'),
+        key: 'LeaveDays',
+        label: leaveLabelsData?.LeaveDaysLabel || 'Leave Days',
         type: 'text',
       },
-      {key: 'wfStatus', label: '', type: 'status'},
+      {key: 'WFStatus', label: '', type: 'status'},
     ],
 
+    // Expandable fields (shown when expanded)
     expandableFields: [
       {
-        key: 'leaveReqId',
-        label: translateFieldLabel('Leave Request ID'),
+        key: 'LeaveReqId',
+        label: leaveLabelsData?.LeaveReqIdLabel || 'Leave Request ID',
         type: 'text',
       },
       {
-        key: 'leaveCategory',
-        label: translateFieldLabel('Leave Category'),
+        key: 'LeaveCategory',
+        label: leaveLabelsData?.LeaveCategoryLabel || 'Leave Category',
         type: 'text',
       },
       {
-        key: 'leaveReqDate',
-        label: translateFieldLabel('Leave Request Date'),
+        key: 'LeaveReqDate',
+        label: leaveLabelsData?.LeaveReqDateLabel || 'Leave Request Date',
         type: 'date',
       },
       {
-        key: 'balance',
-        label: translateFieldLabel('Balance'),
+        key: 'Balance',
+        label: leaveLabelsData?.BalanceLabel || 'Balance',
         type: 'currency',
       },
       {
-        key: 'reason',
-        label: translateFieldLabel('Reason'),
+        key: 'Reason',
+        label: leaveLabelsData?.ReasonLabel || 'Reason',
         type: 'text',
       },
     ],
     isRTL: isRTL,
   };
 
+  // Define button configuration
   const getButtonConfig = item => {
-    const isDraft =
-      translateWorkflowStatus(item.wfStatus) ===
-      translateWorkflowStatus('NotSubmitted');
+    const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
 
     return {
       edit: {
@@ -269,7 +299,7 @@ const LeaveRequestListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#FFFFFF', // White icon on blue background
+        iconColor: '#fff',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -279,7 +309,7 @@ const LeaveRequestListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#FFFFFF', // White icon on blue background
+        iconColor: '#fff',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -290,7 +320,8 @@ const LeaveRequestListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#FFFFFF', // White icon on blue background
-        customStyle: {},
+        disabled: !isDraft,
+        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
       submit: {
         show: isDraft,
@@ -298,13 +329,14 @@ const LeaveRequestListPage = () => {
         style: 'text',
         icon: 'send',
         iconSize: 16,
-        text: t('buttons.submit'),
+        text: 'Submit',
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },
     };
   };
 
+  // Helper function to set button processing state
   const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
       ...prev,
@@ -314,6 +346,7 @@ const LeaveRequestListPage = () => {
     }));
   };
 
+  // Handle button presses
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
       case BUTTON_TYPES.EDIT:
@@ -336,8 +369,8 @@ const LeaveRequestListPage = () => {
   const handleEditPress = itemData => {
     navigation.navigate('LeaveSaveRecord', {
       mode: 'edit',
-      employeeId: itemData.employeeId || employeeId,
-      employeeName: itemData.employeeName || employeeName,
+      employeeId: itemData.EmployeeId || employeeId,
+      employeeName: itemData.EmployeeName || employeeName,
       WorkerRecId: itemData.WorkerRecId || WorkerRecId,
       userData: route.params?.userData || {
         employeeId,
@@ -347,17 +380,17 @@ const LeaveRequestListPage = () => {
       cameFrom: 'LeavesListPage',
       originalCameFrom: cameFrom,
       leaveData: {
-        recId: itemData.recId,
-        employeeId: itemData.employeeId || employeeId,
-        employeeName: itemData.employeeName || employeeName,
+        recId: itemData.RecId,
+        employeeId: itemData.EmployeeId || employeeId,
+        employeeName: itemData.EmployeeName || employeeName,
         WorkerRecId: itemData.WorkerRecId || WorkerRecId,
-        leaveCode: itemData.leaveCode,
-        leaveCategory: itemData.leaveCategory,
-        balance: itemData.balance,
-        leaveStartDate: itemData.leaveStartDate,
-        leaveEndDate: itemData.leaveEndDate,
-        leaveDays: itemData.leaveDays,
-        reason: itemData.reason,
+        leaveCode: itemData.LeaveCode,
+        leaveCategory: itemData.LeaveCategory,
+        balance: itemData.Balance,
+        leaveStartDate: itemData.LeaveStartDate,
+        leaveEndDate: itemData.LeaveEndDate,
+        leaveDays: itemData.LeaveDays,
+        reason: itemData.Reason,
       },
     });
   };
@@ -370,26 +403,26 @@ const LeaveRequestListPage = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    setButtonProcessing(itemToDelete.recId, 'delete', true);
+    setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
     try {
       const response = await DeleteLeaveRequest({
-        recordsRecId: [itemToDelete.recId],
+        recordsRecId: [itemToDelete.RecId],
       });
 
       if (response[0].IsSuccess) {
-        setAlertMessage(t('leaveRequest.deleteSuccess'));
+        setAlertMessage('Leave Request Deleted Successfully.');
         setLeavesData(prev =>
-          prev.filter(leave => leave.recId !== itemToDelete.recId),
+          prev.filter(leave => leave.RecId !== itemToDelete.RecId),
         );
       } else {
-        setAlertMessage(t('leaveRequest.deleteFailed'));
+        setAlertMessage('Unable to Delete Leave Request.');
       }
     } catch (error) {
-      setAlertMessage(t('leaveRequest.deleteFailed'));
+      setAlertMessage('Failed to Delete Leave Request');
       console.log('Delete Leave Request response', error);
     } finally {
-      setButtonProcessing(itemToDelete.recId, 'delete', false);
+      setButtonProcessing(itemToDelete.RecId, 'delete', false);
       setDeleteModal(false);
       setItemToDelete(null);
       setAlertModal(true);
@@ -399,22 +432,23 @@ const LeaveRequestListPage = () => {
     }
   };
 
+  /** Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
-    setButtonProcessing(itemData.recId, 'submit', true);
+    setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
       const response = await SubmitLeaveRequest({
-        recId: Number(itemData.recId),
+        recId: Number(itemData.RecId),
       });
       const resObj = Array.isArray(response) ? response[0] : response;
 
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
         setAlertMessage(
-          t('leaveRequest.submitSuccess', {leaveCode: itemData.leaveCode}),
+          `${itemData.LeaveCode} Request Submitted Successfully.`,
         );
         setAlertModal(true);
 
-        setHighlightedRecId(itemData.recId);
+        setHighlightedRecId(itemData.RecId);
 
         setTimeout(() => {
           setHighlightedRecId(null);
@@ -427,32 +461,27 @@ const LeaveRequestListPage = () => {
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : t('leaveRequest.submitFailed', {leaveCode: itemData.leaveCode});
+            : `Failed to Submit ${itemData.LeaveCode} Request`;
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage(
-        t('leaveRequest.submitFailed', {leaveCode: itemData.leaveCode}),
-      );
+      setAlertMessage(`Failed to Submit ${itemData.LeaveCode} Request`);
       setAlertModal(true);
     } finally {
-      setButtonProcessing(itemData.recId, 'submit', false);
+      setButtonProcessing(itemData.RecId, 'submit', false);
     }
   };
 
+  // Render leave card
   const renderLeavesCard = ({item}) => {
-    const isHighlighted = highlightedRecId === item.recId;
-    const itemProcessingButtons = processingButtons[item.recId] || [];
+    const isHighlighted = highlightedRecId === item.RecId;
+    const itemProcessingButtons = processingButtons[item.RecId] || [];
 
     const processedItem = {
       ...item,
-      leaveCode: translateLeaveType(item.leaveCode),
-      leaveCategory: translateLeaveCategory(item.leaveCategory),
-      wfStatus: translateWorkflowStatus(item.wfStatus),
-      employeeId: item.employeeId || employeeId,
-      employeeName: item.employeeName || employeeName,
+      WFStatus: getStatusLabel(item.WFStatus),
     };
 
     // Get button configuration
@@ -491,7 +520,7 @@ const LeaveRequestListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={t('leaveRequest.pageTitle')}
+      pageTitle="Leave Requests"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
@@ -499,6 +528,7 @@ const LeaveRequestListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}>
+      {/* Main content */}
       {isLoading ? (
         <CustomIndicator />
       ) : leavesData.length > 0 ? (
@@ -506,7 +536,7 @@ const LeaveRequestListPage = () => {
           data={leavesData}
           renderItem={renderLeavesCard}
           keyExtractor={(item, index) =>
-            item.recId?.toString() || index.toString()
+            item.RecId?.toString() || index.toString()
           }
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
@@ -520,48 +550,53 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>
-            {t('leaveRequest.noDataFound')}
-          </Text>
+          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
         </ScrollView>
       )}
 
-      <ReceiptAttachmentModal
-        visible={receiptModalVisible}
-        onClose={() => setReceiptModalVisible(false)}
-        attachments={receiptAttachments}
-        recordId={selectedReceiptItem?.recId}
-        entityType="LeaveRequest"
-        entityId={selectedReceiptItem?.recId}
-        allowUpload={true} // Set based on permissions/status
-        title={`${t('leaveRequest.attachments')} - ${
-          selectedReceiptItem?.leaveCode || ''
-        }`}
-        onUploadSuccess={() => {
-          // Refresh attachments after successful upload
-          if (selectedReceiptItem) {
-            handleReceiptAttachmentPress(selectedReceiptItem);
-          }
+      {/* Attachment Modal */}
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedLeaveItem}
+        tableName="PREmployeeLeaveRequest"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedLeaveItem(null);
         }}
-        onDeleteSuccess={() => {
-          // Refresh attachments after successful delete
-          if (selectedReceiptItem) {
-            handleReceiptAttachmentPress(selectedReceiptItem);
-          }
+        onSave={() => {
+          fetchLeavesData();
         }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Leave Attachments"
+        showDetails={true}
+        detailFields={[
+          {key: 'LeaveCode', label: 'Leave Type'},
+          {key: 'LeaveCategory', label: 'Category'},
+          {key: 'LeaveStartDate', label: 'Start Date'},
+          {key: 'LeaveEndDate', label: 'End Date'},
+        ]}
+        detailData={selectedLeaveItem || {}}
+        showTakePhoto={true}
+        showChooseFile={true}
+        showDownload={true}
+        showDelete={true}
       />
 
+      {/* Alert Modal */}
       <AlertModal
         visible={alertModal}
-        heading={t('common.alert')}
+        heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
 
+      {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
-        heading={t('leaveRequest.deleteConfirmTitle')}
-        text={t('leaveRequest.deleteConfirmMessage')}
+        heading="Confirm Deletion"
+        text="Are you sure you want to delete this Leave request?"
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);
