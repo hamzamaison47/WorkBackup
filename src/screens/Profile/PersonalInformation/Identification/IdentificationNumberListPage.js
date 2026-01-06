@@ -1,3 +1,5 @@
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
@@ -322,16 +324,17 @@ const IdentificationNumberListPage = () => {
         : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
   };
+
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
-    console.log(
-      item.ApprovalStatus +
-        ' ' +
-        getStatusLabel(item.ApprovalStatus) +
-        ' ' +
-        isHCMRecord,
-    );
+    // console.log(
+    //   item.ApprovalStatus +
+    //     ' ' +
+    //     getStatusLabel(item.ApprovalStatus) +
+    //     ' ' +
+    //     isHCMRecord,
+    // );
     const isCancelled = getStatusLabel(item.ApprovalStatus) === 'Cancelled';
     return {
       edit: {
@@ -341,6 +344,7 @@ const IdentificationNumberListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: isHCMRecord ? false : !isDraft,
         customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -351,6 +355,7 @@ const IdentificationNumberListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !(isDraft || isCancelled),
         customStyle: !(isDraft || isCancelled)
           ? {backgroundColor: '#BDBDBD'}

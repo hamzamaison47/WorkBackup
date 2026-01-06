@@ -305,6 +305,7 @@ const LeaveRequestListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -315,6 +316,7 @@ const LeaveRequestListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -324,7 +326,8 @@ const LeaveRequestListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#FFFFFF', // White icon on blue background
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -480,6 +483,48 @@ const LeaveRequestListPage = () => {
   };
 
   // Render leave card
+  // const renderLeavesCard = ({item}) => {
+  //   const isHighlighted = highlightedRecId === item.RecId;
+  //   const itemProcessingButtons = processingButtons[item.RecId] || [];
+
+  //   const processedItem = {
+  //     ...item,
+  //     WFStatus: getStatusLabel(item.WFStatus),
+  //   };
+
+  //   // Get button configuration
+  //   const buttonConfig = getButtonConfig(item);
+
+  //   // Determine which header buttons to show
+  //   const headerButtons = [];
+  //   if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
+  //   if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
+  //   if (buttonConfig.attachment?.show)
+  //     headerButtons.push(BUTTON_TYPES.ATTACHMENT);
+
+  //   // Determine which bottom buttons to show
+  //   const bottomButtons = [];
+  //   if (buttonConfig.submit?.show) bottomButtons.push(BUTTON_TYPES.SUBMIT);
+
+  //   return (
+  //     <DynamicRequestCard
+  //       data={processedItem}
+  //       headerConfig={cardConfig.headerConfig}
+  //       fields={cardConfig.fields}
+  //       expandableFields={cardConfig.expandableFields}
+  //       headerButtons={headerButtons}
+  //       bottomButtons={bottomButtons}
+  //       buttons={buttonConfig}
+  //       isHighlighted={isHighlighted}
+  //       onButtonPress={handleButtonPress}
+  //       isExpandable={true}
+  //       gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
+  //       highlightGradientColors={['#E8F5E8', '#F0FFF0']}
+  //       processingButtons={itemProcessingButtons}
+  //       isRTL={isRTL}
+  //     />
+  //   );
+  // };
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
@@ -492,29 +537,16 @@ const LeaveRequestListPage = () => {
     // Get button configuration
     const buttonConfig = getButtonConfig(item);
 
-    // Determine which header buttons to show
-    const headerButtons = [];
-    if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
-    if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
-    if (buttonConfig.attachment?.show)
-      headerButtons.push(BUTTON_TYPES.ATTACHMENT);
-
-    // Determine which bottom buttons to show
-    const bottomButtons = [];
-    if (buttonConfig.submit?.show) bottomButtons.push(BUTTON_TYPES.SUBMIT);
-
     return (
       <DynamicRequestCard
         data={processedItem}
         headerConfig={cardConfig.headerConfig}
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
-        headerButtons={headerButtons}
-        bottomButtons={bottomButtons}
-        buttons={buttonConfig}
+        buttons={buttonConfig} // Only this prop needed now!
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
-        isExpandable={true}
+        isExpandable={true} // Can set to false to disable
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
