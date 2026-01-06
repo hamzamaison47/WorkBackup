@@ -106,7 +106,7 @@ const buildContractXml = contracts => {
     'InventSerialId',
     'InventSiteId',
     'InventSizeId',
-    'InventStyleId',
+    'InventStyle',
     'ItemId',
     'PurchQty',
     'PurchReqId',

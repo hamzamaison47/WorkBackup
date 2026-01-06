@@ -30,6 +30,7 @@ import {itemLookupforPurchRequisitionLine} from '../../API/PurchaseRequisitionLi
 import {itemModifiedforPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesItemModified';
 import {createPurchaseRequistionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesSaveRecord';
 import {updatePurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesUpdateRecord';
+import {updatePurchaseRequisitionLinesItemDimension} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesUpdateInventdimRecord';
 
 import {retrieveConfigIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveConfigId';
 import {retrieveSizeIdPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveSizeId';
@@ -43,6 +44,7 @@ import {retrieveLocationIdPurchaseRequisitionLines} from '../../API/PurchaseRequ
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../components/Buttons/SaveRecordButtons';
+import {retrieveItemInventCombinationLookup} from '../../API/PurchaseRequisitionLines/retrieveItemInventCombination';
 
 const PurchaseRequisitionLinesSaveRecord = () => {
   const route = useRoute();
@@ -98,6 +100,10 @@ const PurchaseRequisitionLinesSaveRecord = () => {
   const [selectedSite, setSelectedSite] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [selectedItem, setSelectedItem] = useState('');
+  // Add these state variables with your existing state declarations
+  const [inventCombinations, setInventCombinations] = useState([]);
+  const [selectedCombination, setSelectedCombination] = useState(null);
+  const [showCombinationDropdown, setShowCombinationDropdown] = useState(false);
   const [itemDetails, setItemDetails] = useState({
     ItemName: '',
     PurchUnitofMeasureCode: '',
@@ -248,7 +254,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
 
   const loadLookups = async itemId => {
     try {
-      const [config, size, color, style, batch, serial, site] =
+      const [config, size, color, style, batch, serial, site, combinations] =
         await Promise.all([
           retrieveConfigIdPurchaseRequisitionLines({
             _itemid: itemId,
@@ -271,6 +277,10 @@ const PurchaseRequisitionLinesSaveRecord = () => {
           retrieveSiteIdPurchaseRequisitionLines({
             _dataAreaid: selectedLegalEntity,
           }),
+          retrieveItemInventCombinationLookup({
+            // Add this
+            _itemid: itemId,
+          }),
         ]);
 
       setConfigList(formatDropdown(config, 'config'));
@@ -281,6 +291,35 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       setSerialList(formatDropdown(serial, 'serial'));
       setSiteList(formatDropdown(site, 'site'));
       setLocationList([]); // Reset locations when item changes
+
+      // Set inventory combinations
+      if (Array.isArray(combinations) && combinations.length > 0) {
+        // Format combinations for dropdown
+        const formattedCombinations = combinations.map(combo => ({
+          label: combo.productDisplayName || getCombinationLabel(combo),
+          value: combo.InventDimId || combo.$id,
+          originalData: combo,
+          config: combo.ConfigId,
+          size: combo.InventSizeId,
+          color: combo.InventColorId,
+          style: combo.InventStyle,
+          site: combo.InventSiteId,
+          location: combo.InventLocationId,
+          batch: combo.InventBatchId,
+          serial: combo.InventSerialId,
+        }));
+
+        setInventCombinations(formattedCombinations);
+        setShowCombinationDropdown(true);
+
+        // If in create mode and there's only one combination, auto-select it
+        if (mode === 'create' && formattedCombinations.length === 1) {
+          handleCombinationChange(formattedCombinations[0]);
+        }
+      } else {
+        setInventCombinations([]);
+        setShowCombinationDropdown(false);
+      }
     } catch (err) {
       console.log('Error loading lookups:', err);
 
@@ -293,6 +332,77 @@ const PurchaseRequisitionLinesSaveRecord = () => {
     }
   };
 
+  // Add this helper function after your other helper functions
+  const getCombinationLabel = combo => {
+    const parts = [];
+    if (combo.ConfigId) parts.push(`Config: ${combo.ConfigId}`);
+    if (combo.InventSizeId) parts.push(`Size: ${combo.InventSizeId}`);
+    if (combo.InventColorId) parts.push(`Color: ${combo.InventColorId}`);
+    if (combo.InventStyle) parts.push(`Style: ${combo.InventStyle}`);
+    if (combo.InventSiteId) parts.push(`Site: ${combo.InventSiteId}`);
+    if (combo.InventLocationId)
+      parts.push(`Location: ${combo.InventLocationId}`);
+
+    return parts.length > 0 ? parts.join(' | ') : 'Combination';
+  };
+
+  // Add this function with your other handlers
+  const handleCombinationChange = combination => {
+    setSelectedCombination(combination.value);
+
+    // Auto-populate dimension fields from selected combination
+    if (combination.originalData) {
+      const data = combination.originalData;
+
+      // Update config
+      if (data.ConfigId) {
+        setSelectedConfig(data.ConfigId);
+      }
+
+      // Update size
+      if (data.InventSizeId) {
+        setSelectedSize(data.InventSizeId);
+      }
+
+      // Update color
+      if (data.InventColorId) {
+        setSelectedColor(data.InventColorId);
+      }
+
+      // Update style
+      if (data.InventStyle) {
+        setSelectedStyle(data.InventStyle);
+      }
+
+      // Update site
+      if (data.InventSiteId) {
+        setSelectedSite(data.InventSiteId);
+
+        // If there's a site, also fetch its locations
+        if (data.InventSiteId) {
+          handleSiteChange({value: data.InventSiteId});
+
+          // If there's also a location in the combination data
+          if (data.InventLocationId) {
+            // Wait a bit for locations to load, then set the location
+            setTimeout(() => {
+              setSelectedLocation(data.InventLocationId);
+            }, 500);
+          }
+        }
+      }
+
+      // Update batch
+      if (data.InventBatchId) {
+        setSelectedBatch(data.InventBatchId);
+      }
+
+      // Update serial
+      if (data.InventSerialId) {
+        setSelectedSerial(data.InventSerialId);
+      }
+    }
+  };
   const handleSiteChange = async siteItem => {
     setSelectedSite(siteItem.value);
     setSelectedLocation(null); // Reset location when site changes
@@ -437,7 +547,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
         ConfigId: selectedConfig || '',
         InventSizeId: selectedSize || '',
         InventColorId: selectedColor || '',
-        InventStyleId: selectedStyle || '',
+        InventStyle: selectedStyle || '',
         InventBatchId: selectedBatch || '',
         InventSerialId: selectedSerial || '',
         Requisitioner: employeeId,
@@ -454,7 +564,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
 
       console.log('Create API response:', result);
 
-      if (result && result.IsSuccess) {
+      if (result && result.IsSuccess === 'true' && result.RecId !== '0') {
         setAlertMessage('Purchase Requisition Line Created Successfully');
         setAlertModal(true);
 
@@ -487,7 +597,16 @@ const PurchaseRequisitionLinesSaveRecord = () => {
     try {
       const payload = {
         CurrencyCode: purchaseRequisitiondata.CurrencyCode,
+        ItemId: selectedItem || '',
         PurchQty: parseFloat(quantity).toString(),
+        InventSiteId: selectedSite || '',
+        InventLocationId: selectedLocation || '',
+        ConfigId: selectedConfig || '',
+        InventSizeId: selectedSize || '',
+        InventColorId: selectedColor || '',
+        InventStyle: selectedStyle || '',
+        InventBatchId: selectedBatch || '',
+        InventSerialId: selectedSerial || '',
         PurchPrice: purchaseRequisitiondata.PurchPrice,
         PurchUnitofMeasure: purchaseRequisitiondata.PurchUnitofMeasure,
         RecId: purchaseRequisitiondata.RecId,
@@ -499,6 +618,9 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       const result = await updatePurchaseRequisitionLines({
         PurchaseRequisitionLinesData: [payload],
       });
+
+      /** 2️⃣ Update Invent Dimensions */
+      await updateInventDimensions(payload);
 
       console.log('Update API response:', result);
 
@@ -519,6 +641,20 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateInventDimensions = async payload => {
+    try {
+      const result = await updatePurchaseRequisitionLinesItemDimension({
+        PurchaseRequisitionLinesData: [payload],
+      });
+
+      console.log('Invent Dimension Update response:', result);
+      return result;
+    } catch (error) {
+      console.error('Error updating invent dimensions:', error);
+      throw error;
     }
   };
 
@@ -556,7 +692,59 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       // Set quantity
       setQuantity(purchaseRequisitiondata.PurchQty?.toString() || '0.00');
 
-      // DO NOT load lookups or dimension fields in edit mode
+      setSelectedSite(purchaseRequisitiondata.InventSiteId || null);
+      setSelectedLocation(purchaseRequisitiondata.InventLocationId || null);
+      setSelectedConfig(purchaseRequisitiondata.ConfigId || null);
+      setSelectedSize(purchaseRequisitiondata.InventSizeId || null);
+      setSelectedColor(purchaseRequisitiondata.InventColorId || null);
+      setSelectedStyle(purchaseRequisitiondata.InventStyle || null);
+      setSelectedBatch(purchaseRequisitiondata.InventBatchId || null);
+      setSelectedSerial(purchaseRequisitiondata.InventSerialId || null);
+
+      // Load lookups so dropdowns have data in edit mode
+      loadLookups(purchaseRequisitiondata.ItemId);
+      // THEN: If there's a pre-selected Site, fetch its locations
+      if (purchaseRequisitiondata.InventSiteId) {
+        const fetchLocationsForExistingSite = async () => {
+          try {
+            setIsLoading(true);
+            const locations = await retrieveLocationIdPurchaseRequisitionLines({
+              _siteId: purchaseRequisitiondata.InventSiteId,
+            });
+
+            // Try to find matching combination in edit mode
+            // This could be done after combinations are loaded
+            setTimeout(() => {
+              if (inventCombinations.length > 0) {
+                const matchingCombo = inventCombinations.find(
+                  combo =>
+                    (!purchaseRequisitiondata.ConfigId ||
+                      combo.config === purchaseRequisitiondata.ConfigId) &&
+                    (!purchaseRequisitiondata.InventSizeId ||
+                      combo.size === purchaseRequisitiondata.InventSizeId) &&
+                    (!purchaseRequisitiondata.InventColorId ||
+                      combo.color === purchaseRequisitiondata.InventColorId) &&
+                    (!purchaseRequisitiondata.InventStyle ||
+                      combo.style === purchaseRequisitiondata.InventStyle),
+                );
+
+                if (matchingCombo) {
+                  setSelectedCombination(matchingCombo.value);
+                }
+              }
+            }, 1000);
+
+            setLocationList(formatDropdown(locations, 'location'));
+          } catch (error) {
+            console.error('Error fetching locations in edit mode:', error);
+            setLocationList([]);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchLocationsForExistingSite();
+      }
     }
   }, [mode, purchaseRequisitiondata]);
 
@@ -723,7 +911,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
               </View>
 
               {/* DIMENSIONS SECTION - Only visible in create mode when item is selected */}
-              {mode === 'create' && selectedItem && (
+              {(mode === 'create' || mode === 'edit') && selectedItem && (
                 <>
                   <View
                     style={{
@@ -816,6 +1004,52 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     />
                   </View>
 
+                  {/* INVENTORY COMBINATIONS DROPDOWN - Show when combinations exist */}
+                  {showCombinationDropdown && inventCombinations.length > 0 && (
+                    <View style={styles.LReqSR_FieldWrapper}>
+                      <Text style={styles.LReqSR_Label}>
+                        Inventory Combinations
+                        <Text
+                          style={{color: '#888', fontSize: 12, marginLeft: 5}}>
+                          (Optional - will auto-fill dimensions below)
+                        </Text>
+                      </Text>
+                      <Dropdown
+                        style={styles.LReqSR_Input}
+                        data={inventCombinations}
+                        labelField="label"
+                        valueField="value"
+                        placeholder="Select Combinations"
+                        value={selectedCombination}
+                        onChange={handleCombinationChange}
+                        search
+                        searchPlaceholder="Search combinations..."
+                        placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                        selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                        itemTextStyle={styles.LReqSR_DropdownItemText}
+                        inputSearchStyle={{color: '#888'}}
+                        activeColor="#E6F0FF"
+                        containerStyle={[
+                          styles.LReqSR_DropdownContainer,
+                          {zIndex: 1001}, // Higher z-index than other dropdowns
+                        ]}
+                        maxHeight={280}
+                        dropdownPosition="auto"
+                        renderItem={item => (
+                          <View style={{padding: 10}}>
+                            <Text
+                              style={[
+                                styles.LReqSR_DropdownItemText,
+                                {fontSize: 12},
+                              ]}>
+                              {item.label}
+                            </Text>
+                          </View>
+                        )}
+                      />
+                    </View>
+                  )}
+
                   {/* CONFIGURATION DROPDOWN */}
                   {configList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
@@ -835,6 +1069,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
                         activeColor="#E6F0FF"
+                        disable={configList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
                           {zIndex: 1000},
@@ -871,6 +1106,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
                         activeColor="#E6F0FF"
+                        disable={sizeList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
                           {zIndex: 999},
@@ -907,6 +1143,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
                         activeColor="#E6F0FF"
+                        disable={colorList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
                           {zIndex: 998},
@@ -943,6 +1180,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
                         activeColor="#E6F0FF"
+                        disable={styleList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
                           {zIndex: 997},
@@ -979,6 +1217,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
                         activeColor="#E6F0FF"
+                        disable={batchList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
                           {zIndex: 996},
@@ -1015,6 +1254,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
                         activeColor="#E6F0FF"
+                        disable={serialList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
                           {zIndex: 995},

@@ -353,6 +353,11 @@ const PurchaseRequisitionListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }
+          ListEmptyComponent={
+            <View style={{paddingTop: 350, alignItems: 'center'}}>
+              <Text style={{fontSize: 16, color: '#999'}}>No Data Found</Text>
+            </View>
+          }
         />
       )}
       <AlertModal

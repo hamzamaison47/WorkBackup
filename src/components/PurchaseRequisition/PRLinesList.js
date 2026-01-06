@@ -55,7 +55,14 @@ const PRLinesList = ({
   };
 
   const formatValue = v => {
-    if (!v && v !== 0) return '-';
+    if (v === null || v === undefined || v === '') return '-';
+
+    const num = Number(v);
+
+    // Check if it's a valid number
+    if (!isNaN(num)) {
+      return num.toFixed(2);
+    }
     return v.toString();
   };
 
