@@ -1898,8 +1898,8 @@ const styles = StyleSheet.create({
   // DYNAMIC REQUEST CARD - FULLY DYNAMIC STYLES
   // ============================================
   DRC_CardContainer: {
-    marginVertical: verticalScale(8),
-    marginHorizontal: scale(8),
+    marginVertical: verticalScale(6),
+    marginHorizontal: scale(2),
   },
 
   DRC_HighlightedContainer: {

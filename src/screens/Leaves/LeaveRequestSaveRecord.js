@@ -258,45 +258,82 @@ const LeaveRequestSaveRecord = () => {
   );
 
   const fetchLeaveLabels = async () => {
+    setIsLoading(true);
     try {
       const labels = await GetLeaveLabels();
       setLeaveLabelsData(labels || {});
     } catch (error) {
       console.error('Error fetching leave labels:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useFocusEffect(
     React.useCallback(() => {
-      fetchLeaveLabels();
+      const initializeForm = async () => {
+        await fetchLeaveLabels();
 
-      if (mode === 'create') {
-        const freshFormData = createInitialFormData();
-        setFormData(freshFormData);
-      } else if (mode === 'edit' && leaveData?.recId) {
-        const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
-          leaveData.leaveCategory,
-        );
+        if (mode === 'create') {
+          const freshFormData = createInitialFormData();
+          setFormData(freshFormData);
+        } else if (mode === 'edit' && leaveData?.recId) {
+          const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
+            leaveData.leaveCategory,
+          );
 
-        const editFormData = {
-          ...createInitialFormData(),
-          ...leaveData,
-          employeeId: leaveData.employeeId || employeeId,
-          employeeName: leaveData.employeeName || employeeName,
-          WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
-          leaveCategory: normalizedLeaveCategory,
-          leaveDays: leaveData.leaveDays || '',
-          balance: leaveData.balance || '0.00',
-          quota: leaveData.quota || '0.00',
-          eligibility: leaveData.eligibility || '0.00',
-        };
+          const editFormData = {
+            ...createInitialFormData(),
+            ...leaveData,
+            employeeId: leaveData.employeeId || employeeId,
+            employeeName: leaveData.employeeName || employeeName,
+            WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
+            leaveCategory: normalizedLeaveCategory,
+            leaveDays: leaveData.leaveDays || '',
+            balance: leaveData.balance || '0.00',
+            quota: leaveData.quota || '0.00',
+            eligibility: leaveData.eligibility || '0.00',
+          };
 
-        setFormData(editFormData);
+          setFormData(editFormData);
+          await fetchLeaveCodesForEmployee();
+        }
+      };
 
-        fetchLeaveCodesForEmployee();
-      }
+      initializeForm();
     }, [mode, leaveData?.recId, employeeId, employeeName, WorkerRecId]),
   );
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     fetchLeaveLabels();
+
+  //     if (mode === 'create') {
+  //       const freshFormData = createInitialFormData();
+  //       setFormData(freshFormData);
+  //     } else if (mode === 'edit' && leaveData?.recId) {
+  //       const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
+  //         leaveData.leaveCategory,
+  //       );
+
+  //       const editFormData = {
+  //         ...createInitialFormData(),
+  //         ...leaveData,
+  //         employeeId: leaveData.employeeId || employeeId,
+  //         employeeName: leaveData.employeeName || employeeName,
+  //         WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
+  //         leaveCategory: normalizedLeaveCategory,
+  //         leaveDays: leaveData.leaveDays || '',
+  //         balance: leaveData.balance || '0.00',
+  //         quota: leaveData.quota || '0.00',
+  //         eligibility: leaveData.eligibility || '0.00',
+  //       };
+
+  //       setFormData(editFormData);
+
+  //       fetchLeaveCodesForEmployee();
+  //     }
+  //   }, [mode, leaveData?.recId, employeeId, employeeName, WorkerRecId]),
+  // );
 
   const handleRefresh = async () => {
     setIsLoading(true);

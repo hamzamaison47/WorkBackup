@@ -165,7 +165,7 @@ const LanguageModal = ({visible, onClose}) => {
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[
                   styles.button,
                   styles.confirmButton,
@@ -178,7 +178,7 @@ const LanguageModal = ({visible, onClose}) => {
                 }}
                 disabled={selectedLanguage === currentLanguage}>
                 <Text style={styles.buttonText}>Apply & Restart</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         </View>
