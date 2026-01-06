@@ -1,10 +1,13 @@
 import {store} from '../index.ts';
 
-export const createSoapHeader = (language = 'en-us') => {
+export const createSoapHeader = () => {
   const state = store.getState();
   const {selectedLegalEntity, defaultLegalEntity} = state.company;
+  const {languageCode} = state.language;
 
   const companyToUse = selectedLegalEntity || defaultLegalEntity;
+  // Use language code from Redux, fallback to 'en-us' if not set
+  const language = languageCode || 'en-us';
 
   if (!companyToUse) {
     console.warn('No company found in Redux store for SOAP header');
@@ -20,8 +23,8 @@ export const createSoapHeader = (language = 'en-us') => {
     </soapenv:Header>`;
 };
 
-export const createSoapEnvelope = (bodyContent, language = 'en-us') => {
-  const header = createSoapHeader(language);
+export const createSoapEnvelope = bodyContent => {
+  const header = createSoapHeader();
 
   return `<?xml version="1.0" encoding="utf-8"?>
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">

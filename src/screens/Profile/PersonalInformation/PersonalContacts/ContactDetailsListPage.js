@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
@@ -185,6 +187,7 @@ const ContactDetailsListPage = () => {
     //   icon: 'edit',
     //   iconSize: 20,
     //   iconColor: '#fff',
+    //   backgroundColor: '#0A66C2', // Add this line
     // },
     // delete: {
     //   show: true,
@@ -193,6 +196,7 @@ const ContactDetailsListPage = () => {
     //   icon: 'trash',
     //   iconSize: 20,
     //   iconColor: '#fff',
+    //   backgroundColor: '#0A66C2', // Add this line
     // },
   });
 

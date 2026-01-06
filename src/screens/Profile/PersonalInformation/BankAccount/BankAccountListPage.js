@@ -228,6 +228,7 @@ const BankAccountListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2', // Add this line
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -238,6 +239,7 @@ const BankAccountListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2', // Add this line
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },

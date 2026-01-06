@@ -284,6 +284,7 @@ const ExpenseManagmentLinesListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -294,6 +295,7 @@ const ExpenseManagmentLinesListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -303,7 +305,8 @@ const ExpenseManagmentLinesListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#FFFFFF',
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         customStyle: {},
       },
     };
@@ -474,11 +477,11 @@ const ExpenseManagmentLinesListPage = () => {
 
     const buttonConfig = getButtonConfig(item);
 
-    const headerButtons = [];
-    if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
-    if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
-    if (buttonConfig.attachment?.show)
-      headerButtons.push(BUTTON_TYPES.ATTACHMENT);
+    // DELETE THESE LINES:
+    // const headerButtons = [];
+    // if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
+    // if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
+    // if (buttonConfig.attachment?.show) headerButtons.push(BUTTON_TYPES.ATTACHMENT);
 
     const processedItem = {
       ...item,
@@ -504,8 +507,8 @@ const ExpenseManagmentLinesListPage = () => {
         headerConfig={CARD_CONFIG.headerConfig}
         fields={CARD_CONFIG.fields}
         expandableFields={CARD_CONFIG.expandableFields}
-        headerButtons={headerButtons}
-        buttons={buttonConfig}
+        // DELETE THIS LINE: headerButtons={headerButtons}
+        buttons={buttonConfig} // Only need this
         onButtonPress={handleButtonPress}
         isExpandable={true}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}

@@ -190,8 +190,8 @@ const PersonalEducation = () => {
   };
 
   const getButtonConfig = item => {
-    console.log(item.ApprovalStatus);
-    console.log(getStatusLabel(item.ApprovalStatus));
+    // console.log(item.ApprovalStatus);
+    // console.log(getStatusLabel(item.ApprovalStatus));
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
     return {
@@ -202,6 +202,7 @@ const PersonalEducation = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: isHCMRecord ? false : !isDraft,
         customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -212,6 +213,7 @@ const PersonalEducation = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },

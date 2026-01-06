@@ -1701,199 +1701,6 @@ const styles = StyleSheet.create({
     color: '#959595ff',
   },
 
-  // ============================================
-  // DYNAMIC REQUEST CARD - RESPONSIVE STYLES
-  // ============================================
-  DRC_CardContainer: {
-    marginVertical: verticalScale(8),
-    marginHorizontal: scale(8),
-  },
-
-  DRC_HighlightedContainer: {
-    borderWidth: moderateScale(2),
-    borderColor: '#4CAF50',
-    borderRadius: moderateScale(16),
-    elevation: 8,
-    shadowColor: '#4CAF50',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-
-  DRC_Card: {
-    borderRadius: moderateScale(16),
-    padding: moderateScale(16),
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-
-  DRC_CardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: verticalScale(12),
-  },
-
-  DRC_CardHeaderText: {
-    fontSize: fontScale(18),
-    fontWeight: '700',
-    color: '#37474F',
-    lineHeight: fontScale(22),
-  },
-
-  DRC_CardSubHeaderText: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: fontScale(14),
-    lineHeight: fontScale(18),
-    marginTop: verticalScale(2),
-  },
-
-  DRC_ButtonsContainer: {
-    flexDirection: 'row',
-    gap: scale(8),
-    flexShrink: 1,
-  },
-
-  // KEEP original style but FIX icon visibility - change iconColor to dark color
-  DRC_IconButton: {
-    backgroundColor: '#0A66C2', // Keep original blue background
-    borderRadius: moderateScale(20),
-    padding: moderateScale(8),
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: moderateScale(36),
-    minHeight: moderateScale(36),
-  },
-
-  // Remove text from icon buttons - set to null
-  DRC_IconButtonText: null, // Remove text styling
-
-  DRC_TextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#0A66C2',
-    borderWidth: moderateScale(2),
-    paddingHorizontal: scale(12),
-    paddingVertical: verticalScale(6),
-    borderRadius: moderateScale(20),
-  },
-
-  DRC_Disabled: {
-    backgroundColor: '#BDBDBD',
-    borderColor: '#BDBDBD',
-    opacity: 0.6,
-  },
-
-  DRC_DisabledText: {
-    color: '#999',
-  },
-
-  DRC_TextButtonText: {
-    color: '#0A66C2',
-    fontWeight: '600',
-    fontSize: fontScale(14),
-    marginLeft: scale(6),
-  },
-
-  DRC_InfoBlock: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: verticalScale(8),
-    flexWrap: 'wrap',
-  },
-
-  DRC_Label: {
-    fontWeight: '600',
-    color: '#455A64',
-    fontSize: fontScale(14),
-    lineHeight: fontScale(18),
-    flex: 1,
-  },
-
-  DRC_Value: {
-    color: '#263238',
-    fontSize: fontScale(14),
-    lineHeight: fontScale(18),
-    flex: 1,
-    textAlign: 'right',
-    flexWrap: 'wrap',
-  },
-
-  DRC_StatusText: {
-    fontWeight: '700',
-    fontSize: fontScale(14),
-    color: '#112936',
-    textAlign: 'center',
-  },
-
-  DRC_SectionDivider: {
-    borderBottomWidth: moderateScale(1),
-    borderBottomColor: 'rgba(85, 85, 85, 0.3)',
-    marginVertical: verticalScale(8),
-  },
-
-  DRC_BottomContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    position: 'relative',
-  },
-
-  DRC_BottomButtonsContainer: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    flexDirection: 'row',
-    gap: scale(8),
-  },
-
-  DRC_ExpandToggle: {
-    alignItems: 'center',
-    padding: moderateScale(4),
-    backgroundColor: '#0A66C2',
-    borderRadius: moderateScale(15),
-    alignSelf: 'center',
-    minWidth: moderateScale(30),
-    minHeight: moderateScale(30),
-    justifyContent: 'center',
-  },
-
-  DRC_NavigationArrow: {
-    position: 'absolute',
-    right: scale(12),
-    top: '50%',
-    transform: [{translateY: -12}],
-    width: scale(24),
-    height: scale(24),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  DRC_ClickableContainer: {
-    position: 'relative',
-  },
-
-  DRC_HeaderContentWithArrow: {
-    flex: 1,
-    marginRight: scale(40),
-  },
-
-  DRC_ButtonsContainerWithArrow: {
-    marginRight: scale(30),
-  },
-
-  DRC_ValueWithArrow: {
-    marginRight: scale(30),
-  },
-
-  DRC_BottomButtonsContainerWithArrow: {
-    right: scale(30),
-  },
-
   // // ============================================
   // // DYNAMIC REQUEST CARD - RESPONSIVE STYLES
   // // ============================================
@@ -1951,8 +1758,9 @@ const styles = StyleSheet.create({
   //   flexShrink: 1,
   // },
 
+  // // KEEP original style but FIX icon visibility - change iconColor to dark color
   // DRC_IconButton: {
-  //   backgroundColor: '#0A66C2',
+  //   backgroundColor: '#0A66C2', // Keep original blue background
   //   borderRadius: moderateScale(20),
   //   padding: moderateScale(8),
   //   alignItems: 'center',
@@ -1960,6 +1768,9 @@ const styles = StyleSheet.create({
   //   minWidth: moderateScale(36),
   //   minHeight: moderateScale(36),
   // },
+
+  // // Remove text from icon buttons - set to null
+  // DRC_IconButtonText: null, // Remove text styling
 
   // DRC_TextButton: {
   //   flexDirection: 'row',
@@ -1974,17 +1785,11 @@ const styles = StyleSheet.create({
   // DRC_Disabled: {
   //   backgroundColor: '#BDBDBD',
   //   borderColor: '#BDBDBD',
+  //   opacity: 0.6,
   // },
 
   // DRC_DisabledText: {
   //   color: '#999',
-  // },
-
-  // DRC_IconButtonText: {
-  //   color: '#fff',
-  //   fontSize: fontScale(12),
-  //   marginLeft: scale(4),
-  //   fontWeight: '600',
   // },
 
   // DRC_TextButtonText: {
@@ -2024,11 +1829,6 @@ const styles = StyleSheet.create({
   //   fontSize: fontScale(14),
   //   color: '#112936',
   //   textAlign: 'center',
-  //   // paddingVertical: verticalScale(4),
-  //   // paddingHorizontal: scale(12),
-  //   // backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  //   // borderRadius: moderateScale(12),
-  //   // overflow: 'hidden',
   // },
 
   // DRC_SectionDivider: {
@@ -2041,8 +1841,6 @@ const styles = StyleSheet.create({
   //   flexDirection: 'column',
   //   alignItems: 'center',
   //   position: 'relative',
-  //   // marginTop: verticalScale(12),
-  //   // minHeight: verticalScale(40),
   // },
 
   // DRC_BottomButtonsContainer: {
@@ -2073,15 +1871,6 @@ const styles = StyleSheet.create({
   //   height: scale(24),
   //   justifyContent: 'center',
   //   alignItems: 'center',
-  //   // backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  //   // borderRadius: scale(12),
-  //   // borderWidth: moderateScale(1),
-  //   // borderColor: '#0A66C2',
-  //   // elevation: 3,
-  //   // shadowColor: '#000',
-  //   // shadowOffset: {width: 0, height: 2},
-  //   // shadowOpacity: 0.2,
-  //   // shadowRadius: 3,
   // },
 
   // DRC_ClickableContainer: {
@@ -2104,6 +1893,200 @@ const styles = StyleSheet.create({
   // DRC_BottomButtonsContainerWithArrow: {
   //   right: scale(30),
   // },
+
+  // ============================================
+  // DYNAMIC REQUEST CARD - FULLY DYNAMIC STYLES
+  // ============================================
+  DRC_CardContainer: {
+    marginVertical: verticalScale(6),
+    marginHorizontal: scale(2),
+  },
+
+  DRC_HighlightedContainer: {
+    borderWidth: moderateScale(2),
+    borderColor: '#4CAF50',
+    borderRadius: moderateScale(16),
+    elevation: 8,
+    shadowColor: '#4CAF50',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+
+  DRC_Card: {
+    borderRadius: moderateScale(16),
+    padding: moderateScale(16),
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  DRC_CardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(12),
+  },
+
+  DRC_CardHeaderText: {
+    fontSize: fontScale(18),
+    fontWeight: '700',
+    color: '#37474F',
+    lineHeight: fontScale(22),
+  },
+
+  DRC_CardSubHeaderText: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
+    marginTop: verticalScale(2),
+  },
+
+  DRC_ButtonsContainer: {
+    flexDirection: 'row',
+    gap: scale(8),
+    flexShrink: 1,
+  },
+
+  // Icon button with customizable background
+  DRC_IconButton: {
+    borderRadius: moderateScale(20),
+    padding: moderateScale(8),
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: moderateScale(36),
+    minHeight: moderateScale(36),
+  },
+
+  DRC_TextButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderColor: '#0A66C2',
+    borderWidth: moderateScale(2),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
+    borderRadius: moderateScale(20),
+    gap: scale(6),
+  },
+
+  DRC_Disabled: {
+    backgroundColor: '#BDBDBD',
+    borderColor: '#BDBDBD',
+    opacity: 0.6,
+  },
+
+  DRC_DisabledText: {
+    color: '#999',
+  },
+
+  DRC_TextButtonText: {
+    color: '#0A66C2',
+    fontWeight: '600',
+    fontSize: fontScale(14),
+  },
+
+  DRC_InfoBlock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: verticalScale(8),
+    flexWrap: 'wrap',
+  },
+
+  DRC_Label: {
+    fontWeight: '600',
+    color: '#455A64',
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
+    flex: 1,
+  },
+
+  DRC_Value: {
+    color: '#263238',
+    fontSize: fontScale(14),
+    lineHeight: fontScale(18),
+    flex: 1,
+    textAlign: 'right',
+    flexWrap: 'wrap',
+  },
+
+  DRC_StatusText: {
+    fontWeight: '800',
+    fontSize: fontScale(14),
+    color: '#112936',
+    textAlign: 'left',
+    width: '100%',
+  },
+
+  DRC_SectionDivider: {
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: 'rgba(85, 85, 85, 0.3)',
+    marginVertical: verticalScale(8),
+  },
+
+  // Dynamic bottom container - adapts to content
+  DRC_BottomContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    position: 'relative',
+    marginTop: verticalScale(8),
+  },
+
+  DRC_BottomButtonsContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    flexDirection: 'row',
+    gap: scale(8),
+  },
+
+  DRC_ExpandToggle: {
+    alignItems: 'center',
+    padding: moderateScale(4),
+    backgroundColor: '#0A66C2',
+    borderRadius: moderateScale(15),
+    alignSelf: 'center',
+    minWidth: moderateScale(30),
+    minHeight: moderateScale(30),
+    justifyContent: 'center',
+  },
+
+  // Navigation arrow styles
+  DRC_NavigationArrow: {
+    position: 'absolute',
+    right: scale(12),
+    top: '50%',
+    transform: [{translateY: -12}],
+    width: scale(24),
+    height: scale(24),
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+
+  DRC_ClickableContainer: {
+    position: 'relative',
+  },
+
+  DRC_HeaderContentWithArrow: {
+    flex: 1,
+    marginRight: scale(40),
+  },
+
+  DRC_ButtonsContainerWithArrow: {
+    marginRight: scale(30),
+  },
+
+  DRC_ValueWithArrow: {
+    marginRight: scale(30),
+  },
+
+  DRC_BottomButtonsContainerWithArrow: {
+    right: scale(30),
+  },
 
   // ============================================
   // NOTIFICATION PANEL - RESPONSIVE STYLES
