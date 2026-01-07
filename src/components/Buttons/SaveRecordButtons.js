@@ -88,7 +88,7 @@ const SaveRecordButtons = ({
               ]}>
               {getButtonText(
                 BUTTON_TYPES.CREATE,
-                processingButton === 'sacreateve',
+                processingButton === 'create',
               )}
             </Text>
           )}

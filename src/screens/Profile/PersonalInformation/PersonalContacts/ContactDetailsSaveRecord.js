@@ -410,7 +410,7 @@ const ContactDetailsSaveRecord = () => {
               onSave={() => handleAction('save')}
               onCancel={goBack}
               isDisabled={
-                processingButton === 'save' || processingButton === 'submit'
+                processingButton === 'create' || processingButton === 'submit'
               }
             />
           </KeyboardAvoidingView>

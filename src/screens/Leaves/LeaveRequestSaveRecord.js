@@ -85,7 +85,7 @@ const LeaveRequestSaveRecord = () => {
     balance: '0.00',
     quota: '0.00',
     eligibility: '0.00',
-    leaveStartDate: '',
+    leaveStartDate: today,
     leaveEndDate: '',
     leaveDays: '',
     reason: '',
@@ -167,51 +167,6 @@ const LeaveRequestSaveRecord = () => {
     employeeName,
     WorkerRecId,
   ]);
-
-  // const goBack = useCallback(() => {
-  //   if (cameFrom === 'AttendanceCalendarScreen') {
-  //     navigation.navigate('AttendanceCalendarScreen');
-  //     return;
-  //   } else if (cameFrom === 'AttendanceDetailsScreen') {
-  //     navigation.navigate('AttendanceDetailsScreen');
-  //     return;
-  //   } else if (cameFrom === 'MainDashboard') {
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [
-  //         {
-  //           name: 'TabNavigator',
-  //           params: {screen: 'MainDashboard'},
-  //         },
-  //       ],
-  //     });
-  //   } else if (cameFrom === 'LeavesListPage') {
-  //     const targetCameFrom = originalCameFrom || 'DisplayListPage';
-  //     navigation.reset({
-  //       index: 0,
-  //       routes: [
-  //         {
-  //           name: 'LeavesListPage',
-  //           params: {
-  //             employeeId,
-  //             employeeName,
-  //             WorkerRecId,
-  //             cameFrom: targetCameFrom,
-  //           },
-  //         },
-  //       ],
-  //     });
-  //   } else {
-  //     navigation.goBack();
-  //   }
-  // }, [
-  //   navigation,
-  //   cameFrom,
-  //   originalCameFrom,
-  //   employeeId,
-  //   employeeName,
-  //   WorkerRecId,
-  // ]);
 
   const normalizeLeaveCategoryForDisplay = category => {
     if (!category) return 'Full Day Leave';
@@ -303,37 +258,6 @@ const LeaveRequestSaveRecord = () => {
       initializeForm();
     }, [mode, leaveData?.recId, employeeId, employeeName, WorkerRecId]),
   );
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     fetchLeaveLabels();
-
-  //     if (mode === 'create') {
-  //       const freshFormData = createInitialFormData();
-  //       setFormData(freshFormData);
-  //     } else if (mode === 'edit' && leaveData?.recId) {
-  //       const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
-  //         leaveData.leaveCategory,
-  //       );
-
-  //       const editFormData = {
-  //         ...createInitialFormData(),
-  //         ...leaveData,
-  //         employeeId: leaveData.employeeId || employeeId,
-  //         employeeName: leaveData.employeeName || employeeName,
-  //         WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
-  //         leaveCategory: normalizedLeaveCategory,
-  //         leaveDays: leaveData.leaveDays || '',
-  //         balance: leaveData.balance || '0.00',
-  //         quota: leaveData.quota || '0.00',
-  //         eligibility: leaveData.eligibility || '0.00',
-  //       };
-
-  //       setFormData(editFormData);
-
-  //       fetchLeaveCodesForEmployee();
-  //     }
-  //   }, [mode, leaveData?.recId, employeeId, employeeName, WorkerRecId]),
-  // );
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -994,7 +918,7 @@ const LeaveRequestSaveRecord = () => {
               onSave={handleSave}
               onCancel={goBack}
               isDisabled={
-                processingButton === 'save' || processingButton === 'submit'
+                processingButton === 'create' || processingButton === 'submit'
               }
             />
           </KeyboardAvoidingView>

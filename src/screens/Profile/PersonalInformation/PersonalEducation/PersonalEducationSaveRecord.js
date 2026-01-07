@@ -500,7 +500,7 @@ const PersonalEducationSaveRecord = () => {
               onSave={handleSave}
               onCancel={goBack}
               isDisabled={
-                processingButton === 'save' || processingButton === 'submit'
+                processingButton === 'create' || processingButton === 'submit'
               }
             />
           </KeyboardAvoidingView>

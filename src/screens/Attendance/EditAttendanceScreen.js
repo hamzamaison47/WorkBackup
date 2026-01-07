@@ -365,7 +365,7 @@ const EditAttendanceScreen = () => {
               processingButton={processing}
               onSave={onSave}
               onCancel={onBack}
-              isDisabled={processing === 'save' || processing === 'submit'}
+              isDisabled={processing === 'create' || processing === 'submit'}
             />
           </KeyboardAvoidingView>
 
