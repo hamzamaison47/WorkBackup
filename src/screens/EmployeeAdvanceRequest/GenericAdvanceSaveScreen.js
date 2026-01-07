@@ -101,7 +101,8 @@ const GenericAdvanceSaveScreen = () => {
       WorkerRecId: WorkerRecId || '',
       AdvanceTypeCode: '',
       AdvanceAmount: '',
-      RequestedPaymentDate: mode === 'create' ? getTodayDateSafe() : '',
+      RequestedPaymentDate: '',
+      // RequestedPaymentDate: mode === 'create' ? getTodayDateSafe() : '',
       RecoveryStartDate: '',
       RequestedInstallmentAmount: '',
       RequestedInstallments: '',
@@ -410,6 +411,32 @@ const GenericAdvanceSaveScreen = () => {
         }
       }
 
+      // // Enhanced PayGroupPayPeriod data fetching
+      // if (employeeId) {
+      //   try {
+      //     const response = await FindFirstPayGroupPayPeriod();
+      //     const filteredPayGroupPayPeriod = response.filter(
+      //       a => a.PayPeriodStatus === 'Active',
+      //     );
+
+      //     if (
+      //       filteredPayGroupPayPeriod &&
+      //       filteredPayGroupPayPeriod.length > 0
+      //     ) {
+      //       if (mode === 'create') {
+      //         setFormData(prev => ({
+      //           ...prev,
+      //           RecoveryStartDate: formatToISOWithTime(
+      //             filteredPayGroupPayPeriod[0]?.EndDate,
+      //           ),
+      //         }));
+      //       }
+      //     }
+      //   } catch (payGroupError) {
+      //     console.warn('PayGroup data fetch failed:', payGroupError);
+      //     // Continue without setting recovery date
+      //   }
+      // }
       // Enhanced PayGroupPayPeriod data fetching
       if (employeeId) {
         try {
@@ -425,6 +452,9 @@ const GenericAdvanceSaveScreen = () => {
             if (mode === 'create') {
               setFormData(prev => ({
                 ...prev,
+                RequestedPaymentDate: formatToISOWithTime(
+                  filteredPayGroupPayPeriod[0]?.EndDate,
+                ),
                 RecoveryStartDate: formatToISOWithTime(
                   filteredPayGroupPayPeriod[0]?.EndDate,
                 ),
@@ -855,9 +885,15 @@ const GenericAdvanceSaveScreen = () => {
     parseNumber(formData.RequestedInstallments) > 0;
 
   // Check if recoveries field should be disabled
+  // const isRecoveriesDisabled =
+  //   formData.RequestedInstallmentAmount &&
+  //   parseNumber(formData.RequestedInstallmentAmount) > 0;
   const isRecoveriesDisabled =
-    formData.RequestedInstallmentAmount &&
-    parseNumber(formData.RequestedInstallmentAmount) > 0;
+    (formData.RequestedInstallmentAmount &&
+      parseNumber(formData.RequestedInstallmentAmount) > 0) ||
+    (selectedAdvanceTypeData?.Recoveries &&
+      parseNumber(selectedAdvanceTypeData.Recoveries) > 0 &&
+      formData.RequestedInstallments === selectedAdvanceTypeData.Recoveries);
 
   return (
     <ActionPaneContainer

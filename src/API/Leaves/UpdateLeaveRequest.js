@@ -92,6 +92,7 @@ const buildContractXml = contract => {
     'Balance',
     'Eligibility',
     'EmployeeId',
+    'EmployeeName',
     'LeaveCategory',
     'LeaveCode',
     'LeaveDays',

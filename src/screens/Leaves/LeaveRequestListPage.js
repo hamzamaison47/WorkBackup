@@ -61,7 +61,7 @@ const LeaveRequestListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [leavesData, setLeavesData] = useState([]);
-  const [leaveLabelsData, setLeaveLabelsData] = useState({});
+  // const [leaveLabelsData, setLeaveLabelsData] = useState({});
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
@@ -82,10 +82,10 @@ const LeaveRequestListPage = () => {
       const LeaveData = await RetrieveAllLeaves({
         employeeId: effectiveEmployeeId,
       });
-      const LeaveLabelData = await GetLeaveLabels();
+      // const LeaveLabelData = await GetLeaveLabels();
 
       setLeavesData(LeaveData);
-      setLeaveLabelsData(LeaveLabelData);
+      // setLeaveLabelsData(LeaveLabelData);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
@@ -246,17 +246,17 @@ const LeaveRequestListPage = () => {
     fields: [
       {
         key: 'LeaveStartDate',
-        label: leaveLabelsData?.LeaveStartDateLabel || 'Leave Start Date',
+        label: leavesData[0]?.LeaveStartDateLabel || 'Leave Start Date',
         type: 'date',
       },
       {
         key: 'LeaveEndDate',
-        label: leaveLabelsData?.LeaveEndDateLabel || 'Leave End Date',
+        label: leavesData[0]?.LeaveEndDateLabel || 'Leave End Date',
         type: 'date',
       },
       {
         key: 'LeaveDays',
-        label: leaveLabelsData?.LeaveDaysLabel || 'Leave Days',
+        label: leavesData[0]?.LeaveDaysLabel || 'Leave Days',
         type: 'text',
       },
       {key: 'WFStatus', label: '', type: 'status'},
@@ -266,27 +266,27 @@ const LeaveRequestListPage = () => {
     expandableFields: [
       {
         key: 'LeaveReqId',
-        label: leaveLabelsData?.LeaveReqIdLabel || 'Leave Request ID',
+        label: leavesData[0]?.LeaveReqIdLabel || 'Leave Request ID',
         type: 'text',
       },
       {
         key: 'LeaveCategory',
-        label: leaveLabelsData?.LeaveCategoryLabel || 'Leave Category',
+        label: leavesData[0]?.LeaveCategoryLabel || 'Leave Category',
         type: 'text',
       },
       {
         key: 'LeaveReqDate',
-        label: leaveLabelsData?.LeaveReqDateLabel || 'Leave Request Date',
+        label: leavesData[0]?.LeaveReqDateLabel || 'Leave Request Date',
         type: 'date',
       },
       {
         key: 'Balance',
-        label: leaveLabelsData?.BalanceLabel || 'Balance',
+        label: leavesData[0]?.BalanceLabel || 'Balance',
         type: 'currency',
       },
       {
         key: 'Reason',
-        label: leaveLabelsData?.ReasonLabel || 'Reason',
+        label: leavesData[0]?.ReasonLabel || 'Reason',
         type: 'text',
       },
     ],

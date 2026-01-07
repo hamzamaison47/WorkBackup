@@ -489,6 +489,7 @@ const LeaveRequestSaveRecord = () => {
         LeaveReqDate: formattedLeaveReqDate,
         Reason: data.reason,
         EmployeeId: data.employeeId,
+        EmployeeName: data.employeeName,
         RecId: data.recId === '' ? '0' : data.recId,
       };
 

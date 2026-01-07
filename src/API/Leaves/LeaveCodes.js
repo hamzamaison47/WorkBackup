@@ -67,7 +67,7 @@ const RetrieveLeaveCodes = async ({employeeId}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
-    console.log({cleanedData});
+    // console.log({cleanedData});
 
     return cleanedData;
   } catch (err) {
