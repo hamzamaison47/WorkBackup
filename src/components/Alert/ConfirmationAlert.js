@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef} from 'react';
 import {
@@ -8,6 +9,8 @@ import {
   TouchableWithoutFeedback,
   Animated,
 } from 'react-native';
+import {useSelector} from 'react-redux';
+import {translate as t} from '../../store/utils/translate';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../styles/styles';
 
@@ -30,8 +33,8 @@ const ConfirmationAlert = ({
   visible,
   heading,
   text,
-  primaryButtonText = 'Confirm',
-  secondaryButtonText = 'Cancel',
+  primaryButtonText = t('modals.confirm'),
+  secondaryButtonText = t('common.cancel'),
   onPrimaryPress,
   onSecondaryPress,
   iconName,
@@ -42,6 +45,7 @@ const ConfirmationAlert = ({
   const translateYAnim = useRef(new Animated.Value(300)).current;
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   // Get configuration based on alert type
   const getAlertConfig = () => {

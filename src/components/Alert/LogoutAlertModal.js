@@ -10,12 +10,15 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
+import {useSelector} from 'react-redux';
+import {translate as t} from '../../store/utils/translate';
 
 const {width, height} = Dimensions.get('window');
 
 const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
   const translateYAnim = useRef(new Animated.Value(300)).current;
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   useEffect(() => {
     if (visible) {
@@ -92,14 +95,18 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
                   style={[styles.button, styles.cancelButton]}
                   onPress={onCancel}
                   activeOpacity={0.8}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={styles.cancelButtonText}>
+                    {t('common.cancel')}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[styles.button, styles.confirmButton]}
                   onPress={onConfirm}
                   activeOpacity={0.8}>
-                  <Text style={styles.confirmButtonText}>Logout</Text>
+                  <Text style={styles.confirmButtonText}>
+                    {t('profile.logout')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </Animated.View>

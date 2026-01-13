@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   Animated,
+  I18nManager,
 } from 'react-native';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -21,6 +22,8 @@ import {
 } from '../../Controller/secureConfig';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {translate as t} from '../../store/utils/translate';
+
 import {decryptQRData} from '../../Controller/decryptQRData';
 import {fontScale} from '../../store/utils/scaling';
 import AlertModal from '../../components/Alert/AlertModal';
@@ -72,7 +75,7 @@ const QRSetupScreen = () => {
           ? configOrUrl
           : configOrUrl?.resource || '';
 
-      if (!resource) return 'Unknown Configuration';
+      if (!resource) return t('qrSetup.unknownConfig');
 
       let withoutProtocol = resource.replace(/(^\w+:|^)\/\//, '');
       const hostname = withoutProtocol.split('/')[0];
@@ -86,19 +89,19 @@ const QRSetupScreen = () => {
       return firstPart || 'Unknown Configuration';
     } catch (err) {
       console.error('extractTitle parsing error:', err);
-      return 'Unknown Configuration';
+      return t('qrSetup.unknownConfig');
     }
   };
 
   const processQRData = async qrData => {
     try {
-      if (!qrData) throw new Error('No data found in QR code');
+      if (!qrData) throw new Error(t('qrSetup.noQRData'));
 
       const parsedData = decryptQRData(qrData, secretKey);
       console.log('QR decrypted successfully, keys:', Object.keys(parsedData));
 
       if (!parsedData || Object.keys(parsedData).length === 0) {
-        throw new Error('Invalid QR code data');
+        throw new Error(t('qrSetup.invalidQRData'));
       }
 
       // Enhanced duplicate check
@@ -123,9 +126,9 @@ const QRSetupScreen = () => {
         );
         console.log(existingConfig);
         setAlertMessage(
-          `This configuration already exists as "${
-            existingConfig?.name || 'Existing Config'
-          }".`,
+          t('qrSetup.duplicateConfig', {
+            configName: existingConfig?.name || t('qrSetup.existingConfig'),
+          }),
         );
         setAlertModal(true);
         return false;
@@ -134,7 +137,7 @@ const QRSetupScreen = () => {
       if (isFromConfigSelection) {
         const configName = extractTitle(parsedData.resource);
         await saveConfigWithId(parsedData, configName);
-        setAlertMessage('Configuration added successfully!');
+        setAlertMessage(t('qrSetup.configAdded'));
         setAlertModal(true);
 
         setTimeout(() => {
@@ -149,7 +152,7 @@ const QRSetupScreen = () => {
       return true;
     } catch (err) {
       console.log('Error with QR data:', err.message);
-      setAlertMessage('QR code not recognized. Please try again.');
+      setAlertMessage(t('qrSetup.qrNotRecognized'));
       setAlertModal(true);
       return false;
     }
@@ -178,16 +181,12 @@ const QRSetupScreen = () => {
       if (permissionResult === RESULTS.DENIED) {
         const requestResult = await request(permissionType);
         if (requestResult !== RESULTS.GRANTED) {
-          setAlertMessage(
-            'Photo library permission is required to scan QR codes from images.',
-          );
+          setAlertMessage(t('qrSetup.photoPermissionRequired'));
           setAlertModal(true);
           return;
         }
       } else if (permissionResult === RESULTS.BLOCKED) {
-        setAlertMessage(
-          'Photo library permission is required. Please enable it from settings.',
-        );
+        setAlertMessage(t('qrSetup.photoPermissionBlocked'));
         setAlertModal(true);
         return;
       }
@@ -207,7 +206,7 @@ const QRSetupScreen = () => {
 
       if (result.errorCode) {
         console.log('ImagePicker Error: ', result.errorMessage);
-        setAlertMessage('Failed to open image picker. Please try again.');
+        setAlertMessage(t('qrSetup.imagePickerFailed'));
         setAlertModal(true);
         return;
       }
@@ -233,16 +232,12 @@ const QRSetupScreen = () => {
 
             await processQRData(qrData);
           } else {
-            setAlertMessage(
-              'No valid QR code found in the selected image. Please try another image.',
-            );
+            setAlertMessage(t('qrSetup.noQRInImage'));
             setAlertModal(true);
           }
         } catch (error) {
           console.log('Error decoding QR from image:', error);
-          setAlertMessage(
-            'Failed to read QR code from image. Please ensure the image contains a valid QR code.',
-          );
+          setAlertMessage(t('qrSetup.qrReadFailed'));
           setAlertModal(true);
         } finally {
           setIsProcessingGalleryImage(false);
@@ -251,9 +246,7 @@ const QRSetupScreen = () => {
       }
     } catch (error) {
       console.error('Error in handleScanFromGallery:', error);
-      setAlertMessage(
-        'An error occurred while processing the image. Please try again.',
-      );
+      setAlertMessage(t('qrSetup.imageProcessingError'));
       setAlertModal(true);
       setIsProcessingGalleryImage(false);
       setTimeout(() => setIsScanning(true), 2000);
@@ -287,15 +280,11 @@ const QRSetupScreen = () => {
         if (requestResult === RESULTS.GRANTED) {
           setHasPermission(true);
         } else if (requestResult === RESULTS.BLOCKED) {
-          setAlertMessage(
-            'Camera permission is required. Please enable it from settings.',
-          );
+          setAlertMessage(t('qrSetup.cameraPermissionRequired'));
           setAlertModal(true);
         }
       } else if (result === RESULTS.BLOCKED) {
-        setAlertMessage(
-          'Camera permission is required. Please enable it from settings.',
-        );
+        setAlertMessage(t('qrSetup.cameraPermissionRequired'));
         setAlertModal(true);
       } else if (result === RESULTS.LIMITED) {
         setHasPermission(true);
@@ -323,7 +312,12 @@ const QRSetupScreen = () => {
             style={styles.QRSetup_BackButton}
             onPress={() => navigation.navigate('ConfigSelectionScreen')}
             activeOpacity={0.7}>
-            <Icon name="arrow-left" size={fontScale(22)} color="#0A66C2" />
+            {/* <Icon name="arrow-left" size={fontScale(22)} color="#0A66C2" /> */}
+            <Icon
+              name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
+              size={fontScale(22)}
+              color="#0A66C2"
+            />
           </TouchableOpacity>
         )}
 
@@ -331,13 +325,23 @@ const QRSetupScreen = () => {
           <View style={styles.QRSetup_IconBackground}>
             <Icon name="qrcode" size={fontScale(36)} color="#0A66C2" />
           </View>
-          <Text style={styles.QRSetup_Title}>
+          {/* <Text style={styles.QRSetup_Title}>
             {isFromConfigSelection ? 'Add Configuration' : 'Environment Setup'}
           </Text>
           <Text style={styles.QRSetup_Subtitle}>
             {isFromConfigSelection
               ? 'Scan QR code to add a new configuration'
               : 'Scan your configuration QR code to begin'}
+          </Text> */}
+          <Text style={styles.QRSetup_Title}>
+            {isFromConfigSelection
+              ? t('qrSetup.addConfig')
+              : t('qrSetup.environmentSetup')}
+          </Text>
+          <Text style={styles.QRSetup_Subtitle}>
+            {isFromConfigSelection
+              ? t('qrSetup.scanToAdd')
+              : t('qrSetup.scanToBegin')}
           </Text>
         </View>
       </View>
@@ -410,7 +414,7 @@ const QRSetupScreen = () => {
                       color="#0A66C2"
                     />
                     <Text style={styles.QRSetup_InstructionText}>
-                      Position QR code within the frame
+                      {t('qrSetup.positionQR')}
                     </Text>
                   </View>
                 </View>
@@ -421,11 +425,11 @@ const QRSetupScreen = () => {
                   <ActivityIndicator size="large" color="#0A66C2" />
                   <Text style={styles.QRSetup_ProcessingText}>
                     {isProcessingGalleryImage
-                      ? 'Processing Image'
-                      : 'Processing QR Code'}
+                      ? t('qrSetup.processingImage')
+                      : t('qrSetup.processingQR')}
                   </Text>
                   <Text style={styles.QRSetup_ProcessingSubtext}>
-                    Please wait while we validate your configuration...
+                    {t('qrSetup.pleaseWait')}
                   </Text>
                 </View>
               </View>
@@ -437,10 +441,10 @@ const QRSetupScreen = () => {
                   <Icon name="camera" size={fontScale(48)} color="#999" />
                 </View>
                 <Text style={styles.QRSetup_PermissionTitle}>
-                  Camera Access Required
+                  {t('qrSetup.cameraAccessRequired')}
                 </Text>
                 <Text style={styles.QRSetup_PermissionText}>
-                  Please grant camera permission to scan QR codes
+                  {t('qrSetup.grantCameraPermission')}
                 </Text>
               </View>
             </View>
@@ -464,7 +468,7 @@ const QRSetupScreen = () => {
               style={styles.QRSetup_ButtonIcon}
             />
             <Text style={styles.QRSetup_GalleryButtonText}>
-              Scan QR from Gallery
+              {t('qrSetup.scanFromGallery')}
             </Text>
           </TouchableOpacity>
 
@@ -479,15 +483,15 @@ const QRSetupScreen = () => {
               style={styles.QRSetup_ButtonIcon}
             />
             <Text style={styles.QRSetup_SkipButtonText}>
-              {isFromConfigSelection ? 'Cancel' : 'Skip for now'}
+              {isFromConfigSelection
+                ? t('common.cancel')
+                : t('qrSetup.skipForNow')}
             </Text>
           </TouchableOpacity>
 
           <View style={styles.QRSetup_HelpContainer}>
             <Icon name="question-circle" size={fontScale(16)} color="#999" />
-            <Text style={styles.QRSetup_HelpText}>
-              Need help? Contact your system administrator
-            </Text>
+            <Text style={styles.QRSetup_HelpText}>{t('qrSetup.needHelp')}</Text>
           </View>
         </View>
       </View>
@@ -513,13 +517,15 @@ const QRSetupScreen = () => {
             </View>
 
             <Text style={styles.QRSetup_ModalTitle}>
-              {isFromConfigSelection ? 'Cancel Setup?' : 'Skip Setup?'}
+              {isFromConfigSelection
+                ? t('qrSetup.cancelSetup')
+                : t('qrSetup.skipSetup')}
             </Text>
 
             <Text style={styles.QRSetup_ModalMessage}>
               {isFromConfigSelection
-                ? 'You will be returned to the configuration list without adding a new configuration.'
-                : 'You can always set up your environment later from the settings menu.'}
+                ? t('qrSetup.cancelSetupMessage')
+                : t('qrSetup.skipSetupMessage')}
             </Text>
 
             <View style={styles.QRSetup_ModalButtons}>
@@ -528,7 +534,7 @@ const QRSetupScreen = () => {
                 onPress={() => setModalVisible(false)}
                 activeOpacity={0.8}>
                 <Text style={styles.QRSetup_ModalButtonSecondaryText}>
-                  Continue Scanning
+                  {t('qrSetup.continueScanning')}
                 </Text>
               </TouchableOpacity>
 
@@ -537,7 +543,9 @@ const QRSetupScreen = () => {
                 onPress={handleSkipConfirm}
                 activeOpacity={0.8}>
                 <Text style={styles.QRSetup_ModalButtonPrimaryText}>
-                  {isFromConfigSelection ? 'Cancel Setup' : 'Skip'}
+                  {isFromConfigSelection
+                    ? t('qrSetup.cancelSetup')
+                    : t('qrSetup.skip')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -547,7 +555,7 @@ const QRSetupScreen = () => {
 
       <AlertModal
         visible={alertModal}
-        heading="Configuration"
+        heading={t('qrSetup.configuration')}
         text={alertMessage}
         onPress={handleAlertPress}
       />

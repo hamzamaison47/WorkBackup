@@ -1,36 +1,40 @@
+/* eslint-disable no-unused-vars */
 import React from 'react';
 import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {translate as t} from '../store/utils/translate';
 
 export default function CustomTabBar(props) {
   const tabBarState = props?.state;
   const tabBarNavigation = props?.navigation;
   const navigation = useNavigation();
   const nav = tabBarNavigation || navigation;
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   const defaultTabs = [
     {
       name: 'MainDashboard',
-      label: 'Home',
+      label: t('tabNavigator.home'),
       iconFocused: 'home',
       iconUnfocused: 'home-outline',
     },
     {
       name: 'WorkerAssignedToMe',
-      label: 'My Team',
+      label: t('tabNavigator.myTeam'),
       iconFocused: 'people',
       iconUnfocused: 'people-outline',
     },
     {
       name: 'DisplayListPage',
-      label: 'History',
+      label: t('tabNavigator.history'),
       iconFocused: 'grid',
       iconUnfocused: 'grid-outline',
     },
     {
       name: 'Profile',
-      label: 'Profile',
+      label: t('tabNavigator.profile'),
       iconFocused: 'person',
       iconUnfocused: 'person-outline',
     },

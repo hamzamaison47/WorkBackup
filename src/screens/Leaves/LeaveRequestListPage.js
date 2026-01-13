@@ -17,6 +17,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
+import {translate as t} from '../../store/utils/translate';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
@@ -28,7 +29,6 @@ import DynamicRequestCard, {
 import styles from '../../styles/styles';
 
 import {RetrieveAllLeaves} from '../../API/Leaves/RetrieveAllLeaves';
-import {GetLeaveLabels} from '../../API/Leaves/GetLeaveLabels';
 import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
@@ -47,6 +47,7 @@ const LeaveRequestListPage = () => {
   } = route.params || {};
 
   // Get userData from Redux as fallback
+  const {menuItems} = useSelector(state => state.menuItem);
   const reduxUserData = useSelector(state => state.user.userData);
   const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
     state => state.company,
@@ -61,7 +62,6 @@ const LeaveRequestListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [leavesData, setLeavesData] = useState([]);
-  // const [leaveLabelsData, setLeaveLabelsData] = useState({});
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
@@ -73,6 +73,14 @@ const LeaveRequestListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  // Function to get the page label
+  const getPageLabel = () => {
+    const currentMenuItem = menuItems.find(
+      item => item.MenuId === 'LeavesListPage',
+    );
+    return currentMenuItem?.Label || t('leaveRequest.pageTitle'); // Fallback to default if not found
+  };
+
   // Fetch leaves data
   const fetchLeavesData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -82,12 +90,10 @@ const LeaveRequestListPage = () => {
       const LeaveData = await RetrieveAllLeaves({
         employeeId: effectiveEmployeeId,
       });
-      // const LeaveLabelData = await GetLeaveLabels();
 
       setLeavesData(LeaveData);
-      // setLeaveLabelsData(LeaveLabelData);
     } catch (error) {
-      setAlertMessage('Failed to fetch data.');
+      setAlertMessage(t('leaveRequest.fetchFailed'));
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -228,8 +234,7 @@ const LeaveRequestListPage = () => {
       setSelectedLeaveItem(itemData);
       setAttachmentModalVisible(true);
     } catch (error) {
-      console.error('Error opening attachments:', error);
-      setAlertMessage('Failed to Attach Receipt');
+      setAlertMessage(t('leaveRequest.attachmentFailed'));
       setAlertModal(true);
     }
   };
@@ -337,7 +342,7 @@ const LeaveRequestListPage = () => {
         style: 'text',
         icon: 'send',
         iconSize: 16,
-        text: 'Submit',
+        text: t('buttons.submit'),
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },
@@ -419,15 +424,15 @@ const LeaveRequestListPage = () => {
       });
 
       if (response[0].IsSuccess) {
-        setAlertMessage('Leave Request Deleted Successfully.');
+        setAlertMessage(t('leaveRequest.deleteSuccess'));
         setLeavesData(prev =>
           prev.filter(leave => leave.RecId !== itemToDelete.RecId),
         );
       } else {
-        setAlertMessage('Unable to Delete Leave Request.');
+        setAlertMessage(t('leaveRequest.deleteFailed'));
       }
     } catch (error) {
-      setAlertMessage('Failed to Delete Leave Request');
+      setAlertMessage(t('leaveRequest.deleteFailed'));
       console.log('Delete Leave Request response', error);
     } finally {
       setButtonProcessing(itemToDelete.RecId, 'delete', false);
@@ -452,7 +457,7 @@ const LeaveRequestListPage = () => {
 
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
         setAlertMessage(
-          `${itemData.LeaveCode} Request Submitted Successfully.`,
+          t('leaveRequest.submitSuccess', {leaveCode: itemData.LeaveCode}),
         );
         setAlertModal(true);
 
@@ -482,49 +487,6 @@ const LeaveRequestListPage = () => {
     }
   };
 
-  // Render leave card
-  // const renderLeavesCard = ({item}) => {
-  //   const isHighlighted = highlightedRecId === item.RecId;
-  //   const itemProcessingButtons = processingButtons[item.RecId] || [];
-
-  //   const processedItem = {
-  //     ...item,
-  //     WFStatus: getStatusLabel(item.WFStatus),
-  //   };
-
-  //   // Get button configuration
-  //   const buttonConfig = getButtonConfig(item);
-
-  //   // Determine which header buttons to show
-  //   const headerButtons = [];
-  //   if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
-  //   if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
-  //   if (buttonConfig.attachment?.show)
-  //     headerButtons.push(BUTTON_TYPES.ATTACHMENT);
-
-  //   // Determine which bottom buttons to show
-  //   const bottomButtons = [];
-  //   if (buttonConfig.submit?.show) bottomButtons.push(BUTTON_TYPES.SUBMIT);
-
-  //   return (
-  //     <DynamicRequestCard
-  //       data={processedItem}
-  //       headerConfig={cardConfig.headerConfig}
-  //       fields={cardConfig.fields}
-  //       expandableFields={cardConfig.expandableFields}
-  //       headerButtons={headerButtons}
-  //       bottomButtons={bottomButtons}
-  //       buttons={buttonConfig}
-  //       isHighlighted={isHighlighted}
-  //       onButtonPress={handleButtonPress}
-  //       isExpandable={true}
-  //       gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
-  //       highlightGradientColors={['#E8F5E8', '#F0FFF0']}
-  //       processingButtons={itemProcessingButtons}
-  //       isRTL={isRTL}
-  //     />
-  //   );
-  // };
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
@@ -557,7 +519,8 @@ const LeaveRequestListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Leave Requests"
+      // pageTitle="Leave Requests"
+      pageTitle={getPageLabel()}
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
@@ -587,7 +550,9 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.LReqLP_NoDataText}>
+            {t('leaveRequest.noDataFound')}
+          </Text>
         </ScrollView>
       )}
 
@@ -606,7 +571,8 @@ const LeaveRequestListPage = () => {
         legalEntity={selectedLegalEntity}
         employeeId={effectiveEmployeeId}
         employeeName={effectiveEmployeeName}
-        modalTitle="Leave Attachments"
+        // modalTitle="Leave Attachments"
+        modalTitle={t('leaveRequest.pageTitle') + ' Attachments'}
         showDetails={true}
         detailFields={[
           {key: 'LeaveCode', label: 'Leave Type'},
@@ -624,7 +590,7 @@ const LeaveRequestListPage = () => {
       {/* Alert Modal */}
       <AlertModal
         visible={alertModal}
-        heading="Alert"
+        heading={t('common.alert')}
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
@@ -632,8 +598,8 @@ const LeaveRequestListPage = () => {
       {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
-        heading="Confirm Deletion"
-        text="Are you sure you want to delete this Leave request?"
+        heading={t('leaveRequest.deleteConfirmTitle')}
+        text={t('leaveRequest.deleteConfirmMessage')}
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

@@ -11,9 +11,12 @@ import {
   RefreshControl,
   TextInput,
   Modal,
+  I18nManager,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../store/utils/translate';
+
 import {
   saveConfig,
   getConfig,
@@ -54,7 +57,7 @@ const ConfigSelectionScreen = () => {
           ? configOrUrl
           : configOrUrl?.resource || '';
 
-      if (!resource) return 'Unknown Configuration';
+      if (!resource) return t('configSelection.unknownConfig');
 
       let withoutProtocol = resource.replace(/(^\w+:|^)\/\//, '');
       const hostname = withoutProtocol.split('/')[0];
@@ -68,7 +71,7 @@ const ConfigSelectionScreen = () => {
       return firstPart || 'Unknown Configuration';
     } catch (err) {
       console.error('extractTitle parsing error:', err);
-      return 'Unknown Configuration';
+      return t('configSelection.unknownConfig');
     }
   };
 
@@ -76,9 +79,11 @@ const ConfigSelectionScreen = () => {
   const formatConfigData = configData => {
     return {
       environment: extractTitle(configData),
-      clientId: configData.client_id?.substring(0, 8) + '...' || 'N/A',
-      grantType: configData.grant_type || 'N/A',
-      resourceUrl: configData.resource || 'N/A',
+      clientId:
+        configData.client_id?.substring(0, 8) + '...' ||
+        t('configSelection.notAvailable'),
+      grantType: configData.grant_type || t('configSelection.notAvailable'),
+      resourceUrl: configData.resource || t('configSelection.notAvailable'),
     };
   };
 
@@ -105,7 +110,7 @@ const ConfigSelectionScreen = () => {
       setActiveConfigId(activeId);
     } catch (error) {
       console.error('Error loading configurations:', error);
-      setAlertMessage('Failed to load configurations. Please try again.');
+      setAlertMessage(t('configSelection.loadFailed'));
       setAlertModal(true);
     } finally {
       setLoading(false);
@@ -135,11 +140,11 @@ const ConfigSelectionScreen = () => {
         await saveConfig(selectedConfig.data);
       }
 
-      setAlertMessage('Configuration activated successfully!');
+      setAlertMessage(t('configSelection.activateSuccess'));
       setAlertModal(true);
     } catch (error) {
       console.error('Error selecting configuration:', error);
-      setAlertMessage('Failed to select configuration. Please try again.');
+      setAlertMessage(t('configSelection.activateFailed'));
       setAlertModal(true);
     }
   };
@@ -164,11 +169,11 @@ const ConfigSelectionScreen = () => {
       setEditModalVisible(false);
       await loadConfigurations();
 
-      setAlertMessage('Title updated successfully!');
+      setAlertMessage(t('configSelection.updateSuccess'));
       setAlertModal(true);
     } catch (error) {
       console.error('Error updating title:', error);
-      setAlertMessage('Failed to update title. Please try again.');
+      setAlertMessage(t('configSelection.updateFailed'));
       setAlertModal(true);
     }
   };
@@ -190,11 +195,11 @@ const ConfigSelectionScreen = () => {
       await clearConfigById(configId);
       await loadConfigurations();
 
-      setAlertMessage('Configuration deleted successfully!');
+      setAlertMessage(t('configSelection.deleteSuccess'));
       setAlertModal(true);
     } catch (error) {
       console.error('Error deleting configuration:', error);
-      setAlertMessage('Failed to delete configuration. Please try again.');
+      setAlertMessage(t('configSelection.deleteFailed'));
       setAlertModal(true);
     }
   };
@@ -214,7 +219,9 @@ const ConfigSelectionScreen = () => {
         {isActive && (
           <View style={styles.ConfigSelection_ActiveBadge}>
             <Icon name="check-circle" size={fontScale(16)} color="#fff" />
-            <Text style={styles.ConfigSelection_ActiveBadgeText}>ACTIVE</Text>
+            <Text style={styles.ConfigSelection_ActiveBadgeText}>
+              {t('configSelection.active').toUpperCase()}
+            </Text>
           </View>
         )}
 
@@ -245,7 +252,7 @@ const ConfigSelectionScreen = () => {
                   styles.ConfigSelection_ConfigSubtitle,
                   isActive && {color: '#0A66C2', opacity: 0.8},
                 ]}>
-                Added{' '}
+                {t('configSelection.addedOn')}{' '}
                 {new Date(item.createdAt).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
@@ -284,7 +291,9 @@ const ConfigSelectionScreen = () => {
               color="#666"
               style={styles.ConfigSelection_DetailIcon}
             />
-            <Text style={styles.ConfigSelection_DetailLabel}>Environment:</Text>
+            <Text style={styles.ConfigSelection_DetailLabel}>
+              {t('configSelection.environment')}:
+            </Text>
             <Text
               style={[
                 styles.ConfigSelection_DetailValue,
@@ -301,7 +310,9 @@ const ConfigSelectionScreen = () => {
               color="#666"
               style={styles.ConfigSelection_DetailIcon}
             />
-            <Text style={styles.ConfigSelection_DetailLabel}>Resource:</Text>
+            <Text style={styles.ConfigSelection_DetailLabel}>
+              {t('configSelection.resource')}:
+            </Text>
             <Text
               style={[
                 styles.ConfigSelection_DetailValue,
@@ -324,10 +335,10 @@ const ConfigSelectionScreen = () => {
         <Icon name="qrcode" size={scale(70)} color="#0A66C2" />
       </View>
       <Text style={styles.ConfigSelection_EmptyStateTitle}>
-        No Configurations Yet
+        {t('configSelection.noConfigs')}
       </Text>
       <Text style={styles.ConfigSelection_EmptyStateSubtitle}>
-        Get started by scanning a QR code to add your first configuration
+        {t('configSelection.getStarted')}
       </Text>
       <TouchableOpacity
         style={styles.ConfigSelection_PrimaryButton}
@@ -340,7 +351,7 @@ const ConfigSelectionScreen = () => {
           style={styles.ConfigSelection_ButtonIcon}
         />
         <Text style={styles.ConfigSelection_PrimaryButtonText}>
-          Add Configuration
+          {t('configSelection.addConfig')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -353,13 +364,23 @@ const ConfigSelectionScreen = () => {
         <TouchableOpacity
           style={styles.ConfigSelection_HeaderButton}
           onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={fontScale(22)} color="#0A66C2" />
+          {/* <Icon name="arrow-left" size={fontScale(22)} color="#0A66C2" /> */}
+          <Icon
+            name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
+            size={fontScale(22)}
+            color="#0A66C2"
+          />
         </TouchableOpacity>
 
         <View style={styles.ConfigSelection_HeaderCenter}>
-          <Text style={styles.ConfigSelection_HeaderTitle}>Configurations</Text>
+          <Text style={styles.ConfigSelection_HeaderTitle}>
+            {t('configSelection.configurations')}
+          </Text>
           <Text style={styles.ConfigSelection_HeaderSubtitle}>
-            {configs.length} {configs.length === 1 ? 'Config' : 'Configs'}
+            {configs.length}{' '}
+            {configs.length === 1
+              ? t('configSelection.configSingular')
+              : t('configSelection.configPlural')}
           </Text>
         </View>
 
@@ -407,7 +428,7 @@ const ConfigSelectionScreen = () => {
                 color: '#666',
                 fontWeight: '500',
               }}>
-              Loading configurations...
+              {t('configSelection.loading')}
             </Text>
           </View>
         )}
@@ -423,7 +444,7 @@ const ConfigSelectionScreen = () => {
           <View style={styles.ConfigSelection_ModalContent}>
             <View style={styles.ConfigSelection_ModalHeader}>
               <Text style={styles.ConfigSelection_ModalTitle}>
-                Edit Configuration Title
+                {t('configSelection.editTitle')}
               </Text>
               <TouchableOpacity
                 onPress={() => setEditModalVisible(false)}
@@ -433,12 +454,14 @@ const ConfigSelectionScreen = () => {
             </View>
 
             <View style={styles.ConfigSelection_ModalBody}>
-              <Text style={styles.ConfigSelection_InputLabel}>Title</Text>
+              <Text style={styles.ConfigSelection_InputLabel}>
+                {t('configSelection.title')}
+              </Text>
               <TextInput
                 style={styles.ConfigSelection_Input}
                 value={editedTitle}
                 onChangeText={setEditedTitle}
-                placeholder="Enter configuration title"
+                placeholder={t('configSelection.titlePlaceholder')}
                 placeholderTextColor="#999"
               />
             </View>
@@ -448,7 +471,7 @@ const ConfigSelectionScreen = () => {
                 style={styles.ConfigSelection_SecondaryButton}
                 onPress={() => setEditModalVisible(false)}>
                 <Text style={styles.ConfigSelection_SecondaryButtonText}>
-                  Cancel
+                  {t('common.cancel')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -461,7 +484,7 @@ const ConfigSelectionScreen = () => {
                   style={styles.ConfigSelection_ButtonIcon}
                 />
                 <Text style={styles.ConfigSelection_PrimaryButtonText}>
-                  Save
+                  {t('common.save')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -471,15 +494,15 @@ const ConfigSelectionScreen = () => {
 
       <AlertModal
         visible={alertModal}
-        heading="Configuration"
+        heading={t('configSelection.configurations')}
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
 
       <AlertDeleteModal
         visible={deleteModal}
-        heading="Confirm Deletion"
-        text={`Are you sure you want to delete "${selectedRecName}"?`}
+        heading={t('configSelection.confirmDelete')}
+        text={t('configSelection.deleteMessage', {configName: selectedRecName})}
         onPress={() => {
           deleteConfiguration(selectedRecId);
           setDeleteModal(false);

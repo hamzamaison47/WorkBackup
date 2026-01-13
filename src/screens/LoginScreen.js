@@ -1,12 +1,22 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, Image} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  BackHandler,
+  ToastAndroid,
+  Platform,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import PopupDialog from 'react-native-popup-dialog';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {translate as t} from '../store/utils/translate';
 
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../components/Alert/AlertModal';
@@ -35,11 +45,48 @@ const LoginScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
+
   const [loading, setLoading] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [backPressedOnce, setBackPressedOnce] = useState(false);
+
+  useEffect(() => {
+    const backAction = () => {
+      if (navigation.isFocused()) {
+        if (!backPressedOnce) {
+          if (Platform.OS === 'android') {
+            ToastAndroid.show(t('login.pressAgainToExit'), ToastAndroid.SHORT);
+          } else {
+            setAlertMessage(t('login.pressAgainToExit'));
+            setAlertModal(true);
+          }
+
+          setBackPressedOnce(true);
+
+          setTimeout(() => {
+            setBackPressedOnce(false);
+          }, 2000);
+
+          return true;
+        }
+
+        BackHandler.exitApp();
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction,
+    );
+
+    return () => backHandler.remove();
+  }, [backPressedOnce, navigation]);
 
   const handleProviderLogin = async provider => {
     try {
@@ -58,7 +105,7 @@ const LoginScreen = () => {
       );
     } catch (error) {
       console.error('Error in handleProviderLogin:', error);
-      setAlertMessage('Login error. Please try again.');
+      setAlertMessage(t('login.loginError'));
       setAlertModal(true);
     }
   };
@@ -69,9 +116,10 @@ const LoginScreen = () => {
       const hasCredentials = await hasPersistentBiometricCredentials();
 
       if (!hasCredentials) {
-        setAlertMessage(
-          'Biometric login is not configured.\nPlease login with Microsoft or Google first, then enable biometric in settings.',
-        );
+        // setAlertMessage(
+        //   'Biometric login is not configured.\nPlease login with Microsoft or Google first, then enable biometric in settings.',
+        // );
+        setAlertMessage(t('login.biometricNotConfigured'));
         setAlertModal(true);
         return;
       }
@@ -79,9 +127,10 @@ const LoginScreen = () => {
       // Check if there's an active configuration
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) {
-        setAlertMessage(
-          'No active configuration found.\nPlease select a configuration first.',
-        );
+        // setAlertMessage(
+        //   'No active configuration found.\nPlease select a configuration first.',
+        // );
+        setAlertMessage(t('login.noActiveConfig'));
         setAlertModal(true);
         global.onDialogOk = () => {
           setAlertModal(false);
@@ -97,9 +146,10 @@ const LoginScreen = () => {
         !credentials.email ||
         !credentials.isBiometricEnabled
       ) {
-        setAlertMessage(
-          'Biometric configuration is invalid.\nPlease login again and enable biometric in settings.',
-        );
+        // setAlertMessage(
+        //   'Biometric configuration is invalid.\nPlease login again and enable biometric in settings.',
+        // );
+        setAlertMessage(t('login.biometricConfigInvalid'));
         setAlertModal(true);
         return;
       }
@@ -107,7 +157,8 @@ const LoginScreen = () => {
       // Authenticate with biometrics
       const biometricSuccess = await authenticateWithBiometrics();
       if (!biometricSuccess) {
-        setAlertMessage('Authentication cancelled or failed');
+        // setAlertMessage('Authentication cancelled or failed');
+        setAlertMessage(t('login.authCancelled'));
         setAlertModal(true);
         return;
       }
@@ -117,9 +168,10 @@ const LoginScreen = () => {
       // Get active configuration (fetched fresh at login time)
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
-        setAlertMessage(
-          'Failed to load configuration.\nPlease check your configuration settings.',
-        );
+        // setAlertMessage(
+        //   'Failed to load configuration.\nPlease check your configuration settings.',
+        // );
+        setAlertMessage(t('login.configLoadFailed'));
         setAlertModal(true);
         setLoading(false);
         return;
@@ -132,7 +184,8 @@ const LoginScreen = () => {
       setLoading(false);
     } catch (error) {
       console.error('Biometric login error:', error);
-      setAlertMessage('Biometric login failed. Please try again.');
+      // setAlertMessage('Biometric login failed. Please try again.');
+      setAlertMessage(t('login.biometricLoginFailed'));
       setAlertModal(true);
       setLoading(false);
     }
@@ -221,9 +274,13 @@ const LoginScreen = () => {
               source={require('../assets/cloud.png')}
               style={styles.Login_Logo}
             />
-            <Text style={styles.Login_Title}>Welcome to Dynaface</Text>
+            {/* <Text style={styles.Login_Title}>Welcome to Dynaface</Text>
             <Text style={styles.Login_Subtitle}>
               Manage your HR services anytime, anywhere
+            </Text> */}
+            <Text style={styles.Login_Title}>{t('login.welcomeTitle')}</Text>
+            <Text style={styles.Login_Subtitle}>
+              {t('login.welcomeSubtitle')}
             </Text>
           </View>
 
@@ -240,8 +297,11 @@ const LoginScreen = () => {
                 color="#0A66C2"
                 style={styles.Login_Icon}
               />
-              <Text style={styles.Login_ButtonText}>
+              {/* <Text style={styles.Login_ButtonText}>
                 Sign in with Microsoft
+              </Text> */}
+              <Text style={styles.Login_ButtonText}>
+                {t('login.signInMicrosoft')}
               </Text>
             </TouchableOpacity>
 
@@ -256,7 +316,10 @@ const LoginScreen = () => {
                 color="#0A66C2"
                 style={styles.Login_Icon}
               />
-              <Text style={styles.Login_ButtonText}>Sign in with Google</Text>
+              {/* <Text style={styles.Login_ButtonText}>Sign in with Google</Text> */}
+              <Text style={styles.Login_ButtonText}>
+                {t('login.signInGoogle')}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -277,8 +340,11 @@ const LoginScreen = () => {
       {loading && (
         <View style={styles.Login_LoadingContainer}>
           <CustomIndicator />
-          <Text style={styles.Login_LoadingText}>
+          {/* <Text style={styles.Login_LoadingText}>
             Connecting to your account, Please wait...
+          </Text> */}
+          <Text style={styles.Login_LoadingText}>
+            {t('login.connectingMessage')}
           </Text>
         </View>
       )}
@@ -290,7 +356,10 @@ const LoginScreen = () => {
         width={0.8}
         height={0.3}
         dialogTitle={
-          <Text style={styles.Login_DialogTitle}>Notification</Text>
+          // <Text style={styles.Login_DialogTitle}>Notification</Text>
+          <Text style={styles.Login_DialogTitle}>
+            {t('login.notification')}
+          </Text>
         }>
         <Text style={styles.Login_DialogMessage}>{dialogMessage}</Text>
 
@@ -298,7 +367,10 @@ const LoginScreen = () => {
           <TouchableOpacity
             style={[styles.Login_DialogButton, {backgroundColor: '#999'}]}
             onPress={() => setDialogVisible(false)}>
-            <Text style={styles.Login_DialogButtonText}>Cancel</Text>
+            {/* <Text style={styles.Login_DialogButtonText}>Cancel</Text> */}
+            <Text style={styles.Login_DialogButtonText}>
+              {t('common.cancel')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -310,14 +382,16 @@ const LoginScreen = () => {
                 global.onDialogOk = null;
               }
             }}>
-            <Text style={styles.Login_DialogButtonText}>OK</Text>
+            {/* <Text style={styles.Login_DialogButtonText}>OK</Text> */}
+            <Text style={styles.Login_DialogButtonText}>{t('common.ok')}</Text>
           </TouchableOpacity>
         </View>
       </PopupDialog>
 
       <AlertModal
         visible={alertModal}
-        heading="Alert"
+        // heading="Alert"
+        heading={t('common.alert')}
         text={alertMessage}
         onPress={() => {
           setAlertModal(false);

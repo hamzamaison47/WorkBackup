@@ -10,6 +10,8 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
+import {useSelector} from 'react-redux';
+import {translate as t} from '../../store/utils/translate';
 
 const {width, height} = Dimensions.get('window');
 
@@ -22,17 +24,19 @@ const fontScale = size => Math.min(scale(size), size + 4);
 
 const AlertModal = ({
   visible,
-  heading = 'Alert',
+  heading = t('common.alert'),
   text,
   onPress,
   type = 'info',
   iconName,
-  buttonText = 'OK',
+  buttonText = t('common.ok'),
 }) => {
   const translateYAnim = useRef(new Animated.Value(300)).current;
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   // Get configuration based on alert type
   const getAlertConfig = () => {

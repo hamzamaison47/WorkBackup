@@ -8,16 +8,19 @@ import {
   BackHandler,
   RefreshControl,
   ScrollView,
+  I18nManager,
 } from 'react-native';
 import {
   useNavigation,
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
+import {translate as t} from '../../store/utils/translate';
 
 import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
 import {FindByEmployeeAdvanceRequest} from '../../API/EmployeeAdvanceRequest/FindByEmployeeAdvanceRequest';
+// import {RetrieveAllEmployees} from '../../API/EmployeeAdvanceRequest/RetrieveAllEmployees';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
@@ -41,6 +44,7 @@ const GenericAdvanceListScreen = () => {
 
   const navigation = useNavigation();
   const route = useRoute();
+  const isRTL = I18nManager.isRTL;
 
   const {
     employeeId,
@@ -66,6 +70,9 @@ const GenericAdvanceListScreen = () => {
 
     try {
       const allResults = await FindByEmployeeAdvanceRequest({employeeId});
+      // const allEmployees = await RetrieveAllEmployees();
+
+      // console.log('allEmployees on List page', {allEmployees});
 
       // Filter to show only Loan and Advance types (excluding Expense)
       const filteredResults = allResults.filter(item => {
@@ -75,17 +82,26 @@ const GenericAdvanceListScreen = () => {
 
       // Sort by RecId or RequestDate in descending order (latest first)
       const sortedResults = filteredResults.sort((a, b) => {
+        const aDate = new Date(a.RequestDate || 0);
+        const bDate = new Date(b.RequestDate || 0);
+
+        if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+          if (bDate.getTime() !== aDate.getTime()) {
+            return bDate - aDate;
+          }
+        }
+
         const aRecId = parseInt(a.RecId, 10);
         const bRecId = parseInt(b.RecId, 10);
 
         if (!isNaN(aRecId) && !isNaN(bRecId)) {
-          return bRecId - aRecId; // Descending order
+          return bRecId - aRecId;
         }
 
-        const aDate = new Date(a.RequestDate || 0);
-        const bDate = new Date(b.RequestDate || 0);
-        return bDate - aDate; // Latest first
+        return 0;
       });
+
+      setAllAdvanceData(sortedResults);
 
       setAllAdvanceData(sortedResults);
     } catch (error) {
@@ -319,6 +335,7 @@ const GenericAdvanceListScreen = () => {
       },
       {key: 'RequestedInstallments', label: 'Recoveries', type: 'text'},
     ],
+    isRTL: isRTL,
   };
 
   /** Enhanced button configuration */
@@ -354,7 +371,7 @@ const GenericAdvanceListScreen = () => {
         style: 'text',
         icon: 'send',
         iconSize: 16,
-        text: 'Submit',
+        text: t('buttons.submit'),
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },
@@ -587,6 +604,7 @@ const GenericAdvanceListScreen = () => {
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
+        isRTL={isRTL}
       />
     );
   };

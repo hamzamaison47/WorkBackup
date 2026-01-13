@@ -35,6 +35,7 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
 import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import {GetEmployeeLookup} from '../../API/EmployeeAdvanceRequest/GetEmployeeLookup';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -66,6 +67,8 @@ const GenericAdvanceSaveScreen = () => {
   // State declarations
   const [advanceCodes, setAdvanceCodes] = useState([]);
   const [advanceCodeDropDown, setAdvanceCodeDropDown] = useState([]);
+  const [Guarantors1, setGuarantors1] = useState([]);
+  const [Guarantors2, setGuarantors2] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDateField, setCurrentDateField] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
@@ -117,7 +120,6 @@ const GenericAdvanceSaveScreen = () => {
   useFocusEffect(
     useCallback(() => {
       if (mode === 'create' && cameFrom !== 'RequestTypeSelectionModal') {
-        // Only reset if coming from navigation, not from type selection
         const shouldReset =
           cameFrom === 'MainDashboard' ||
           cameFrom === 'GenericAdvanceListScreen';
@@ -129,9 +131,11 @@ const GenericAdvanceSaveScreen = () => {
           setAdvanceCodes([]);
           setValidationErrors({});
           setDataInitialized(false);
+
+          fetchInitialData();
         }
       }
-    }, [mode, cameFrom]),
+    }, [mode, cameFrom, fetchInitialData]), // Add fetchInitialData to dependencies
   );
 
   useFocusEffect(
@@ -317,6 +321,7 @@ const GenericAdvanceSaveScreen = () => {
     const initializeScreen = async () => {
       if (!dataInitialized) {
         setDataInitialized(true);
+        setIsLoading(true); // Add this line
 
         // Reset states
         setAdvanceCodeDropDown([]);
@@ -351,12 +356,13 @@ const GenericAdvanceSaveScreen = () => {
           console.error('Initialization error:', error);
           setAlertMessage('Failed to initialize screen. Please try again.');
           setAlertModal(true);
+          setIsLoading(false); // Add this line
         }
       }
     };
 
     initializeScreen();
-  }, [mode, advanceData?.RecId, requestType]); // Simplified dependencies
+  }, [mode, advanceData?.RecId, requestType]);
 
   // Enhanced data fetching with better error handling
   const fetchInitialData = async () => {
@@ -364,6 +370,9 @@ const GenericAdvanceSaveScreen = () => {
       setIsLoading(true);
 
       const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
+      // const getEmployeeLookup = await GetEmployeeLookup();
+
+      // console.log({getEmployeeLookup});
 
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
@@ -411,32 +420,6 @@ const GenericAdvanceSaveScreen = () => {
         }
       }
 
-      // // Enhanced PayGroupPayPeriod data fetching
-      // if (employeeId) {
-      //   try {
-      //     const response = await FindFirstPayGroupPayPeriod();
-      //     const filteredPayGroupPayPeriod = response.filter(
-      //       a => a.PayPeriodStatus === 'Active',
-      //     );
-
-      //     if (
-      //       filteredPayGroupPayPeriod &&
-      //       filteredPayGroupPayPeriod.length > 0
-      //     ) {
-      //       if (mode === 'create') {
-      //         setFormData(prev => ({
-      //           ...prev,
-      //           RecoveryStartDate: formatToISOWithTime(
-      //             filteredPayGroupPayPeriod[0]?.EndDate,
-      //           ),
-      //         }));
-      //       }
-      //     }
-      //   } catch (payGroupError) {
-      //     console.warn('PayGroup data fetch failed:', payGroupError);
-      //     // Continue without setting recovery date
-      //   }
-      // }
       // Enhanced PayGroupPayPeriod data fetching
       if (employeeId) {
         try {
@@ -493,22 +476,6 @@ const GenericAdvanceSaveScreen = () => {
     const num = parseFloat(cleanValue);
     return isNaN(num) ? 0 : num;
   };
-
-  // const getTodayDate = () => {
-  //   try {
-  //     const today = new Date();
-  //     if (isNaN(today.getTime())) {
-  //       throw new Error('Invalid date');
-  //     }
-  //     const year = today.getFullYear();
-  //     const month = String(today.getMonth() + 1).padStart(2, '0');
-  //     const day = String(today.getDate()).padStart(2, '0');
-  //     return `${year}-${month}-${day}T12:00:00`;
-  //   } catch (error) {
-  //     console.error('Error getting today date:', error);
-  //     throw new Error('Failed to get current date');
-  //   }
-  // };
 
   // Enhanced refresh handler
   const handleRefresh = async () => {
@@ -1009,6 +976,60 @@ const GenericAdvanceSaveScreen = () => {
                     <Icon name="calendar" size={20} color="#0A66C2" />
                   </TouchableOpacity>
 
+                  {/* Guarantors 1 */}
+                  {/* <Text style={styles.LReqSR_Label}>Guarantors 1</Text>
+                  <Dropdown
+                    style={[
+                      styles.LReqSR_Input,
+                      requestType === 'Advance' && styles.LReqSR_Disabled,
+                    ]}
+                    data={Guarantors1}
+                    labelField="label"
+                    valueField="value"
+                    placeholder="Select Guarantors"
+                    value={formData.AdvanceTypeCode}
+                    onChange={handleAdvanceTypeCodeChange}
+                    placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                    selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                    itemTextStyle={styles.LReqSR_DropdownItemText}
+                    activeColor="#E6F0FF"
+                    containerStyle={styles.LReqSR_DropdownContainer}
+                    itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                    maxHeight={280}
+                    search
+                    searchPlaceholder="Search EmployeeId"
+                    inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                    iconStyle={styles.LReqSR_DropdownIcon}
+                    disable={requestType === 'Advance'}
+                  /> */}
+
+                  {/* Guarantors 2 */}
+                  {/* <Text style={styles.LReqSR_Label}>Guarantors 1</Text>
+                  <Dropdown
+                    style={[
+                      styles.LReqSR_Input,
+                      requestType === 'Advance' && styles.LReqSR_Disabled,
+                    ]}
+                    data={Guarantors2}
+                    labelField="label"
+                    valueField="value"
+                    placeholder="Select Guarantors"
+                    value={formData.AdvanceTypeCode}
+                    onChange={handleAdvanceTypeCodeChange}
+                    placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                    selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                    itemTextStyle={styles.LReqSR_DropdownItemText}
+                    activeColor="#E6F0FF"
+                    containerStyle={styles.LReqSR_DropdownContainer}
+                    itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                    maxHeight={280}
+                    search
+                    searchPlaceholder="Search EmployeeId"
+                    inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                    iconStyle={styles.LReqSR_DropdownIcon}
+                    disable={requestType === 'Advance'}
+                  /> */}
+
                   <Text style={styles.LReqSR_Label}>Recovery Amount *</Text>
                   <TextInput
                     style={[
@@ -1022,7 +1043,6 @@ const GenericAdvanceSaveScreen = () => {
                     placeholderTextColor="#888"
                     editable={!isRecoveryAmountDisabled}
                   />
-
                   <Text style={styles.LReqSR_Label}>Recoveries *</Text>
                   <TextInput
                     style={[

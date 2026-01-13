@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect, useCallback} from 'react';
@@ -5,6 +6,7 @@ import {useSelector, useDispatch} from 'react-redux';
 import {View, TouchableOpacity, BackHandler} from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../store/utils/translate';
 
 import {
   setSelectedLegalEntity,
@@ -45,6 +47,7 @@ const ActionPaneContainer = ({
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
   const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
     state => state.company,
   );
@@ -128,7 +131,9 @@ const ActionPaneContainer = ({
         isBack: false,
         onDatPress: toggleCompanyDropdown,
         selectedDat:
-          selectedLegalEntity || defaultLegalEntity || 'Select Company',
+          selectedLegalEntity ||
+          defaultLegalEntity ||
+          t('actionPane.selectCompany'),
         defaultDat: defaultLegalEntity,
       });
       navigation.setOptions(headerOptions);
@@ -160,11 +165,9 @@ const ActionPaneContainer = ({
         await onRefresh();
       }
     } catch (error) {
-      console.error('Error updating data after company change:', error);
-
       dispatch(setSelectedLegalEntity(selectedLegalEntity));
 
-      setAlertMessage('Failed to update menu items for the selected company.');
+      setAlertMessage(t('actionPane.companyChangeFailed'));
       setAlertModal(true);
     }
   };
@@ -227,15 +230,15 @@ const ActionPaneContainer = ({
       {/* Modals */}
       <AlertModal
         visible={alertModal}
-        heading="Alert"
+        heading={t('common.alert')}
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
 
       <LogoutAlertModal
         visible={modalVisible}
-        heading="Are you sure you want to logout?"
-        text="Are you sure you want to logout?"
+        heading={t('profile.logoutConfirm')}
+        text={t('profile.logoutConfirm')}
         onConfirm={confirmLogout}
         onCancel={() => setModalVisible(false)}
       />

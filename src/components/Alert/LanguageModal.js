@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -17,36 +17,60 @@ import {
   setSkipLoginAfterRestart,
 } from '../../store/slices/languageSlice';
 import ConfirmationAlert from './ConfirmationAlert';
+import {translate as t} from '../../store/utils/translate';
 
 const LanguageModal = ({visible, onClose}) => {
+  const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   const dispatch = useDispatch();
+
+  // Select data from Redux store
   const currentLanguage = useSelector(state => state.language.currentLanguage);
   const accessToken = useSelector(state => state.auth.accessToken);
   const idToken = useSelector(state => state.auth.idToken);
   const userToken = useSelector(state => state.auth.userToken);
   const userData = useSelector(state => state.user.userData);
-  const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const languages = [
-    {
-      code: 'en',
-      apiCode: 'en-us',
-      name: 'English',
-      nativeName: 'English',
-      isRTL: false,
-    },
-    {
-      code: 'ar',
-      apiCode: 'ar',
-      name: 'Arabic',
-      nativeName: 'العربية',
-      isRTL: true,
-    },
-  ];
+  // Initialize selected language when component mounts or currentLanguage changes
+  useEffect(() => {
+    if (currentLanguage) {
+      setSelectedLanguage(currentLanguage);
+    }
+  }, [currentLanguage]);
 
-  const currentLang = languages.find(lang => lang.code === currentLanguage);
-  const selectedLang = languages.find(lang => lang.code === selectedLanguage);
+  // Update selected language when modal opens
+  useEffect(() => {
+    if (visible) {
+      setSelectedLanguage(currentLanguage);
+    }
+  }, [visible, currentLanguage]);
+
+  const getLanguages = () => {
+    return [
+      {
+        code: 'en',
+        apiCode: 'en-us',
+        name: 'English',
+        nativeName: 'English',
+        isRTL: false,
+      },
+      {
+        code: 'ar',
+        apiCode: 'ar',
+        name: 'Arabic',
+        nativeName: 'العربية',
+        isRTL: true,
+      },
+      // {
+      //   code: 'ur',
+      //   apiCode: 'ur',
+      //   name: 'Urdu',
+      //   nativeName: 'اردو',
+      //   isRTL: true,
+      // },
+    ];
+  };
 
   const handleLanguageSelection = languageCode => {
     setSelectedLanguage(languageCode);
@@ -65,7 +89,9 @@ const LanguageModal = ({visible, onClose}) => {
       return;
     }
 
-    const willChangeDirection = selectedLang.isRTL !== currentLang.isRTL;
+    const languages = getLanguages();
+    const selectedLang = languages.find(lang => lang.code === selectedLanguage);
+    const currentLang = languages.find(lang => lang.code === currentLanguage);
 
     try {
       // Update Redux with new format (includes API code)
@@ -77,7 +103,7 @@ const LanguageModal = ({visible, onClose}) => {
         }),
       );
 
-      // Always restart app to ensure API calls use new language code
+      // Check for active session
       const hasSession = Boolean(
         accessToken || idToken || userToken || userData?.employeeId,
       );
@@ -93,6 +119,7 @@ const LanguageModal = ({visible, onClose}) => {
 
       onClose();
 
+      // Restart app after a short delay
       setTimeout(() => {
         const persistAndRestart = async () => {
           try {
@@ -114,9 +141,10 @@ const LanguageModal = ({visible, onClose}) => {
 
   const handleCancelChange = () => {
     setShowConfirmModal(false);
-    // Reset selection to current language
     setSelectedLanguage(currentLanguage);
   };
+
+  const languages = getLanguages();
 
   return (
     <>
@@ -128,7 +156,7 @@ const LanguageModal = ({visible, onClose}) => {
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <View style={styles.header}>
-              <Text style={styles.heading}>Select Language</Text>
+              <Text style={styles.heading}>{t('languageModal.title')}</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                 <Icon name="x" size={24} color="#666" />
               </TouchableOpacity>
@@ -162,23 +190,10 @@ const LanguageModal = ({visible, onClose}) => {
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}
                 onPress={onClose}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>
+                  {t('languageModal.cancel')}
+                </Text>
               </TouchableOpacity>
-
-              {/* <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.confirmButton,
-                  selectedLanguage === currentLanguage && styles.disabledButton,
-                ]}
-                onPress={() => {
-                  if (selectedLanguage !== currentLanguage) {
-                    setShowConfirmModal(true);
-                  }
-                }}
-                disabled={selectedLanguage === currentLanguage}>
-                <Text style={styles.buttonText}>Apply & Restart</Text>
-              </TouchableOpacity> */}
             </View>
           </View>
         </View>
@@ -187,10 +202,10 @@ const LanguageModal = ({visible, onClose}) => {
       {/* Confirmation Alert Modal */}
       <ConfirmationAlert
         visible={showConfirmModal}
-        heading="Change Language"
-        text="Are you sure you want to change the language? The app will restart to apply the changes."
-        primaryButtonText="Yes, Change"
-        secondaryButtonText="Cancel"
+        heading={t('languageModal.changeLanguage')}
+        text={t('languageModal.confirmMessage')}
+        primaryButtonText={t('languageModal.yesChange')}
+        secondaryButtonText={t('languageModal.cancel')}
         onPrimaryPress={() => {
           setShowConfirmModal(false);
           handleLanguageChange();
@@ -273,18 +288,6 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#F1F1F1',
-  },
-  confirmButton: {
-    backgroundColor: '#0A66C2',
-  },
-  disabledButton: {
-    backgroundColor: '#CCCCCC',
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
   },
   cancelButtonText: {
     color: '#666',

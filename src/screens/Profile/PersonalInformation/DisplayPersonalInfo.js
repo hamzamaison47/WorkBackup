@@ -1,14 +1,25 @@
+/* eslint-disable no-unused-vars */
 import React, {useState, useEffect} from 'react';
-import {View, Text, FlatList, TouchableOpacity, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  I18nManager,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
+import {translate as t} from '../../../store/utils/translate';
 
 const DisplayPersonalInfo = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation();
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -19,50 +30,50 @@ const DisplayPersonalInfo = () => {
     // {
     //   id: 'addresses',
     //   icon: 'map-pin',
-    //   title: 'Addresses',
-    //   subtitle: 'View and edit your current and permanent addresses',
+    //   title: t('personalInfo.addresses'),
+    //   subtitle: t('personalInfo.addressesSubtitle'),
     //   screen: '',
     // },
     {
       id: 'contactDetails',
       icon: 'phone',
-      title: 'Contact Details',
-      subtitle: 'Manage your phone numbers and email addresses',
+      title: t('personalInfo.contactDetails'),
+      subtitle: t('personalInfo.contactDetailsSubtitle'),
       screen: 'ContactDetailsListPage',
     },
     // {
     //   id: 'personalContacts',
     //   icon: 'users',
-    //   title: 'Personal Contacts',
-    //   subtitle: 'Emergency contacts and dependents',
+    //   title: t('personalInfo.personalContacts'),
+    //   subtitle: t('personalInfo.personalContactsSubtitle'),
     //   screen: '',
     // },
     {
       id: 'identification',
       icon: 'user-check',
-      title: 'Identification Numbers',
-      subtitle: 'Your CNIC, passport, and other IDs',
+      title: t('personalInfo.identification'),
+      subtitle: t('personalInfo.identificationSubtitle'),
       screen: 'IdentificationNumberListPage',
     },
     {
       id: 'personalEducation',
       icon: 'pen-tool',
-      title: 'Education',
-      subtitle: 'View or update your education details',
+      title: t('personalInfo.education'),
+      subtitle: t('personalInfo.educationSubtitle'),
       screen: 'PersonalEducation',
     },
     {
       id: 'bankaccounts',
       icon: 'credit-card',
-      title: 'Bank Account',
-      subtitle: 'View or update your bank account details',
+      title: t('personalInfo.bankAccount'),
+      subtitle: t('personalInfo.bankAccountSubtitle'),
       screen: 'BankAccountListPage',
     },
     {
       id: 'profileImage',
       icon: 'image',
-      title: 'Profile Image',
-      subtitle: 'Upload or change your profile photo',
+      title: t('personalInfo.profileImage'),
+      subtitle: t('personalInfo.profileImageSubtitle'),
       screen: 'ChangeProfileImage',
     },
   ];
@@ -82,13 +93,18 @@ const DisplayPersonalInfo = () => {
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.subtitle}>{item.subtitle}</Text>
       </View>
-      <Icon name="chevron-right" size={20} color="#9CA3AF" />
+      <Icon
+        name={I18nManager.isRTL ? 'chevron-left' : 'chevron-right'}
+        size={20}
+        color="#9CA3AF"
+      />
+      {/* <Icon name="chevron-right" size={20} color="#9CA3AF" /> */}
     </TouchableOpacity>
   );
 
   return (
     <ActionPaneContainer
-      pageTitle="Profile"
+      pageTitle={t('personalInfo.pageTitle')}
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
@@ -104,9 +120,11 @@ const DisplayPersonalInfo = () => {
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.headerContainer}>
-            <Text style={styles.headerTitle}>Personal Information</Text>
+            <Text style={styles.headerTitle}>
+              {t('personalInfo.headerTitle')}
+            </Text>
             <Text style={styles.headerSubtitle}>
-              Manage your profile, contact, and preferences
+              {t('personalInfo.headerSubtitle')}
             </Text>
           </LinearGradient>
 
