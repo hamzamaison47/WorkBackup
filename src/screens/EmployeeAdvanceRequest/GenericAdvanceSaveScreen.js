@@ -67,8 +67,11 @@ const GenericAdvanceSaveScreen = () => {
   // State declarations
   const [advanceCodes, setAdvanceCodes] = useState([]);
   const [advanceCodeDropDown, setAdvanceCodeDropDown] = useState([]);
-  const [Guarantors1, setGuarantors1] = useState([]);
-  const [Guarantors2, setGuarantors2] = useState([]);
+  const [guarantorsData, setGuarantorsData] = useState([]);
+  const [filteredGuarantors1, setFilteredGuarantors1] = useState([]);
+  const [filteredGuarantors2, setFilteredGuarantors2] = useState([]);
+  const [guarantor1SearchQuery, setGuarantor1SearchQuery] = useState('');
+  const [guarantor2SearchQuery, setGuarantor2SearchQuery] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDateField, setCurrentDateField] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
@@ -82,18 +85,6 @@ const GenericAdvanceSaveScreen = () => {
 
   // Create initial form data function with enhanced validation
   const createInitialFormData = useCallback(() => {
-    const getTodayDateSafe = () => {
-      try {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}T12:00:00`;
-      } catch (error) {
-        return '';
-      }
-    };
-
     return {
       RecId:
         !advanceData.RecId || advanceData.RecId === '0'
@@ -105,13 +96,14 @@ const GenericAdvanceSaveScreen = () => {
       AdvanceTypeCode: '',
       AdvanceAmount: '',
       RequestedPaymentDate: '',
-      // RequestedPaymentDate: mode === 'create' ? getTodayDateSafe() : '',
       RecoveryStartDate: '',
       RequestedInstallmentAmount: '',
       RequestedInstallments: '',
       AdvanceDescription: '',
+      Guarantor1: '',
+      Guarantor2: '',
     };
-  }, []); // Empty dependency array to prevent recreation
+  }, []);
 
   // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
@@ -370,18 +362,50 @@ const GenericAdvanceSaveScreen = () => {
       setIsLoading(true);
 
       const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
-      // const getEmployeeLookup = await GetEmployeeLookup();
+      const getEmployeeLookup = await GetEmployeeLookup();
 
-      // console.log({getEmployeeLookup});
+      console.log({allAdvanceCodes});
 
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
       }
 
+      // Process Guarantors data
+      if (getEmployeeLookup && Array.isArray(getEmployeeLookup)) {
+        const filteredGuarantors = getEmployeeLookup
+          .filter(
+            emp =>
+              emp.EmployeeId !== employeeId.toString() &&
+              emp.EmployeeId !== String(employeeId).padStart(6, '0'),
+          )
+          .map(emp => ({
+            ...emp,
+            // Create a combined label for search
+            combinedLabel: `${emp.EmployeeId} - ${emp.EmployeeName}`,
+          }));
+
+        setGuarantorsData(filteredGuarantors);
+        setFilteredGuarantors1(filteredGuarantors);
+        setFilteredGuarantors2(filteredGuarantors);
+      }
+
+      // const expectedAdvanceType = getAdvanceTypeMapping();
+      // const filteredAdvanceType = allAdvanceCodes.filter(
+      //   type => type.AdvanceType === expectedAdvanceType,
+      // );
       const expectedAdvanceType = getAdvanceTypeMapping();
-      const filteredAdvanceType = allAdvanceCodes.filter(
-        type => type.AdvanceType === expectedAdvanceType,
-      );
+      const employmentType = effectiveUserData?.EmploymentType || '';
+      const filteredAdvanceType = allAdvanceCodes.filter(type => {
+        if (type.AdvanceType !== expectedAdvanceType) {
+          return false;
+        }
+
+        if (requestType === 'Loan') {
+          return type.EmploymentType === 'Permanent';
+        }
+
+        return true;
+      });
 
       const dropdownData = Array.from(
         new Set(filteredAdvanceType.map(item => item.AdvanceTypeCode)),
@@ -639,6 +663,29 @@ const GenericAdvanceSaveScreen = () => {
     }, 100);
   };
 
+  // Add these custom render functions
+  const renderGuarantorItem = item => {
+    return (
+      <View style={styles.LReqSR_GuarantorItem}>
+        <Text style={styles.LReqSR_GuarantorId}>{item.EmployeeId}</Text>
+        <Text style={styles.LReqSR_GuarantorName}>{item.EmployeeName}</Text>
+      </View>
+    );
+  };
+
+  // Update renderGuarantorSelectedItem:
+  const renderGuarantorSelectedItem = item => {
+    if (!item) return null;
+    return (
+      <View style={styles.LReqSR_GuarantorSelectedItem}>
+        <Text style={styles.LReqSR_GuarantorSelectedText}>
+          {/* {item.EmployeeId} - {item.EmployeeName} */}
+          {item.EmployeeName}
+        </Text>
+      </View>
+    );
+  };
+
   // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -659,6 +706,8 @@ const GenericAdvanceSaveScreen = () => {
         EmployeeId: WorkerRecId,
         RecId: data.RecId === '' ? '0' : data.RecId,
         RequestDate: formattedRequestDate,
+        Guarantor1: data.Guarantor1 || '',
+        Guarantor2: data.Guarantor2 || '',
       };
 
       // Enhanced validation before API call
@@ -852,9 +901,6 @@ const GenericAdvanceSaveScreen = () => {
     parseNumber(formData.RequestedInstallments) > 0;
 
   // Check if recoveries field should be disabled
-  // const isRecoveriesDisabled =
-  //   formData.RequestedInstallmentAmount &&
-  //   parseNumber(formData.RequestedInstallmentAmount) > 0;
   const isRecoveriesDisabled =
     (formData.RequestedInstallmentAmount &&
       parseNumber(formData.RequestedInstallmentAmount) > 0) ||
@@ -976,19 +1022,18 @@ const GenericAdvanceSaveScreen = () => {
                     <Icon name="calendar" size={20} color="#0A66C2" />
                   </TouchableOpacity>
 
-                  {/* Guarantors 1 */}
-                  {/* <Text style={styles.LReqSR_Label}>Guarantors 1</Text>
+                  {/* Guarantor 1 */}
+                  <Text style={styles.LReqSR_Label}>Guarantor 1</Text>
                   <Dropdown
-                    style={[
-                      styles.LReqSR_Input,
-                      requestType === 'Advance' && styles.LReqSR_Disabled,
-                    ]}
-                    data={Guarantors1}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Select Guarantors"
-                    value={formData.AdvanceTypeCode}
-                    onChange={handleAdvanceTypeCodeChange}
+                    style={styles.LReqSR_Input}
+                    data={guarantorsData}
+                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    valueField="EmployeeId"
+                    placeholder="Select Guarantor 1"
+                    value={formData.Guarantor1}
+                    onChange={item => {
+                      handleInputChange('Guarantor1', item.EmployeeId);
+                    }}
                     placeholderStyle={styles.LReqSR_DropdownPlaceholder}
                     selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                     itemTextStyle={styles.LReqSR_DropdownItemText}
@@ -997,25 +1042,25 @@ const GenericAdvanceSaveScreen = () => {
                     itemContainerStyle={styles.LReqSR_DropdownItemContainer}
                     maxHeight={280}
                     search
-                    searchPlaceholder="Search EmployeeId"
+                    searchPlaceholder="Search by ID or Name"
                     inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                     iconStyle={styles.LReqSR_DropdownIcon}
-                    disable={requestType === 'Advance'}
-                  /> */}
+                    renderItem={renderGuarantorItem}
+                    searchField="combinedLabel" // Add this prop for searching
+                  />
 
-                  {/* Guarantors 2 */}
-                  {/* <Text style={styles.LReqSR_Label}>Guarantors 1</Text>
+                  {/* Guarantor 2 */}
+                  <Text style={styles.LReqSR_Label}>Guarantor 2</Text>
                   <Dropdown
-                    style={[
-                      styles.LReqSR_Input,
-                      requestType === 'Advance' && styles.LReqSR_Disabled,
-                    ]}
-                    data={Guarantors2}
-                    labelField="label"
-                    valueField="value"
-                    placeholder="Select Guarantors"
-                    value={formData.AdvanceTypeCode}
-                    onChange={handleAdvanceTypeCodeChange}
+                    style={styles.LReqSR_Input}
+                    data={guarantorsData}
+                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    valueField="EmployeeId"
+                    placeholder="Select Guarantor 2"
+                    value={formData.Guarantor2}
+                    onChange={item => {
+                      handleInputChange('Guarantor2', item.EmployeeId);
+                    }}
                     placeholderStyle={styles.LReqSR_DropdownPlaceholder}
                     selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                     itemTextStyle={styles.LReqSR_DropdownItemText}
@@ -1024,11 +1069,12 @@ const GenericAdvanceSaveScreen = () => {
                     itemContainerStyle={styles.LReqSR_DropdownItemContainer}
                     maxHeight={280}
                     search
-                    searchPlaceholder="Search EmployeeId"
+                    searchPlaceholder="Search by ID or Name"
                     inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                     iconStyle={styles.LReqSR_DropdownIcon}
-                    disable={requestType === 'Advance'}
-                  /> */}
+                    renderItem={renderGuarantorItem}
+                    searchField="combinedLabel" // Add this prop for searching
+                  />
 
                   <Text style={styles.LReqSR_Label}>Recovery Amount *</Text>
                   <TextInput
