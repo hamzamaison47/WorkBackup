@@ -184,46 +184,7 @@ const GenericAdvanceListScreen = () => {
     fetchAllAdvanceData();
   };
 
-  // /** Show type selection modal */
-  // const handleCreateRequest = () => {
-  //   setTypeSelectionModal(true);
-  // };
-
-  // /** Handle type selection from modal with enhanced validation */
-  // const handleTypeSelection = selectedType => {
-  //   if (!selectedType || !selectedType.type) {
-  //     setAlertMessage('Invalid selection. Please try again.');
-  //     setAlertModal(true);
-  //     return;
-  //   }
-
-  //   navigation.navigate('GenericAdvanceSaveScreen', {
-  //     mode: 'create',
-  //     employeeId: effectiveEmployeeId,
-  //     employeeName: effectiveEmployeeName,
-  //     WorkerRecId: effectiveWorkerRecId,
-  //     userData: effectiveUserData,
-  //     cameFrom: 'GenericAdvanceListScreen',
-  //     requestType: selectedType.type,
-  //     advanceType: selectedType.advanceType,
-  //     screenName: selectedType.title,
-  //     advanceData: {
-  //       employeeId: effectiveEmployeeId,
-  //       employeeName: effectiveEmployeeName,
-  //       WorkerRecId: effectiveWorkerRecId,
-  //       RecId: '',
-  //       AdvanceTypeCode: '',
-  //       AdvanceAmount: '0.00',
-  //       RequestedPaymentDate: '',
-  //       RecoveryStartDate: '',
-  //       RequestedInstallmentAmount: '0.00',
-  //       RequestedInstallments: '0',
-  //       AdvanceDescription: '',
-  //     },
-  //   });
-  // };
-
-  /** New Version for Creating Record. */
+  /** Creating Record. */
   const handleCreateRequest = () => {
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'create',
@@ -247,6 +208,8 @@ const GenericAdvanceListScreen = () => {
         RequestedInstallmentAmount: '0.00',
         RequestedInstallments: '0',
         AdvanceDescription: '',
+        Guarantor1: '',
+        Guarantor2: '',
       },
     });
   };
@@ -467,6 +430,8 @@ const GenericAdvanceListScreen = () => {
         RequestedInstallmentAmount: itemData.RequestedInstallmentAmount,
         RequestedInstallments: itemData.RequestedInstallments,
         AdvanceDescription: itemData.AdvanceDescription,
+        Guarantor1: itemData.Guarantor1,
+        Guarantor2: itemData.Guarantor2,
       },
     });
   };

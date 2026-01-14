@@ -35,67 +35,24 @@ const GetEmployeeLookup = async () => {
       },
     );
 
-    // const parser = new XMLParser({
-    //   ignoreAttributes: false,
-    //   attributeNamePrefix: '@_',
-    //   allowBooleanAttributes: false,
-    //   parseNodeValue: true,
-    //   parseAttributeValue: false,
-    //   trimValues: true,
-    //   removeNSPrefix: true,
-    // });
-
-    // const parsed = parser.parse(xml);
-
-    // // Directly access the employee array from the exact path
-    // const employeeArray =
-    //   parsed?.Envelope?.Body?.getEmployeeLookupResponse?.result
-    //     ?.PREmploymentInformationSvcContract;
-
-    // if (!employeeArray) {
-    //   console.log('No employee data found in response');
-    //   return [];
-    // }
-
-    // // Ensure it's an array
-    // const employees = Array.isArray(employeeArray)
-    //   ? employeeArray
-    //   : [employeeArray];
-
-    // // Extract only EmployeeId and EmployeeName
-    // const filteredEmployees = employees
-    //   .filter(emp => emp && emp.EmployeeId && emp.EmployeeName)
-    //   .map(emp => ({
-    //     EmployeeId: emp.EmployeeId,
-    //     EmployeeName: emp.EmployeeName,
-    //     // Also include WorkerRecId if you need it later
-    //     WorkerRecId: emp.WorkerRecId || 0,
-    //   }));
-
-    // console.log(`Retrieved ${filteredEmployees.length} employees`);
-    // console.log('Filtered employee data:', filteredEmployees);
-
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: '@_',
       allowBooleanAttributes: false,
-      parseNodeValue: false, // Changed from true to false to preserve string values
+      parseNodeValue: false,
       parseAttributeValue: false,
       trimValues: true,
       removeNSPrefix: true,
-      // Add these options to preserve number formats
       numberParseOptions: {
         hex: false,
-        leadingZeros: true, // This preserves leading zeros
-        skipLike: /.*/, // Skip all number parsing
+        leadingZeros: true,
+        skipLike: /.*/,
       },
-      // Alternative: Disable number parsing entirely
       alwaysCreateTextNode: false,
     });
 
     const parsed = parser.parse(xml);
 
-    // Directly access the employee array from the exact path
     const employeeArray =
       parsed?.Envelope?.Body?.getEmployeeLookupResponse?.result
         ?.PREmploymentInformationSvcContract;
@@ -105,22 +62,18 @@ const GetEmployeeLookup = async () => {
       return [];
     }
 
-    // Ensure it's an array
     const employees = Array.isArray(employeeArray)
       ? employeeArray
       : [employeeArray];
 
-    // Extract only EmployeeId and EmployeeName, preserving EmployeeId as string
     const filteredEmployees = employees
       .filter(
         emp =>
           emp && (emp.EmployeeId || emp.EmployeeId === 0) && emp.EmployeeName,
       )
       .map(emp => {
-        // Convert EmployeeId to string and pad with leading zeros if needed
         let employeeIdStr = String(emp.EmployeeId || '');
 
-        // If it's a number, pad it to 6 digits with leading zeros
         if (/^\d+$/.test(employeeIdStr)) {
           employeeIdStr = employeeIdStr.padStart(6, '0');
         }

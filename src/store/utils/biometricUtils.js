@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // biometricUtils.js
 import ReactNativeBiometrics from 'react-native-biometrics';
 import Keychain from 'react-native-keychain';
