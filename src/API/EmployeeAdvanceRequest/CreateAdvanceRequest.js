@@ -92,6 +92,8 @@ const buildContractXml = contract => {
     'AdvanceDescription',
     'AdvanceTypeCode',
     'EmployeeId',
+    'Guarantor1',
+    'Guarantor2',
     'RecId',
     'RecoveryStartDate',
     'RequestDate',

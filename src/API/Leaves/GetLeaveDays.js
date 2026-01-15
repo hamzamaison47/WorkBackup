@@ -30,7 +30,7 @@ const GetLeaveDays = async ({
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log({soapEnvelope});
+    // console.log({soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/PREmploymentInformationSvcGroup`,
@@ -46,7 +46,7 @@ const GetLeaveDays = async ({
       },
     );
 
-    console.log({xml});
+    // console.log({xml});
 
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -66,7 +66,7 @@ const GetLeaveDays = async ({
       return null;
     }
 
-    console.log({result});
+    // console.log({result});
 
     return Number(result); // Convert to number if not already
   } catch (err) {

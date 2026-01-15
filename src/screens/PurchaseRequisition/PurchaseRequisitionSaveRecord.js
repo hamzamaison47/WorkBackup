@@ -326,7 +326,7 @@ const PurchaseRequisitionSaveRecord = () => {
               onSave={handleCreate}
               onCancel={goBack}
               isDisabled={
-                processingButton === 'save' || processingButton === 'submit'
+                processingButton === 'create' || processingButton === 'submit'
               }
               showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
             />

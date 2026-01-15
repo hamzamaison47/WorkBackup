@@ -11,6 +11,8 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
+import {useSelector} from 'react-redux';
+import {translate as t} from '../../store/utils/translate';
 import styles from '../../styles/styles';
 
 const {width, height} = Dimensions.get('window');
@@ -24,7 +26,7 @@ const fontScale = size => Math.min(scale(size), size + 4);
 
 const AlertDeleteModal = ({
   visible,
-  heading = 'Confirm Deletion',
+  heading = t('modals.confirmDeletion'),
   text,
   onPress,
   onCancel,
@@ -34,6 +36,8 @@ const AlertDeleteModal = ({
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   // Delete alert configuration
   const deleteConfig = {
@@ -182,7 +186,9 @@ const AlertDeleteModal = ({
                   onPress={handleCancelPress}
                   disabled={isProcessing}
                   activeOpacity={0.8}>
-                  <Text style={deleteStyles.secondaryButtonText}>Cancel</Text>
+                  <Text style={deleteStyles.secondaryButtonText}>
+                    {t('common.cancel')}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -199,11 +205,13 @@ const AlertDeleteModal = ({
                     <View style={deleteStyles.processingButtonContent}>
                       <ActivityIndicator size="small" color="#FFFFFF" />
                       <Text style={deleteStyles.primaryButtonText}>
-                        Deleting...
+                        {t('modals.deleting')}
                       </Text>
                     </View>
                   ) : (
-                    <Text style={deleteStyles.primaryButtonText}>Delete</Text>
+                    <Text style={deleteStyles.primaryButtonText}>
+                      {t('buttons.delete')}
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>

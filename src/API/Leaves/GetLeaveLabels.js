@@ -88,7 +88,7 @@ const GetLeaveLabels = async () => {
       }
     }
 
-    console.log('Leave Labels data:', finalData);
+    // console.log('Leave Labels data:', finalData);
 
     return finalData;
   } catch (err) {

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/no-unstable-nested-components */
@@ -5,6 +6,7 @@ import React, {useRef, useEffect} from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Animated} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import {useSelector} from 'react-redux';
 
 import MainDashboard from '../screens/Maindasboard';
 import DisplayListPage from '../screens/TabListPage/DisplayListPage';
@@ -13,10 +15,13 @@ import Profile from '../screens/Profile/Profile';
 
 import styles from '../styles/styles';
 import CustomTabBar from '../Controller/CustomTabBar';
+import {translate as t} from '../store/utils/translate';
 
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
+  const currentLanguage = useSelector(state => state.language.currentLanguage);
+
   return (
     <Tab.Navigator
       initialRouteName="MainDashboard"
@@ -62,22 +67,22 @@ const TabNavigator = () => {
       <Tab.Screen
         name="MainDashboard"
         component={MainDashboard}
-        options={{tabBarLabel: 'Home'}}
+        options={{tabBarLabel: t('tabNavigator.home')}}
       />
       <Tab.Screen
         name="WorkerAssignedToMe"
         component={WorkerAssignedToMe}
-        options={{tabBarLabel: 'My Team'}}
+        options={{tabBarLabel: t('tabNavigator.myTeam')}}
       />
       <Tab.Screen
         name="DisplayListPage"
         component={DisplayListPage}
-        options={{tabBarLabel: 'History'}}
+        options={{tabBarLabel: t('tabNavigator.history')}}
       />
       <Tab.Screen
         name="Profile"
         component={Profile}
-        options={{tabBarLabel: 'Profile'}}
+        options={{tabBarLabel: t('tabNavigator.profile')}}
       />
     </Tab.Navigator>
   );

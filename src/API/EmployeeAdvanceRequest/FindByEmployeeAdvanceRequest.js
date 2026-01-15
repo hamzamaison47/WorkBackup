@@ -1,5 +1,5 @@
 /* eslint-disable dot-notation */
-import {resource} from '@env';
+// import {resource} from '@env';
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';

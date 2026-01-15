@@ -25,7 +25,7 @@ const createLeaveRequest = async ({leaveData}) => {
       </create>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-    console.log({soapEnvelope});
+    // console.log({soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/PREmployeeLeavesSvcGroup`,
@@ -97,6 +97,7 @@ const buildContractXml = contract => {
     'Balance',
     'Eligibility',
     'EmployeeId',
+    'EmployeeName',
     'LeaveCategory',
     'LeaveCode',
     'LeaveDays',

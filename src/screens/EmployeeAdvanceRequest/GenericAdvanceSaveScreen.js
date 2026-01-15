@@ -35,6 +35,7 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
 import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import {GetEmployeeLookup} from '../../API/EmployeeAdvanceRequest/GetEmployeeLookup';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -66,6 +67,11 @@ const GenericAdvanceSaveScreen = () => {
   // State declarations
   const [advanceCodes, setAdvanceCodes] = useState([]);
   const [advanceCodeDropDown, setAdvanceCodeDropDown] = useState([]);
+  const [guarantorsData, setGuarantorsData] = useState([]);
+  const [filteredGuarantors1, setFilteredGuarantors1] = useState([]);
+  const [filteredGuarantors2, setFilteredGuarantors2] = useState([]);
+  const [guarantor1SearchQuery, setGuarantor1SearchQuery] = useState('');
+  const [guarantor2SearchQuery, setGuarantor2SearchQuery] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentDateField, setCurrentDateField] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
@@ -79,18 +85,6 @@ const GenericAdvanceSaveScreen = () => {
 
   // Create initial form data function with enhanced validation
   const createInitialFormData = useCallback(() => {
-    const getTodayDateSafe = () => {
-      try {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}T12:00:00`;
-      } catch (error) {
-        return '';
-      }
-    };
-
     return {
       RecId:
         !advanceData.RecId || advanceData.RecId === '0'
@@ -101,13 +95,15 @@ const GenericAdvanceSaveScreen = () => {
       WorkerRecId: WorkerRecId || '',
       AdvanceTypeCode: '',
       AdvanceAmount: '',
-      RequestedPaymentDate: mode === 'create' ? getTodayDateSafe() : '',
+      RequestedPaymentDate: '',
       RecoveryStartDate: '',
       RequestedInstallmentAmount: '',
       RequestedInstallments: '',
       AdvanceDescription: '',
+      Guarantor1: '',
+      Guarantor2: '',
     };
-  }, []); // Empty dependency array to prevent recreation
+  }, []);
 
   // Form state - Initialize by calling the function
   const [formData, setFormData] = useState(() => createInitialFormData());
@@ -116,7 +112,6 @@ const GenericAdvanceSaveScreen = () => {
   useFocusEffect(
     useCallback(() => {
       if (mode === 'create' && cameFrom !== 'RequestTypeSelectionModal') {
-        // Only reset if coming from navigation, not from type selection
         const shouldReset =
           cameFrom === 'MainDashboard' ||
           cameFrom === 'GenericAdvanceListScreen';
@@ -128,9 +123,11 @@ const GenericAdvanceSaveScreen = () => {
           setAdvanceCodes([]);
           setValidationErrors({});
           setDataInitialized(false);
+
+          fetchInitialData();
         }
       }
-    }, [mode, cameFrom]),
+    }, [mode, cameFrom, fetchInitialData]), // Add fetchInitialData to dependencies
   );
 
   useFocusEffect(
@@ -316,6 +313,7 @@ const GenericAdvanceSaveScreen = () => {
     const initializeScreen = async () => {
       if (!dataInitialized) {
         setDataInitialized(true);
+        setIsLoading(true); // Add this line
 
         // Reset states
         setAdvanceCodeDropDown([]);
@@ -350,12 +348,13 @@ const GenericAdvanceSaveScreen = () => {
           console.error('Initialization error:', error);
           setAlertMessage('Failed to initialize screen. Please try again.');
           setAlertModal(true);
+          setIsLoading(false); // Add this line
         }
       }
     };
 
     initializeScreen();
-  }, [mode, advanceData?.RecId, requestType]); // Simplified dependencies
+  }, [mode, advanceData?.RecId, requestType]);
 
   // Enhanced data fetching with better error handling
   const fetchInitialData = async () => {
@@ -363,15 +362,50 @@ const GenericAdvanceSaveScreen = () => {
       setIsLoading(true);
 
       const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
+      const getEmployeeLookup = await GetEmployeeLookup();
+
+      console.log({allAdvanceCodes});
 
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
       }
 
+      // Process Guarantors data
+      if (getEmployeeLookup && Array.isArray(getEmployeeLookup)) {
+        const filteredGuarantors = getEmployeeLookup
+          .filter(
+            emp =>
+              emp.EmployeeId !== employeeId.toString() &&
+              emp.EmployeeId !== String(employeeId).padStart(6, '0'),
+          )
+          .map(emp => ({
+            ...emp,
+            // Create a combined label for search
+            combinedLabel: `${emp.EmployeeId} - ${emp.EmployeeName}`,
+          }));
+
+        setGuarantorsData(filteredGuarantors);
+        setFilteredGuarantors1(filteredGuarantors);
+        setFilteredGuarantors2(filteredGuarantors);
+      }
+
+      // const expectedAdvanceType = getAdvanceTypeMapping();
+      // const filteredAdvanceType = allAdvanceCodes.filter(
+      //   type => type.AdvanceType === expectedAdvanceType,
+      // );
       const expectedAdvanceType = getAdvanceTypeMapping();
-      const filteredAdvanceType = allAdvanceCodes.filter(
-        type => type.AdvanceType === expectedAdvanceType,
-      );
+      const employmentType = effectiveUserData?.EmploymentType || '';
+      const filteredAdvanceType = allAdvanceCodes.filter(type => {
+        if (type.AdvanceType !== expectedAdvanceType) {
+          return false;
+        }
+
+        if (requestType === 'Loan') {
+          return type.EmploymentType === 'Permanent';
+        }
+
+        return true;
+      });
 
       const dropdownData = Array.from(
         new Set(filteredAdvanceType.map(item => item.AdvanceTypeCode)),
@@ -425,6 +459,9 @@ const GenericAdvanceSaveScreen = () => {
             if (mode === 'create') {
               setFormData(prev => ({
                 ...prev,
+                RequestedPaymentDate: formatToISOWithTime(
+                  filteredPayGroupPayPeriod[0]?.EndDate,
+                ),
                 RecoveryStartDate: formatToISOWithTime(
                   filteredPayGroupPayPeriod[0]?.EndDate,
                 ),
@@ -463,22 +500,6 @@ const GenericAdvanceSaveScreen = () => {
     const num = parseFloat(cleanValue);
     return isNaN(num) ? 0 : num;
   };
-
-  // const getTodayDate = () => {
-  //   try {
-  //     const today = new Date();
-  //     if (isNaN(today.getTime())) {
-  //       throw new Error('Invalid date');
-  //     }
-  //     const year = today.getFullYear();
-  //     const month = String(today.getMonth() + 1).padStart(2, '0');
-  //     const day = String(today.getDate()).padStart(2, '0');
-  //     return `${year}-${month}-${day}T12:00:00`;
-  //   } catch (error) {
-  //     console.error('Error getting today date:', error);
-  //     throw new Error('Failed to get current date');
-  //   }
-  // };
 
   // Enhanced refresh handler
   const handleRefresh = async () => {
@@ -642,6 +663,29 @@ const GenericAdvanceSaveScreen = () => {
     }, 100);
   };
 
+  // Add these custom render functions
+  const renderGuarantorItem = item => {
+    return (
+      <View style={styles.LReqSR_GuarantorItem}>
+        <Text style={styles.LReqSR_GuarantorId}>{item.EmployeeId}</Text>
+        <Text style={styles.LReqSR_GuarantorName}>{item.EmployeeName}</Text>
+      </View>
+    );
+  };
+
+  // Update renderGuarantorSelectedItem:
+  const renderGuarantorSelectedItem = item => {
+    if (!item) return null;
+    return (
+      <View style={styles.LReqSR_GuarantorSelectedItem}>
+        <Text style={styles.LReqSR_GuarantorSelectedText}>
+          {/* {item.EmployeeId} - {item.EmployeeName} */}
+          {item.EmployeeName}
+        </Text>
+      </View>
+    );
+  };
+
   // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -662,6 +706,8 @@ const GenericAdvanceSaveScreen = () => {
         EmployeeId: WorkerRecId,
         RecId: data.RecId === '' ? '0' : data.RecId,
         RequestDate: formattedRequestDate,
+        Guarantor1: data.Guarantor1 || '',
+        Guarantor2: data.Guarantor2 || '',
       };
 
       // Enhanced validation before API call
@@ -856,8 +902,11 @@ const GenericAdvanceSaveScreen = () => {
 
   // Check if recoveries field should be disabled
   const isRecoveriesDisabled =
-    formData.RequestedInstallmentAmount &&
-    parseNumber(formData.RequestedInstallmentAmount) > 0;
+    (formData.RequestedInstallmentAmount &&
+      parseNumber(formData.RequestedInstallmentAmount) > 0) ||
+    (selectedAdvanceTypeData?.Recoveries &&
+      parseNumber(selectedAdvanceTypeData.Recoveries) > 0 &&
+      formData.RequestedInstallments === selectedAdvanceTypeData.Recoveries);
 
   return (
     <ActionPaneContainer
@@ -973,6 +1022,60 @@ const GenericAdvanceSaveScreen = () => {
                     <Icon name="calendar" size={20} color="#0A66C2" />
                   </TouchableOpacity>
 
+                  {/* Guarantor 1 */}
+                  <Text style={styles.LReqSR_Label}>Guarantor 1</Text>
+                  <Dropdown
+                    style={styles.LReqSR_Input}
+                    data={guarantorsData}
+                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    valueField="EmployeeId"
+                    placeholder="Select Guarantor 1"
+                    value={formData.Guarantor1}
+                    onChange={item => {
+                      handleInputChange('Guarantor1', item.EmployeeId);
+                    }}
+                    placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                    selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                    itemTextStyle={styles.LReqSR_DropdownItemText}
+                    activeColor="#E6F0FF"
+                    containerStyle={styles.LReqSR_DropdownContainer}
+                    itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                    maxHeight={280}
+                    search
+                    searchPlaceholder="Search by ID or Name"
+                    inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                    iconStyle={styles.LReqSR_DropdownIcon}
+                    renderItem={renderGuarantorItem}
+                    searchField="combinedLabel" // Add this prop for searching
+                  />
+
+                  {/* Guarantor 2 */}
+                  <Text style={styles.LReqSR_Label}>Guarantor 2</Text>
+                  <Dropdown
+                    style={styles.LReqSR_Input}
+                    data={guarantorsData}
+                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    valueField="EmployeeId"
+                    placeholder="Select Guarantor 2"
+                    value={formData.Guarantor2}
+                    onChange={item => {
+                      handleInputChange('Guarantor2', item.EmployeeId);
+                    }}
+                    placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                    selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                    itemTextStyle={styles.LReqSR_DropdownItemText}
+                    activeColor="#E6F0FF"
+                    containerStyle={styles.LReqSR_DropdownContainer}
+                    itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                    maxHeight={280}
+                    search
+                    searchPlaceholder="Search by ID or Name"
+                    inputSearchStyle={styles.LReqSR_DropdownSearchInput}
+                    iconStyle={styles.LReqSR_DropdownIcon}
+                    renderItem={renderGuarantorItem}
+                    searchField="combinedLabel" // Add this prop for searching
+                  />
+
                   <Text style={styles.LReqSR_Label}>Recovery Amount *</Text>
                   <TextInput
                     style={[
@@ -986,7 +1089,6 @@ const GenericAdvanceSaveScreen = () => {
                     placeholderTextColor="#888"
                     editable={!isRecoveryAmountDisabled}
                   />
-
                   <Text style={styles.LReqSR_Label}>Recoveries *</Text>
                   <TextInput
                     style={[
@@ -1029,7 +1131,7 @@ const GenericAdvanceSaveScreen = () => {
               onSave={handleSave}
               onCancel={goBack}
               isDisabled={
-                processingButton === 'save' || processingButton === 'submit'
+                processingButton === 'create' || processingButton === 'submit'
               }
             />
           </KeyboardAvoidingView>

@@ -571,6 +571,7 @@ import IdentificationNumberListPage from '../screens/Profile/PersonalInformation
 import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
 import Preferences from '../screens/Profile/Preferences/Preferences';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
+import {clearConfig} from '../Controller/secureConfig';
 
 const {width} = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
