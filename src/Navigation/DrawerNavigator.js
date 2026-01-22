@@ -570,7 +570,9 @@ import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/
 import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
 import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
 import Preferences from '../screens/Profile/Preferences/Preferences';
+import {FamilyContacts_ListPageScreen} from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_ListPage';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
+import FamilyContact_SaveRecord from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_SaveRecord';
 import {clearConfig} from '../Controller/secureConfig';
 
 const {width} = Dimensions.get('window');
@@ -1015,6 +1017,19 @@ const DrawerNavigator = () => {
       />
 
       <Drawer.Screen
+        name="FamilyContact_SaveRecord"
+        component={FamilyContact_SaveRecord}
+        initialParams={{userData}}
+        options={{
+          title: 'Personal contact create',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+        }}
+      />
+
+      <Drawer.Screen
         name="Preferences"
         component={Preferences}
         options={{
@@ -1037,6 +1052,18 @@ const DrawerNavigator = () => {
           headerStyle: {backgroundColor: '#0A66C2'},
           headerTintColor: '#fff',
           headerShadowVisible: false,
+        }}
+      />
+      <Drawer.Screen
+        name="FamilyContact_ListPage"
+        component={FamilyContacts_ListPageScreen}
+        initialParams={{userData}}
+        options={{
+          title: 'FamilyContact_ListPage',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
         }}
       />
     </Drawer.Navigator>

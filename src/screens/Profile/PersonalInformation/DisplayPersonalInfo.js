@@ -41,6 +41,14 @@ const DisplayPersonalInfo = () => {
       subtitle: t('personalInfo.contactDetailsSubtitle'),
       screen: 'ContactDetailsListPage',
     },
+
+    {
+      id: 'Personal contacts',
+      icon: 'layers',
+      title: t('Personal contacts'),
+      subtitle: t('Manage your personal contacts.'),
+      screen: 'FamilyContact_ListPage',
+    },
     // {
     //   id: 'personalContacts',
     //   icon: 'users',
