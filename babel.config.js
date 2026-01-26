@@ -10,8 +10,6 @@ module.exports = {
         path: '.env',
         blocklist: null,
         allowlist: null,
-        blacklist: null, // DEPRECATED
-        whitelist: null, // DEPRECATED
         safe: false,
         allowUndefined: true,
         verbose: false,
@@ -20,19 +18,19 @@ module.exports = {
     [
       '@babel/plugin-transform-class-properties',
       {
-        loose: true, // Ensure consistency across plugins
+        loose: true,
       },
     ],
     [
       '@babel/plugin-transform-private-methods',
       {
-        loose: true, // Ensure consistency across plugins
+        loose: true,
       },
     ],
     [
       '@babel/plugin-transform-private-property-in-object',
       {
-        loose: true, // Ensure consistency across plugins
+        loose: true,
       },
     ],
   ],

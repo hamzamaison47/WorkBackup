@@ -25,11 +25,13 @@ const GetLeaveBalance = async ({
       <getLeaveBalance xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
         <_leaveCode>${leaveCode}</_leaveCode>
-        <_leaveStartDate>${leaveStartDate}</_leaveStartDate>
         <_leaveRequestId>${leaveRequestId}</_leaveRequestId>
+        <_leaveStartDate>${leaveStartDate}</_leaveStartDate>
       </getLeaveBalance>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
+
+    console.log('Leave Balance Soap Envelop', {soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/PREmploymentInformationSvcGroup`,

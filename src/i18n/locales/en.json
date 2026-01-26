@@ -180,6 +180,8 @@
     "reason": "Reason",
     "enterReason": "Enter reason for leave",
     "endDateBeforeStart": "Leave End Date cannot be before Leave Start Date.",
+    "startDateAfterEnd": "Leave Start Date cannot be after Leave End Date.",
+    "selectLeaveCodeFirst": "Please select Leave Code first before selecting dates",
     "requiredFields": "Leave Code and End Date are required.",
     "successfully": "Successfully",
     "andSubmitted": "and Submitted",

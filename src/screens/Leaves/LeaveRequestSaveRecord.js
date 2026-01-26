@@ -14,6 +14,7 @@ import {
   BackHandler,
   Platform,
   I18nManager,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -74,7 +75,8 @@ const LeaveRequestSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [leaveLabelsData, setLeaveLabelsData] = useState({});
 
   const createInitialFormData = () => ({
@@ -91,6 +93,7 @@ const LeaveRequestSaveRecord = () => {
     leaveEndDate: '',
     leaveDays: '',
     reason: '',
+    leaveRequestId: '',
   });
 
   const [formData, setFormData] = useState(() => createInitialFormData());
@@ -245,31 +248,45 @@ const LeaveRequestSaveRecord = () => {
   useFocusEffect(
     React.useCallback(() => {
       const initializeForm = async () => {
-        await fetchLeaveLabels();
-
-        if (mode === 'create') {
-          const freshFormData = createInitialFormData();
-          setFormData(freshFormData);
-        } else if (mode === 'edit' && leaveData?.recId) {
-          const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
-            leaveData.leaveCategory,
-          );
-
-          const editFormData = {
-            ...createInitialFormData(),
-            ...leaveData,
-            employeeId: leaveData.employeeId || employeeId,
-            employeeName: leaveData.employeeName || employeeName,
-            WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
-            leaveCategory: normalizedLeaveCategory,
-            leaveDays: leaveData.leaveDays || '',
-            balance: leaveData.balance || '0.00',
-            quota: leaveData.quota || '0.00',
-            eligibility: leaveData.eligibility || '0.00',
-          };
-
-          setFormData(editFormData);
+        setIsLoading(true);
+        try {
+          await fetchLeaveLabels();
           await fetchLeaveCodesForEmployee();
+
+          if (mode === 'create') {
+            const freshFormData = createInitialFormData();
+            setFormData(freshFormData);
+          } else if (mode === 'edit' && leaveData?.recId) {
+            const normalizedLeaveCategory = normalizeLeaveCategoryForDisplay(
+              leaveData.leaveCategory,
+            );
+
+            const editFormData = {
+              ...createInitialFormData(),
+              ...leaveData,
+              employeeId: leaveData.employeeId || employeeId,
+              employeeName: leaveData.employeeName || employeeName,
+              WorkerRecId: leaveData.WorkerRecId || WorkerRecId,
+              leaveCategory: normalizedLeaveCategory,
+              leaveDays: leaveData.leaveDays || '',
+              balance: leaveData.balance || '0.00',
+              quota: leaveData.quota || '0.00',
+              eligibility: leaveData.eligibility || '0.00',
+              leaveRequestId: leaveData.leaveReqId || '',
+            };
+
+            setFormData(editFormData);
+
+            // Fetch balance, quota, and eligibility for edit mode
+            if (leaveData.leaveCode && leaveData.leaveStartDate) {
+              await fetchBalanceQuotaEligibility(
+                leaveData.leaveCode,
+                leaveData.leaveStartDate,
+              );
+            }
+          }
+        } finally {
+          setIsLoading(false);
         }
       };
 
@@ -321,20 +338,23 @@ const LeaveRequestSaveRecord = () => {
   const fetchBalanceQuotaEligibility = async (leaveCode, startDate) => {
     try {
       const effectiveStartDate = startDate || formatToISOWithTime(new Date());
-      const leaveRequestId = mode === 'edit' ? formData.recId : '';
+      const leaveRequestId =
+        mode === 'edit' && formData.leaveRequestId
+          ? formData.leaveRequestId
+          : leaveData?.leaveReqId || '';
 
       const balanceResult = await GetLeaveBalance({
-        employeeId: formData.employeeId,
+        employeeId: formData.employeeId || employeeId,
         leaveCode: leaveCode,
         leaveStartDate: effectiveStartDate,
         leaveRequestId: leaveRequestId,
       });
 
       const quotaResult = await GetEmployeeQuota({
-        employeeId: formData.employeeId,
+        employeeId: formData.employeeId || employeeId,
         leaveCode: leaveCode,
         leaveStartDate: effectiveStartDate,
-        leaveRecId: leaveRequestId || '0',
+        leaveRecId: mode === 'edit' && formData.recId ? formData.recId : '0',
       });
 
       const balance =
@@ -391,15 +411,33 @@ const LeaveRequestSaveRecord = () => {
 
   const handleStartDateChange = async date => {
     const formatted = formatToISOWithTime(date);
+    const startDate = new Date(formatted);
+
+    if (formData.leaveEndDate) {
+      const endDate = new Date(formData.leaveEndDate);
+      if (startDate > endDate) {
+        setAlertMessage(t('leaveSaveRecord.startDateAfterEnd'));
+        setAlertModal(true);
+        setShowStartCalendar(false);
+        return;
+      }
+    }
 
     setFormData(prev => ({
       ...prev,
       leaveStartDate: formatted,
     }));
 
-    if (formData.leaveEndDate && formData.leaveCode) {
-      await fetchLeaveDaysFromAPI(formatted, formData.leaveEndDate);
+    // Add these lines:
+    if (formData.leaveCode) {
+      await fetchBalanceQuotaEligibility(formData.leaveCode, formatted);
+
+      if (formData.leaveEndDate) {
+        await fetchLeaveDaysFromAPI(formatted, formData.leaveEndDate);
+      }
     }
+
+    setShowStartCalendar(false);
   };
 
   const handleEndDateChange = async date => {
@@ -429,9 +467,28 @@ const LeaveRequestSaveRecord = () => {
       leaveEndDate: formatted,
     }));
 
+    // Add these lines:
     if (formData.leaveStartDate && formData.leaveCode) {
       await fetchLeaveDaysFromAPI(formData.leaveStartDate, formatted);
+      await fetchBalanceQuotaEligibility(
+        formData.leaveCode,
+        formData.leaveStartDate,
+      );
     }
+
+    setShowEndCalendar(false); // Add this line
+  };
+
+  const handleDatePickerOpen = dateType => {
+    if (!formData.leaveCode) {
+      setAlertMessage(
+        t('leaveSaveRecord.selectLeaveCodeFirst') ||
+          'Please select Leave Code first',
+      );
+      setAlertModal(true);
+      return false;
+    }
+    return true;
   };
 
   const handleLeaveCategoryChange = async item => {
@@ -452,12 +509,21 @@ const LeaveRequestSaveRecord = () => {
       leaveDays: '',
     }));
 
-    await fetchBalanceQuotaEligibility(newLeaveCode, formData.leaveStartDate);
+    if (formData.leaveStartDate) {
+      await fetchBalanceQuotaEligibility(newLeaveCode, formData.leaveStartDate);
+
+      if (formData.leaveEndDate) {
+        await fetchLeaveDaysFromAPI(
+          formData.leaveStartDate,
+          formData.leaveEndDate,
+        );
+      }
+    }
   };
 
   const fetchLeaveCodesForEmployee = async () => {
     try {
-      const codes = await fetchLeaveCodes(leaveData?.employeeId || employeeId);
+      const codes = await fetchLeaveCodes(formData.employeeId || employeeId);
       setLeaveCodesForEmployee(codes);
     } catch (error) {
       setAlertMessage(t('leaveRequest.fetchFailed'));
@@ -509,6 +575,7 @@ const LeaveRequestSaveRecord = () => {
         EmployeeId: data.employeeId,
         EmployeeName: data.employeeName,
         RecId: data.recId === '' ? '0' : data.recId,
+        LeaveRequestId: modalMode === 'create' ? '' : data.leaveRequestId || '',
       };
 
       if (
@@ -587,11 +654,11 @@ const LeaveRequestSaveRecord = () => {
     if (!formData.leaveCode) missingFields.push('Leave Code');
     if (!formData.leaveStartDate) missingFields.push('Leave Start Date');
     if (!formData.leaveEndDate) missingFields.push('Leave End Date');
-    if (!formData.leaveDays) {
-      missingFields.push('Leave Days');
-    } else if (Number(formData.leaveDays) === 0) {
-      missingFields.push('Leave Days cannot be 0');
-    }
+    // if (!formData.leaveDays) {
+    //   missingFields.push('Leave Days');
+    // } else if (Number(formData.leaveDays) === 0) {
+    //   missingFields.push('Leave Days cannot be 0');
+    // }
 
     if (missingFields.length > 0) {
       const message =
@@ -604,6 +671,7 @@ const LeaveRequestSaveRecord = () => {
     }
 
     setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const result = await handleAction(
@@ -638,6 +706,7 @@ const LeaveRequestSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -664,6 +733,16 @@ const LeaveRequestSaveRecord = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.LReqSR_ContentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}
@@ -836,7 +915,12 @@ const LeaveRequestSaveRecord = () => {
                   styles.LReqSR_DateSelector,
                   isRTL && {flexDirection: 'row'},
                 ]}
-                onPress={() => setShowStartCalendar(true)}>
+                // onPress={() => setShowStartCalendar(true)}>
+                onPress={() => {
+                  if (handleDatePickerOpen('start')) {
+                    setShowStartCalendar(true);
+                  }
+                }}>
                 <View style={{flex: 1}}>
                   <Text
                     style={[
@@ -860,7 +944,12 @@ const LeaveRequestSaveRecord = () => {
                   styles.LReqSR_DateSelector,
                   isRTL && {flexDirection: 'row'},
                 ]}
-                onPress={() => setShowEndCalendar(true)}>
+                // onPress={() => setShowEndCalendar(true)}>
+                onPress={() => {
+                  if (handleDatePickerOpen('end')) {
+                    setShowEndCalendar(true);
+                  }
+                }}>
                 <View style={{flex: 1}}>
                   <Text
                     style={[

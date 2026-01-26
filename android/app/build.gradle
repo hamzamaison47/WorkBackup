@@ -79,15 +79,33 @@ android {
     namespace "com.authentication"
     defaultConfig {
         applicationId "com.authentication"
-        minSdkVersion rootProject.ext.minSdkVersion
+        minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [appAuthRedirectScheme: 'com.authentication.callback',
                         appAuthRedirectScheme:'authentication']
         missingDimensionStrategy 'react-native-camera', 'general'
-       //  manifestPlaceholders = [appAuthRedirectScheme: 'com.redirectScheme.comm']
     }
+    
+    // ⚠️ FIX 1: Java compatibility - MUST match Kotlin
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17  // CHANGED to 17
+        targetCompatibility JavaVersion.VERSION_17  // CHANGED to 17
+    }
+    
+    // ⚠️ FIX 2: Kotlin compiler options - MUST match Java
+    kotlinOptions {
+        jvmTarget = '17'  // CHANGED to 17
+    }
+    
+    // ⚠️ FIX 3: Explicit JVM toolchain configuration
+    kotlin {
+        jvmToolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
+        }
+    }
+    
     signingConfigs {
         release {
             if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
@@ -127,10 +145,10 @@ android {
     }
 
     defaultConfig {
-    manifestPlaceholders = [
-      appAuthRedirectScheme: 'com.googleusercontent.apps.127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl'
-    ]
-  }
+        manifestPlaceholders = [
+            appAuthRedirectScheme: 'com.googleusercontent.apps.127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl'
+        ]
+    }
 }
 
 configurations.all {
@@ -163,8 +181,10 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:34.6.0')
     implementation 'com.google.firebase:firebase-messaging:23.4.0'
     implementation 'com.google.firebase:firebase-analytics:21.5.0'
-    // implementation 'com.google.firebase:firebase-messaging'
-    // implementation 'com.google.firebase:firebase-analytics'
+
+    // ⚠️ FIX 4: Ensure Kotlin dependencies
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.22"
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

@@ -25,7 +25,8 @@ import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
-import {chatbotClearChat} from '../store/slices/chatbotSlice'; // Adjust the path if your slice is in a different location
+// import {chatbotClearChat} from '../store/slices/chatbotSlice'; // Adjust the path if your slice is in a different location
+import {chatbotClearMessages} from '../store/slices/chatbotSlice';
 
 // Polyfill at the top of your authUtils file
 if (typeof global.atob === 'undefined') {
@@ -279,7 +280,8 @@ export const handleSuccessfulLogin = async (
     // Step 6: CRITICAL - Clear previous user's Firebase data FIRST
     console.log('Clearing previous Firebase data before setting new user data');
     store.dispatch(clearFirebaseData());
-    store.dispatch(chatbotClearChat());
+    // store.dispatch(chatbotClearChat());
+    store.dispatch(chatbotClearMessages());
 
     // Then save NEW user's Firebase data to Redux
     console.log(

@@ -54,9 +54,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 import React from 'react';
-// import {useSelector} from 'react-redux';
 import {createStackNavigator} from '@react-navigation/stack';
 
 import SplashScreens from '../screens/SplashScreens';
@@ -65,6 +63,7 @@ import DrawerNavigator from './DrawerNavigator';
 import QRSetupScreen from '../screens/Setup/QRSetupScreen';
 import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
 import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
+import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -90,58 +89,64 @@ const ScreenWithSessionTimeout = ({children}) => {
 
 const AppNavigator = () => {
   return (
-    <>
-      <Stack.Navigator initialRouteName="SplashScreen">
-        {/* Screens WITHOUT session timeout */}
-        <Stack.Screen
-          name="SplashScreen"
-          component={SplashScreens}
-          options={{headerShown: false}}
-        />
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{headerShown: false}}
-        />
+    <Stack.Navigator initialRouteName="SplashScreen">
+      {/* Screens WITHOUT session timeout */}
+      <Stack.Screen
+        name="SplashScreen"
+        component={SplashScreens}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{headerShown: false}}
+      />
 
-        {/* Screens WITH session timeout */}
-        <Stack.Screen name="DrawerNavigator" options={{headerShown: false}}>
-          {() => (
-            <ScreenWithSessionTimeout>
-              <DrawerNavigator />
-            </ScreenWithSessionTimeout>
-          )}
-        </Stack.Screen>
+      {/* Screens WITH session timeout */}
+      <Stack.Screen name="DrawerNavigator" options={{headerShown: false}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <DrawerNavigator />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
 
-        <Stack.Screen
-          name="RequestForRegistration"
-          options={{headerShown: false}}>
-          {() => (
-            <ScreenWithSessionTimeout>
-              <RequestForRegistration />
-            </ScreenWithSessionTimeout>
-          )}
-        </Stack.Screen>
+      <Stack.Screen
+        name="RequestForRegistration"
+        options={{headerShown: false}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <RequestForRegistration />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
 
-        <Stack.Screen
-          name="ConfigSelectionScreen"
-          options={{headerShown: false}}>
-          {() => (
-            <ScreenWithSessionTimeout>
-              <ConfigSelectionScreen />
-            </ScreenWithSessionTimeout>
-          )}
-        </Stack.Screen>
+      {/* FIXED: Removed the extra space */}
+      <Stack.Screen
+        name="CreateAttendanceScreen"
+        component={CreateAttendanceScreen}
+        options={{
+          title: 'Mark Attendance',
+          headerBackTitle: 'Back',
+        }}
+      />
 
-        <Stack.Screen name="QRSetupScreen" options={{headerShown: false}}>
-          {() => (
-            <ScreenWithSessionTimeout>
-              <QRSetupScreen />
-            </ScreenWithSessionTimeout>
-          )}
-        </Stack.Screen>
-      </Stack.Navigator>
-    </>
+      <Stack.Screen name="ConfigSelectionScreen" options={{headerShown: false}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <ConfigSelectionScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="QRSetupScreen" options={{headerShown: false}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <QRSetupScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+    </Stack.Navigator>
   );
 };
 

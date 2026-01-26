@@ -16,6 +16,7 @@ import AttendanceCalendar from '../components/Attendance/AttendanceCalender';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
 import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
+import GlobalAIFloatingButton from '../components/AIChatbot/GlobalAIFloatingButton';
 
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {useDashboardDimensions} from '../hooks/useDashboardDimensions';
@@ -186,6 +187,18 @@ const MainDashboard = () => {
           setChatVisible(true);
         }}
       />
+      {/* <GlobalAIFloatingButton
+        onPress={() => {
+          setChatInitialMessages([
+            {
+              id: String(Date.now()),
+              from: 'bot',
+              text: 'Hey! How may I help you?',
+            },
+          ]);
+          setChatVisible(true);
+        }}
+      /> */}
     </ActionPaneContainer>
   );
 };

@@ -8,3 +8,15 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+# Keep Azure AI Service
+-keep class com.yourapp.services.** { *; }
+
+# Keep encrypted storage
+-keep class com.emeraldsanto.** { *; }
+
+# Obfuscate API keys
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+}

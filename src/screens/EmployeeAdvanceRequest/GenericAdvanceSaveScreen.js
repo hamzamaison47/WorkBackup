@@ -364,7 +364,7 @@ const GenericAdvanceSaveScreen = () => {
       const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
       const getEmployeeLookup = await GetEmployeeLookup();
 
-      console.log({allAdvanceCodes});
+      // console.log({allAdvanceCodes});
 
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
@@ -673,19 +673,6 @@ const GenericAdvanceSaveScreen = () => {
     );
   };
 
-  // Update renderGuarantorSelectedItem:
-  const renderGuarantorSelectedItem = item => {
-    if (!item) return null;
-    return (
-      <View style={styles.LReqSR_GuarantorSelectedItem}>
-        <Text style={styles.LReqSR_GuarantorSelectedText}>
-          {/* {item.EmployeeId} - {item.EmployeeName} */}
-          {item.EmployeeName}
-        </Text>
-      </View>
-    );
-  };
-
   // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -786,7 +773,7 @@ const GenericAdvanceSaveScreen = () => {
         const maxAmount = parseNumber(selectedAdvanceTypeData.MaxAdanceAmount);
         if (maxAmount > 0 && advanceAmount > maxAmount) {
           errors.push(
-            `Advance Amount cannot exceed ${formatNumber(
+            `Advance can not be greater than ${formatNumber(
               maxAmount.toString(),
             )}`,
           );
@@ -809,6 +796,12 @@ const GenericAdvanceSaveScreen = () => {
             recoveryDate,
           )}`,
         );
+      }
+    }
+
+    if (formData.Guarantor1 && formData.Guarantor2) {
+      if (formData.Guarantor1 === formData.Guarantor2) {
+        errors.push('Guarantor 1 and Guarantor 2 cannot be the same person');
       }
     }
 
@@ -1026,8 +1019,10 @@ const GenericAdvanceSaveScreen = () => {
                   <Text style={styles.LReqSR_Label}>Guarantor 1</Text>
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={guarantorsData}
-                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    data={guarantorsData.filter(
+                      emp => emp.EmployeeId !== formData.Guarantor2,
+                    )}
+                    labelField="EmployeeName"
                     valueField="EmployeeId"
                     placeholder="Select Guarantor 1"
                     value={formData.Guarantor1}
@@ -1046,15 +1041,17 @@ const GenericAdvanceSaveScreen = () => {
                     inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                     iconStyle={styles.LReqSR_DropdownIcon}
                     renderItem={renderGuarantorItem}
-                    searchField="combinedLabel" // Add this prop for searching
+                    searchField="combinedLabel"
                   />
 
                   {/* Guarantor 2 */}
                   <Text style={styles.LReqSR_Label}>Guarantor 2</Text>
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={guarantorsData}
-                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    data={guarantorsData.filter(
+                      emp => emp.EmployeeId !== formData.Guarantor1,
+                    )}
+                    labelField="EmployeeName"
                     valueField="EmployeeId"
                     placeholder="Select Guarantor 2"
                     value={formData.Guarantor2}
@@ -1073,7 +1070,7 @@ const GenericAdvanceSaveScreen = () => {
                     inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                     iconStyle={styles.LReqSR_DropdownIcon}
                     renderItem={renderGuarantorItem}
-                    searchField="combinedLabel" // Add this prop for searching
+                    searchField="combinedLabel"
                   />
 
                   <Text style={styles.LReqSR_Label}>Recovery Amount *</Text>
