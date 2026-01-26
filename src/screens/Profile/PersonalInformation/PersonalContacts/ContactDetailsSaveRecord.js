@@ -12,7 +12,8 @@ import {
   SafeAreaView,
   BackHandler,
   Platform,
-  Switch, // <-- add this line
+  Switch,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,6 +23,7 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../../../store/utils/translate';
 
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -109,6 +111,7 @@ const ContactDetailsSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   /* -------  STATIC DROPDOWN DATA  ------- */
   const contactTypeOptions = [
@@ -235,7 +238,7 @@ const ContactDetailsSaveRecord = () => {
     }
 
     setProcessingButton(actionType);
-    setIsLoading(true);
+    setIsProcessing(true);
 
     try {
       /*  AX contact endpoint expects EmployeeId = WorkerRecId  */
@@ -295,7 +298,7 @@ const ContactDetailsSaveRecord = () => {
       return {IsSuccess: false};
     } finally {
       setProcessingButton('');
-      setIsLoading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -318,6 +321,16 @@ const ContactDetailsSaveRecord = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.contentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={styles.formContainer}

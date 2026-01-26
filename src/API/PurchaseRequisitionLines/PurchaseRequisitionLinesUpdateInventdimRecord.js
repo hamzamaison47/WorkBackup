@@ -101,6 +101,7 @@ const buildContractXml = contracts => {
 
   const ns = 'tem';
   const fields = [
+    'ConfigId',
     'InventBatchId',
     'InventColorId',
     'InventLocationId',

@@ -105,6 +105,8 @@ const DynamicRequestCard = ({
         return `${value}`;
       case 'status':
         return value;
+      case 'boolean':
+        return value;
       default:
         return value || '';
     }
@@ -206,6 +208,23 @@ const DynamicRequestCard = ({
       return (
         <View key={index} style={styles.DRC_InfoBlock}>
           <Text style={styles.DRC_StatusText}>{formattedValue}</Text>
+        </View>
+      );
+    }
+
+    if (field.type === 'boolean') {
+      return (
+        <View key={index} style={styles.DRC_InfoBlock}>
+          <Text style={styles.DRC_Label}>{field.label}:</Text>
+          <View
+            style={{flex: 1, alignItems: 'flex-end', justifyContent: 'center'}}>
+            {formattedValue === true ||
+            formattedValue === 'true' ||
+            formattedValue === 1 ||
+            formattedValue === '1' ? (
+              <FontAwesome name="check" size={16} color="#000000ff" />
+            ) : null}
+          </View>
         </View>
       );
     }

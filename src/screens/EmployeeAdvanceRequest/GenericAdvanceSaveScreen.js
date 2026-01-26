@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   Pressable,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,6 +23,7 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../store/utils/translate';
 
 import {CreateAdvanceRequest} from '../../API/EmployeeAdvanceRequest/CreateAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
@@ -79,6 +81,7 @@ const GenericAdvanceSaveScreen = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [dataInitialized, setDataInitialized] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Enhanced validation error states
   const [validationErrors, setValidationErrors] = useState({});
@@ -361,7 +364,7 @@ const GenericAdvanceSaveScreen = () => {
     try {
       setIsLoading(true);
 
-      const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
+      const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest(employeeId);
       const getEmployeeLookup = await GetEmployeeLookup();
 
       // console.log({allAdvanceCodes});
@@ -850,6 +853,7 @@ const GenericAdvanceSaveScreen = () => {
     }
 
     setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const result = await handleAction(
@@ -880,6 +884,7 @@ const GenericAdvanceSaveScreen = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -920,6 +925,16 @@ const GenericAdvanceSaveScreen = () => {
           <KeyboardAvoidingView
             behavior="padding"
             style={styles.LReqSR_ContentWrapper}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}>

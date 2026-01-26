@@ -6,7 +6,7 @@ import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-const RetrieveAllAdvanceTypeRequest = async () => {
+const RetrieveAllAdvanceTypeRequest = async ({employeeId}) => {
   try {
     const config = await getActiveConfigData();
 
@@ -17,6 +17,7 @@ const RetrieveAllAdvanceTypeRequest = async () => {
     const token = await getToken();
 
     const soapBody = `<retrieveAll xmlns="http://tempuri.org">
+      <_employeeId>${employeeId}</_employeeId>
       </retrieveAll>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

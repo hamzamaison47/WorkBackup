@@ -613,7 +613,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
         VendAccount: purchaseRequisitiondata.VendAccount,
       };
 
-      console.log('Payload to update:', payload);
+      console.log('PAYLOAD FOR UPDATEEEEEEEE:', payload);
 
       const result = await updatePurchaseRequisitionLines({
         PurchaseRequisitionLinesData: [payload],
@@ -622,7 +622,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       /** 2️⃣ Update Invent Dimensions */
       await updateInventDimensions(payload);
 
-      console.log('Update API response:', result);
+      console.log('UPDATE API RESPONSE:', result);
 
       if (result && result.IsSuccess) {
         setAlertMessage('Purchase Requisition Line Updated Successfully');
@@ -1010,7 +1010,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                       <Text style={styles.LReqSR_Label}>
                         Inventory Combinations
                         <Text
-                          style={{color: '#888', fontSize: 12, marginLeft: 5}}>
+                          style={{color: '#888', fontSize: 14, marginLeft: 5}}>
                           (Optional - will auto-fill dimensions below)
                         </Text>
                       </Text>
