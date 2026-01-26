@@ -2,7 +2,10 @@ import {createSlice} from '@reduxjs/toolkit';
 
 const initialState = {
   messages: [],
-  leaveFlow: null,
+  isTyping: false,
+  pendingAction: null,
+  currentScreen: null,
+  conversationContext: [],
 };
 
 const chatbotSlice = createSlice({
@@ -15,12 +18,36 @@ const chatbotSlice = createSlice({
     chatbotSetMessages: (state, action) => {
       state.messages = action.payload;
     },
-    chatbotSetLeaveFlow: (state, action) => {
-      state.leaveFlow = action.payload;
+    chatbotClearMessages: state => {
+      state.messages = [];
     },
+
+    // ADD THIS - This is what's missing
     chatbotClearChat: state => {
       state.messages = [];
-      state.leaveFlow = null;
+      state.conversationContext = [];
+      state.pendingAction = null;
+      state.isTyping = false;
+    },
+
+    chatbotSetTyping: (state, action) => {
+      state.isTyping = action.payload;
+    },
+    chatbotSetPendingAction: (state, action) => {
+      state.pendingAction = action.payload;
+    },
+    chatbotSetCurrentScreen: (state, action) => {
+      state.currentScreen = action.payload;
+    },
+    chatbotAddToContext: (state, action) => {
+      state.conversationContext.push(action.payload);
+      // Keep only last 10 context items
+      if (state.conversationContext.length > 10) {
+        state.conversationContext = state.conversationContext.slice(-10);
+      }
+    },
+    chatbotClearContext: state => {
+      state.conversationContext = [];
     },
   },
 });
@@ -28,8 +55,13 @@ const chatbotSlice = createSlice({
 export const {
   chatbotAddMessage,
   chatbotSetMessages,
-  chatbotSetLeaveFlow,
-  chatbotClearChat,
+  chatbotClearMessages,
+  chatbotClearChat, // ADD THIS
+  chatbotSetTyping,
+  chatbotSetPendingAction,
+  chatbotSetCurrentScreen,
+  chatbotAddToContext,
+  chatbotClearContext,
 } = chatbotSlice.actions;
 
 export default chatbotSlice.reducer;

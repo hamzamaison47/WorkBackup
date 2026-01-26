@@ -10,7 +10,6 @@ const AIFloatingButton = ({onPress}) => {
         onPress={onPress}
         style={styles.button}>
         <Icon name="smart-toy" size={24} color="#fff" />
-        {/* <Text style={styles.text}>AI Assistant</Text> */}
       </TouchableOpacity>
     </View>
   );
@@ -26,7 +25,7 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0066ff', // Vibrant modern blue
+    backgroundColor: '#0066ff',
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderRadius: 32,
@@ -35,12 +34,6 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.32,
     shadowRadius: 16,
-  },
-  text: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 10,
   },
 });
 
