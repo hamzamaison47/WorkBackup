@@ -1690,7 +1690,7 @@ import {
 const AIChatbot = ({visible, onClose}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const navigation = useNavigation();
+  // const navigation = useNavigation();
   const {userData} = useSelector(s => s.user || {});
   const messages = useSelector(s => s.chatbot?.messages || []);
 
