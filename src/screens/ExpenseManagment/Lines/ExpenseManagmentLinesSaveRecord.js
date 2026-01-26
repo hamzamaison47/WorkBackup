@@ -13,6 +13,7 @@ import {
   BackHandler,
   Platform,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,6 +23,7 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../../store/utils/translate';
 
 import {ExpenseCategoryLookup} from '../../../API/ExpenseManagment/Lines/ExpenseCategoryLookup';
 import {RetrieveAllCurrency} from '../../../API/ExpenseManagment/Lines/RetrieveAllCurrency';
@@ -76,6 +78,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -582,6 +585,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
     }
 
     setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const result = await handleAction(
@@ -638,6 +642,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -661,6 +666,16 @@ const ExpenseManagmentLinesSaveRecord = () => {
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.LReqSR_ContentWrapper}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+              {isProcessing && (
+                <View style={styles.LReqSR_ProcessingOverlay}>
+                  <View style={styles.LReqSR_ProcessingContainer}>
+                    <ActivityIndicator size="large" color="#0A66C2" />
+                    <Text style={styles.LReqSR_ProcessingText}>
+                      {t('common.processing')}
+                    </Text>
+                  </View>
+                </View>
+              )}
               <ScrollView
                 ref={scrollViewRef}
                 contentContainerStyle={styles.LReqSR_FormContainer}

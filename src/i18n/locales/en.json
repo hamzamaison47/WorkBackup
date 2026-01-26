@@ -214,6 +214,7 @@
   "tabNavigator": {
     "home": "Home",
     "myTeam": "My Team",
+    "MyWorkItems": "Work Item Assigned To Me",
     "history": "History",
     "profile": "Profile"
   },

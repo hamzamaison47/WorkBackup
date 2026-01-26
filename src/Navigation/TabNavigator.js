@@ -80,6 +80,11 @@ const TabNavigator = () => {
         options={{tabBarLabel: t('tabNavigator.history')}}
       />
       <Tab.Screen
+        name="WorkItemAssignedToMe"
+        component={DisplayListPage}
+        options={{tabBarLabel: t('tabNavigator.MyWorkItems')}}
+      />
+      <Tab.Screen
         name="Profile"
         component={Profile}
         options={{tabBarLabel: t('tabNavigator.profile')}}
