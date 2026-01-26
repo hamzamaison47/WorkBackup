@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 // services/VoiceRecordingService.js
 import Voice from '@react-native-voice/voice';
 import {PermissionsAndroid, Platform} from 'react-native';
