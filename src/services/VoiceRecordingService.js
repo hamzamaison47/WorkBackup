@@ -1,4 +1,3 @@
-/* eslint-disable curly */
 // services/VoiceRecordingService.js
 import Voice from '@react-native-voice/voice';
 import {PermissionsAndroid, Platform} from 'react-native';
@@ -9,45 +8,70 @@ class VoiceRecordingService {
     this.transcriptionResult = null;
     this.partialResults = [];
     this.recordingStartTime = null;
-    this.recognitionStarted = false;
-    this.setupVoiceListeners();
+    this.currentLocale = 'en-US';
+    this.onResultCallback = null;
   }
 
   setupVoiceListeners() {
     // Remove all existing listeners first
-    Voice.destroy().then(() => {
-      Voice.removeAllListeners();
-    });
+    Voice.removeAllListeners();
 
-    Voice.onSpeechStart = e => {
+    Voice.onSpeechStart = () => {
       console.log('🎤 Speech started');
-      this.recognitionStarted = true;
+      this.isRecording = true;
     };
 
-    Voice.onSpeechRecognized = e => {
-      console.log('✅ Speech recognized');
-    };
-
-    Voice.onSpeechEnd = e => {
+    Voice.onSpeechEnd = () => {
       console.log('🛑 Speech ended');
-      this.recognitionStarted = false;
+      // Don't set isRecording = false here - let stopRecording handle it
     };
 
     Voice.onSpeechError = e => {
-      console.error('❌ Speech error:', e.error);
-      // Don't immediately set isRecording to false - let stopRecording handle it
-      if (e.error && e.error.code) {
-        console.error('Error code:', e.error.code);
-        console.error('Error message:', e.error.message);
+      console.error('❌ Speech error:', e);
+      this.isRecording = false;
+
+      // Handle "no match" error gracefully
+      if (e.error?.code === '7') {
+        console.log('⚠️ No match error - speech not recognized');
+        if (this.onResultCallback) {
+          this.onResultCallback({
+            success: false,
+            error: 'Speech not recognized. Please try again.',
+            code: 'no_match',
+          });
+        }
+      } else if (this.onResultCallback) {
+        this.onResultCallback({
+          success: false,
+          error: e.error?.message || 'Speech recognition failed',
+        });
       }
     };
 
     Voice.onSpeechResults = e => {
-      console.log('📝 Final speech results:', e);
-      if (e.value && e.value.length > 0) {
-        this.transcriptionResult = e.value[0];
-        console.log('✅ Final transcription:', this.transcriptionResult);
-      }
+      console.log('📝 Final results:', e);
+
+      // Stop recording immediately when we get results
+      this.stopRecordingInternal().then(() => {
+        if (e.value && e.value.length > 0) {
+          const result = e.value[0];
+          console.log('✅ Transcription:', result);
+
+          this.transcriptionResult = result;
+
+          if (this.onResultCallback) {
+            this.onResultCallback({
+              success: true,
+              text: result.trim(),
+            });
+          }
+        } else if (this.onResultCallback) {
+          this.onResultCallback({
+            success: false,
+            error: 'No speech detected',
+          });
+        }
+      });
     };
 
     Voice.onSpeechPartialResults = e => {
@@ -55,13 +79,14 @@ class VoiceRecordingService {
         const partial = e.value[0];
         console.log('📝 Partial result:', partial);
         this.partialResults.push(partial);
-        // Store the latest partial as backup
+        // Store the latest partial for potential use
         this.transcriptionResult = partial;
       }
     };
 
     Voice.onSpeechVolumeChanged = e => {
-      // Uncomment for debugging: console.log('🔊 Volume:', e.value);
+      // Optional: For debugging audio levels
+      // console.log('🔊 Volume:', e.value);
     };
   }
 
@@ -70,37 +95,32 @@ class VoiceRecordingService {
       try {
         const grants = await PermissionsAndroid.requestMultiple([
           PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
         ]);
 
-        const audioGranted =
+        const granted =
           grants[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] ===
           PermissionsAndroid.RESULTS.GRANTED;
 
         console.log(
           '🎤 Microphone permission:',
-          audioGranted ? 'GRANTED' : 'DENIED',
+          granted ? 'GRANTED' : 'DENIED',
         );
-        return audioGranted;
+        return granted;
       } catch (err) {
         console.error('❌ Permission error:', err);
         return false;
       }
     }
-    return true; // iOS handles permissions differently
+    return true;
   }
 
   async startRecording() {
     try {
-      console.log('🎤 Starting voice recording...');
+      console.log('🎤 Starting recording...');
 
-      // Check if already recording
       if (this.isRecording) {
-        console.warn('⚠️ Already recording');
-        return {
-          success: false,
-          error: 'Already recording',
-        };
+        console.log('⚠️ Already recording');
+        return {success: false, error: 'Already recording'};
       }
 
       // Check permissions
@@ -108,165 +128,125 @@ class VoiceRecordingService {
       if (!hasPermission) {
         return {
           success: false,
-          error: 'Microphone permission denied. Please enable it in Settings.',
+          error: 'Microphone permission required',
         };
       }
 
-      // Cleanup previous session
+      // Clean up previous session
       try {
         await Voice.destroy();
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       } catch (e) {
         console.log('⚠️ Cleanup warning:', e.message);
       }
 
       // Reset state
+      this.isRecording = false;
       this.transcriptionResult = null;
       this.partialResults = [];
-      this.recognitionStarted = false;
       this.recordingStartTime = Date.now();
 
-      // Re-setup listeners
+      // Setup listeners
       this.setupVoiceListeners();
 
-      // Try multiple locales with different configurations
-      const localeConfigs = [
-        {
-          locale: 'en-US',
-          options: {
-            EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 15000,
-            EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 2000,
-            EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 2000,
-            EXTRA_MAX_RESULTS: 5,
-            EXTRA_PARTIAL_RESULTS: true,
-            EXTRA_PREFER_OFFLINE: false, // Use online recognition
-          },
-        },
-        {
-          locale: 'en-GB',
-          options: {
-            EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 15000,
-            EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 2000,
-            EXTRA_MAX_RESULTS: 5,
-            EXTRA_PARTIAL_RESULTS: true,
-          },
-        },
-        {
-          locale: 'en-IN',
-          options: {
-            EXTRA_PARTIAL_RESULTS: true,
-            EXTRA_MAX_RESULTS: 5,
-          },
-        },
-      ];
+      // Start with SIMPLE config - like your working code
+      try {
+        await Voice.start(this.currentLocale, {
+          EXTRA_PARTIAL_RESULTS: true,
+          EXTRA_MAX_RESULTS: 3,
+        });
 
-      let started = false;
-      for (const config of localeConfigs) {
+        console.log('✅ Recording started');
+        this.isRecording = true;
+
+        return {
+          success: true,
+          message: 'Recording started',
+        };
+      } catch (startError) {
+        console.error('❌ Voice.start failed:', startError);
+
+        // Try without options as fallback
         try {
-          console.log(`🔄 Trying locale: ${config.locale}`);
-          await Voice.start(config.locale, config.options);
+          await Voice.start(this.currentLocale);
+          console.log('✅ Recording started (fallback)');
           this.isRecording = true;
-          started = true;
-          console.log(`✅ Voice recognition started with ${config.locale}`);
+
           return {
             success: true,
-            message: 'Voice recognition started. Speak now...',
+            message: 'Recording started',
           };
-        } catch (e) {
-          console.error(`Failed with ${config.locale}:`, e.message);
-          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (fallbackError) {
+          console.error('❌ Fallback also failed:', fallbackError);
+          throw fallbackError;
         }
       }
-
-      if (!started) {
-        throw new Error('Failed to start voice recognition');
-      }
     } catch (error) {
-      console.error('❌ Start recording error:', error);
+      console.error('❌ Start error:', error);
       this.isRecording = false;
 
       return {
         success: false,
-        error: `Failed to start: ${error.message}. Please ensure your device has internet connection for voice recognition.`,
+        error: `Failed to start: ${error.message}`,
       };
+    }
+  }
+
+  async stopRecordingInternal() {
+    try {
+      if (!this.isRecording) {
+        return;
+      }
+
+      console.log('🛑 Stopping recording...');
+
+      try {
+        await Voice.stop();
+      } catch (stopError) {
+        console.error('Voice.stop error:', stopError);
+      }
+
+      this.isRecording = false;
+
+      // Calculate duration if we have a start time
+      if (this.recordingStartTime) {
+        const duration = (Date.now() - this.recordingStartTime) / 1000;
+        console.log(`⏱️ Recording duration: ${duration.toFixed(1)}s`);
+        return duration;
+      }
+
+      return 0;
+    } catch (error) {
+      console.error('❌ Stop internal error:', error);
+      this.isRecording = false;
+      return 0;
     }
   }
 
   async stopRecording() {
     try {
-      console.log('🛑 Stopping voice recording...');
+      const duration = await this.stopRecordingInternal();
 
-      if (!this.isRecording) {
-        console.warn('⚠️ No active recording');
-        return {
-          success: false,
-          error: 'No active recording to stop',
-        };
-      }
+      // Wait a bit for any pending results
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Calculate duration
-      const duration = this.recordingStartTime
-        ? (Date.now() - this.recordingStartTime) / 1000
-        : 0;
-
-      console.log(`⏱️ Recording duration: ${duration.toFixed(1)}s`);
-
-      // Check if recording was too short
-      if (duration < 0.5) {
-        this.isRecording = false;
-        return {
-          success: false,
-          error: 'Recording too short. Please speak for at least 1 second.',
-          duration,
-        };
-      }
-
-      // Stop voice recognition
-      try {
-        await Voice.stop();
-      } catch (stopError) {
-        console.error('❌ Voice.stop error:', stopError);
-        // Continue anyway - we might have partial results
-      }
-
-      // Wait longer for final results (especially important for "no match" errors)
-      await new Promise(resolve => setTimeout(resolve, 1200));
-
-      this.isRecording = false;
-
-      // Get best transcription result
+      // Get the best result we have
       let finalText = this.transcriptionResult || '';
 
-      // If no final result, try to use the last partial result
+      // Check partials if no final result
       if (!finalText && this.partialResults.length > 0) {
-        finalText = this.partialResults[this.partialResults.length - 1];
-        console.log('📝 Using last partial result:', finalText);
+        // Use the longest partial result
+        finalText = this.partialResults.reduce((longest, current) => {
+          return current.length > longest.length ? current : longest;
+        }, '');
+        console.log('📝 Using best partial result:', finalText);
       }
 
-      console.log('✅ Stop recording complete:', {
-        text: finalText?.substring(0, 100),
-        textLength: finalText?.length || 0,
-        duration: duration.toFixed(1),
-        hasResult: !!finalText,
-        partialResultsCount: this.partialResults.length,
-      });
-
-      // More helpful error message
       if (!finalText || finalText.trim().length === 0) {
-        let errorMessage = 'No speech detected. ';
-
-        if (duration < 2) {
-          errorMessage += 'Try speaking for at least 2-3 seconds.';
-        } else {
-          errorMessage +=
-            'Please speak louder and clearer. Make sure you have internet connection.';
-        }
-
         return {
           success: false,
-          error: errorMessage,
+          error: 'No speech detected. Please try again.',
           duration,
-          tip: 'Voice recognition works best in quiet environments with good internet connection.',
         };
       }
 
@@ -274,16 +254,12 @@ class VoiceRecordingService {
         success: true,
         text: finalText.trim(),
         duration,
-        confidence: 1.0,
-        alternatives: this.partialResults,
       };
     } catch (error) {
       console.error('❌ Stop recording error:', error);
-      this.isRecording = false;
-
       return {
         success: false,
-        error: `Failed to process: ${error.message}`,
+        error: error.message,
       };
     }
   }
@@ -295,8 +271,8 @@ class VoiceRecordingService {
       if (this.isRecording) {
         try {
           await Voice.cancel();
-        } catch (e) {
-          console.error('Cancel error:', e);
+        } catch (cancelError) {
+          console.error('Cancel error:', cancelError);
         }
       }
 
@@ -304,7 +280,7 @@ class VoiceRecordingService {
       this.transcriptionResult = null;
       this.partialResults = [];
       this.recordingStartTime = null;
-      this.recognitionStarted = false;
+      this.onResultCallback = null;
 
       console.log('✅ Recording cancelled');
       return {success: true};
@@ -315,51 +291,106 @@ class VoiceRecordingService {
     }
   }
 
-  cleanup() {
-    try {
-      Voice.destroy()
-        .then(() => {
-          Voice.removeAllListeners();
-          console.log('✅ Voice service cleaned up');
-        })
-        .catch(e => console.error('Cleanup error:', e));
+  // Set callback for real-time results (optional)
+  setResultCallback(callback) {
+    this.onResultCallback = callback;
+  }
 
-      this.isRecording = false;
-      this.transcriptionResult = null;
-      this.partialResults = [];
-      this.recordingStartTime = null;
-      this.recognitionStarted = false;
+  // Check if speech recognition is available
+  async isAvailable() {
+    try {
+      const available = await Voice.isAvailable();
+      console.log('🎤 Speech recognition available:', available);
+      return available;
     } catch (error) {
-      console.error('❌ Cleanup error:', error);
+      console.error('❌ Availability check failed:', error);
+      return false;
     }
   }
 
-  getRecordingDuration() {
-    if (!this.recordingStartTime) return '0:00';
-    const seconds = Math.floor((Date.now() - this.recordingStartTime) / 1000);
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  // Get supported locales
+  async getSupportedLocales() {
+    try {
+      const locales = await Voice.getSupportedLocales();
+      console.log('🌍 Supported locales count:', locales?.locales?.length || 0);
+      return locales?.locales || [];
+    } catch (error) {
+      console.error('❌ Failed to get locales:', error);
+      return [];
+    }
+  }
+
+  // Test microphone and speech recognition
+  async testRecognition() {
+    try {
+      console.log('🧪 Testing speech recognition...');
+
+      const available = await this.isAvailable();
+      if (!available) {
+        return {
+          success: false,
+          error: 'Speech recognition not available',
+        };
+      }
+
+      const hasPermission = await this.requestPermissions();
+      if (!hasPermission) {
+        return {
+          success: false,
+          error: 'Microphone permission denied',
+        };
+      }
+
+      const locales = await this.getSupportedLocales();
+
+      return {
+        success: true,
+        available: true,
+        hasPermission: true,
+        localeCount: locales.length,
+        defaultLocale: this.currentLocale,
+      };
+    } catch (error) {
+      console.error('❌ Test failed:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  cleanup() {
+    try {
+      Voice.destroy();
+      Voice.removeAllListeners();
+    } catch (e) {
+      console.error('Cleanup error:', e);
+    }
+
+    this.isRecording = false;
+    this.transcriptionResult = null;
+    this.partialResults = [];
+    this.recordingStartTime = null;
+    this.onResultCallback = null;
+
+    console.log('✅ Service cleaned up');
   }
 
   isCurrentlyRecording() {
     return this.isRecording;
   }
 
-  // Get current transcription (useful for real-time display)
-  getCurrentTranscription() {
-    return this.transcriptionResult || '';
-  }
-
-  // Get all partial results
+  // Get partial results for real-time display
   getPartialResults() {
     return this.partialResults;
   }
 
-  async destroy() {
-    this.cleanup();
+  // Get current transcription
+  getCurrentTranscription() {
+    return this.transcriptionResult || '';
   }
 }
 
-// Export singleton instance
-export default new VoiceRecordingService();
+// Export a singleton instance
+const voiceRecordingService = new VoiceRecordingService();
+export default voiceRecordingService;

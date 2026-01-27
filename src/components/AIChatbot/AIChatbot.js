@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
@@ -16,6 +15,7 @@ import {
   Animated,
   ActivityIndicator,
   Alert,
+  InteractionManager,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import moment from 'moment';
@@ -25,7 +25,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import azureAIService from '../../services/AzureAIService';
 import LeaveService from '../../services/LeaveService';
-// import VoiceRecordingService from '../../services/VoiceRecordingService';
+import VoiceRecordingService from '../../services/VoiceRecordingService';
 
 import {
   chatbotAddMessage,
@@ -40,20 +40,15 @@ const AIChatbot = ({visible, onClose}) => {
 
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showQuickActions, setShowQuickActions] = useState(false);
-  const [language, setLanguage] = useState('en');
-
-  // Voice states - DISABLED
-  // const [isRecording, setIsRecording] = useState(false);
-  // const [recordingDuration, setRecordingDuration] = useState(0);
-  // const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
 
   const processingRef = useRef(false);
   const flatListRef = useRef(null);
   const leaveService = useRef(new LeaveService());
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  // const recordingTimer = useRef(null);
-  // const micScaleAnim = useRef(new Animated.Value(1)).current;
+  const micScaleAnim = useRef(new Animated.Value(1)).current;
+  const recordingTimer = useRef(null);
 
   /* -------------------- Initialize -------------------- */
   useEffect(() => {
@@ -70,20 +65,36 @@ const AIChatbot = ({visible, onClose}) => {
     }
 
     return () => {
-      // Voice cleanup disabled
-      // if (isRecording) {
-      //   VoiceRecordingService.cancelRecording();
-      // }
-      // clearTimers();
+      if (isRecording) {
+        VoiceRecordingService.cancelRecording();
+      }
+      clearTimers();
     };
   }, [visible]);
 
-  // const clearTimers = () => {
-  //   if (recordingTimer.current) {
-  //     clearInterval(recordingTimer.current);
-  //     recordingTimer.current = null;
-  //   }
-  // };
+  /* -------------------- Auto-scroll -------------------- */
+  useEffect(() => {
+    if (messages.length > 0 && flatListRef.current) {
+      InteractionManager.runAfterInteractions(() => {
+        flatListRef.current?.scrollToEnd({animated: true});
+      });
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (isTyping && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({animated: true});
+      }, 500);
+    }
+  }, [isTyping]);
+
+  const clearTimers = () => {
+    if (recordingTimer.current) {
+      clearInterval(recordingTimer.current);
+      recordingTimer.current = null;
+    }
+  };
 
   /* -------------------- Animations -------------------- */
   useEffect(() => {
@@ -107,40 +118,94 @@ const AIChatbot = ({visible, onClose}) => {
     }
   }, [isTyping]);
 
-  // Voice animation disabled
-  // useEffect(() => {
-  //   if (isRecording) {
-  //     Animated.loop(
-  //       Animated.sequence([
-  //         Animated.timing(micScaleAnim, {
-  //           toValue: 1.3,
-  //           duration: 500,
-  //           useNativeDriver: true,
-  //         }),
-  //         Animated.timing(micScaleAnim, {
-  //           toValue: 1,
-  //           duration: 500,
-  //           useNativeDriver: true,
-  //         }),
-  //       ]),
-  //     ).start();
-  //   } else {
-  //     micScaleAnim.setValue(1);
-  //   }
-  // }, [isRecording]);
+  useEffect(() => {
+    if (isRecording) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(micScaleAnim, {
+            toValue: 1.3,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(micScaleAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    } else {
+      micScaleAnim.setValue(1);
+    }
+  }, [isRecording]);
 
-  /* -------------------- Voice Recording - DISABLED -------------------- */
-  // const startRecording = async () => {
-  //   // Disabled - do nothing
-  // };
+  /* -------------------- Voice Recording -------------------- */
+  const startRecording = async () => {
+    try {
+      console.log('🎤 Starting recording...');
+      setIsRecording(true);
+      setRecordingDuration(0);
 
-  // const stopRecording = async () => {
-  //   // Disabled - do nothing
-  // };
+      // Start duration timer
+      recordingTimer.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
 
-  // const cancelRecording = async () => {
-  //   // Disabled - do nothing
-  // };
+      const result = await VoiceRecordingService.startRecording();
+
+      if (!result.success) {
+        console.error('❌ Recording failed to start:', result.error);
+        Alert.alert('Recording Error', result.error);
+        stopRecording();
+      }
+    } catch (error) {
+      console.error('❌ Start recording error:', error);
+      Alert.alert('Error', 'Failed to start recording. Please try again.');
+      stopRecording();
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      console.log('🛑 Stopping recording...');
+      clearTimers();
+      setIsRecording(false);
+
+      // Wait a moment before stopping to ensure we get results
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const result = await VoiceRecordingService.stopRecording();
+
+      if (result.success && result.text) {
+        console.log('✅ Transcription:', result.text);
+        // Put transcribed text in the input field
+        setInput(result.text);
+      } else {
+        console.warn('⚠️ No transcription:', result.error);
+        if (result.error) {
+          Alert.alert('Transcription', result.error);
+        }
+      }
+
+      setRecordingDuration(0);
+    } catch (error) {
+      console.error('❌ Stop recording error:', error);
+      Alert.alert('Error', 'Failed to process recording.');
+      setRecordingDuration(0);
+    }
+  };
+
+  const cancelRecording = async () => {
+    try {
+      console.log('🗑️ Cancelling recording...');
+      clearTimers();
+      setIsRecording(false);
+      setRecordingDuration(0);
+      await VoiceRecordingService.cancelRecording();
+    } catch (error) {
+      console.error('❌ Cancel recording error:', error);
+    }
+  };
 
   /* -------------------- Message Handling -------------------- */
   const addMessage = (text, from) => {
@@ -153,8 +218,11 @@ const AIChatbot = ({visible, onClose}) => {
 
     dispatch(chatbotAddMessage(newMsg));
 
+    // Auto-scroll after message is added
     setTimeout(() => {
-      flatListRef.current?.scrollToEnd({animated: true});
+      if (flatListRef.current) {
+        flatListRef.current.scrollToEnd({animated: true});
+      }
     }, 100);
   };
 
@@ -174,69 +242,6 @@ const AIChatbot = ({visible, onClose}) => {
       });
     }, 300);
   };
-
-  /* -------------------- Detect Language -------------------- */
-  /* -------------------- Detect Language -------------------- */
-  const detectLanguage = text => {
-    // Very simple detection - just to give AI a hint
-    const cleanText = text.trim();
-
-    // Check script type
-    if (/[آ-ی]/.test(cleanText)) {
-      // Could be Urdu or Arabic - let AI decide
-      return 'auto';
-    }
-
-    if (/[a-zA-Z]/.test(cleanText)) {
-      return 'en';
-    }
-
-    return 'en'; // Default
-  };
-
-  /* -------------------- Detect Attendance Intent -------------------- */
-  const detectAttendanceIntent = text => {
-    // Remove this entire function or leave it empty
-    // AI will handle intent detection
-    return false;
-  };
-
-  /* -------------------- Detect Attendance Intent -------------------- */
-  // const detectAttendanceIntent = text => {
-  //   // Simplify - just check for any attendance-related keywords in any language
-  //   // AI will handle the actual intent detection
-  //   const lowerText = text.toLowerCase().trim();
-
-  //   // Very basic keywords in multiple languages
-  //   const keywords = [
-  //     // English
-  //     'attendance',
-  //     'mark',
-  //     'punch',
-  //     'check in',
-  //     'check out',
-  //     // Roman Urdu
-  //     'haazri',
-  //     'hazri',
-  //     'attendance',
-  //     'mark',
-  //     // Urdu script (partial)
-  //     'حاضری',
-  //     'حاضر',
-  //     'مارک',
-  //     // Arabic
-  //     'حضور',
-  //     'تسجيل',
-  //   ];
-
-  //   return keywords.some(keyword => {
-  //     if (keyword.includes(' ')) {
-  //       return lowerText.includes(keyword.toLowerCase());
-  //     }
-  //     const words = lowerText.split(/\s+/);
-  //     return words.some(word => word.includes(keyword.toLowerCase()));
-  //   });
-  // };
 
   /* -------------------- Main Send Handler -------------------- */
   const handleSend = async textOverride => {
@@ -279,63 +284,6 @@ const AIChatbot = ({visible, onClose}) => {
       setIsTyping(false);
     }
   };
-  // const handleSend = async textOverride => {
-  //   const text = (textOverride || input).trim();
-  //   if (!text || processingRef.current) {
-  //     return;
-  //   }
-
-  //   processingRef.current = true;
-  //   setInput('');
-  //   setShowQuickActions(false);
-
-  //   if (!textOverride) {
-  //     addMessage(text, 'user');
-  //   }
-
-  //   // Detect language - simplified
-  //   const detectedLanguage = detectLanguage(text);
-  //   console.log(`🌍 Language setting: ${detectedLanguage}`);
-
-  //   setIsTyping(true);
-
-  //   try {
-  //     const functions = leaveService.current.getFunctionDefinitions();
-
-  //     console.log('💬 User message:', text);
-
-  //     const aiResponse = await azureAIService.chat({
-  //       userMessage: text,
-  //       conversationHistory: messages,
-  //       availableFunctions: functions,
-  //       userData: userData,
-  //       preferredLanguage: detectedLanguage,
-  //     });
-
-  //     console.log('🤖 AI response:', aiResponse);
-
-  //     if (aiResponse.type === 'function_call') {
-  //       await handleFunctionCall(aiResponse);
-  //     } else {
-  //       addMessage(aiResponse.text, 'bot');
-  //     }
-  //   } catch (err) {
-  //     console.error('❌ Chat error:', err);
-
-  //     // Error message in appropriate language
-  //     const errorMessage =
-  //       detectedLanguage === 'ur'
-  //         ? 'معذرت، مجھے ایک خرابی کا سامنا ہوا۔ براہ کرم دوبارہ کوشش کریں۔'
-  //         : detectedLanguage === 'ar'
-  //         ? 'عذراً، واجهت خطأ. يرجى المحاولة مرة أخرى.'
-  //         : 'Sorry, I encountered an error. Please try again.';
-
-  //     addMessage(errorMessage, 'bot');
-  //   } finally {
-  //     processingRef.current = false;
-  //     setIsTyping(false);
-  //   }
-  // };
 
   /* -------------------- Handle Function Call -------------------- */
   const handleFunctionCall = async functionCall => {
@@ -345,15 +293,12 @@ const AIChatbot = ({visible, onClose}) => {
 
       // SPECIAL HANDLING FOR NAVIGATION
       if (functionCall.function === 'navigate_to_screen') {
-        // Handle navigation immediately
         const {screenName, message} = functionCall.parameters;
 
-        // Show message if provided
         if (message) {
           addMessage(message, 'bot');
         }
 
-        // Navigate after a short delay
         setTimeout(() => {
           navigateToScreen(screenName);
         }, 1000);
@@ -378,7 +323,6 @@ const AIChatbot = ({visible, onClose}) => {
 
       // Check if result contains navigation action
       if (result.action === 'navigate') {
-        // Handle navigation from other functions
         if (result.message) {
           addMessage(result.message, 'bot');
         }
@@ -395,385 +339,32 @@ const AIChatbot = ({visible, onClose}) => {
       await handleFunctionSuccess(functionCall, result);
     } catch (error) {
       console.error('❌ Function execution error:', error);
-
-      // Get language from current context
-      const lastUserMessage = messages[messages.length - 1];
-      const lang =
-        lastUserMessage && lastUserMessage.from === 'user'
-          ? detectLanguage(lastUserMessage.text)
-          : 'en';
-
-      const errorMsg =
-        lang === 'ur'
-          ? 'میں آپ کی درخواست پر کارروائی کرنے میں ناکام رہا۔ براہ کرم دوبارہ کوشش کریں۔'
-          : lang === 'ar'
-          ? 'فشلت في معالجة طلبك. يرجى المحاولة مرة أخرى.'
-          : 'I failed to process your request. Please try again.';
-
-      addMessage(errorMsg, 'bot');
+      addMessage('I failed to process your request. Please try again.', 'bot');
     }
   };
-  // const handleSend = async textOverride => {
-  //   const text = (textOverride || input).trim();
-  //   if (!text || processingRef.current) {
-  //     return;
-  //   }
-
-  //   processingRef.current = true;
-  //   setInput('');
-  //   setShowQuickActions(false);
-
-  //   if (!textOverride) {
-  //     addMessage(text, 'user');
-  //   }
-
-  //   // Detect language - let AI handle the nuances
-  //   const detectedLanguage = detectLanguage(text);
-  //   console.log(`🌍 Language setting: ${detectedLanguage}`);
-
-  //   // Check for attendance intent
-  //   if (detectAttendanceIntent(text)) {
-  //     processingRef.current = false;
-
-  //     // Don't send a response here - let AI handle it
-  //     // This way AI can respond in the correct language
-  //   }
-
-  //   setIsTyping(true);
-
-  //   try {
-  //     const functions = leaveService.current.getFunctionDefinitions();
-
-  //     console.log('💬 User message:', text);
-  //     console.log('🌍 Language mode:', detectedLanguage);
-
-  //     const aiResponse = await azureAIService.chat({
-  //       userMessage: text,
-  //       conversationHistory: messages,
-  //       availableFunctions: functions,
-  //       userData: userData,
-  //       preferredLanguage: detectedLanguage, // 'auto' or actual language
-  //     });
-
-  //     console.log('🤖 AI response:', aiResponse);
-
-  //     if (aiResponse.type === 'function_call') {
-  //       await handleFunctionCall(aiResponse);
-  //     } else {
-  //       addMessage(aiResponse.text, 'bot');
-  //     }
-  //   } catch (err) {
-  //     console.error('❌ Chat error:', err);
-
-  //     // Let AI decide error message language based on context
-  //     addMessage('Sorry, I encountered an error. Please try again.', 'bot');
-  //   } finally {
-  //     processingRef.current = false;
-  //     setIsTyping(false);
-  //   }
-  // };
-
-  /* -------------------- Detect Language -------------------- */
-  // const detectLanguage = text => {
-  //   // Arabic detection - check for Arabic Unicode range
-  //   const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
-  //   if (arabicPattern.test(text)) {
-  //     return 'ar';
-  //   }
-
-  //   // Urdu detection - check for Urdu Unicode range
-  //   const urduPattern = /[\u0600-\u06FF]/;
-
-  //   // Roman Urdu keywords (Urdu written in English)
-  //   const romanUrduKeywords = [
-  //     'karo',
-  //     'karein',
-  //     'karna',
-  //     'hai',
-  //     'hain',
-  //     'ka',
-  //     'ki',
-  //     'ko',
-  //     'mera',
-  //     'meri',
-  //     'mere',
-  //     'haazri',
-  //     'chutti',
-  //     'lagao',
-  //     'dikhaao',
-  //     'batao',
-  //     'dekhna',
-  //     'chahiye',
-  //     'chahte',
-  //     'kya',
-  //     'kyun',
-  //     'kab',
-  //     'balance',
-  //     'check',
-  //     'kitne',
-  //     'kitni',
-  //     'din',
-  //     'mahina',
-  //     'saal',
-  //     'aaj',
-  //     'kal',
-  //     'parso',
-  //     'abhi',
-  //     'phir',
-  //     'wapas',
-  //     'shukria',
-  //   ];
-
-  //   const lowerText = text.toLowerCase();
-  //   const hasRomanUrdu = romanUrduKeywords.some(keyword =>
-  //     lowerText.split(/\s+/).includes(keyword),
-  //   );
-
-  //   if (urduPattern.test(text) || hasRomanUrdu) {
-  //     return 'ur';
-  //   }
-
-  //   // Default to English
-  //   return 'en';
-  // };
-
-  /* -------------------- Detect Attendance Intent -------------------- */
-  // const detectAttendanceIntent = text => {
-  //   const lowerText = text.toLowerCase().trim();
-
-  //   // English keywords
-  //   const englishKeywords = [
-  //     'mark attendance',
-  //     'attendance',
-  //     'mark my attendance',
-  //     'punch in',
-  //     'punch out',
-  //     'clock in',
-  //     'clock out',
-  //     'check in',
-  //     'check out',
-  //     'present',
-  //     'mark present',
-  //     'attendance mark',
-  //     'register attendance',
-  //     'log attendance',
-  //     'attendance today',
-  //     'today attendance',
-  //     'mark today',
-  //     'i want to mark',
-  //     'need to mark',
-  //     'marking attendance',
-  //   ];
-
-  //   // Roman Urdu keywords (Urdu written in English letters)
-  //   const romanUrduKeywords = [
-  //     'haazri',
-  //     'hazri',
-  //     'haaziri',
-  //     'haziri',
-  //     'haazri lagao',
-  //     'hazri lagao',
-  //     'haazri lagaao',
-  //     'haazri karo',
-  //     'hazri karo',
-  //     'attendance karo',
-  //     'present karo',
-  //     'mark karo',
-  //     'lagao haazri',
-  //     'meri haazri',
-  //     'meri hazri',
-  //     'attendance laga do',
-  //     'haazri mark karo',
-  //     'aaj ki haazri',
-  //     'aaj haazri',
-  //   ];
-
-  //   // Urdu keywords (in Urdu script)
-  //   const urduKeywords = [
-  //     'حاضری',
-  //     'حاضري',
-  //     'ہاضری',
-  //     'حاضری لگاؤ',
-  //     'حاضری لگائیں',
-  //     'حاضری کرو',
-  //     'حاضری مارک کریں',
-  //     'میری حاضری',
-  //     'آج کی حاضری',
-  //   ];
-
-  //   // Arabic keywords
-  //   const arabicKeywords = [
-  //     'حضور',
-  //     'الحضور',
-  //     'تسجيل الحضور',
-  //     'سجل الحضور',
-  //     'حضوري',
-  //     'الحضور اليوم',
-  //     'تسجيل',
-  //     'احضر',
-  //     'حاضر',
-  //   ];
-
-  //   // Combine all keywords
-  //   const allKeywords = [
-  //     ...englishKeywords,
-  //     ...romanUrduKeywords,
-  //     ...urduKeywords,
-  //     ...arabicKeywords,
-  //   ];
-
-  //   return allKeywords.some(keyword => {
-  //     // For multi-word phrases, check if text includes the phrase
-  //     if (keyword.includes(' ')) {
-  //       return lowerText.includes(keyword.toLowerCase());
-  //     }
-  //     // For single words, check if it exists as a separate word
-  //     const words = lowerText.split(/\s+/);
-  //     return words.includes(keyword.toLowerCase());
-  //   });
-  // };
-
-  /* -------------------- Main Send Handler -------------------- */
-  // const handleSend = async textOverride => {
-  //   const text = (textOverride || input).trim();
-  //   if (!text || processingRef.current) {
-  //     return;
-  //   }
-
-  //   processingRef.current = true;
-  //   setInput('');
-  //   setShowQuickActions(false);
-
-  //   if (!textOverride) {
-  //     addMessage(text, 'user');
-  //   }
-
-  //   // Detect language from user input
-  //   const detectedLanguage = detectLanguage(text);
-
-  //   // Update language state if different
-  //   if (detectedLanguage !== language) {
-  //     setLanguage(detectedLanguage);
-  //     console.log(`🌍 Language auto-detected: ${detectedLanguage}`);
-  //   }
-
-  //   // Check for attendance intent FIRST
-  //   if (detectAttendanceIntent(text)) {
-  //     processingRef.current = false;
-
-  //     // Respond in detected language
-  //     const responses = {
-  //       en: "I'll help you mark your attendance. Taking you to the attendance screen...",
-  //       ur: 'میں آپ کی حاضری لگانے میں مدد کروں گا۔ آپ کو حاضری کی سکرین پر لے جا رہا ہوں...',
-  //       ar: 'سأساعدك في تسجيل حضورك. سأنقلك إلى شاشة الحضور...',
-  //     };
-
-  //     addMessage(responses[detectedLanguage] || responses.en, 'bot');
-
-  //     setTimeout(() => {
-  //       navigateToScreen('CreateAttendanceScreen');
-  //     }, 1000);
-
-  //     return;
-  //   }
-
-  //   setIsTyping(true);
-
-  //   try {
-  //     const functions = leaveService.current.getFunctionDefinitions();
-
-  //     console.log('💬 User message:', text);
-  //     console.log('🌍 Detected language:', detectedLanguage);
-
-  //     const aiResponse = await azureAIService.chat({
-  //       userMessage: text,
-  //       conversationHistory: messages,
-  //       availableFunctions: functions,
-  //       userData: userData,
-  //       preferredLanguage: detectedLanguage, // Use detected language
-  //     });
-
-  //     console.log('🤖 AI response:', aiResponse);
-
-  //     if (aiResponse.type === 'function_call') {
-  //       await handleFunctionCall(aiResponse);
-  //     } else {
-  //       addMessage(aiResponse.text, 'bot');
-  //     }
-  //   } catch (err) {
-  //     console.error('❌ Chat error:', err);
-
-  //     // Error messages in detected language
-  //     const errorMessages = {
-  //       en: 'Sorry, I encountered an error. Please try again or rephrase your request.',
-  //       ur: 'معذرت، مجھے ایک خرابی کا سامنا ہوا۔ براہ کرم دوبارہ کوشش کریں یا اپنی درخواست دوبارہ لکھیں۔',
-  //       ar: 'عذراً، واجهت خطأ. يرجى المحاولة مرة أخرى أو إعادة صياغة طلبك.',
-  //     };
-
-  //     addMessage(errorMessages[detectedLanguage] || errorMessages.en, 'bot');
-  //   } finally {
-  //     processingRef.current = false;
-  //     setIsTyping(false);
-  //   }
-  // };
-
-  /* -------------------- Smart Function Call Handler -------------------- */
-  // const handleFunctionCall = async functionCall => {
-  //   try {
-  //     console.log('🔧 Executing function:', functionCall.function);
-  //     console.log('📥 Parameters:', functionCall.parameters);
-
-  //     // Execute the function with smart parameter filling
-  //     const result = await leaveService.current.execute(
-  //       functionCall.function,
-  //       functionCall.parameters,
-  //       userData,
-  //     );
-
-  //     console.log('📤 Function result:', result);
-
-  //     // Handle function result based on success/error
-  //     if (!result.success) {
-  //       await handleFunctionError(functionCall, result);
-  //       return;
-  //     }
-
-  //     // Handle successful function execution
-  //     await handleFunctionSuccess(functionCall, result);
-  //   } catch (error) {
-  //     console.error('❌ Function execution error:', error);
-  //     addMessage(
-  //       "I encountered an error while processing your request. Let's try a different approach.",
-  //       'bot',
-  //     );
-  //   }
-  // };
 
   /* -------------------- Handle Function Errors -------------------- */
   const handleFunctionError = async (functionCall, result) => {
     console.log('⚠️ Function error:', result.error);
 
-    // Build error context for AI
     const errorContext = {
       ...result,
       originalFunction: functionCall.function,
       originalParameters: functionCall.parameters,
     };
 
-    // Let AI handle the error intelligently
     const continueResponse = await azureAIService.continueAfterFunction({
       previousMessages: messages,
       functionName: functionCall.function,
       functionResult: errorContext,
       userData,
-      preferredLanguage: language, // Use current language state
+      preferredLanguage: 'auto',
       availableFunctions: leaveService.current.getFunctionDefinitions(),
       toolCallId: functionCall.toolCallId,
     });
 
     addMessage(continueResponse.text, 'bot');
 
-    // If AI wants to call another function (e.g., retry with more params)
     if (continueResponse.type === 'function_call') {
       await handleFunctionCall(continueResponse);
     }
@@ -783,114 +374,31 @@ const AIChatbot = ({visible, onClose}) => {
   const handleFunctionSuccess = async (functionCall, result) => {
     console.log('✅ Function succeeded');
 
-    // Continue conversation, AI will maintain language context
     const continueResponse = await azureAIService.continueAfterFunction({
       previousMessages: messages,
       functionName: functionCall.function,
       functionResult: result,
       userData,
-      preferredLanguage: 'auto', // Let AI maintain language from context
+      preferredLanguage: 'auto',
       availableFunctions: leaveService.current.getFunctionDefinitions(),
       toolCallId: functionCall.toolCallId,
     });
 
     addMessage(continueResponse.text, 'bot');
 
-    // Handle chained function calls
     if (continueResponse.type === 'function_call') {
       await handleFunctionCall(continueResponse);
     }
   };
-  // const handleFunctionSuccess = async (functionCall, result) => {
-  //   console.log('✅ Function succeeded');
 
-  //   // Special handling for leave creation
-  //   if (functionCall.function === 'create_leave_request' && result.success) {
-  //     // Ask AI to summarize and offer to submit
-  //     const continueResponse = await azureAIService.continueAfterFunction({
-  //       previousMessages: messages,
-  //       functionName: functionCall.function,
-  //       functionResult: result,
-  //       userData,
-  //       preferredLanguage: language, // Use current language state
-  //       availableFunctions: leaveService.current.getFunctionDefinitions(),
-  //       toolCallId: functionCall.toolCallId,
-  //     });
-
-  //     addMessage(continueResponse.text, 'bot');
-
-  //     // If user confirms submission, AI might call submit_leave_request
-  //     if (continueResponse.type === 'function_call') {
-  //       await handleFunctionCall(continueResponse);
-  //     }
-
-  //     return;
-  //   }
-
-  //   // Special handling for leave submission
-  //   if (functionCall.function === 'submit_leave_request' && result.success) {
-  //     const continueResponse = await azureAIService.continueAfterFunction({
-  //       previousMessages: messages,
-  //       functionName: functionCall.function,
-  //       functionResult: result,
-  //       userData,
-  //       preferredLanguage: language, // Use current language state
-  //       availableFunctions: leaveService.current.getFunctionDefinitions(),
-  //       toolCallId: functionCall.toolCallId,
-  //     });
-
-  //     addMessage(continueResponse.text, 'bot');
-
-  //     // Navigate to leaves list after a delay
-  //     setTimeout(() => {
-  //       navigateToScreen('LeavesListPage', {
-  //         highlightRecId: result.requestId,
-  //       });
-  //     }, 2000);
-
-  //     return;
-  //   }
-
-  //   // Default: Let AI interpret and respond
-  //   const continueResponse = await azureAIService.continueAfterFunction({
-  //     previousMessages: messages,
-  //     functionName: functionCall.function,
-  //     functionResult: result,
-  //     userData,
-  //     preferredLanguage: language, // Use current language state
-  //     availableFunctions: leaveService.current.getFunctionDefinitions(),
-  //     toolCallId: functionCall.toolCallId,
-  //   });
-
-  //   addMessage(continueResponse.text, 'bot');
-
-  //   // Handle chained function calls
-  //   if (continueResponse.type === 'function_call') {
-  //     await handleFunctionCall(continueResponse);
-  //   }
-  // };
+  /* -------------------- Format Recording Duration -------------------- */
+  const formatDuration = seconds => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   /* -------------------- UI Components -------------------- */
-  // Language buttons removed
-
-  // Quick action buttons removed
-  // const QuickActionButton = ({icon, label, gradient, onPress}) => (
-  //   <TouchableOpacity onPress={onPress} style={styles.quickActionWrapper}>
-  //     <LinearGradient
-  //       colors={gradient}
-  //       start={{x: 0, y: 0}}
-  //       end={{x: 1, y: 1}}
-  //       style={styles.quickAction}>
-  //       <Icon name={icon} size={28} color="#fff" />
-  //       <Text style={styles.quickActionLabel}>{label}</Text>
-  //     </LinearGradient>
-  //   </TouchableOpacity>
-  // );
-
-  // const renderQuickActions = () => {
-  //   return null; // Disabled
-  // };
-
   const renderItem = ({item}) => {
     const isUser = item.from === 'user';
 
@@ -945,17 +453,11 @@ const AIChatbot = ({visible, onClose}) => {
     </View>
   );
 
-  // Recording UI disabled
-  // const renderRecordingUI = () => {
-  //   return null;
-  // };
-
   const handleClose = () => {
-    // Voice cleanup disabled
-    // if (isRecording) {
-    //   cancelRecording();
-    // }
-    // clearTimers();
+    if (isRecording) {
+      cancelRecording();
+    }
+    clearTimers();
     onClose();
   };
 
@@ -965,10 +467,7 @@ const AIChatbot = ({visible, onClose}) => {
       transparent
       animationType="slide"
       onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+      <View style={styles.overlay}>
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
@@ -1002,59 +501,113 @@ const AIChatbot = ({visible, onClose}) => {
               </TouchableOpacity>
             </LinearGradient>
 
-            {/* Language Bar - REMOVED */}
-
-            {/* Messages */}
-            <FlatList
-              ref={flatListRef}
-              data={messages}
-              renderItem={renderItem}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.chatContainer}
-              showsVerticalScrollIndicator={false}
-              ListFooterComponent={<>{isTyping && renderTypingIndicator()}</>}
-            />
-
-            {/* Input Bar */}
-            <View style={styles.inputRow}>
-              {/* Mic button - DISABLED appearance */}
-              <TouchableOpacity style={styles.iconButton} disabled={true}>
-                <LinearGradient
-                  colors={['#ccc', '#aaa']}
-                  style={styles.iconButtonGradient}>
-                  <Icon name="mic-off" size={24} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <TextInput
-                value={input}
-                onChangeText={setInput}
-                placeholder="Type your message..."
-                placeholderTextColor="#999"
-                style={styles.input}
-                onSubmitEditing={() => handleSend()}
-                multiline
-                maxLength={500}
+            {/* Messages Container with KeyboardAvoidingView */}
+            <KeyboardAvoidingView
+              style={styles.chatArea}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+              {/* Messages */}
+              <FlatList
+                ref={flatListRef}
+                data={messages}
+                renderItem={renderItem}
+                keyExtractor={item => item.id}
+                contentContainerStyle={styles.chatContainer}
+                showsVerticalScrollIndicator={false}
+                ListFooterComponent={<>{isTyping && renderTypingIndicator()}</>}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
+                onContentSizeChange={() => {
+                  InteractionManager.runAfterInteractions(() => {
+                    flatListRef.current?.scrollToEnd({animated: true});
+                  });
+                }}
               />
 
-              <TouchableOpacity
-                onPress={() => handleSend()}
-                style={styles.iconButton}
-                disabled={!input.trim()}>
-                <LinearGradient
-                  colors={
-                    input.trim() ? ['#43e97b', '#38f9d7'] : ['#ddd', '#ccc']
-                  }
-                  style={styles.iconButtonGradient}>
-                  <Icon name="send" size={24} color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+              {/* Recording Indicator */}
+              {isRecording && (
+                <View style={styles.recordingIndicator}>
+                  <View style={styles.recordingContent}>
+                    <Animated.View style={{transform: [{scale: micScaleAnim}]}}>
+                      <Icon name="mic" size={24} color="#ff4444" />
+                    </Animated.View>
+                    <Text style={styles.recordingText}>
+                      Recording... {formatDuration(recordingDuration)}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={cancelRecording}
+                      style={styles.cancelButton}>
+                      <Icon name="close" size={20} color="#666" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
-            {/* Recording Overlay - REMOVED */}
+              {/* Input Bar */}
+              <View style={styles.inputRow}>
+                {/* Voice Button */}
+                <TouchableOpacity
+                  onPress={isRecording ? stopRecording : startRecording}
+                  onLongPress={startRecording}
+                  style={styles.iconButton}>
+                  <LinearGradient
+                    colors={
+                      isRecording
+                        ? ['#ff4444', '#cc0000']
+                        : ['#667eea', '#764ba2']
+                    }
+                    style={styles.iconButtonGradient}>
+                    <Animated.View
+                      style={
+                        isRecording ? {transform: [{scale: micScaleAnim}]} : {}
+                      }>
+                      <Icon
+                        name={isRecording ? 'stop' : 'mic'}
+                        size={24}
+                        color="#fff"
+                      />
+                    </Animated.View>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Text Input */}
+                <TextInput
+                  value={input}
+                  onChangeText={setInput}
+                  placeholder={
+                    isRecording
+                      ? 'Recording...'
+                      : 'Type or speak your message...'
+                  }
+                  placeholderTextColor="#999"
+                  style={styles.input}
+                  onSubmitEditing={() => handleSend()}
+                  multiline
+                  maxLength={500}
+                  editable={!isRecording}
+                  color="#000000"
+                />
+
+                {/* Send Button */}
+                <TouchableOpacity
+                  onPress={() => handleSend()}
+                  style={styles.iconButton}
+                  disabled={!input.trim() || isRecording}>
+                  <LinearGradient
+                    colors={
+                      input.trim() && !isRecording
+                        ? ['#43e97b', '#38f9d7']
+                        : ['#ddd', '#ccc']
+                    }
+                    style={styles.iconButtonGradient}>
+                    <Icon name="send" size={24} color="#fff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
           </TouchableOpacity>
         </TouchableOpacity>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
@@ -1092,7 +645,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  chatContainer: {padding: 16, paddingBottom: 8},
+  chatArea: {
+    flex: 1,
+  },
+  chatContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
   messageContainer: {
     flexDirection: 'row',
     marginVertical: 6,
@@ -1135,6 +695,33 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginLeft: 8,
   },
+  recordingIndicator: {
+    backgroundColor: '#fff3cd',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#ffeaa7',
+  },
+  recordingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordingText: {
+    fontSize: 14,
+    color: '#856404',
+    fontWeight: '600',
+    marginLeft: 12,
+    flex: 1,
+  },
+  cancelButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f8d7da',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1161,6 +748,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     fontSize: 15,
     paddingTop: 12,
+    color: '#000000',
   },
 });
 
