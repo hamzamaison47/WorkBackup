@@ -170,7 +170,7 @@ const MainDashboard = () => {
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
       />
-      {/* <AIChatbot
+      <AIChatbot
         visible={chatVisible}
         onClose={() => setChatVisible(false)}
         initialMessages={chatInitialMessages}

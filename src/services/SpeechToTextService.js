@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 // services/SpeechToTextService.js
 import {fetch} from 'react-native';
 import {getAzureAIConfig} from './SecureConfigService';

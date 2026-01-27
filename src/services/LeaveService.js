@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 // services/LeaveService.js
 import {RetrieveLeaveCodes} from '../API/Leaves/LeaveCodes';
 import {createLeaveRequest} from '../API/Leaves/CreateLeaveRequest';
@@ -178,7 +179,42 @@ class LeaveService {
           required: ['leaveCode', 'startDate'],
         },
       },
+      {
+        name: 'navigate_to_screen',
+        description:
+          'Navigate to a specific screen in the app. Use when user explicitly wants to go to attendance screen or leaves screen.',
+        parameters: {
+          type: 'object',
+          properties: {
+            screenName: {
+              type: 'string',
+              enum: ['CreateAttendanceScreen', 'LeavesListPage', 'ApplyLeave'],
+              description: 'The screen to navigate to',
+            },
+            message: {
+              type: 'string',
+              description: 'Message to show user before navigating',
+            },
+          },
+          required: ['screenName'],
+        },
+      },
     ];
+  }
+
+  /**
+   * Navigation function
+   */
+  async navigate_to_screen({screenName, message = ''}) {
+    // This function doesn't actually execute navigation here
+    // It returns a result that will trigger navigation in the chatbot
+    return {
+      success: true,
+      action: 'navigate',
+      screenName,
+      message,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**
