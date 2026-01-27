@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   BackHandler,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -20,6 +21,7 @@ import {
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../store/utils/translate';
 
 import {createPurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseRequisitionSaveRecord';
 import {updatePurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseRequisitionUpdateRecord';
@@ -54,6 +56,7 @@ const PurchaseRequisitionSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarField, setCalendarField] = useState('');
@@ -180,9 +183,10 @@ const PurchaseRequisitionSaveRecord = () => {
     return true;
   };
 
-  const handleCreate = async () => {
+  const handleCreate = async actionType => {
     if (!validate()) return;
-    setProcessingButton('create');
+    setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const payload = {
@@ -234,6 +238,7 @@ const PurchaseRequisitionSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -253,6 +258,16 @@ const PurchaseRequisitionSaveRecord = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.LReqSR_ContentWrapper}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}
