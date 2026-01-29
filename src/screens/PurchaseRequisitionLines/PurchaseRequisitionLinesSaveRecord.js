@@ -25,6 +25,7 @@ import AlertModal from '../../components/Alert/AlertModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import styles from '../../styles/styles';
 import {Dropdown} from 'react-native-element-dropdown';
+import {translate as t} from '../../store/utils/translate';
 
 import {itemLookupforPurchRequisitionLine} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesRetrieveItemLookup';
 import {itemModifiedforPurchaseRequisitionLines} from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesItemModified';
@@ -79,6 +80,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [processingButton, setProcessingButton] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
   const [quantity, setQuantity] = useState('0.00');
   const [alertMessage, setAlertMessage] = useState('');
@@ -525,9 +527,10 @@ const PurchaseRequisitionLinesSaveRecord = () => {
   };
 
   /** ✅ Handle create */
-  const handleCreate = async () => {
+  const handleCreate = async actionType => {
     if (!validate()) return;
-    setProcessingButton('create');
+    setProcessingButton(actionType);
+    setIsProcessing(true);
 
     if (!quantity || parseFloat(quantity) <= 0) {
       setAlertMessage('Please enter a valid quantity');
@@ -580,8 +583,8 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       setAlertMessage('Error creating requisition line. Please try again.');
       setAlertModal(true);
     } finally {
-      setIsLoading(false);
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -767,6 +770,16 @@ const PurchaseRequisitionLinesSaveRecord = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.LReqSR_ContentWrapper}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               contentContainerStyle={styles.LReqSR_FormContainer}
               showsVerticalScrollIndicator={false}
