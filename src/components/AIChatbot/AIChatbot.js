@@ -18,7 +18,6 @@ import {
   InteractionManager,
   Dimensions,
   TouchableWithoutFeedback,
-  Keyboard,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import moment from 'moment';
@@ -122,7 +121,6 @@ const AIChatbot = ({visible, onClose}) => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [voiceServiceReady, setVoiceServiceReady] = useState(true);
   const [voiceStatus, setVoiceStatus] = useState('Voice Ready');
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const processingRef = useRef(false);
   const flatListRef = useRef(null);
@@ -142,28 +140,6 @@ const AIChatbot = ({visible, onClose}) => {
 
   const isPressToTalk = useMemo(() => {
     return Platform.OS === 'android' || Platform.OS === 'ios';
-  }, []);
-
-  /* -------------------- Keyboard Handling -------------------- */
-  useEffect(() => {
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      e => {
-        setKeyboardHeight(e.endCoordinates.height);
-      },
-    );
-
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardHeight(0);
-      },
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
   }, []);
 
   /* -------------------- Animations -------------------- */
@@ -626,7 +602,6 @@ const AIChatbot = ({visible, onClose}) => {
   const handleClose = () => {
     if (isRecording) cancelRecording();
     clearTimers();
-    Keyboard.dismiss();
     onClose?.();
   };
 
@@ -653,7 +628,7 @@ const AIChatbot = ({visible, onClose}) => {
             <View style={styles.backdrop} />
           </TouchableWithoutFeedback>
 
-          {/* Sheet - Fixed position, doesn't move with keyboard */}
+          {/* Sheet */}
           <Animated.View
             style={[styles.sheet, {transform: [{translateY: slideAnim}]}]}>
             {/* Header */}
@@ -686,93 +661,90 @@ const AIChatbot = ({visible, onClose}) => {
 
             {/* Chat Area */}
             <View style={styles.chatArea}>
-              <FlatList
-                ref={flatListRef}
-                data={messages}
-                renderItem={renderItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={[
-                  styles.chatContainer,
-                  {
-                    paddingBottom:
-                      keyboardHeight > 0 ? keyboardHeight + 20 : 100,
-                  },
-                ]}
-                showsVerticalScrollIndicator={true}
-                ListFooterComponent={<>{isTyping && renderTypingIndicator()}</>}
-                keyboardDismissMode="on-drag"
-                keyboardShouldPersistTaps="handled"
-                bounces={true}
-                scrollEnabled={true}
-                nestedScrollEnabled={true}
-                removeClippedSubviews={false}
-                scrollEventThrottle={16}
-                decelerationRate="normal"
-                directionalLockEnabled={true}
-                alwaysBounceVertical={true}
-                onContentSizeChange={() => {
-                  InteractionManager.runAfterInteractions(() => {
-                    try {
-                      flatListRef.current?.scrollToEnd({animated: true});
-                    } catch (e) {}
-                  });
-                }}
-              />
+              <KeyboardAvoidingView
+                style={styles.flex1}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+                <FlatList
+                  ref={flatListRef}
+                  data={messages}
+                  renderItem={renderItem}
+                  keyExtractor={item => item.id}
+                  contentContainerStyle={styles.chatContainer}
+                  showsVerticalScrollIndicator={true}
+                  ListFooterComponent={
+                    <>{isTyping && renderTypingIndicator()}</>
+                  }
+                  keyboardDismissMode="on-drag"
+                  keyboardShouldPersistTaps="handled"
+                  bounces={true}
+                  scrollEnabled={true}
+                  nestedScrollEnabled={true}
+                  removeClippedSubviews={false}
+                  scrollEventThrottle={16}
+                  decelerationRate="normal"
+                  directionalLockEnabled={true}
+                  alwaysBounceVertical={true}
+                  onContentSizeChange={() => {
+                    InteractionManager.runAfterInteractions(() => {
+                      try {
+                        flatListRef.current?.scrollToEnd({animated: true});
+                      } catch (e) {}
+                    });
+                  }}
+                />
 
-              {/* Recording Overlay */}
-              {isRecording && (
-                <View
-                  style={[
-                    styles.recordingOverlay,
-                    {bottom: keyboardHeight > 0 ? keyboardHeight + 20 : 100},
-                  ]}>
-                  <Animated.View
-                    style={[
-                      styles.waveContainer,
-                      {
-                        transform: [
-                          {
-                            scale: waveAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [1, 1.5],
-                            }),
-                          },
-                        ],
-                        opacity: waveAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.5, 0],
-                        }),
-                      },
-                    ]}>
-                    <View style={styles.wave} />
-                  </Animated.View>
-
-                  <View style={styles.recordingContent}>
+                {/* Recording Overlay */}
+                {isRecording && (
+                  <View style={styles.recordingOverlay}>
                     <Animated.View
                       style={[
-                        styles.recordingIcon,
-                        {transform: [{scale: micScaleAnim}]},
+                        styles.waveContainer,
+                        {
+                          transform: [
+                            {
+                              scale: waveAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [1, 1.5],
+                              }),
+                            },
+                          ],
+                          opacity: waveAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.5, 0],
+                          }),
+                        },
                       ]}>
-                      <Icon name="microphone" size={32} color="#fff" />
+                      <View style={styles.wave} />
                     </Animated.View>
-                    <Text style={styles.recordingText}>
-                      {formatDuration(recordingDuration)}
-                    </Text>
-                    <Text style={styles.recordingSubtext}>
-                      {isPressToTalk ? 'Release to send' : 'Tap to stop'}
-                    </Text>
+
+                    <View style={styles.recordingContent}>
+                      <Animated.View
+                        style={[
+                          styles.recordingIcon,
+                          {transform: [{scale: micScaleAnim}]},
+                        ]}>
+                        <Icon name="microphone" size={32} color="#fff" />
+                      </Animated.View>
+                      <Text style={styles.recordingText}>
+                        {formatDuration(recordingDuration)}
+                      </Text>
+                      <Text style={styles.recordingSubtext}>
+                        {isPressToTalk ? 'Release to send' : 'Tap to stop'}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={cancelRecording}
+                      style={styles.cancelRecordingButton}>
+                      <Icon name="close" size={20} color="#fff" />
+                    </TouchableOpacity>
                   </View>
+                )}
+              </KeyboardAvoidingView>
 
-                  <TouchableOpacity
-                    onPress={cancelRecording}
-                    style={styles.cancelRecordingButton}>
-                    <Icon name="close" size={20} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Input Area - Moves up with keyboard */}
-              <View style={[styles.inputContainer, {bottom: keyboardHeight}]}>
+              {/* Input Area */}
+              <View style={styles.inputContainer}>
                 <View style={styles.inputWrapper}>
                   <TouchableOpacity
                     onPressIn={micPressIn}
@@ -957,10 +929,13 @@ const styles = StyleSheet.create({
   chatArea: {
     flex: 1,
   },
+  flex1: {
+    flex: 1,
+  },
   chatContainer: {
     paddingHorizontal: 16,
     paddingTop: 20,
-    paddingBottom: 100,
+    paddingBottom: 10,
   },
   messageWrapper: {
     flexDirection: 'row',
@@ -1054,6 +1029,7 @@ const styles = StyleSheet.create({
   },
   recordingOverlay: {
     position: 'absolute',
+    bottom: 100,
     left: 20,
     right: 20,
     height: 120,
@@ -1116,9 +1092,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inputContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E9F0',
