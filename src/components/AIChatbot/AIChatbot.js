@@ -17,6 +17,8 @@ import {
   Alert,
   InteractionManager,
   Dimensions,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import moment from 'moment';
@@ -120,6 +122,7 @@ const AIChatbot = ({visible, onClose}) => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [voiceServiceReady, setVoiceServiceReady] = useState(true);
   const [voiceStatus, setVoiceStatus] = useState('Voice Ready');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const processingRef = useRef(false);
   const flatListRef = useRef(null);
@@ -139,6 +142,28 @@ const AIChatbot = ({visible, onClose}) => {
 
   const isPressToTalk = useMemo(() => {
     return Platform.OS === 'android' || Platform.OS === 'ios';
+  }, []);
+
+  /* -------------------- Keyboard Handling -------------------- */
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      e => {
+        setKeyboardHeight(e.endCoordinates.height);
+      },
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      },
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
   }, []);
 
   /* -------------------- Animations -------------------- */
@@ -601,6 +626,7 @@ const AIChatbot = ({visible, onClose}) => {
   const handleClose = () => {
     if (isRecording) cancelRecording();
     clearTimers();
+    Keyboard.dismiss();
     onClose?.();
   };
 
@@ -621,10 +647,13 @@ const AIChatbot = ({visible, onClose}) => {
       animationType="none"
       onRequestClose={handleClose}>
       <Animated.View style={[styles.overlay, {opacity: fadeAnim}]}>
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={handleClose}>
+        <View style={styles.container}>
+          {/* Backdrop - only this should close the modal */}
+          <TouchableWithoutFeedback onPress={handleClose}>
+            <View style={styles.backdrop} />
+          </TouchableWithoutFeedback>
+
+          {/* Sheet - Fixed position, doesn't move with keyboard */}
           <Animated.View
             style={[styles.sheet, {transform: [{translateY: slideAnim}]}]}>
             {/* Header */}
@@ -656,20 +685,31 @@ const AIChatbot = ({visible, onClose}) => {
             </LinearGradient>
 
             {/* Chat Area */}
-            <KeyboardAvoidingView
-              style={styles.chatArea}
-              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+            <View style={styles.chatArea}>
               <FlatList
                 ref={flatListRef}
                 data={messages}
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
-                contentContainerStyle={styles.chatContainer}
-                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[
+                  styles.chatContainer,
+                  {
+                    paddingBottom:
+                      keyboardHeight > 0 ? keyboardHeight + 20 : 100,
+                  },
+                ]}
+                showsVerticalScrollIndicator={true}
                 ListFooterComponent={<>{isTyping && renderTypingIndicator()}</>}
                 keyboardDismissMode="on-drag"
                 keyboardShouldPersistTaps="handled"
+                bounces={true}
+                scrollEnabled={true}
+                nestedScrollEnabled={true}
+                removeClippedSubviews={false}
+                scrollEventThrottle={16}
+                decelerationRate="normal"
+                directionalLockEnabled={true}
+                alwaysBounceVertical={true}
                 onContentSizeChange={() => {
                   InteractionManager.runAfterInteractions(() => {
                     try {
@@ -681,7 +721,11 @@ const AIChatbot = ({visible, onClose}) => {
 
               {/* Recording Overlay */}
               {isRecording && (
-                <View style={styles.recordingOverlay}>
+                <View
+                  style={[
+                    styles.recordingOverlay,
+                    {bottom: keyboardHeight > 0 ? keyboardHeight + 20 : 100},
+                  ]}>
                   <Animated.View
                     style={[
                       styles.waveContainer,
@@ -727,8 +771,8 @@ const AIChatbot = ({visible, onClose}) => {
                 </View>
               )}
 
-              {/* Input Area */}
-              <View style={styles.inputContainer}>
+              {/* Input Area - Moves up with keyboard */}
+              <View style={[styles.inputContainer, {bottom: keyboardHeight}]}>
                 <View style={styles.inputWrapper}>
                   <TouchableOpacity
                     onPressIn={micPressIn}
@@ -742,13 +786,15 @@ const AIChatbot = ({visible, onClose}) => {
                       colors={
                         isRecording
                           ? ['#FF4444', '#CC0000']
+                          : isTyping
+                          ? ['#CCCCCC', '#999999']
                           : ['#0A66C2', '#0765A2']
                       }
                       style={styles.gradientButton}>
                       <Icon
                         name={isRecording ? 'stop' : 'microphone'}
                         size={22}
-                        color="#fff"
+                        color={isTyping ? '#666' : '#fff'}
                       />
                     </LinearGradient>
                   </TouchableOpacity>
@@ -758,7 +804,11 @@ const AIChatbot = ({visible, onClose}) => {
                       value={input}
                       onChangeText={setInput}
                       placeholder={
-                        isRecording ? 'Listening...' : 'Type a message...'
+                        isRecording
+                          ? 'Listening...'
+                          : isTyping
+                          ? 'AI is thinking...'
+                          : 'Type a message...'
                       }
                       placeholderTextColor="#8E9AAF"
                       style={styles.input}
@@ -804,9 +854,9 @@ const AIChatbot = ({visible, onClose}) => {
                   </View>
                 )}
               </View>
-            </KeyboardAvoidingView>
+            </View>
           </Animated.View>
-        </TouchableOpacity>
+        </View>
       </Animated.View>
     </Modal>
   );
@@ -816,13 +866,23 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
   },
-  backdrop: {
+  container: {
     flex: 1,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
   },
   sheet: {
-    height: height * 0.92,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.9,
     backgroundColor: BG_COLOR,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -994,7 +1054,6 @@ const styles = StyleSheet.create({
   },
   recordingOverlay: {
     position: 'absolute',
-    bottom: 100,
     left: 20,
     right: 20,
     height: 120,
@@ -1057,6 +1116,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   inputContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E9F0',
