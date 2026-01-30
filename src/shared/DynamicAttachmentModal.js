@@ -147,13 +147,13 @@ const DynamicAttachmentModal = ({
       return;
     }
 
-    console.log('DEBUG: Loading attachments with:', {
-      recordId,
-      tableName,
-      hasRecId: !!recordData?.recId,
-      hasRecIdAlt: !!recordData?.RecId,
-      hasExpenseTransactionNumber: !!recordData?.ExpenseTransactionNumber,
-    });
+    // console.log('DEBUG: Loading attachments with:', {
+    //   recordId,
+    //   tableName,
+    //   hasRecId: !!recordData?.recId,
+    //   hasRecIdAlt: !!recordData?.RecId,
+    //   hasExpenseTransactionNumber: !!recordData?.ExpenseTransactionNumber,
+    // });
 
     setIsLoading(true);
     try {
@@ -162,7 +162,7 @@ const DynamicAttachmentModal = ({
         tableName: tableName || 'TrvExpTrans',
       });
 
-      console.log('DEBUG: RetrieveReceipts result:', result);
+      // console.log('DEBUG: RetrieveReceipts result:', result);
 
       if (result.success && result.attachments) {
         const formattedAttachments = Array.isArray(result.attachments)
@@ -174,7 +174,7 @@ const DynamicAttachmentModal = ({
               isExisting: true,
             }))
           : [];
-        console.log('DEBUG: Formatted attachments:', formattedAttachments);
+        // console.log('DEBUG: Formatted attachments:', formattedAttachments);
         setAttachments(formattedAttachments);
       } else {
         console.log('DEBUG: No attachments or result not successful');
@@ -280,11 +280,11 @@ const DynamicAttachmentModal = ({
           isNew: true,
         };
 
-        console.log('DEBUG: New camera photo added:', {
-          fileName,
-          hasBase64: !!base64,
-          base64Length: base64?.length,
-        });
+        // console.log('DEBUG: New camera photo added:', {
+        //   fileName,
+        //   hasBase64: !!base64,
+        //   base64Length: base64?.length,
+        // });
 
         setAttachments(prev => [...prev, newAttachment]);
       }
@@ -525,7 +525,7 @@ const DynamicAttachmentModal = ({
 
     try {
       for (const attachment of newAttachments) {
-        console.log('Uploading attachment:', attachment.name);
+        // console.log('Uploading attachment:', attachment.name);
 
         // Get file extension
         let fileExt = getFileExtension(attachment.name);
@@ -573,7 +573,7 @@ const DynamicAttachmentModal = ({
         let success = false;
 
         for (const approach of approaches) {
-          console.log(`Trying approach: ${approach.name}`);
+          // console.log(`Trying approach: ${approach.name}`);
 
           try {
             const saveResult = await SaveAttachmentByteArray({
@@ -586,15 +586,15 @@ const DynamicAttachmentModal = ({
               fileByteArray: approach.fileByteArray,
             });
 
-            console.log(`Result for ${approach.name}:`, saveResult);
+            // console.log(`Result for ${approach.name}:`, saveResult);
 
             if (saveResult.IsSuccess) {
               success = true;
-              console.log(`✅ Success with ${approach.name}`);
+              // console.log(`✅ Success with ${approach.name}`);
               break;
             } else {
               lastError = saveResult.Message;
-              console.log(`❌ ${approach.name} failed: ${saveResult.Message}`);
+              // console.log(`❌ ${approach.name} failed: ${saveResult.Message}`);
             }
           } catch (error) {
             lastError = error.message;

@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   Pressable,
   BackHandler,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,6 +23,7 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../store/utils/translate';
 
 import {CreateAdvanceRequest} from '../../API/EmployeeAdvanceRequest/CreateAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
@@ -81,6 +83,7 @@ const GenericAdvanceSaveScreen = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [dataInitialized, setDataInitialized] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [EmployeeAdvanceLabelsData, setEmployeeAdvanceLabelsData] = useState({});
 
   // Enhanced validation error states
@@ -434,10 +437,10 @@ const GenericAdvanceSaveScreen = () => {
     try {
       setIsLoading(true);
 
-      const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest();
+      const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest(employeeId);
       const getEmployeeLookup = await GetEmployeeLookup();
 
-      console.log({allAdvanceCodes});
+      // console.log({allAdvanceCodes});
 
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
@@ -746,19 +749,6 @@ const GenericAdvanceSaveScreen = () => {
     );
   };
 
-  // Update renderGuarantorSelectedItem:
-  const renderGuarantorSelectedItem = item => {
-    if (!item) return null;
-    return (
-      <View style={styles.LReqSR_GuarantorSelectedItem}>
-        <Text style={styles.LReqSR_GuarantorSelectedText}>
-          {/* {item.EmployeeId} - {item.EmployeeName} */}
-          {item.EmployeeName}
-        </Text>
-      </View>
-    );
-  };
-
   // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -859,7 +849,7 @@ const GenericAdvanceSaveScreen = () => {
         const maxAmount = parseNumber(selectedAdvanceTypeData.MaxAdanceAmount);
         if (maxAmount > 0 && advanceAmount > maxAmount) {
           errors.push(
-            `Advance Amount cannot exceed ${formatNumber(
+            `Advance can not be greater than ${formatNumber(
               maxAmount.toString(),
             )}`,
           );
@@ -882,6 +872,12 @@ const GenericAdvanceSaveScreen = () => {
             recoveryDate,
           )}`,
         );
+      }
+    }
+
+    if (formData.Guarantor1 && formData.Guarantor2) {
+      if (formData.Guarantor1 === formData.Guarantor2) {
+        errors.push('Guarantor 1 and Guarantor 2 cannot be the same person');
       }
     }
 
@@ -930,6 +926,7 @@ const GenericAdvanceSaveScreen = () => {
     }
 
     setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const result = await handleAction(
@@ -960,6 +957,7 @@ const GenericAdvanceSaveScreen = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -1000,6 +998,16 @@ const GenericAdvanceSaveScreen = () => {
           <KeyboardAvoidingView
             behavior="padding"
             style={styles.LReqSR_ContentWrapper}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}>
@@ -1125,8 +1133,10 @@ const GenericAdvanceSaveScreen = () => {
                  
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={guarantorsData}
-                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    data={guarantorsData.filter(
+                      emp => emp.EmployeeId !== formData.Guarantor2,
+                    )}
+                    labelField="EmployeeName"
                     valueField="EmployeeId"
                     placeholder="Select Guarantor 1"
                     value={formData.Guarantor1}
@@ -1145,7 +1155,7 @@ const GenericAdvanceSaveScreen = () => {
                     inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                     iconStyle={styles.LReqSR_DropdownIcon}
                     renderItem={renderGuarantorItem}
-                    searchField="combinedLabel" // Add this prop for searching
+                    searchField="combinedLabel"
                   />
 
                   {/* Guarantor 2 */}
@@ -1155,8 +1165,10 @@ const GenericAdvanceSaveScreen = () => {
                   
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={guarantorsData}
-                    labelField="EmployeeName" // Changed from "combinedLabel"
+                    data={guarantorsData.filter(
+                      emp => emp.EmployeeId !== formData.Guarantor1,
+                    )}
+                    labelField="EmployeeName"
                     valueField="EmployeeId"
                     placeholder="Select Guarantor 2"
                     value={formData.Guarantor2}
@@ -1175,7 +1187,7 @@ const GenericAdvanceSaveScreen = () => {
                     inputSearchStyle={styles.LReqSR_DropdownSearchInput}
                     iconStyle={styles.LReqSR_DropdownIcon}
                     renderItem={renderGuarantorItem}
-                    searchField="combinedLabel" // Add this prop for searching
+                    searchField="combinedLabel"
                   />
                   <Text style={styles.LReqSR_Label}>
   {EmployeeAdvanceLabelsData?.RequestedInstallmentAmountlbl || 'Recovery Amount *'}

@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   BackHandler,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -21,6 +22,7 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import {translate as t} from '../../../../store/utils/translate';
 
 import {createBankAccountRecord} from '../../../../API/PersonalInformation/BankAccounts/BankAccountCreate';
 import {UpdateBankAccountRecord} from '../../../../API/PersonalInformation/BankAccounts/BankAccountUpdate';
@@ -67,6 +69,7 @@ const BankAccountSaveRecord = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Create initial form data function
   const createInitialFormData = () => ({
@@ -370,6 +373,7 @@ const BankAccountSaveRecord = () => {
     }
 
     setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const result = await handleAction(
@@ -407,6 +411,7 @@ const BankAccountSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -431,6 +436,16 @@ const BankAccountSaveRecord = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.LReqSR_ContentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={[

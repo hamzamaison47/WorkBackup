@@ -12,6 +12,7 @@ import {
   SafeAreaView,
   BackHandler,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,6 +23,7 @@ import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import {translate as t} from '../../../../store/utils/translate';
 
 import {CreateIdentityRequest} from '../../../../API/PersonalInformation/Identification/CreateIdentityRequest';
 import {UpdateIdentityRequest} from '../../../../API/PersonalInformation/Identification/UpdateIdentityRequest';
@@ -66,6 +68,7 @@ const IdentificationNumberSaveRecord = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarField, setCalendarField] = useState('');
   const [processingButton, setProcessingButton] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState({});
   const createInitialFormData = () => ({
@@ -388,7 +391,10 @@ const IdentificationNumberSaveRecord = () => {
   const handleSave = async actionType => {
     if (processingButton) return;
     if (!validateFields()) return;
+
     setProcessingButton(actionType);
+    setIsProcessing(true);
+
     console.log('Form Data : ', formData);
     try {
       const result = await handleAction(
@@ -417,6 +423,7 @@ const IdentificationNumberSaveRecord = () => {
       }
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -440,6 +447,16 @@ const IdentificationNumberSaveRecord = () => {
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.LReqSR_ContentWrapper}>
+            {isProcessing && (
+              <View style={styles.LReqSR_ProcessingOverlay}>
+                <View style={styles.LReqSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.LReqSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
+                </View>
+              </View>
+            )}
             <ScrollView
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}

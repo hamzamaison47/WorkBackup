@@ -70,9 +70,6 @@ const GenericAdvanceListScreen = () => {
 
     try {
       const allResults = await FindByEmployeeAdvanceRequest({employeeId});
-      // const allEmployees = await RetrieveAllEmployees();
-
-      // console.log('allEmployees on List page', {allEmployees});
 
       // Filter to show only Loan and Advance types (excluding Expense)
       const filteredResults = allResults.filter(item => {
@@ -80,28 +77,29 @@ const GenericAdvanceListScreen = () => {
         return !type.includes('expense'); // filter OUT expenses
       });
 
-      // Sort by RecId or RequestDate in descending order (latest first)
+      // Sort by CreatedDateTime in descending order (latest first)
       const sortedResults = filteredResults.sort((a, b) => {
-        const aDate = new Date(a.RequestDate || 0);
-        const bDate = new Date(b.RequestDate || 0);
+        // Parse CreatedDateTime timestamps
+        const aCreated = new Date(a.CreatedDateTime || a.RequestDate || 0);
+        const bCreated = new Date(b.CreatedDateTime || b.RequestDate || 0);
 
-        if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
-          if (bDate.getTime() !== aDate.getTime()) {
-            return bDate - aDate;
+        // If both have valid CreatedDateTime timestamps
+        if (!isNaN(aCreated.getTime()) && !isNaN(bCreated.getTime())) {
+          if (bCreated.getTime() !== aCreated.getTime()) {
+            return bCreated - aCreated; // Latest timestamp first
           }
         }
 
+        // Fallback to RecId if CreatedDateTime is equal or invalid
         const aRecId = parseInt(a.RecId, 10);
         const bRecId = parseInt(b.RecId, 10);
 
         if (!isNaN(aRecId) && !isNaN(bRecId)) {
-          return bRecId - aRecId;
+          return bRecId - aRecId; // Highest RecId first
         }
 
         return 0;
       });
-
-      setAllAdvanceData(sortedResults);
 
       setAllAdvanceData(sortedResults);
     } catch (error) {
@@ -448,7 +446,7 @@ const GenericAdvanceListScreen = () => {
     setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
     try {
-      console.log('Delete Advance Request response', itemToDelete.RecId);
+      // console.log('Delete Advance Request response', itemToDelete.RecId);
       const response = await DeleteAdvanceRequest({
         recordsRecId: [itemToDelete.RecId],
       });
@@ -491,7 +489,7 @@ const GenericAdvanceListScreen = () => {
     setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
-      console.log('Submit Advance Request:', itemData.RecId);
+      // console.log('Submit Advance Request:', itemData.RecId);
       const response = await SubmitAdvanceRequest({recId: itemData.RecId});
       const resObj = Array.isArray(response) ? response[0] : response;
 

@@ -23,6 +23,8 @@ const RetrieveLeaveCodes = async ({employeeId}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
+    console.log('Leave Code', {soapEnvelope});
+
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/PRLeaveSvcGroup`,
       soapEnvelope,
@@ -67,7 +69,7 @@ const RetrieveLeaveCodes = async ({employeeId}) => {
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
 
-    // console.log({cleanedData});
+    console.log('Leave Code Clean data', {cleanedData});
 
     return cleanedData;
   } catch (err) {

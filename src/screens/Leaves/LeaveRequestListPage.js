@@ -91,6 +91,8 @@ const LeaveRequestListPage = () => {
         employeeId: effectiveEmployeeId,
       });
 
+      console.log('LeaveData', {LeaveData});
+
       setLeavesData(LeaveData);
     } catch (error) {
       setAlertMessage(t('leaveRequest.fetchFailed'));
@@ -289,6 +291,16 @@ const LeaveRequestListPage = () => {
         label: leavesData[0]?.BalanceLabel || 'Balance',
         type: 'currency',
       },
+      // {
+      //   key: 'Quota',
+      //   label: leavesData[0]?.QuotaLabel || 'Quota',
+      //   type: 'text',
+      // },
+      // {
+      //   key: 'Eligibility',
+      //   label: leavesData[0]?.EligibilityLabel || 'Eligibility',
+      //   type: 'text',
+      // },
       {
         key: 'Reason',
         label: leavesData[0]?.ReasonLabel || 'Reason',
@@ -333,8 +345,8 @@ const LeaveRequestListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: false,
+        customStyle: {},
       },
       submit: {
         show: isDraft,
@@ -404,6 +416,7 @@ const LeaveRequestListPage = () => {
         leaveEndDate: itemData.LeaveEndDate,
         leaveDays: itemData.LeaveDays,
         reason: itemData.Reason,
+        leaveReqId: itemData.LeaveReqId,
       },
     });
   };
@@ -571,7 +584,6 @@ const LeaveRequestListPage = () => {
         legalEntity={selectedLegalEntity}
         employeeId={effectiveEmployeeId}
         employeeName={effectiveEmployeeName}
-        // modalTitle="Leave Attachments"
         modalTitle={t('leaveRequest.pageTitle') + ' Attachments'}
         showDetails={true}
         detailFields={[
@@ -581,10 +593,10 @@ const LeaveRequestListPage = () => {
           {key: 'LeaveEndDate', label: 'End Date'},
         ]}
         detailData={selectedLeaveItem || {}}
-        showTakePhoto={true}
-        showChooseFile={true}
+        showTakePhoto={selectedLeaveItem?.WFStatus === 'Draft'}
+        showChooseFile={selectedLeaveItem?.WFStatus === 'Draft'}
         showDownload={true}
-        showDelete={true}
+        showDelete={selectedLeaveItem?.WFStatus === 'Draft'}
       />
 
       {/* Alert Modal */}

@@ -4,12 +4,14 @@
 import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   Text,
+  View,
   KeyboardAvoidingView,
   ScrollView,
   SafeAreaView,
   BackHandler,
   Platform,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -18,6 +20,7 @@ import {
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
+import {translate as t} from '../../../store/utils/translate';
 
 import {ExpenseLocationLookup} from '../../../API/ExpenseManagment/Headers/ExpenseLocationLookup';
 import ExpensePurposeLookup from '../../../API/ExpenseManagment/Headers/ExpensePurposeLookup';
@@ -70,6 +73,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
@@ -402,6 +406,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
     if (processingButton) return;
 
     setProcessingButton(actionType);
+    setIsProcessing(true);
 
     try {
       const result = await handleAction(
@@ -479,6 +484,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       setAlertModal(true);
     } finally {
       setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
@@ -502,6 +508,16 @@ const ExpenseManagementHeaderSaveRecord = () => {
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.LReqSR_ContentWrapper}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
+              {isProcessing && (
+                <View style={styles.LReqSR_ProcessingOverlay}>
+                  <View style={styles.LReqSR_ProcessingContainer}>
+                    <ActivityIndicator size="large" color="#0A66C2" />
+                    <Text style={styles.LReqSR_ProcessingText}>
+                      {t('common.processing')}
+                    </Text>
+                  </View>
+                </View>
+              )}
               <ScrollView
                 ref={scrollViewRef}
                 contentContainerStyle={styles.LReqSR_FormContainer}

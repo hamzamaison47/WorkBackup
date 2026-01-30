@@ -24,8 +24,8 @@ const GetEmployeeQuota = async ({
       <getEmployeeQuota xmlns="http://tempuri.org">
         <_employeeId>${employeeId}</_employeeId>
         <_leaveCode>${leaveCode}</_leaveCode>
-        <_leaveStartDate>${leaveStartDate}</_leaveStartDate>
         <_leaveRecId>${leaveRecId}</_leaveRecId>
+        <_leaveStartDate>${leaveStartDate}</_leaveStartDate>
       </getEmployeeQuota>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

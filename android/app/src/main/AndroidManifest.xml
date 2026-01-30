@@ -1,36 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Internet + Camera -->    
+    <!-- ============================================ -->
+    <!-- CAMERA PERMISSIONS -->
+    <!-- ============================================ -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="true" />
     
-    <!-- Read Images -->
+    <!-- ============================================ -->
+    <!-- STORAGE PERMISSIONS -->
+    <!-- ============================================ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-
-    <!-- Read + Upload Document -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
-    <!-- Location (Foreground Only) -->
+    <!-- ============================================ -->
+    <!-- LOCATION PERMISSIONS -->
+    <!-- ============================================ -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
-    <!-- Internet Permissions -->
+    <!-- ============================================ -->
+    <!-- NETWORK PERMISSIONS -->
+    <!-- ============================================ -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Biometric Permissions -->
+    <!-- ============================================ -->
+    <!-- BIOMETRIC PERMISSIONS -->
+    <!-- ============================================ -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
 
-    <!-- Push Notifications -->
+    <!-- ============================================ -->
+    <!-- PUSH NOTIFICATIONS -->
+    <!-- ============================================ -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- ============================================ -->
+    <!-- VOICE RECOGNITION PERMISSIONS - CRITICAL -->
+    <!-- ============================================ -->
+    <!-- Core audio recording permission -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
+    <!-- Bluetooth permissions for voice input via Bluetooth devices -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    
+    <!-- Internet required for cloud-based speech recognition -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Modify audio settings (optional but recommended) -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- ============================================ -->
+    <!-- HARDWARE FEATURES -->
+    <!-- ============================================ -->
+    <!-- Microphone feature (not required so app works on tablets without mic) -->
+    <uses-feature 
+        android:name="android.hardware.microphone" 
+        android:required="false" />
+
+    <!-- ============================================ -->
+    <!-- SPEECH RECOGNITION QUERIES -->
+    <!-- ============================================ -->
+    <!-- Required for accessing speech recognition services -->
+    <queries>
+        <!-- Query for Speech Recognition Service -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        
+        <!-- Query for Google app (contains Google Speech Services) -->
+        <package android:name="com.google.android.googlequicksearchbox" />
+        
+        <!-- Query for Play Store to check/install Google app -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="market" />
+        </intent>
+    </queries>
+
+    <!-- ============================================ -->
+    <!-- APPLICATION CONFIGURATION -->
+    <!-- ============================================ -->
     <application
         android:name=".MainApplication"
         android:label="@string/app_name"
@@ -38,8 +98,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="false"
         android:theme="@style/AppTheme"
-        tools:replace="android:allowBackup">
+        android:usesCleartextTraffic="true"
+        tools:replace="android:allowBackup,android:usesCleartextTraffic">
 
+        <!-- ============================================ -->
+        <!-- MAIN ACTIVITY -->
+        <!-- ============================================ -->
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -49,11 +113,13 @@
             android:exported="true"
             android:screenOrientation="portrait">
 
+            <!-- Main launcher intent -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
+            <!-- OAuth redirect intent -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -65,7 +131,11 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="net.openid.appauth.RedirectUriReceiverActivity">
+        <!-- ============================================ -->
+        <!-- OAUTH REDIRECT ACTIVITY -->
+        <!-- ============================================ -->
+        <activity android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -77,6 +147,9 @@
             </intent-filter>
         </activity>
 
+        <!-- ============================================ -->
+        <!-- FILE PROVIDER -->
+        <!-- ============================================ -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -87,7 +160,9 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- ADD THESE INSIDE <application> TAG -->
+        <!-- ============================================ -->
+        <!-- FIREBASE CONFIGURATION -->
+        <!-- ============================================ -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="dynamics_channel"
@@ -98,7 +173,9 @@
             android:resource="@drawable/notification_icon"
             tools:replace="android:resource" />
 
-        <!-- ADD FIREBASE MESSAGING SERVICE -->
+        <!-- ============================================ -->
+        <!-- FIREBASE MESSAGING SERVICE -->
+        <!-- ============================================ -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
