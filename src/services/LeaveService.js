@@ -1,88 +1,56 @@
-/* eslint-disable curly */
 // services/LeaveService.js
+/* eslint-disable curly */
+/* eslint-disable no-unused-vars */
 import {RetrieveLeaveCodes} from '../API/Leaves/LeaveCodes';
 import {createLeaveRequest} from '../API/Leaves/CreateLeaveRequest';
 import SubmitLeaveRequest from '../API/Leaves/SubmitLeaveRequest';
+import DeleteLeaveRequest from '../API/Leaves/deleteLeaveRequest';
 import {GetLeaveBalance} from '../API/Leaves/LeaveBalance';
 import {GetEmployeeQuota} from '../API/Leaves/GetEmployeeQuota';
 import {GetLeaveDays} from '../API/Leaves/GetLeaveDays';
 import {RetrieveAllLeaves} from '../API/Leaves/RetrieveAllLeaves';
 
-/**
- * SMART LEAVE SERVICE
- * - Dynamic API parameter handling
- * - Intelligent error recovery
- * - Progressive parameter collection
- */
 class LeaveService {
   constructor() {
     this.apiCache = new Map();
   }
 
-  /**
-   * Get comprehensive function definitions with flexible parameters
-   */
   getFunctionDefinitions() {
     return [
       {
         name: 'get_available_leave_types',
-        description:
-          'Get all available leave types for the employee. Use when user asks about leaves, vacation types, time off options, or available leave categories.',
+        description: 'Get all available leave types for the employee.',
         parameters: {
           type: 'object',
           properties: {
-            employeeId: {
-              type: 'string',
-              description: 'Employee ID - can be inferred from user context',
-            },
+            employeeId: {type: 'string'},
           },
-          required: [], // Make it optional - we'll fill from context
+          required: [],
         },
       },
       {
         name: 'get_leave_balance',
-        description:
-          'Check remaining leave balance for a specific leave type. Use when user asks "how many days", "check balance", "remaining leaves", "balance query", etc. Handles variations: balance, remaining, available, left. Accepts either leave code (e.g., "ANNUAL") or description (e.g., "Annual Leave").',
+        description: 'Check remaining leave balance for a specific leave type.',
         parameters: {
           type: 'object',
           properties: {
-            employeeId: {
-              type: 'string',
-              description: 'Employee ID from context',
-            },
-            leaveCode: {
-              type: 'string',
-              description:
-                'Leave type code or description (e.g., "ANNUAL" or "Annual Leave"). The system will automatically map to the correct code.',
-            },
-            startDate: {
-              type: 'string',
-              description:
-                'Reference date for balance check. Defaults to today if not provided. Accepts natural language like "today", "tomorrow", or ISO format.',
-            },
+            employeeId: {type: 'string'},
+            leaveCode: {type: 'string'},
+            startDate: {type: 'string'},
           },
           required: ['leaveCode'],
         },
       },
       {
         name: 'calculate_leave_days',
-        description:
-          'Calculate number of leave days between two dates. Handles business days calculation.',
+        description: 'Calculate number of leave days between two dates.',
         parameters: {
           type: 'object',
           properties: {
             employeeId: {type: 'string'},
             leaveCode: {type: 'string'},
-            startDate: {
-              type: 'string',
-              description:
-                'Start date - accepts natural language or YYYY-MM-DD',
-            },
-            endDate: {
-              type: 'string',
-              description:
-                'End date - accepts natural language or YYYY-MM-DD. Defaults to startDate for single-day leaves.',
-            },
+            startDate: {type: 'string'},
+            endDate: {type: 'string'},
           },
           required: ['leaveCode', 'startDate'],
         },
@@ -90,47 +58,47 @@ class LeaveService {
       {
         name: 'create_leave_request',
         description:
-          'Create a new leave request. Try calling with available parameters - the system will ask for missing required fields if needed.',
+          'Create a NEW leave request via API. No navigation needed. Returns the Leave RecId which can be used to submit or edit later.',
         parameters: {
           type: 'object',
           properties: {
             employeeId: {type: 'string'},
-            leaveCode: {
-              type: 'string',
-              description: 'Leave type code',
-            },
-            startDate: {
-              type: 'string',
-              description: 'Leave start date',
-            },
-            endDate: {
-              type: 'string',
-              description:
-                'Leave end date - defaults to startDate if not provided',
-            },
-            leaveCategory: {
-              type: 'string',
-              enum: ['FullLeave', 'HalfLeave'],
-              description: 'Full day or half day leave. Defaults to FullLeave.',
-            },
-            reason: {
-              type: 'string',
-              description: 'Reason for leave (min 3 characters)',
-            },
+            leaveCode: {type: 'string'},
+            startDate: {type: 'string'},
+            endDate: {type: 'string'},
+            leaveCategory: {type: 'string', enum: ['FullLeave', 'HalfLeave']},
+            reason: {type: 'string'},
           },
-          required: ['leaveCode', 'startDate'], // Minimal required fields
+          required: ['leaveCode', 'startDate'],
         },
       },
       {
         name: 'submit_leave_request',
         description:
-          'Submit a leave request for approval. Can only be called after creating a request.',
+          'Submit a leave request for approval. Uses the Leave Record RecId (the RecId field from the leave data, e.g., "5637237577").',
         parameters: {
           type: 'object',
           properties: {
             requestId: {
               type: 'string',
-              description: 'RecId of the created leave request',
+              description:
+                'The RecId of the leave request (e.g., "5637237577")',
+            },
+          },
+          required: ['requestId'],
+        },
+      },
+      {
+        name: 'delete_leave_request',
+        description:
+          'Delete/cancel a leave request using the Leave Record RecId (the RecId field from the leave data, e.g., "5637237577"). Only works on NotSubmitted/Draft status.',
+        parameters: {
+          type: 'object',
+          properties: {
+            requestId: {
+              type: 'string',
+              description:
+                'The RecId of the leave request to delete (e.g., "5637237577")',
             },
           },
           required: ['requestId'],
@@ -139,7 +107,7 @@ class LeaveService {
       {
         name: 'get_leave_requests',
         description:
-          'Get list of leave requests with optional filters. Use when user asks about "my leaves", "leave history", "pending requests", etc.',
+          'Get list of leave requests to display in chatbot. Returns leave records with their RecIds for use in submit/delete/edit operations.',
         parameters: {
           type: 'object',
           properties: {
@@ -147,23 +115,16 @@ class LeaveService {
             status: {
               type: 'string',
               enum: ['all', 'draft', 'pending', 'approved', 'rejected'],
-              description:
-                'Filter by status. Defaults to "all" if not specified.',
+              default: 'all',
             },
-            limit: {
-              type: 'integer',
-              minimum: 1,
-              maximum: 50,
-              description: 'Number of records to return. Defaults to 20.',
-            },
+            limit: {type: 'integer', default: 20},
           },
-          required: [], // All optional - use defaults
+          required: [],
         },
       },
       {
         name: 'validate_leave_request',
-        description:
-          'Validate if a leave request is valid before creating it. Checks dates, balance, overlaps, etc.',
+        description: 'Validate if a leave request is valid before creating it.',
         parameters: {
           type: 'object',
           properties: {
@@ -171,10 +132,7 @@ class LeaveService {
             leaveCode: {type: 'string'},
             startDate: {type: 'string'},
             endDate: {type: 'string'},
-            leaveCategory: {
-              type: 'string',
-              enum: ['FullLeave', 'HalfLeave'],
-            },
+            leaveCategory: {type: 'string', enum: ['FullLeave', 'HalfLeave']},
           },
           required: ['leaveCode', 'startDate'],
         },
@@ -182,14 +140,26 @@ class LeaveService {
       {
         name: 'navigate_to_screen',
         description:
-          'Navigate to a specific screen in the app. Use when user explicitly wants to go to attendance screen or leaves screen.',
+          'Navigate to specific screens. ATTENDANCE: Use CreateAttendanceScreen. LEAVES: ONLY for EDITING existing leave requests (mode=edit). NEVER for creating leaves - use create_leave_request API instead. Must provide leaveData with all fields including RecId.',
         parameters: {
           type: 'object',
           properties: {
             screenName: {
               type: 'string',
-              enum: ['CreateAttendanceScreen', 'LeavesListPage', 'ApplyLeave'],
-              description: 'The screen to navigate to',
+              enum: ['CreateAttendanceScreen', 'LeaveRequestSaveRecord'],
+              description:
+                'CreateAttendanceScreen for attendance marking. LeaveRequestSaveRecord for editing existing leaves ONLY.',
+            },
+            mode: {
+              type: 'string',
+              enum: ['edit'],
+              description:
+                'MUST be "edit" when navigating to LeaveRequestSaveRecord. Never "create".',
+            },
+            leaveData: {
+              type: 'object',
+              description:
+                'Complete leave record data for editing. Must include: recId (the RecId field), employeeId, employeeName, WorkerRecId, leaveCode, leaveStartDate, leaveEndDate, leaveDays, leaveCategory, reason, balance, quota, eligibility.',
             },
             message: {
               type: 'string',
@@ -202,38 +172,85 @@ class LeaveService {
     ];
   }
 
-  /**
-   * Navigation function
-   */
-  async navigate_to_screen({screenName, message = ''}) {
-    // This function doesn't actually execute navigation here
-    // It returns a result that will trigger navigation in the chatbot
+  async navigate_to_screen({screenName, mode, leaveData, message = ''}) {
+    // Only allow Edit mode for Leave screen
+    if (screenName === 'LeaveRequestSaveRecord' && mode !== 'edit') {
+      return {
+        success: false,
+        error: 'INVALID_MODE',
+        message:
+          'LeaveRequestSaveRecord only supports "edit" mode via navigation. For creating leaves, use create_leave_request function instead.',
+      };
+    }
+
+    // Validate required fields for edit navigation
+    if (screenName === 'LeaveRequestSaveRecord' && mode === 'edit') {
+      if (!leaveData || !leaveData.recId) {
+        return {
+          success: false,
+          error: 'MISSING_RECID',
+          message:
+            'Navigation to edit requires leaveData with recId (the RecId field from the leave record).',
+        };
+      }
+    }
+
     return {
       success: true,
       action: 'navigate',
       screenName,
+      mode, // 'edit' for leaves
+      leaveData, // full record data for edit
       message,
       timestamp: new Date().toISOString(),
     };
   }
 
-  /**
-   * Smart parameter filling from context
-   */
+  async delete_leave_request({requestId}) {
+    try {
+      if (!requestId) {
+        return {
+          success: false,
+          error: 'MISSING_PARAMETER',
+          message: 'Leave Record RecId is required for deletion',
+        };
+      }
+
+      // Support both single string and array
+      const ids = Array.isArray(requestId) ? requestId : [String(requestId)];
+
+      const result = await DeleteLeaveRequest({recordsRecId: ids});
+
+      return {
+        success: true,
+        message: 'Leave request deleted successfully',
+        deletedRecIds: ids,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'DELETE_FAILED',
+        message: error.message || 'Failed to delete leave request',
+      };
+    }
+  }
+
   fillParametersFromContext(parameters, userData) {
     const filled = {...parameters};
 
-    // Auto-fill employee ID if missing
     if (!filled.employeeId && userData?.employeeId) {
       filled.employeeId = userData.employeeId;
     }
 
-    // Auto-fill WorkerRecId if needed
     if (!filled.WorkerRecId && userData?.WorkerRecId) {
       filled.WorkerRecId = userData.WorkerRecId;
     }
 
-    // Convert natural language dates to ISO format
+    if (!filled.employeeName && userData?.employeeName) {
+      filled.employeeName = userData.employeeName;
+    }
+
     if (filled.startDate) {
       filled.startDate = this.parseFlexibleDate(filled.startDate);
     }
@@ -241,26 +258,21 @@ class LeaveService {
     if (filled.endDate) {
       filled.endDate = this.parseFlexibleDate(filled.endDate);
     } else if (filled.startDate) {
-      // Default end date to start date for single-day leaves
       filled.endDate = filled.startDate;
     }
 
-    // Default to today if no start date
     if (!filled.startDate && parameters.startDate !== undefined) {
       filled.startDate = this.todayISO();
     }
 
-    // Default leave category
     if (!filled.leaveCategory && parameters.leaveCategory !== undefined) {
       filled.leaveCategory = 'FullLeave';
     }
 
-    // Default status filter
     if (!filled.status && parameters.status !== undefined) {
       filled.status = 'all';
     }
 
-    // Default limit
     if (!filled.limit && parameters.limit !== undefined) {
       filled.limit = 20;
     }
@@ -268,13 +280,8 @@ class LeaveService {
     return filled;
   }
 
-  /**
-   * Parse flexible date formats
-   */
   parseFlexibleDate(input) {
     if (!input) return null;
-
-    // Already in ISO format
     if (/^\d{4}-\d{2}-\d{2}/.test(input)) {
       return input.includes('T') ? input : `${input}T12:00:00`;
     }
@@ -282,7 +289,6 @@ class LeaveService {
     const today = new Date();
     const lowerInput = input.toLowerCase().trim();
 
-    // Natural language dates
     if (lowerInput === 'today') {
       return this.formatDateISO(today);
     }
@@ -293,13 +299,6 @@ class LeaveService {
       return this.formatDateISO(tomorrow);
     }
 
-    if (lowerInput === 'yesterday') {
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      return this.formatDateISO(yesterday);
-    }
-
-    // Handle "next Monday", "next Friday", etc.
     const nextDayMatch = lowerInput.match(/next\s+(\w+)/);
     if (nextDayMatch) {
       const dayName = nextDayMatch[1];
@@ -323,7 +322,6 @@ class LeaveService {
       }
     }
 
-    // Try standard date parsing
     try {
       const parsed = new Date(input);
       if (!isNaN(parsed.getTime())) {
@@ -347,18 +345,12 @@ class LeaveService {
     return this.formatDateISO(new Date());
   }
 
-  /**
-   * 1. Get available leave types with caching
-   */
   async get_available_leave_types({employeeId}) {
     try {
-      // Check cache first
       const cacheKey = `leave_types_${employeeId}`;
       if (this.apiCache.has(cacheKey)) {
         const cached = this.apiCache.get(cacheKey);
         if (Date.now() - cached.timestamp < 300000) {
-          // 5 min cache
-          console.log('✅ Using cached leave types');
           return cached.data;
         }
       }
@@ -376,12 +368,11 @@ class LeaveService {
       const result = {
         success: true,
         leaves: data.map(leave => ({
-          code: leave.LeaveCode, // e.g., "ANNUAL"
-          name: leave.LeaveDescription, // e.g., "Annual Leave"
-          description: leave.LeaveDescription, // Alias for compatibility
+          code: leave.LeaveCode,
+          name: leave.LeaveDescription,
+          description: leave.LeaveDescription,
           id: leave.RecId,
         })),
-        // Add mapping for easier lookup
         leaveMap: data.reduce((map, leave) => {
           map[leave.LeaveDescription.toLowerCase()] = leave.LeaveCode;
           map[leave.LeaveCode.toLowerCase()] = leave.LeaveCode;
@@ -389,29 +380,19 @@ class LeaveService {
         }, {}),
       };
 
-      // Cache the result
-      this.apiCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now(),
-      });
-
+      this.apiCache.set(cacheKey, {data: result, timestamp: Date.now()});
       return result;
     } catch (error) {
       return {
         success: false,
         error: 'API_ERROR',
         message: error.message,
-        details: 'Failed to fetch leave types from server',
       };
     }
   }
 
-  /**
-   * 2. Get leave balance with smart defaults
-   */
   async get_leave_balance({employeeId, leaveCode, startDate}) {
     try {
-      // Use today if no start date provided
       const effectiveStartDate = startDate || this.todayISO();
 
       const [balance, quota] = await Promise.all([
@@ -445,17 +426,10 @@ class LeaveService {
         success: false,
         error: 'API_ERROR',
         message: error.message,
-        requiredParameters: {
-          employeeId: 'Employee ID is required',
-          leaveCode: 'Leave type code is required',
-        },
       };
     }
   }
 
-  /**
-   * 3. Calculate leave days
-   */
   async calculate_leave_days({employeeId, leaveCode, startDate, endDate}) {
     try {
       const effectiveEndDate = endDate || startDate;
@@ -478,20 +452,13 @@ class LeaveService {
         success: false,
         error: 'API_ERROR',
         message: error.message,
-        requiredParameters: {
-          employeeId: 'Employee ID is required',
-          leaveCode: 'Leave type code is required',
-          startDate: 'Start date is required',
-        },
       };
     }
   }
 
-  /**
-   * 4. Create leave request with progressive parameter collection
-   */
   async create_leave_request({
     employeeId,
+    employeeName,
     leaveCode,
     startDate,
     endDate,
@@ -499,7 +466,6 @@ class LeaveService {
     reason,
   }) {
     try {
-      // Validate minimum required parameters
       const missingParams = [];
       if (!employeeId) missingParams.push('employeeId');
       if (!leaveCode) missingParams.push('leaveCode');
@@ -511,20 +477,13 @@ class LeaveService {
           error: 'MISSING_PARAMETERS',
           message: 'Required parameters are missing',
           missingParameters: missingParams,
-          requiredParameters: {
-            employeeId: 'Employee ID',
-            leaveCode: 'Leave type (e.g., Annual, Sick)',
-            startDate: 'Start date (e.g., 2025-01-27 or "tomorrow")',
-          },
         };
       }
 
-      // Apply defaults
       const effectiveEndDate = endDate || startDate;
       const effectiveCategory = leaveCategory || 'FullLeave';
       const effectiveReason = reason || 'Leave request';
 
-      // Get leave days and balance
       const [daysResult, balanceResult] = await Promise.all([
         this.calculate_leave_days({
           employeeId,
@@ -540,14 +499,9 @@ class LeaveService {
           success: false,
           error: 'CALCULATION_ERROR',
           message: 'Failed to calculate leave details',
-          details: {
-            daysError: daysResult.error,
-            balanceError: balanceResult.error,
-          },
         };
       }
 
-      // Create the leave request
       const leaveData = {
         LeaveCode: leaveCode,
         LeaveDays: daysResult.days.toString(),
@@ -560,6 +514,7 @@ class LeaveService {
         LeaveReqDate: this.todayISO(),
         Reason: effectiveReason,
         EmployeeId: employeeId,
+        EmployeeName: employeeName || '',
         RecId: '0',
       };
 
@@ -570,13 +525,14 @@ class LeaveService {
           success: false,
           error: 'CREATE_FAILED',
           message: created?.Message || 'Failed to create leave request',
-          apiResponse: created,
         };
       }
 
+      // Return the RecId clearly so AI can use it for submit or edit
       return {
         success: true,
-        requestId: created.RecId,
+        requestId: created.RecId, // This is the RecId for submit/delete/edit
+        recId: created.RecId, // Explicitly provide recId for navigation
         status: 'draft',
         leaveDetails: {
           leaveCode,
@@ -586,10 +542,11 @@ class LeaveService {
           endDate: effectiveEndDate,
           category: effectiveCategory,
         },
-        message: `Leave request created successfully with ID: ${created.RecId}`,
+        message: `Leave request created successfully with Record ID: ${created.RecId}`,
         nextActions: [
-          'You can now submit this request for approval',
-          'Or you can modify it before submitting',
+          `Submit: Use submit_leave_request with requestId: "${created.RecId}"`,
+          `Edit: Use navigate_to_screen with mode="edit" and leaveData.recId="${created.RecId}"`,
+          `Delete: Use delete_leave_request with requestId: "${created.RecId}"`,
         ],
       };
     } catch (error) {
@@ -597,28 +554,21 @@ class LeaveService {
         success: false,
         error: 'API_ERROR',
         message: error.message,
-        stack: error.stack,
       };
     }
   }
 
-  /**
-   * 5. Submit leave request
-   */
   async submit_leave_request({requestId}) {
     try {
       if (!requestId) {
         return {
           success: false,
           error: 'MISSING_PARAMETER',
-          message: 'Request ID is required to submit',
-          requiredParameters: {
-            requestId: 'The RecId of the leave request to submit',
-          },
+          message: 'Leave Record RecId is required for submission',
         };
       }
 
-      const result = await SubmitLeaveRequest({recId: requestId});
+      const result = await SubmitLeaveRequest({recId: String(requestId)});
 
       const isSuccess =
         result?.IsSuccess === true || result?.IsSuccess === 'true';
@@ -628,13 +578,12 @@ class LeaveService {
           success: false,
           error: 'SUBMIT_FAILED',
           message: result?.Message || 'Failed to submit leave request',
-          apiResponse: result,
         };
       }
 
       return {
         success: true,
-        requestId,
+        requestId: String(requestId),
         status: 'submitted',
         message: 'Leave request submitted successfully for approval',
       };
@@ -647,9 +596,6 @@ class LeaveService {
     }
   }
 
-  /**
-   * 6. Get leave requests with smart filtering
-   */
   async get_leave_requests({employeeId, status = 'all', limit = 20}) {
     try {
       if (!employeeId) {
@@ -670,7 +616,6 @@ class LeaveService {
         };
       }
 
-      // Status mapping
       const statusMap = {
         draft: ['NotSubmitted', 'Draft'],
         pending: ['Pending', 'Submitted', 'PendingApproval'],
@@ -678,7 +623,6 @@ class LeaveService {
         rejected: ['Rejected'],
       };
 
-      // Filter by status
       let filtered = data;
       if (status !== 'all' && statusMap[status]) {
         filtered = data.filter(leave =>
@@ -686,25 +630,49 @@ class LeaveService {
         );
       }
 
-      // Apply limit
       const limited = filtered.slice(0, limit);
 
       return {
         success: true,
         requests: limited.map(leave => ({
-          id: leave.RecId,
+          // Primary identifier for all operations
+          recId: leave.RecId,
+          requestId: leave.RecId, // Same as recId for consistency
+          displayId: leave.LeaveReqId, // The human-readable ID like "USMF-000299"
+
+          // Basic info
           type: leave.LeaveCode,
           typeName: leave.LeaveDescription,
           status: leave.WFStatus,
+          statusLabel: leave.LeaveRequestStatus,
+
+          // Dates
           startDate: leave.LeaveStartDate,
           endDate: leave.LeaveEndDate,
-          days: leave.LeaveDays,
-          reason: leave.Reason,
           requestDate: leave.LeaveReqDate,
+          days: leave.LeaveDays,
+
+          // Category and reason
+          category: leave.LeaveCategory,
+          reason: leave.Reason,
+
+          // Balance info
+          balance: leave.Balance,
+          quota: leave.Quota,
+          eligibility: leave.Eligibility,
+
+          // Employee info
+          employeeId: leave.EmployeeId,
+          employeeName: leave.EmployeeName,
+          WorkerRecId: leave.WorkerRecId,
+
+          // Include raw data for navigation if needed
+          rawData: leave,
         })),
         total: filtered.length,
         showing: limited.length,
         hasMore: filtered.length > limit,
+        note: 'Use the recId field for submit, delete, or edit operations',
       };
     } catch (error) {
       return {
@@ -715,9 +683,6 @@ class LeaveService {
     }
   }
 
-  /**
-   * 7. Validate leave request
-   */
   async validate_leave_request({
     employeeId,
     leaveCode,
@@ -730,7 +695,6 @@ class LeaveService {
       const warnings = [];
       const effectiveEndDate = endDate || startDate;
 
-      // Date validation
       const start = new Date(startDate);
       const end = new Date(effectiveEndDate);
 
@@ -763,7 +727,6 @@ class LeaveService {
         });
       }
 
-      // Check balance
       const [balanceResult, daysResult] = await Promise.all([
         this.get_leave_balance({employeeId, leaveCode, startDate}),
         this.calculate_leave_days({
@@ -805,21 +768,15 @@ class LeaveService {
     }
   }
 
-  /**
-   * Resolve leave code from user input
-   * This handles fuzzy matching between description and code
-   */
   resolveLeaveCode(input, leaveTypesResult) {
     if (!input || !leaveTypesResult) return input;
 
-    // If input is already a code, return as-is
     const leaves = leaveTypesResult.leaves || [];
     const exactCodeMatch = leaves.find(
       leave => leave.code.toLowerCase() === input.toLowerCase(),
     );
     if (exactCodeMatch) return exactCodeMatch.code;
 
-    // Try to match by name/description
     const nameMatch = leaves.find(
       leave =>
         leave.name.toLowerCase().includes(input.toLowerCase()) ||
@@ -828,38 +785,30 @@ class LeaveService {
 
     if (nameMatch) return nameMatch.code;
 
-    // Use the leaveMap if available
     if (leaveTypesResult.leaveMap) {
       const mappedCode = leaveTypesResult.leaveMap[input.toLowerCase()];
       if (mappedCode) return mappedCode;
     }
 
-    return input; // Return original if no match
+    return input;
   }
 
-  /**
-   * Execute function by name with smart parameter handling
-   */
   async execute(functionName, parameters, userData = {}) {
     if (typeof this[functionName] !== 'function') {
       return {
         success: false,
         error: 'FUNCTION_NOT_FOUND',
         message: `Function ${functionName} not found`,
-        availableFunctions: this.getFunctionDefinitions().map(f => f.name),
       };
     }
 
     try {
-      // Fill parameters from context
       const filledParams = this.fillParametersFromContext(parameters, userData);
 
-      // Special handling for leaveCode parameter
       if (
         filledParams.leaveCode &&
         functionName !== 'get_available_leave_types'
       ) {
-        // Get leave types to resolve code
         const leaveTypesResult = await this.get_available_leave_types({
           employeeId: filledParams.employeeId || userData.employeeId,
         });
@@ -874,7 +823,6 @@ class LeaveService {
       }
 
       console.log('🔧 Executing:', functionName);
-      console.log('📥 Original params:', parameters);
       console.log('📤 Filled params:', filledParams);
 
       return await this[functionName](filledParams);
@@ -884,7 +832,6 @@ class LeaveService {
         success: false,
         error: 'EXECUTION_ERROR',
         message: error.message,
-        stack: error.stack,
       };
     }
   }

@@ -1,5 +1,5 @@
-/* eslint-disable curly */
 // services/AzureAIService.js
+/* eslint-disable curly */
 import {getAzureAIConfig} from './SecureConfigService';
 
 class AzureAIService {

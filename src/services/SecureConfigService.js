@@ -36,10 +36,10 @@ export const getAzureAIConfig = async () => {
   try {
     // Always use environment variables directly
     const config = {
-      endpoint: AZURE_ENDPOINT || 'https://dynaface-resource.openai.azure.com',
-      apiKey: AZURE_API_KEY || '',
-      deployment: AZURE_DEPLOYMENT || 'gpt-4.1-mini',
-      apiVersion: AZURE_API_VERSION || '2024-08-01-preview',
+      endpoint: AZURE_ENDPOINT,
+      apiKey: AZURE_API_KEY,
+      deployment: AZURE_DEPLOYMENT,
+      apiVersion: AZURE_API_VERSION,
     };
 
     // Validate config

@@ -1,6 +1,6 @@
-/* eslint-disable no-unused-vars */
+// services/VoiceRecordingService.js
 /* eslint-disable curly */
-// services/VoiceRecordingService.js - AZURE SPEECH SDK + REST FALLBACK (RN SAFE)
+/* eslint-disable no-unused-vars */
 import AudioRecord from 'react-native-audio-record';
 import {PermissionsAndroid, Platform} from 'react-native';
 import RNFS from 'react-native-fs';
@@ -296,6 +296,18 @@ class VoiceRecordingService {
     }
 
     throw new Error('All endpoints failed');
+  }
+
+  async checkPermission() {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const res = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+      );
+      return res === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**

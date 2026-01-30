@@ -1,5 +1,5 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState, useRef, useMemo} from 'react';
 import {
@@ -18,6 +18,7 @@ import {
   InteractionManager,
   Dimensions,
   TouchableWithoutFeedback,
+  Linking,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import moment from 'moment';
@@ -119,8 +120,9 @@ const AIChatbot = ({visible, onClose}) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [voiceServiceReady, setVoiceServiceReady] = useState(true);
-  const [voiceStatus, setVoiceStatus] = useState('Voice Ready');
+  const [voiceServiceReady, setVoiceServiceReady] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState('Checking microphone...');
+  const permissionInitializedRef = useRef(false);
 
   const processingRef = useRef(false);
   const flatListRef = useRef(null);
@@ -190,6 +192,35 @@ const AIChatbot = ({visible, onClose}) => {
       return;
     }
 
+    // Proactive permission check - only on first open
+    if (!permissionInitializedRef.current) {
+      permissionInitializedRef.current = true;
+
+      const initializePermission = async () => {
+        // First check silently
+        const hasPerm = await VoiceRecordingService.checkPermission();
+
+        if (hasPerm) {
+          setVoiceServiceReady(true);
+          setVoiceStatus('Voice Ready');
+        } else {
+          // First time: request permission proactively
+          const granted = await VoiceRecordingService.requestPermission();
+          setVoiceServiceReady(granted);
+          setVoiceStatus(granted ? 'Voice Ready' : 'Microphone access denied');
+        }
+      };
+
+      initializePermission();
+    } else {
+      // Subsequent opens: just check status without requesting
+      VoiceRecordingService.checkPermission().then(hasPerm => {
+        setVoiceServiceReady(hasPerm);
+        setVoiceStatus(hasPerm ? 'Voice Ready' : 'Microphone access denied');
+      });
+    }
+
+    // Welcome message logic (keep existing)
     if (!messages || messages.length === 0) {
       const welcomeMsg = {
         id: 'welcome-1',
@@ -199,9 +230,6 @@ const AIChatbot = ({visible, onClose}) => {
       };
       dispatch(chatbotSetMessages([welcomeMsg]));
     }
-
-    setVoiceServiceReady(true);
-    setVoiceStatus('Voice Ready');
 
     return () => {
       if (isRecording) VoiceRecordingService.cancelRecording?.();
@@ -605,8 +633,36 @@ const AIChatbot = ({visible, onClose}) => {
     onClose?.();
   };
 
-  const micPressIn = () => {
+  const micPressIn = async () => {
     if (!isPressToTalk) return;
+
+    if (!voiceServiceReady) {
+      const granted = await VoiceRecordingService.requestPermission();
+
+      if (granted) {
+        setVoiceServiceReady(true);
+        setVoiceStatus('Voice Ready');
+        startRecording();
+      } else {
+        Alert.alert(
+          'Microphone Access Required',
+          'Voice input requires microphone access. Please enable it in your device settings.',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+            {
+              text: 'Open Settings',
+              onPress: () => Linking.openSettings(),
+              style: 'default',
+            },
+          ],
+        );
+      }
+      return;
+    }
+
     startRecording();
   };
 
@@ -752,13 +808,16 @@ const AIChatbot = ({visible, onClose}) => {
                     style={[
                       styles.micButton,
                       isRecording && styles.micButtonActive,
+                      !voiceServiceReady &&
+                        !isRecording &&
+                        styles.micButtonDisabled,
                     ]}
-                    disabled={!voiceServiceReady || isTyping}>
+                    disabled={isTyping}>
                     <LinearGradient
                       colors={
                         isRecording
                           ? ['#FF4444', '#CC0000']
-                          : isTyping
+                          : !voiceServiceReady || isTyping
                           ? ['#CCCCCC', '#999999']
                           : ['#0A66C2', '#0765A2']
                       }
@@ -766,7 +825,7 @@ const AIChatbot = ({visible, onClose}) => {
                       <Icon
                         name={isRecording ? 'stop' : 'microphone'}
                         size={22}
-                        color={isTyping ? '#666' : '#fff'}
+                        color={!voiceServiceReady || isTyping ? '#888' : '#fff'}
                       />
                     </LinearGradient>
                   </TouchableOpacity>
@@ -802,7 +861,7 @@ const AIChatbot = ({visible, onClose}) => {
                     <LinearGradient
                       colors={
                         input.trim() && !isRecording && !isTyping
-                          ? ['#00B894', '#00C9A7']
+                          ? ['#00b875', '#00c96b']
                           : ['#E4E9F2', '#D1D8E0']
                       }
                       style={styles.gradientButton}>
@@ -822,7 +881,9 @@ const AIChatbot = ({visible, onClose}) => {
                 {!voiceServiceReady && (
                   <View style={styles.voiceWarning}>
                     <Icon name="microphone-off" size={12} color="#FF6B6B" />
-                    <Text style={styles.voiceWarningText}>{voiceStatus}</Text>
+                    <Text style={styles.voiceWarningText}>
+                      Tap mic to enable voice access
+                    </Text>
                   </View>
                 )}
               </View>
@@ -1029,7 +1090,7 @@ const styles = StyleSheet.create({
   },
   recordingOverlay: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 10,
     left: 20,
     right: 20,
     height: 120,
@@ -1115,6 +1176,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
+  },
+  micButtonDisabled: {
+    opacity: 0.6,
   },
   gradientButton: {
     width: 48,
