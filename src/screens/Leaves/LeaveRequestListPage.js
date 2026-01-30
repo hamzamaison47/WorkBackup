@@ -32,6 +32,7 @@ import {RetrieveAllLeaves} from '../../API/Leaves/RetrieveAllLeaves';
 import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+import {isLeaveWorkflowConfigured} from '../../API/Leaves/isLeaveWorkflowEnabled';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
@@ -68,6 +69,7 @@ const LeaveRequestListPage = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
+  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -349,7 +351,7 @@ const LeaveRequestListPage = () => {
         customStyle: {},
       },
       submit: {
-        show: isDraft,
+        show: isWorkflowConfigured && isDraft,
         position: 'bottom',
         style: 'text',
         icon: 'send',
@@ -360,6 +362,21 @@ const LeaveRequestListPage = () => {
       },
     };
   };
+
+  const checkWorkflowConfig = useCallback(async () => {
+    try {
+      const res = await isLeaveWorkflowConfigured();
+      setIsWorkflowConfigured(res === true || res === 1);
+    } catch (e) {
+      setIsWorkflowConfigured(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkWorkflowConfig();
+    }, [checkWorkflowConfig]),
+  );
 
   // Helper function to set button processing state
   const setButtonProcessing = (recId, buttonType, isProcessing) => {

@@ -16,6 +16,7 @@ import Profile from '../screens/Profile/Profile';
 import styles from '../styles/styles';
 import CustomTabBar from '../Controller/CustomTabBar';
 import {translate as t} from '../store/utils/translate';
+import WorkItemsAssignedToMePage from '../screens/WorkItemsAssignedToMe/WorkItemAssignedToMe';
 
 const Tab = createBottomTabNavigator();
 
@@ -48,7 +49,7 @@ const TabNavigator = () => {
             iconName = focused ? 'person' : 'person-outline';
           } else if (route.name === 'WorkerAssignedToMe') {
             iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'WorkItemAssignedToMe') {
+          } else if (route.name === 'WorkItemAssigned') {
             iconName = focused ? 'clipboard' : 'clipboard-outline';
           }
 
@@ -80,8 +81,8 @@ const TabNavigator = () => {
         options={{tabBarLabel: t('tabNavigator.history')}}
       />
       <Tab.Screen
-        name="WorkItemAssignedToMe"
-        component={DisplayListPage}
+        name="WorkItemAssigned"
+        component={WorkItemsAssignedToMePage}
         options={{tabBarLabel: t('tabNavigator.MyWorkItems')}}
       />
       <Tab.Screen

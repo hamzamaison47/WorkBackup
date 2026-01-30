@@ -55,6 +55,31 @@ const LoginScreen = () => {
   const [backPressedOnce, setBackPressedOnce] = useState(false);
 
   useEffect(() => {
+    const tryAutoBiometricLogin = async () => {
+      if (!navigation.isFocused()) return;
+
+      const hasCredentials = await hasPersistentBiometricCredentials();
+      if (!hasCredentials) return;
+
+      const activeConfigId = await getActiveConfig();
+      if (!activeConfigId) return;
+
+      const biometricSuccess = await authenticateWithBiometrics();
+      if (!biometricSuccess) return;
+
+      setLoading(true);
+
+      const credentials = await getBiometricCredentials();
+      await loadUserDataFromBiometric(credentials.email, credentials.provider);
+
+      navigation.navigate('DrawerNavigator');
+      setLoading(false);
+    };
+
+    tryAutoBiometricLogin();
+  }, [navigation, loadUserDataFromBiometric]);
+
+  useEffect(() => {
     const backAction = () => {
       if (navigation.isFocused()) {
         if (!backPressedOnce) {
@@ -191,69 +216,72 @@ const LoginScreen = () => {
     }
   };
 
-  const loadUserDataFromBiometric = async (email, provider) => {
-    try {
-      // Fetch fresh user data from API using email
-      const userInfo = await fetchUserInfo(email);
+  const loadUserDataFromBiometric = React.useCallback(
+    async (email, provider) => {
+      try {
+        // Fetch fresh user data from API using email
+        const userInfo = await fetchUserInfo(email);
 
-      if (
-        !userInfo.length ||
-        !userInfo[0].EmployeeName ||
-        !userInfo[0].EmployeeId ||
-        userInfo[0].WorkerRecId === 0
-      ) {
-        throw new Error('User data not found or invalid');
+        if (
+          !userInfo.length ||
+          !userInfo[0].EmployeeName ||
+          !userInfo[0].EmployeeId ||
+          userInfo[0].WorkerRecId === 0
+        ) {
+          throw new Error('User data not found or invalid');
+        }
+
+        const user = userInfo[0];
+
+        // Prepare complete user data object
+        const completeUserData = {
+          userName: user.EmployeeName,
+          employeeName: user.EmployeeName,
+          employeeId: user.EmployeeId,
+          WorkerRecId: user.WorkerRecId,
+          email: email,
+          jobId: user.JobId,
+          department: user.Department,
+          defaultLegalEntity: user.DefaultLegalEntity,
+          PositionDescription: user.PositionDescription,
+          CreatedBy: user.CreatedBy,
+          CreatedDateTime: user.CreatedDateTime,
+          DataAreaId: user.DataAreaId,
+          IsEnrolledInPayroll: user.IsEnrolledInPayroll,
+          JobDescription: user.JobDescription,
+          ModifiedBy: user.ModifiedBy,
+          ModifiedDateTime: user.ModifiedDateTime,
+          OriginalHireDate: user.OriginalHireDate,
+          Partition: user.Partition,
+          Person: user.Person,
+          Positionid: user.Positionid,
+          RecId: user.RecId,
+          isDynamicsUser: user.isDynamicsUser,
+          employeeFullInfo: user,
+        };
+
+        // Set user data in Redux
+        dispatch(setUserData(completeUserData));
+
+        // Initialize legal entity
+        await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
+
+        // Fetch legal entities and menu items
+        const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+        const menus = await fetchEmployeeMenuItems(user.EmployeeId);
+
+        dispatch(setLegalEntities(legalEntities));
+        dispatch(setMenuItems(menus));
+
+        console.log('Biometric login successful for:', email);
+        return true;
+      } catch (error) {
+        console.error('Error loading user data from biometric:', error);
+        throw error;
       }
-
-      const user = userInfo[0];
-
-      // Prepare complete user data object
-      const completeUserData = {
-        userName: user.EmployeeName,
-        employeeName: user.EmployeeName,
-        employeeId: user.EmployeeId,
-        WorkerRecId: user.WorkerRecId,
-        email: email,
-        jobId: user.JobId,
-        department: user.Department,
-        defaultLegalEntity: user.DefaultLegalEntity,
-        PositionDescription: user.PositionDescription,
-        CreatedBy: user.CreatedBy,
-        CreatedDateTime: user.CreatedDateTime,
-        DataAreaId: user.DataAreaId,
-        IsEnrolledInPayroll: user.IsEnrolledInPayroll,
-        JobDescription: user.JobDescription,
-        ModifiedBy: user.ModifiedBy,
-        ModifiedDateTime: user.ModifiedDateTime,
-        OriginalHireDate: user.OriginalHireDate,
-        Partition: user.Partition,
-        Person: user.Person,
-        Positionid: user.Positionid,
-        RecId: user.RecId,
-        isDynamicsUser: user.isDynamicsUser,
-        employeeFullInfo: user,
-      };
-
-      // Set user data in Redux
-      dispatch(setUserData(completeUserData));
-
-      // Initialize legal entity
-      await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
-
-      // Fetch legal entities and menu items
-      const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
-      const menus = await fetchEmployeeMenuItems(user.EmployeeId);
-
-      dispatch(setLegalEntities(legalEntities));
-      dispatch(setMenuItems(menus));
-
-      console.log('Biometric login successful for:', email);
-      return true;
-    } catch (error) {
-      console.error('Error loading user data from biometric:', error);
-      throw error;
-    }
-  };
+    },
+    [dispatch],
+  );
 
   return (
     <LinearGradient

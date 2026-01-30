@@ -24,6 +24,7 @@ import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {translate as t} from '../../../../store/utils/translate';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
@@ -121,11 +122,25 @@ const FamilyContact_SaveRecord = () => {
           Gender: familyContactDataSet.Gender || '',
           BirthDate: familyContactDataSet.BirthDate || '',
 
-          beneficiaryValidFrom: familyContactDataSet.BeneficiaryFromDate || '',
-          beneficiaryValidTo: familyContactDataSet.BeneficiaryToDate || '',
+          // beneficiaryValidFrom: familyContactDataSet.BeneficiaryFromDate || '',
+          // beneficiaryValidTo: familyContactDataSet.BeneficiaryToDate || '',
 
-          dependentValidFrom: familyContactDataSet.DependentValidFrom || '',
-          dependentValidTo: familyContactDataSet.DependentValidTo || '',
+          // dependentValidFrom: familyContactDataSet.DependentValidFrom || '',
+          // dependentValidTo: familyContactDataSet.DependentValidTo || '',
+
+          beneficiaryValidFrom: normalizeD365Date(
+            familyContactDataSet.BeneficiaryFromDate,
+          ),
+          beneficiaryValidTo: normalizeD365Date(
+            familyContactDataSet.BeneficiaryToDate,
+          ),
+
+          dependentValidFrom: normalizeD365Date(
+            familyContactDataSet.DependentValidFrom,
+          ),
+          dependentValidTo: normalizeD365Date(
+            familyContactDataSet.DependentValidTo,
+          ),
 
           IsFullTimeStudent: toBoolean(familyContactDataSet.IsFullTimeStudent),
           IsPersonWithDisabilities: toBoolean(
@@ -149,6 +164,22 @@ const FamilyContact_SaveRecord = () => {
       WorkerRecId,
     ]),
   );
+
+  const D365_MAX_DATE = '2154-12-31T23:59:59Z';
+  const D365_MIN_DATE = '1900-01-01';
+
+  const normalizeD365Date = dateString => {
+    if (!dateString) return '';
+
+    if (
+      dateString.startsWith(D365_MAX_DATE) ||
+      dateString.startsWith(D365_MIN_DATE)
+    ) {
+      return ''; // empty means "Never / Not set" in UI
+    }
+
+    return dateString;
+  };
 
   const [relationshipTypes, setRelationshipTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -290,15 +321,20 @@ const FamilyContact_SaveRecord = () => {
 
         BeneficiaryFromDate:
           data.beneficiaryValidFrom || '1900-01-01T00:00:00.000Z',
-        BeneficiaryToDate:
-          data.beneficiaryValidTo || '1900-01-01T00:00:00.000Z',
+
+        BeneficiaryToDate: data.beneficiaryValidTo
+          ? data.beneficiaryValidTo
+          : '2154-12-31T23:59:59.000Z',
 
         Gender: data.Gender || '',
         BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
 
         DependentValidFrom:
           data.dependentValidFrom || '1900-01-01T00:00:00.000Z',
-        DependentValidTo: data.dependentValidTo || '1900-01-01T00:00:00.000Z',
+
+        DependentValidTo: data.dependentValidTo
+          ? data.dependentValidTo
+          : '2154-12-31T23:59:59.000Z',
 
         IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
         IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
@@ -319,6 +355,7 @@ const FamilyContact_SaveRecord = () => {
         response = await FamilyContactUpdate({
           familyContactDataSet: contract,
         });
+        console.log('THIS IS HTE DAT ATHAT IS GOIGJ', contract);
       }
 
       if (!response) {
@@ -418,7 +455,7 @@ const FamilyContact_SaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        mode === 'edit' ? 'Edit Personal contact' : 'Create Personal contact'
+        mode === 'edit' ? 'Edit Personal Contact' : 'Create Personal Contact'
       }
       isBackButton={true}
       showFooter={false}
@@ -607,7 +644,15 @@ const FamilyContact_SaveRecord = () => {
                       Valid From
                     </Text>
                     <TouchableOpacity
-                      style={[styles.LReqSR_Input, {justifyContent: 'center'}]}
+                      style={[
+                        styles.LReqSR_Input,
+                        {
+                          flexDirection: 'row', // Makes children align horizontally
+                          alignItems: 'center', // Centers items vertically
+                          justifyContent: 'space-between', // Pushes items to edges
+                          paddingHorizontal: 12,
+                        },
+                      ]}
                       onPress={() => setShowValidFromPicker(true)}>
                       <Text
                         style={{
@@ -618,8 +663,9 @@ const FamilyContact_SaveRecord = () => {
                         }}>
                         {formData.beneficiaryValidFrom
                           ? formatDisplayDate(formData.beneficiaryValidFrom)
-                          : 'Select Valid From Date'}
+                          : formatDisplayDate(new Date().toISOString())}
                       </Text>
+                      <Icon name="calendar" size={20} color="#04739cff" />
                     </TouchableOpacity>
 
                     {showValidFromPicker && (
@@ -646,7 +692,15 @@ const FamilyContact_SaveRecord = () => {
                       Valid To
                     </Text>
                     <TouchableOpacity
-                      style={[styles.LReqSR_Input, {justifyContent: 'center'}]}
+                      style={[
+                        styles.LReqSR_Input,
+                        {
+                          flexDirection: 'row', // Makes children align horizontally
+                          alignItems: 'center', // Centers items vertically
+                          justifyContent: 'space-between', // Pushes items to edges
+                          paddingHorizontal: 12,
+                        },
+                      ]}
                       onPress={() => setShowValidToPicker(true)}>
                       <Text
                         style={{
@@ -655,8 +709,9 @@ const FamilyContact_SaveRecord = () => {
                         }}>
                         {formData.beneficiaryValidTo
                           ? formatDisplayDate(formData.beneficiaryValidTo)
-                          : 'Select Valid To Date'}
+                          : 'Never'}
                       </Text>
+                      <Icon name="calendar" size={20} color="#04739cff" />
                     </TouchableOpacity>
 
                     {showValidToPicker && (
@@ -745,7 +800,12 @@ const FamilyContact_SaveRecord = () => {
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
-                              {justifyContent: 'center'},
+                              {
+                                flexDirection: 'row', // Makes children align horizontally
+                                alignItems: 'center', // Centers items vertically
+                                justifyContent: 'space-between', // Pushes items to edges
+                                paddingHorizontal: 12,
+                              },
                             ]}
                             onPress={() =>
                               setShowDependentValidFromPicker(true)
@@ -759,8 +819,9 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.dependentValidFrom
                                 ? formatDisplayDate(formData.dependentValidFrom)
-                                : 'Select Valid From Date'}
+                                : formatDisplayDate(new Date().toISOString())}
                             </Text>
+                            <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
                           {showDependentValidFromPicker && (
                             <DateTimePicker
@@ -790,7 +851,12 @@ const FamilyContact_SaveRecord = () => {
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
-                              {justifyContent: 'center'},
+                              {
+                                flexDirection: 'row', // Makes children align horizontally
+                                alignItems: 'center', // Centers items vertically
+                                justifyContent: 'space-between', // Pushes items to edges
+                                paddingHorizontal: 12,
+                              },
                             ]}
                             onPress={() => setShowDependentValidToPicker(true)}>
                             <Text
@@ -802,8 +868,9 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.dependentValidTo
                                 ? formatDisplayDate(formData.dependentValidTo)
-                                : 'Select Valid To Date'}
+                                : 'Never'}
                             </Text>
+                            <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
                           {showDependentValidToPicker && (
                             <DateTimePicker
@@ -880,7 +947,12 @@ const FamilyContact_SaveRecord = () => {
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
-                              {justifyContent: 'center'},
+                              {
+                                flexDirection: 'row', // Makes children align horizontally
+                                alignItems: 'center', // Centers items vertically
+                                justifyContent: 'space-between', // Pushes items to edges
+                                paddingHorizontal: 12,
+                              },
                             ]}
                             onPress={() => setShowDatePicker(true)}>
                             <Text
@@ -890,8 +962,9 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.BirthDate
                                 ? formatDisplayDate(formData.BirthDate)
-                                : 'Select Birth Date'}
+                                : formatDisplayDate(new Date().toISOString())}
                             </Text>
+                            <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
 
                           {showDatePicker && (

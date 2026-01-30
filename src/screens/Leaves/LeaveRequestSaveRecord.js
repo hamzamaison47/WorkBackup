@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   View,
   Text,
@@ -37,12 +37,14 @@ import {GetLeaveBalance} from '../../API/Leaves/LeaveBalance';
 import {GetEmployeeQuota} from '../../API/Leaves/GetEmployeeQuota';
 import {GetLeaveDays} from '../../API/Leaves/GetLeaveDays';
 import {GetLeaveLabels} from '../../API/Leaves/GetLeaveLabels';
+import {isLeaveWorkflowConfigured} from '../../API/Leaves/isLeaveWorkflowEnabled';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import {BUTTON_TYPES} from '../../components/DynamicRequestCard';
 import styles from '../../styles/styles';
 
 const LeaveRequestSaveRecord = () => {
@@ -78,6 +80,7 @@ const LeaveRequestSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [leaveLabelsData, setLeaveLabelsData] = useState({});
+  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
 
   const createInitialFormData = () => ({
     recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
@@ -123,6 +126,34 @@ const LeaveRequestSaveRecord = () => {
 
     return baseLabel;
   };
+
+  const checkIsWorkflowConfigured = async () => {
+    try {
+      const result = await isLeaveWorkflowConfigured();
+      console.log('Here is the data', result);
+      return result === true || result === 'true' || result === 1;
+    } catch (error) {
+      console.error('Workflow config check failed:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadWorkflowConfig = async () => {
+      const enabled = await checkIsWorkflowConfigured();
+      if (isMounted) {
+        setIsWorkflowConfigured(enabled);
+      }
+    };
+
+    loadWorkflowConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const goBack = useCallback(() => {
     try {
@@ -1033,7 +1064,7 @@ const LeaveRequestSaveRecord = () => {
                 numberOfLines={6}
               />
             </ScrollView>
-
+            {/*
             <SaveRecordButtons
               mode={mode}
               processingButton={processingButton}
@@ -1042,7 +1073,29 @@ const LeaveRequestSaveRecord = () => {
               isDisabled={
                 processingButton === 'create' || processingButton === 'submit'
               }
-            />
+            />*/}
+            {isWorkflowConfigured ? (
+              <SaveRecordButtons
+                mode={mode}
+                processingButton={processingButton}
+                onSave={handleSave}
+                onCancel={goBack}
+                isDisabled={
+                  processingButton === 'create' || processingButton === 'submit'
+                }
+              />
+            ) : (
+              <SaveRecordButtons
+                mode={mode}
+                processingButton={processingButton}
+                onSave={handleSave}
+                onCancel={goBack}
+                isDisabled={
+                  processingButton === 'create' || processingButton === 'submit'
+                }
+                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              />
+            )}
           </KeyboardAvoidingView>
 
           <CalendarModal

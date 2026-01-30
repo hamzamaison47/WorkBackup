@@ -1034,9 +1034,12 @@ const GenericAdvanceSaveScreen = () => {
                   <Text style={styles.LReqSR_Label}>Guarantor 1</Text>
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={guarantorsData.filter(
-                      emp => emp.EmployeeId !== formData.Guarantor2,
-                    )}
+                    data={[
+                      {EmployeeId: null, EmployeeName: 'Select Guarantor 1'},
+                      ...guarantorsData.filter(
+                        emp => emp.EmployeeId !== formData.Guarantor2,
+                      ),
+                    ]}
                     labelField="EmployeeName"
                     valueField="EmployeeId"
                     placeholder="Select Guarantor 1"
@@ -1063,9 +1066,12 @@ const GenericAdvanceSaveScreen = () => {
                   <Text style={styles.LReqSR_Label}>Guarantor 2</Text>
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={guarantorsData.filter(
-                      emp => emp.EmployeeId !== formData.Guarantor1,
-                    )}
+                    data={[
+                      {EmployeeId: null, EmployeeName: 'Select Guarantor 2'},
+                      ...guarantorsData.filter(
+                        emp => emp.EmployeeId !== formData.Guarantor1,
+                      ),
+                    ]}
                     labelField="EmployeeName"
                     valueField="EmployeeId"
                     placeholder="Select Guarantor 2"

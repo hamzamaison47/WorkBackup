@@ -163,6 +163,7 @@ const FamilyContacts_ListPageScreen = () => {
     switch (buttonType) {
       case 'edit':
         handleEditPress(itemData);
+        console.log('This is the EDit data', itemData);
         break;
       case 'delete':
         handleDeletePress(itemData);
@@ -331,7 +332,7 @@ const FamilyContacts_ListPageScreen = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Personal contacts"
+      pageTitle="Personal Contacts"
       isBackButton={true}
       showFooter={true}
       showFloatingButton={true}
