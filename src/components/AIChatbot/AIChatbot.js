@@ -1,7 +1,7 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useMemo} from 'react';
 import {
   Modal,
   View,
@@ -16,12 +16,14 @@ import {
   ActivityIndicator,
   Alert,
   InteractionManager,
+  Dimensions,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import moment from 'moment';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import azureAIService from '../../services/AzureAIService';
 import LeaveService from '../../services/LeaveService';
@@ -32,9 +34,84 @@ import {
   chatbotSetMessages,
 } from '../../store/slices/chatbotSlice';
 
+const {width, height} = Dimensions.get('window');
+const PRIMARY_COLOR = '#0A66C2';
+const SECONDARY_COLOR = '#0765A2';
+const ACCENT_COLOR = '#E7F3FF';
+const BG_COLOR = '#F3F6F8';
+const USER_BUBBLE = '#0A66C2';
+const BOT_BUBBLE = '#FFFFFF';
+
+// Separate component for message bubbles to properly use hooks
+const MessageBubble = React.memo(({item, index}) => {
+  const isUser = item.from === 'user';
+  const slideAnim = useRef(new Animated.Value(isUser ? 50 : -50)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.messageWrapper,
+        isUser ? styles.userWrapper : styles.botWrapper,
+        {
+          opacity: opacityAnim,
+          transform: [{translateX: slideAnim}],
+        },
+      ]}>
+      {!isUser && (
+        <View style={styles.avatarContainer}>
+          <LinearGradient colors={['#0A66C2', '#0765A2']} style={styles.avatar}>
+            <Icon name="robot-excited" size={22} color="#fff" />
+          </LinearGradient>
+        </View>
+      )}
+
+      <View
+        style={[styles.bubbleContainer, isUser && styles.userBubbleContainer]}>
+        <View
+          style={[
+            styles.bubble,
+            isUser ? styles.userBubble : styles.botBubble,
+          ]}>
+          <Text style={[styles.messageText, isUser && styles.userMessageText]}>
+            {item.text}
+          </Text>
+          <Text style={[styles.timestamp, isUser && styles.userTimestamp]}>
+            {moment(item.timestamp).format('HH:mm')}
+          </Text>
+        </View>
+      </View>
+
+      {isUser && (
+        <View style={styles.avatarContainer}>
+          <LinearGradient colors={['#0765A2', '#0A66C2']} style={styles.avatar}>
+            <Icon name="account" size={22} color="#fff" />
+          </LinearGradient>
+        </View>
+      )}
+    </Animated.View>
+  );
+});
+
 const AIChatbot = ({visible, onClose}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
+
   const {userData} = useSelector(s => s.user || {});
   const messages = useSelector(s => s.chatbot?.messages || []);
 
@@ -42,32 +119,92 @@ const AIChatbot = ({visible, onClose}) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [voiceServiceReady, setVoiceServiceReady] = useState(true);
+  const [voiceStatus, setVoiceStatus] = useState('Voice Ready');
 
   const processingRef = useRef(false);
   const flatListRef = useRef(null);
   const leaveService = useRef(new LeaveService());
+
+  // Animation refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(height)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const micScaleAnim = useRef(new Animated.Value(1)).current;
+  const waveAnim = useRef(new Animated.Value(0)).current;
   const recordingTimer = useRef(null);
+  const isMountedRef = useRef(true);
+  const lastRecordingTime = useRef(0);
+  const stopRequestedRef = useRef(false);
+  const endLockRef = useRef(false);
 
-  /* -------------------- Initialize -------------------- */
+  const isPressToTalk = useMemo(() => {
+    return Platform.OS === 'android' || Platform.OS === 'ios';
+  }, []);
+
+  /* -------------------- Animations -------------------- */
   useEffect(() => {
-    if (!visible) return;
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: height,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      clearTimers();
+      VoiceRecordingService.cancelRecording?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      clearTimers();
+      VoiceRecordingService.cancelRecording?.();
+      return;
+    }
 
     if (!messages || messages.length === 0) {
       const welcomeMsg = {
         id: 'welcome-1',
-        text: "👋 Hello! I'm your Dynaface AI Assistant. How may I assist you?",
+        text: "👋 Hello! I'm your AI Assistant. How may I help you today?",
         from: 'bot',
         timestamp: Date.now(),
       };
       dispatch(chatbotSetMessages([welcomeMsg]));
     }
 
+    setVoiceServiceReady(true);
+    setVoiceStatus('Voice Ready');
+
     return () => {
-      if (isRecording) {
-        VoiceRecordingService.cancelRecording();
-      }
+      if (isRecording) VoiceRecordingService.cancelRecording?.();
       clearTimers();
     };
   }, [visible]);
@@ -76,16 +213,77 @@ const AIChatbot = ({visible, onClose}) => {
   useEffect(() => {
     if (messages.length > 0 && flatListRef.current) {
       InteractionManager.runAfterInteractions(() => {
-        flatListRef.current?.scrollToEnd({animated: true});
+        try {
+          flatListRef.current?.scrollToEnd({animated: true});
+        } catch (error) {}
       });
     }
   }, [messages]);
 
   useEffect(() => {
     if (isTyping && flatListRef.current) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({animated: true});
-      }, 500);
+      const t = setTimeout(() => {
+        try {
+          flatListRef.current?.scrollToEnd({animated: true});
+        } catch (error) {}
+      }, 400);
+      return () => clearTimeout(t);
+    }
+  }, [isTyping]);
+
+  /* -------------------- Recording Animations -------------------- */
+  useEffect(() => {
+    if (isRecording) {
+      Animated.parallel([
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(micScaleAnim, {
+              toValue: 1.3,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(micScaleAnim, {
+              toValue: 1,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+          ]),
+        ),
+        Animated.loop(
+          Animated.timing(waveAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: true,
+          }),
+        ),
+      ]).start();
+    } else {
+      micScaleAnim.stopAnimation?.();
+      micScaleAnim.setValue(1);
+      waveAnim.stopAnimation?.();
+      waveAnim.setValue(0);
+    }
+  }, [isRecording]);
+
+  useEffect(() => {
+    if (isTyping) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.15,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]),
+      ).start();
+    } else {
+      pulseAnim.stopAnimation?.();
+      pulseAnim.setValue(1);
     }
   }, [isTyping]);
 
@@ -96,547 +294,630 @@ const AIChatbot = ({visible, onClose}) => {
     }
   };
 
-  /* -------------------- Animations -------------------- */
-  useEffect(() => {
-    if (isTyping) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [isTyping]);
-
-  useEffect(() => {
-    if (isRecording) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(micScaleAnim, {
-            toValue: 1.3,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(micScaleAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    } else {
-      micScaleAnim.setValue(1);
-    }
-  }, [isRecording]);
-
   /* -------------------- Voice Recording -------------------- */
   const startRecording = async () => {
+    const now = Date.now();
+    if (now - lastRecordingTime.current < 700) return;
+    lastRecordingTime.current = now;
+
+    if (!voiceServiceReady) {
+      Alert.alert('Voice Not Ready', 'Please type instead.');
+      return;
+    }
+
     try {
-      console.log('🎤 Starting recording...');
+      stopRequestedRef.current = false;
       setIsRecording(true);
       setRecordingDuration(0);
+      setInput('');
 
-      // Start duration timer
       recordingTimer.current = setInterval(() => {
-        setRecordingDuration(prev => prev + 1);
+        if (!isMountedRef.current) return;
+        setRecordingDuration(prev => {
+          const next = prev + 1;
+          if (next >= 60) stopRecording();
+          return next;
+        });
       }, 1000);
 
-      const result = await VoiceRecordingService.startRecording();
-
-      if (!result.success) {
-        console.error('❌ Recording failed to start:', result.error);
-        Alert.alert('Recording Error', result.error);
-        stopRecording();
+      const res = await VoiceRecordingService.startRecording();
+      if (!res?.success) {
+        throw new Error(res?.error || 'Failed to start recording');
       }
-    } catch (error) {
-      console.error('❌ Start recording error:', error);
-      Alert.alert('Error', 'Failed to start recording. Please try again.');
-      stopRecording();
+    } catch (e) {
+      clearTimers();
+      setIsRecording(false);
+      setRecordingDuration(0);
+      Alert.alert('Recording Error', e?.message || 'Failed to start recording');
     }
   };
 
   const stopRecording = async () => {
+    if (endLockRef.current) return;
+    endLockRef.current = true;
+
     try {
-      console.log('🛑 Stopping recording...');
       clearTimers();
       setIsRecording(false);
 
-      // Wait a moment before stopping to ensure we get results
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const rec = await VoiceRecordingService.stopRecording();
 
-      const result = await VoiceRecordingService.stopRecording();
-
-      if (result.success && result.text) {
-        console.log('✅ Transcription:', result.text);
-        // Put transcribed text in the input field
-        setInput(result.text);
-      } else {
-        console.warn('⚠️ No transcription:', result.error);
-        if (result.error) {
-          Alert.alert('Transcription', result.error);
-        }
+      if (!rec?.success) {
+        throw new Error(rec?.error || 'Failed to stop recording');
       }
 
-      setRecordingDuration(0);
-    } catch (error) {
-      console.error('❌ Stop recording error:', error);
-      Alert.alert('Error', 'Failed to process recording.');
-      setRecordingDuration(0);
+      if ((rec.duration || 0) < 1) {
+        Alert.alert(
+          'Recording Too Short',
+          'Please speak for at least 1 second.',
+        );
+        return;
+      }
+
+      const text = (rec?.text || '').trim();
+      if (!text) {
+        Alert.alert(
+          'Speech Not Recognized',
+          "I couldn't understand. Please try again.",
+        );
+        return;
+      }
+
+      setInput(text);
+
+      const normalized = await azureAIService.normalizeVoiceText({
+        sttText: text,
+        detectedLanguage: rec?.detectedLanguage || 'unknown',
+      });
+
+      const finalText = normalized?.text || text;
+      const langHint = normalized?.preferredLanguage || 'auto';
+
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          handleSend(finalText, langHint);
+        }
+      }, 300);
+    } catch (e) {
+      setIsRecording(false);
+      Alert.alert('Speech Error', e?.message || 'Failed to recognize speech');
+    } finally {
+      endLockRef.current = false;
     }
   };
 
   const cancelRecording = async () => {
+    if (endLockRef.current) return;
+    endLockRef.current = true;
+
     try {
-      console.log('🗑️ Cancelling recording...');
       clearTimers();
+      stopRequestedRef.current = false;
       setIsRecording(false);
       setRecordingDuration(0);
-      await VoiceRecordingService.cancelRecording();
+      await VoiceRecordingService.cancelRecording?.();
     } catch (error) {
-      console.error('❌ Cancel recording error:', error);
+    } finally {
+      endLockRef.current = false;
     }
   };
 
   /* -------------------- Message Handling -------------------- */
   const addMessage = (text, from) => {
+    if (!text || typeof text !== 'string' || text.trim().length === 0) return;
+
     const newMsg = {
-      id: `${Date.now()}-${Math.random()}`,
-      text: String(text),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      text: String(text).substring(0, 1000),
       from,
       timestamp: Date.now(),
     };
 
     dispatch(chatbotAddMessage(newMsg));
 
-    // Auto-scroll after message is added
     setTimeout(() => {
-      if (flatListRef.current) {
+      if (!flatListRef.current) return;
+      try {
         flatListRef.current.scrollToEnd({animated: true});
-      }
+      } catch (e) {}
     }, 100);
   };
 
-  /* -------------------- Navigation -------------------- */
+  /* -------------------- Navigation & Send -------------------- */
   const navigateToScreen = (screenName, params = {}) => {
-    console.log(`🚀 Navigating to: ${screenName}`);
-    onClose();
-
+    onClose?.();
     setTimeout(() => {
-      navigation.navigate(screenName, {
-        employeeId: userData?.employeeId,
-        employeeName: userData?.employeeName,
-        WorkerRecId: userData?.WorkerRecId,
-        userData: userData,
-        cameFrom: 'MainDashboard',
-        ...params,
-      });
+      try {
+        navigation.navigate(screenName, {
+          employeeId: userData?.employeeId,
+          employeeName: userData?.employeeName,
+          WorkerRecId: userData?.WorkerRecId,
+          userData,
+          cameFrom: 'MainDashboard',
+          ...params,
+        });
+      } catch (navError) {
+        Alert.alert('Navigation Error', 'Cannot navigate to that screen.');
+      }
     }, 300);
   };
 
-  /* -------------------- Main Send Handler -------------------- */
-  const handleSend = async textOverride => {
-    const text = (textOverride || input).trim();
-    if (!text || processingRef.current) return;
+  const handleSend = async (textOverride, preferredLanguageOverride) => {
+    const text = (textOverride ?? input).trim();
+    if (!text) return;
+    if (processingRef.current) return;
 
     processingRef.current = true;
+    addMessage(text, 'user');
     setInput('');
-
-    if (!textOverride) {
-      addMessage(text, 'user');
-    }
-
     setIsTyping(true);
 
     try {
       const functions = leaveService.current.getFunctionDefinitions();
+      const langHint = preferredLanguageOverride || 'auto';
 
-      // Get language hint (optional)
-      const langHint = text.match(/[آ-ی]/) ? 'auto' : 'en';
-
-      const aiResponse = await azureAIService.chat({
-        userMessage: text,
-        conversationHistory: messages,
-        availableFunctions: functions,
-        userData: userData,
-        preferredLanguage: langHint,
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('AI response timeout')), 30000);
       });
 
-      if (aiResponse.type === 'function_call') {
+      const aiResponse = await Promise.race([
+        azureAIService.chat({
+          userMessage: text,
+          conversationHistory: messages,
+          availableFunctions: functions,
+          userData,
+          preferredLanguage: langHint,
+        }),
+        timeoutPromise,
+      ]);
+
+      if (aiResponse?.type === 'function_call') {
         await handleFunctionCall(aiResponse);
       } else {
-        addMessage(aiResponse.text, 'bot');
+        addMessage(aiResponse?.text || 'Sorry, I could not respond.', 'bot');
       }
     } catch (err) {
-      console.error('❌ Chat error:', err);
-      addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+      const errorMessage = err?.message?.toLowerCase?.().includes('timeout')
+        ? 'Response taking too long. Please try again.'
+        : 'Sorry, something went wrong. Please try again.';
+      addMessage(errorMessage, 'bot');
     } finally {
       processingRef.current = false;
       setIsTyping(false);
     }
   };
 
-  /* -------------------- Handle Function Call -------------------- */
   const handleFunctionCall = async functionCall => {
     try {
-      console.log('🔧 Executing function:', functionCall.function);
-      console.log('📥 Parameters:', functionCall.parameters);
-
-      // SPECIAL HANDLING FOR NAVIGATION
       if (functionCall.function === 'navigate_to_screen') {
-        const {screenName, message} = functionCall.parameters;
-
-        if (message) {
-          addMessage(message, 'bot');
-        }
-
-        setTimeout(() => {
-          navigateToScreen(screenName);
-        }, 1000);
-
-        processingRef.current = false;
+        const {screenName, message} = functionCall.parameters || {};
+        if (message) addMessage(message, 'bot');
+        setTimeout(() => navigateToScreen(screenName), 700);
         return;
       }
 
-      // Execute other functions normally
       const result = await leaveService.current.execute(
         functionCall.function,
         functionCall.parameters,
         userData,
       );
 
-      console.log('📤 Function result:', result);
-
-      if (!result.success) {
+      if (!result?.success) {
         await handleFunctionError(functionCall, result);
         return;
       }
 
-      // Check if result contains navigation action
       if (result.action === 'navigate') {
-        if (result.message) {
-          addMessage(result.message, 'bot');
-        }
-
-        setTimeout(() => {
-          navigateToScreen(result.screenName, result.params || {});
-        }, 1000);
-
-        processingRef.current = false;
+        if (result.message) addMessage(result.message, 'bot');
+        setTimeout(
+          () => navigateToScreen(result.screenName, result.params || {}),
+          700,
+        );
         return;
       }
 
-      // Handle successful function execution
       await handleFunctionSuccess(functionCall, result);
     } catch (error) {
-      console.error('❌ Function execution error:', error);
-      addMessage('I failed to process your request. Please try again.', 'bot');
+      addMessage('Failed to process request. Please try again.', 'bot');
     }
   };
 
-  /* -------------------- Handle Function Errors -------------------- */
   const handleFunctionError = async (functionCall, result) => {
-    console.log('⚠️ Function error:', result.error);
-
     const errorContext = {
       ...result,
       originalFunction: functionCall.function,
       originalParameters: functionCall.parameters,
     };
 
-    const continueResponse = await azureAIService.continueAfterFunction({
-      previousMessages: messages,
-      functionName: functionCall.function,
-      functionResult: errorContext,
-      userData,
-      preferredLanguage: 'auto',
-      availableFunctions: leaveService.current.getFunctionDefinitions(),
-      toolCallId: functionCall.toolCallId,
-    });
+    try {
+      const continueResponse = await azureAIService.continueAfterFunction({
+        previousMessages: messages,
+        functionName: functionCall.function,
+        functionResult: errorContext,
+        userData,
+        preferredLanguage: 'auto',
+        availableFunctions: leaveService.current.getFunctionDefinitions(),
+        toolCallId: functionCall.toolCallId,
+      });
 
-    addMessage(continueResponse.text, 'bot');
-
-    if (continueResponse.type === 'function_call') {
-      await handleFunctionCall(continueResponse);
+      addMessage(continueResponse?.text || 'Something went wrong.', 'bot');
+      if (continueResponse?.type === 'function_call') {
+        await handleFunctionCall(continueResponse);
+      }
+    } catch (error) {
+      addMessage('Sorry, something went wrong.', 'bot');
     }
   };
 
-  /* -------------------- Handle Function Success -------------------- */
   const handleFunctionSuccess = async (functionCall, result) => {
-    console.log('✅ Function succeeded');
+    try {
+      const continueResponse = await azureAIService.continueAfterFunction({
+        previousMessages: messages,
+        functionName: functionCall.function,
+        functionResult: result,
+        userData,
+        preferredLanguage: 'auto',
+        availableFunctions: leaveService.current.getFunctionDefinitions(),
+        toolCallId: functionCall.toolCallId,
+      });
 
-    const continueResponse = await azureAIService.continueAfterFunction({
-      previousMessages: messages,
-      functionName: functionCall.function,
-      functionResult: result,
-      userData,
-      preferredLanguage: 'auto',
-      availableFunctions: leaveService.current.getFunctionDefinitions(),
-      toolCallId: functionCall.toolCallId,
-    });
-
-    addMessage(continueResponse.text, 'bot');
-
-    if (continueResponse.type === 'function_call') {
-      await handleFunctionCall(continueResponse);
+      addMessage(continueResponse?.text || 'Done!', 'bot');
+      if (continueResponse?.type === 'function_call') {
+        await handleFunctionCall(continueResponse);
+      }
+    } catch (error) {
+      addMessage('Sorry, something went wrong.', 'bot');
     }
   };
 
-  /* -------------------- Format Recording Duration -------------------- */
   const formatDuration = seconds => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  /* -------------------- UI Components -------------------- */
-  const renderItem = ({item}) => {
-    const isUser = item.from === 'user';
-
-    return (
-      <View
-        style={[
-          styles.messageContainer,
-          isUser ? styles.userContainer : styles.botContainer,
-        ]}>
-        {!isUser && (
-          <LinearGradient colors={['#667eea', '#764ba2']} style={styles.avatar}>
-            <Icon name="smart-toy" size={20} color="#fff" />
-          </LinearGradient>
-        )}
-        <View
-          style={[
-            styles.bubble,
-            isUser ? styles.userBubble : styles.botBubble,
-          ]}>
-          <Text style={[styles.messageText, isUser && styles.userMessageText]}>
-            {item.text}
-          </Text>
-          <Text style={styles.timestamp}>
-            {moment(item.timestamp).format('HH:mm')}
-          </Text>
-        </View>
-        {isUser && (
-          <LinearGradient colors={['#00c6ff', '#0072ff']} style={styles.avatar}>
-            <Icon name="person" size={20} color="#fff" />
-          </LinearGradient>
-        )}
-      </View>
-    );
+  /* -------------------- Render Components -------------------- */
+  const renderItem = ({item, index}) => {
+    return <MessageBubble item={item} index={index} />;
   };
 
   const renderTypingIndicator = () => (
-    <View style={[styles.messageContainer, styles.botContainer]}>
-      <LinearGradient colors={['#667eea', '#764ba2']} style={styles.avatar}>
-        <Animated.View style={{transform: [{scale: pulseAnim}]}}>
-          <Icon name="smart-toy" size={20} color="#fff" />
-        </Animated.View>
-      </LinearGradient>
-      <View
-        style={[
-          styles.bubble,
-          styles.botBubble,
-          {flexDirection: 'row', alignItems: 'center'},
-        ]}>
-        <ActivityIndicator size="small" color="#667eea" />
-        <Text style={styles.typingText}>Thinking...</Text>
+    <View style={[styles.messageWrapper, styles.botWrapper]}>
+      <View style={styles.avatarContainer}>
+        <LinearGradient colors={['#0A66C2', '#0765A2']} style={styles.avatar}>
+          <Animated.View style={{transform: [{scale: pulseAnim}]}}>
+            <Icon name="robot-excited" size={22} color="#fff" />
+          </Animated.View>
+        </LinearGradient>
+      </View>
+      <View style={[styles.bubble, styles.typingBubble]}>
+        <View style={styles.typingContainer}>
+          <ActivityIndicator size="small" color="#0A66C2" />
+          <Text style={styles.typingText}>AI is thinking...</Text>
+        </View>
       </View>
     </View>
   );
 
   const handleClose = () => {
-    if (isRecording) {
-      cancelRecording();
-    }
+    if (isRecording) cancelRecording();
     clearTimers();
-    onClose();
+    onClose?.();
+  };
+
+  const micPressIn = () => {
+    if (!isPressToTalk) return;
+    startRecording();
+  };
+
+  const micPressOut = () => {
+    if (!isPressToTalk) return;
+    if (isRecording) stopRecording();
   };
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType="none"
       onRequestClose={handleClose}>
-      <View style={styles.overlay}>
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPressOut={handleClose}>
-          <TouchableOpacity
-            style={styles.sheet}
-            activeOpacity={1}
-            onPress={e => e.stopPropagation()}>
+      <Animated.View style={[styles.overlay, {opacity: fadeAnim}]}>
+        <View style={styles.container}>
+          {/* Backdrop - only this should close the modal */}
+          <TouchableWithoutFeedback onPress={handleClose}>
+            <View style={styles.backdrop} />
+          </TouchableWithoutFeedback>
+
+          {/* Sheet */}
+          <Animated.View
+            style={[styles.sheet, {transform: [{translateY: slideAnim}]}]}>
             {/* Header */}
             <LinearGradient
-              colors={['#667eea', '#764ba2']}
+              colors={['#0A66C2', '#0765A2', '#054A8C']}
               start={{x: 0, y: 0}}
-              end={{x: 1, y: 0}}
+              end={{x: 1, y: 1}}
               style={styles.header}>
-              <View style={styles.headerLeft}>
-                <Icon
-                  name="smart-toy"
-                  size={32}
-                  color="#fff"
-                  style={{marginRight: 12}}
-                />
-                <View>
-                  <Text style={styles.title}>Dynaface AI</Text>
-                  <Text style={styles.status}>● Online</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={handleClose}
-                style={styles.closeButton}>
-                <Icon name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </LinearGradient>
-
-            {/* Messages Container with KeyboardAvoidingView */}
-            <KeyboardAvoidingView
-              style={styles.chatArea}
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
-              {/* Messages */}
-              <FlatList
-                ref={flatListRef}
-                data={messages}
-                renderItem={renderItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.chatContainer}
-                showsVerticalScrollIndicator={false}
-                ListFooterComponent={<>{isTyping && renderTypingIndicator()}</>}
-                keyboardDismissMode="on-drag"
-                keyboardShouldPersistTaps="handled"
-                onContentSizeChange={() => {
-                  InteractionManager.runAfterInteractions(() => {
-                    flatListRef.current?.scrollToEnd({animated: true});
-                  });
-                }}
-              />
-
-              {/* Recording Indicator */}
-              {isRecording && (
-                <View style={styles.recordingIndicator}>
-                  <View style={styles.recordingContent}>
-                    <Animated.View style={{transform: [{scale: micScaleAnim}]}}>
-                      <Icon name="mic" size={24} color="#ff4444" />
-                    </Animated.View>
-                    <Text style={styles.recordingText}>
-                      Recording... {formatDuration(recordingDuration)}
+              <View style={styles.headerContent}>
+                <View style={styles.headerLeft}>
+                  <View style={styles.iconContainer}>
+                    <Icon name="robot-excited" size={28} color="#fff" />
+                    <View style={styles.statusDot} />
+                  </View>
+                  <View style={styles.headerText}>
+                    <Text style={styles.title}>Dynaface AI</Text>
+                    <Text style={styles.status}>
+                      {voiceServiceReady ? '● Online' : '○ Offline'}
                     </Text>
-                    <TouchableOpacity
-                      onPress={cancelRecording}
-                      style={styles.cancelButton}>
-                      <Icon name="close" size={20} color="#666" />
-                    </TouchableOpacity>
                   </View>
                 </View>
-              )}
-
-              {/* Input Bar */}
-              <View style={styles.inputRow}>
-                {/* Voice Button */}
                 <TouchableOpacity
-                  onPress={isRecording ? stopRecording : startRecording}
-                  onLongPress={startRecording}
-                  style={styles.iconButton}>
-                  <LinearGradient
-                    colors={
-                      isRecording
-                        ? ['#ff4444', '#cc0000']
-                        : ['#667eea', '#764ba2']
-                    }
-                    style={styles.iconButtonGradient}>
-                    <Animated.View
-                      style={
-                        isRecording ? {transform: [{scale: micScaleAnim}]} : {}
-                      }>
-                      <Icon
-                        name={isRecording ? 'stop' : 'mic'}
-                        size={24}
-                        color="#fff"
-                      />
-                    </Animated.View>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {/* Text Input */}
-                <TextInput
-                  value={input}
-                  onChangeText={setInput}
-                  placeholder={
-                    isRecording
-                      ? 'Recording...'
-                      : 'Type or speak your message...'
-                  }
-                  placeholderTextColor="#999"
-                  style={styles.input}
-                  onSubmitEditing={() => handleSend()}
-                  multiline
-                  maxLength={500}
-                  editable={!isRecording}
-                  color="#000000"
-                />
-
-                {/* Send Button */}
-                <TouchableOpacity
-                  onPress={() => handleSend()}
-                  style={styles.iconButton}
-                  disabled={!input.trim() || isRecording}>
-                  <LinearGradient
-                    colors={
-                      input.trim() && !isRecording
-                        ? ['#43e97b', '#38f9d7']
-                        : ['#ddd', '#ccc']
-                    }
-                    style={styles.iconButtonGradient}>
-                    <Icon name="send" size={24} color="#fff" />
-                  </LinearGradient>
+                  onPress={handleClose}
+                  style={styles.closeButton}
+                  hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}>
+                  <Icon name="close" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
-            </KeyboardAvoidingView>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </View>
+            </LinearGradient>
+
+            {/* Chat Area */}
+            <View style={styles.chatArea}>
+              <KeyboardAvoidingView
+                style={styles.flex1}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+                <FlatList
+                  ref={flatListRef}
+                  data={messages}
+                  renderItem={renderItem}
+                  keyExtractor={item => item.id}
+                  contentContainerStyle={styles.chatContainer}
+                  showsVerticalScrollIndicator={true}
+                  ListFooterComponent={
+                    <>{isTyping && renderTypingIndicator()}</>
+                  }
+                  keyboardDismissMode="on-drag"
+                  keyboardShouldPersistTaps="handled"
+                  bounces={true}
+                  scrollEnabled={true}
+                  nestedScrollEnabled={true}
+                  removeClippedSubviews={false}
+                  scrollEventThrottle={16}
+                  decelerationRate="normal"
+                  directionalLockEnabled={true}
+                  alwaysBounceVertical={true}
+                  onContentSizeChange={() => {
+                    InteractionManager.runAfterInteractions(() => {
+                      try {
+                        flatListRef.current?.scrollToEnd({animated: true});
+                      } catch (e) {}
+                    });
+                  }}
+                />
+
+                {/* Recording Overlay */}
+                {isRecording && (
+                  <View style={styles.recordingOverlay}>
+                    <Animated.View
+                      style={[
+                        styles.waveContainer,
+                        {
+                          transform: [
+                            {
+                              scale: waveAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [1, 1.5],
+                              }),
+                            },
+                          ],
+                          opacity: waveAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.5, 0],
+                          }),
+                        },
+                      ]}>
+                      <View style={styles.wave} />
+                    </Animated.View>
+
+                    <View style={styles.recordingContent}>
+                      <Animated.View
+                        style={[
+                          styles.recordingIcon,
+                          {transform: [{scale: micScaleAnim}]},
+                        ]}>
+                        <Icon name="microphone" size={32} color="#fff" />
+                      </Animated.View>
+                      <Text style={styles.recordingText}>
+                        {formatDuration(recordingDuration)}
+                      </Text>
+                      <Text style={styles.recordingSubtext}>
+                        {isPressToTalk ? 'Release to send' : 'Tap to stop'}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={cancelRecording}
+                      style={styles.cancelRecordingButton}>
+                      <Icon name="close" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </KeyboardAvoidingView>
+
+              {/* Input Area */}
+              <View style={styles.inputContainer}>
+                <View style={styles.inputWrapper}>
+                  <TouchableOpacity
+                    onPressIn={micPressIn}
+                    onPressOut={micPressOut}
+                    style={[
+                      styles.micButton,
+                      isRecording && styles.micButtonActive,
+                    ]}
+                    disabled={!voiceServiceReady || isTyping}>
+                    <LinearGradient
+                      colors={
+                        isRecording
+                          ? ['#FF4444', '#CC0000']
+                          : isTyping
+                          ? ['#CCCCCC', '#999999']
+                          : ['#0A66C2', '#0765A2']
+                      }
+                      style={styles.gradientButton}>
+                      <Icon
+                        name={isRecording ? 'stop' : 'microphone'}
+                        size={22}
+                        color={isTyping ? '#666' : '#fff'}
+                      />
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <View style={styles.textInputContainer}>
+                    <TextInput
+                      value={input}
+                      onChangeText={setInput}
+                      placeholder={
+                        isRecording
+                          ? 'Listening...'
+                          : isTyping
+                          ? 'AI is thinking...'
+                          : 'Type a message...'
+                      }
+                      placeholderTextColor="#8E9AAF"
+                      style={styles.input}
+                      onSubmitEditing={() => handleSend()}
+                      multiline
+                      maxLength={1000}
+                      editable={!isRecording && !isTyping}
+                    />
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => handleSend()}
+                    style={[
+                      styles.sendButton,
+                      (!input.trim() || isRecording || isTyping) &&
+                        styles.sendButtonDisabled,
+                    ]}
+                    disabled={!input.trim() || isRecording || isTyping}>
+                    <LinearGradient
+                      colors={
+                        input.trim() && !isRecording && !isTyping
+                          ? ['#00B894', '#00C9A7']
+                          : ['#E4E9F2', '#D1D8E0']
+                      }
+                      style={styles.gradientButton}>
+                      <Icon
+                        name="send"
+                        size={20}
+                        color={
+                          input.trim() && !isRecording && !isTyping
+                            ? '#fff'
+                            : '#8E9AAF'
+                        }
+                      />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+
+                {!voiceServiceReady && (
+                  <View style={styles.voiceWarning}>
+                    <Icon name="microphone-off" size={12} color="#FF6B6B" />
+                    <Text style={styles.voiceWarningText}>{voiceStatus}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </Animated.View>
+        </View>
+      </Animated.View>
     </Modal>
   );
 };
 
-/* -------------------- Styles -------------------- */
 const styles = StyleSheet.create({
-  overlay: {flex: 1},
-  modalOverlay: {
+  overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
+  },
+  container: {
+    flex: 1,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   sheet: {
-    height: '90%',
-    backgroundColor: '#f8f9fa',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.9,
+    backgroundColor: BG_COLOR,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -4},
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
   },
   header: {
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 20,
   },
-  headerLeft: {flexDirection: 'row', alignItems: 'center'},
-  title: {fontSize: 18, fontWeight: '700', color: '#fff'},
-  status: {fontSize: 12, color: '#e0e0e0', marginTop: 2},
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    position: 'relative',
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#00D084',
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+  status: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+    fontWeight: '500',
+  },
   closeButton: {
     width: 36,
     height: 36,
@@ -648,107 +929,236 @@ const styles = StyleSheet.create({
   chatArea: {
     flex: 1,
   },
+  flex1: {
+    flex: 1,
+  },
   chatContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  messageContainer: {
+  messageWrapper: {
     flexDirection: 'row',
-    marginVertical: 6,
+    marginVertical: 8,
     alignItems: 'flex-end',
   },
-  botContainer: {justifyContent: 'flex-start'},
-  userContainer: {justifyContent: 'flex-end'},
+  botWrapper: {
+    justifyContent: 'flex-start',
+  },
+  userWrapper: {
+    justifyContent: 'flex-end',
+  },
+  avatarContainer: {
+    marginHorizontal: 4,
+  },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  bubbleContainer: {
+    maxWidth: '75%',
+  },
+  userBubbleContainer: {
+    alignItems: 'flex-end',
   },
   bubble: {
-    maxWidth: '70%',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 2,
   },
-  botBubble: {backgroundColor: '#ffffff', borderBottomLeftRadius: 4},
-  userBubble: {backgroundColor: '#667eea', borderBottomRightRadius: 4},
-  messageText: {fontSize: 15, color: '#1a1a1a', lineHeight: 20},
-  userMessageText: {color: '#ffffff'},
+  botBubble: {
+    backgroundColor: BOT_BUBBLE,
+    borderTopLeftRadius: 4,
+    marginLeft: 4,
+  },
+  userBubble: {
+    backgroundColor: USER_BUBBLE,
+    borderTopRightRadius: 4,
+    marginRight: 4,
+  },
+  typingBubble: {
+    backgroundColor: BOT_BUBBLE,
+    borderTopLeftRadius: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginLeft: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  messageText: {
+    fontSize: 15,
+    color: '#1F2937',
+    lineHeight: 22,
+    fontWeight: '400',
+  },
+  userMessageText: {
+    color: '#FFFFFF',
+  },
   timestamp: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 4,
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 6,
     alignSelf: 'flex-end',
+    fontWeight: '500',
+  },
+  userTimestamp: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   typingText: {
     fontSize: 14,
-    color: '#667eea',
-    fontStyle: 'italic',
+    color: '#6B7280',
     marginLeft: 8,
+    fontWeight: '500',
   },
-  recordingIndicator: {
-    backgroundColor: '#fff3cd',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#ffeaa7',
+  recordingOverlay: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    height: 120,
+    backgroundColor: 'rgba(10, 102, 194, 0.95)',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 10,
+    overflow: 'hidden',
+  },
+  waveContainer: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  wave: {
+    flex: 1,
+    borderRadius: 100,
   },
   recordingContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 1,
+  },
+  recordingIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   recordingText: {
-    fontSize: 14,
-    color: '#856404',
-    fontWeight: '600',
-    marginLeft: 12,
-    flex: 1,
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+    fontVariant: ['tabular-nums'],
   },
-  cancelButton: {
+  recordingSubtext: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  cancelRecordingButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f8d7da',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  inputRow: {
+  inputContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E9F0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 16,
+  },
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
   },
-  iconButton: {width: 48, height: 48},
-  iconButtonGradient: {
+  micButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 8,
+  },
+  micButtonActive: {
+    shadowColor: '#FF4444',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  gradientButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  input: {
+  textInputContainer: {
     flex: 1,
-    minHeight: 48,
-    maxHeight: 100,
+    backgroundColor: '#F1F5F9',
     borderRadius: 24,
-    paddingHorizontal: 16,
-    backgroundColor: '#f5f5f5',
     marginHorizontal: 8,
+    maxHeight: 120,
+  },
+  input: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 15,
-    paddingTop: 12,
-    color: '#000000',
+    color: '#1F2937',
+    lineHeight: 20,
+    maxHeight: 100,
+  },
+  sendButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginLeft: 8,
+  },
+  sendButtonDisabled: {
+    opacity: 0.6,
+  },
+  voiceWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    paddingVertical: 4,
+  },
+  voiceWarningText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginLeft: 6,
+    fontWeight: '500',
   },
 });
 

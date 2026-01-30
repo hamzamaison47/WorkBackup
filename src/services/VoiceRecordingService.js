@@ -1,396 +1,358 @@
-// services/VoiceRecordingService.js
-import Voice from '@react-native-voice/voice';
+/* eslint-disable no-unused-vars */
+/* eslint-disable curly */
+// services/VoiceRecordingService.js - AZURE SPEECH SDK + REST FALLBACK (RN SAFE)
+import AudioRecord from 'react-native-audio-record';
 import {PermissionsAndroid, Platform} from 'react-native';
+import RNFS from 'react-native-fs';
+import {Buffer} from 'buffer';
+import {
+  AZURE_API_KEY,
+  AZURE_SPEECH_REGION,
+  AZURE_SPEECH_STT_ENDPOINT,
+  AZURE_OPENAI_ENDPOINT, // Optional: for Whisper fallback
+  AZURE_OPENAI_KEY, // Optional: for Whisper fallback
+} from '@env';
+
+global.Buffer = global.Buffer || Buffer;
 
 class VoiceRecordingService {
   constructor() {
     this.isRecording = false;
-    this.transcriptionResult = null;
-    this.partialResults = [];
-    this.recordingStartTime = null;
-    this.currentLocale = 'en-US';
-    this.onResultCallback = null;
+    this.startTime = 0;
+    this.audioFilePath = null;
+    this.token = null;
+    this.tokenExpMs = 0;
   }
 
-  setupVoiceListeners() {
-    // Remove all existing listeners first
-    Voice.removeAllListeners();
+  async getToken() {
+    const now = Date.now();
+    if (this.token && now < this.tokenExpMs) return this.token;
 
-    Voice.onSpeechStart = () => {
-      console.log('🎤 Speech started');
-      this.isRecording = true;
-    };
+    const tokenUrl = `https://${AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken`;
 
-    Voice.onSpeechEnd = () => {
-      console.log('🛑 Speech ended');
-      // Don't set isRecording = false here - let stopRecording handle it
-    };
+    const res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Ocp-Apim-Subscription-Key': AZURE_API_KEY,
+        'Content-Length': '0',
+      },
+    });
 
-    Voice.onSpeechError = e => {
-      console.error('❌ Speech error:', e);
-      this.isRecording = false;
-
-      // Handle "no match" error gracefully
-      if (e.error?.code === '7') {
-        console.log('⚠️ No match error - speech not recognized');
-        if (this.onResultCallback) {
-          this.onResultCallback({
-            success: false,
-            error: 'Speech not recognized. Please try again.',
-            code: 'no_match',
-          });
-        }
-      } else if (this.onResultCallback) {
-        this.onResultCallback({
-          success: false,
-          error: e.error?.message || 'Speech recognition failed',
-        });
-      }
-    };
-
-    Voice.onSpeechResults = e => {
-      console.log('📝 Final results:', e);
-
-      // Stop recording immediately when we get results
-      this.stopRecordingInternal().then(() => {
-        if (e.value && e.value.length > 0) {
-          const result = e.value[0];
-          console.log('✅ Transcription:', result);
-
-          this.transcriptionResult = result;
-
-          if (this.onResultCallback) {
-            this.onResultCallback({
-              success: true,
-              text: result.trim(),
-            });
-          }
-        } else if (this.onResultCallback) {
-          this.onResultCallback({
-            success: false,
-            error: 'No speech detected',
-          });
-        }
-      });
-    };
-
-    Voice.onSpeechPartialResults = e => {
-      if (e.value && e.value.length > 0) {
-        const partial = e.value[0];
-        console.log('📝 Partial result:', partial);
-        this.partialResults.push(partial);
-        // Store the latest partial for potential use
-        this.transcriptionResult = partial;
-      }
-    };
-
-    Voice.onSpeechVolumeChanged = e => {
-      // Optional: For debugging audio levels
-      // console.log('🔊 Volume:', e.value);
-    };
-  }
-
-  async requestPermissions() {
-    if (Platform.OS === 'android') {
-      try {
-        const grants = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        ]);
-
-        const granted =
-          grants[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] ===
-          PermissionsAndroid.RESULTS.GRANTED;
-
-        console.log(
-          '🎤 Microphone permission:',
-          granted ? 'GRANTED' : 'DENIED',
-        );
-        return granted;
-      } catch (err) {
-        console.error('❌ Permission error:', err);
-        return false;
-      }
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Token error ${res.status}: ${t}`);
     }
-    return true;
+
+    this.token = await res.text();
+    this.tokenExpMs = now + 9 * 60 * 1000;
+    return this.token;
   }
 
-  async startRecording() {
+  async requestPermission() {
+    if (Platform.OS !== 'android') return true;
     try {
-      console.log('🎤 Starting recording...');
-
-      if (this.isRecording) {
-        console.log('⚠️ Already recording');
-        return {success: false, error: 'Already recording'};
-      }
-
-      // Check permissions
-      const hasPermission = await this.requestPermissions();
-      if (!hasPermission) {
-        return {
-          success: false,
-          error: 'Microphone permission required',
-        };
-      }
-
-      // Clean up previous session
-      try {
-        await Voice.destroy();
-        await new Promise(resolve => setTimeout(resolve, 200));
-      } catch (e) {
-        console.log('⚠️ Cleanup warning:', e.message);
-      }
-
-      // Reset state
-      this.isRecording = false;
-      this.transcriptionResult = null;
-      this.partialResults = [];
-      this.recordingStartTime = Date.now();
-
-      // Setup listeners
-      this.setupVoiceListeners();
-
-      // Start with SIMPLE config - like your working code
-      try {
-        await Voice.start(this.currentLocale, {
-          EXTRA_PARTIAL_RESULTS: true,
-          EXTRA_MAX_RESULTS: 3,
-        });
-
-        console.log('✅ Recording started');
-        this.isRecording = true;
-
-        return {
-          success: true,
-          message: 'Recording started',
-        };
-      } catch (startError) {
-        console.error('❌ Voice.start failed:', startError);
-
-        // Try without options as fallback
-        try {
-          await Voice.start(this.currentLocale);
-          console.log('✅ Recording started (fallback)');
-          this.isRecording = true;
-
-          return {
-            success: true,
-            message: 'Recording started',
-          };
-        } catch (fallbackError) {
-          console.error('❌ Fallback also failed:', fallbackError);
-          throw fallbackError;
-        }
-      }
-    } catch (error) {
-      console.error('❌ Start error:', error);
-      this.isRecording = false;
-
-      return {
-        success: false,
-        error: `Failed to start: ${error.message}`,
-      };
-    }
-  }
-
-  async stopRecordingInternal() {
-    try {
-      if (!this.isRecording) {
-        return;
-      }
-
-      console.log('🛑 Stopping recording...');
-
-      try {
-        await Voice.stop();
-      } catch (stopError) {
-        console.error('Voice.stop error:', stopError);
-      }
-
-      this.isRecording = false;
-
-      // Calculate duration if we have a start time
-      if (this.recordingStartTime) {
-        const duration = (Date.now() - this.recordingStartTime) / 1000;
-        console.log(`⏱️ Recording duration: ${duration.toFixed(1)}s`);
-        return duration;
-      }
-
-      return 0;
-    } catch (error) {
-      console.error('❌ Stop internal error:', error);
-      this.isRecording = false;
-      return 0;
-    }
-  }
-
-  async stopRecording() {
-    try {
-      const duration = await this.stopRecordingInternal();
-
-      // Wait a bit for any pending results
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Get the best result we have
-      let finalText = this.transcriptionResult || '';
-
-      // Check partials if no final result
-      if (!finalText && this.partialResults.length > 0) {
-        // Use the longest partial result
-        finalText = this.partialResults.reduce((longest, current) => {
-          return current.length > longest.length ? current : longest;
-        }, '');
-        console.log('📝 Using best partial result:', finalText);
-      }
-
-      if (!finalText || finalText.trim().length === 0) {
-        return {
-          success: false,
-          error: 'No speech detected. Please try again.',
-          duration,
-        };
-      }
-
-      return {
-        success: true,
-        text: finalText.trim(),
-        duration,
-      };
-    } catch (error) {
-      console.error('❌ Stop recording error:', error);
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
-  }
-
-  async cancelRecording() {
-    try {
-      console.log('🗑️ Cancelling recording...');
-
-      if (this.isRecording) {
-        try {
-          await Voice.cancel();
-        } catch (cancelError) {
-          console.error('Cancel error:', cancelError);
-        }
-      }
-
-      this.isRecording = false;
-      this.transcriptionResult = null;
-      this.partialResults = [];
-      this.recordingStartTime = null;
-      this.onResultCallback = null;
-
-      console.log('✅ Recording cancelled');
-      return {success: true};
-    } catch (error) {
-      console.error('❌ Cancel error:', error);
-      this.isRecording = false;
-      return {success: false, error: error.message};
-    }
-  }
-
-  // Set callback for real-time results (optional)
-  setResultCallback(callback) {
-    this.onResultCallback = callback;
-  }
-
-  // Check if speech recognition is available
-  async isAvailable() {
-    try {
-      const available = await Voice.isAvailable();
-      console.log('🎤 Speech recognition available:', available);
-      return available;
-    } catch (error) {
-      console.error('❌ Availability check failed:', error);
+      const res = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: 'Microphone Permission',
+          message: 'This app needs microphone access for speech recognition.',
+          buttonPositive: 'OK',
+          buttonNegative: 'Cancel',
+        },
+      );
+      return res === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (e) {
       return false;
     }
   }
 
-  // Get supported locales
-  async getSupportedLocales() {
-    try {
-      const locales = await Voice.getSupportedLocales();
-      console.log('🌍 Supported locales count:', locales?.locales?.length || 0);
-      return locales?.locales || [];
-    } catch (error) {
-      console.error('❌ Failed to get locales:', error);
-      return [];
+  async startRecording() {
+    if (this.isRecording) {
+      return {success: false, error: 'Already recording'};
     }
-  }
 
-  // Test microphone and speech recognition
-  async testRecognition() {
+    const ok = await this.requestPermission();
+    if (!ok) return {success: false, error: 'Permission denied'};
+
     try {
-      console.log('🧪 Testing speech recognition...');
+      AudioRecord.init({
+        sampleRate: 16000,
+        channels: 1,
+        bitsPerSample: 16,
+        audioSource: 6, // MIC
+        wavFile: 'speech_recording.wav',
+      });
 
-      const available = await this.isAvailable();
-      if (!available) {
-        return {
-          success: false,
-          error: 'Speech recognition not available',
-        };
-      }
+      this.startTime = Date.now();
+      this.isRecording = true;
+      AudioRecord.start();
 
-      const hasPermission = await this.requestPermissions();
-      if (!hasPermission) {
-        return {
-          success: false,
-          error: 'Microphone permission denied',
-        };
-      }
-
-      const locales = await this.getSupportedLocales();
-
-      return {
-        success: true,
-        available: true,
-        hasPermission: true,
-        localeCount: locales.length,
-        defaultLocale: this.currentLocale,
-      };
-    } catch (error) {
-      console.error('❌ Test failed:', error);
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
-  }
-
-  cleanup() {
-    try {
-      Voice.destroy();
-      Voice.removeAllListeners();
+      return {success: true};
     } catch (e) {
-      console.error('Cleanup error:', e);
+      this.isRecording = false;
+      return {success: false, error: e?.message || 'Start failed'};
+    }
+  }
+
+  async stopRecording() {
+    if (!this.isRecording) {
+      return {success: false, error: 'Not recording'};
     }
 
-    this.isRecording = false;
-    this.transcriptionResult = null;
-    this.partialResults = [];
-    this.recordingStartTime = null;
-    this.onResultCallback = null;
+    try {
+      const filePath = await AudioRecord.stop();
+      const duration = (Date.now() - this.startTime) / 1000;
+      this.isRecording = false;
 
-    console.log('✅ Service cleaned up');
+      if (!filePath || !(await RNFS.exists(filePath))) {
+        return {success: false, error: 'Audio file not created', duration};
+      }
+
+      const stat = await RNFS.stat(filePath);
+      if (!stat?.size || Number(stat.size) < 2000) {
+        return {success: false, error: 'Recording too short', duration};
+      }
+
+      console.log('🎯 Starting Speech-to-Text...');
+
+      // Try multiple methods in parallel for speed and accuracy
+      let result = null;
+
+      // Method 1: Try Azure Whisper if available (best for multilingual)
+      if (AZURE_OPENAI_ENDPOINT && AZURE_OPENAI_KEY) {
+        try {
+          console.log('🎤 Trying Whisper API (auto-detect)...');
+          result = await this.whisperTranscribe(filePath);
+          if (result?.text) {
+            console.log('✅ Whisper success:', result.text);
+            return {
+              success: true,
+              text: result.text,
+              duration,
+              detectedLanguage: result.language || 'auto',
+              methodUsed: 'whisper',
+            };
+          }
+        } catch (whisperErr) {
+          console.log('⚠️ Whisper failed:', whisperErr.message);
+        }
+      }
+
+      // Method 2: Try multiple Azure Speech languages in PARALLEL
+      console.log('🎤 Trying Azure Speech with multiple languages...');
+      result = await this.tryMultipleLanguages(filePath);
+
+      if (result?.text) {
+        return {
+          success: true,
+          text: result.text,
+          duration,
+          detectedLanguage: result.language,
+          methodUsed: result.method,
+        };
+      }
+
+      throw new Error('Could not recognize speech in any language');
+    } catch (e) {
+      this.isRecording = false;
+      console.error('❌ stopRecording error:', e?.message);
+      return {success: false, error: e?.message || 'Recognition failed'};
+    }
+  }
+
+  /**
+   * Try multiple languages in PARALLEL - fastest approach
+   */
+  async tryMultipleLanguages(filePath) {
+    const languages = [
+      {code: 'en-US', name: 'English'},
+      {code: 'ur-IN', name: 'Urdu'}, // Try Indian Urdu (often supported when PK isn't)
+      {code: 'ar-SA', name: 'Arabic'},
+      // {code: 'hi-IN', name: 'Hindi'}, // Hindi works for many Urdu speakers
+      {code: 'ur-PK', name: 'Urdu-PK'}, // Try PK variant too
+    ];
+
+    // Create parallel promises
+    const promises = languages.map(lang =>
+      this.azureSpeechToTextREST(filePath, lang.code)
+        .then(text => ({
+          success: true,
+          text,
+          language: lang.code,
+          name: lang.name,
+        }))
+        .catch(err => ({
+          success: false,
+          error: err.message,
+          language: lang.code,
+        })),
+    );
+
+    try {
+      // Wait for all to complete (fastest wins)
+      const results = await Promise.all(promises);
+
+      // Filter successful ones with text
+      const successful = results.filter(
+        r => r.success && r.text && r.text.trim().length > 0,
+      );
+
+      if (successful.length === 0) {
+        throw new Error('No successful recognition');
+      }
+
+      // Pick the best result (longest text usually means better recognition)
+      // or you could implement confidence scoring here
+      const best = successful.reduce((prev, current) =>
+        prev.text.length > current.text.length ? prev : current,
+      );
+
+      console.log(
+        `✅ Best result from ${best.name} (${best.language}):`,
+        best.text,
+      );
+
+      // Map language codes to generic ones
+      let langCode = 'en';
+      if (best.language.startsWith('ur')) langCode = 'ur';
+      else if (best.language.startsWith('ar')) langCode = 'ar';
+      else if (best.language.startsWith('hi')) langCode = 'hi';
+
+      return {
+        text: best.text,
+        language: langCode,
+        method: 'azure-rest-parallel',
+      };
+    } catch (e) {
+      throw new Error('All language attempts failed: ' + e.message);
+    }
+  }
+
+  /**
+   * Azure Speech REST API with specific language
+   */
+  async azureSpeechToTextREST(wavFilePath, language) {
+    const token = await this.getToken();
+
+    const baseEndpoint =
+      (AZURE_SPEECH_STT_ENDPOINT || '').replace(/\/+$/, '') ||
+      `https://${AZURE_SPEECH_REGION}.stt.speech.microsoft.com`;
+
+    // Try both conversation and dictation endpoints for better language support
+    const endpoints = [
+      `${baseEndpoint}/speech/recognition/conversation/cognitiveservices/v1`,
+      `${baseEndpoint}/speech/recognition/dictation/cognitiveservices/v1`,
+    ];
+
+    const base64Audio = await RNFS.readFile(wavFilePath, 'base64');
+    const audioBuffer = Buffer.from(base64Audio, 'base64');
+
+    // Try each endpoint
+    for (const endpoint of endpoints) {
+      try {
+        const url = `${endpoint}?language=${encodeURIComponent(
+          language,
+        )}&format=detailed&profanity=raw`;
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'audio/wav; codecs=audio/pcm; samplerate=16000',
+            Accept: 'application/json',
+          },
+          body: audioBuffer,
+        });
+
+        if (!response.ok) {
+          // If 400, this endpoint doesn't support this language, try next endpoint
+          if (response.status === 400) continue;
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const status = data?.RecognitionStatus;
+
+        // Must have both Success status AND actual text
+        const nbest = Array.isArray(data?.NBest) ? data.NBest : [];
+        const best = nbest[0] || {};
+        const text = (
+          best?.Display ||
+          best?.ITN ||
+          data?.DisplayText ||
+          ''
+        ).trim();
+
+        if (status === 'Success' && text.length > 0) {
+          return text;
+        }
+
+        // If status is Success but text is empty, it's actually a failure
+        throw new Error('Empty transcription');
+      } catch (e) {
+        // If this endpoint failed, try next one
+        if (endpoint === endpoints[endpoints.length - 1]) throw e;
+      }
+    }
+
+    throw new Error('All endpoints failed');
+  }
+
+  /**
+   * Azure OpenAI Whisper API - Best for multilingual auto-detection
+   */
+  async whisperTranscribe(wavFilePath) {
+    // Convert wav to mp3 or just send as is (Whisper accepts various formats)
+    const audioData = await RNFS.readFile(wavFilePath, 'base64');
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('file', {
+      uri: 'file://' + wavFilePath,
+      type: 'audio/wav',
+      name: 'audio.wav',
+    });
+    formData.append('model', 'whisper-1');
+    formData.append('language', ''); // Empty for auto-detect, or remove this line
+    formData.append('response_format', 'json');
+
+    const response = await fetch(
+      `${AZURE_OPENAI_ENDPOINT}/openai/deployments/whisper/audio/transcriptions?api-version=2024-06-01`,
+      {
+        method: 'POST',
+        headers: {
+          'api-key': AZURE_OPENAI_KEY,
+          // Note: Don't set Content-Type header, fetch sets it with boundary for FormData
+        },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Whisper error: ${err}`);
+    }
+
+    const data = await response.json();
+    return {
+      text: data.text,
+      language: data.language || 'auto',
+    };
+  }
+
+  async cancelRecording() {
+    try {
+      if (this.isRecording) {
+        await AudioRecord.stop();
+      }
+    } catch (e) {}
+    this.isRecording = false;
+    return {success: true};
   }
 
   isCurrentlyRecording() {
     return this.isRecording;
   }
-
-  // Get partial results for real-time display
-  getPartialResults() {
-    return this.partialResults;
-  }
-
-  // Get current transcription
-  getCurrentTranscription() {
-    return this.transcriptionResult || '';
-  }
 }
 
-// Export a singleton instance
-const voiceRecordingService = new VoiceRecordingService();
-export default voiceRecordingService;
+export default new VoiceRecordingService();

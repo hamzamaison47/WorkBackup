@@ -33,15 +33,19 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import styles from '../../../../styles/styles';
+import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
+
 
 const BankAccountSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
 
+  const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
+  const [BankAccountLabelData, setBankAccountLabelsData] = useState({});
 
   // Navigation params with safe defaults
   const {
@@ -160,30 +164,90 @@ const BankAccountSaveRecord = () => {
     }, []),
   );
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (mode === 'create') {
-        const freshFormData = createInitialFormData();
-        setFormData(freshFormData);
-      } else if (mode === 'edit' && bankaccountdata?.recId) {
-        const editFormData = {
-          ...createInitialFormData(),
-          ...bankaccountdata,
-          employeeId: bankaccountdata.employeeId || employeeId,
-          employeeName: bankaccountdata.employeeName || employeeName,
-          WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
-        };
-        setFormData(editFormData);
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     if (mode === 'create') {
+  //       const freshFormData = createInitialFormData();
+  //       setFormData(freshFormData);
+  //     } else if (mode === 'edit' && bankaccountdata?.recId) {
+  //       const editFormData = {
+  //         ...createInitialFormData(),
+  //         ...bankaccountdata,
+  //         employeeId: bankaccountdata.employeeId || employeeId,
+  //         employeeName: bankaccountdata.employeeName || employeeName,
+  //         WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
+  //       };
+  //       setFormData(editFormData);
+  //     }
+  //   }, [
+  //     mode,
+  //     bankaccountdata?.recId,
+  //     employeeId,
+  //     employeeName,
+  //     WorkerRecId,
+  //     bankaccountdata,
+  //   ]),
+  // );
+   const fetchGetBankAccountLabel = async () => {
+  try {
+    const labels = await GetBankAccountLabels();
+    console.log('Labels fetched:', labels);
+    return labels; // ✅ IMPORTANT
+  } catch (error) {
+    console.error('Error fetching Bank Account labels:', error);
+    return {};
+  }
+};
+
+ useFocusEffect(
+  useCallback(() => {
+    let isActive = true;
+
+    const initializeForm = async () => {
+      setIsLoading(true);
+
+      try {
+        // 🔹 Fetch labels FIRST
+        const labels = await fetchGetBankAccountLabel();
+        if (!isActive) return;
+
+        setBankAccountLabelsData(labels || {});
+
+        // 🔹 CREATE MODE
+        if (mode === 'create') {
+          setFormData(createInitialFormData());
+          setAlertMessage('');
+        }
+
+        // 🔹 EDIT MODE
+        else if (mode === 'edit' && bankaccountdata?.recId) {
+          setFormData({
+            ...createInitialFormData(),
+            ...bankaccountdata,
+            employeeId: bankaccountdata.employeeId || employeeId,
+            employeeName: bankaccountdata.employeeName || employeeName,
+            WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing Bank Account form:', error);
+        setAlertMessage('Failed to load bank account screen');
+        setAlertModal(true);
+      } finally {
+        if (isActive) setIsLoading(false);
       }
-    }, [
-      mode,
-      bankaccountdata?.recId,
-      employeeId,
-      employeeName,
-      WorkerRecId,
-      bankaccountdata,
-    ]),
-  );
+    };
+
+    initializeForm();
+
+    return () => {
+      isActive = false;
+    };
+  }, [mode, bankaccountdata?.recId, employeeId, employeeName, WorkerRecId]),
+);
+
+
+
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -219,6 +283,8 @@ const BankAccountSaveRecord = () => {
     }
     return true;
   };
+ 
+
 
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -389,8 +455,12 @@ const BankAccountSaveRecord = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              <Text style={styles.LReqSR_Label}>Account identification *</Text>
-              <TextInput
+              {/* <Text style={styles.LReqSR_Label}>Account identification *</Text>
+              <TextInput */}
+               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
+                </Text>
+                <Text
                 style={styles.LReqSR_Input}
                 value={formData.AccountId}
                 onChangeText={text => handleInputChange('AccountId', text)}
@@ -400,7 +470,10 @@ const BankAccountSaveRecord = () => {
                 maxLength={10}
               />
 
-              <Text style={styles.LReqSR_Label}>Name *</Text>
+            
+                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.Namelbl || 'Name'}
+                </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.Name}
@@ -410,7 +483,10 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Bank account number *</Text>
+             
+               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
+                </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountNum}
@@ -421,7 +497,10 @@ const BankAccountSaveRecord = () => {
                 keyboardType="numeric"
               />
 
-              <Text style={styles.LReqSR_Label}>IBAN</Text>
+            
+               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BankIBANlbl || 'IBAN*'}
+                </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.BankIBAN}
@@ -431,7 +510,10 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Branch number</Text>
+             
+                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
+                </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.BranchNumber}
@@ -441,7 +523,10 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Branch name</Text>
+             
+                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
+                </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.BranchName}
@@ -451,7 +536,10 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Account Title</Text>
+              
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
+                </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountHolder}
