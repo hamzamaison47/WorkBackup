@@ -43,11 +43,13 @@ const FamilyContact_SaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
- const isRTL = useSelector(state => state.language.isRTL);
+  const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
-  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState({});
+  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
+    {},
+  );
 
   const {
     mode = 'create',
@@ -88,15 +90,14 @@ const FamilyContact_SaveRecord = () => {
   });
 
   const fetchPersonalContactsLabels = async () => {
-      try {
-        const labels = await getpersonalContactLabels();
-        return labels || {};
-        
-      } catch (error) {
-        console.error('Error fetching Personal Contacts labels:', error);
-        return {};
-      }
-    };
+    try {
+      const labels = await getpersonalContactLabels();
+      return labels || {};
+    } catch (error) {
+      console.error('Error fetching Personal Contacts labels:', error);
+      return {};
+    }
+  };
   // useFocusEffect(
   //   React.useCallback(() => {
   //     if (mode === 'create') {
@@ -163,115 +164,109 @@ const FamilyContact_SaveRecord = () => {
   //     WorkerRecId,
   //   ]),
   // );
-useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
 
-    const initializeForm = async () => {
-      setIsLoading(true);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-      try {
-        // 🔹 1. Fetch labels FIRST
-        const labels = await fetchPersonalContactsLabels();
-        if (!isActive) return;
-        setPersonalContactsLabelsData(labels);
+      const initializeForm = async () => {
+        setIsLoading(true);
 
-        console.log('Personal Contact Labels:', labels);
+        try {
+          // 🔹 1. Fetch labels FIRST
+          const labels = await fetchPersonalContactsLabels();
+          if (!isActive) return;
+          setPersonalContactsLabelsData(labels);
 
+          console.log('Personal Contact Labels:', labels);
 
-        // 🔹 2. Fetch Relationship Types
-        const res = await retrieveRelationshipTypeId();
-        if (!isActive) return;
+          // 🔹 2. Fetch Relationship Types
+          const res = await retrieveRelationshipTypeId();
+          if (!isActive) return;
 
-        if (Array.isArray(res)) {
-          setRelationshipTypes(res);
+          if (Array.isArray(res)) {
+            setRelationshipTypes(res);
+          }
+
+          // 🔹 3. CREATE MODE
+          if (mode === 'create') {
+            setFormData(createInitialFormData());
+            setAlertMessage('');
+          }
+
+          // 🔹 4. EDIT MODE
+          else if (mode === 'edit' && familyContactDataSet?.RecId) {
+            const fullName = familyContactDataSet.Name || '';
+            const nameParts = fullName.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const toBoolean = value => {
+              if (typeof value === 'boolean') return value;
+              if (typeof value === 'number') return value === 1;
+              if (typeof value === 'string') {
+                const lower = value.toLowerCase();
+                return lower === 'true' || lower === '1' || lower === 'yes';
+              }
+              return false;
+            };
+
+            setFormData({
+              ...createInitialFormData(),
+              recId: familyContactDataSet.RecId,
+              firstName,
+              lastName,
+              relationship: familyContactDataSet.RelationShipTypeId || '',
+
+              EmergencyContact: toBoolean(
+                familyContactDataSet.EmergencyContact,
+              ),
+              isBeneficiary: toBoolean(familyContactDataSet.isBeneficiary),
+              isDependent: toBoolean(familyContactDataSet.isDependent),
+
+              Gender: familyContactDataSet.Gender || '',
+              BirthDate: familyContactDataSet.BirthDate || '',
+
+              beneficiaryValidFrom: normalizeD365Date(
+                familyContactDataSet.BeneficiaryFromDate,
+              ),
+              beneficiaryValidTo: normalizeD365Date(
+                familyContactDataSet.BeneficiaryToDate,
+              ),
+
+              dependentValidFrom: normalizeD365Date(
+                familyContactDataSet.DependentValidFrom,
+              ),
+              dependentValidTo: normalizeD365Date(
+                familyContactDataSet.DependentValidTo,
+              ),
+
+              IsFullTimeStudent: toBoolean(
+                familyContactDataSet.IsFullTimeStudent,
+              ),
+              IsPersonWithDisabilities: toBoolean(
+                familyContactDataSet.IsPersonWithDisabilities,
+              ),
+
+              employeeId: familyContactDataSet.employeeId || employeeId,
+              employeeName: familyContactDataSet.employeeName || employeeName,
+              WorkerRecId: familyContactDataSet.WorkerRecId || WorkerRecId,
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing Family Contact form:', error);
+          setAlertMessage('Failed to load Family Contact screen');
+          setAlertModal(true);
+        } finally {
+          if (isActive) setIsLoading(false);
         }
+      };
 
-        // 🔹 3. CREATE MODE
-        if (mode === 'create') {
-          setFormData(createInitialFormData());
-          setAlertMessage('');
-        }
+      initializeForm();
 
-        // 🔹 4. EDIT MODE
-        else if (mode === 'edit' && familyContactDataSet?.RecId) {
-          const fullName = familyContactDataSet.Name || '';
-          const nameParts = fullName.trim().split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-
-          const toBoolean = value => {
-            if (typeof value === 'boolean') return value;
-            if (typeof value === 'number') return value === 1;
-            if (typeof value === 'string') {
-              const lower = value.toLowerCase();
-              return lower === 'true' || lower === '1' || lower === 'yes';
-            }
-            return false;
-          };
-
-          setFormData({
-            ...createInitialFormData(),
-            recId: familyContactDataSet.RecId,
-            firstName,
-            lastName,
-            relationship: familyContactDataSet.RelationShipTypeId || '',
-
-            EmergencyContact: toBoolean(
-              familyContactDataSet.EmergencyContact,
-            ),
-            isBeneficiary: toBoolean(
-              familyContactDataSet.isBeneficiary,
-            ),
-            isDependent: toBoolean(
-              familyContactDataSet.isDependent,
-            ),
-
-            Gender: familyContactDataSet.Gender || '',
-            BirthDate: familyContactDataSet.BirthDate || '',
-
-          // beneficiaryValidFrom: familyContactDataSet.BeneficiaryFromDate || '',
-          // beneficiaryValidTo: familyContactDataSet.BeneficiaryToDate || '',
-
-          // dependentValidFrom: familyContactDataSet.DependentValidFrom || '',
-          // dependentValidTo: familyContactDataSet.DependentValidTo || '',
-
-          beneficiaryValidFrom: normalizeD365Date(
-            familyContactDataSet.BeneficiaryFromDate,
-          ),
-          beneficiaryValidTo: normalizeD365Date(
-            familyContactDataSet.BeneficiaryToDate,
-          ),
-
-          dependentValidFrom: normalizeD365Date(
-            familyContactDataSet.DependentValidFrom,
-          ),
-          dependentValidTo: normalizeD365Date(
-            familyContactDataSet.DependentValidTo,
-          ),
-
-            IsFullTimeStudent: toBoolean(
-              familyContactDataSet.IsFullTimeStudent,
-            ),
-            IsPersonWithDisabilities: toBoolean(
-              familyContactDataSet.IsPersonWithDisabilities,
-            ),
-
-            employeeId:
-              familyContactDataSet.employeeId || employeeId,
-            employeeName:
-              familyContactDataSet.employeeName || employeeName,
-            WorkerRecId:
-              familyContactDataSet.WorkerRecId || WorkerRecId,
-          });
-        }
-      } catch (error) {
-        console.error('Error initializing Family Contact form:', error);
-        setAlertMessage('Failed to load Family Contact screen');
-        setAlertModal(true);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
+      return () => {
+        isActive = false;
+      };
     }, [
       mode,
       familyContactDataSet?.RecId,
@@ -604,10 +599,9 @@ useFocusEffect(
               contentContainerStyle={styles.LReqSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled">
-              
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                    {PersonalContactsLabelData?.firstNamelbl || 'First Name'}
-                 </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.firstNamelbl || 'First Name'}
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.firstName}
@@ -616,11 +610,9 @@ useFocusEffect(
                 placeholderTextColor="#888"
               />
 
-              
-              
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.lastNamelbl || 'Last Name '}
-                 </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.lastNamelbl || 'Last Name '}
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.lastName}
@@ -629,10 +621,10 @@ useFocusEffect(
                 placeholderTextColor="#888"
               />
 
-           
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.RelationShipTypeIdlbl || 'Relationship '}
-                 </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.RelationShipTypeIdlbl ||
+                  'Relationship '}
+              </Text>
               <Dropdown
                 style={styles.LReqSR_Input}
                 data={relationshipTypes}
@@ -668,10 +660,11 @@ useFocusEffect(
                     borderRadius: 12,
                     marginBottom: 12,
                   }}>
-                 
-                  <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.EmergencyContactlbl || 'Emergency Contact'}
-                 </Text>
+                  <Text
+                    style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                    {PersonalContactsLabelData?.EmergencyContactlbl ||
+                      'Emergency Contact'}
+                  </Text>
 
                   <Switch
                     value={formData.EmergencyContact}
@@ -725,10 +718,11 @@ useFocusEffect(
                     borderBottomRightRadius: formData.isBeneficiary ? 0 : 12,
                     marginBottom: formData.isBeneficiary ? 0 : 12,
                   }}>
-                 
-                   <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.isBeneficiarylbl || 'Beneficiary'}
-                 </Text>
+                  <Text
+                    style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                    {PersonalContactsLabelData?.isBeneficiarylbl ||
+                      'Beneficiary'}
+                  </Text>
 
                   <Switch
                     value={formData.isBeneficiary}
@@ -753,10 +747,15 @@ useFocusEffect(
                       borderTopColor: '#e0e0e0',
                     }}>
                     {/* Valid From */}
-                   
-                     <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.BeneficiaryFromDatelbl || ' Valid From'}
-                 </Text>
+
+                    <Text
+                      style={[
+                        styles.LReqSR_Label,
+                        isRTL && {textAlign: 'left'},
+                      ]}>
+                      {PersonalContactsLabelData?.BeneficiaryFromDatelbl ||
+                        ' Valid From'}
+                    </Text>
                     <TouchableOpacity
                       style={[
                         styles.LReqSR_Input,
@@ -796,11 +795,15 @@ useFocusEffect(
                     )}
 
                     {/* Valid To */}
-                  
 
-                     <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.BeneficiaryToDatelbl || 'Valid To'}
-                 </Text>
+                    <Text
+                      style={[
+                        styles.LReqSR_Label,
+                        isRTL && {textAlign: 'left'},
+                      ]}>
+                      {PersonalContactsLabelData?.BeneficiaryToDatelbl ||
+                        'Valid To'}
+                    </Text>
                     <TouchableOpacity
                       style={[
                         styles.LReqSR_Input,
@@ -864,10 +867,14 @@ useFocusEffect(
                             : 12,
                           marginBottom: formData.isDependent ? 0 : 12,
                         }}>
-                       
-                      <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.isDependentlbl || 'Dependent'}
-                 </Text>
+                        <Text
+                          style={[
+                            styles.LReqSR_Label,
+                            isRTL && {textAlign: 'left'},
+                          ]}>
+                          {PersonalContactsLabelData?.isDependentlbl ||
+                            'Dependent'}
+                        </Text>
 
                         <Switch
                           value={formData.isDependent}
@@ -894,11 +901,15 @@ useFocusEffect(
                             borderTopColor: '#e0e0e0',
                           }}>
                           {/* Valid From */}
-                        
-                               
-                      <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.dependentValidFromlbl || 'Valid From'}
-                 </Text>
+
+                          <Text
+                            style={[
+                              styles.LReqSR_Label,
+                              isRTL && {textAlign: 'left'},
+                            ]}>
+                            {PersonalContactsLabelData?.dependentValidFromlbl ||
+                              'Valid From'}
+                          </Text>
 
                           <TouchableOpacity
                             style={[
@@ -942,11 +953,15 @@ useFocusEffect(
                           )}
 
                           {/* Valid To */}
-                         
-                                   
-                      <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.depndentValidTolbl || 'Valid To'}
-                 </Text>
+
+                          <Text
+                            style={[
+                              styles.LReqSR_Label,
+                              isRTL && {textAlign: 'left'},
+                            ]}>
+                            {PersonalContactsLabelData?.depndentValidTolbl ||
+                              'Valid To'}
+                          </Text>
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
@@ -991,10 +1006,14 @@ useFocusEffect(
                             />
                           )}
                           {/* Gender Dropdown */}
-                
-                    <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.genderlbl || 'Gender'}
-                 </Text>
+
+                          <Text
+                            style={[
+                              styles.LReqSR_Label,
+                              isRTL && {textAlign: 'left'},
+                            ]}>
+                            {PersonalContactsLabelData?.genderlbl || 'Gender'}
+                          </Text>
                           <Dropdown
                             style={styles.LReqSR_Input}
                             data={[
@@ -1029,11 +1048,15 @@ useFocusEffect(
                           />
 
                           {/* Birth Date */}
-                         
 
-                   <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.birthDatelbl || 'Birth Date'}
-                 </Text>
+                          <Text
+                            style={[
+                              styles.LReqSR_Label,
+                              isRTL && {textAlign: 'left'},
+                            ]}>
+                            {PersonalContactsLabelData?.birthDatelbl ||
+                              'Birth Date'}
+                          </Text>
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
@@ -1075,11 +1098,14 @@ useFocusEffect(
 
                           {/* Full-time Student */}
                           <View style={{marginTop: 12}}>
-                            
-
-                        <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.isFullTimeStudentlbl || 'Full-time Student'}
-                 </Text>
+                            <Text
+                              style={[
+                                styles.LReqSR_Label,
+                                isRTL && {textAlign: 'left'},
+                              ]}>
+                              {PersonalContactsLabelData?.isFullTimeStudentlbl ||
+                                'Full-time Student'}
+                            </Text>
                             <View style={{alignSelf: 'flex-start'}}>
                               <Switch
                                 value={formData.IsFullTimeStudent}
@@ -1098,11 +1124,14 @@ useFocusEffect(
 
                           {/* Person with Disabilities */}
                           <View style={{marginTop: 12}}>
-                          
-
-                         <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                  {PersonalContactsLabelData?.isPersonWithDisabilitieslbl || 'Person with Disabilities'}
-                 </Text>
+                            <Text
+                              style={[
+                                styles.LReqSR_Label,
+                                isRTL && {textAlign: 'left'},
+                              ]}>
+                              {PersonalContactsLabelData?.isPersonWithDisabilitieslbl ||
+                                'Person with Disabilities'}
+                            </Text>
                             <View style={{alignSelf: 'flex-start'}}>
                               <Switch
                                 value={formData.IsPersonWithDisabilities}
