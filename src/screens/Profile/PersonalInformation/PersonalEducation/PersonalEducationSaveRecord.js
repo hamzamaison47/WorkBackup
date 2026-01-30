@@ -33,6 +33,8 @@ import {RetrieveAllEducationDisciplines} from '../../../../API/PersonalInformati
 import {CreateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationCreate';
 import {UpdateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonEducationIUpdate';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
+import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
+import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
 
 import styles from '../../../../styles/styles';
 
@@ -105,6 +107,7 @@ const PersonalEducationSaveRecord = () => {
   const [educationDisciplines, setEducationDisciplines] = useState([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarField, setCalendarField] = useState('');
+  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
 
   /* ---------- helpers ---------- */
   const formatDate = date => {
@@ -114,6 +117,22 @@ const PersonalEducationSaveRecord = () => {
       d.getDate(),
     ).padStart(2, '0')}/${d.getFullYear()}`;
   };
+
+  const checkWorkflowConfig = useCallback(async () => {
+    try {
+      const res = await isEducationWorkflowConfigured();
+      console.log('here is the workflow resut', res);
+      setIsWorkflowConfigured(res === true || res === 1);
+    } catch (e) {
+      setIsWorkflowConfigured(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkWorkflowConfig();
+    }, [checkWorkflowConfig]),
+  );
 
   const convertDateFormat = date => {
     const d = new Date(date);
@@ -506,7 +525,7 @@ const PersonalEducationSaveRecord = () => {
                 numberOfLines={6}
               />
             </ScrollView>
-
+            {/*
             <SaveRecordButtons
               mode={mode}
               processingButton={processingButton}
@@ -515,7 +534,29 @@ const PersonalEducationSaveRecord = () => {
               isDisabled={
                 processingButton === 'create' || processingButton === 'submit'
               }
-            />
+            /> */}
+            {isWorkflowConfigured ? (
+              <SaveRecordButtons
+                mode={mode}
+                processingButton={processingButton}
+                onSave={handleSave}
+                onCancel={goBack}
+                isDisabled={
+                  processingButton === 'create' || processingButton === 'submit'
+                }
+              />
+            ) : (
+              <SaveRecordButtons
+                mode={mode}
+                processingButton={processingButton}
+                onSave={handleSave}
+                onCancel={goBack}
+                isDisabled={
+                  processingButton === 'create' || processingButton === 'submit'
+                }
+                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              />
+            )}
           </KeyboardAvoidingView>
 
           <AlertModal

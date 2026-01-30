@@ -33,7 +33,7 @@ export default function CustomTabBar(props) {
       iconUnfocused: 'grid-outline',
     },
     {
-      name: 'WorkItemAssignedToMe',
+      name: 'WorkItemAssigned',
       label: t('tabNavigator.MyWorkItems'),
       iconFocused: 'clipboard',
       iconUnfocused: 'clipboard-outline',

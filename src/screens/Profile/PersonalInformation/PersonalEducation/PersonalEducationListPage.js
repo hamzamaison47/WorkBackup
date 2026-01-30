@@ -29,6 +29,7 @@ import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import {EmployeePersonalEducation} from '../../../../API/PersonalInformation/Education/PersonalEducation';
 import {DeleteEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationDelete';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
+import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
 
 const PersonalEducation = () => {
   const navigation = useNavigation();
@@ -51,6 +52,7 @@ const PersonalEducation = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
+  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   // const [refreshing, setRefreshing] = useState(false);
 
   /* ---------- fetch ---------- */
@@ -61,6 +63,7 @@ const PersonalEducation = () => {
       const data = await EmployeePersonalEducation({
         employeeId: effectiveEmployeeId,
       });
+      console.log('Herer is the data', data);
       // newest record on top
       data.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       console.log('Education Data : ', data);
@@ -129,6 +132,21 @@ const PersonalEducation = () => {
   const handleRefresh = () => {
     fetchEducationData();
   };
+
+  const checkWorkflowConfig = useCallback(async () => {
+    try {
+      const res = await isEducationWorkflowConfigured();
+      setIsWorkflowConfigured(res === true || res === 1);
+    } catch (e) {
+      setIsWorkflowConfigured(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkWorkflowConfig();
+    }, [checkWorkflowConfig]),
+  );
 
   /* ---------- create ---------- */
   const handleCreateEducation = () => {
@@ -218,7 +236,7 @@ const PersonalEducation = () => {
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
       submit: {
-        show: isDraft,
+        show: isWorkflowConfigured && isDraft,
         position: 'bottom',
         style: 'text',
         icon: 'send',

@@ -526,7 +526,68 @@ const PurchaseRequisitionLinesSaveRecord = () => {
     return true;
   };
 
-  /** ✅ Handle create */
+  // /** ✅ Handle create */
+  // const handleCreate = async actionType => {
+  //   if (!validate()) return;
+  //   setProcessingButton(actionType);
+  //   setIsProcessing(true);
+
+  //   if (!quantity || parseFloat(quantity) <= 0) {
+  //     setAlertMessage('Please enter a valid quantity');
+  //     setAlertModal(true);
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   try {
+  //     // Prepare the payload with all selected values
+  //     const payload = {
+  //       PurchReqId: PurchReqId,
+  //       ItemId: selectedItem,
+  //       PurchQty: parseFloat(quantity).toString(),
+  //       InventSiteId: selectedSite || '',
+  //       InventLocationId: selectedLocation || '',
+  //       ConfigId: selectedConfig || '',
+  //       InventSizeId: selectedSize || '',
+  //       InventColorId: selectedColor || '',
+  //       InventStyle: selectedStyle || '',
+  //       InventBatchId: selectedBatch || '',
+  //       InventSerialId: selectedSerial || '',
+  //       Requisitioner: employeeId,
+  //       dataAreaId: selectedLegalEntity,
+  //       // Add any other required fields
+  //     };
+
+  //     console.log('Payload to create:', payload);
+
+  //     // Call the create API
+  //     const result = await createPurchaseRequistionLines({
+  //       PurchaseRequisitionLinesData: [payload], // Pass as array
+  //     });
+
+  //     console.log('Create API response:', result);
+
+  //     if (result && result.IsSuccess === 'true' && result.RecId !== '0') {
+  //       setAlertMessage('Purchase Requisition Line Created Successfully');
+  //       setAlertModal(true);
+
+  //       setTimeout(() => goBack(), 5000); // navigate back after success
+  //     } else {
+  //       const errorMessage =
+  //         result?.Message || 'Failed to create purchase requisition line';
+  //       setAlertMessage(errorMessage);
+  //       setAlertModal(true);
+  //     }
+  //   } catch (err) {
+  //     console.error('Error creating requisition line:', err);
+  //     setAlertMessage('Error creating requisition line. Please try again.');
+  //     setAlertModal(true);
+  //   } finally {
+  //     setProcessingButton('');
+  //     setIsProcessing(false);
+  //   }
+  // };
+
   const handleCreate = async actionType => {
     if (!validate()) return;
     setProcessingButton(actionType);
@@ -535,12 +596,13 @@ const PurchaseRequisitionLinesSaveRecord = () => {
     if (!quantity || parseFloat(quantity) <= 0) {
       setAlertMessage('Please enter a valid quantity');
       setAlertModal(true);
+      setProcessingButton('');
+      setIsProcessing(false);
       return;
     }
 
     setIsLoading(true);
     try {
-      // Prepare the payload with all selected values
       const payload = {
         PurchReqId: PurchReqId,
         ItemId: selectedItem,
@@ -555,34 +617,35 @@ const PurchaseRequisitionLinesSaveRecord = () => {
         InventSerialId: selectedSerial || '',
         Requisitioner: employeeId,
         dataAreaId: selectedLegalEntity,
-        // Add any other required fields
       };
 
-      console.log('Payload to create:', payload);
-
-      // Call the create API
       const result = await createPurchaseRequistionLines({
-        PurchaseRequisitionLinesData: [payload], // Pass as array
+        PurchaseRequisitionLinesData: [payload],
       });
 
-      console.log('Create API response:', result);
-
       if (result && result.IsSuccess === 'true' && result.RecId !== '0') {
+        setIsLoading(false); // ✅ Stop loading BEFORE showing alert
+        setProcessingButton('');
+        setIsProcessing(false);
+
         setAlertMessage('Purchase Requisition Line Created Successfully');
         setAlertModal(true);
 
-        setTimeout(() => goBack(), 1500); // navigate back after success
+        setTimeout(() => goBack(), 2000); // ✅ Reduced to 2 seconds
       } else {
         const errorMessage =
           result?.Message || 'Failed to create purchase requisition line';
         setAlertMessage(errorMessage);
         setAlertModal(true);
+        setIsLoading(false);
+        setProcessingButton('');
+        setIsProcessing(false);
       }
     } catch (err) {
       console.error('Error creating requisition line:', err);
       setAlertMessage('Error creating requisition line. Please try again.');
       setAlertModal(true);
-    } finally {
+      setIsLoading(false);
       setProcessingButton('');
       setIsProcessing(false);
     }

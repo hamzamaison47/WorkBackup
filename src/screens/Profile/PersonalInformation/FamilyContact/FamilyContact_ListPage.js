@@ -110,14 +110,14 @@ const FamilyContacts_ListPageScreen = () => {
     },
 
     fields: [
-      {key: 'Name', label: 'Name', type: 'text'},
-      {key: 'RelationShipTypeId', label: 'Relationship', type: 'text'},
+      {key: 'Name', label:familycontactsdata[0]?.firstNamelbl || 'First Name', type: 'text'},
+      {key: 'RelationShipTypeId',label:familycontactsdata[0]?.RelationShipTypeIdlbl || 'Relationship', type: 'text'},
     ],
 
     expandableFields: [
-      {key: 'EmergencyContact', label: 'Emergency contact', type: 'boolean'},
-      {key: 'isDependent', label: 'Dependent', type: 'boolean'},
-      {key: 'isBeneficiary', label: 'Beneficiary', type: 'boolean'},
+      {key: 'EmergencyContact', label:familycontactsdata[0]?.EmergencyContactlbl || 'Emergency contact', type: 'boolean'},
+      {key: 'isDependent', label:familycontactsdata[0]?.isDependentlbl || 'Dependent', type: 'boolean'},
+      {key: 'isBeneficiary', label:familycontactsdata[0]?.isBeneficiarylbl || 'Beneficiary', type: 'boolean'},
     ],
   };
 
@@ -163,6 +163,7 @@ const FamilyContacts_ListPageScreen = () => {
     switch (buttonType) {
       case 'edit':
         handleEditPress(itemData);
+        console.log('This is the EDit data', itemData);
         break;
       case 'delete':
         handleDeletePress(itemData);
@@ -331,7 +332,7 @@ const FamilyContacts_ListPageScreen = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Personal contacts"
+      pageTitle="Personal Contacts"
       isBackButton={true}
       showFooter={true}
       showFloatingButton={true}

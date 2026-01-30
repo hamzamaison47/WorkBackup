@@ -24,6 +24,7 @@ import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {translate as t} from '../../../../store/utils/translate';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
@@ -34,16 +35,19 @@ import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
 import {retrieveRelationshipTypeId} from '../../../../API/PersonalInformation/FamilyContacts/retrieveRelationshipTypeId';
 import {FamilyContactCreate} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactCreate';
 import {FamilyContactUpdate} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactUpdate';
+import {getpersonalContactLabels} from '../../../../API/PersonalInformation/FamilyContacts/GetPersonalContactsLabels';
+
 import styles from '../../../../styles/styles';
 
 const FamilyContact_SaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
-
+ const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
+  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState({});
 
   const {
     mode = 'create',
@@ -83,62 +87,190 @@ const FamilyContact_SaveRecord = () => {
     WorkflowOperation: '',
   });
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (mode === 'create') {
-        const freshFormData = createInitialFormData();
-        setFormData(freshFormData);
-      } else if (mode === 'edit' && familyContactDataSet?.RecId) {
-        const fullName = familyContactDataSet.Name || '';
-        const nameParts = fullName.trim().split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || ''; // Join remaining parts for last name
+  const fetchPersonalContactsLabels = async () => {
+      try {
+        const labels = await getpersonalContactLabels();
+        return labels || {};
+        
+      } catch (error) {
+        console.error('Error fetching Personal Contacts labels:', error);
+        return {};
+      }
+    };
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     if (mode === 'create') {
+  //       const freshFormData = createInitialFormData();
+  //       setFormData(freshFormData);
+  //     } else if (mode === 'edit' && familyContactDataSet?.RecId) {
+  //       const fullName = familyContactDataSet.Name || '';
+  //       const nameParts = fullName.trim().split(' ');
+  //       const firstName = nameParts[0] || '';
+  //       const lastName = nameParts.slice(1).join(' ') || ''; // Join remaining parts for last name
 
-        // Helper function to convert various boolean representations to true boolean
-        const toBoolean = value => {
-          if (typeof value === 'boolean') return value;
-          if (typeof value === 'number') return value === 1;
-          if (typeof value === 'string') {
-            const lower = value.toLowerCase();
-            return lower === 'true' || lower === '1' || lower === 'yes';
-          }
-          return false;
-        };
-        const editFormData = {
-          ...createInitialFormData(),
+  //       // Helper function to convert various boolean representations to true boolean
+  //       const toBoolean = value => {
+  //         if (typeof value === 'boolean') return value;
+  //         if (typeof value === 'number') return value === 1;
+  //         if (typeof value === 'string') {
+  //           const lower = value.toLowerCase();
+  //           return lower === 'true' || lower === '1' || lower === 'yes';
+  //         }
+  //         return false;
+  //       };
+  //       const editFormData = {
+  //         ...createInitialFormData(),
 
-          // map edit values
-          // map edit values
-          recId: familyContactDataSet.RecId,
-          firstName: firstName,
-          lastName: lastName,
-          relationship: familyContactDataSet.RelationShipTypeId || '',
+  //         // map edit values
+  //         // map edit values
+  //         recId: familyContactDataSet.RecId,
+  //         firstName: firstName,
+  //         lastName: lastName,
+  //         relationship: familyContactDataSet.RelationShipTypeId || '',
 
-          EmergencyContact: toBoolean(familyContactDataSet.EmergencyContact),
-          isBeneficiary: toBoolean(familyContactDataSet.isBeneficiary),
-          isDependent: toBoolean(familyContactDataSet.isDependent),
+  //         EmergencyContact: toBoolean(familyContactDataSet.EmergencyContact),
+  //         isBeneficiary: toBoolean(familyContactDataSet.isBeneficiary),
+  //         isDependent: toBoolean(familyContactDataSet.isDependent),
 
-          Gender: familyContactDataSet.Gender || '',
-          BirthDate: familyContactDataSet.BirthDate || '',
+  //         Gender: familyContactDataSet.Gender || '',
+  //         BirthDate: familyContactDataSet.BirthDate || '',
 
-          beneficiaryValidFrom: familyContactDataSet.BeneficiaryFromDate || '',
-          beneficiaryValidTo: familyContactDataSet.BeneficiaryToDate || '',
+  //         beneficiaryValidFrom: familyContactDataSet.BeneficiaryFromDate || '',
+  //         beneficiaryValidTo: familyContactDataSet.BeneficiaryToDate || '',
 
-          dependentValidFrom: familyContactDataSet.DependentValidFrom || '',
-          dependentValidTo: familyContactDataSet.DependentValidTo || '',
+  //         dependentValidFrom: familyContactDataSet.DependentValidFrom || '',
+  //         dependentValidTo: familyContactDataSet.DependentValidTo || '',
 
-          IsFullTimeStudent: toBoolean(familyContactDataSet.IsFullTimeStudent),
-          IsPersonWithDisabilities: toBoolean(
-            familyContactDataSet.IsPersonWithDisabilities,
+  //         IsFullTimeStudent: toBoolean(familyContactDataSet.IsFullTimeStudent),
+  //         IsPersonWithDisabilities: toBoolean(
+  //           familyContactDataSet.IsPersonWithDisabilities,
+  //         ),
+
+  //         // ensure employee context is preserved
+  //         employeeId: familyContactDataSet.employeeId || employeeId,
+  //         employeeName: familyContactDataSet.employeeName || employeeName,
+  //         WorkerRecId: familyContactDataSet.WorkerRecId || WorkerRecId,
+  //       };
+
+  //       setFormData(editFormData);
+  //     }
+  //   }, [
+  //     mode,
+  //     familyContactDataSet?.RecId,
+  //     familyContactDataSet,
+  //     employeeId,
+  //     employeeName,
+  //     WorkerRecId,
+  //   ]),
+  // );
+useFocusEffect(
+  useCallback(() => {
+    let isActive = true;
+
+    const initializeForm = async () => {
+      setIsLoading(true);
+
+      try {
+        // 🔹 1. Fetch labels FIRST
+        const labels = await fetchPersonalContactsLabels();
+        if (!isActive) return;
+        setPersonalContactsLabelsData(labels);
+
+        console.log('Personal Contact Labels:', labels);
+
+
+        // 🔹 2. Fetch Relationship Types
+        const res = await retrieveRelationshipTypeId();
+        if (!isActive) return;
+
+        if (Array.isArray(res)) {
+          setRelationshipTypes(res);
+        }
+
+        // 🔹 3. CREATE MODE
+        if (mode === 'create') {
+          setFormData(createInitialFormData());
+          setAlertMessage('');
+        }
+
+        // 🔹 4. EDIT MODE
+        else if (mode === 'edit' && familyContactDataSet?.RecId) {
+          const fullName = familyContactDataSet.Name || '';
+          const nameParts = fullName.trim().split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          const toBoolean = value => {
+            if (typeof value === 'boolean') return value;
+            if (typeof value === 'number') return value === 1;
+            if (typeof value === 'string') {
+              const lower = value.toLowerCase();
+              return lower === 'true' || lower === '1' || lower === 'yes';
+            }
+            return false;
+          };
+
+          setFormData({
+            ...createInitialFormData(),
+            recId: familyContactDataSet.RecId,
+            firstName,
+            lastName,
+            relationship: familyContactDataSet.RelationShipTypeId || '',
+
+            EmergencyContact: toBoolean(
+              familyContactDataSet.EmergencyContact,
+            ),
+            isBeneficiary: toBoolean(
+              familyContactDataSet.isBeneficiary,
+            ),
+            isDependent: toBoolean(
+              familyContactDataSet.isDependent,
+            ),
+
+            Gender: familyContactDataSet.Gender || '',
+            BirthDate: familyContactDataSet.BirthDate || '',
+
+          // beneficiaryValidFrom: familyContactDataSet.BeneficiaryFromDate || '',
+          // beneficiaryValidTo: familyContactDataSet.BeneficiaryToDate || '',
+
+          // dependentValidFrom: familyContactDataSet.DependentValidFrom || '',
+          // dependentValidTo: familyContactDataSet.DependentValidTo || '',
+
+          beneficiaryValidFrom: normalizeD365Date(
+            familyContactDataSet.BeneficiaryFromDate,
+          ),
+          beneficiaryValidTo: normalizeD365Date(
+            familyContactDataSet.BeneficiaryToDate,
           ),
 
-          // ensure employee context is preserved
-          employeeId: familyContactDataSet.employeeId || employeeId,
-          employeeName: familyContactDataSet.employeeName || employeeName,
-          WorkerRecId: familyContactDataSet.WorkerRecId || WorkerRecId,
-        };
+          dependentValidFrom: normalizeD365Date(
+            familyContactDataSet.DependentValidFrom,
+          ),
+          dependentValidTo: normalizeD365Date(
+            familyContactDataSet.DependentValidTo,
+          ),
 
-        setFormData(editFormData);
+            IsFullTimeStudent: toBoolean(
+              familyContactDataSet.IsFullTimeStudent,
+            ),
+            IsPersonWithDisabilities: toBoolean(
+              familyContactDataSet.IsPersonWithDisabilities,
+            ),
+
+            employeeId:
+              familyContactDataSet.employeeId || employeeId,
+            employeeName:
+              familyContactDataSet.employeeName || employeeName,
+            WorkerRecId:
+              familyContactDataSet.WorkerRecId || WorkerRecId,
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing Family Contact form:', error);
+        setAlertMessage('Failed to load Family Contact screen');
+        setAlertModal(true);
+      } finally {
+        if (isActive) setIsLoading(false);
       }
     }, [
       mode,
@@ -149,6 +281,22 @@ const FamilyContact_SaveRecord = () => {
       WorkerRecId,
     ]),
   );
+
+  const D365_MAX_DATE = '2154-12-31T23:59:59Z';
+  const D365_MIN_DATE = '1900-01-01';
+
+  const normalizeD365Date = dateString => {
+    if (!dateString) return '';
+
+    if (
+      dateString.startsWith(D365_MAX_DATE) ||
+      dateString.startsWith(D365_MIN_DATE)
+    ) {
+      return ''; // empty means "Never / Not set" in UI
+    }
+
+    return dateString;
+  };
 
   const [relationshipTypes, setRelationshipTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -290,15 +438,20 @@ const FamilyContact_SaveRecord = () => {
 
         BeneficiaryFromDate:
           data.beneficiaryValidFrom || '1900-01-01T00:00:00.000Z',
-        BeneficiaryToDate:
-          data.beneficiaryValidTo || '1900-01-01T00:00:00.000Z',
+
+        BeneficiaryToDate: data.beneficiaryValidTo
+          ? data.beneficiaryValidTo
+          : '2154-12-31T23:59:59.000Z',
 
         Gender: data.Gender || '',
         BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
 
         DependentValidFrom:
           data.dependentValidFrom || '1900-01-01T00:00:00.000Z',
-        DependentValidTo: data.dependentValidTo || '1900-01-01T00:00:00.000Z',
+
+        DependentValidTo: data.dependentValidTo
+          ? data.dependentValidTo
+          : '2154-12-31T23:59:59.000Z',
 
         IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
         IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
@@ -319,6 +472,7 @@ const FamilyContact_SaveRecord = () => {
         response = await FamilyContactUpdate({
           familyContactDataSet: contract,
         });
+        console.log('THIS IS HTE DAT ATHAT IS GOIGJ', contract);
       }
 
       if (!response) {
@@ -418,7 +572,7 @@ const FamilyContact_SaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        mode === 'edit' ? 'Edit Personal contact' : 'Create Personal contact'
+        mode === 'edit' ? 'Edit Personal Contact' : 'Create Personal Contact'
       }
       isBackButton={true}
       showFooter={false}
@@ -450,7 +604,10 @@ const FamilyContact_SaveRecord = () => {
               contentContainerStyle={styles.LReqSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled">
-              <Text style={styles.LReqSR_Label}>First Name *</Text>
+              
+                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                    {PersonalContactsLabelData?.firstNamelbl || 'First Name'}
+                 </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.firstName}
@@ -459,7 +616,11 @@ const FamilyContact_SaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Last Name *</Text>
+              
+              
+                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.lastNamelbl || 'Last Name '}
+                 </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.lastName}
@@ -468,7 +629,10 @@ const FamilyContact_SaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Relationship *</Text>
+           
+               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.RelationShipTypeIdlbl || 'Relationship '}
+                 </Text>
               <Dropdown
                 style={styles.LReqSR_Input}
                 data={relationshipTypes}
@@ -504,14 +668,10 @@ const FamilyContact_SaveRecord = () => {
                     borderRadius: 12,
                     marginBottom: 12,
                   }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: '#000',
-                      fontWeight: '500',
-                    }}>
-                    Emergency Contact
-                  </Text>
+                 
+                  <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.EmergencyContactlbl || 'Emergency Contact'}
+                 </Text>
 
                   <Switch
                     value={formData.EmergencyContact}
@@ -565,14 +725,10 @@ const FamilyContact_SaveRecord = () => {
                     borderBottomRightRadius: formData.isBeneficiary ? 0 : 12,
                     marginBottom: formData.isBeneficiary ? 0 : 12,
                   }}>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      color: '#000',
-                      fontWeight: '500',
-                    }}>
-                    Beneficiary
-                  </Text>
+                 
+                   <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.isBeneficiarylbl || 'Beneficiary'}
+                 </Text>
 
                   <Switch
                     value={formData.isBeneficiary}
@@ -597,17 +753,20 @@ const FamilyContact_SaveRecord = () => {
                       borderTopColor: '#e0e0e0',
                     }}>
                     {/* Valid From */}
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        color: '#000',
-                        marginTop: 8,
-                        marginBottom: 4,
-                      }}>
-                      Valid From
-                    </Text>
+                   
+                     <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.BeneficiaryFromDatelbl || ' Valid From'}
+                 </Text>
                     <TouchableOpacity
-                      style={[styles.LReqSR_Input, {justifyContent: 'center'}]}
+                      style={[
+                        styles.LReqSR_Input,
+                        {
+                          flexDirection: 'row', // Makes children align horizontally
+                          alignItems: 'center', // Centers items vertically
+                          justifyContent: 'space-between', // Pushes items to edges
+                          paddingHorizontal: 12,
+                        },
+                      ]}
                       onPress={() => setShowValidFromPicker(true)}>
                       <Text
                         style={{
@@ -618,8 +777,9 @@ const FamilyContact_SaveRecord = () => {
                         }}>
                         {formData.beneficiaryValidFrom
                           ? formatDisplayDate(formData.beneficiaryValidFrom)
-                          : 'Select Valid From Date'}
+                          : formatDisplayDate(new Date().toISOString())}
                       </Text>
+                      <Icon name="calendar" size={20} color="#04739cff" />
                     </TouchableOpacity>
 
                     {showValidFromPicker && (
@@ -636,17 +796,21 @@ const FamilyContact_SaveRecord = () => {
                     )}
 
                     {/* Valid To */}
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        color: '#000',
-                        marginTop: 12,
-                        marginBottom: 4,
-                      }}>
-                      Valid To
-                    </Text>
+                  
+
+                     <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.BeneficiaryToDatelbl || 'Valid To'}
+                 </Text>
                     <TouchableOpacity
-                      style={[styles.LReqSR_Input, {justifyContent: 'center'}]}
+                      style={[
+                        styles.LReqSR_Input,
+                        {
+                          flexDirection: 'row', // Makes children align horizontally
+                          alignItems: 'center', // Centers items vertically
+                          justifyContent: 'space-between', // Pushes items to edges
+                          paddingHorizontal: 12,
+                        },
+                      ]}
                       onPress={() => setShowValidToPicker(true)}>
                       <Text
                         style={{
@@ -655,8 +819,9 @@ const FamilyContact_SaveRecord = () => {
                         }}>
                         {formData.beneficiaryValidTo
                           ? formatDisplayDate(formData.beneficiaryValidTo)
-                          : 'Select Valid To Date'}
+                          : 'Never'}
                       </Text>
+                      <Icon name="calendar" size={20} color="#04739cff" />
                     </TouchableOpacity>
 
                     {showValidToPicker && (
@@ -699,14 +864,10 @@ const FamilyContact_SaveRecord = () => {
                             : 12,
                           marginBottom: formData.isDependent ? 0 : 12,
                         }}>
-                        <Text
-                          style={{
-                            fontSize: 16,
-                            color: '#000',
-                            fontWeight: '500',
-                          }}>
-                          Dependent
-                        </Text>
+                       
+                      <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.isDependentlbl || 'Dependent'}
+                 </Text>
 
                         <Switch
                           value={formData.isDependent}
@@ -733,19 +894,21 @@ const FamilyContact_SaveRecord = () => {
                             borderTopColor: '#e0e0e0',
                           }}>
                           {/* Valid From */}
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              color: '#000',
-                              marginTop: 8,
-                              marginBottom: 4,
-                            }}>
-                            Valid From
-                          </Text>
+                        
+                               
+                      <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.dependentValidFromlbl || 'Valid From'}
+                 </Text>
+
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
-                              {justifyContent: 'center'},
+                              {
+                                flexDirection: 'row', // Makes children align horizontally
+                                alignItems: 'center', // Centers items vertically
+                                justifyContent: 'space-between', // Pushes items to edges
+                                paddingHorizontal: 12,
+                              },
                             ]}
                             onPress={() =>
                               setShowDependentValidFromPicker(true)
@@ -759,8 +922,9 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.dependentValidFrom
                                 ? formatDisplayDate(formData.dependentValidFrom)
-                                : 'Select Valid From Date'}
+                                : formatDisplayDate(new Date().toISOString())}
                             </Text>
+                            <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
                           {showDependentValidFromPicker && (
                             <DateTimePicker
@@ -778,19 +942,20 @@ const FamilyContact_SaveRecord = () => {
                           )}
 
                           {/* Valid To */}
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              color: '#000',
-                              marginTop: 12,
-                              marginBottom: 4,
-                            }}>
-                            Valid To
-                          </Text>
+                         
+                                   
+                      <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.depndentValidTolbl || 'Valid To'}
+                 </Text>
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
-                              {justifyContent: 'center'},
+                              {
+                                flexDirection: 'row', // Makes children align horizontally
+                                alignItems: 'center', // Centers items vertically
+                                justifyContent: 'space-between', // Pushes items to edges
+                                paddingHorizontal: 12,
+                              },
                             ]}
                             onPress={() => setShowDependentValidToPicker(true)}>
                             <Text
@@ -802,8 +967,9 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.dependentValidTo
                                 ? formatDisplayDate(formData.dependentValidTo)
-                                : 'Select Valid To Date'}
+                                : 'Never'}
                             </Text>
+                            <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
                           {showDependentValidToPicker && (
                             <DateTimePicker
@@ -825,15 +991,10 @@ const FamilyContact_SaveRecord = () => {
                             />
                           )}
                           {/* Gender Dropdown */}
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              color: '#000',
-                              marginBottom: 4,
-                              marginTop: 8,
-                            }}>
-                            Gender
-                          </Text>
+                
+                    <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.genderlbl || 'Gender'}
+                 </Text>
                           <Dropdown
                             style={styles.LReqSR_Input}
                             data={[
@@ -868,19 +1029,20 @@ const FamilyContact_SaveRecord = () => {
                           />
 
                           {/* Birth Date */}
-                          <Text
-                            style={{
-                              fontSize: 16,
-                              color: '#000',
-                              marginTop: 12,
-                              marginBottom: 4,
-                            }}>
-                            Birth Date
-                          </Text>
+                         
+
+                   <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.birthDatelbl || 'Birth Date'}
+                 </Text>
                           <TouchableOpacity
                             style={[
                               styles.LReqSR_Input,
-                              {justifyContent: 'center'},
+                              {
+                                flexDirection: 'row', // Makes children align horizontally
+                                alignItems: 'center', // Centers items vertically
+                                justifyContent: 'space-between', // Pushes items to edges
+                                paddingHorizontal: 12,
+                              },
                             ]}
                             onPress={() => setShowDatePicker(true)}>
                             <Text
@@ -890,8 +1052,9 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.BirthDate
                                 ? formatDisplayDate(formData.BirthDate)
-                                : 'Select Birth Date'}
+                                : formatDisplayDate(new Date().toISOString())}
                             </Text>
+                            <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
 
                           {showDatePicker && (
@@ -912,15 +1075,11 @@ const FamilyContact_SaveRecord = () => {
 
                           {/* Full-time Student */}
                           <View style={{marginTop: 12}}>
-                            <Text
-                              style={{
-                                fontSize: 16,
-                                color: '#000',
-                                marginBottom: 8,
-                                fontWeight: '500',
-                              }}>
-                              Full-time Student
-                            </Text>
+                            
+
+                        <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.isFullTimeStudentlbl || 'Full-time Student'}
+                 </Text>
                             <View style={{alignSelf: 'flex-start'}}>
                               <Switch
                                 value={formData.IsFullTimeStudent}
@@ -939,15 +1098,11 @@ const FamilyContact_SaveRecord = () => {
 
                           {/* Person with Disabilities */}
                           <View style={{marginTop: 12}}>
-                            <Text
-                              style={{
-                                fontSize: 16,
-                                color: '#000',
-                                marginBottom: 8,
-                                fontWeight: '500',
-                              }}>
-                              Person with Disabilities
-                            </Text>
+                          
+
+                         <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.isPersonWithDisabilitieslbl || 'Person with Disabilities'}
+                 </Text>
                             <View style={{alignSelf: 'flex-start'}}>
                               <Switch
                                 value={formData.IsPersonWithDisabilities}
