@@ -110,14 +110,35 @@ const FamilyContacts_ListPageScreen = () => {
     },
 
     fields: [
-      {key: 'Name', label:familycontactsdata[0]?.firstNamelbl || 'First Name', type: 'text'},
-      {key: 'RelationShipTypeId',label:familycontactsdata[0]?.RelationShipTypeIdlbl || 'Relationship', type: 'text'},
+      {
+        key: 'Name',
+        label: familycontactsdata[0]?.firstNamelbl || 'First Name',
+        type: 'text',
+      },
+      {
+        key: 'RelationShipTypeId',
+        label: familycontactsdata[0]?.RelationShipTypeIdlbl || 'Relationship',
+        type: 'text',
+      },
     ],
 
     expandableFields: [
-      {key: 'EmergencyContact', label:familycontactsdata[0]?.EmergencyContactlbl || 'Emergency contact', type: 'boolean'},
-      {key: 'isDependent', label:familycontactsdata[0]?.isDependentlbl || 'Dependent', type: 'boolean'},
-      {key: 'isBeneficiary', label:familycontactsdata[0]?.isBeneficiarylbl || 'Beneficiary', type: 'boolean'},
+      {
+        key: 'EmergencyContact',
+        label:
+          familycontactsdata[0]?.EmergencyContactlbl || 'Emergency contact',
+        type: 'boolean',
+      },
+      {
+        key: 'isDependent',
+        label: familycontactsdata[0]?.isDependentlbl || 'Dependent',
+        type: 'boolean',
+      },
+      {
+        key: 'isBeneficiary',
+        label: familycontactsdata[0]?.isBeneficiarylbl || 'Beneficiary',
+        type: 'boolean',
+      },
     ],
   };
 

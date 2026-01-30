@@ -43,19 +43,12 @@ const DisplayPersonalInfo = () => {
     },
 
     {
-      id: 'Personal contacts',
+      id: 'personalContacts',
       icon: 'layers',
-      title: t('Personal Contacts'),
-      subtitle: t('Manage your personal contacts.'),
+      title: t('personalInfo.personalContacts'),
+      subtitle: t('personalInfo.personalContactsSubtitle'),
       screen: 'FamilyContact_ListPage',
     },
-    // {
-    //   id: 'personalContacts',
-    //   icon: 'users',
-    //   title: t('personalInfo.personalContacts'),
-    //   subtitle: t('personalInfo.personalContactsSubtitle'),
-    //   screen: '',
-    // },
     {
       id: 'identification',
       icon: 'user-check',
