@@ -173,8 +173,8 @@ const ContactDetailsListPage = () => {
     },
     fields: [
       // {key: 'Type', label: 'Type', type: 'text'},
-      {key: 'IsPrimary', label: 'Primary Contact', type: 'text'},
-      {key: 'Locator', label: 'Address', type: 'text'},
+      {key: 'IsPrimary', label:contactsData[0]?.IsPrimarylbl || 'Primary Contact', type: 'text'},
+      {key: 'Locator', label:contactsData[0]?.Locatorlbl || 'Address', type: 'text'},
     ],
   };
 

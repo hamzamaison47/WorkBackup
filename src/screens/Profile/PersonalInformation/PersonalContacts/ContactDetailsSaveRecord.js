@@ -21,7 +21,6 @@ import {
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
-import Icon from 'react-native-vector-icons/FontAwesome';
 
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -30,6 +29,7 @@ import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons'
 
 import {CreateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/CreateContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
+import {getContactDetailsLabels} from '../../../../API/PersonalInformation/ContactDetails/GetContactDetailsLabel';
 
 /* --------------  STYLE SHEET  -------------- */
 import {StyleSheet} from 'react-native';
@@ -109,6 +109,8 @@ const ContactDetailsSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [contactDetailsLabels, setContactDetailsLabels] = useState({});
+
 
   /* -------  STATIC DROPDOWN DATA  ------- */
   const contactTypeOptions = [
@@ -124,6 +126,46 @@ const ContactDetailsSaveRecord = () => {
     {label: 'Work number', value: 'Work number'},
     {label: 'Mobile number', value: 'Mobile number'},
   ];
+
+
+  const fetchgetContactDetailsLabels = async () => {
+        try {
+          const labels = await getContactDetailsLabels();
+          return labels || {};
+          
+        } catch (error) {
+          console.error('Error fetching Contact Details labels:', error);
+          return {};
+        }
+      };
+      useFocusEffect(
+  useCallback(() => {
+    let isActive = true;
+
+    const initializeLabels = async () => {
+      try {
+        setIsLoading(true);
+
+        // 🔹 Fetch Contact Details Labels
+        const labels = await fetchgetContactDetailsLabels();
+        if (!isActive) return;
+
+        setContactDetailsLabels(labels);
+        console.log('Contact Details Labels:', labels);
+      } catch (error) {
+        console.error('Error loading Contact Details labels:', error);
+      } finally {
+        if (isActive) setIsLoading(false);
+      }
+    };
+
+    initializeLabels();
+
+    return () => {
+      isActive = false;
+    };
+  }, []),
+);
 
   /* -------  NAVIGATION  ------- */
   const goBack = useCallback(() => {

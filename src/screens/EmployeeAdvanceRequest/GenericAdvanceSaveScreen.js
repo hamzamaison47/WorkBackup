@@ -36,12 +36,14 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
 import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
 import {GetEmployeeLookup} from '../../API/EmployeeAdvanceRequest/GetEmployeeLookup';
+import {GetEmployeeAdvanceLabels} from '../../API/EmployeeAdvanceRequest/GetEmployeeAdvanceLabels';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
 
+  const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
@@ -79,9 +81,25 @@ const GenericAdvanceSaveScreen = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [dataInitialized, setDataInitialized] = useState(false);
+  const [EmployeeAdvanceLabelsData, setEmployeeAdvanceLabelsData] = useState({});
 
   // Enhanced validation error states
   const [validationErrors, setValidationErrors] = useState({});
+
+  const fetchEmployeeAdvanceLabels = async () => {
+      setIsLoading(true);
+      try {
+        const labels = await GetEmployeeAdvanceLabels();
+        setEmployeeAdvanceLabelsData(labels || {});
+      } catch (error) {
+        console.error('Error fetching Employee Advance labels:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+   
+    
 
   // Create initial form data function with enhanced validation
   const createInitialFormData = useCallback(() => {
@@ -212,6 +230,61 @@ const GenericAdvanceSaveScreen = () => {
       }
     }, []),
   );
+
+  useFocusEffect(
+  useCallback(() => {
+    let isActive = true;
+
+    const initializeForm = async () => {
+      setIsLoading(true);
+
+      try {
+        // 🔹 Fetch labels
+        await fetchEmployeeAdvanceLabels();
+        if (!isActive) return;
+
+        // 🔹 CREATE MODE
+        if (mode === 'create') {
+          setFormData(createInitialFormData());
+          setSelectedAdvanceTypeData(null);
+          setValidationErrors({});
+        }
+
+        // 🔹 EDIT MODE
+        if (mode === 'edit' && advanceData?.RecId) {
+          setFormData({
+            ...createInitialFormData(),
+            ...advanceData,
+            employeeId: advanceData.employeeId || employeeId,
+            employeeName: advanceData.employeeName || employeeName,
+            WorkerRecId: advanceData.WorkerRecId || WorkerRecId,
+            AdvanceAmount: formatNumber(advanceData.AdvanceAmount || ''),
+            RequestedInstallmentAmount: formatNumber(
+              advanceData.RequestedInstallmentAmount || '',
+            ),
+            RequestedInstallments:
+              advanceData.RequestedInstallments?.toString() || '',
+          });
+        }
+
+        // 🔹 Load dropdowns, guarantors, pay period etc.
+        await fetchInitialData();
+      } catch (error) {
+        console.error('Initialization error:', error);
+        setAlertMessage('Failed to initialize screen. Please try again.');
+        setAlertModal(true);
+      } finally {
+        if (isActive) setIsLoading(false);
+      }
+    };
+
+    initializeForm();
+
+    return () => {
+      isActive = false;
+    };
+  }, [mode, advanceData?.RecId]),
+);
 
   // Enhanced real-time validation function
   const validateField = useCallback(
@@ -931,19 +1004,35 @@ const GenericAdvanceSaveScreen = () => {
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}>
               {/* Employee Name */}
-              <Text style={styles.LReqSR_Label}>Employee Name</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
-                {formData.employeeName}
-              </Text>
-
-              {/* Request Date */}
-              <Text style={styles.LReqSR_Label}>Request Date</Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {EmployeeAdvanceLabelsData?.EmployeeNamelbl || 'Employee Name'}
+                </Text>
+                <Text
+                style={[
+                  styles.LReqSR_Input,
+                                styles.LReqSR_Disabled,
+                                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                              ]}>
+                              {formData.employeeName}
+                            </Text>
+              
+                            {/* Request Date */}
+                            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                              {EmployeeAdvanceLabelsData?.RequestDatelbl || 'Request Date'}
+                            </Text>
+              <Text
+                style={[
+                  styles.LReqSR_Input,
+                  styles.LReqSR_Disabled,
+                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                ]}>
                 {formatDate(today)}
               </Text>
-
               {/* Advance Type Code */}
-              <Text style={styles.LReqSR_Label}>Advance Type Code *</Text>
+             
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                              {EmployeeAdvanceLabelsData?.AdvanceTypeCodelbl || 'Advance Type Code *'}
+                            </Text>
               <Dropdown
                 style={[
                   styles.LReqSR_Input,
@@ -970,7 +1059,9 @@ const GenericAdvanceSaveScreen = () => {
               />
 
               {/* Advance Amount */}
-              <Text style={styles.LReqSR_Label}>Advance Amount *</Text>
+             <Text style={styles.LReqSR_Label}>
+           {EmployeeAdvanceLabelsData?.AdvanceAmountlbl || 'Advance Amount *'}
+           </Text>
               <TextInput
                 style={[
                   styles.LReqSR_Input,
@@ -985,7 +1076,9 @@ const GenericAdvanceSaveScreen = () => {
               />
 
               {/* Payment Date */}
-              <Text style={styles.LReqSR_Label}>Payment Date *</Text>
+             <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.RequestedPaymentDatelbl || 'Payment Date *'}
+</Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
                 onPress={() => {
@@ -1005,7 +1098,10 @@ const GenericAdvanceSaveScreen = () => {
               {/* Recovery fields - only show for Loan requests */}
               {showRecoveryFields && (
                 <>
-                  <Text style={styles.LReqSR_Label}>Recovery Start Date</Text>
+          <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.RecoveryStartDatelbl || 'Recovery Start Date'}
+</Text>
+                 
                   <TouchableOpacity
                     style={styles.LReqSR_DateSelector}
                     onPress={() => {
@@ -1023,7 +1119,10 @@ const GenericAdvanceSaveScreen = () => {
                   </TouchableOpacity>
 
                   {/* Guarantor 1 */}
-                  <Text style={styles.LReqSR_Label}>Guarantor 1</Text>
+                  <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.Guarantor1lbl || 'Guarantor 1'}
+</Text>
+                 
                   <Dropdown
                     style={styles.LReqSR_Input}
                     data={guarantorsData}
@@ -1050,7 +1149,10 @@ const GenericAdvanceSaveScreen = () => {
                   />
 
                   {/* Guarantor 2 */}
-                  <Text style={styles.LReqSR_Label}>Guarantor 2</Text>
+                   <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.Guarantor2lbl || 'Guarantor 2'}
+</Text>
+                  
                   <Dropdown
                     style={styles.LReqSR_Input}
                     data={guarantorsData}
@@ -1075,8 +1177,10 @@ const GenericAdvanceSaveScreen = () => {
                     renderItem={renderGuarantorItem}
                     searchField="combinedLabel" // Add this prop for searching
                   />
-
-                  <Text style={styles.LReqSR_Label}>Recovery Amount *</Text>
+                  <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.RequestedInstallmentAmountlbl || 'Recovery Amount *'}
+</Text>
+                 
                   <TextInput
                     style={[
                       styles.LReqSR_Input,
@@ -1089,7 +1193,10 @@ const GenericAdvanceSaveScreen = () => {
                     placeholderTextColor="#888"
                     editable={!isRecoveryAmountDisabled}
                   />
-                  <Text style={styles.LReqSR_Label}>Recoveries *</Text>
+                   <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.recoverieslbl || 'Recoveries *'}
+</Text>
+                
                   <TextInput
                     style={[
                       styles.LReqSR_Input,
@@ -1106,7 +1213,11 @@ const GenericAdvanceSaveScreen = () => {
               )}
 
               {/* Description */}
-              <Text style={styles.LReqSR_Label}>{requestType} Description</Text>
+
+                <Text style={styles.LReqSR_Label}>
+  {EmployeeAdvanceLabelsData?.AdvanceDescriptionlbl || 'AdvanceDescription'}
+</Text>
+              
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
                 value={formData.AdvanceDescription}

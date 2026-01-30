@@ -283,20 +283,20 @@ const GenericAdvanceListScreen = () => {
       subtitle: {key: 'employeeName'},
     },
     fields: [
-      {key: 'AdvanceAmount', label: 'Amount', type: 'currency'},
-      {key: 'RequestedPaymentDate', label: 'Payment Date', type: 'date'},
-      {key: 'RecoveryStartDate', label: 'Recovery Start Date', type: 'text'},
-      {key: 'WFStatus', label: '', type: 'status'},
+      {key: 'AdvanceAmount', label: allAdvanceData[0]?.AdvanceAmountlbl || 'Amount', type: 'currency'},
+      {key: 'RequestedPaymentDate', label:allAdvanceData[0]?.RequestedPaymentDatelbl ||  'Payment Date', type: 'date'},
+      {key: 'RecoveryStartDate', label:allAdvanceData[0]?.RecoveryStartDatelbl || 'Recovery Start Date', type: 'text'},
+      {key: 'WFStatus', label:allAdvanceData[0]?.WFStatuslbl|| 'Workflow status', type: 'status'},
     ],
     expandableFields: [
-      {key: 'AdvanceRequestId', label: 'Request Id', type: 'text'},
-      {key: 'RequestDate', label: 'Request Date', type: 'date'},
+      {key: 'AdvanceRequestId', label:allAdvanceData[0]?.AdvanceRequestIdlbl||'Request Id', type: 'text'},
+      {key: 'RequestDate', label:allAdvanceData[0]?.RequestDatelbl|| 'Request Date', type: 'date'},
       {
         key: 'RequestedInstallmentAmount',
-        label: 'Recovery Amount',
+        label: allAdvanceData[0]?.RequestedInstallmentAmountlbl||'Recovery Amount',
         type: 'text',
       },
-      {key: 'RequestedInstallments', label: 'Recoveries', type: 'text'},
+      {key: 'RequestedInstallments', label:allAdvanceData[0]?.recoverieslbl||'Recoveries', type: 'text'},
     ],
     isRTL: isRTL,
   };
