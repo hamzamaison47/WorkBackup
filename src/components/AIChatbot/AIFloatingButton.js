@@ -16,12 +16,12 @@ const AIFloatingButton = ({onPress, scrollY}) => {
   const animation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const offset = 280; // Start expanding after this scroll position
-    const expansionDistance = 80; // Distance over which it fully expands
+    const offset = 280;
+    const expansionDistance = 80;
 
     const listener = scrollY.addListener(({value}) => {
       if (value <= offset) {
-        animation.setValue(0); // Compact
+        animation.setValue(0);
       } else {
         const progress = (value - offset) / expansionDistance;
         const animatedValue = Math.min(Math.max(progress, 0), 1);
@@ -34,30 +34,29 @@ const AIFloatingButton = ({onPress, scrollY}) => {
     };
   }, [scrollY]);
 
-  // Dimensions
   const compactWidth = 56;
   const wideWidth = SCREEN_WIDTH - 32;
 
-  // Animate layout properties (requires JS thread)
-  const width = animation.interpolate({
+  // Use interpolation but don't apply to style directly
+  const animatedWidth = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [compactWidth, wideWidth],
     extrapolate: 'clamp',
   });
 
-  const height = animation.interpolate({
+  const animatedHeight = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [56, 64],
     extrapolate: 'clamp',
   });
 
-  const right = animation.interpolate({
+  const animatedRight = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [16, (SCREEN_WIDTH - wideWidth) / 2],
     extrapolate: 'clamp',
   });
 
-  const borderRadius = animation.interpolate({
+  const animatedBorderRadius = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [28, 16],
     extrapolate: 'clamp',
@@ -71,13 +70,13 @@ const AIFloatingButton = ({onPress, scrollY}) => {
 
   const textWidth = animation.interpolate({
     inputRange: [0, 0.5],
-    outputRange: [0, 130], // Width for text container
+    outputRange: [0, 130],
     extrapolate: 'clamp',
   });
 
   const textMarginLeft = animation.interpolate({
     inputRange: [0, 0.5],
-    outputRange: [0, 8], // Margin appears as text appears
+    outputRange: [0, 8],
     extrapolate: 'clamp',
   });
 
@@ -88,16 +87,16 @@ const AIFloatingButton = ({onPress, scrollY}) => {
         {
           position: 'absolute',
           bottom: 24,
-          right,
-          width,
-          height,
-          borderRadius,
+          right: animatedRight,
+          width: animatedWidth,
+          height: animatedHeight,
+          borderRadius: animatedBorderRadius,
         },
       ]}>
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
-        style={[styles.button, {borderRadius}]}>
+        style={styles.button}>
         <Icon name="robot-excited" size={24} color="#fff" />
 
         <Animated.View
@@ -132,7 +131,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0066ff',
+    backgroundColor: 'transparent',
   },
   text: {
     color: '#fff',

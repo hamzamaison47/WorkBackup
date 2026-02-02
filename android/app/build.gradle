@@ -38,7 +38,6 @@ android {
         
         manifestPlaceholders = [
             appAuthRedirectScheme: 'com.authentication.callback',
-            appAuthRedirectScheme: 'authentication'
         ]
         
         missingDimensionStrategy 'react-native-camera', 'general'
