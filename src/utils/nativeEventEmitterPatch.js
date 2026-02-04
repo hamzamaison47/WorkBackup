@@ -6,9 +6,7 @@ const ensureRemoveListeners = moduleName => {
   const mod = NativeModules[moduleName];
   if (mod && !mod.removeListeners) {
     mod.removeListeners =
-      mod.removeAllListeners ||
-      mod.removeAllSubscriptions ||
-      (() => {});
+      mod.removeAllListeners || mod.removeAllSubscriptions || (() => {});
   }
 };
 
