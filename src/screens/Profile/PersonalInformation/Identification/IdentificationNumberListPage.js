@@ -147,8 +147,16 @@ const IdentificationNumberListPage = () => {
       subtitle: {key: 'IdentificationNumber'},
     },
     fields: [
-      {key: 'IssuedDate', label:identificationsData[0]?.IssuedDatelbl ||  'Issued Date', type: 'date'},
-      {key: 'ExpirationDate', label:identificationsData[0]?.ExpirationDatelbl || 'Expiration Date', type: 'date'},
+      {
+        key: 'IssuedDate',
+        label: identificationsData[0]?.IssuedDatelbl || 'Issued Date',
+        type: 'date',
+      },
+      {
+        key: 'ExpirationDate',
+        label: identificationsData[0]?.ExpirationDatelbl || 'Expiration Date',
+        type: 'date',
+      },
       //   {key: 'IssuingCountry', label: 'Issuing Agency', type: 'text'},
       {key: 'ApprovalStatus', label: '', type: 'status'},
     ],
@@ -436,7 +444,7 @@ const IdentificationNumberListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Employee Identifications"
+      pageTitle="My Identification Numebrs"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={workflowEnabled}
