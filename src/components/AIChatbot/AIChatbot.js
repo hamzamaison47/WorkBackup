@@ -590,7 +590,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
       <View style={[styles.AIChat_bubble, styles.AIChat_typingBubble]}>
         <View style={styles.AIChat_typingContainer}>
           <ActivityIndicator size="small" color="#0A66C2" />
-          <Text style={styles.AIChat_typingText}>AI is thinking...</Text>
+          <Text style={styles.AIChat_typingText}>Dynaface is typing...</Text>
         </View>
       </View>
     </View>
@@ -787,7 +787,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
                         isRecording
                           ? 'Listening...'
                           : isTyping
-                          ? 'AI is thinking...'
+                          ? 'Dynaface is typing...'
                           : 'Type a message...'
                       }
                       placeholderTextColor="#8E9AAF"
