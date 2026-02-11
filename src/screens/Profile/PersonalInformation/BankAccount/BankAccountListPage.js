@@ -197,21 +197,49 @@ const BankAccountListPage = () => {
   // Card Configuration
   const cardConfig = {
     headerConfig: {
-      title: {key:  'AccountId'},
+      title: {key: 'AccountId'},
     },
 
     fields: [
-      {key: 'Name', label:banksaccountdata[0]?.Namelbl ||  'Account Name', type: 'text'},
-      {key: 'AccountNum', label:banksaccountdata[0]?.AccountNumlbl || 'Account Number', type: 'text'},
-      {key: 'AccountHolder', label:banksaccountdata[0]?.AccountHolderlbl || 'Account Holder', type: 'text'},
+      {
+        key: 'Name',
+        label: banksaccountdata[0]?.Namelbl || 'Account Name',
+        type: 'text',
+      },
+      {
+        key: 'AccountNum',
+        label: banksaccountdata[0]?.AccountNumlbl || 'Account Number',
+        type: 'text',
+      },
+      {
+        key: 'AccountHolder',
+        label: banksaccountdata[0]?.AccountHolderlbl || 'Account Holder',
+        type: 'text',
+      },
       {key: 'WFStatus', label: '', type: 'status'},
     ],
 
     expandableFields: [
-      {key: 'AccountId', label:banksaccountdata[0]?.AccountIdlbl || 'Account Id',  type: 'text'},
-      {key: 'BankIBAN', label:banksaccountdata[0]?.BankIBANlbl || 'IBAN', type: 'text'},
-      {key: 'BranchNumber', label:banksaccountdata[0]?.BranchNumberlbl||'Branch Number', type: 'text'},
-      {key: 'BranchName', label:banksaccountdata[0]?.BranchNamelbl|| 'Branch Name', type: 'text'},
+      {
+        key: 'AccountId',
+        label: banksaccountdata[0]?.AccountIdlbl || 'Account Id',
+        type: 'text',
+      },
+      {
+        key: 'BankIBAN',
+        label: banksaccountdata[0]?.BankIBANlbl || 'IBAN',
+        type: 'text',
+      },
+      {
+        key: 'BranchNumber',
+        label: banksaccountdata[0]?.BranchNumberlbl || 'Branch Number',
+        type: 'text',
+      },
+      {
+        key: 'BranchName',
+        label: banksaccountdata[0]?.BranchNamelbl || 'Branch Name',
+        type: 'text',
+      },
       // {key: 'CreatedBy', label: 'Created By', type: 'text'},
     ],
   };

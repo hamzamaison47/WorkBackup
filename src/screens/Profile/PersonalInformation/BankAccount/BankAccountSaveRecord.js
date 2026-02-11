@@ -35,7 +35,6 @@ import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons'
 import styles from '../../../../styles/styles';
 import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
 
-
 const BankAccountSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
@@ -188,66 +187,63 @@ const BankAccountSaveRecord = () => {
   //     bankaccountdata,
   //   ]),
   // );
-   const fetchGetBankAccountLabel = async () => {
-  try {
-    const labels = await GetBankAccountLabels();
-    console.log('Labels fetched:', labels);
-    return labels; // ✅ IMPORTANT
-  } catch (error) {
-    console.error('Error fetching Bank Account labels:', error);
-    return {};
-  }
-};
+  const fetchGetBankAccountLabel = async () => {
+    try {
+      const labels = await GetBankAccountLabels();
+      console.log('Labels fetched:', labels);
+      return labels; // ✅ IMPORTANT
+    } catch (error) {
+      console.error('Error fetching Bank Account labels:', error);
+      return {};
+    }
+  };
 
- useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    const initializeForm = async () => {
-      setIsLoading(true);
+      const initializeForm = async () => {
+        setIsLoading(true);
 
-      try {
-        // 🔹 Fetch labels FIRST
-        const labels = await fetchGetBankAccountLabel();
-        if (!isActive) return;
+        try {
+          // 🔹 Fetch labels FIRST
+          const labels = await fetchGetBankAccountLabel();
+          if (!isActive) return;
 
-        setBankAccountLabelsData(labels || {});
+          setBankAccountLabelsData(labels || {});
 
-        // 🔹 CREATE MODE
-        if (mode === 'create') {
-          setFormData(createInitialFormData());
-          setAlertMessage('');
+          // 🔹 CREATE MODE
+          if (mode === 'create') {
+            setFormData(createInitialFormData());
+            setAlertMessage('');
+          }
+
+          // 🔹 EDIT MODE
+          else if (mode === 'edit' && bankaccountdata?.recId) {
+            setFormData({
+              ...createInitialFormData(),
+              ...bankaccountdata,
+              employeeId: bankaccountdata.employeeId || employeeId,
+              employeeName: bankaccountdata.employeeName || employeeName,
+              WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing Bank Account form:', error);
+          setAlertMessage('Failed to load bank account screen');
+          setAlertModal(true);
+        } finally {
+          if (isActive) setIsLoading(false);
         }
+      };
 
-        // 🔹 EDIT MODE
-        else if (mode === 'edit' && bankaccountdata?.recId) {
-          setFormData({
-            ...createInitialFormData(),
-            ...bankaccountdata,
-            employeeId: bankaccountdata.employeeId || employeeId,
-            employeeName: bankaccountdata.employeeName || employeeName,
-            WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
-          });
-        }
-      } catch (error) {
-        console.error('Error initializing Bank Account form:', error);
-        setAlertMessage('Failed to load bank account screen');
-        setAlertModal(true);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
+      initializeForm();
 
-    initializeForm();
-
-    return () => {
-      isActive = false;
-    };
-  }, [mode, bankaccountdata?.recId, employeeId, employeeName, WorkerRecId]),
-);
-
-
-
+      return () => {
+        isActive = false;
+      };
+    }, [mode, bankaccountdata?.recId, employeeId, employeeName, WorkerRecId]),
+  );
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -283,8 +279,6 @@ const BankAccountSaveRecord = () => {
     }
     return true;
   };
- 
-
 
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -457,23 +451,21 @@ const BankAccountSaveRecord = () => {
               nestedScrollEnabled={true}>
               {/* <Text style={styles.LReqSR_Label}>Account identification *</Text>
               <TextInput */}
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
-                </Text>
-                <Text
+              </Text>
+              <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountId}
                 onChangeText={text => handleInputChange('AccountId', text)}
-                // editable={mode === 'create'}
                 placeholder="Enter Account ID"
                 placeholderTextColor="#888"
                 maxLength={10}
               />
 
-            
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.Namelbl || 'Name'}
-                </Text>
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.Name}
@@ -483,10 +475,9 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-             
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
-                </Text>
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountNum}
@@ -497,10 +488,9 @@ const BankAccountSaveRecord = () => {
                 keyboardType="numeric"
               />
 
-            
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BankIBANlbl || 'IBAN*'}
-                </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BankIBANlbl || 'IBAN'}
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.BankIBAN}
@@ -510,10 +500,9 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-             
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
-                </Text>
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.BranchNumber}
@@ -523,10 +512,9 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-             
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
-                </Text>
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.BranchName}
@@ -536,10 +524,9 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              
               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
-                </Text>
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.AccountHolder}

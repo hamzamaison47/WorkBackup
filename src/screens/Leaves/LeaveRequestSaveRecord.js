@@ -807,7 +807,7 @@ const LeaveRequestSaveRecord = () => {
               </Text>
 
               {/* Leave Category Label */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveCategoryLabel || 'Leave Category'}
               </Text>
               <Dropdown
@@ -867,7 +867,7 @@ const LeaveRequestSaveRecord = () => {
                 maxHeight={280}
                 dropdownPosition="auto"
                 inverted={isRTL}
-              />
+              /> */}
 
               {/* Leave Code */}
               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>

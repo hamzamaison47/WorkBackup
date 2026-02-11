@@ -1382,16 +1382,15 @@ const FamilyContact_SaveRecord = () => {
             setFormData(createInitialFormData());
             setAlertMessage('');
           } else if (mode === 'edit' && familyContactDataSet?.RecId) {
+            console.log('Edit Data :', familyContactDataSet);
             const fullName = familyContactDataSet.Name || '';
-            const nameParts = fullName.trim().split(' ');
-            const firstName = nameParts[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
 
             setFormData(prev => ({
               ...prev,
               recId: familyContactDataSet.RecId,
-              firstName,
-              lastName,
+              firstName: familyContactDataSet.FirstName,
+              middleName: familyContactDataSet.MiddleName,
+              lastName: familyContactDataSet.LastName,
               relationship: familyContactDataSet.RelationShipTypeId || '',
               EmergencyContact: toBoolean(
                 familyContactDataSet.EmergencyContact,
@@ -1544,6 +1543,9 @@ const FamilyContact_SaveRecord = () => {
     try {
       const contract = {
         RecId: Number(data.recId || 0),
+        FirstName: data.firstName,
+        MiddleName: data.middleName,
+        LastName: data.lastName,
         Name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
         EmployeeId: data.employeeId || '',
         RelationShipTypeId: data.relationship || '',
@@ -1699,7 +1701,16 @@ const FamilyContact_SaveRecord = () => {
                 placeholder="Enter First Name"
                 placeholderTextColor="#888"
               />
-
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.middleNamelbl || 'Middle Name'}
+              </Text>
+              <TextInput
+                style={styles.LReqSR_Input}
+                value={formData.middleName}
+                onChangeText={t => handleInputChange('middleName', t)}
+                placeholder="Enter Middle Name"
+                placeholderTextColor="#888"
+              />
               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {PersonalContactsLabelData?.lastNamelbl || 'Last Name '}
               </Text>

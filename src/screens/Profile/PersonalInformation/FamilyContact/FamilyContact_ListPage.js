@@ -59,7 +59,7 @@ const FamilyContacts_ListPageScreen = () => {
         employeeId: effectiveEmployeeId, // ✅
       });
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
-
+      console.log(familycontactsdata);
       setfamilycontactsdata(FamilyContactData);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
@@ -184,7 +184,6 @@ const FamilyContacts_ListPageScreen = () => {
     switch (buttonType) {
       case 'edit':
         handleEditPress(itemData);
-        console.log('This is the EDit data', itemData);
         break;
       case 'delete':
         handleDeletePress(itemData);
@@ -209,6 +208,9 @@ const FamilyContacts_ListPageScreen = () => {
         employeeName: itemData.employeeName || effectiveEmployeeName,
         WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
         Name: itemData.Name, // ← Pass the full name
+        FirstName: itemData.FirstName,
+        MiddleName: itemData.MiddleName,
+        LastName: itemData.LastName,
         RelationShipTypeId: itemData.RelationShipTypeId, // ← Fixed spelling
         EmergencyContact: itemData.EmergencyContact,
         isBeneficiary: itemData.isBeneficiary,
@@ -398,7 +400,7 @@ const FamilyContacts_ListPageScreen = () => {
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
-        text="Are you sure you want to delete this request?"
+        text="Are you sure you want to delete this record?"
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

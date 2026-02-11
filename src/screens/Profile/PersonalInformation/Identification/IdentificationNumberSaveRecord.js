@@ -70,7 +70,9 @@ const IdentificationNumberSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState({});
+  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
+    {},
+  );
   const createInitialFormData = () => ({
     recId:
       !identityData.recId || identityData.recId === '0'
@@ -178,84 +180,76 @@ const IdentificationNumberSaveRecord = () => {
   //     }
   //   }, [mode, identityData?.RecId, employeeId, employeeName, WorkerRecId]),
   // );
- const fetchPersonalContactsLabels = async () => {
+  const fetchPersonalContactsLabels = async () => {
     try {
       const labels = await getpersonalContactsLabels();
       return labels || {};
-      
     } catch (error) {
       console.error('Error fetching Personal Contacts labels:', error);
       return {};
     }
   };
   useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+    useCallback(() => {
+      let isActive = true;
 
-    const initializeForm = async () => {
-      setIsLoading(true);
+      const initializeForm = async () => {
+        setIsLoading(true);
 
-      try {
-        // 🔹 Fetch labels FIRST
-        const labels = await fetchPersonalContactsLabels();
-        if (!isActive) return;
-        setPersonalContactsLabelsData(labels || {});
+        try {
+          // 🔹 Fetch labels FIRST
+          const labels = await fetchPersonalContactsLabels();
+          if (!isActive) return;
+          setPersonalContactsLabelsData(labels || {});
 
-        console.log("ashan",setPersonalContactsLabelsData);
+          console.log('ashan', setPersonalContactsLabelsData);
 
-        // 🔹 Fetch Identification Types
-        const identResponse = await FindIdentificationTypeRequest();
-        if (!isActive) return;
+          // 🔹 Fetch Identification Types
+          const identResponse = await FindIdentificationTypeRequest();
+          if (!isActive) return;
 
-        if (identResponse && Array.isArray(identResponse)) {
-          setIdentTypes(
-            identResponse.map(item => ({
-              label: item.IdentificationTypeId,
-              value: item.RecId,
-            })),
-          );
+          if (identResponse && Array.isArray(identResponse)) {
+            setIdentTypes(
+              identResponse.map(item => ({
+                label: item.IdentificationTypeId,
+                value: item.RecId,
+              })),
+            );
+          }
+
+          // 🔹 CREATE MODE
+          if (mode === 'create') {
+            setFormData(createInitialFormData());
+            setAlertMessage('');
+          }
+
+          // 🔹 EDIT MODE
+          else if (mode === 'edit' && identityData?.recId) {
+            setFormData({
+              ...createInitialFormData(),
+              ...identityData,
+              employeeId: identityData.employeeId || employeeId,
+              employeeName: identityData.employeeName || employeeName,
+              WorkerRecId: identityData.WorkerRecId || WorkerRecId,
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing Identification form:', error);
+          setAlertMessage('Failed to load identification screen');
+          setAlertModal(true);
+        } finally {
+          if (isActive) setIsLoading(false);
         }
+      };
 
-        // 🔹 CREATE MODE
-        if (mode === 'create') {
-          setFormData(createInitialFormData());
-          setAlertMessage('');
-        }
+      initializeForm();
 
-        // 🔹 EDIT MODE
-        else if (mode === 'edit' && identityData?.recId) {
-          setFormData({
-            ...createInitialFormData(),
-            ...identityData,
-            employeeId: identityData.employeeId || employeeId,
-            employeeName: identityData.employeeName || employeeName,
-            WorkerRecId: identityData.WorkerRecId || WorkerRecId,
-          });
-        }
-      } catch (error) {
-        console.error('Error initializing Identification form:', error);
-        setAlertMessage('Failed to load identification screen');
-        setAlertModal(true);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
-
-    initializeForm();
-
-    // ✅ Proper cleanup (VERY IMPORTANT)
-    return () => {
-      isActive = false;
-    };
-  }, [
-    mode,
-    identityData?.recId,
-    employeeId,
-    employeeName,
-    WorkerRecId,
-  ]),
-);
-
+      // ✅ Proper cleanup (VERY IMPORTANT)
+      return () => {
+        isActive = false;
+      };
+    }, [mode, identityData?.recId, employeeId, employeeName, WorkerRecId]),
+  );
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -317,7 +311,6 @@ const IdentificationNumberSaveRecord = () => {
       }));
   };
 
-
   const validateFields = () => {
     const missing = [];
     if (!formData.employeeId) missing.push('Employee Id');
@@ -332,12 +325,10 @@ const IdentificationNumberSaveRecord = () => {
     }
     return true;
   };
-   
 
   // 🔧 Centralized Save/Update/Submit logic
   const handleAction = async (actionType, modalMode, data) => {
     try {
-      console.log('Handle Action Data : ', data);
       const contract = {
         RecId: data.recId || '',
         Description: data.Description || null,
@@ -355,26 +346,39 @@ const IdentificationNumberSaveRecord = () => {
         WorkflowOperation: data.WorkflowOperation,
       };
 
-      let response;
+      let response, submitResult;
 
       if (modalMode === 'create') {
         response = await CreateIdentityRequest({identityData: contract});
         if (actionType === 'submit' && response?.RecId) {
-          await SubmitIdentificationRequest({recId: response.RecId});
+          submitResult = await SubmitIdentificationRequest({
+            recId: response.RecId,
+          });
         }
       } else if (modalMode === 'update') {
         response = await UpdateIdentityRequest({identityData: contract});
-        if (actionType === 'submit' && contract.RecId) {
-          await SubmitIdentificationRequest({recId: contract.RecId});
+        if (actionType === 'submit' && response.IsSuccess) {
+          submitResult = await SubmitIdentificationRequest({
+            recId: contract.RecId,
+          });
         }
       }
 
       if (response) {
         const textAction = modalMode === 'create' ? 'Created' : 'Updated';
-        const textSubmit = actionType === 'submit' ? ' and Submitted' : '';
-        setAlertMessage(
-          `${contract.IdentificationNumber} is ${textAction}${textSubmit} Successfully`,
-        );
+        let textSubmit;
+        if (submitResult.IsSuccess === 'true') {
+          textSubmit = actionType === 'submit' ? ' and Submitted' : '';
+          setAlertMessage(
+            `${contract.IdentificationTypeId} is ${textAction}${textSubmit} Successfully`,
+          );
+        } else if (submitResult.IsSuccess === 'false') {
+          textSubmit = actionType === 'submit' ? ' but not Submitted' : '';
+          setAlertMessage(
+            `${contract.IdentificationTypeId} is ${textAction}${textSubmit}`,
+          );
+        }
+
         setAlertModal(true);
         return {success: true, recId: response.RecId || contract.RecId};
       } else {
@@ -461,26 +465,25 @@ const IdentificationNumberSaveRecord = () => {
               ref={scrollViewRef}
               contentContainerStyle={styles.LReqSR_FormContainer}
               showsVerticalScrollIndicator={false}>
-               
-           <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                     {PersonalContactsLabelData?.employeeNamelbl || 'Employee Name'}
-                   </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.employeeNamelbl || 'Employee Name'}
+              </Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formData.employeeName}
               </Text>
 
-              
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.IdentificationTypelbl || 'Request Date'}
-                              </Text>
+              {/*<Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IdentificationTypelbl ||
+                  'Request Date'}
+              </Text>
               <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
                 {formatDate(today)}
-              </Text>
+              </Text>*/}
 
-             
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                        {PersonalContactsLabelData?.IdentificationTypelbl || 'Identification Type *'}
-                        </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IdentificationTypelbl ||
+                  'Identification Type *'}
+              </Text>
               <Dropdown
                 style={[
                   styles.LReqSR_Input,
@@ -505,10 +508,10 @@ const IdentificationNumberSaveRecord = () => {
                 itemTextStyle={styles.LReqSR_DropdownItemText}
               />
 
-             
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.IdentificationNumberlbl || 'Account Identification'}
-                              </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IdentificationNumberlbl ||
+                  'Account Identification'}
+              </Text>
               <TextInput
                 style={styles.LReqSR_Input}
                 value={formData.IdentificationNumber}
@@ -517,10 +520,9 @@ const IdentificationNumberSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-            
               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.Descriptionlbl || 'Description'}
-                              </Text>
+                {PersonalContactsLabelData?.Descriptionlbl || 'Description'}
+              </Text>
               <TextInput
                 style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
                 value={formData.Description}
@@ -565,10 +567,9 @@ const IdentificationNumberSaveRecord = () => {
                 />
               )} */}
 
-             
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date *'}
-                              </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date *'}
+              </Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
                 onPress={() => {
@@ -612,10 +613,10 @@ const IdentificationNumberSaveRecord = () => {
                 />
               )} */}
 
-             
-                 <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.ExpirationDatelbl || 'Expiration Date *'}
-                              </Text>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.ExpirationDatelbl ||
+                  'Expiration Date *'}
+              </Text>
               <TouchableOpacity
                 style={styles.LReqSR_DateSelector}
                 onPress={() => {

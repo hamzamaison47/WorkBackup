@@ -142,7 +142,8 @@ const WorkItemsAssignedToMePage = () => {
         recId: [item.recId],
         action: 'Approve',
       });
-      if (response?.success) {
+      console.log('Response: ', response);
+      if (response?.IsSuccess) {
         setAlertMessage(`Approved ${item.document}`);
         setHighlightedRecId(item.correlationId);
         setTimeout(() => setHighlightedRecId(null), 3000);
@@ -167,9 +168,9 @@ const WorkItemsAssignedToMePage = () => {
       // });
       const response = await WorkflowItemAction({
         recId: [item.recId],
-        action: 'Approve',
+        action: 'Reject',
       });
-      if (response?.success) {
+      if (response?.IsSuccess) {
         setAlertMessage(`Rejected ${item.document}`);
         setHighlightedRecId(item.correlationId);
         setTimeout(() => setHighlightedRecId(null), 3000);

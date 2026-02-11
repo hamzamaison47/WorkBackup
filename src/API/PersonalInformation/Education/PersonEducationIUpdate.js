@@ -9,7 +9,7 @@ import {getActiveConfigData} from '../../../Controller/secureConfig';
 const UpdateEducationDetails = async ({educationData}) => {
   try {
     const config = await getActiveConfigData();
-
+    console.log('EducationData: ', educationData);
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
     }
