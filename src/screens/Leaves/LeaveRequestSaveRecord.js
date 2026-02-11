@@ -619,62 +619,51 @@ const LeaveRequestSaveRecord = () => {
         return false;
       }
 
-      let response;
-      if (modalMode === 'create') {
-        response = await createLeaveRequest({
-          leaveData: leavesData,
-        });
-        if (actionType === 'submit') {
-          await SubmitLeaveRequest({
-            recId: response.RecId,
-          });
-        }
-      } else {
-        response = await UpdateLeaveRequest({
-          leaveData: leavesData,
-        });
-        if (actionType === 'submit') {
-          await SubmitLeaveRequest({
-            recId: response.RecId,
-          });
-        }
-      }
+       let response, submitResult;
 
-      const isSuccess =
-        response.IsSuccess === true || response.IsSuccess === 'true';
-
-      if (isSuccess) {
-        // const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-        // const submitText = actionType === 'submit' ? ' and Submitted' : '';
-        // setAlertMessage(
-        //   `${data.leaveCode} is ${actionText}${submitText} Successfully`,
-        // );
-        const actionText =
-          modalMode === 'create' ? t('common.create') : t('common.update');
-        const submitText =
-          actionType === 'submit'
-            ? ` ${t('leaveSaveRecord.andSubmitted')}`
-            : '';
-        setAlertMessage(
-          `${data.leaveCode} ${actionText}${submitText} ${t(
-            'leaveSaveRecord.successfully',
-          )}`,
-        );
-        setAlertModal(true);
-        return {success: true, recId: response.RecId};
-      } else {
-        const errorMessage =
-          response.Message || t('leaveSaveRecord.operationFailed');
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
-        return {success: false, message: errorMessage};
-      }
-    } catch (error) {
-      console.error('Error in handleAction:', error);
-      setAlertMessage(t('leaveSaveRecord.processingError'));
-      setAlertModal(true);
-      return {success: false, message: 'Network or server error'};
+  if (modalMode === 'create') {
+   
+    response = await createLeaveRequest({ leaveData: leavesData });
+          if (actionType === 'submit' && response?.RecId) {
+      submitResult = await SubmitLeaveRequest({ recId: response.RecId });
     }
+  } else if (modalMode === 'update') {
+   
+    response = await UpdateLeaveRequest({ leaveData: leavesData });
+        if (actionType === 'submit' && response?.IsSuccess) {
+      submitResult = await SubmitLeaveRequest({ recId: leavesData.RecId });
+    }
+  }
+
+       if (response?.IsSuccess) {
+   
+    const actionText = modalMode === 'create' ? t('common.create') : t('common.update');
+    const submitText =
+      actionType === 'submit' && submitResult?.IsSuccess === 'true'
+        ? ` ${t('leaveSaveRecord.andSubmitted')}`
+        : actionType === 'submit' && submitResult?.IsSuccess === 'false'
+        ? ` ${t('leaveSaveRecord.butNotSubmitted')}`
+        : '';
+
+    setAlertMessage(
+      `${leavesData.LeaveCode} ${actionText}${submitText} ${t('leaveSaveRecord.successfully')}`
+    );
+    setAlertModal(true);
+
+    return { success: true, recId: response?.RecId };
+  } else {
+    
+    const errorMessage = response?.Message || t('leaveSaveRecord.operationFailed');
+    setAlertMessage(errorMessage);
+    setAlertModal(true);
+    return { success: false, message: errorMessage };
+  }
+} catch (error) {
+  console.error('Error in handleAction:', error);
+  setAlertMessage(t('leaveSaveRecord.processingError'));
+  setAlertModal(true);
+  return { success: false, message: 'Network or server error' };
+}
   };
 
   const handleSave = async actionType => {

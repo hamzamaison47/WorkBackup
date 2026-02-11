@@ -15,6 +15,7 @@ import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/I
 import {isWorkflowConfigured} from '../../../../API/PersonalInformation/Identification/IsIdentificationWorkflowEnabled';
 import {IdentificationFindRequest} from '../../../../API/PersonalInformation/Identification/IdentificationFindRequest';
 import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identification/DeleteIdentityRequest';
+import { canEnableEditButton } from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
 
 import IdentificationRequestCard from '../../../../components/IdentificationRequestCard';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -24,6 +25,7 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import styles from '../../../../styles/styles';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import {ScrollView} from 'react-native-gesture-handler';
+import { itemModifiedforPurchaseRequisitionLines } from '../../../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesItemModified';
 
 const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
@@ -55,6 +57,7 @@ const IdentificationNumberListPage = () => {
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [editEnabled, setEditEnabled] = useState(true);
   // Fetch Identification Data
   const fetchIdentifications = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -71,9 +74,20 @@ const IdentificationNumberListPage = () => {
           new Date(a.CreatedDateTime).getTime(),
       );
 
-      console.log('Data from aPI', data);
+     const dataWithPermissions = await Promise.all(
+        data.map(async item => {
+          let canEdit = false;
+          try {
+            canEdit = await canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
+          } catch {
+            canEdit = false;
+          }
+          return {...item, canEdit};
+        })
+      );
 
-      setIdentificationsData(data);
+      setIdentificationsData(dataWithPermissions);
+   
     } catch (error) {
       console.error('Failed to fetch identification data:', error);
       setAlertMessage('Failed to fetch identification data.');
@@ -82,6 +96,28 @@ const IdentificationNumberListPage = () => {
       setIsLoading(false);
     }
   }, [effectiveEmployeeId]);
+
+ 
+
+
+
+
+
+  // const checkEditButton = async (recId, recVersion) => {
+  //   try {
+  //     const enabled = await canEnableEditButton(recId, recVersion);
+  //     setEditButtonEnabledMap(prev => ({
+  //       ...prev,
+  //       [recId]: enabled,
+  //     }));
+  //   } catch (error) {
+  //     console.error('Failed to check Edit permission:', error);
+  //     setEditButtonEnabledMap(prev => ({
+  //       ...prev,
+  //       [recId]: false, // disable on error
+  //     }));
+  //   }
+  // };
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -334,8 +370,12 @@ const IdentificationNumberListPage = () => {
   };
 
   const getButtonConfig = item => {
+    console.log("Item Data: ",item);
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
+   // const apiEditEnabled = canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
+    // console.log("Item Number : ", item.ApprovalStatus);
+    // console.log("apiEditEnabled : ", apiEditEnabled);
     // console.log(
     //   item.ApprovalStatus +
     //     ' ' +
@@ -353,8 +393,8 @@ const IdentificationNumberListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: isHCMRecord ? false : !isDraft,
-        customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: isHCMRecord ? !item.canEdit : !isDraft,
+          customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: workflowEnabled,

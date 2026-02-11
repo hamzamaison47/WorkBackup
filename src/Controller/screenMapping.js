@@ -20,6 +20,7 @@ import ExpenseManagementHeaderSaveRecord from '../screens/ExpenseManagment/Heade
 import ExpenseManagmentLinesSaveRecord from '../screens/ExpenseManagment/Lines/ExpenseManagmentLinesSaveRecord';
 import PurchaseRequisitionLinesListPage from '../screens/PurchaseRequisitionLines/PurchaseRequisitionLinesListPage';
 import PurchaseRequisitionLinesSaveRecord from '../screens/PurchaseRequisitionLines/PurchaseRequisitionLinesSaveRecord';
+import EmployeeEOSRequestListPage from '../screens/EmployeeEOSRequest/EmployeeEOSRequest_ListPage';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -44,6 +45,7 @@ export const screenMapping = {
   ExpenseManagmentLinesSaveRecord: ExpenseManagmentLinesSaveRecord,
   PurchaseRequisitionLinesListPage: PurchaseRequisitionLinesListPage,
   PurchaseRequisitionLinesSaveRecord: PurchaseRequisitionLinesSaveRecord,
+  EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
 };
 
 // Map Images → Screen component
@@ -63,4 +65,5 @@ export const iconMapping = {
   EmploymentCertificate: require('..//assets/Certificate/certificate.png'),
   PurchaseRequisitionListPage: require('..//assets//Maindashboard/PurchaseRequisition.png'),
   ExpenseManagmentListPage: require('../assets/Maindashboard/Expense.png'),
+  EmployeeEOSRequestListPage: require('../assets/Maindashboard/EOSRequestNew.png'),
 };
