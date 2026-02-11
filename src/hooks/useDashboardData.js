@@ -1,54 +1,117 @@
 /* eslint-disable curly */
-import {useState} from 'react';
+import {useState, useCallback, useMemo, useRef, useEffect} from 'react';
 import {useSelector} from 'react-redux';
 
 import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfilePicture';
+import {apiCache} from '../utils/apiCache';
+import {selectUserData} from '../store/selectors';
 
 export const useDashboardData = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const isMountedRef = useRef(true);
 
-  // Redux
-  const userData = useSelector(state => state.user.userData);
+  // Use memoized selector to prevent unnecessary re-renders
+  const userData = useSelector(selectUserData);
 
-  const fetchProfilePicture = async employeeId => {
-    setIsLoading(true);
-    setRefreshing(true);
+  // Memoize the employee ID to prevent unnecessary function calls
+  const employeeId = useMemo(
+    () => userData?.employeeId,
+    [userData?.employeeId],
+  );
+
+  const fetchProfilePicture = useCallback(async empId => {
+    if (!empId) return;
+
+    // Check cache first (15 minute TTL for profile pictures)
+    const cacheKey = `profilePicture:${empId}`;
+    if (apiCache.has(`profilePicture`, {employeeId: empId})) {
+      const cachedData = apiCache.get(`profilePicture`, {employeeId: empId});
+      if (isMountedRef.current) {
+        setProfilePictureUrl(cachedData);
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (isMountedRef.current) {
+      setIsLoading(true);
+      setRefreshing(true);
+    }
 
     try {
-      if (!employeeId) return;
-
-      const data = await ProfilePicture({employeeId});
+      const data = await ProfilePicture({employeeId: empId});
       const img = Array.isArray(data) && data.length > 0 ? data[0] : data;
 
       if (img?.StringImage) {
         const clean = img.StringImage.replace(/\s/g, '');
-        setProfilePictureUrl(`data:image/png;base64,${clean}`);
+        const imageUrl = `data:image/png;base64,${clean}`;
+
+        // Cache the result (15 minutes)
+        apiCache.set(`profilePicture`, imageUrl, 15 * 60 * 1000, {
+          employeeId: empId,
+        });
+
+        if (isMountedRef.current) {
+          setProfilePictureUrl(imageUrl);
+        }
       } else {
-        setProfilePictureUrl(null);
+        if (isMountedRef.current) {
+          setProfilePictureUrl(null);
+        }
       }
     } catch (error) {
       console.log('Failed to fetch profile pic:', error);
-      setProfilePictureUrl(null);
+      if (isMountedRef.current) {
+        setProfilePictureUrl(null);
+      }
     } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+        setRefreshing(false);
+      }
     }
-  };
+  }, []);
 
-  const handleRefresh = () => {
-    fetchProfilePicture(userData?.employeeId);
-  };
+  // Memoize the refresh handler
+  const handleRefresh = useCallback(() => {
+    if (employeeId) {
+      fetchProfilePicture(employeeId);
+    }
+  }, [employeeId, fetchProfilePicture]);
 
-  return {
-    isLoading,
-    refreshing,
-    profilePictureUrl,
-    modalVisible,
-    setModalVisible,
-    fetchProfilePicture,
-    handleRefresh,
-  };
+  // Memoize the modal setter
+  const toggleModal = useCallback(visible => {
+    setModalVisible(visible);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  return useMemo(
+    () => ({
+      isLoading,
+      refreshing,
+      profilePictureUrl,
+      modalVisible,
+      setModalVisible: toggleModal,
+      fetchProfilePicture,
+      handleRefresh,
+    }),
+    [
+      isLoading,
+      refreshing,
+      profilePictureUrl,
+      modalVisible,
+      toggleModal,
+      fetchProfilePicture,
+      handleRefresh,
+    ],
+  );
 };
