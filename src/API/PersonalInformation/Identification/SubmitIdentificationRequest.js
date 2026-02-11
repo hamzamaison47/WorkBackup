@@ -35,7 +35,6 @@ const SubmitIdentificationRequest = async ({recId}) => {
 
     // Wrap inside SOAP envelope
     const soapEnvelope = createSoapEnvelope(soapBody);
-
     // Make SOAP POST request
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/EssWorkflowSvcGroup`,
@@ -89,8 +88,8 @@ const SubmitIdentificationRequest = async ({recId}) => {
         ]),
       );
     };
-
     const cleanedResult = cleanObject(result);
+    console.log('Cleaned Resut: ', cleanedResult);
 
     return cleanedResult;
   } catch (error) {

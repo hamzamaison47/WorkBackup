@@ -23,6 +23,7 @@ import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByE
 import ApproveWorkItem from '../../API/WorkflowTrackingStatusTable/ApproveWorkItem';
 import RejectWorkItem from '../../API/WorkflowTrackingStatusTable/RejectWorkItem';
 import styles from '../../styles/styles';
+import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
@@ -54,6 +55,7 @@ const WorkItemsAssignedToMePage = () => {
         document: item.Document,
         documentType: item.DocumentType,
         correlationId: item.CorrelationId,
+        recId: item.workflowWorkItemRecId,
         additionalDetails:
           item.AdditionalDetails || `Details for ${item.Document}`,
       }));
@@ -135,14 +137,13 @@ const WorkItemsAssignedToMePage = () => {
     console.log(item);
     setButtonProcessing(item.correlationId, 'approve', true);
     try {
-      console.log(
-        'Correlation Id Outside Approve Request : ',
-        item.correlationId,
-      );
-      const response = await ApproveWorkItem({
-        correlationId: item.correlationId,
+      console.log('Correlation Id Outside Approve Request : ', item.recId);
+      const response = await WorkflowItemAction({
+        recId: [item.recId],
+        action: 'Approve',
       });
-      if (response?.success) {
+      console.log('Response: ', response);
+      if (response?.IsSuccess) {
         setAlertMessage(`Approved ${item.document}`);
         setHighlightedRecId(item.correlationId);
         setTimeout(() => setHighlightedRecId(null), 3000);
@@ -162,10 +163,14 @@ const WorkItemsAssignedToMePage = () => {
   const handleRejectPress = async item => {
     setButtonProcessing(item.correlationId, 'reject', true);
     try {
-      const response = await RejectWorkItem({
-        correlationId: item.correlationId,
+      // const response = await RejectWorkItem({
+      //   correlationId: item.correlationId,
+      // });
+      const response = await WorkflowItemAction({
+        recId: [item.recId],
+        action: 'Reject',
       });
-      if (response?.success) {
+      if (response?.IsSuccess) {
         setAlertMessage(`Rejected ${item.document}`);
         setHighlightedRecId(item.correlationId);
         setTimeout(() => setHighlightedRecId(null), 3000);

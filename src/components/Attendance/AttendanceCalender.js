@@ -183,6 +183,21 @@ const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
   const selectedLegalEntity = useSelector(
     state => state.company.selectedLegalEntity,
   );
+
+  // Expose refresh method via ref
+  const calendarRef = useRef();
+  React.useImperativeHandle(calendarRef, () => ({
+    refreshCalendar: () => {
+      warmLoadMonth(currentMonth);
+    },
+  }));
+
+  // Accept forwarded ref from parent
+  React.useEffect(() => {
+    if (typeof navigation?.setCalendarRef === 'function') {
+      navigation.setCalendarRef(calendarRef);
+    }
+  }, [navigation]);
   useEffect(() => {
     if (userData?.employeeId) {
       // Clear caches and reload current month

@@ -619,52 +619,41 @@ const LeaveRequestSaveRecord = () => {
         return false;
       }
 
-      let response;
+      let response, submitResult;
+
       if (modalMode === 'create') {
-        response = await createLeaveRequest({
-          leaveData: leavesData,
-        });
-        if (actionType === 'submit') {
-          await SubmitLeaveRequest({
-            recId: response.RecId,
-          });
+        response = await createLeaveRequest({leaveData: leavesData});
+        if (actionType === 'submit' && response?.RecId) {
+          submitResult = await SubmitLeaveRequest({recId: response.RecId});
         }
-      } else {
-        response = await UpdateLeaveRequest({
-          leaveData: leavesData,
-        });
-        if (actionType === 'submit') {
-          await SubmitLeaveRequest({
-            recId: response.RecId,
-          });
+      } else if (modalMode === 'update') {
+        response = await UpdateLeaveRequest({leaveData: leavesData});
+        if (actionType === 'submit' && response?.IsSuccess) {
+          submitResult = await SubmitLeaveRequest({recId: leavesData.RecId});
         }
       }
 
-      const isSuccess =
-        response.IsSuccess === true || response.IsSuccess === 'true';
-
-      if (isSuccess) {
-        // const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-        // const submitText = actionType === 'submit' ? ' and Submitted' : '';
-        // setAlertMessage(
-        //   `${data.leaveCode} is ${actionText}${submitText} Successfully`,
-        // );
+      if (response?.IsSuccess) {
         const actionText =
           modalMode === 'create' ? t('common.create') : t('common.update');
         const submitText =
-          actionType === 'submit'
+          actionType === 'submit' && submitResult?.IsSuccess === 'true'
             ? ` ${t('leaveSaveRecord.andSubmitted')}`
+            : actionType === 'submit' && submitResult?.IsSuccess === 'false'
+            ? ` ${t('leaveSaveRecord.butNotSubmitted')}`
             : '';
+
         setAlertMessage(
-          `${data.leaveCode} ${actionText}${submitText} ${t(
+          `${leavesData.LeaveCode} ${actionText}${submitText} ${t(
             'leaveSaveRecord.successfully',
           )}`,
         );
         setAlertModal(true);
-        return {success: true, recId: response.RecId};
+
+        return {success: true, recId: response?.RecId};
       } else {
         const errorMessage =
-          response.Message || t('leaveSaveRecord.operationFailed');
+          response?.Message || t('leaveSaveRecord.operationFailed');
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};
@@ -803,8 +792,8 @@ const LeaveRequestSaveRecord = () => {
                 {formatDate(today)}
               </Text>
 
-              {/* Leave Category */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* Leave Category Label */}
+              {/* <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveCategoryLabel || 'Leave Category'}
               </Text>
               <Dropdown
@@ -864,7 +853,7 @@ const LeaveRequestSaveRecord = () => {
                 maxHeight={280}
                 dropdownPosition="auto"
                 inverted={isRTL}
-              />
+              /> */}
 
               {/* Leave Code */}
               <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>

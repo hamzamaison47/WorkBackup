@@ -159,7 +159,7 @@ const PersonalEducationSaveRecord = () => {
     Person: Number(data.Person),
     PersonEducationRecVersion: data.PersonEducationRecVersion || 1,
     ApprovalStatus: data.ApprovalStatus || 'Draft',
-    WorkflowOperation: 'Update',
+    WorkflowOperation: data.ApprovalStatus ? 'Update' : '',
   });
 
   /* ---------- back ---------- */

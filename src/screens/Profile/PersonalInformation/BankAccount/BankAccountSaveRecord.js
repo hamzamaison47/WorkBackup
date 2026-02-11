@@ -32,6 +32,7 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 
 import styles from '../../../../styles/styles';
+import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
 
 const BankAccountSaveRecord = () => {
   const route = useRoute();
@@ -300,47 +301,55 @@ const BankAccountSaveRecord = () => {
       //   });
       // }
 
-      let response;
+      let response, submitResult;
       if (modalMode === 'create') {
         response = await createBankAccountRecord({
           bankaccountdata: bankaccountsdata,
         });
         if (actionType === 'submit') {
-          await SubmitBankAccountRecord({
+          submitResult = await SubmitBankAccountRecord({
             recId: response.RecId,
           });
         }
-      } else {
+      } else if (modalMode === 'update') {
         response = await UpdateBankAccountRecord({
           bankaccountdata: bankaccountsdata,
         });
-        if (actionType === 'submit') {
-          await SubmitBankAccountRecord({
-            recId: response.RecId,
+
+        if (actionType === 'submit' && response?.IsSuccess) {
+          submitResult = await SubmitBankAccountRecord({
+            recId: bankaccountsdata.RecId,
           });
         }
       }
 
-      const isSuccess =
-        response.IsSuccess === true || response.IsSuccess === 'true';
-
-      if (isSuccess) {
+      if (response) {
         const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-        const submitText = actionType === 'submit' ? ' and Submitted' : '';
-        setAlertModal(true);
+        let submitText = '';
+
+        if (submitResult?.IsSuccess === 'true') {
+          submitText = actionType === 'submit' ? ' and Submitted' : '';
+        } else if (submitResult?.IsSuccess === 'false') {
+          submitText = actionType === 'submit' ? ' but not Submitted' : '';
+        }
+
         setAlertMessage(
           `${bankaccountsdata.AccountId} is ${actionText}${submitText} Successfully`,
         );
-        return {success: true, recId: response.RecId};
+        setAlertModal(true);
+
+        return {success: true, recId: response?.RecId};
       } else {
-        const errorMessage = response.Message || 'Operation Failed';
+        const errorMessage = response?.Message || 'Operation Failed';
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};
       }
     } catch (error) {
       console.error('Error in handleAction:', error);
-      setAlertMessage('An error occurred while processing the request.');
+      const errorMessage =
+        error.message || 'An error occurred while processing the request.';
+      setAlertMessage(errorMessage);
       setAlertModal(true);
       return {success: false, message: 'Network or server error'};
     }
@@ -443,12 +452,13 @@ const BankAccountSaveRecord = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountIdlbl ||
-                  'Account Identification *'}
+              {/* <Text style={styles.LReqSR_Label}>Account identification *</Text>
+              <TextInput */}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
               </Text>
               <TextInput
-                style={styles.DSR_Input}
+                style={styles.LReqSR_Input}
                 value={formData.AccountId}
                 onChangeText={text => handleInputChange('AccountId', text)}
                 placeholder="Enter Account ID"
@@ -456,8 +466,8 @@ const BankAccountSaveRecord = () => {
                 maxLength={10}
               />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.Namelbl || 'Name *'}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.Namelbl || 'Name'}
               </Text>
               <TextInput
                 style={styles.DSR_Input}
@@ -467,8 +477,8 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountNumlbl || 'Bank Account Number'}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
               </Text>
               <TextInput
                 style={styles.DSR_Input}
@@ -479,8 +489,8 @@ const BankAccountSaveRecord = () => {
                 keyboardType="numeric"
               />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BankIBANlbl || 'IBAN *'}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BankIBANlbl || 'IBAN'}
               </Text>
               <TextInput
                 style={styles.DSR_Input}
@@ -490,8 +500,8 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BranchNumberlbl || 'Branch Number'}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
               </Text>
               <TextInput
                 style={styles.DSR_Input}
@@ -501,8 +511,8 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BranchNamelbl || 'Branch Name'}
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
               </Text>
               <TextInput
                 style={styles.DSR_Input}
@@ -512,7 +522,7 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
               </Text>
               <TextInput

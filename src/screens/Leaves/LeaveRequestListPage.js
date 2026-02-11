@@ -608,7 +608,7 @@ const LeaveRequestListPage = () => {
         showDetails={true}
         detailFields={[
           {key: 'LeaveCode', label: 'Leave Type'},
-          {key: 'LeaveCategory', label: 'Category'},
+          // {key: 'LeaveCategory', label: 'Category'},
           {key: 'LeaveStartDate', label: 'Start Date'},
           {key: 'LeaveEndDate', label: 'End Date'},
         ]}

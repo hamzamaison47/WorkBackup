@@ -35,6 +35,12 @@ const MainDashboard = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const calendarRef = useRef();
+
+  // Allow AttendanceCalendar to set its ref in navigation
+  navigation.setCalendarRef = ref => {
+    calendarRef.current = ref.current;
+  };
 
   const dimensions = useDashboardDimensions();
   const {
@@ -82,6 +88,18 @@ const MainDashboard = () => {
     });
     return unsub;
   }, [navigation]);
+
+  // Refresh calendar when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      if (
+        calendarRef.current &&
+        typeof calendarRef.current.refreshCalendar === 'function'
+      ) {
+        calendarRef.current.refreshCalendar();
+      }
+    }, []),
+  );
 
   useEffect(() => {
     fetchProfilePicture(userData?.employeeId);
@@ -153,6 +171,7 @@ const MainDashboard = () => {
               navigation={navigation}
               screenWidth={dimensions.screenWidth}
               H_PADDING={dimensions.H_PADDING}
+              ref={calendarRef}
             />
 
             {/* Only render LeaveEntitlementProgress if there's data */}
