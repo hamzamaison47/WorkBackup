@@ -110,7 +110,6 @@ const RetrieveByEmail = async ({email}) => {
     const cleanedData = Array.isArray(rawData)
       ? rawData.map(cleanObject)
       : [cleanObject(rawData)];
-
     return cleanedData;
   } catch (error) {
     console.error('Failed to fetch Work Flow Data:', error);
