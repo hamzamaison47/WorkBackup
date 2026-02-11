@@ -32,7 +32,6 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 
 import styles from '../../../../styles/styles';
-import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
 
 const BankAccountSaveRecord = () => {
   const route = useRoute();
@@ -452,13 +451,13 @@ const BankAccountSaveRecord = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              {/* <Text style={styles.LReqSR_Label}>Account identification *</Text>
+              {/* <Text style={styles.DSR_Label}>Account identification *</Text>
               <TextInput */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
               </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.AccountId}
                 onChangeText={text => handleInputChange('AccountId', text)}
                 placeholder="Enter Account ID"
@@ -466,7 +465,7 @@ const BankAccountSaveRecord = () => {
                 maxLength={10}
               />
 
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.Namelbl || 'Name'}
               </Text>
               <TextInput
@@ -477,7 +476,7 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
               </Text>
               <TextInput
@@ -489,7 +488,7 @@ const BankAccountSaveRecord = () => {
                 keyboardType="numeric"
               />
 
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.BankIBANlbl || 'IBAN'}
               </Text>
               <TextInput
@@ -500,7 +499,7 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
               </Text>
               <TextInput
@@ -511,7 +510,7 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
               </Text>
               <TextInput
@@ -522,7 +521,7 @@ const BankAccountSaveRecord = () => {
                 placeholderTextColor="#888"
               />
 
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
               </Text>
               <TextInput
