@@ -308,50 +308,57 @@ const BankAccountSaveRecord = () => {
       //   });
       // }
 
-      let response;
+      let response, submitResult;
       if (modalMode === 'create') {
         response = await createBankAccountRecord({
           bankaccountdata: bankaccountsdata,
         });
         if (actionType === 'submit') {
-          await SubmitBankAccountRecord({
+        submitResult = await SubmitBankAccountRecord({
             recId: response.RecId,
           });
         }
-      } else {
-        response = await UpdateBankAccountRecord({
-          bankaccountdata: bankaccountsdata,
-        });
-        if (actionType === 'submit') {
-          await SubmitBankAccountRecord({
-            recId: response.RecId,
-          });
-        }
-      }
+      }else if (modalMode === 'update') {
+   
+    response = await UpdateBankAccountRecord({ bankaccountdata: bankaccountsdata });
 
-      const isSuccess =
-        response.IsSuccess === true || response.IsSuccess === 'true';
-
-      if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-        const submitText = actionType === 'submit' ? ' and Submitted' : '';
-        setAlertModal(true);
-        setAlertMessage(
-          `${bankaccountsdata.AccountId} is ${actionText}${submitText} Successfully`,
-        );
-        return {success: true, recId: response.RecId};
-      } else {
-        const errorMessage = response.Message || 'Operation Failed';
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
-        return {success: false, message: errorMessage};
-      }
-    } catch (error) {
-      console.error('Error in handleAction:', error);
-      setAlertMessage('An error occurred while processing the request.');
-      setAlertModal(true);
-      return {success: false, message: 'Network or server error'};
+    
+    if (actionType === 'submit' && response?.IsSuccess) {
+      submitResult = await SubmitBankAccountRecord({ recId: bankaccountsdata.RecId });
     }
+  }
+    
+      
+      if (response) {
+    const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+    let submitText = '';
+
+    if (submitResult?.IsSuccess === 'true') {
+      submitText = actionType === 'submit' ? ' and Submitted' : '';
+    } else if (submitResult?.IsSuccess === 'false') {
+      submitText = actionType === 'submit' ? ' but not Submitted' : '';
+    }
+
+    setAlertMessage(
+      `${bankaccountsdata.AccountId} is ${actionText}${submitText} Successfully`
+    );
+    setAlertModal(true);
+
+    return { success: true, recId: response?.RecId };
+  } else {
+    const errorMessage = response?.Message || 'Operation Failed';
+    setAlertMessage(errorMessage);
+    setAlertModal(true);
+    return { success: false, message: errorMessage };
+  }
+} catch (error) {
+  console.error('Error in handleAction:', error);
+  const errorMessage =
+    error.message || 'An error occurred while processing the request.';
+  setAlertMessage(errorMessage);
+  setAlertModal(true);
+  return { success: false, message: 'Network or server error' };
+}
   };
 
   const handleSave = async actionType => {

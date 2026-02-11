@@ -781,53 +781,52 @@ const GenericAdvanceSaveScreen = () => {
         throw new Error('Advance Type Code and Payment Date are required.');
       }
 
-      let response;
+      let response,submitResult;
 
-      if (modalMode === 'create') {
-        response = await CreateAdvanceRequest({
-          advanceData: advanceRequestData,
-        });
-        if (actionType === 'submit') {
-          await SubmitAdvanceRequest({
-            recId: response.RecId,
-          });
-        }
-      } else {
-        response = await UpdateAdvanceRequest({
-          advanceData: advanceRequestData,
-        });
-        if (actionType === 'submit') {
-          await SubmitAdvanceRequest({
-            recId: response.RecId,
-          });
-        }
-      }
+       if (modalMode === 'create') {
 
-      const isSuccess =
-        response.IsSuccess === true || response.IsSuccess === 'true';
-
-      if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
-        const submitText = actionType === 'submit' ? ' and Submitted' : '';
-        setAlertMessage(
-          `${data.AdvanceTypeCode} is ${actionText}${submitText} Successfully`,
-        );
-        setAlertModal(true);
-        return {success: true, recId: response.RecId};
-      } else {
-        const errorMessage = response.Message || 'Operation Failed';
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
-        return {success: false, message: errorMessage};
-      }
-    } catch (error) {
-      console.error('Error in handleAction:', error);
-      const errorMessage =
-        error.message || 'An error occurred while processing the request.';
-      setAlertMessage(errorMessage);
-      setAlertModal(true);
-      return {success: false, message: errorMessage};
+    response = await CreateAdvanceRequest({ advanceData: advanceRequestData });
+       if (actionType === 'submit' && response?.RecId) {
+      submitResult = await SubmitAdvanceRequest({ recId: response.RecId });
     }
+  }else if (modalMode === 'update') {
+    
+    response = await UpdateAdvanceRequest({ advanceData: advanceRequestData });
+        if (actionType === 'submit' && response?.IsSuccess) {
+      submitResult = await SubmitAdvanceRequest({ recId: advanceRequestData.RecId });
+    }
+  }
+
+     if (response) {
+    const actionText = modalMode === 'create' ? 'Created' : 'update';
+    let submitText = '';
+
+    if (submitResult?.IsSuccess === 'true') {
+      submitText = actionType === 'submit' ? ' and Submitted' : '';
+    } else if (submitResult?.IsSuccess === 'false') {
+      submitText = actionType === 'submit' ? ' but not Submitted' : '';
+    }
+
+    setAlertMessage(
+      `${advanceRequestData.AdvanceTypeCode} is ${actionText}${submitText} Successfully`
+    );
+    setAlertModal(true);
+
+    return { success: true, recId: response?.RecId };
+  } else {
+    const errorMessage = response?.Message || 'Operation Failed';
+    setAlertMessage(errorMessage);
+    setAlertModal(true);
+    return { success: false, message: errorMessage };
+  }
+} catch (error) {
+  console.error('Error in handleAction:', error);
+  const errorMessage =
+    error.message || 'An error occurred while processing the request.';
+  setAlertMessage(errorMessage);
+  setAlertModal(true);
+  return { success: false, message: errorMessage };
+}
   };
 
   // Enhanced field validation with comprehensive checks
