@@ -10,25 +10,27 @@ import {
   Modal,
   Animated,
   I18nManager,
+  Platform,
 } from 'react-native';
+import RNQRGenerator from 'rn-qr-generator';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {launchImageLibrary} from 'react-native-image-picker';
-import RNQRGenerator from 'rn-qr-generator';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+
 import {
   getAllConfigs,
   saveConfig,
   saveConfigWithId,
 } from '../../Controller/secureConfig';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import {translate as t} from '../../store/utils/translate';
-
 import {decryptQRData} from '../../Controller/decryptQRData';
-import {fontScale} from '../../store/utils/scaling';
+
 import AlertModal from '../../components/Alert/AlertModal';
+
 import styles from '../../styles/styles';
-import {Platform} from 'react-native';
+import {conditionalVerticalScale, iconSize} from '../../store/utils/scaling';
 
 const secretKey = 'P@$sw0rd321';
 
@@ -298,9 +300,16 @@ const QRSetupScreen = () => {
     setAlertModal(false);
   };
 
+  // const scanLineTranslate = scanAnimation.interpolate({
+  //   inputRange: [0, 1],
+  //   outputRange: [0, 250],
+  // });
+  const SCAN_FRAME_HEIGHT = conditionalVerticalScale(220, 250, 270, 320);
+  const SCAN_LINE_HEIGHT = 2;
+
   const scanLineTranslate = scanAnimation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 250],
+    outputRange: [0, SCAN_FRAME_HEIGHT - SCAN_LINE_HEIGHT],
   });
 
   return (
@@ -312,10 +321,9 @@ const QRSetupScreen = () => {
             style={styles.QRSetup_BackButton}
             onPress={() => navigation.navigate('ConfigSelectionScreen')}
             activeOpacity={0.7}>
-            {/* <Icon name="arrow-left" size={fontScale(22)} color="#0A66C2" /> */}
             <Icon
               name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
-              size={fontScale(22)}
+              size={iconSize.sm}
               color="#0A66C2"
             />
           </TouchableOpacity>
@@ -323,16 +331,8 @@ const QRSetupScreen = () => {
 
         <View style={styles.QRSetup_HeaderContent}>
           <View style={styles.QRSetup_IconBackground}>
-            <Icon name="qrcode" size={fontScale(36)} color="#0A66C2" />
+            <Icon name="qrcode" size={iconSize.xl} color="#0A66C2" />
           </View>
-          {/* <Text style={styles.QRSetup_Title}>
-            {isFromConfigSelection ? 'Add Configuration' : 'Environment Setup'}
-          </Text>
-          <Text style={styles.QRSetup_Subtitle}>
-            {isFromConfigSelection
-              ? 'Scan QR code to add a new configuration'
-              : 'Scan your configuration QR code to begin'}
-          </Text> */}
           <Text style={styles.QRSetup_Title}>
             {isFromConfigSelection
               ? t('qrSetup.addConfig')
@@ -410,7 +410,7 @@ const QRSetupScreen = () => {
                   <View style={styles.QRSetup_InstructionCard}>
                     <Icon
                       name="crosshairs"
-                      size={fontScale(24)}
+                      size={iconSize.md}
                       color="#0A66C2"
                     />
                     <Text style={styles.QRSetup_InstructionText}>
@@ -438,7 +438,7 @@ const QRSetupScreen = () => {
             <View style={styles.QRSetup_PermissionContainer}>
               <View style={styles.QRSetup_PermissionCard}>
                 <View style={styles.QRSetup_PermissionIcon}>
-                  <Icon name="camera" size={fontScale(48)} color="#999" />
+                  <Icon name="camera" size={iconSize.xl} color="#999" />
                 </View>
                 <Text style={styles.QRSetup_PermissionTitle}>
                   {t('qrSetup.cameraAccessRequired')}
@@ -463,7 +463,7 @@ const QRSetupScreen = () => {
             disabled={isProcessingGalleryImage}>
             <Icon
               name="picture-o"
-              size={fontScale(16)}
+              size={iconSize.xs}
               color="#fff"
               style={styles.QRSetup_ButtonIcon}
             />
@@ -478,7 +478,7 @@ const QRSetupScreen = () => {
             activeOpacity={0.8}>
             <Icon
               name={isFromConfigSelection ? 'times' : 'forward'}
-              size={fontScale(16)}
+              size={iconSize.xs}
               color="#0A66C2"
               style={styles.QRSetup_ButtonIcon}
             />
@@ -490,7 +490,7 @@ const QRSetupScreen = () => {
           </TouchableOpacity>
 
           <View style={styles.QRSetup_HelpContainer}>
-            <Icon name="question-circle" size={fontScale(16)} color="#999" />
+            <Icon name="question-circle" size={iconSize.xs} color="#999" />
             <Text style={styles.QRSetup_HelpText}>{t('qrSetup.needHelp')}</Text>
           </View>
         </View>
@@ -511,7 +511,7 @@ const QRSetupScreen = () => {
                     ? 'times-circle'
                     : 'exclamation-triangle'
                 }
-                size={fontScale(50)}
+                size={iconSize.xl}
                 color="#ff9800"
               />
             </View>

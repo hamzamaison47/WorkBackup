@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -9,7 +10,6 @@ import {
   TouchableOpacity,
   TextInput,
   FlatList,
-  StyleSheet,
   Platform,
   KeyboardAvoidingView,
   Animated,
@@ -27,23 +27,18 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import azureAIService from '../../services/AzureAIService';
-import LeaveService from '../../services/LeaveService';
 import VoiceRecordingService from '../../services/VoiceRecordingService';
 
 import {
   chatbotAddMessage,
   chatbotSetMessages,
 } from '../../store/slices/chatbotSlice';
+import styles from '../../styles/styles';
 
 const {width, height} = Dimensions.get('window');
 const PRIMARY_COLOR = '#0A66C2';
-const SECONDARY_COLOR = '#0765A2';
-const ACCENT_COLOR = '#E7F3FF';
-const BG_COLOR = '#F3F6F8';
-const USER_BUBBLE = '#0A66C2';
-const BOT_BUBBLE = '#FFFFFF';
 
-// Separate component for message bubbles to properly use hooks
+// Message bubble component
 const MessageBubble = React.memo(({item, index}) => {
   const isUser = item.from === 'user';
   const slideAnim = useRef(new Animated.Value(isUser ? 50 : -50)).current;
@@ -67,40 +62,55 @@ const MessageBubble = React.memo(({item, index}) => {
   return (
     <Animated.View
       style={[
-        styles.messageWrapper,
-        isUser ? styles.userWrapper : styles.botWrapper,
+        styles.AIChat_messageWrapper,
+        isUser ? styles.AIChat_userWrapper : styles.AIChat_botWrapper,
         {
           opacity: opacityAnim,
           transform: [{translateX: slideAnim}],
         },
       ]}>
       {!isUser && (
-        <View style={styles.avatarContainer}>
-          <LinearGradient colors={['#0A66C2', '#0765A2']} style={styles.avatar}>
+        <View style={styles.AIChat_avatarContainer}>
+          <LinearGradient
+            colors={['#0A66C2', '#0765A2']}
+            style={styles.AIChat_avatar}>
             <Icon name="robot-excited" size={22} color="#fff" />
           </LinearGradient>
         </View>
       )}
 
       <View
-        style={[styles.bubbleContainer, isUser && styles.userBubbleContainer]}>
+        style={[
+          styles.AIChat_bubbleContainer,
+          isUser && styles.AIChat_userBubbleContainer,
+        ]}>
         <View
           style={[
-            styles.bubble,
-            isUser ? styles.userBubble : styles.botBubble,
+            styles.AIChat_bubble,
+            isUser ? styles.AIChat_userBubble : styles.AIChat_botBubble,
           ]}>
-          <Text style={[styles.messageText, isUser && styles.userMessageText]}>
+          <Text
+            style={[
+              styles.AIChat_messageText,
+              isUser && styles.AIChat_userMessageText,
+            ]}>
             {item.text}
           </Text>
-          <Text style={[styles.timestamp, isUser && styles.userTimestamp]}>
+          <Text
+            style={[
+              styles.AIChat_timestamp,
+              isUser && styles.AIChat_userTimestamp,
+            ]}>
             {moment(item.timestamp).format('HH:mm')}
           </Text>
         </View>
       </View>
 
       {isUser && (
-        <View style={styles.avatarContainer}>
-          <LinearGradient colors={['#0765A2', '#0A66C2']} style={styles.avatar}>
+        <View style={styles.AIChat_avatarContainer}>
+          <LinearGradient
+            colors={['#0765A2', '#0A66C2']}
+            style={styles.AIChat_avatar}>
             <Icon name="account" size={22} color="#fff" />
           </LinearGradient>
         </View>
@@ -109,7 +119,11 @@ const MessageBubble = React.memo(({item, index}) => {
   );
 });
 
-const AIChatbot = ({visible, onClose}) => {
+/**
+ * GENERIC AI Chatbot
+ * Works with ANY service that provides getFunctionDefinitions() and execute()
+ */
+const AIChatbot = ({visible, onClose, serviceInstance}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -121,32 +135,31 @@ const AIChatbot = ({visible, onClose}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [voiceServiceReady, setVoiceServiceReady] = useState(false);
-  const [voiceStatus, setVoiceStatus] = useState('Checking microphone...');
-  const permissionInitializedRef = useRef(false);
 
   const processingRef = useRef(false);
   const flatListRef = useRef(null);
-  const leaveService = useRef(new LeaveService());
-
-  // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(height)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
   const micScaleAnim = useRef(new Animated.Value(1)).current;
   const waveAnim = useRef(new Animated.Value(0)).current;
   const recordingTimer = useRef(null);
   const isMountedRef = useRef(true);
-  const lastRecordingTime = useRef(0);
-  const stopRequestedRef = useRef(false);
+  const permissionInitializedRef = useRef(false);
   const endLockRef = useRef(false);
 
-  const isPressToTalk = useMemo(() => {
-    return Platform.OS === 'android' || Platform.OS === 'ios';
+  /* -------------------- Initialization -------------------- */
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      clearTimers();
+      VoiceRecordingService.cancelRecording?.();
+    };
   }, []);
 
-  /* -------------------- Animations -------------------- */
   useEffect(() => {
     if (visible) {
+      // Animations
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -160,6 +173,27 @@ const AIChatbot = ({visible, onClose}) => {
           useNativeDriver: true,
         }),
       ]).start();
+
+      // Check permissions
+      if (!permissionInitializedRef.current) {
+        permissionInitializedRef.current = true;
+        initializePermission();
+      } else {
+        VoiceRecordingService.checkPermission().then(hasPerm => {
+          setVoiceServiceReady(hasPerm);
+        });
+      }
+
+      // Welcome message
+      if (!messages || messages.length === 0) {
+        const welcomeMsg = {
+          id: 'welcome-1',
+          text: "👋 Hello! I'm your AI Assistant. How may I help you today?",
+          from: 'bot',
+          timestamp: Date.now(),
+        };
+        dispatch(chatbotSetMessages([welcomeMsg]));
+      }
     } else {
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -173,69 +207,20 @@ const AIChatbot = ({visible, onClose}) => {
           useNativeDriver: true,
         }),
       ]).start();
+      clearTimers();
+      VoiceRecordingService.cancelRecording?.();
     }
   }, [visible]);
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      clearTimers();
-      VoiceRecordingService.cancelRecording?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!visible) {
-      clearTimers();
-      VoiceRecordingService.cancelRecording?.();
-      return;
-    }
-
-    // Proactive permission check - only on first open
-    if (!permissionInitializedRef.current) {
-      permissionInitializedRef.current = true;
-
-      const initializePermission = async () => {
-        // First check silently
-        const hasPerm = await VoiceRecordingService.checkPermission();
-
-        if (hasPerm) {
-          setVoiceServiceReady(true);
-          setVoiceStatus('Voice Ready');
-        } else {
-          // First time: request permission proactively
-          const granted = await VoiceRecordingService.requestPermission();
-          setVoiceServiceReady(granted);
-          setVoiceStatus(granted ? 'Voice Ready' : 'Microphone access denied');
-        }
-      };
-
-      initializePermission();
+  const initializePermission = async () => {
+    const hasPerm = await VoiceRecordingService.checkPermission();
+    if (hasPerm) {
+      setVoiceServiceReady(true);
     } else {
-      // Subsequent opens: just check status without requesting
-      VoiceRecordingService.checkPermission().then(hasPerm => {
-        setVoiceServiceReady(hasPerm);
-        setVoiceStatus(hasPerm ? 'Voice Ready' : 'Microphone access denied');
-      });
+      const granted = await VoiceRecordingService.requestPermission();
+      setVoiceServiceReady(granted);
     }
-
-    // Welcome message logic (keep existing)
-    if (!messages || messages.length === 0) {
-      const welcomeMsg = {
-        id: 'welcome-1',
-        text: "👋 Hello! I'm your AI Assistant. How may I help you today?",
-        from: 'bot',
-        timestamp: Date.now(),
-      };
-      dispatch(chatbotSetMessages([welcomeMsg]));
-    }
-
-    return () => {
-      if (isRecording) VoiceRecordingService.cancelRecording?.();
-      clearTimers();
-    };
-  }, [visible]);
+  };
 
   /* -------------------- Auto-scroll -------------------- */
   useEffect(() => {
@@ -247,17 +232,6 @@ const AIChatbot = ({visible, onClose}) => {
       });
     }
   }, [messages]);
-
-  useEffect(() => {
-    if (isTyping && flatListRef.current) {
-      const t = setTimeout(() => {
-        try {
-          flatListRef.current?.scrollToEnd({animated: true});
-        } catch (error) {}
-      }, 400);
-      return () => clearTimeout(t);
-    }
-  }, [isTyping]);
 
   /* -------------------- Recording Animations -------------------- */
   useEffect(() => {
@@ -293,28 +267,6 @@ const AIChatbot = ({visible, onClose}) => {
     }
   }, [isRecording]);
 
-  useEffect(() => {
-    if (isTyping) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.15,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    } else {
-      pulseAnim.stopAnimation?.();
-      pulseAnim.setValue(1);
-    }
-  }, [isTyping]);
-
   const clearTimers = () => {
     if (recordingTimer.current) {
       clearInterval(recordingTimer.current);
@@ -324,17 +276,12 @@ const AIChatbot = ({visible, onClose}) => {
 
   /* -------------------- Voice Recording -------------------- */
   const startRecording = async () => {
-    const now = Date.now();
-    if (now - lastRecordingTime.current < 700) return;
-    lastRecordingTime.current = now;
-
     if (!voiceServiceReady) {
       Alert.alert('Voice Not Ready', 'Please type instead.');
       return;
     }
 
     try {
-      stopRequestedRef.current = false;
       setIsRecording(true);
       setRecordingDuration(0);
       setInput('');
@@ -420,7 +367,6 @@ const AIChatbot = ({visible, onClose}) => {
 
     try {
       clearTimers();
-      stopRequestedRef.current = false;
       setIsRecording(false);
       setRecordingDuration(0);
       await VoiceRecordingService.cancelRecording?.();
@@ -451,7 +397,7 @@ const AIChatbot = ({visible, onClose}) => {
     }, 100);
   };
 
-  /* -------------------- Navigation & Send -------------------- */
+  /* -------------------- Navigation -------------------- */
   const navigateToScreen = (screenName, params = {}) => {
     onClose?.();
     setTimeout(() => {
@@ -470,10 +416,18 @@ const AIChatbot = ({visible, onClose}) => {
     }, 300);
   };
 
+  /**
+   * GENERIC: Send message and handle AI response
+   * Works with any service that implements getFunctionDefinitions() and execute()
+   */
   const handleSend = async (textOverride, preferredLanguageOverride) => {
     const text = (textOverride ?? input).trim();
     if (!text) return;
     if (processingRef.current) return;
+    if (!serviceInstance) {
+      addMessage('Service not configured. Please contact support.', 'bot');
+      return;
+    }
 
     processingRef.current = true;
     addMessage(text, 'user');
@@ -481,7 +435,8 @@ const AIChatbot = ({visible, onClose}) => {
     setIsTyping(true);
 
     try {
-      const functions = leaveService.current.getFunctionDefinitions();
+      // Get functions from the service (generic)
+      const functions = serviceInstance.getFunctionDefinitions();
       const langHint = preferredLanguageOverride || 'auto';
 
       const timeoutPromise = new Promise((_, reject) => {
@@ -515,8 +470,13 @@ const AIChatbot = ({visible, onClose}) => {
     }
   };
 
+  /**
+   * GENERIC: Handle function call execution
+   * Delegates to the service's execute() method
+   */
   const handleFunctionCall = async functionCall => {
     try {
+      // Special handling for navigation
       if (functionCall.function === 'navigate_to_screen') {
         const {screenName, message} = functionCall.parameters || {};
         if (message) addMessage(message, 'bot');
@@ -524,7 +484,8 @@ const AIChatbot = ({visible, onClose}) => {
         return;
       }
 
-      const result = await leaveService.current.execute(
+      // Execute function through service (generic)
+      const result = await serviceInstance.execute(
         functionCall.function,
         functionCall.parameters,
         userData,
@@ -535,6 +496,7 @@ const AIChatbot = ({visible, onClose}) => {
         return;
       }
 
+      // Handle navigation action
       if (result.action === 'navigate') {
         if (result.message) addMessage(result.message, 'bot');
         setTimeout(
@@ -544,12 +506,16 @@ const AIChatbot = ({visible, onClose}) => {
         return;
       }
 
+      // Continue conversation with result
       await handleFunctionSuccess(functionCall, result);
     } catch (error) {
       addMessage('Failed to process request. Please try again.', 'bot');
     }
   };
 
+  /**
+   * GENERIC: Handle function error
+   */
   const handleFunctionError = async (functionCall, result) => {
     const errorContext = {
       ...result,
@@ -564,7 +530,7 @@ const AIChatbot = ({visible, onClose}) => {
         functionResult: errorContext,
         userData,
         preferredLanguage: 'auto',
-        availableFunctions: leaveService.current.getFunctionDefinitions(),
+        availableFunctions: serviceInstance.getFunctionDefinitions(),
         toolCallId: functionCall.toolCallId,
       });
 
@@ -577,6 +543,9 @@ const AIChatbot = ({visible, onClose}) => {
     }
   };
 
+  /**
+   * GENERIC: Handle function success
+   */
   const handleFunctionSuccess = async (functionCall, result) => {
     try {
       const continueResponse = await azureAIService.continueAfterFunction({
@@ -585,7 +554,7 @@ const AIChatbot = ({visible, onClose}) => {
         functionResult: result,
         userData,
         preferredLanguage: 'auto',
-        availableFunctions: leaveService.current.getFunctionDefinitions(),
+        availableFunctions: serviceInstance.getFunctionDefinitions(),
         toolCallId: functionCall.toolCallId,
       });
 
@@ -604,24 +573,24 @@ const AIChatbot = ({visible, onClose}) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  /* -------------------- Render Components -------------------- */
+  /* -------------------- Render -------------------- */
   const renderItem = ({item, index}) => {
     return <MessageBubble item={item} index={index} />;
   };
 
   const renderTypingIndicator = () => (
-    <View style={[styles.messageWrapper, styles.botWrapper]}>
-      <View style={styles.avatarContainer}>
-        <LinearGradient colors={['#0A66C2', '#0765A2']} style={styles.avatar}>
-          <Animated.View style={{transform: [{scale: pulseAnim}]}}>
-            <Icon name="robot-excited" size={22} color="#fff" />
-          </Animated.View>
+    <View style={[styles.AIChat_messageWrapper, styles.AIChat_botWrapper]}>
+      <View style={styles.AIChat_avatarContainer}>
+        <LinearGradient
+          colors={['#0A66C2', '#0765A2']}
+          style={styles.AIChat_avatar}>
+          <Icon name="robot-excited" size={22} color="#fff" />
         </LinearGradient>
       </View>
-      <View style={[styles.bubble, styles.typingBubble]}>
-        <View style={styles.typingContainer}>
+      <View style={[styles.AIChat_bubble, styles.AIChat_typingBubble]}>
+        <View style={styles.AIChat_typingContainer}>
           <ActivityIndicator size="small" color="#0A66C2" />
-          <Text style={styles.typingText}>AI is thinking...</Text>
+          <Text style={styles.AIChat_typingText}>AI is thinking...</Text>
         </View>
       </View>
     </View>
@@ -634,40 +603,27 @@ const AIChatbot = ({visible, onClose}) => {
   };
 
   const micPressIn = async () => {
-    if (!isPressToTalk) return;
-
     if (!voiceServiceReady) {
       const granted = await VoiceRecordingService.requestPermission();
-
       if (granted) {
         setVoiceServiceReady(true);
-        setVoiceStatus('Voice Ready');
         startRecording();
       } else {
         Alert.alert(
           'Microphone Access Required',
-          'Voice input requires microphone access. Please enable it in your device settings.',
+          'Voice input requires microphone access.',
           [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-            },
-            {
-              text: 'Open Settings',
-              onPress: () => Linking.openSettings(),
-              style: 'default',
-            },
+            {text: 'Cancel', style: 'cancel'},
+            {text: 'Open Settings', onPress: () => Linking.openSettings()},
           ],
         );
       }
       return;
     }
-
     startRecording();
   };
 
   const micPressOut = () => {
-    if (!isPressToTalk) return;
     if (isRecording) stopRecording();
   };
 
@@ -677,38 +633,39 @@ const AIChatbot = ({visible, onClose}) => {
       transparent
       animationType="none"
       onRequestClose={handleClose}>
-      <Animated.View style={[styles.overlay, {opacity: fadeAnim}]}>
-        <View style={styles.container}>
-          {/* Backdrop - only this should close the modal */}
+      <Animated.View style={[styles.AIChat_overlay, {opacity: fadeAnim}]}>
+        <View style={styles.AIChat_container}>
           <TouchableWithoutFeedback onPress={handleClose}>
-            <View style={styles.backdrop} />
+            <View style={styles.AIChat_backdrop} />
           </TouchableWithoutFeedback>
 
-          {/* Sheet */}
           <Animated.View
-            style={[styles.sheet, {transform: [{translateY: slideAnim}]}]}>
+            style={[
+              styles.AIChat_sheet,
+              {transform: [{translateY: slideAnim}]},
+            ]}>
             {/* Header */}
             <LinearGradient
               colors={['#0A66C2', '#0765A2', '#054A8C']}
               start={{x: 0, y: 0}}
               end={{x: 1, y: 1}}
-              style={styles.header}>
-              <View style={styles.headerContent}>
-                <View style={styles.headerLeft}>
-                  <View style={styles.iconContainer}>
+              style={styles.AIChat_header}>
+              <View style={styles.AIChat_headerContent}>
+                <View style={styles.AIChat_headerLeft}>
+                  <View style={styles.AIChat_iconContainer}>
                     <Icon name="robot-excited" size={28} color="#fff" />
-                    <View style={styles.statusDot} />
+                    <View style={styles.AIChat_statusDot} />
                   </View>
-                  <View style={styles.headerText}>
-                    <Text style={styles.title}>Dynaface AI</Text>
-                    <Text style={styles.status}>
+                  <View style={styles.AIChat_headerText}>
+                    <Text style={styles.AIChat_title}>Dynaface AI</Text>
+                    <Text style={styles.AIChat_status}>
                       {voiceServiceReady ? '● Online' : '○ Offline'}
                     </Text>
                   </View>
                 </View>
                 <TouchableOpacity
                   onPress={handleClose}
-                  style={styles.closeButton}
+                  style={styles.AIChat_closeButton}
                   hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}>
                   <Icon name="close" size={24} color="#fff" />
                 </TouchableOpacity>
@@ -716,31 +673,23 @@ const AIChatbot = ({visible, onClose}) => {
             </LinearGradient>
 
             {/* Chat Area */}
-            <View style={styles.chatArea}>
+            <View style={styles.AIChat_chatArea}>
               <KeyboardAvoidingView
-                style={styles.flex1}
+                style={{flex: 1}}
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+                keyboardVerticalOffset={0}>
                 <FlatList
                   ref={flatListRef}
                   data={messages}
                   renderItem={renderItem}
                   keyExtractor={item => item.id}
-                  contentContainerStyle={styles.chatContainer}
+                  contentContainerStyle={styles.AIChat_chatContainer}
                   showsVerticalScrollIndicator={true}
                   ListFooterComponent={
                     <>{isTyping && renderTypingIndicator()}</>
                   }
                   keyboardDismissMode="on-drag"
                   keyboardShouldPersistTaps="handled"
-                  bounces={true}
-                  scrollEnabled={true}
-                  nestedScrollEnabled={true}
-                  removeClippedSubviews={false}
-                  scrollEventThrottle={16}
-                  decelerationRate="normal"
-                  directionalLockEnabled={true}
-                  alwaysBounceVertical={true}
                   onContentSizeChange={() => {
                     InteractionManager.runAfterInteractions(() => {
                       try {
@@ -752,10 +701,10 @@ const AIChatbot = ({visible, onClose}) => {
 
                 {/* Recording Overlay */}
                 {isRecording && (
-                  <View style={styles.recordingOverlay}>
+                  <View style={styles.AIChat_recordingOverlay}>
                     <Animated.View
                       style={[
-                        styles.waveContainer,
+                        styles.AIChat_waveContainer,
                         {
                           transform: [
                             {
@@ -771,28 +720,28 @@ const AIChatbot = ({visible, onClose}) => {
                           }),
                         },
                       ]}>
-                      <View style={styles.wave} />
+                      <View style={styles.AIChat_wave} />
                     </Animated.View>
 
-                    <View style={styles.recordingContent}>
+                    <View style={styles.AIChat_recordingContent}>
                       <Animated.View
                         style={[
-                          styles.recordingIcon,
+                          styles.AIChat_recordingIcon,
                           {transform: [{scale: micScaleAnim}]},
                         ]}>
                         <Icon name="microphone" size={32} color="#fff" />
                       </Animated.View>
-                      <Text style={styles.recordingText}>
+                      <Text style={styles.AIChat_recordingText}>
                         {formatDuration(recordingDuration)}
                       </Text>
-                      <Text style={styles.recordingSubtext}>
-                        {isPressToTalk ? 'Release to send' : 'Tap to stop'}
+                      <Text style={styles.AIChat_recordingSubtext}>
+                        Release to send
                       </Text>
                     </View>
 
                     <TouchableOpacity
                       onPress={cancelRecording}
-                      style={styles.cancelRecordingButton}>
+                      style={styles.AIChat_cancelRecordingButton}>
                       <Icon name="close" size={20} color="#fff" />
                     </TouchableOpacity>
                   </View>
@@ -800,17 +749,17 @@ const AIChatbot = ({visible, onClose}) => {
               </KeyboardAvoidingView>
 
               {/* Input Area */}
-              <View style={styles.inputContainer}>
-                <View style={styles.inputWrapper}>
+              <View style={styles.AIChat_inputContainer}>
+                <View style={styles.AIChat_inputWrapper}>
                   <TouchableOpacity
                     onPressIn={micPressIn}
                     onPressOut={micPressOut}
                     style={[
-                      styles.micButton,
-                      isRecording && styles.micButtonActive,
+                      styles.AIChat_micButton,
+                      isRecording && styles.AIChat_micButtonActive,
                       !voiceServiceReady &&
                         !isRecording &&
-                        styles.micButtonDisabled,
+                        styles.AIChat_micButtonDisabled,
                     ]}
                     disabled={isTyping}>
                     <LinearGradient
@@ -821,7 +770,7 @@ const AIChatbot = ({visible, onClose}) => {
                           ? ['#CCCCCC', '#999999']
                           : ['#0A66C2', '#0765A2']
                       }
-                      style={styles.gradientButton}>
+                      style={styles.AIChat_gradientButton}>
                       <Icon
                         name={isRecording ? 'stop' : 'microphone'}
                         size={22}
@@ -830,7 +779,7 @@ const AIChatbot = ({visible, onClose}) => {
                     </LinearGradient>
                   </TouchableOpacity>
 
-                  <View style={styles.textInputContainer}>
+                  <View style={styles.AIChat_textInputContainer}>
                     <TextInput
                       value={input}
                       onChangeText={setInput}
@@ -842,7 +791,7 @@ const AIChatbot = ({visible, onClose}) => {
                           : 'Type a message...'
                       }
                       placeholderTextColor="#8E9AAF"
-                      style={styles.input}
+                      style={styles.AIChat_input}
                       onSubmitEditing={() => handleSend()}
                       multiline
                       maxLength={1000}
@@ -853,9 +802,9 @@ const AIChatbot = ({visible, onClose}) => {
                   <TouchableOpacity
                     onPress={() => handleSend()}
                     style={[
-                      styles.sendButton,
+                      styles.AIChat_sendButton,
                       (!input.trim() || isRecording || isTyping) &&
-                        styles.sendButtonDisabled,
+                        styles.AIChat_sendButtonDisabled,
                     ]}
                     disabled={!input.trim() || isRecording || isTyping}>
                     <LinearGradient
@@ -864,7 +813,7 @@ const AIChatbot = ({visible, onClose}) => {
                           ? ['#00b875', '#00c96b']
                           : ['#E4E9F2', '#D1D8E0']
                       }
-                      style={styles.gradientButton}>
+                      style={styles.AIChat_gradientButton}>
                       <Icon
                         name="send"
                         size={20}
@@ -879,9 +828,9 @@ const AIChatbot = ({visible, onClose}) => {
                 </View>
 
                 {!voiceServiceReady && (
-                  <View style={styles.voiceWarning}>
+                  <View style={styles.AIChat_voiceWarning}>
                     <Icon name="microphone-off" size={12} color="#FF6B6B" />
-                    <Text style={styles.voiceWarningText}>
+                    <Text style={styles.AIChat_voiceWarningText}>
                       Tap mic to enable voice access
                     </Text>
                   </View>
@@ -894,336 +843,5 @@ const AIChatbot = ({visible, onClose}) => {
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: height * 0.9,
-    backgroundColor: BG_COLOR,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -4},
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
-  },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 50 : 16,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    position: 'relative',
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#00D084',
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    borderWidth: 2,
-    borderColor: '#0A66C2',
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-  status: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chatArea: {
-    flex: 1,
-  },
-  flex1: {
-    flex: 1,
-  },
-  chatContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  messageWrapper: {
-    flexDirection: 'row',
-    marginVertical: 8,
-    alignItems: 'flex-end',
-  },
-  botWrapper: {
-    justifyContent: 'flex-start',
-  },
-  userWrapper: {
-    justifyContent: 'flex-end',
-  },
-  avatarContainer: {
-    marginHorizontal: 4,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  bubbleContainer: {
-    maxWidth: '75%',
-  },
-  userBubbleContainer: {
-    alignItems: 'flex-end',
-  },
-  bubble: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  botBubble: {
-    backgroundColor: BOT_BUBBLE,
-    borderTopLeftRadius: 4,
-    marginLeft: 4,
-  },
-  userBubble: {
-    backgroundColor: USER_BUBBLE,
-    borderTopRightRadius: 4,
-    marginRight: 4,
-  },
-  typingBubble: {
-    backgroundColor: BOT_BUBBLE,
-    borderTopLeftRadius: 4,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginLeft: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  messageText: {
-    fontSize: 15,
-    color: '#1F2937',
-    lineHeight: 22,
-    fontWeight: '400',
-  },
-  userMessageText: {
-    color: '#FFFFFF',
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 6,
-    alignSelf: 'flex-end',
-    fontWeight: '500',
-  },
-  userTimestamp: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typingText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginLeft: 8,
-    fontWeight: '500',
-  },
-  recordingOverlay: {
-    position: 'absolute',
-    bottom: 10,
-    left: 20,
-    right: 20,
-    height: 120,
-    backgroundColor: 'rgba(10, 102, 194, 0.95)',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#0A66C2',
-    shadowOffset: {width: 0, height: 8},
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 10,
-    overflow: 'hidden',
-  },
-  waveContainer: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  wave: {
-    flex: 1,
-    borderRadius: 100,
-  },
-  recordingContent: {
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  recordingIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  recordingText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-    fontVariant: ['tabular-nums'],
-  },
-  recordingSubtext: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  cancelRecordingButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  inputContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E9F0',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 16,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  micButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 8,
-  },
-  micButtonActive: {
-    shadowColor: '#FF4444',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  micButtonDisabled: {
-    opacity: 0.6,
-  },
-  gradientButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  textInputContainer: {
-    flex: 1,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 24,
-    marginHorizontal: 8,
-    maxHeight: 120,
-  },
-  input: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1F2937',
-    lineHeight: 20,
-    maxHeight: 100,
-  },
-  sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginLeft: 8,
-  },
-  sendButtonDisabled: {
-    opacity: 0.6,
-  },
-  voiceWarning: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    paddingVertical: 4,
-  },
-  voiceWarningText: {
-    fontSize: 12,
-    color: '#FF6B6B',
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-});
 
 export default AIChatbot;

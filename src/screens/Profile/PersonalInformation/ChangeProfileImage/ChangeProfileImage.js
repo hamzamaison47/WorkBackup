@@ -4,7 +4,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {
   View,
-  StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -26,6 +25,9 @@ import ProfilePictureEditor from '../../../../components/PersonalInformation/Pro
 // API
 import {ProfilePicture} from '../../../../API/PersonalInformation/ProfilePicture/ProfilePicture';
 import {UpdateByEmployeeId} from '../../../../API/PersonalInformation/ProfilePicture/UpdateByEmployeeId';
+
+// Styles
+import styles from '../../../../styles/styles';
 
 const ChangeProfileImage = () => {
   const navigation = useNavigation();
@@ -170,11 +172,13 @@ const ChangeProfileImage = () => {
       showTabNavigator={true}
       onRefresh={() => fetchProfilePicture()}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : (
-        <View style={styles.container}>
+        <View style={styles.CPI_container}>
           <ScrollView
-            contentContainerStyle={styles.scrollContainer}
+            contentContainerStyle={styles.CPI_scrollContainer}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -185,12 +189,12 @@ const ChangeProfileImage = () => {
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={{flex: 1}}>
-              <Text style={styles.title}>Your Profile Picture</Text>
-              <Text style={styles.subtitle}>
+              <Text style={styles.CPI_title}>Your Profile Picture</Text>
+              <Text style={styles.CPI_subtitle}>
                 Upload a clear image of yourself to keep your account updated.
               </Text>
 
-              <View style={styles.imageWrapper}>
+              <View style={styles.CPI_imageWrapper}>
                 <ProfilePictureEditor
                   isLoading={isLoading}
                   profilePictureUrl={profilePictureUrl}
@@ -200,21 +204,29 @@ const ChangeProfileImage = () => {
               </View>
 
               {/* Gallery & Camera Buttons */}
-              <View style={styles.saveCancelContainer}>
+              <View style={styles.CPI_actionButtonsContainer}>
                 <TouchableOpacity
-                  style={[styles.button, styles.galleryButton]}
+                  style={[styles.CPI_button, styles.CPI_secondaryButton]}
                   onPress={handleProfileImageEdit}>
-                  <Text style={styles.buttonTextSave}>Choose from Gallery</Text>
+                  <Text
+                    style={[
+                      styles.CPI_buttonText,
+                      styles.CPI_buttonTextSecondary,
+                    ]}>
+                    Choose from Gallery
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[
-                    styles.button,
-                    styles.saveButton,
-                    styles.cameraButton,
-                  ]}
+                  style={[styles.CPI_button, styles.CPI_secondaryButton]}
                   onPress={handleTakePhoto}>
-                  <Text style={styles.buttonTextSave}>Take Photo</Text>
+                  <Text
+                    style={[
+                      styles.CPI_buttonText,
+                      styles.CPI_buttonTextSecondary,
+                    ]}>
+                    Take Photo
+                  </Text>
                 </TouchableOpacity>
               </View>
             </KeyboardAvoidingView>
@@ -222,21 +234,30 @@ const ChangeProfileImage = () => {
 
           {/* Save & Cancel Buttons */}
           {isImageChanged && (
-            <View style={styles.saveCancelContainer}>
+            <View style={styles.CPI_actionButtonsContainer}>
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+                style={[styles.CPI_button, styles.CPI_secondaryButton]}
                 onPress={() => {
-                  fetchProfilePicture(); // reset to original
+                  fetchProfilePicture();
                   setIsImageChanged(false);
                 }}>
-                <Text style={styles.buttonTextCancel}>Cancel</Text>
+                <Text
+                  style={[
+                    styles.CPI_buttonText,
+                    styles.CPI_buttonTextSecondary,
+                  ]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
+                style={[styles.CPI_button, styles.CPI_primaryButton]}
                 onPress={handleSaveChanges}
                 disabled={isLoading}>
-                <Text style={styles.buttonTextSave}>Save</Text>
+                <Text
+                  style={[styles.CPI_buttonText, styles.CPI_buttonTextPrimary]}>
+                  Save
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -252,94 +273,5 @@ const ChangeProfileImage = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContainer: {
-    alignItems: 'center',
-    paddingTop: 40,
-    paddingBottom: 120,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  imageWrapper: {
-    overflow: 'hidden',
-    padding: 6,
-    marginBottom: 24,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    width: '100%',
-  },
-  changeButton: {
-    flex: 1,
-    backgroundColor: '#2563EB',
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  changeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  galleryButton: {
-    backgroundColor: '#2563EB', // keep blue
-  },
-  cameraButton: {
-    backgroundColor: '#10B981', // green for camera
-  },
-  saveCancelContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    marginBottom: 24,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginHorizontal: 5,
-  },
-  saveButton: {
-    backgroundColor: '#2563EB', // blue
-  },
-  cancelButton: {
-    backgroundColor: '#F3F4F6', // light gray
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  buttonTextSave: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonTextCancel: {
-    color: '#111827',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
 
 export default ChangeProfileImage;

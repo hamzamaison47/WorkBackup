@@ -7,13 +7,11 @@ import {
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
-  Dimensions,
   Animated,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {translate as t} from '../../store/utils/translate';
-
-const {width, height} = Dimensions.get('window');
+import styles from '../../styles/styles';
 
 const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
   const translateYAnim = useRef(new Animated.Value(300)).current;
@@ -63,7 +61,7 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
       <TouchableWithoutFeedback onPress={onCancel}>
         <Animated.View
           style={[
-            styles.overlay,
+            styles.LogoutAlert_overlay,
             {
               opacity: overlayOpacityAnim,
             },
@@ -71,40 +69,46 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
-                styles.modalContainer,
+                styles.LogoutAlert_modalContainer,
                 {
                   transform: [{translateY: translateYAnim}],
                 },
               ]}>
               {/* Icon/Visual Element */}
-              <View style={styles.iconContainer}>
-                <View style={styles.warningIcon}>
-                  <Text style={styles.warningIconText}>!</Text>
+              <View style={styles.LogoutAlert_iconContainer}>
+                <View style={styles.LogoutAlert_warningIcon}>
+                  <Text style={styles.LogoutAlert_warningIconText}>!</Text>
                 </View>
               </View>
 
               {/* Content */}
-              <View style={styles.contentContainer}>
-                <Text style={styles.heading}>{heading}</Text>
-                {/* <Text style={styles.description}>{text}</Text> */}
+              <View style={styles.LogoutAlert_contentContainer}>
+                <Text style={styles.LogoutAlert_heading}>{heading}</Text>
+                {/* <Text style={styles.LogoutAlert_description}>{text}</Text> */}
               </View>
 
               {/* Action Buttons */}
-              <View style={styles.buttonContainer}>
+              <View style={styles.LogoutAlert_buttonContainer}>
                 <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
+                  style={[
+                    styles.LogoutAlert_button,
+                    styles.LogoutAlert_cancelButton,
+                  ]}
                   onPress={onCancel}
                   activeOpacity={0.8}>
-                  <Text style={styles.cancelButtonText}>
+                  <Text style={styles.LogoutAlert_cancelButtonText}>
                     {t('common.cancel')}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.button, styles.confirmButton]}
+                  style={[
+                    styles.LogoutAlert_button,
+                    styles.LogoutAlert_confirmButton,
+                  ]}
                   onPress={onConfirm}
                   activeOpacity={0.8}>
-                  <Text style={styles.confirmButtonText}>
+                  <Text style={styles.LogoutAlert_confirmButtonText}>
                     {t('profile.logout')}
                   </Text>
                 </TouchableOpacity>
@@ -115,109 +119,6 @@ const LogoutAlertModal = ({visible, heading, text, onConfirm, onCancel}) => {
       </TouchableWithoutFeedback>
     </Modal>
   );
-};
-
-const styles = {
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    width: Math.min(width * 0.85, 340),
-    maxWidth: 340,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 20,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 25,
-    elevation: 25,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  warningIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#FEF3E7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#F59E0B',
-  },
-  warningIconText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#F59E0B',
-  },
-  contentContainer: {
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 28,
-  },
-  description: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: 8,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  cancelButton: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-  },
-  confirmButton: {
-    backgroundColor: '#DC2626',
-    shadowColor: '#DC2626',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
 };
 
 export default LogoutAlertModal;

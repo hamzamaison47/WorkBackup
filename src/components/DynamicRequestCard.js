@@ -5,7 +5,6 @@ import {View, Text, TouchableOpacity, Animated} from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import LinearGradient from 'react-native-linear-gradient';
 import styles from '../styles/styles';
-import {verticalScale} from '../store/utils/scaling';
 
 // Button type constants for header buttons
 const BUTTON_TYPES = {
@@ -381,7 +380,6 @@ const DynamicRequestCard = ({
           style={[
             styles.DRC_CardHeader,
             isRTL && {flexDirection: 'row-reverse'},
-            !hasHeaderButtons && {marginBottom: verticalScale(12)}, // Dynamic spacing
           ]}>
           <View
             style={[
@@ -400,6 +398,7 @@ const DynamicRequestCard = ({
                   headerConfig.title.defaultValue}
               </Text>
             )}
+
             {headerConfig.subtitle && (
               <Text
                 style={[
@@ -412,7 +411,6 @@ const DynamicRequestCard = ({
             )}
           </View>
 
-          {/* Header buttons - only render if buttons exist */}
           {hasHeaderButtons && (
             <View
               style={[
@@ -428,7 +426,7 @@ const DynamicRequestCard = ({
         {/* Main fields */}
         {fields.map((field, index) => renderField(field, index))}
 
-        {/* Expandable content */}
+        {/* Expandable fields */}
         {expanded && expandableFields.length > 0 && (
           <>
             <View style={styles.DRC_SectionDivider} />
@@ -436,18 +434,15 @@ const DynamicRequestCard = ({
           </>
         )}
 
-        {/* Bottom container - only render if needed */}
+        {/* Bottom section */}
         {(shouldShowExpandToggle || hasBottomButtons) && (
           <View
             style={[
               styles.DRC_BottomContainer,
               !shouldShowExpandToggle &&
-                hasBottomButtons && {
-                  alignItems: 'flex-end',
-                  marginTop: verticalScale(8),
-                },
+                hasBottomButtons &&
+                styles.DRC_BottomContainerCollapsed,
             ]}>
-            {/* Expand toggle */}
             {shouldShowExpandToggle && (
               <TouchableOpacity
                 onPress={() => setExpanded(!expanded)}
@@ -460,16 +455,12 @@ const DynamicRequestCard = ({
               </TouchableOpacity>
             )}
 
-            {/* Bottom buttons */}
             {hasBottomButtons && (
               <View
                 style={[
-                  shouldShowExpandToggle
-                    ? styles.DRC_BottomButtonsContainer
-                    : {flexDirection: 'row', gap: 8},
-                  showNavigationArrow &&
-                    shouldShowExpandToggle &&
-                    styles.DRC_BottomButtonsContainerWithArrow,
+                  styles.DRC_BottomButtonsContainer,
+                  !shouldShowExpandToggle &&
+                    styles.DRC_BottomButtonsContainerCollapsed,
                 ]}>
                 {bottomButtons.map(buttonType => renderButton(buttonType))}
               </View>

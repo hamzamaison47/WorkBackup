@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback, useRef} from 'react';
@@ -37,6 +38,7 @@ import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation
 import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
 
 import styles from '../../../../styles/styles';
+import {conditionalVerticalScale} from '../../../../store/utils/scaling';
 
 /* ---------- initial form ---------- */
 const createInitialFormData = (
@@ -379,16 +381,16 @@ const PersonalEducationSaveRecord = () => {
       onRefresh={fetchDisciplines}>
       {isLoading && <CustomIndicator />}
       {!isLoading && (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}
+            style={styles.DSR_ContentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
             {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
                   <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
+                  <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
                 </View>
@@ -396,23 +398,22 @@ const PersonalEducationSaveRecord = () => {
             )}
             <ScrollView
               ref={scrollViewRef}
-              contentContainerStyle={styles.LReqSR_FormContainer}
+              contentContainerStyle={styles.DSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled">
-              {/* ---------- Education (frozen in edit) ---------- */}
-              <Text style={styles.LReqSR_Label}>Education *</Text>
+              <Text style={styles.DSR_Label}>Education *</Text>
               {mode === 'edit' ? (
                 <Text
                   style={[
-                    styles.LReqSR_Input,
-                    styles.LReqSR_Disabled,
-                    {paddingVertical: 14},
+                    styles.DSR_Input,
+                    styles.DSR_Disabled,
+                    {paddingVertical: conditionalVerticalScale(12, 14, 16, 18)},
                   ]}>
                   {readableEducation}
                 </Text>
               ) : (
                 <Dropdown
-                  style={styles.LReqSR_Input}
+                  style={styles.DSR_Input}
                   data={educationDisciplines}
                   labelField="label"
                   valueField="value"
@@ -423,32 +424,32 @@ const PersonalEducationSaveRecord = () => {
                   }
                   search
                   searchPlaceholder="Search Education"
-                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
                   activeColor="#E6F0FF"
                   containerStyle={[
-                    styles.LReqSR_DropdownContainer,
+                    styles.DSR_DropdownContainer,
                     {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
                   ]}
-                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
                   dropdownPosition="auto"
                 />
               )}
 
-              <Text style={styles.LReqSR_Label}>Description *</Text>
+              <Text style={styles.DSR_Label}>Description *</Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.Description}
                 onChangeText={t => handleInputChange('Description', t)}
                 placeholder="Enter Description"
                 placeholderTextColor="#888"
               />
 
-              <Text style={styles.LReqSR_Label}>Duration Unit *</Text>
+              <Text style={styles.DSR_Label}>Duration Unit *</Text>
               <Dropdown
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 data={durationOptions}
                 labelField="label"
                 valueField="value"
@@ -457,20 +458,20 @@ const PersonalEducationSaveRecord = () => {
                 onChange={item => handleInputChange('DurationUnit', item.value)}
                 maxHeight={250}
                 dropdownPosition="auto"
-                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                itemTextStyle={styles.LReqSR_DropdownItemText}
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
                 activeColor="#E6F0FF"
                 containerStyle={[
-                  styles.LReqSR_DropdownContainer,
+                  styles.DSR_DropdownContainer,
                   {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
                 ]}
-                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
               />
 
-              <Text style={styles.LReqSR_Label}>Duration *</Text>
+              <Text style={styles.DSR_Label}>Duration *</Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.Duration}
                 onChangeText={t =>
                   handleInputChange('Duration', t.replace(/[^0-9]/g, ''))
@@ -480,15 +481,15 @@ const PersonalEducationSaveRecord = () => {
                 keyboardType="numeric"
               />
 
-              <Text style={styles.LReqSR_Label}>Start Date *</Text>
+              <Text style={styles.DSR_Label}>Start Date *</Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={styles.DSR_DateSelector}
                 onPress={() => {
                   setCalendarField('StartDate');
                   setShowCalendar(true);
                 }}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text style={styles.DSR_DateText}>
                     {formData.StartDate
                       ? formatDate(formData.StartDate)
                       : 'Select Start Date'}
@@ -497,15 +498,15 @@ const PersonalEducationSaveRecord = () => {
                 <Icon name="calendar" size={20} color="#0A66C2" />
               </TouchableOpacity>
 
-              <Text style={styles.LReqSR_Label}>End Date *</Text>
+              <Text style={styles.DSR_Label}>End Date *</Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={styles.DSR_DateSelector}
                 onPress={() => {
                   setCalendarField('EndDate');
                   setShowCalendar(true);
                 }}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text style={styles.DSR_DateText}>
                     {formData.EndDate
                       ? formatDate(formData.EndDate)
                       : 'Select End Date'}
@@ -514,9 +515,9 @@ const PersonalEducationSaveRecord = () => {
                 <Icon name="calendar" size={20} color="#0A66C2" />
               </TouchableOpacity>
 
-              <Text style={styles.LReqSR_Label}>Notes</Text>
+              <Text style={styles.DSR_Label}>Notes</Text>
               <TextInput
-                style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
+                style={[styles.DSR_Input, styles.DSR_TextArea]}
                 value={formData.Notes}
                 onChangeText={t => handleInputChange('Notes', t)}
                 placeholder="Enter Notes"
@@ -525,16 +526,7 @@ const PersonalEducationSaveRecord = () => {
                 numberOfLines={6}
               />
             </ScrollView>
-            {/*
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-            /> */}
+
             {isWorkflowConfigured ? (
               <SaveRecordButtons
                 mode={mode}

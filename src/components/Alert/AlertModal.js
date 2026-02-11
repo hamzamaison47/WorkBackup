@@ -11,16 +11,9 @@ import {
   Animated,
 } from 'react-native';
 import {useSelector} from 'react-redux';
+
 import {translate as t} from '../../store/utils/translate';
-
-const {width, height} = Dimensions.get('window');
-
-// Scaling functions
-const scale = size => (width / 375) * size;
-const verticalScale = size => (height / 812) * size;
-const moderateScale = (size, factor = 0.5) =>
-  size + (scale(size) - size) * factor;
-const fontScale = size => Math.min(scale(size), size + 4);
+import styles from '../../styles/styles';
 
 const AlertModal = ({
   visible,
@@ -153,7 +146,7 @@ const AlertModal = ({
       <TouchableWithoutFeedback onPress={handleOverlayPress}>
         <Animated.View
           style={[
-            alertStyles.overlay,
+            styles.Alert_overlay,
             {
               opacity: overlayOpacityAnim,
             },
@@ -161,26 +154,26 @@ const AlertModal = ({
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
-                alertStyles.modalContainer,
+                styles.Alert_modalContainer,
                 {
                   transform: [{translateY: translateYAnim}, {scale: scaleAnim}],
                 },
               ]}>
               {/* Content Section */}
-              <View style={alertStyles.contentContainer}>
-                <Text style={alertStyles.heading}>{heading}</Text>
-                <Text style={alertStyles.description}>{text}</Text>
+              <View style={styles.Alert_contentContainer}>
+                <Text style={styles.Alert_heading}>{heading}</Text>
+                <Text style={styles.Alert_description}>{text}</Text>
               </View>
 
               {/* Action Button */}
               <TouchableOpacity
                 style={[
-                  alertStyles.button,
+                  styles.Alert_button,
                   {backgroundColor: alertConfig.primaryColor},
                 ]}
                 onPress={handlePress}
                 activeOpacity={0.8}>
-                <Text style={alertStyles.buttonText}>{buttonText}</Text>
+                <Text style={styles.Alert_buttonText}>{buttonText}</Text>
               </TouchableOpacity>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -188,89 +181,6 @@ const AlertModal = ({
       </TouchableWithoutFeedback>
     </Modal>
   );
-};
-
-// Modern alert modal styles
-const alertStyles = {
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: scale(20),
-  },
-  modalContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: moderateScale(24),
-    paddingVertical: verticalScale(28),
-    paddingHorizontal: scale(24),
-    width: Math.min(width * 0.85, scale(340)),
-    maxWidth: scale(340),
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: verticalScale(20),
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: moderateScale(25),
-    elevation: 25,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: verticalScale(20),
-  },
-  iconBackground: {
-    width: scale(64),
-    height: scale(64),
-    borderRadius: scale(32),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: moderateScale(2),
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  iconSize: fontScale(32),
-  contentContainer: {
-    alignItems: 'center',
-    marginBottom: verticalScale(24),
-    width: '100%',
-  },
-  heading: {
-    fontSize: fontScale(20),
-    fontWeight: '700',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: verticalScale(12),
-    lineHeight: fontScale(26),
-  },
-  description: {
-    fontSize: fontScale(15),
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: fontScale(22),
-  },
-  button: {
-    width: '100%',
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(20),
-    borderRadius: moderateScale(12),
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: verticalScale(48),
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: verticalScale(4),
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: moderateScale(8),
-    elevation: 8,
-  },
-  buttonText: {
-    fontSize: fontScale(15),
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
 };
 
 export default AlertModal;

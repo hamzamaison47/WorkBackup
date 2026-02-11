@@ -1,12 +1,10 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback} from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   BackHandler,
   RefreshControl,
@@ -30,6 +28,8 @@ import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import {ContactDetails} from '../../../../API/PersonalInformation/ContactDetails/ContactDetails';
 import {DeleteContactDetails} from '../../../../API/PersonalInformation/ContactDetails/DeleteContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
+
+import styles from '../../../../styles/styles';
 
 const ContactDetailsListPage = () => {
   const navigation = useNavigation();
@@ -269,7 +269,6 @@ const ContactDetailsListPage = () => {
     );
   };
 
-  // 🔹 Main Render
   return (
     <ActionPaneContainer
       pageTitle="Contact Details"
@@ -279,9 +278,12 @@ const ContactDetailsListPage = () => {
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateContact}
+      onBackPress={handleGoBack}
       onRefresh={handleRefresh}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : contactsData.length > 0 ? (
         <FlatList
           data={contactsData}
@@ -289,7 +291,7 @@ const ContactDetailsListPage = () => {
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -297,15 +299,17 @@ const ContactDetailsListPage = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            No contact details available
+          </Text>
         </ScrollView>
       )}
 
-      {/* Alert Modal */}
       <AlertModal
         visible={alertModal}
         heading="Alert"
@@ -313,7 +317,6 @@ const ContactDetailsListPage = () => {
         onPress={() => setAlertModal(false)}
       />
 
-      {/* Delete Modal */}
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
@@ -327,17 +330,5 @@ const ContactDetailsListPage = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  listContent: {
-    padding: 6,
-  },
-  noDataText: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginTop: 20,
-    color: '#9CA3AF',
-  },
-});
 
 export default ContactDetailsListPage;

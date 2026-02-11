@@ -1,8 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -363,7 +362,9 @@ const FamilyContacts_ListPageScreen = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleFamilyContactRecordCreate}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : familycontactsdata.length > 0 ? (
         <FlatList
           data={familycontactsdata}
@@ -371,7 +372,7 @@ const FamilyContacts_ListPageScreen = () => {
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.LReqLP_ListContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -379,11 +380,14 @@ const FamilyContacts_ListPageScreen = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            Tap the + button to add your first personal contact
+          </Text>
         </ScrollView>
       )}
 
@@ -394,7 +398,6 @@ const FamilyContacts_ListPageScreen = () => {
         onPress={() => setAlertModal(false)}
       />
 
-      {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"

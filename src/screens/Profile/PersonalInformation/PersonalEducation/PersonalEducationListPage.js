@@ -1,15 +1,14 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback} from 'react';
 import {
   Text,
-  StyleSheet,
   FlatList,
   RefreshControl,
   BackHandler,
   ScrollView,
+  View,
 } from 'react-native';
 import {
   useNavigation,
@@ -30,6 +29,8 @@ import {EmployeePersonalEducation} from '../../../../API/PersonalInformation/Edu
 import {DeleteEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationDelete';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
+
+import styles from '../../../../styles/styles';
 
 const PersonalEducation = () => {
   const navigation = useNavigation();
@@ -365,19 +366,21 @@ const PersonalEducation = () => {
     );
   };
 
-  /* ---------- render ---------- */
   return (
     <ActionPaneContainer
       pageTitle="Education Details"
       isBackButton={false}
-      showFooter
-      showFloatingButton
-      isHeaderActive
-      showTabNavigator
+      showFooter={true}
+      showFloatingButton={true}
+      isHeaderActive={true}
+      showTabNavigator={true}
       onFloatingButtonPress={handleCreateEducation}
+      onBackPress={handleGoBack}
       onRefresh={fetchEducationData}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : educationData.length > 0 ? (
         <FlatList
           data={educationData}
@@ -385,7 +388,7 @@ const PersonalEducation = () => {
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -393,11 +396,14 @@ const PersonalEducation = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.noDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            Tap the + button to add your first education record
+          </Text>
         </ScrollView>
       )}
 
@@ -421,18 +427,5 @@ const PersonalEducation = () => {
     </ActionPaneContainer>
   );
 };
-
-/* ---------- styles ---------- */
-const styles = StyleSheet.create({
-  listContent: {padding: 6},
-  noDataText: {
-    flex: 1,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#999999',
-  },
-});
 
 export default PersonalEducation;

@@ -11,6 +11,7 @@ import AlertModal from '../../components/Alert/AlertModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import EntitlementCards from '../../components/EntitlementBalance/EntitlementCards';
+
 import styles from '../../styles/styles';
 
 const EntitlementBalance = () => {

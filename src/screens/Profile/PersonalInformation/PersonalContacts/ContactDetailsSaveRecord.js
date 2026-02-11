@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
@@ -34,29 +35,7 @@ import {CreateContactDetails} from '../../../../API/PersonalInformation/ContactD
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
 import {getContactDetailsLabels} from '../../../../API/PersonalInformation/ContactDetails/GetContactDetailsLabel';
 
-/* --------------  STYLE SHEET  -------------- */
-import {StyleSheet} from 'react-native';
-const styles = StyleSheet.create({
-  container: {flex: 1},
-  contentWrapper: {flex: 1},
-  formContainer: {padding: 16},
-  label: {fontSize: 16, marginBottom: 6, color: '#333'},
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-  },
-  textArea: {height: 100, textAlignVertical: 'top'},
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  switchLabel: {fontSize: 16, color: '#333'},
-});
+import styles from '../../../../styles/styles';
 
 /* --------------  MAIN COMPONENT  -------------- */
 const ContactDetailsSaveRecord = () => {
@@ -115,7 +94,6 @@ const ContactDetailsSaveRecord = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [contactDetailsLabels, setContactDetailsLabels] = useState({});
 
-
   /* -------  STATIC DROPDOWN DATA  ------- */
   const contactTypeOptions = [
     {label: 'Phone', value: 'Phone'},
@@ -131,45 +109,43 @@ const ContactDetailsSaveRecord = () => {
     {label: 'Mobile number', value: 'Mobile number'},
   ];
 
-
   const fetchgetContactDetailsLabels = async () => {
+    try {
+      const labels = await getContactDetailsLabels();
+      return labels || {};
+    } catch (error) {
+      console.error('Error fetching Contact Details labels:', error);
+      return {};
+    }
+  };
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const initializeLabels = async () => {
         try {
-          const labels = await getContactDetailsLabels();
-          return labels || {};
-          
+          setIsLoading(true);
+
+          // 🔹 Fetch Contact Details Labels
+          const labels = await fetchgetContactDetailsLabels();
+          if (!isActive) return;
+
+          setContactDetailsLabels(labels);
+          console.log('Contact Details Labels:', labels);
         } catch (error) {
-          console.error('Error fetching Contact Details labels:', error);
-          return {};
+          console.error('Error loading Contact Details labels:', error);
+        } finally {
+          if (isActive) setIsLoading(false);
         }
       };
-      useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
 
-    const initializeLabels = async () => {
-      try {
-        setIsLoading(true);
+      initializeLabels();
 
-        // 🔹 Fetch Contact Details Labels
-        const labels = await fetchgetContactDetailsLabels();
-        if (!isActive) return;
-
-        setContactDetailsLabels(labels);
-        console.log('Contact Details Labels:', labels);
-      } catch (error) {
-        console.error('Error loading Contact Details labels:', error);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
-
-    initializeLabels();
-
-    return () => {
-      isActive = false;
-    };
-  }, []),
-);
+      return () => {
+        isActive = false;
+      };
+    }, []),
+  );
 
   /* -------  NAVIGATION  ------- */
   const goBack = useCallback(() => {
@@ -359,16 +335,16 @@ const ContactDetailsSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.contentWrapper}
+            style={styles.DSR_ContentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
             {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
                   <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
+                  <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
                 </View>
@@ -376,18 +352,14 @@ const ContactDetailsSaveRecord = () => {
             )}
             <ScrollView
               ref={scrollViewRef}
-              contentContainerStyle={styles.formContainer}
+              contentContainerStyle={styles.DSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled">
-              {/* Type */}
-              <Text style={styles.label}>Type *</Text>
+              <Text style={styles.DSR_Label}>Type *</Text>
               <Dropdown
                 style={[
-                  styles.input,
-                  mode === 'edit' && {
-                    backgroundColor: '#f0f0f0',
-                    color: '#888',
-                  }, // gray-out style
+                  styles.DSR_Input,
+                  mode === 'edit' && styles.DSR_Disabled,
                 ]}
                 data={contactTypeOptions}
                 labelField="label"
@@ -400,66 +372,83 @@ const ContactDetailsSaveRecord = () => {
                 maxHeight={280}
                 search
                 searchPlaceholder="Search Type"
-                disable={mode === 'edit'} // <--- this disables the dropdown interaction
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={[
+                  styles.DSR_DropdownContainer,
+                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
+                ]}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
+                disable={mode === 'edit'}
               />
 
-              {/* Locator */}
-              <Text style={styles.label}>Locator (Email or Phone No.) *</Text>
+              <Text style={styles.DSR_Label}>
+                Locator (Email or Phone No.) *
+              </Text>
               <TextInput
-                style={styles.input}
+                style={styles.DSR_Input}
                 value={formData.Locator}
                 onChangeText={text => handleInputChange('Locator', text)}
                 placeholder="e.g., john.doe@email.com"
+                placeholderTextColor="#888"
                 autoCapitalize="none"
               />
 
-              {/* Extension */}
-              <Text style={styles.label}>Extension</Text>
+              <Text style={styles.DSR_Label}>Extension</Text>
               <TextInput
-                style={styles.input}
+                style={styles.DSR_Input}
                 value={formData.LocatorExtension}
                 onChangeText={text =>
                   handleInputChange('LocatorExtension', text)
                 }
                 placeholder="e.g., +92"
+                placeholderTextColor="#888"
               />
 
-              {/* Description */}
-              <Text style={styles.label}>Description</Text>
+              <Text style={styles.DSR_Label}>Description</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.DSR_Input, styles.DSR_TextArea]}
                 value={formData.Description}
                 onChangeText={text => handleInputChange('Description', text)}
                 placeholder="Enter description"
+                placeholderTextColor="#888"
                 multiline
                 numberOfLines={4}
               />
 
-              {/* Switches */}
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Is Primary</Text>
+              <View style={styles.DSR_SwitchRow}>
+                <Text style={styles.DSR_SwitchLabel}>Is Primary</Text>
                 <Switch
                   value={!!formData.IsPrimary}
                   onValueChange={val => handleInputChange('IsPrimary', val)}
+                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  thumbColor={formData.IsPrimary ? '#2196F3' : '#f4f3f4'}
                 />
               </View>
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Is Private</Text>
+
+              <View style={styles.DSR_SwitchRow}>
+                <Text style={styles.DSR_SwitchLabel}>Is Private</Text>
                 <Switch
                   value={!!formData.IsPrivate}
                   onValueChange={val => handleInputChange('IsPrivate', val)}
+                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  thumbColor={formData.IsPrivate ? '#2196F3' : '#f4f3f4'}
                 />
               </View>
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Is Mobile Phone</Text>
+
+              <View style={styles.DSR_SwitchRow}>
+                <Text style={styles.DSR_SwitchLabel}>Is Mobile Phone</Text>
                 <Switch
                   value={!!formData.IsMobilePhone}
                   onValueChange={val => handleInputChange('IsMobilePhone', val)}
+                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  thumbColor={formData.IsMobilePhone ? '#2196F3' : '#f4f3f4'}
                 />
               </View>
             </ScrollView>
 
-            {/* Buttons */}
             <SaveRecordButtons
               mode={mode}
               processingButton={processingButton}

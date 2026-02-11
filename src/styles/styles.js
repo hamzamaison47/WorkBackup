@@ -9,13 +9,23 @@ import {
   isTablet,
   conditionalScale,
   conditionalValue,
+  conditionalVerticalScale,
+  conditionalFontScale,
+  spacing,
+  borderRadius,
+  iconSize,
 } from '../store/utils/scaling';
+
 const {height, width} = Dimensions.get('window');
 
 const PROFILE_IMAGE_SIZE = width * 0.35; // responsive image size
 const BORDER_WIDTH = 5;
 
 const styles = StyleSheet.create({
+  // ==================================================================================================================
+  // START OF SCREEN - RESPONSIVE SCREEN STYLES
+  // ==================================================================================================================
+
   // ============================================
   // SPLASH SCREEN - RESPONSIVE STYLES
   // ============================================
@@ -26,264 +36,60 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   splash_Logo: {
-    width: scale(200),
-    height: verticalScale(80),
-    marginBottom: verticalScale(20),
+    width: conditionalScale(180, 200, 220, 280),
+    height: conditionalVerticalScale(70, 80, 90, 110),
+    marginBottom: conditionalVerticalScale(16, 20, 24, 32),
   },
   splash_Text: {
-    fontSize: fontScale(30),
+    fontSize: conditionalFontScale(26, 30, 32, 38),
     fontWeight: 'bold',
     color: '#FFFFFF',
     textShadowColor: 'rgba(0, 0, 0, 0.25)',
     textShadowOffset: {width: 2, height: 2},
     textShadowRadius: 4,
     textAlign: 'center',
-    paddingHorizontal: scale(20),
-    lineHeight: fontScale(36),
+    paddingHorizontal: spacing.md,
+    lineHeight: conditionalFontScale(32, 36, 40, 46),
   },
   splash_Tagline: {
-    fontSize: fontScale(18),
+    fontSize: conditionalFontScale(16, 18, 20, 24),
     color: '#FFFFFF',
-    marginTop: verticalScale(10),
+    marginTop: conditionalVerticalScale(8, 10, 12, 16),
     fontStyle: 'italic',
     fontWeight: '300',
     textAlign: 'center',
-    paddingHorizontal: scale(20),
-    lineHeight: fontScale(22),
+    paddingHorizontal: spacing.md,
+    lineHeight: conditionalFontScale(20, 22, 24, 28),
   },
   splash_Loader: {
-    marginTop: verticalScale(20),
+    marginTop: conditionalVerticalScale(16, 20, 24, 32),
   },
   splash_Circle1: {
     position: 'absolute',
-    width: scale(300),
-    height: scale(300),
-    borderRadius: scale(150),
+    width: conditionalScale(260, 300, 340, 420),
+    height: conditionalScale(260, 300, 340, 420),
+    borderRadius: conditionalScale(130, 150, 170, 210),
     backgroundColor: '#FFFFFF',
     top: '-15%',
     right: '-15%',
   },
   splash_Circle2: {
     position: 'absolute',
-    width: scale(200),
-    height: scale(200),
-    borderRadius: scale(100),
+    width: conditionalScale(170, 200, 230, 300),
+    height: conditionalScale(170, 200, 230, 300),
+    borderRadius: conditionalScale(85, 100, 115, 150),
     backgroundColor: '#FFFFFF',
     bottom: '-10%',
     left: '-10%',
   },
   splash_Circle3: {
     position: 'absolute',
-    width: scale(150),
-    height: scale(150),
-    borderRadius: scale(75),
+    width: conditionalScale(130, 150, 170, 220),
+    height: conditionalScale(130, 150, 170, 220),
+    borderRadius: conditionalScale(65, 75, 85, 110),
     backgroundColor: '#FFFFFF',
     top: '60%',
     right: '20%',
-  },
-
-  // ============================================
-  // MAIN DASHBOARD - RESPONSIVE STYLES (DETAILED)
-  // ============================================
-  MainDash_Container: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-  },
-
-  MainDash_ScrollView: {
-    flex: 1,
-  },
-
-  MainDash_HeaderContainer: {
-    paddingHorizontal: scale(20),
-    paddingTop: verticalScale(10),
-    paddingBottom: verticalScale(20),
-    borderBottomLeftRadius: moderateScale(32),
-    borderBottomRightRadius: moderateScale(32),
-    backgroundColor: '#0A66C2',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: {width: 0, height: 3},
-    shadowRadius: 6,
-    elevation: 4,
-  },
-
-  MainDash_HeaderContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-  },
-
-  MainDash_HeaderContentSmall: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  MainDash_ProfilePicture: {
-    width: scale(90),
-    height: scale(90),
-    borderRadius: scale(45),
-    borderWidth: scale(3),
-    borderColor: '#fff',
-    backgroundColor: '#EAF2FB',
-  },
-
-  MainDash_AvatarContainer: {
-    width: scale(90),
-    height: scale(90),
-    borderRadius: scale(45),
-    borderWidth: scale(3),
-    borderColor: '#fff',
-    backgroundColor: '#bed8f6ff',
-    marginRight: scale(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  MainDash_AvatarContainerSmall: {
-    width: scale(90),
-    height: scale(90),
-    borderRadius: scale(45),
-    borderWidth: scale(3),
-    borderColor: '#fff',
-    backgroundColor: '#bed8f6ff',
-    marginRight: 0,
-    marginBottom: verticalScale(12),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  MainDash_AvatarText: {
-    fontSize: fontScale(28),
-    fontWeight: '700',
-    color: '#0A66C2',
-  },
-
-  MainDash_TextColumn: {
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-
-  MainDash_TextColumnSmall: {
-    flex: 1,
-    alignItems: 'center',
-  },
-
-  MainDash_NameText: {
-    fontSize: fontScale(20),
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: verticalScale(2),
-    textAlign: 'left',
-  },
-
-  MainDash_NameTextSmall: {
-    fontSize: fontScale(20),
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: verticalScale(2),
-    textAlign: 'center',
-  },
-
-  MainDash_EmailText: {
-    fontSize: fontScale(13),
-    color: '#DCE6F5',
-    textAlign: 'left',
-    lineHeight: fontScale(16),
-  },
-
-  MainDash_EmailTextSmall: {
-    fontSize: fontScale(13),
-    color: '#DCE6F5',
-    textAlign: 'center',
-    lineHeight: fontScale(16),
-  },
-
-  MainDash_BoldText: {
-    fontSize: fontScale(13),
-    color: '#DCE6F5',
-    fontWeight: 'bold',
-  },
-
-  MainDash_MainContent: {
-    flex: 1,
-    paddingTop: verticalScale(22),
-  },
-
-  MainDash_SectionTitle: {
-    fontSize: fontScale(18),
-    fontWeight: '700',
-    color: '#2C3E50',
-    marginBottom: verticalScale(18),
-    paddingHorizontal: scale(20),
-  },
-
-  MainDash_Card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: moderateScale(16),
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: moderateScale(10),
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowOffset: {width: 0, height: 3},
-    shadowRadius: 6,
-    elevation: 2,
-  },
-
-  MainDash_CardTitle: {
-    fontSize: fontScale(12),
-    fontWeight: '700',
-    color: '#2C3E50',
-    textAlign: 'center',
-    lineHeight: fontScale(14),
-    marginTop: verticalScale(8),
-  },
-
-  MainDash_IndicatorContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: verticalScale(12),
-    paddingHorizontal: scale(20),
-    marginBottom: verticalScale(20),
-  },
-
-  MainDash_IndicatorDot: {
-    width: scale(8),
-    height: scale(8),
-    borderRadius: scale(4),
-    backgroundColor: '#0A66C2',
-    marginHorizontal: scale(4),
-  },
-
-  MainDash_IndicatorDotInactive: {
-    opacity: 0.3,
-  },
-
-  MainDash_NoMenuContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: verticalScale(40),
-    paddingHorizontal: scale(20),
-  },
-
-  MainDash_NoMenuText: {
-    fontSize: fontScale(16),
-    color: '#6B7280',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  MainDash_CardIcon: {
-    resizeMode: 'contain',
-  },
-
-  MainDash_PageContainer: {
-    paddingHorizontal: scale(20),
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
   },
 
   // ============================================
@@ -293,23 +99,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(10),
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
 
   Login_Header: {
     alignItems: 'center',
-    marginBottom: verticalScale(20),
+    marginBottom: conditionalVerticalScale(16, 20, 24, 32),
     width: '100%',
   },
 
   Login_QRButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? verticalScale(50) : verticalScale(50),
-    right: scale(20),
-    width: scale(50),
-    height: scale(50),
-    borderRadius: scale(28),
+    top:
+      Platform.OS === 'ios'
+        ? conditionalVerticalScale(45, 50, 55, 60)
+        : conditionalVerticalScale(45, 50, 55, 60),
+    right: spacing.md,
+    width: conditionalScale(46, 50, 54, 64),
+    height: conditionalScale(46, 50, 54, 64),
+    borderRadius: conditionalScale(23, 25, 27, 32),
     backgroundColor: '#fff',
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
@@ -325,10 +134,10 @@ const styles = StyleSheet.create({
 
   Login_FingerprintButton: {
     position: 'absolute',
-    bottom: verticalScale(50),
-    width: scale(70),
-    height: scale(70),
-    borderRadius: scale(40),
+    bottom: conditionalVerticalScale(45, 50, 55, 65),
+    width: conditionalScale(64, 70, 76, 90),
+    height: conditionalScale(64, 70, 76, 90),
+    borderRadius: conditionalScale(32, 35, 38, 45),
     backgroundColor: '#fff',
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
@@ -342,49 +151,47 @@ const styles = StyleSheet.create({
   },
 
   Login_Logo: {
-    width: scale(210),
-    height: verticalScale(100),
-    marginBottom: verticalScale(20),
+    width: conditionalScale(190, 210, 230, 280),
+    height: conditionalVerticalScale(90, 100, 110, 130),
+    marginBottom: conditionalVerticalScale(16, 20, 24, 32),
     resizeMode: 'contain',
   },
 
   Login_Title: {
-    fontSize: fontScale(24),
+    fontSize: conditionalFontScale(22, 24, 26, 32),
     fontWeight: 'bold',
-    marginBottom: verticalScale(8),
+    marginBottom: conditionalVerticalScale(6, 8, 10, 12),
     color: '#333333',
     textAlign: 'center',
-    lineHeight: fontScale(30),
+    lineHeight: conditionalFontScale(28, 30, 34, 40),
   },
 
   Login_Subtitle: {
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(13, 14, 15, 18),
     color: '#666666',
-    // marginBottom: verticalScale(10),
     textAlign: 'center',
-    paddingHorizontal: scale(20),
-    lineHeight: fontScale(20),
-    maxWidth: scale(300),
+    paddingHorizontal: spacing.md,
+    lineHeight: conditionalFontScale(18, 20, 22, 26),
+    maxWidth: conditionalScale(280, 300, 320, 400),
   },
 
   Login_ButtonsContainer: {
     width: '100%',
     alignItems: 'center',
-    // marginBottom: verticalScale(20),
   },
 
   Login_Button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '85%',
-    maxWidth: scale(320),
-    height: verticalScale(52),
-    borderRadius: moderateScale(25),
+    width: isTablet ? '70%' : '85%',
+    maxWidth: conditionalScale(300, 320, 340, 450),
+    height: conditionalVerticalScale(48, 52, 56, 64),
+    borderRadius: borderRadius.xl,
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
-    marginVertical: verticalScale(8),
-    paddingHorizontal: scale(20),
+    marginVertical: conditionalVerticalScale(6, 8, 10, 12),
+    paddingHorizontal: spacing.md,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -395,81 +202,81 @@ const styles = StyleSheet.create({
 
   Login_ButtonText: {
     color: '#0A66C2',
-    fontSize: fontScale(15),
+    fontSize: conditionalFontScale(14, 15, 16, 19),
     fontWeight: '600',
   },
 
   Login_Icon: {
-    marginRight: scale(12),
+    marginRight: spacing.sm,
   },
 
   Login_LoadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: moderateScale(20),
+    padding: spacing.md,
   },
 
   Login_LoadingText: {
-    marginTop: verticalScale(16),
-    fontSize: fontScale(15),
+    marginTop: conditionalVerticalScale(12, 16, 18, 24),
+    fontSize: conditionalFontScale(14, 15, 16, 19),
     color: '#333',
     textAlign: 'center',
-    lineHeight: fontScale(20),
-    paddingHorizontal: scale(20),
+    lineHeight: conditionalFontScale(18, 20, 22, 26),
+    paddingHorizontal: spacing.md,
   },
 
   Login_DialogContainer: {
-    borderRadius: moderateScale(16),
-    padding: moderateScale(20),
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   Login_DialogTitle: {
-    fontSize: fontScale(18),
+    fontSize: conditionalFontScale(17, 18, 19, 22),
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginBottom: verticalScale(12),
+    marginBottom: conditionalVerticalScale(10, 12, 14, 16),
   },
 
   Login_DialogMessage: {
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(13, 14, 15, 18),
     color: '#666',
     textAlign: 'center',
-    marginBottom: verticalScale(20),
-    paddingHorizontal: scale(10),
-    lineHeight: fontScale(20),
+    marginBottom: conditionalVerticalScale(16, 20, 24, 28),
+    paddingHorizontal: spacing.sm,
+    lineHeight: conditionalFontScale(18, 20, 22, 26),
   },
 
   Login_DialogButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    gap: scale(10),
+    gap: spacing.sm,
   },
 
   Login_DialogButton: {
     flex: 1,
-    borderRadius: moderateScale(8),
-    paddingVertical: verticalScale(12),
+    borderRadius: borderRadius.md,
+    paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
     alignItems: 'center',
-    minHeight: verticalScale(44),
+    minHeight: conditionalVerticalScale(40, 44, 48, 52),
   },
 
   Login_DialogButtonText: {
     color: '#fff',
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(13, 14, 15, 17),
     fontWeight: '600',
   },
 
   Login_Divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: verticalScale(20),
+    marginVertical: conditionalVerticalScale(16, 20, 24, 32),
     width: '100%',
-    maxWidth: scale(300),
+    maxWidth: conditionalScale(280, 300, 320, 400),
   },
 
   Login_DividerLine: {
@@ -479,8 +286,8 @@ const styles = StyleSheet.create({
   },
 
   Login_DividerText: {
-    marginHorizontal: scale(16),
-    fontSize: fontScale(13),
+    marginHorizontal: spacing.md,
+    fontSize: conditionalFontScale(12, 13, 14, 16),
     color: '#6B7280',
     fontWeight: '600',
   },
@@ -497,9 +304,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: scale(16),
-    paddingVertical: verticalScale(16),
-    paddingTop: verticalScale(20),
+    paddingHorizontal: spacing.md,
+    paddingVertical: conditionalVerticalScale(14, 16, 18, 20),
+    paddingTop: conditionalVerticalScale(18, 20, 22, 24),
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e8eaed',
@@ -511,11 +318,11 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_HeaderButton: {
-    width: scale(44),
-    height: scale(44),
+    width: conditionalScale(40, 44, 48, 52),
+    height: conditionalScale(40, 44, 48, 52),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: scale(22),
+    borderRadius: conditionalScale(20, 22, 24, 26),
     backgroundColor: '#f0f8ff',
   },
 
@@ -525,26 +332,26 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_HeaderTitle: {
-    fontSize: fontScale(20),
+    fontSize: conditionalFontScale(18, 20, 22, 26),
     fontWeight: '700',
     color: '#1a1a1a',
   },
 
   ConfigSelection_HeaderSubtitle: {
-    fontSize: fontScale(12),
+    fontSize: conditionalFontScale(11, 12, 13, 15),
     color: '#666',
-    marginTop: verticalScale(2),
+    marginTop: conditionalVerticalScale(1, 2, 2, 3),
   },
 
   ConfigSelection_ListContainer: {
-    padding: scale(16),
-    paddingBottom: verticalScale(32),
+    padding: spacing.md,
+    paddingBottom: conditionalVerticalScale(28, 32, 36, 42),
   },
 
   ConfigSelection_ConfigCard: {
     backgroundColor: '#fff',
-    borderRadius: moderateScale(16),
-    padding: moderateScale(16),
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     borderWidth: 2,
     borderColor: '#e8eaed',
     shadowColor: '#000',
@@ -552,7 +359,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
   ConfigSelection_ActiveConfigCard: {
@@ -567,15 +374,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A66C2',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: scale(10),
-    paddingVertical: verticalScale(4),
+    paddingHorizontal: conditionalScale(8, 10, 11, 13),
+    paddingVertical: conditionalVerticalScale(3, 4, 5, 6),
     borderRadius: moderateScale(12),
-    gap: scale(4),
+    gap: conditionalScale(3, 4, 5, 6),
   },
 
   ConfigSelection_ActiveBadgeText: {
     color: '#fff',
-    fontSize: fontScale(10),
+    fontSize: conditionalFontScale(9, 10, 11, 12),
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -584,7 +391,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
   ConfigSelection_CardHeaderLeft: {
@@ -594,13 +401,13 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_IconContainer: {
-    width: scale(44),
-    height: scale(44),
+    width: conditionalScale(40, 44, 48, 54),
+    height: conditionalScale(40, 44, 48, 54),
     borderRadius: moderateScale(12),
     backgroundColor: '#f0f8ff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: scale(12),
+    marginRight: spacing.sm,
   },
 
   ConfigSelection_ActiveIconContainer: {
@@ -608,26 +415,26 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_ConfigTitle: {
-    fontSize: fontScale(18),
+    fontSize: conditionalFontScale(16, 18, 19, 22),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: verticalScale(4),
+    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
   },
 
   ConfigSelection_ConfigSubtitle: {
-    fontSize: fontScale(12),
+    fontSize: conditionalFontScale(11, 12, 13, 15),
     color: '#666',
   },
 
   ConfigSelection_CardActions: {
-    marginTop: verticalScale(24),
+    marginTop: conditionalVerticalScale(20, 24, 26, 30),
     flexDirection: 'row',
-    gap: scale(8),
+    gap: spacing.sm,
   },
 
   ConfigSelection_ActionButton: {
-    width: scale(36),
-    height: scale(36),
+    width: conditionalScale(32, 36, 40, 44),
+    height: conditionalScale(32, 36, 40, 44),
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: moderateScale(8),
@@ -638,7 +445,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     borderRadius: moderateScale(12),
     padding: moderateScale(12),
-    gap: verticalScale(10),
+    gap: conditionalVerticalScale(8, 10, 11, 13),
   },
 
   ConfigSelection_DetailRow: {
@@ -647,19 +454,19 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_DetailIcon: {
-    marginRight: scale(8),
-    width: scale(16),
+    marginRight: spacing.sm,
+    width: conditionalScale(14, 16, 17, 19),
   },
 
   ConfigSelection_DetailLabel: {
-    fontSize: fontScale(12),
+    fontSize: conditionalFontScale(11, 12, 13, 14),
     color: '#666',
     fontWeight: '600',
-    width: scale(90),
+    width: conditionalScale(80, 90, 95, 105),
   },
 
   ConfigSelection_DetailValue: {
-    fontSize: fontScale(12),
+    fontSize: conditionalFontScale(11, 12, 13, 14),
     color: '#1a1a1a',
     flex: 1,
     fontWeight: '500',
@@ -669,39 +476,39 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scale(40),
+    padding: conditionalScale(35, 40, 45, 55),
   },
 
   ConfigSelection_EmptyIconContainer: {
-    width: scale(120),
-    height: scale(120),
-    borderRadius: scale(60),
+    width: conditionalScale(100, 120, 130, 150),
+    height: conditionalScale(100, 120, 130, 150),
+    borderRadius: conditionalScale(50, 60, 65, 75),
     backgroundColor: '#f0f8ff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: verticalScale(24),
+    marginBottom: conditionalVerticalScale(20, 24, 28, 32),
   },
 
   ConfigSelection_EmptyStateTitle: {
-    fontSize: fontScale(24),
+    fontSize: conditionalFontScale(22, 24, 26, 30),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: verticalScale(12),
+    marginBottom: conditionalVerticalScale(10, 12, 14, 16),
   },
 
   ConfigSelection_EmptyStateSubtitle: {
-    fontSize: fontScale(15),
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     color: '#666',
     textAlign: 'center',
-    lineHeight: fontScale(22),
-    marginBottom: verticalScale(32),
-    paddingHorizontal: scale(20),
+    lineHeight: conditionalFontScale(20, 22, 24, 27),
+    marginBottom: conditionalVerticalScale(28, 32, 36, 40),
+    paddingHorizontal: spacing.md,
   },
 
   ConfigSelection_PrimaryButton: {
     backgroundColor: '#0A66C2',
-    paddingHorizontal: scale(28),
-    paddingVertical: verticalScale(14),
+    paddingHorizontal: conditionalScale(24, 28, 32, 36),
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
     borderRadius: moderateScale(12),
     flexDirection: 'row',
     alignItems: 'center',
@@ -713,12 +520,12 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_ButtonIcon: {
-    marginRight: scale(8),
+    marginRight: spacing.sm,
   },
 
   ConfigSelection_PrimaryButtonText: {
     color: '#fff',
-    fontSize: fontScale(16),
+    fontSize: conditionalFontScale(15, 16, 17, 19),
     fontWeight: '700',
   },
 
@@ -728,14 +535,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scale(20),
+    padding: spacing.md,
   },
 
   ConfigSelection_ModalContent: {
     backgroundColor: '#fff',
-    borderRadius: moderateScale(20),
+    borderRadius: borderRadius.xl,
     width: '100%',
-    maxWidth: scale(400),
+    maxWidth: conditionalScale(360, 400, 420, 500),
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.3,
@@ -747,35 +554,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: moderateScale(20),
+    padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: '#e8eaed',
   },
 
   ConfigSelection_ModalTitle: {
-    fontSize: fontScale(20),
+    fontSize: conditionalFontScale(18, 20, 21, 24),
     fontWeight: '700',
     color: '#1a1a1a',
   },
 
   ConfigSelection_ModalCloseButton: {
-    width: scale(32),
-    height: scale(32),
+    width: conditionalScale(28, 32, 34, 38),
+    height: conditionalScale(28, 32, 34, 38),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: scale(16),
+    borderRadius: conditionalScale(14, 16, 17, 19),
     backgroundColor: '#f5f7fa',
   },
 
   ConfigSelection_ModalBody: {
-    padding: moderateScale(20),
+    padding: spacing.md,
   },
 
   ConfigSelection_InputLabel: {
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(13, 14, 15, 17),
     fontWeight: '600',
     color: '#333',
-    marginBottom: verticalScale(8),
+    marginBottom: conditionalVerticalScale(6, 8, 9, 10),
   },
 
   ConfigSelection_Input: {
@@ -783,7 +590,7 @@ const styles = StyleSheet.create({
     borderColor: '#e8eaed',
     borderRadius: moderateScale(12),
     padding: moderateScale(14),
-    fontSize: fontScale(16),
+    fontSize: conditionalFontScale(15, 16, 17, 19),
     color: '#1a1a1a',
     backgroundColor: '#f8f9fa',
   },
@@ -791,29 +598,29 @@ const styles = StyleSheet.create({
   ConfigSelection_ModalFooter: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    padding: moderateScale(20),
-    gap: scale(12),
+    padding: spacing.md,
+    gap: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: '#e8eaed',
   },
 
   ConfigSelection_SecondaryButton: {
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(12),
+    paddingHorizontal: conditionalScale(18, 20, 22, 26),
+    paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
     borderRadius: moderateScale(10),
     backgroundColor: '#f5f7fa',
   },
 
   ConfigSelection_SecondaryButtonText: {
     color: '#666',
-    fontSize: fontScale(15),
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '600',
   },
 
   ConfigSelection_PrimaryButtonModal: {
     backgroundColor: '#0A66C2',
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(12),
+    paddingHorizontal: conditionalScale(18, 20, 22, 26),
+    paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
     borderRadius: moderateScale(10),
     flexDirection: 'row',
     alignItems: 'center',
@@ -828,12 +635,15 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_Header: {
-    paddingTop: Platform.OS === 'ios' ? verticalScale(60) : verticalScale(40),
-    paddingBottom: verticalScale(24),
-    paddingHorizontal: scale(20),
+    paddingTop:
+      Platform.OS === 'ios'
+        ? conditionalVerticalScale(55, 60, 65, 70)
+        : conditionalVerticalScale(35, 40, 45, 50),
+    paddingBottom: conditionalVerticalScale(20, 24, 26, 30),
+    paddingHorizontal: spacing.md,
     backgroundColor: '#fff',
-    borderBottomLeftRadius: moderateScale(24),
-    borderBottomRightRadius: moderateScale(24),
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.1,
@@ -843,11 +653,14 @@ const styles = StyleSheet.create({
 
   QRSetup_BackButton: {
     position: 'absolute',
-    left: scale(20),
-    top: Platform.OS === 'ios' ? verticalScale(60) : verticalScale(40),
-    width: scale(44),
-    height: scale(44),
-    borderRadius: scale(22),
+    left: spacing.md,
+    top:
+      Platform.OS === 'ios'
+        ? conditionalVerticalScale(55, 60, 65, 70)
+        : conditionalVerticalScale(35, 40, 45, 50),
+    width: conditionalScale(40, 44, 48, 52),
+    height: conditionalScale(40, 44, 48, 52),
+    borderRadius: conditionalScale(20, 22, 24, 26),
     backgroundColor: '#f0f8ff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -859,9 +672,9 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_IconBackground: {
-    width: scale(80),
-    height: scale(80),
-    borderRadius: moderateScale(20),
+    width: conditionalScale(70, 80, 85, 100),
+    height: conditionalScale(70, 80, 85, 100),
+    borderRadius: borderRadius.xl,
     backgroundColor: '#f0f8ff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -870,33 +683,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
   QRSetup_Title: {
-    fontSize: fontScale(24), // Reduced from 26 for better scaling
+    fontSize: conditionalFontScale(22, 24, 26, 30),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: verticalScale(8),
+    marginBottom: conditionalVerticalScale(6, 8, 9, 11),
     textAlign: 'center',
   },
 
   QRSetup_Subtitle: {
-    fontSize: fontScale(14), // Reduced from 15 for better scaling
+    fontSize: conditionalFontScale(13, 14, 15, 17),
     color: '#666',
     textAlign: 'center',
-    lineHeight: fontScale(20),
-    maxWidth: '85%',
+    lineHeight: conditionalFontScale(18, 20, 22, 25),
+    maxWidth: isTablet ? '70%' : '85%',
   },
 
   QRSetup_ScannerWrapper: {
     flex: 1,
-    padding: scale(16),
+    padding: spacing.md,
   },
 
   QRSetup_ScannerContainer: {
     flex: 1,
-    borderRadius: moderateScale(20), // Reduced from 24
+    borderRadius: borderRadius.xl,
     overflow: 'hidden',
     backgroundColor: '#000',
     shadowColor: '#000',
@@ -925,52 +738,53 @@ const styles = StyleSheet.create({
 
   QRSetup_MiddleSection: {
     flexDirection: 'row',
-    height: verticalScale(250), // Added fixed height for scanner frame area
+    height: conditionalVerticalScale(220, 250, 270, 320),
   },
 
   QRSetup_ScannerFrame: {
-    width: scale(250), // Reduced from 280 for better small screen support
-    height: verticalScale(250),
+    width: conditionalScale(220, 250, 270, 320),
+    height: conditionalVerticalScale(220, 250, 270, 320),
     position: 'relative',
-    alignSelf: 'center', // Center the frame
+    alignSelf: 'center',
+    overflow: 'hidden',
   },
 
   QRSetup_Corner: {
     position: 'absolute',
-    width: scale(25), // Reduced from 30
-    height: scale(25), // Reduced from 30
+    width: conditionalScale(22, 25, 27, 32),
+    height: conditionalScale(22, 25, 27, 32),
     borderColor: '#0A66C2',
   },
 
   QRSetup_TopLeft: {
     top: 0,
     left: 0,
-    borderTopWidth: 3, // Reduced from 4
-    borderLeftWidth: 3, // Reduced from 4
+    borderTopWidth: moderateScale(3),
+    borderLeftWidth: moderateScale(3),
     borderTopLeftRadius: moderateScale(6),
   },
 
   QRSetup_TopRight: {
     top: 0,
     right: 0,
-    borderTopWidth: 3, // Reduced from 4
-    borderRightWidth: 3, // Reduced from 4
+    borderTopWidth: moderateScale(3),
+    borderRightWidth: moderateScale(3),
     borderTopRightRadius: moderateScale(6),
   },
 
   QRSetup_BottomLeft: {
     bottom: 0,
     left: 0,
-    borderBottomWidth: 3, // Reduced from 4
-    borderLeftWidth: 3, // Reduced from 4
+    borderBottomWidth: moderateScale(3),
+    borderLeftWidth: moderateScale(3),
     borderBottomLeftRadius: moderateScale(6),
   },
 
   QRSetup_BottomRight: {
     bottom: 0,
     right: 0,
-    borderBottomWidth: 3, // Reduced from 4
-    borderRightWidth: 3, // Reduced from 4
+    borderBottomWidth: moderateScale(3),
+    borderRightWidth: moderateScale(3),
     borderBottomRightRadius: moderateScale(6),
   },
 
@@ -987,16 +801,16 @@ const styles = StyleSheet.create({
 
   QRSetup_InstructionsContainer: {
     position: 'absolute',
-    bottom: verticalScale(10), // Increased from 5 for better spacing
-    left: scale(20),
-    right: scale(20),
+    bottom: conditionalVerticalScale(8, 10, 12, 15),
+    left: spacing.md,
+    right: spacing.md,
     alignItems: 'center',
   },
 
   QRSetup_InstructionCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: scale(16),
-    paddingVertical: verticalScale(12),
+    paddingHorizontal: spacing.md,
+    paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
     borderRadius: moderateScale(12),
     flexDirection: 'row',
     alignItems: 'center',
@@ -1008,10 +822,10 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_InstructionText: {
-    fontSize: fontScale(14), // Reduced from 15
+    fontSize: conditionalFontScale(13, 14, 15, 17),
     fontWeight: '600',
     color: '#1a1a1a',
-    marginLeft: scale(8),
+    marginLeft: spacing.sm,
   },
 
   QRSetup_ProcessingContainer: {
@@ -1023,74 +837,74 @@ const styles = StyleSheet.create({
 
   QRSetup_ProcessingCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    padding: moderateScale(24),
-    borderRadius: moderateScale(16),
+    padding: conditionalScale(20, 24, 26, 30),
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
-    minWidth: scale(250), // Reduced from 280
-    margin: scale(20),
+    minWidth: conditionalScale(220, 250, 270, 320),
+    margin: spacing.md,
   },
 
   QRSetup_ProcessingText: {
-    fontSize: fontScale(16), // Reduced from 18
+    fontSize: conditionalFontScale(15, 16, 17, 20),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginTop: verticalScale(16),
-    marginBottom: verticalScale(8),
+    marginTop: conditionalVerticalScale(12, 16, 18, 20),
+    marginBottom: conditionalVerticalScale(6, 8, 9, 10),
     textAlign: 'center',
   },
 
   QRSetup_ProcessingSubtext: {
-    fontSize: fontScale(13), // Reduced from 14
+    fontSize: conditionalFontScale(12, 13, 14, 16),
     color: '#666',
     textAlign: 'center',
-    lineHeight: fontScale(18),
+    lineHeight: conditionalFontScale(16, 18, 20, 22),
   },
 
   QRSetup_PermissionContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scale(20),
+    padding: spacing.md,
   },
 
   QRSetup_PermissionCard: {
     backgroundColor: '#fff',
-    padding: moderateScale(24),
-    borderRadius: moderateScale(16),
+    padding: conditionalScale(20, 24, 26, 30),
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
-    maxWidth: scale(300), // Reduced from 320
-    margin: scale(20),
+    maxWidth: conditionalScale(270, 300, 320, 380),
+    margin: spacing.md,
   },
 
   QRSetup_PermissionIcon: {
-    width: scale(80), // Reduced from 100
-    height: scale(80), // Reduced from 100
-    borderRadius: scale(40),
+    width: conditionalScale(70, 80, 85, 100),
+    height: conditionalScale(70, 80, 85, 100),
+    borderRadius: conditionalScale(35, 40, 42, 50),
     backgroundColor: '#f5f7fa',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
   QRSetup_PermissionTitle: {
-    fontSize: fontScale(18), // Reduced from 20
+    fontSize: conditionalFontScale(17, 18, 19, 22),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: verticalScale(8),
+    marginBottom: conditionalVerticalScale(6, 8, 9, 10),
     textAlign: 'center',
   },
 
   QRSetup_PermissionText: {
-    fontSize: fontScale(14), // Reduced from 15
+    fontSize: conditionalFontScale(13, 14, 15, 17),
     color: '#666',
     textAlign: 'center',
-    lineHeight: fontScale(20),
+    lineHeight: conditionalFontScale(18, 20, 22, 25),
   },
 
   QRSetup_Footer: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: moderateScale(20),
-    borderTopRightRadius: moderateScale(20),
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: -4},
     shadowOpacity: 0.1,
@@ -1099,20 +913,22 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_FooterContent: {
-    padding: scale(20),
+    padding: spacing.md,
     paddingBottom:
-      Platform.OS === 'ios' ? verticalScale(30) : verticalScale(20),
+      Platform.OS === 'ios'
+        ? conditionalVerticalScale(26, 30, 33, 38)
+        : conditionalVerticalScale(16, 20, 22, 26),
   },
 
   QRSetup_GalleryButton: {
     backgroundColor: '#0A66C2',
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(20),
+    paddingVertical: conditionalVerticalScale(12, 14, 15, 17),
+    paddingHorizontal: spacing.md,
     borderRadius: moderateScale(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: verticalScale(12),
+    marginBottom: conditionalVerticalScale(10, 12, 13, 15),
     shadowColor: '#0A66C2',
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
@@ -1122,30 +938,30 @@ const styles = StyleSheet.create({
 
   QRSetup_GalleryButtonText: {
     color: '#fff',
-    fontSize: fontScale(15), // Reduced from 16
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '700',
   },
 
   QRSetup_SkipButton: {
     backgroundColor: '#f0f8ff',
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(20),
+    paddingVertical: conditionalVerticalScale(12, 14, 15, 17),
+    paddingHorizontal: spacing.md,
     borderRadius: moderateScale(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#0A66C2',
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
   QRSetup_ButtonIcon: {
-    marginRight: scale(8),
+    marginRight: spacing.sm,
   },
 
   QRSetup_SkipButtonText: {
     color: '#0A66C2',
-    fontSize: fontScale(15), // Reduced from 16
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '700',
   },
 
@@ -1153,14 +969,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: scale(8),
+    gap: spacing.sm,
   },
 
   QRSetup_HelpText: {
-    fontSize: fontScale(12), // Reduced from 13
+    fontSize: conditionalFontScale(11, 12, 13, 15),
     color: '#999',
     textAlign: 'center',
-    lineHeight: fontScale(16),
+    lineHeight: conditionalFontScale(15, 16, 18, 20),
   },
 
   // Modal Styles
@@ -1169,15 +985,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scale(16),
+    padding: spacing.md,
   },
 
   QRSetup_ModalContainer: {
     backgroundColor: '#fff',
-    borderRadius: moderateScale(20),
-    padding: moderateScale(24),
+    borderRadius: borderRadius.xl,
+    padding: conditionalScale(20, 24, 26, 30),
     width: '100%',
-    maxWidth: scale(340), // Reduced from 380
+    maxWidth: conditionalScale(310, 340, 360, 420),
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 10},
@@ -1187,40 +1003,40 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_ModalIconContainer: {
-    width: scale(70), // Reduced from 80
-    height: scale(70), // Reduced from 80
-    borderRadius: scale(35),
+    width: conditionalScale(62, 70, 75, 85),
+    height: conditionalScale(62, 70, 75, 85),
+    borderRadius: conditionalScale(31, 35, 37, 42),
     backgroundColor: '#fff3e0',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
   QRSetup_ModalTitle: {
-    fontSize: fontScale(20), // Reduced from 22
+    fontSize: conditionalFontScale(18, 20, 21, 24),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: verticalScale(12),
+    marginBottom: conditionalVerticalScale(10, 12, 13, 15),
     textAlign: 'center',
   },
 
   QRSetup_ModalMessage: {
-    fontSize: fontScale(14), // Reduced from 15
+    fontSize: conditionalFontScale(13, 14, 15, 17),
     color: '#666',
     textAlign: 'center',
-    lineHeight: fontScale(20),
-    marginBottom: verticalScale(24),
+    lineHeight: conditionalFontScale(18, 20, 22, 25),
+    marginBottom: conditionalVerticalScale(20, 24, 26, 30),
   },
 
   QRSetup_ModalButtons: {
     flexDirection: 'column',
     width: '100%',
-    gap: verticalScale(12),
+    gap: conditionalVerticalScale(10, 12, 13, 15),
   },
 
   QRSetup_ModalButtonPrimary: {
     backgroundColor: '#0A66C2',
-    paddingVertical: verticalScale(14),
+    paddingVertical: conditionalVerticalScale(12, 14, 15, 17),
     borderRadius: moderateScale(10),
     alignItems: 'center',
     shadowColor: '#0A66C2',
@@ -1232,13 +1048,13 @@ const styles = StyleSheet.create({
 
   QRSetup_ModalButtonPrimaryText: {
     color: '#fff',
-    fontSize: fontScale(15), // Reduced from 16
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '700',
   },
 
   QRSetup_ModalButtonSecondary: {
     backgroundColor: '#f5f7fa',
-    paddingVertical: verticalScale(14),
+    paddingVertical: conditionalVerticalScale(12, 14, 15, 17),
     borderRadius: moderateScale(10),
     alignItems: 'center',
     borderWidth: 1,
@@ -1247,13 +1063,900 @@ const styles = StyleSheet.create({
 
   QRSetup_ModalButtonSecondaryText: {
     color: '#666',
-    fontSize: fontScale(15), // Reduced from 16
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '600',
+  },
+
+  // ============================================
+  // MAIN DASHBOARD - RESPONSIVE STYLES
+  // ============================================
+  MainDash_Container: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
+
+  MainDash_ScrollView: {
+    flex: 1,
+  },
+
+  MainDash_HeaderContainer: {
+    paddingHorizontal: conditionalScale(16, 20, 24, 28),
+    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
+    paddingBottom: conditionalVerticalScale(16, 20, 24, 28),
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
+    backgroundColor: '#0A66C2',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: {width: 0, height: 3},
+    shadowRadius: 6,
+    elevation: 4,
+  },
+
+  MainDash_HeaderContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+
+  MainDash_HeaderContentSmall: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  MainDash_ProfilePicture: {
+    width: conditionalScale(80, 90, 100, 110),
+    height: conditionalScale(80, 90, 100, 110),
+    borderRadius: conditionalScale(40, 45, 50, 55),
+    borderWidth: moderateScale(3),
+    borderColor: '#fff',
+    backgroundColor: '#EAF2FB',
+  },
+
+  MainDash_AvatarContainer: {
+    width: conditionalScale(80, 90, 100, 110),
+    height: conditionalScale(80, 90, 100, 110),
+    borderRadius: conditionalScale(40, 45, 50, 55),
+    borderWidth: moderateScale(3),
+    borderColor: '#fff',
+    backgroundColor: '#bed8f6ff',
+    marginRight: spacing.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  MainDash_AvatarContainerSmall: {
+    width: conditionalScale(80, 90, 100, 110),
+    height: conditionalScale(80, 90, 100, 110),
+    borderRadius: conditionalScale(40, 45, 50, 55),
+    borderWidth: moderateScale(3),
+    borderColor: '#fff',
+    backgroundColor: '#bed8f6ff',
+    marginRight: 0,
+    marginBottom: conditionalVerticalScale(10, 12, 14, 16),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  MainDash_AvatarText: {
+    fontSize: conditionalFontScale(24, 28, 30, 34),
+    fontWeight: '700',
+    color: '#0A66C2',
+  },
+
+  MainDash_TextColumn: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+
+  MainDash_TextColumnSmall: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  MainDash_NameText: {
+    fontSize: conditionalFontScale(18, 20, 22, 26),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: conditionalVerticalScale(1, 2, 2, 3),
+    textAlign: 'left',
+  },
+
+  MainDash_NameTextSmall: {
+    fontSize: conditionalFontScale(18, 20, 22, 26),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: conditionalVerticalScale(1, 2, 2, 3),
+    textAlign: 'center',
+  },
+
+  MainDash_EmailText: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    color: '#DCE6F5',
+    textAlign: 'left',
+    lineHeight: conditionalFontScale(15, 16, 18, 20),
+  },
+
+  MainDash_EmailTextSmall: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    color: '#DCE6F5',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(15, 16, 18, 20),
+  },
+
+  MainDash_BoldText: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    color: '#DCE6F5',
+    fontWeight: 'bold',
+  },
+
+  MainDash_MainContent: {
+    flex: 1,
+    paddingTop: conditionalVerticalScale(18, 22, 26, 30),
+  },
+
+  MainDash_SectionTitle: {
+    fontSize: conditionalFontScale(16, 18, 20, 24),
+    fontWeight: '700',
+    color: '#2C3E50',
+    marginBottom: conditionalVerticalScale(14, 18, 20, 24),
+    paddingHorizontal: spacing.md,
+  },
+
+  MainDash_Card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: moderateScale(10),
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowOffset: {width: 0, height: 3},
+    shadowRadius: 6,
+    elevation: 2,
+  },
+
+  MainDash_CardTitle: {
+    fontSize: conditionalFontScale(11, 12, 13, 15),
+    fontWeight: '700',
+    color: '#2C3E50',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(13, 14, 16, 18),
+    marginTop: conditionalVerticalScale(6, 8, 9, 10),
+  },
+
+  MainDash_IndicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: conditionalVerticalScale(10, 12, 14, 16),
+    paddingHorizontal: spacing.md,
+    marginBottom: conditionalVerticalScale(1, 2, 2, 3),
+  },
+
+  MainDash_IndicatorDot: {
+    width: conditionalScale(7, 8, 9, 10),
+    height: conditionalScale(7, 8, 9, 10),
+    borderRadius: conditionalScale(3.5, 4, 4.5, 5),
+    backgroundColor: '#0A66C2',
+    marginHorizontal: conditionalScale(3, 4, 5, 6),
+  },
+
+  MainDash_IndicatorDotInactive: {
+    opacity: 0.3,
+  },
+
+  MainDash_NoMenuContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: conditionalVerticalScale(35, 40, 45, 50),
+    paddingHorizontal: spacing.md,
+  },
+
+  MainDash_NoMenuText: {
+    fontSize: conditionalFontScale(15, 16, 17, 19),
+    color: '#6B7280',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  MainDash_CardIcon: {
+    resizeMode: 'contain',
+  },
+
+  MainDash_PageContainer: {
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+
+  // ==================================================
+  // WORKER ASSIGNED TO ME SCREEN - RESPONSIVE STYLES
+  // ==================================================
+
+  WorkerATM_Container: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
+
+  WorkerATM_ScrollContainer: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+    paddingTop: conditionalVerticalScale(10, 12, 14, 16),
+  },
+
+  WorkerATM_ContentWrapper: {
+    paddingBottom: conditionalVerticalScale(25, 30, 35, 40),
+  },
+
+  WorkerATM_ChainContainer: {
+    position: 'relative',
+  },
+
+  WorkerATM_NoDataText: {
+    textAlign: 'center',
+    marginTop: conditionalVerticalScale(25, 30, 35, 40),
+    fontSize: conditionalFontScale(13, 14, 15, 17),
+    fontWeight: '500',
+    color: '#6B7280',
+    paddingHorizontal: spacing.md,
+    lineHeight: conditionalFontScale(18, 20, 22, 24),
+  },
+
+  // Root User Card Styles
+  WorkerATM_RootContainer: {
+    alignItems: 'center',
+    paddingHorizontal: conditionalScale(10, 12, 14, 16),
+    position: 'relative',
+  },
+
+  WorkerATM_RootCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: borderRadius.lg,
+    padding: conditionalScale(10, 12, 14, 16),
+    borderWidth: 2,
+    borderColor: '#0A66C2',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    width: '100%',
+    maxWidth: conditionalScale(340, 370, 390, 450),
+    marginTop: conditionalVerticalScale(5, 6, 7, 8),
+  },
+
+  WorkerATM_RootCardShrunk: {
+    backgroundColor: '#F0F7FF',
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+    transform: [{scale: 0.88}],
+    maxWidth: conditionalScale(310, 340, 360, 420),
+  },
+
+  WorkerATM_RootAvatar: {
+    width: conditionalScale(60, 70, 75, 85),
+    height: conditionalScale(60, 70, 75, 85),
+    borderRadius: conditionalScale(30, 35, 37, 42),
+    borderWidth: moderateScale(3),
+    borderColor: '#0A66C2',
+    marginRight: spacing.sm,
+  },
+
+  WorkerATM_RootAvatarShrunk: {
+    width: conditionalScale(45, 50, 55, 60),
+    height: conditionalScale(45, 50, 55, 60),
+    borderRadius: conditionalScale(22, 25, 27, 30),
+    borderWidth: moderateScale(2),
+  },
+
+  WorkerATM_RootAvatarPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E5E7EB',
+  },
+
+  WorkerATM_RootInitials: {
+    fontSize: conditionalFontScale(16, 18, 20, 22),
+    fontWeight: '700',
+    color: '#374151',
+  },
+
+  WorkerATM_RootInitialsShrunk: {
+    fontSize: conditionalFontScale(13, 14, 16, 18),
+  },
+
+  WorkerATM_RootInfo: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+
+  WorkerATM_RootInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(1, 2, 2, 3),
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+
+  WorkerATM_RootName: {
+    fontSize: conditionalFontScale(14, 16, 17, 19),
+    fontWeight: '700',
+    color: '#111827',
+    marginRight: spacing.sm,
+    flexShrink: 1,
+    textAlign: 'left',
+  },
+
+  WorkerATM_RootNameShrunk: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+  },
+
+  WorkerATM_RootRole: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    color: '#0A66C2',
+    fontWeight: '600',
+    flexShrink: 1,
+    textAlign: 'left',
+  },
+
+  WorkerATM_RootRoleShrunk: {
+    fontSize: conditionalFontScale(10, 11, 12, 14),
+  },
+
+  WorkerATM_RootMeta: {
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+    color: '#374151',
+    marginRight: spacing.sm,
+    flexShrink: 1,
+    textAlign: 'left',
+    lineHeight: conditionalFontScale(12, 13, 15, 16),
+  },
+
+  WorkerATM_RootMetaShrunk: {
+    fontSize: conditionalFontScale(9, 10, 11, 12),
+  },
+
+  WorkerATM_ActionButtonRow: {
+    flexDirection: 'row',
+    marginTop: conditionalVerticalScale(5, 6, 7, 8),
+    justifyContent: 'flex-start',
+  },
+
+  WorkerATM_ActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0A66C2',
+    paddingVertical: conditionalVerticalScale(5, 6, 7, 8),
+    paddingHorizontal: conditionalScale(8, 10, 11, 13),
+    borderRadius: borderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+    marginRight: conditionalScale(5, 6, 7, 8),
+  },
+
+  WorkerATM_ActionButtonText: {
+    color: '#fff',
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+    fontWeight: '600',
+    marginLeft: conditionalScale(3, 4, 5, 6),
+  },
+
+  WorkerATM_BottomConnector: {
+    position: 'absolute',
+    bottom: conditionalVerticalScale(-18, -22, -24, -28),
+    alignSelf: 'center',
+    width: 2,
+    height: conditionalVerticalScale(24, 28, 30, 34),
+    backgroundColor: '#0A66C2',
+    zIndex: 1,
+  },
+
+  // Employee Node Styles
+  WorkerATM_EmployeeContainer: {
+    marginRight: conditionalScale(12, 16, 18, 20),
+    marginVertical: conditionalVerticalScale(5, 6, 7, 8),
+    position: 'relative',
+    paddingLeft: conditionalScale(12, 16, 18, 20),
+  },
+
+  WorkerATM_HorizontalConnector: {
+    position: 'absolute',
+    left: conditionalScale(20, 25, 27, 30),
+    top: '50%',
+    width: conditionalScale(12, 16, 18, 20),
+    height: 2,
+    backgroundColor: '#0A66C2',
+  },
+
+  WorkerATM_EmployeeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: conditionalVerticalScale(8, 10, 11, 13),
+    paddingHorizontal: conditionalScale(10, 12, 14, 16),
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginLeft: conditionalScale(12, 16, 18, 20),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    minHeight: conditionalVerticalScale(55, 60, 65, 70),
+  },
+
+  WorkerATM_EmployeeAvatar: {
+    width: conditionalScale(36, 40, 44, 48),
+    height: conditionalScale(36, 40, 44, 48),
+    borderRadius: conditionalScale(18, 20, 22, 24),
+    marginRight: conditionalScale(8, 10, 11, 13),
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+
+  WorkerATM_EmployeeAvatarPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E5E7EB',
+  },
+
+  WorkerATM_EmployeeInitials: {
+    fontSize: conditionalFontScale(13, 14, 15, 17),
+    fontWeight: '600',
+    color: '#374151',
+  },
+
+  WorkerATM_EmployeeInfo: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+
+  WorkerATM_EmployeeName: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'left',
+  },
+
+  WorkerATM_EmployeeRole: {
+    fontSize: conditionalFontScale(11, 12, 13, 14),
+    color: '#6B7280',
+    marginTop: conditionalVerticalScale(1, 2, 2, 3),
+    textAlign: 'left',
+  },
+
+  WorkerATM_ChevronIcon: {
+    marginLeft: conditionalScale(6, 8, 9, 10),
+  },
+
+  // Connector Lines
+  WorkerATM_ConnectorFromRoot: {
+    width: 2,
+    height: conditionalVerticalScale(15, 18, 20, 22),
+    backgroundColor: '#0A66C2',
+    alignSelf: 'flex-start',
+    marginLeft: conditionalScale(20, 25, 27, 30),
+    marginBottom: 0,
+    marginTop: -1,
+  },
+
+  WorkerATM_VerticalLine: {
+    position: 'absolute',
+    left: conditionalScale(20, 25, 27, 30),
+    top: -1,
+    bottom: conditionalVerticalScale(32, 37, 40, 44),
+    width: 2,
+    backgroundColor: '#0A66C2',
+  },
+
+  // ============================================
+  // DISPLAY LIST PAGE - RESPONSIVE STYLES
+  // ============================================
+
+  DisplayList_Container: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
+
+  DisplayList_ListContainer: {
+    paddingHorizontal: conditionalScale(1, 2, 3, 4),
+    paddingTop: conditionalVerticalScale(12, 14, 18, 22),
+    paddingBottom: conditionalVerticalScale(12, 14, 18, 22),
+  },
+
+  DisplayList_Card: {
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: moderateScale(6),
+    elevation: 4,
+    paddingHorizontal: conditionalScale(8, 10, 12, 14),
+    paddingVertical: conditionalVerticalScale(14, 16, 18, 20),
+  },
+
+  DisplayList_IconWrapper: {
+    width: conditionalScale(64, 70, 76, 84),
+    height: conditionalScale(64, 70, 76, 84),
+    borderRadius: conditionalScale(32, 35, 38, 42),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: conditionalVerticalScale(10, 12, 14, 16),
+  },
+
+  DisplayList_Icon: {
+    width: conditionalScale(44, 50, 54, 60),
+    height: conditionalScale(44, 50, 54, 60),
+    resizeMode: 'contain',
+  },
+
+  DisplayList_Title: {
+    fontSize: conditionalFontScale(13, 14, 15, 17),
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(16, 18, 20, 22),
+  },
+
+  DisplayList_ColumnWrapper: {
+    justifyContent: 'flex-start',
+    paddingHorizontal: conditionalScale(4, 6, 8, 10),
+  },
+
+  DisplayList_ItemSeparator: {
+    height: conditionalVerticalScale(12, 14, 16, 18),
+  },
+
+  // DLP_PressableCard: {
+  //   marginBottom: verticalScale(12),
+  // },
+
+  DLP_PressableCardPressed: {
+    opacity: 0.85,
+  },
+
+  // ============================================
+  // PROFILE SCREEN - RESPONSIVE STYLES
+  // ============================================
+
+  Profile_container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  Profile_scrollContainer: {
+    paddingBottom: conditionalVerticalScale(24, 28, 32, 36),
+  },
+
+  Profile_profileHeader: {
+    alignItems: 'center',
+    paddingTop: conditionalVerticalScale(24, 28, 32, 36),
+    paddingBottom: conditionalVerticalScale(16, 18, 20, 22),
+  },
+
+  Profile_avatarContainer: {
+    marginBottom: conditionalVerticalScale(16, 18, 20, 22),
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.15,
+    shadowRadius: moderateScale(10),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(4),
+    },
+    elevation: moderateScale(6),
+  },
+
+  Profile_avatarFallback: {
+    width: conditionalScale(100, 110, 120, 130),
+    height: conditionalScale(100, 110, 120, 130),
+    borderRadius: conditionalScale(50, 55, 60, 65),
+    backgroundColor: '#E8E3F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: moderateScale(3),
+    borderColor: '#FFFFFF',
+  },
+
+  Profile_avatarText: {
+    fontSize: conditionalFontScale(36, 38, 40, 42),
+    fontWeight: '600',
+    color: '#6366F1',
+  },
+
+  Profile_card: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: conditionalScale(18, 20, 22, 24),
+    borderRadius: borderRadius.lg,
+    paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: moderateScale(3),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(1.5),
+    },
+    elevation: moderateScale(2),
+  },
+
+  Profile_settingItem: {
+    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: '#F5F5F5',
+  },
+
+  Profile_settingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  Profile_settingIconWrapper: {
+    width: conditionalScale(32, 34, 36, 38),
+    height: conditionalScale(32, 34, 36, 38),
+    borderRadius: conditionalScale(16, 17, 18, 19),
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: conditionalScale(12, 13, 14, 15),
+  },
+
+  Profile_settingTextContainer: {
+    flex: 1,
+  },
+
+  Profile_settingTitle: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '500',
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(2, 2.5, 3, 3.5),
+  },
+
+  Profile_settingSubtitle: {
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
+    color: '#757575',
+    lineHeight: conditionalFontScale(16, 17, 18, 19),
+  },
+
+  Profile_versionContainer: {
+    alignItems: 'center',
+    marginTop: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: conditionalScale(18, 20, 22, 24),
+  },
+
+  Profile_versionText: {
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
+    color: '#A0A0A0',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(18, 19, 20, 21),
+  },
+
+  Profile_signOutButton: {
+    marginHorizontal: conditionalScale(18, 20, 22, 24),
+    marginTop: conditionalVerticalScale(24, 28, 32, 36),
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    backgroundColor: '#FF6464',
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    shadowColor: '#FF6464',
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(6),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(3),
+    },
+    elevation: moderateScale(3),
+  },
+
+  Profile_signOutText: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // ============================================
+  // DISPLAY PERSONAL INFO - RESPONSIVE STYLES
+  // ============================================
+
+  DPI_container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+
+  DPI_headerContainer: {
+    paddingBottom: conditionalVerticalScale(20, 22, 24, 26),
+    paddingHorizontal: conditionalScale(18, 20, 22, 24),
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+    elevation: moderateScale(3),
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.15,
+    shadowRadius: moderateScale(8),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(2),
+    },
+  },
+
+  DPI_headerTitle: {
+    fontSize: conditionalFontScale(26, 28, 30, 32),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: conditionalVerticalScale(4, 5, 6, 7),
+  },
+
+  DPI_headerSubtitle: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: conditionalFontScale(20, 21, 22, 23),
+    letterSpacing: 0.3,
+  },
+
+  DPI_listContent: {
+    padding: conditionalScale(16, 18, 20, 22),
+  },
+
+  DPI_card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.lg,
+    padding: conditionalScale(14, 15, 16, 17),
+    marginBottom: conditionalVerticalScale(10, 11, 12, 13),
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: moderateScale(4),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(1),
+    },
+    elevation: moderateScale(2),
+    borderWidth: moderateScale(0.5),
+    borderColor: '#F0F0F0',
+  },
+
+  DPI_iconContainer: {
+    width: conditionalScale(42, 44, 46, 48),
+    height: conditionalScale(42, 44, 46, 48),
+    borderRadius: conditionalScale(14, 15, 16, 17),
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: conditionalScale(12, 13, 14, 15),
+  },
+
+  DPI_textContainer: {
+    flex: 1,
+  },
+
+  DPI_title: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(2, 2.5, 3, 3.5),
+    letterSpacing: 0.2,
+  },
+
+  DPI_subtitle: {
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    color: '#757575',
+    lineHeight: conditionalFontScale(18, 19, 20, 21),
+    letterSpacing: 0.2,
+  },
+
+  // ============================================
+  // CHANGE PROFILE IMAGE - RESPONSIVE STYLES
+  // ============================================
+
+  CPI_container: {
+    flex: 1,
+    padding: conditionalScale(16, 18, 20, 22),
+    backgroundColor: '#F9FAFB',
+  },
+
+  CPI_scrollContainer: {
+    alignItems: 'center',
+    paddingTop: conditionalVerticalScale(24, 28, 32, 36),
+    paddingBottom: conditionalVerticalScale(40, 45, 50, 55),
+  },
+
+  CPI_title: {
+    fontSize: conditionalFontScale(26, 28, 30, 32),
+    fontWeight: '700',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    marginBottom: conditionalVerticalScale(6, 7, 8, 9),
+    letterSpacing: 0.5,
+  },
+
+  CPI_subtitle: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#757575',
+    textAlign: 'center',
+    marginBottom: conditionalVerticalScale(20, 22, 24, 26),
+    lineHeight: conditionalFontScale(20, 21, 22, 23),
+    paddingHorizontal: conditionalScale(20, 24, 28, 32),
+    letterSpacing: 0.2,
+  },
+
+  CPI_imageWrapper: {
+    overflow: 'hidden',
+    marginBottom: conditionalVerticalScale(32, 36, 40, 44),
+    shadowColor: '#0A66C2',
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(12),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(6),
+    },
+    elevation: moderateScale(8),
+  },
+
+  CPI_actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: conditionalVerticalScale(16, 18, 20, 22),
+    gap: conditionalScale(12, 14, 16, 18),
+  },
+
+  CPI_button: {
+    flex: 1,
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: moderateScale(4),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(2),
+    },
+    elevation: moderateScale(2),
+  },
+
+  CPI_primaryButton: {
+    backgroundColor: '#0A66C2',
+  },
+
+  CPI_secondaryButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: moderateScale(1),
+    borderColor: '#D1D5DB',
+  },
+
+  CPI_buttonText: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
+
+  CPI_buttonTextPrimary: {
+    color: '#FFFFFF',
+  },
+
+  CPI_buttonTextSecondary: {
+    color: '#374151',
   },
 
   // ============================================
   // BIOMETRIC SETTINGS SCREEN - RESPONSIVE STYLES
   // ============================================
+
   Biometric_container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -1265,37 +1968,37 @@ const styles = StyleSheet.create({
 
   Biometric_scrollContent: {
     flexGrow: 1,
-    paddingTop: 0,
+    paddingBottom: conditionalVerticalScale(24, 28, 32, 36),
   },
 
   Biometric_headerContainer: {
-    paddingTop: verticalScale(40),
-    paddingBottom: verticalScale(30),
-    paddingHorizontal: scale(24),
-    borderBottomLeftRadius: moderateScale(24),
-    borderBottomRightRadius: moderateScale(24),
-    elevation: 8,
-    shadowColor: '#0A66C2',
-    shadowOpacity: 0.3,
-    shadowRadius: moderateScale(12),
-    shadowOffset: {width: 0, height: verticalScale(6)},
-    marginBottom: verticalScale(8),
+    paddingTop: conditionalVerticalScale(24, 28, 32, 36),
+    paddingBottom: conditionalVerticalScale(20, 22, 24, 26),
+    paddingHorizontal: conditionalScale(18, 20, 22, 24),
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+    elevation: moderateScale(4),
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(10),
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    marginBottom: conditionalVerticalScale(4, 6, 8, 10),
   },
 
   Biometric_headerContent: {
-    gap: verticalScale(16),
+    gap: conditionalVerticalScale(12, 14, 16, 18),
   },
 
   Biometric_headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: scale(12),
+    gap: conditionalScale(10, 12, 14, 16),
   },
 
   Biometric_headerIconContainer: {
-    width: scale(52),
-    height: scale(52),
-    borderRadius: scale(26),
+    width: conditionalScale(44, 48, 52, 56),
+    height: conditionalScale(44, 48, 52, 56),
+    borderRadius: conditionalScale(22, 24, 26, 28),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1303,48 +2006,51 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
 
-  Biometric_headerIconSize: fontScale(28),
+  Biometric_headerIconSize: conditionalFontScale(22, 24, 26, 28),
 
   Biometric_headerTitle: {
-    fontSize: fontScale(24),
+    fontSize: conditionalFontScale(24, 26, 28, 30),
     fontWeight: '700',
     color: '#FFFFFF',
     flex: 1,
+    letterSpacing: 0.5,
   },
 
   Biometric_headerSubtitle: {
-    fontSize: fontScale(15),
-    color: '#E0E7FF',
-    lineHeight: fontScale(22),
-    marginTop: verticalScale(4),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: conditionalFontScale(20, 21, 22, 23),
+    marginTop: conditionalVerticalScale(2, 3, 4, 5),
+    letterSpacing: 0.2,
   },
 
   Biometric_statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: scale(14),
-    paddingVertical: verticalScale(8),
-    borderRadius: moderateScale(20),
-    gap: scale(6),
+    paddingHorizontal: conditionalScale(12, 13, 14, 15),
+    paddingVertical: conditionalVerticalScale(6, 7, 8, 9),
+    borderRadius: borderRadius.full,
+    gap: conditionalScale(4, 5, 6, 7),
     borderWidth: moderateScale(1),
   },
 
   Biometric_statusActive: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderColor: 'rgba(16, 185, 129, 0.3)',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderColor: 'rgba(16, 185, 129, 0.2)',
   },
 
   Biometric_statusInactive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
 
-  Biometric_statusIconSize: fontScale(14),
+  Biometric_statusIconSize: conditionalFontScale(12, 13, 14, 15),
 
   Biometric_statusText: {
-    fontSize: fontScale(13),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     fontWeight: '600',
+    letterSpacing: 0.3,
   },
 
   Biometric_statusTextActive: {
@@ -1352,218 +2058,1753 @@ const styles = StyleSheet.create({
   },
 
   Biometric_statusTextInactive: {
-    color: '#E0E7FF',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
 
   Biometric_unavailableContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: scale(40),
+    padding: conditionalScale(32, 36, 40, 44),
     backgroundColor: '#FFFFFF',
   },
 
-  Biometric_unavailableIconSize: scale(64),
+  Biometric_unavailableIconSize: conditionalScale(48, 52, 56, 60),
 
   Biometric_unavailableTitle: {
-    fontSize: fontScale(20),
+    fontSize: conditionalFontScale(20, 21, 22, 23),
     fontWeight: '600',
-    color: '#1C1C1E',
-    marginTop: verticalScale(24),
-    marginBottom: verticalScale(8),
+    color: '#1A1A1A',
+    marginTop: conditionalVerticalScale(20, 22, 24, 26),
+    marginBottom: conditionalVerticalScale(6, 7, 8, 9),
+    letterSpacing: 0.3,
   },
 
   Biometric_unavailableText: {
-    fontSize: fontScale(15),
-    color: '#8E8E93',
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#757575',
     textAlign: 'center',
-    lineHeight: fontScale(22),
-    paddingHorizontal: scale(20),
+    lineHeight: conditionalFontScale(20, 21, 22, 23),
+    paddingHorizontal: conditionalScale(16, 20, 24, 28),
+    letterSpacing: 0.2,
   },
 
   Biometric_sectionAccount: {
-    padding: scale(24),
+    paddingHorizontal: conditionalScale(18, 20, 22, 24),
+    paddingVertical: conditionalVerticalScale(20, 22, 24, 26),
   },
 
   Biometric_sectionHeader: {
-    marginBottom: verticalScale(16),
+    marginBottom: conditionalVerticalScale(14, 15, 16, 17),
   },
 
   Biometric_sectionTitle: {
-    fontSize: fontScale(18),
+    fontSize: conditionalFontScale(17, 18, 19, 20),
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
   },
 
   Biometric_accountsContainer: {
-    gap: verticalScale(20),
+    gap: conditionalVerticalScale(12, 14, 16, 18),
   },
 
   Biometric_providerSection: {
-    gap: verticalScale(8),
+    gap: conditionalVerticalScale(6, 7, 8, 9),
   },
 
   Biometric_accountItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: scale(16),
+    padding: conditionalScale(14, 15, 16, 17),
     backgroundColor: '#F8F9FA',
-    borderRadius: moderateScale(12),
+    borderRadius: borderRadius.lg,
     borderWidth: moderateScale(1),
     borderColor: 'transparent',
   },
 
   Biometric_selectedAccountItem: {
-    backgroundColor: '#E3F2FD',
-    borderColor: '#007AFF',
+    backgroundColor: '#EEF2FF',
+    borderColor: '#6366F1',
   },
 
   Biometric_accountIcon: {
-    width: scale(40),
-    height: scale(40),
-    borderRadius: scale(20),
+    width: conditionalScale(36, 38, 40, 42),
+    height: conditionalScale(36, 38, 40, 42),
+    borderRadius: conditionalScale(18, 19, 20, 21),
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: scale(12),
+    marginRight: conditionalScale(10, 11, 12, 13),
     borderWidth: moderateScale(1),
-    borderColor: '#F2F2F7',
+    borderColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: moderateScale(2),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    elevation: moderateScale(1),
   },
 
-  Biometric_accountIconSize: fontScale(20),
+  Biometric_accountIconSize: conditionalFontScale(18, 19, 20, 21),
 
   Biometric_accountInfo: {
     flex: 1,
   },
 
   Biometric_accountEmail: {
-    fontSize: fontScale(16),
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
     fontWeight: '500',
-    color: '#1C1C1E',
-    marginBottom: verticalScale(2),
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(2, 2.5, 3, 3.5),
+    letterSpacing: 0.2,
   },
 
   Biometric_selectedAccountEmail: {
-    color: '#007AFF',
+    color: '#6366F1',
     fontWeight: '600',
   },
 
   Biometric_accountName: {
-    fontSize: fontScale(14),
-    color: '#8E8E93',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    color: '#757575',
+    letterSpacing: 0.2,
   },
 
   Biometric_enabledBadge: {
-    fontSize: fontScale(12),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#10B981',
     fontWeight: '600',
-    marginTop: verticalScale(4),
+    marginTop: conditionalVerticalScale(3, 4, 5, 6),
+    letterSpacing: 0.2,
   },
 
-  Biometric_checkIconSize: fontScale(20),
+  Biometric_checkIconSize: conditionalFontScale(18, 19, 20, 21),
 
   Biometric_emptyState: {
     alignItems: 'center',
-    padding: scale(40),
+    padding: conditionalScale(32, 36, 40, 44),
   },
 
-  Biometric_emptyStateIconSize: scale(48),
+  Biometric_emptyStateIconSize: conditionalScale(40, 44, 48, 52),
 
   Biometric_emptyStateText: {
-    fontSize: fontScale(16),
+    fontSize: conditionalFontScale(16, 16.5, 17, 17.5),
     fontWeight: '500',
-    color: '#8E8E93',
-    marginTop: verticalScale(16),
-    marginBottom: verticalScale(8),
+    color: '#757575',
+    marginTop: conditionalVerticalScale(14, 15, 16, 17),
+    marginBottom: conditionalVerticalScale(6, 7, 8, 9),
+    letterSpacing: 0.2,
   },
 
   Biometric_emptyStateSubtext: {
-    fontSize: fontScale(14),
-    color: '#C7C7CC',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    color: '#A0A0A0',
     textAlign: 'center',
-    lineHeight: fontScale(20),
-    paddingHorizontal: scale(20),
+    lineHeight: conditionalFontScale(18, 19, 20, 21),
+    paddingHorizontal: conditionalScale(16, 20, 24, 28),
+    letterSpacing: 0.2,
   },
 
   // ============================================
-  // CONFIRMATION ALERT - RESPONSIVE STYLES
+  // ENTITLEMENT SCREENS – RESPONSIVE STYLES
   // ============================================
+
+  EntBal_NoDataText: {
+    flex: 1,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    fontSize: fontScale(16),
+    fontWeight: '600',
+    color: '#CCCCCC',
+  },
+
+  // ============================================
+  // SALARY SLIP SCREEN – RESPONSIVE STYLES
+  // ============================================
+
+  SSlip_Container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+
+  SSlip_ScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: conditionalScale(20, 24, 28, 32),
+    paddingTop: conditionalVerticalScale(40, 45, 50, 55),
+    paddingBottom: conditionalVerticalScale(40, 45, 50, 55),
+  },
+
+  SSlip_Icon: {
+    marginBottom: conditionalVerticalScale(24, 26, 28, 30),
+    alignSelf: 'center',
+  },
+
+  SSlip_ScreenTitle: {
+    fontSize: conditionalFontScale(24, 26, 28, 30),
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(6, 7, 8, 9),
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  SSlip_ScreenSubtitle: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#757575',
+    textAlign: 'center',
+    marginBottom: conditionalVerticalScale(24, 26, 28, 30),
+    paddingHorizontal: conditionalScale(16, 20, 24, 28),
+    lineHeight: conditionalFontScale(20, 21, 22, 23),
+    letterSpacing: 0.2,
+  },
+
+  SSlip_FieldsHeading: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '600',
+    color: '#1A1A1A',
+    alignSelf: 'flex-start',
+    width: '100%',
+    marginBottom: conditionalVerticalScale(8, 9, 10, 11),
+    marginTop: conditionalVerticalScale(4, 5, 6, 7),
+    letterSpacing: 0.2,
+  },
+
+  SSlip_Dropdown: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderWidth: moderateScale(1),
+    borderColor: '#E0E0E0',
+    borderRadius: borderRadius.lg,
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    paddingHorizontal: conditionalScale(16, 17, 18, 19),
+    marginBottom: conditionalVerticalScale(16, 18, 20, 22),
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: moderateScale(3),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    elevation: moderateScale(1),
+  },
+
+  SSlip_ItemText: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+
+  SSlip_DropdownPlaceholder: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#A0A0A0',
+    letterSpacing: 0.2,
+  },
+
+  SSlip_DropdownSelected: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+
+  SSlip_Button: {
+    width: '100%',
+    borderRadius: borderRadius.lg,
+    marginTop: conditionalVerticalScale(24, 26, 28, 30),
+    overflow: 'hidden',
+    shadowColor: '#6366F1',
+    shadowOffset: {width: 0, height: moderateScale(3)},
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(8),
+    elevation: moderateScale(4),
+  },
+
+  SSlip_ButtonContent: {
+    width: '100%',
+    paddingVertical: conditionalVerticalScale(14, 15, 16, 17),
+    paddingHorizontal: conditionalScale(24, 28, 32, 36),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366F1',
+  },
+
+  SSlip_ButtonText: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  // ============================================
+  // TAX CERTIFICATE SCREEN – RESPONSIVE STYLES
+  // ============================================
+
+  TCert_Container: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
+
+  TCert_ScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: conditionalScale(20, 24, 28, 32),
+    paddingTop: conditionalVerticalScale(40, 45, 50, 55),
+    paddingBottom: conditionalVerticalScale(40, 45, 50, 55),
+  },
+
+  TCert_Icon: {
+    marginBottom: conditionalVerticalScale(24, 26, 28, 30),
+    alignSelf: 'center',
+  },
+
+  TCert_ScreenTitle: {
+    fontSize: conditionalFontScale(24, 26, 28, 30),
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(6, 7, 8, 9),
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  TCert_ScreenSubtitle: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#757575',
+    textAlign: 'center',
+    marginBottom: conditionalVerticalScale(24, 26, 28, 30),
+    paddingHorizontal: conditionalScale(16, 20, 24, 28),
+    lineHeight: conditionalFontScale(20, 21, 22, 23),
+    letterSpacing: 0.2,
+  },
+
+  TCert_Label: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(8, 9, 10, 11),
+    alignSelf: 'flex-start',
+    width: '100%',
+    letterSpacing: 0.2,
+  },
+
+  TCert_Dropdown: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderWidth: moderateScale(1),
+    borderColor: '#E0E0E0',
+    borderRadius: borderRadius.lg,
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    paddingHorizontal: conditionalScale(16, 17, 18, 19),
+    marginBottom: conditionalVerticalScale(16, 18, 20, 22),
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: moderateScale(3),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    elevation: moderateScale(1),
+  },
+
+  TCert_ItemText: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+
+  TCert_DropdownPlaceholder: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#A0A0A0',
+    letterSpacing: 0.2,
+  },
+
+  TCert_DropdownSelected: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+
+  TCert_Button: {
+    width: '100%',
+    borderRadius: borderRadius.lg,
+    marginTop: conditionalVerticalScale(24, 26, 28, 30),
+    overflow: 'hidden',
+    shadowColor: '#6366F1',
+    shadowOffset: {width: 0, height: moderateScale(3)},
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(8),
+    elevation: moderateScale(4),
+  },
+
+  TCert_ButtonContent: {
+    width: '100%',
+    paddingVertical: conditionalVerticalScale(14, 15, 16, 17),
+    paddingHorizontal: conditionalScale(24, 28, 32, 36),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366F1',
+  },
+
+  TCert_ButtonText: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  // ============================================
+  // DYNAMIC LIST PAGE - RESPONSIVE STYLES
+  // ============================================
+
+  DLP_Container: {
+    flex: 1,
+    backgroundColor: '#FAFAFA',
+  },
+
+  DLP_AnimatedContainer: {
+    flex: 1,
+  },
+
+  DLP_LoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  DLP_ListContainer: {
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+
+  DLP_CardWrapper: {
+    marginBottom: conditionalVerticalScale(8, 10, 12, 16),
+  },
+
+  DLP_SummaryContainer: {
+    backgroundColor: '#E6F2FF',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderLeftWidth: conditionalScale(4, 4, 5, 6),
+    borderLeftColor: '#0A66C2',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(3)},
+    shadowOpacity: 0.12,
+    shadowRadius: moderateScale(6),
+    elevation: 4,
+  },
+
+  DLP_SummaryText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#0A66C2',
+    textAlign: 'center',
+  },
+
+  DLP_NoDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+
+  DLP_NoDataText: {
+    fontSize: conditionalFontScale(16, 17, 18, 20),
+    fontWeight: '600',
+    color: '#0A66C2',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+
+  DLP_NoDataSubText: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+
+  // ============================================
+  // DYNAMIC SAVE RECORD - RESPONSIVE STYLES
+  // ============================================
+
+  DSR_SafeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  DSR_ContentWrapper: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: conditionalScale(16, 18, 20, 22),
+    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
+  },
+
+  DSR_FormContainer: {
+    padding: conditionalScale(0, 0, 0, 0),
+    paddingBottom: conditionalVerticalScale(20, 24, 28, 32),
+  },
+
+  DSR_Label: {
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    marginTop: conditionalVerticalScale(16, 18, 20, 22),
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+
+  DSR_Input: {
+    borderWidth: moderateScale(1),
+    borderColor: '#E0E0E0',
+    borderRadius: borderRadius.lg,
+    padding: conditionalScale(12, 13, 14, 15),
+    marginTop: conditionalVerticalScale(6, 7, 8, 9),
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    color: '#1A1A1A',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: moderateScale(3),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    elevation: moderateScale(1),
+  },
+
+  DSR_Disabled: {
+    backgroundColor: '#F8F9FA',
+    color: '#A0A0A0',
+    borderColor: '#F0F0F0',
+  },
+
+  DSR_TextArea: {
+    height: conditionalVerticalScale(100, 110, 120, 130),
+    textAlignVertical: 'top',
+    paddingTop: conditionalVerticalScale(12, 13, 14, 15),
+  },
+
+  DSR_DateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: moderateScale(1),
+    borderColor: '#E0E0E0',
+    borderRadius: borderRadius.lg,
+    padding: conditionalScale(12, 13, 14, 15),
+    marginTop: conditionalVerticalScale(6, 7, 8, 9),
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: moderateScale(3),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    elevation: moderateScale(1),
+  },
+
+  DSR_DateText: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+    flex: 1,
+  },
+
+  DSR_DropdownPlaceholder: {
+    color: '#A0A0A0',
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    letterSpacing: 0.2,
+  },
+
+  DSR_DropdownSelectedText: {
+    color: '#1A1A1A',
+    fontWeight: '400',
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    letterSpacing: 0.2,
+  },
+
+  DSR_DropdownItemText: {
+    color: '#1A1A1A',
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    letterSpacing: 0.2,
+  },
+
+  DSR_DropdownContainer: {
+    borderWidth: moderateScale(1),
+    borderColor: '#E0E0E0',
+    borderRadius: borderRadius.lg,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(2)},
+    shadowOpacity: 0.08,
+    shadowRadius: moderateScale(6),
+    elevation: 4,
+    marginTop: conditionalVerticalScale(2, 3, 4, 5),
+  },
+
+  DSR_DropdownItemContainer: {
+    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(10, 11, 12, 13),
+  },
+
+  DSR_DropdownSearchInput: {
+    color: '#1A1A1A',
+    backgroundColor: '#FFFFFF',
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: '#F0F0F0',
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+  },
+
+  DSR_DropdownIcon: {
+    width: conditionalScale(20, 21, 22, 23),
+    height: conditionalScale(20, 21, 22, 23),
+    tintColor: '#6366F1',
+  },
+
+  DSR_ProcessingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+
+  DSR_ProcessingContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.xl,
+    padding: conditionalScale(24, 28, 32, 36),
+    alignItems: 'center',
+    minWidth: conditionalScale(200, 220, 240, 260),
+    shadowColor: '#6366F1',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.15,
+    shadowRadius: moderateScale(12),
+    elevation: 8,
+    borderWidth: moderateScale(1),
+    borderColor: '#F0F0F0',
+  },
+
+  DSR_ProcessingText: {
+    marginTop: conditionalVerticalScale(12, 14, 16, 18),
+    fontSize: conditionalFontScale(16, 17, 18, 19),
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: 0.3,
+  },
+
+  DSR_CharCount: {
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
+    color: '#757575',
+    marginTop: conditionalVerticalScale(4, 5, 6, 7),
+    textAlign: 'right',
+    letterSpacing: 0.2,
+  },
+
+  DSR_FormHeader: {
+    backgroundColor: '#F8F9FA',
+    padding: conditionalScale(16, 18, 20, 22),
+    marginBottom: conditionalVerticalScale(20, 22, 24, 26),
+    borderLeftWidth: moderateScale(4),
+    borderLeftColor: '#6366F1',
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000',
+    shadowOpacity: 0.02,
+    shadowRadius: moderateScale(4),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    elevation: moderateScale(1),
+  },
+
+  DSR_FormHeaderText: {
+    fontSize: conditionalFontScale(17, 18, 19, 20),
+    fontWeight: '600',
+    color: '#6366F1',
+    marginBottom: conditionalVerticalScale(4, 5, 6, 7),
+    letterSpacing: 0.3,
+  },
+
+  DSR_FormHeaderSubtext: {
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    color: '#757575',
+    letterSpacing: 0.2,
+    lineHeight: conditionalFontScale(18, 19, 20, 21),
+  },
+
+  DSR_SwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8F9FA',
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    paddingHorizontal: conditionalScale(16, 17, 18, 19),
+    borderRadius: borderRadius.lg,
+    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+    borderWidth: moderateScale(1),
+    borderColor: '#F0F0F0',
+  },
+
+  DSR_SwitchLabel: {
+    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    color: '#1A1A1A',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+    flex: 1,
+  },
+
+  DSR_ExpandableContent: {
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: conditionalScale(16, 17, 18, 19),
+    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
+    paddingBottom: conditionalVerticalScale(16, 18, 20, 22),
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+    marginTop: conditionalVerticalScale(-4, -5, -6, -7),
+    borderWidth: moderateScale(1),
+    borderTopWidth: 0,
+    borderColor: '#F0F0F0',
+  },
+
+  DSR_GuarantorHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    paddingVertical: conditionalVerticalScale(10, 11, 12, 13),
+    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    borderWidth: moderateScale(1),
+    borderBottomWidth: 0,
+    borderColor: '#F0F0F0',
+    marginTop: conditionalVerticalScale(12, 14, 16, 18),
+  },
+
+  DSR_GuarantorHeaderId: {
+    flex: 0.3,
+    fontWeight: '600',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+
+  DSR_GuarantorHeaderName: {
+    flex: 0.7,
+    fontWeight: '600',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    color: '#1A1A1A',
+    paddingLeft: conditionalScale(8, 10, 12, 14),
+    letterSpacing: 0.2,
+  },
+
+  DSR_GuarantorItem: {
+    flexDirection: 'row',
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
+    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    alignItems: 'center',
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: '#F5F5F5',
+  },
+
+  DSR_GuarantorId: {
+    flex: 0.3,
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#1A1A1A',
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+
+  DSR_GuarantorName: {
+    flex: 0.7,
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    color: '#757575',
+    paddingLeft: conditionalScale(8, 10, 12, 14),
+    letterSpacing: 0.2,
+  },
+
+  DSR_LastItem: {
+    borderBottomWidth: 0,
+  },
+
+  // ==================================================================================================================
+  // END OF SCREEN - RESPONSIVE SCREEN STYLES
+  // ==================================================================================================================
+
+  // ==================================================================================================================
+  // START OF COMPONENT - RESPONSIVE COMPONENT STYLES
+  // ==================================================================================================================
+
+  // ============================================
+  // ACTION PANE CONTAINER - RESPONSIVE STYLES
+  // ============================================
+  APCont_container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  APCont_content: {
+    flex: 1,
+  },
+
+  APCont_floatingPlusButtonContainer: {
+    position: 'absolute',
+    bottom: conditionalVerticalScale(65, 70, 75, 85),
+    right: conditionalScale(16, 20, 24, 28),
+    zIndex: 1000,
+  },
+
+  APCont_floatingPlusButton: {
+    width: conditionalScale(52, 56, 60, 68),
+    height: conditionalScale(52, 56, 60, 68),
+    borderRadius: conditionalScale(26, 28, 30, 34),
+    backgroundColor: '#0A66C2',
+    borderWidth: moderateScale(4),
+    borderColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+
+  APCont_plusIcon: {
+    fontSize: iconSize.sm,
+    color: '#ffffff',
+  },
+
+  APCont_customTabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: conditionalVerticalScale(6, 8, 9, 10),
+    minHeight: conditionalVerticalScale(44, 48, 52, 56),
+  },
+
+  // ============================================
+  // TAB NAVIGATOR - RESPONSIVE STYLES
+  // ============================================
+  TNav_TabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#0A66C2',
+    height: conditionalVerticalScale(56, 60, 64, 70),
+    borderTopColor: '#ccc',
+    borderColor: '#0A66C2',
+    borderTopWidth: moderateScale(3),
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    paddingBottom: conditionalVerticalScale(3, 4, 5, 6),
+  },
+
+  TNav_TabLabel: {
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+    fontWeight: '600',
+    marginTop: conditionalVerticalScale(1, 2, 2, 3),
+    color: 'white',
+    textAlign: 'center',
+  },
+
+  TNav_TabBarO: {
+    backgroundColor: '#0A66C2',
+    height: conditionalVerticalScale(56, 60, 64, 70),
+    borderColor: '#0A66C2',
+    borderTopWidth: moderateScale(3),
+    paddingBottom: conditionalVerticalScale(3, 4, 5, 6),
+  },
+
+  TNav_TabLabelO: {
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+    fontWeight: '600',
+    marginTop: conditionalVerticalScale(1, 2, 2, 3),
+    color: 'white',
+  },
+
+  // ============================================
+  // CUSTOM TAB BAR - RESPONSIVE STYLES
+  // ============================================
+
+  TabBar_container: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: conditionalVerticalScale(6, 8, 10, 12),
+    backgroundColor: '#0A66C2',
+    borderTopWidth: moderateScale(0.5),
+    borderTopColor: 'rgba(0,0,0,0.1)',
+  },
+
+  TabBar_tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  TabBar_label: {
+    fontSize: conditionalFontScale(10, 11, 12, 14),
+    marginTop: conditionalVerticalScale(2, 3, 4, 5),
+    color: '#ffffff',
+  },
+
+  TabBar_labelActive: {
+    fontWeight: '600',
+  },
+
+  // ============================================
+  // NOTIFICATION PANEL - RESPONSIVE STYLES
+  // ============================================
+  notif_Overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+  },
+
+  notif_OverlayTouchable: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  notif_Panel: {
+    width: conditionalScale(280, 350, 380, 450),
+    height: '100%',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {width: conditionalScale(-3, -4, -5, -6), height: 0},
+    shadowOpacity: 0.1,
+    shadowRadius: conditionalScale(10, 12, 14, 16),
+    elevation: 20,
+  },
+
+  notif_Header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    paddingVertical: conditionalVerticalScale(12, 16, 18, 20),
+    backgroundColor: '#0A66C2',
+    borderBottomWidth: 1,
+    borderBottomColor: '#0c5298',
+  },
+
+  notif_HeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  notif_BellIcon: {
+    fontSize: iconSize.md,
+    color: '#ffffff',
+  },
+
+  notif_HeaderTitle: {
+    fontSize: conditionalFontScale(16, 18, 19, 22),
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+
+  notif_HeaderCount: {
+    fontSize: conditionalFontScale(11, 12, 13, 14),
+    color: '#e2e8f0',
+    marginTop: conditionalVerticalScale(1, 2, 2, 3),
+  },
+
+  notif_HeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+
+  notif_MarkAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: conditionalScale(10, 12, 14, 16),
+    paddingVertical: conditionalVerticalScale(5, 6, 7, 8),
+    borderRadius: borderRadius.lg,
+    gap: conditionalScale(5, 6, 7, 8),
+    marginRight: conditionalScale(40, 45, 48, 52),
+  },
+
+  notif_MarkAllButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  notif_MarkAllIcon: {
+    fontSize: iconSize.xs,
+    color: '#ffffff',
+  },
+
+  notif_MarkAllText: {
+    fontSize: conditionalFontScale(11, 12, 13, 14),
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+
+  notif_RefreshButton: {
+    width: conditionalScale(32, 36, 38, 42),
+    height: conditionalScale(32, 36, 38, 42),
+    borderRadius: conditionalScale(16, 18, 19, 21),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  notif_RefreshIcon: {
+    fontSize: iconSize.sm,
+    color: '#ffffff',
+  },
+
+  notif_ScrollView: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+
+  notif_SectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
+    backgroundColor: '#f8fafc',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+
+  notif_SectionTitle: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    fontWeight: '600',
+    color: '#475569',
+  },
+
+  notif_CountBadge: {
+    backgroundColor: '#e2e8f0',
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: conditionalScale(7, 8, 9, 10),
+    paddingVertical: conditionalVerticalScale(1, 2, 2, 3),
+    minWidth: conditionalScale(22, 24, 26, 28),
+  },
+
+  notif_CountText: {
+    fontSize: conditionalFontScale(11, 12, 13, 14),
+    fontWeight: '600',
+    color: '#475569',
+    textAlign: 'center',
+  },
+
+  notif_NotificationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    paddingVertical: conditionalVerticalScale(12, 16, 18, 20),
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    backgroundColor: '#fff',
+  },
+
+  notif_NotificationItemToday: {
+    backgroundColor: '#f0f9ff',
+    borderLeftWidth: 2,
+    borderLeftColor: '#0A66C2',
+  },
+
+  notif_NotificationItemRead: {
+    backgroundColor: '#fafafa',
+    opacity: 0.8,
+  },
+
+  notif_LogoContainer: {
+    position: 'relative',
+    marginRight: spacing.sm,
+  },
+
+  notif_IconContainer: {
+    width: conditionalScale(40, 44, 48, 52),
+    height: conditionalScale(40, 44, 48, 52),
+    borderRadius: conditionalScale(20, 22, 24, 26),
+    backgroundColor: '#e0f2fe',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  notif_NotificationIcon: {
+    fontSize: iconSize.sm,
+    color: '#0A66C2',
+  },
+
+  notif_NotificationIconToday: {
+    color: '#0369a1',
+  },
+
+  notif_MarkReadButtonContainer: {
+    position: 'absolute',
+    bottom: conditionalVerticalScale(-3, -4, -4, -5),
+    right: conditionalScale(-3, -4, -4, -5),
+    zIndex: 1,
+  },
+
+  notif_MarkReadButton: {
+    width: conditionalScale(10, 12, 13, 14),
+    height: conditionalScale(10, 12, 13, 14),
+    borderRadius: conditionalScale(5, 6, 6.5, 7),
+    backgroundColor: '#0A66C2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  notif_MarkReadButtonToday: {
+    backgroundColor: '#0A66C2',
+  },
+
+  notif_MarkReadButtonRead: {
+    backgroundColor: '#94a3b8',
+  },
+
+  notif_MarkReadButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  notif_MarkReadIcon: {
+    fontSize: conditionalFontScale(3, 4, 4, 5),
+    color: '#ffffff',
+  },
+
+  notif_MarkReadIconToday: {
+    color: '#ffffff',
+  },
+
+  notif_MarkReadIconRead: {
+    color: '#ffffff',
+  },
+
+  notif_ContentContainer: {
+    flex: 1,
+  },
+
+  notif_NotificationTitle: {
+    fontSize: conditionalFontScale(14, 15, 16, 17),
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
+  },
+
+  notif_NotificationTitleToday: {
+    color: '#0A66C2',
+  },
+
+  notif_NotificationMessage: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    color: '#64748b',
+    lineHeight: conditionalFontScale(18, 20, 22, 24),
+    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
+  },
+
+  notif_NotificationMessageToday: {
+    color: '#475569',
+  },
+
+  notif_NotificationTime: {
+    fontSize: conditionalFontScale(11, 12, 13, 14),
+    color: '#94a3b8',
+  },
+
+  notif_NotificationTimeToday: {
+    color: '#0A66C2',
+  },
+
+  notif_EmptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: conditionalVerticalScale(70, 80, 90, 100),
+  },
+
+  notif_EmptyIcon: {
+    fontSize: conditionalFontScale(48, 56, 60, 68),
+    color: '#cbd5e1',
+    marginBottom: conditionalVerticalScale(12, 16, 18, 20),
+  },
+
+  notif_EmptyText: {
+    fontSize: conditionalFontScale(15, 16, 17, 19),
+    color: '#64748b',
+  },
+
+  notif_CloseButton: {
+    position: 'absolute',
+    top: conditionalVerticalScale(12, 16, 18, 20),
+    right: conditionalScale(16, 20, 22, 26),
+    width: conditionalScale(32, 36, 38, 42),
+    height: conditionalScale(32, 36, 38, 42),
+    borderRadius: conditionalScale(16, 18, 19, 21),
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+
+  notif_CloseIcon: {
+    fontSize: iconSize.xs,
+    color: '#64748b',
+  },
+
+  // ====================================================
+  // MAIN PAGE HEADER COMPONENTS - RESPONSIVE STYLES
+  // ====================================================
+  MPH_leftContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: conditionalScale(6, 8, 10, 12),
+  },
+
+  MPH_leftSide: {
+    width: conditionalScale(32, 36, 40, 44),
+    alignItems: 'center',
+    height: conditionalVerticalScale(44, 48, 52, 56),
+    justifyContent: 'center',
+    // marginRight: conditionalScale(8, 12, 16, 20),
+  },
+
+  MPH_title: {
+    color: '#ffffff',
+    fontSize: conditionalFontScale(15, 17, 19, 22),
+    fontWeight: 'bold',
+  },
+
+  MPH_rightSideView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: conditionalScale(10, 12, 14, 16),
+  },
+
+  MPH_dropdownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: conditionalScale(8, 10, 12, 14),
+    paddingVertical: conditionalVerticalScale(8, 10, 11, 13),
+    borderRadius: borderRadius.md,
+    marginRight: conditionalScale(8, 10, 12, 14),
+  },
+
+  MPH_dropdownText: {
+    color: '#ffffff',
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    fontWeight: '600',
+  },
+
+  MPH_dropdownIcon: {
+    marginLeft: conditionalScale(4, 6, 7, 8),
+  },
+
+  // ====================================================
+  // NOTIFICATION BUTTON COMPONENT - RESPONSIVE STYLES
+  // ====================================================
+  NB_button: {
+    marginRight: conditionalScale(8, 10, 12, 14),
+  },
+
+  NB_iconContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  NB_badgeContainer: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF4500',
+    borderRadius: moderateScale(10),
+    width: conditionalScale(16, 18, 19, 21),
+    height: conditionalScale(16, 18, 19, 21),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+  },
+
+  NB_badgeText: {
+    color: '#FFFFFF',
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+    fontWeight: 'bold',
+  },
+
+  // ====================================================
+  // LOGOUT BUTTON COMPONENT - RESPONSIVE STYLES
+  // ====================================================
+  LgOut_ButtonContainer: {
+    marginRight: conditionalScale(8, 10, 12, 14),
+  },
+
+  // ====================================================
+  // COMPANY DROPDOWN COMPONENT - RESPONSIVE STYLES
+  // ====================================================
+  CD_Overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+
+  CD_DropdownContainer: {
+    marginTop: conditionalVerticalScale(8, 10, 12, 14),
+    marginRight: conditionalScale(8, 10, 12, 14),
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    width: conditionalScale(180, 200, 220, 260),
+    maxHeight: conditionalVerticalScale(350, 400, 420, 480),
+  },
+
+  CD_DropdownContent: {
+    padding: 0,
+  },
+
+  CD_DropdownTitle: {
+    fontSize: conditionalFontScale(16, 18, 19, 22),
+    fontWeight: 'bold',
+    color: '#0A66C2',
+    textAlign: 'center',
+    paddingVertical: conditionalVerticalScale(12, 15, 17, 19),
+    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+
+  CD_ScrollView: {
+    maxHeight: conditionalVerticalScale(260, 300, 320, 360),
+  },
+
+  CD_CompanyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
+    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
+  },
+
+  CD_CompanyInfo: {
+    flex: 1,
+  },
+
+  CD_CompanyName: {
+    fontSize: conditionalFontScale(14, 16, 17, 19),
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
+  },
+
+  CD_SelectedCompanyName: {
+    color: '#0A66C2',
+  },
+
+  CD_CheckIcon: {
+    marginLeft: conditionalScale(8, 10, 12, 14),
+  },
+
+  CD_NoDataText: {
+    fontSize: conditionalFontScale(13, 14, 15, 17),
+    color: '#999999',
+    textAlign: 'center',
+    paddingVertical: conditionalVerticalScale(16, 20, 22, 26),
+    fontStyle: 'italic',
+  },
+
+  CD_FirstSelectedItem: {
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+  },
+
+  CD_LastSelectedItem: {
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+  },
+
+  CD_SelectedCompanyItem: {
+    backgroundColor: '#ebf5ff',
+    zIndex: 1,
+  },
+
+  // ============================================
+  // ALERT MODAL COMPONENT - RESPONSIVE STYLES
+  // ============================================
+
+  Alert_overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+  },
+
+  Alert_modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.xl,
+    paddingVertical: conditionalVerticalScale(24, 28, 30, 34),
+    paddingHorizontal: spacing.md,
+    width: '100%',
+    maxWidth: conditionalScale(300, 320, 340, 420),
+    alignItems: 'center',
+
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(16)},
+    shadowOpacity: 0.25,
+    shadowRadius: moderateScale(20),
+    elevation: 20,
+  },
+
+  Alert_contentContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+    width: '100%',
+  },
+
+  Alert_heading: {
+    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+    lineHeight: conditionalFontScale(24, 26, 28, 32),
+  },
+
+  Alert_description: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(20, 22, 24, 26),
+  },
+
+  Alert_button: {
+    width: '100%',
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: conditionalVerticalScale(44, 48, 52, 56),
+
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+  },
+
+  Alert_buttonText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // ===================================================
+  // LOGOUT ALERT MODAL COMPONENT - RESPONSIVE STYLES
+  // ===================================================
+
+  LogoutAlert_overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+  },
+
+  LogoutAlert_modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.xl,
+    paddingVertical: conditionalVerticalScale(24, 28, 30, 34),
+    paddingHorizontal: spacing.md,
+    width: '100%',
+    maxWidth: conditionalScale(300, 320, 340, 420),
+
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(16)},
+    shadowOpacity: 0.25,
+    shadowRadius: moderateScale(20),
+    elevation: 20,
+  },
+
+  LogoutAlert_iconContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+  },
+
+  LogoutAlert_warningIcon: {
+    width: conditionalScale(56, 60, 64, 72),
+    height: conditionalScale(56, 60, 64, 72),
+    borderRadius: conditionalScale(28, 30, 32, 36),
+    backgroundColor: '#FEF3E7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: moderateScale(2),
+    borderColor: '#F59E0B',
+  },
+
+  LogoutAlert_warningIconText: {
+    fontSize: conditionalFontScale(24, 26, 28, 32),
+    fontWeight: '700',
+    color: '#F59E0B',
+  },
+
+  LogoutAlert_contentContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 18, 20, 24),
+  },
+
+  LogoutAlert_heading: {
+    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(24, 26, 28, 32),
+  },
+
+  LogoutAlert_buttonContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+
+  LogoutAlert_button: {
+    flex: 1,
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: conditionalVerticalScale(44, 48, 52, 56),
+  },
+
+  LogoutAlert_cancelButton: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: moderateScale(1.5),
+    borderColor: '#E5E7EB',
+  },
+
+  LogoutAlert_confirmButton: {
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+  },
+
+  LogoutAlert_cancelButtonText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+
+  LogoutAlert_confirmButtonText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  // ===================================================
+  // ALERT DELETE MODAL COMPONENT - RESPONSIVE STYLES
+  // ===================================================
+
+  DeleteAlert_overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+  },
+
+  DeleteAlert_modalContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: borderRadius.xl,
+    paddingVertical: conditionalVerticalScale(24, 28, 30, 34),
+    paddingHorizontal: spacing.md,
+    width: '100%',
+    maxWidth: conditionalScale(300, 320, 340, 420),
+
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(16)},
+    shadowOpacity: 0.25,
+    shadowRadius: moderateScale(20),
+    elevation: 20,
+  },
+
+  DeleteAlert_contentContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+  },
+
+  DeleteAlert_heading: {
+    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontWeight: '700',
+    color: '#DC2626',
+    textAlign: 'center',
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+    lineHeight: conditionalFontScale(24, 26, 28, 32),
+  },
+
+  DeleteAlert_description: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: conditionalFontScale(20, 22, 24, 26),
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+  },
+
+  DeleteAlert_buttonContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+
+  DeleteAlert_button: {
+    flex: 1,
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: conditionalVerticalScale(44, 48, 52, 56),
+  },
+
+  DeleteAlert_secondaryButton: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: moderateScale(1.5),
+    borderColor: '#E5E7EB',
+  },
+
+  DeleteAlert_primaryButton: {
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+  },
+
+  DeleteAlert_disabledButton: {
+    opacity: 0.6,
+  },
+
+  DeleteAlert_processingButton: {
+    opacity: 0.8,
+  },
+
+  DeleteAlert_secondaryButtonText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+
+  DeleteAlert_primaryButtonText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  DeleteAlert_processingButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+
+  // ====================================================
+  // CONFIRMATION ALERT COMPONENT - RESPONSIVE STYLES
+  // ====================================================
+
   ConfAlert_overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: scale(20),
+    paddingHorizontal: spacing.md,
   },
 
   ConfAlert_modalContainer: {
     backgroundColor: '#ffffff',
-    borderRadius: moderateScale(24),
-    paddingVertical: verticalScale(28),
-    paddingHorizontal: scale(24),
-    width: Math.min(width * 0.85, scale(340)),
-    maxWidth: scale(340),
+    borderRadius: borderRadius.xl,
+    paddingVertical: conditionalVerticalScale(24, 28, 30, 34),
+    paddingHorizontal: spacing.md,
+    width: '100%',
+    maxWidth: conditionalScale(300, 320, 340, 420),
+    alignItems: 'center',
+
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: verticalScale(20),
-    },
+    shadowOffset: {width: 0, height: moderateScale(16)},
     shadowOpacity: 0.25,
-    shadowRadius: moderateScale(25),
-    elevation: 25,
+    shadowRadius: moderateScale(20),
+    elevation: 20,
   },
 
   ConfAlert_iconContainer: {
     alignItems: 'center',
-    marginBottom: verticalScale(20),
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
   },
 
   ConfAlert_iconBackground: {
-    width: scale(64),
-    height: scale(64),
-    borderRadius: scale(32),
+    width: conditionalScale(56, 60, 64, 72),
+    height: conditionalScale(56, 60, 64, 72),
+    borderRadius: conditionalScale(28, 30, 32, 36),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: moderateScale(2),
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
 
-  ConfAlert_iconSize: fontScale(32),
+  ConfAlert_iconSize: conditionalFontScale(26, 28, 30, 34),
 
   ConfAlert_contentContainer: {
     alignItems: 'center',
-    marginBottom: verticalScale(24),
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+    width: '100%',
   },
 
   ConfAlert_heading: {
-    fontSize: fontScale(20),
+    fontSize: conditionalFontScale(18, 20, 22, 24),
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
-    marginBottom: verticalScale(12),
-    lineHeight: fontScale(26),
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+    lineHeight: conditionalFontScale(24, 26, 28, 32),
   },
 
   ConfAlert_description: {
-    fontSize: fontScale(15),
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: fontScale(22),
+    lineHeight: conditionalFontScale(20, 22, 24, 26),
   },
 
   ConfAlert_buttonContainer: {
     flexDirection: 'row',
-    gap: scale(12),
+    gap: spacing.sm,
+    width: '100%',
   },
 
   ConfAlert_button: {
     flex: 1,
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(20),
-    borderRadius: moderateScale(12),
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: verticalScale(48),
+    minHeight: conditionalVerticalScale(44, 48, 52, 56),
   },
 
   ConfAlert_secondaryButton: {
@@ -1574,338 +3815,746 @@ const styles = StyleSheet.create({
 
   ConfAlert_primaryButton: {
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: verticalScale(4),
-    },
+    shadowOffset: {width: 0, height: moderateScale(4)},
     shadowOpacity: 0.3,
     shadowRadius: moderateScale(8),
     elevation: 8,
   },
 
   ConfAlert_secondaryButtonText: {
-    fontSize: fontScale(15),
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '600',
     color: '#6B7280',
   },
 
   ConfAlert_primaryButtonText: {
-    fontSize: fontScale(15),
+    fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '600',
     color: '#FFFFFF',
   },
 
-  // ============================================
-  // SAVE RECORD BUTTONS - RESPONSIVE STYLES
-  // ============================================
-  SRBtn_Footer: {
+  // =================================================
+  // LANGUAGE MODAL COMPONENT - RESPONSIVE STYLES
+  // =================================================
+
+  LanguageModal_overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+
+  LanguageModal_modal: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingHorizontal: spacing.md,
+    paddingTop: conditionalVerticalScale(16, 20, 22, 26),
+    paddingBottom: conditionalVerticalScale(20, 24, 28, 32),
+    minHeight: conditionalVerticalScale(260, 300, 340, 420),
+  },
+
+  LanguageModal_header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: verticalScale(10),
-    paddingHorizontal: conditionalScale(8, 12, 16),
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+  },
+
+  LanguageModal_heading: {
+    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontWeight: '700',
+    color: '#000000',
+  },
+
+  LanguageModal_closeButton: {
+    padding: spacing.xs,
+  },
+
+  LanguageModal_languageList: {
+    marginBottom: conditionalVerticalScale(16, 20, 24, 28),
+  },
+
+  LanguageModal_languageItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    backgroundColor: '#F8F9FA',
+  },
+
+  LanguageModal_selectedItem: {
+    backgroundColor: '#EEF2FF',
+    borderWidth: moderateScale(2),
+    borderColor: '#0A66C2',
+  },
+
+  LanguageModal_languageInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  LanguageModal_languageName: {
+    fontSize: conditionalFontScale(16, 18, 20, 22),
+    fontWeight: '600',
+    color: '#000000',
+    marginEnd: spacing.xs,
+  },
+
+  LanguageModal_languageSubname: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    color: '#666666',
+  },
+
+  LanguageModal_buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+
+  LanguageModal_button: {
+    flex: 1,
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  LanguageModal_cancelButton: {
+    backgroundColor: '#F1F1F1',
+  },
+
+  LanguageModal_cancelButtonText: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '600',
+    color: '#666666',
+  },
+
+  // ============================================
+  // CUSTOM INDICATOR COMPONENT - RESPONSIVE STYLES
+  // ============================================
+
+  CustomIndicator_container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  CustomIndicator_innerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ============================================
+  // LEAVE ENTITLEMENT PROGRESS - RESPONSIVE STYLES
+  // ============================================
+
+  LeaveEnt_container: {
+    marginVertical: conditionalVerticalScale(12, 16, 20, 24),
+  },
+
+  LeaveEnt_header: {
+    marginBottom: conditionalVerticalScale(12, 16, 20, 24),
+    borderLeftWidth: moderateScale(4),
+    borderLeftColor: '#4CAF50',
+    paddingLeft: spacing.sm,
+  },
+
+  LeaveEnt_title: {
+    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: conditionalVerticalScale(2, 4, 6, 8),
+  },
+
+  LeaveEnt_subtitle: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    color: '#757575',
+    fontWeight: '500',
+  },
+
+  LeaveEnt_scrollContainer: {
     position: 'relative',
-    minHeight: verticalScale(70),
-    gap: conditionalScale(6, 8, 12),
-  },
-
-  SRBtn_SingleButtonFooter: {
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
   },
 
-  SRBtn_Button: {
-    borderWidth: conditionalValue(1, 2, 2),
-    borderColor: '#0A66C2',
-    borderRadius: moderateScale(20),
-    paddingVertical: verticalScale(12),
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    minWidth: conditionalScale(80, 100, 120),
-    minHeight: verticalScale(44),
+  LeaveEnt_scrollContent: {
+    paddingVertical: conditionalVerticalScale(6, 8, 10, 12),
   },
 
-  SRBtn_SingleButton: {
-    flex: 0.5,
+  LeaveEnt_leaveItem: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    minWidth: conditionalScale(140, 160, 180, 220),
+  },
+
+  LeaveEnt_progressSection: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(12, 16, 20, 24),
+  },
+
+  LeaveEnt_semiCircleContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: conditionalVerticalScale(60, 75, 90, 110),
+    marginBottom: conditionalVerticalScale(6, 8, 10, 12),
+    position: 'relative',
+  },
+
+  LeaveEnt_svg: {
+    position: 'absolute',
+    top: 0,
+  },
+
+  LeaveEnt_centerText: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    bottom: conditionalVerticalScale(6, 8, 10, 12),
+  },
+
+  LeaveEnt_takenText: {
+    fontSize: conditionalFontScale(16, 18, 20, 22),
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+
+  LeaveEnt_divider: {
+    fontSize: conditionalFontScale(12, 14, 16, 18),
+    fontWeight: '400',
+    color: '#BDBDBD',
+    marginHorizontal: spacing.xs,
+  },
+
+  LeaveEnt_totalText: {
+    fontSize: conditionalFontScale(12, 14, 16, 18),
+    fontWeight: '600',
+    color: '#757575',
+  },
+
+  LeaveEnt_baseLine: {
+    position: 'absolute',
+    bottom: 0,
+    height: moderateScale(2),
+    backgroundColor: '#D1D1D1',
+  },
+
+  LeaveEnt_leaveLabel: {
+    fontSize: conditionalFontScale(12, 13, 14, 16),
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: conditionalVerticalScale(2, 4, 6, 8),
+  },
+
+  LeaveEnt_statsBox: {
+    width: '100%',
+    backgroundColor: '#F3F3F3',
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    marginBottom: conditionalVerticalScale(6, 8, 10, 12),
+  },
+
+  LeaveEnt_statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+
+  LeaveEnt_stat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  LeaveEnt_statLabel: {
+    fontSize: conditionalFontScale(6, 7, 8, 9),
+    color: '#9E9E9E',
+    fontWeight: '600',
+    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+    letterSpacing: 0.5,
+  },
+
+  LeaveEnt_statValue: {
+    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontWeight: '700',
+  },
+
+  LeaveEnt_unitBadge: {
+    backgroundColor: '#EBEBEB',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.lg,
+  },
+
+  LeaveEnt_unitText: {
+    fontSize: conditionalFontScale(8, 9, 10, 12),
+    color: '#757575',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  LeaveEnt_itemDivider: {
+    width: moderateScale(1),
+    height: '80%',
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: spacing.sm,
     alignSelf: 'center',
-    maxWidth: conditionalScale(200, 250, 300),
   },
 
-  SRBtn_SubmitButton: {
-    borderColor: '#0A66C2',
+  LeaveEnt_arrowButton: {
+    position: 'absolute',
+    top: '55%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  LeaveEnt_leftArrow: {
+    left: spacing.sm,
+  },
+
+  LeaveEnt_rightArrow: {
+    right: spacing.sm,
+  },
+
+  LeaveEnt_loadingText: {
+    textAlign: 'center',
+    color: '#757575',
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    marginTop: conditionalVerticalScale(16, 20, 24, 28),
+  },
+
+  LeaveEnt_noDataText: {
+    textAlign: 'center',
+    color: '#9E9E9E',
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    marginTop: conditionalVerticalScale(8, 12, 16, 20),
+    fontStyle: 'italic',
+  },
+
+  // ============================================
+  // AI FLOATING BUTTON - RESPONSIVE STYLES
+  // ============================================
+
+  AIFloat_container: {
     backgroundColor: '#0A66C2',
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+    overflow: 'hidden',
   },
 
-  SRBtn_CancelButton: {
-    borderColor: '#cccccc',
+  AIFloat_button: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'transparent',
   },
 
-  SRBtn_DisabledButton: {
+  AIFloat_text: {
+    color: '#FFFFFF',
+    fontSize: conditionalFontScale(14, 16, 18, 20),
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
+  // ============================================
+  // AI CHATBOT - COMPLETE RESPONSIVE STYLES
+  // ============================================
+
+  AIChat_overlay: {
+    flex: 1,
+  },
+
+  AIChat_container: {
+    flex: 1,
+  },
+
+  AIChat_backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+
+  AIChat_sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: conditionalVerticalScale(80, 90, 110),
+    backgroundColor: '#F3F6F8',
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -moderateScale(4)},
+    shadowOpacity: 0.15,
+    shadowRadius: moderateScale(12),
+    elevation: 20,
+  },
+
+  /* ---------- Header ---------- */
+
+  AIChat_header: {
+    paddingTop:
+      Platform.OS === 'ios'
+        ? conditionalVerticalScale(44, 50, 56)
+        : conditionalVerticalScale(14, 16, 20),
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+
+  AIChat_headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  AIChat_headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  AIChat_iconContainer: {
+    width: conditionalScale(40, 44, 48),
+    height: conditionalScale(40, 44, 48),
+    borderRadius: conditionalScale(20, 22, 24),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+    position: 'relative',
+  },
+
+  AIChat_statusDot: {
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
+    backgroundColor: '#00D084',
+    position: 'absolute',
+    bottom: scale(2),
+    right: scale(2),
+    borderWidth: moderateScale(2),
+    borderColor: '#0A66C2',
+  },
+
+  AIChat_headerText: {
+    flex: 1,
+  },
+
+  AIChat_title: {
+    fontSize: conditionalFontScale(16, 18, 20),
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  AIChat_status: {
+    fontSize: conditionalFontScale(11, 12, 13),
+    marginTop: verticalScale(1),
+    color: '#FFFFFF',
+  },
+
+  AIChat_closeButton: {
+    width: conditionalScale(32, 36, 40),
+    height: conditionalScale(32, 36, 40),
+    borderRadius: conditionalScale(16, 18, 20),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* ---------- Chat Area ---------- */
+
+  AIChat_chatArea: {
+    flex: 1,
+    backgroundColor: '#F3F6F8',
+  },
+
+  AIChat_chatContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    flexGrow: 1,
+  },
+
+  AIChat_messageWrapper: {
+    flexDirection: 'row',
+    marginVertical: spacing.xs,
+    alignItems: 'flex-end',
+  },
+
+  AIChat_botWrapper: {
+    justifyContent: 'flex-start',
+  },
+
+  AIChat_userWrapper: {
+    justifyContent: 'flex-end',
+  },
+
+  AIChat_avatarContainer: {
+    marginHorizontal: spacing.xs,
+  },
+
+  AIChat_avatar: {
+    width: conditionalScale(32, 36, 40),
+    height: conditionalScale(32, 36, 40),
+    borderRadius: conditionalScale(16, 18, 20),
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(2)},
+    shadowOpacity: 0.2,
+    shadowRadius: moderateScale(3),
+    elevation: 4,
+  },
+
+  AIChat_bubbleContainer: {
+    maxWidth: '75%',
+  },
+
+  AIChat_userBubbleContainer: {
+    alignItems: 'flex-end',
+  },
+
+  AIChat_bubble: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    shadowOpacity: 0.08,
+    shadowRadius: moderateScale(2),
+    elevation: 1,
+  },
+
+  AIChat_messageText: {
+    fontSize: conditionalFontScale(13, 14, 15),
+    color: '#1F2937',
+    lineHeight: conditionalVerticalScale(18, 20, 22),
+  },
+
+  AIChat_timestamp: {
+    fontSize: conditionalFontScale(9, 10, 11),
+    marginTop: spacing.xs,
+  },
+
+  AIChat_botBubble: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: moderateScale(4),
+    marginLeft: spacing.xs,
+  },
+
+  AIChat_userBubble: {
+    backgroundColor: '#0A66C2',
+    borderTopRightRadius: moderateScale(4),
+    marginRight: spacing.xs,
+  },
+
+  AIChat_typingBubble: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: moderateScale(4),
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginLeft: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  AIChat_userMessageText: {
+    color: '#FFFFFF',
+  },
+
+  AIChat_userTimestamp: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+
+  AIChat_typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  AIChat_typingText: {
+    fontSize: conditionalFontScale(13, 14, 15),
+    color: '#6B7280',
+    marginLeft: spacing.sm,
+    fontWeight: '500',
+  },
+
+  /* ---------- Recording Overlay ---------- */
+
+  AIChat_recordingOverlay: {
+    position: 'absolute',
+    bottom: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
+    height: conditionalVerticalScale(110, 120, 140),
+    backgroundColor: 'rgba(10,102,194,0.95)',
+    borderRadius: borderRadius.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: moderateScale(8)},
+    shadowOpacity: 0.4,
+    shadowRadius: moderateScale(12),
+    elevation: 10,
+    overflow: 'hidden',
+  },
+
+  AIChat_waveContainer: {
+    position: 'absolute',
+    width: conditionalScale(160, 200, 240),
+    height: conditionalScale(160, 200, 240),
+    borderRadius: conditionalScale(80, 100, 120),
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+
+  AIChat_recordingContent: {
+    alignItems: 'center',
+    zIndex: 1,
+  },
+
+  AIChat_recordingIcon: {
+    width: conditionalScale(52, 56, 64),
+    height: conditionalScale(52, 56, 64),
+    borderRadius: conditionalScale(26, 28, 32),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+
+  AIChat_recordingText: {
+    fontSize: conditionalFontScale(20, 24, 26),
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  AIChat_recordingSubtext: {
+    fontSize: conditionalFontScale(12, 13, 14),
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: spacing.xs,
+  },
+
+  AIChat_cancelRecordingButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: conditionalScale(28, 32, 36),
+    height: conditionalScale(28, 32, 36),
+    borderRadius: conditionalScale(14, 16, 18),
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  /* ---------- Input Area ---------- */
+
+  AIChat_inputContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: moderateScale(1),
+    borderTopColor: '#E5E9F0',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom:
+      Platform.OS === 'ios' ? conditionalVerticalScale(20, 22, 24) : spacing.md,
+  },
+
+  AIChat_inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  AIChat_micButton: {
+    width: conditionalScale(40, 44, 48),
+    height: conditionalScale(40, 44, 48),
+    borderRadius: conditionalScale(20, 22, 24),
+    marginRight: spacing.xs,
+  },
+
+  AIChat_micButtonActive: {
+    shadowColor: '#FF4444',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.4,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+  },
+
+  AIChat_micButtonDisabled: {
     opacity: 0.6,
   },
 
-  SRBtn_ButtonText: {
-    fontWeight: conditionalValue('600', 'bold', 'bold'),
-    fontSize: fontScale(conditionalValue(12, 14, 16)),
-    color: '#0A66C2',
-    textAlign: 'center',
-    includeFontPadding: false,
+  AIChat_gradientButton: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
-  SRBtn_SubmitButtonText: {
-    fontWeight: conditionalValue('600', 'bold', 'bold'),
-    fontSize: fontScale(conditionalValue(12, 13, 15)),
-    color: '#fff',
-    textAlign: 'center',
-    includeFontPadding: false,
+  AIChat_textInputContainer: {
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.lg,
+    marginHorizontal: spacing.xs,
+    maxHeight: conditionalVerticalScale(70, 80, 90),
   },
 
-  SRBtn_CancelButtonText: {
-    fontWeight: conditionalValue('600', 'bold', 'bold'),
-    fontSize: fontScale(conditionalValue(12, 14, 16)),
-    color: '#666666',
-    textAlign: 'center',
-    includeFontPadding: false,
+  AIChat_input: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: conditionalFontScale(13, 14, 15),
+    lineHeight: conditionalVerticalScale(18, 20, 22),
   },
 
-  SRBtn_SingleButtonText: {
-    fontSize: fontScale(conditionalValue(14, 16, 18)),
-    fontWeight: 'bold',
+  AIChat_sendButton: {
+    width: conditionalScale(40, 44, 48),
+    height: conditionalScale(40, 44, 48),
+    borderRadius: conditionalScale(20, 22, 24),
+    marginLeft: spacing.xs,
   },
 
-  SRBtn_PressedButton: {
-    backgroundColor: '#0A66C2',
-    transform: [{scale: 0.98}],
+  AIChat_sendButtonDisabled: {
+    opacity: 0.6,
   },
 
-  SRBtn_pressedSubmitButton: {
-    backgroundColor: '#3d95edff',
-    borderColor: '#3d95edff',
-    transform: [{scale: 0.98}],
+  AIChat_voiceWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    paddingVertical: spacing.xs,
   },
 
-  SRBtn_pressedCancelButton: {
-    backgroundColor: '#e6e6e6',
-    transform: [{scale: 0.98}],
+  AIChat_voiceWarningText: {
+    fontSize: conditionalFontScale(11, 12, 13),
+    color: '#FF6B6B',
+    marginLeft: spacing.xs,
+    fontWeight: '500',
   },
-
-  SRBtn_pressedText: {
-    color: '#fff',
-  },
-
-  SRBtn_pressedCancelText: {
-    color: '#959595ff',
-  },
-
-  // // ============================================
-  // // DYNAMIC REQUEST CARD - RESPONSIVE STYLES
-  // // ============================================
-  // DRC_CardContainer: {
-  //   marginVertical: verticalScale(8),
-  //   marginHorizontal: scale(8),
-  // },
-
-  // DRC_HighlightedContainer: {
-  //   borderWidth: moderateScale(2),
-  //   borderColor: '#4CAF50',
-  //   borderRadius: moderateScale(16),
-  //   elevation: 8,
-  //   shadowColor: '#4CAF50',
-  //   shadowOffset: {width: 0, height: 4},
-  //   shadowOpacity: 0.3,
-  //   shadowRadius: 8,
-  // },
-
-  // DRC_Card: {
-  //   borderRadius: moderateScale(16),
-  //   padding: moderateScale(16),
-  //   elevation: 3,
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.1,
-  //   shadowRadius: 4,
-  // },
-
-  // DRC_CardHeader: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'flex-start',
-  //   marginBottom: verticalScale(12),
-  // },
-
-  // DRC_CardHeaderText: {
-  //   fontSize: fontScale(18),
-  //   fontWeight: '700',
-  //   color: '#37474F',
-  //   lineHeight: fontScale(22),
-  // },
-
-  // DRC_CardSubHeaderText: {
-  //   fontWeight: '600',
-  //   color: '#455A64',
-  //   fontSize: fontScale(14),
-  //   lineHeight: fontScale(18),
-  //   marginTop: verticalScale(2),
-  // },
-
-  // DRC_ButtonsContainer: {
-  //   flexDirection: 'row',
-  //   gap: scale(8),
-  //   flexShrink: 1,
-  // },
-
-  // // KEEP original style but FIX icon visibility - change iconColor to dark color
-  // DRC_IconButton: {
-  //   backgroundColor: '#0A66C2', // Keep original blue background
-  //   borderRadius: moderateScale(20),
-  //   padding: moderateScale(8),
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   minWidth: moderateScale(36),
-  //   minHeight: moderateScale(36),
-  // },
-
-  // // Remove text from icon buttons - set to null
-  // DRC_IconButtonText: null, // Remove text styling
-
-  // DRC_TextButton: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   borderColor: '#0A66C2',
-  //   borderWidth: moderateScale(2),
-  //   paddingHorizontal: scale(12),
-  //   paddingVertical: verticalScale(6),
-  //   borderRadius: moderateScale(20),
-  // },
-
-  // DRC_Disabled: {
-  //   backgroundColor: '#BDBDBD',
-  //   borderColor: '#BDBDBD',
-  //   opacity: 0.6,
-  // },
-
-  // DRC_DisabledText: {
-  //   color: '#999',
-  // },
-
-  // DRC_TextButtonText: {
-  //   color: '#0A66C2',
-  //   fontWeight: '600',
-  //   fontSize: fontScale(14),
-  //   marginLeft: scale(6),
-  // },
-
-  // DRC_InfoBlock: {
-  //   flexDirection: 'row',
-  //   justifyContent: 'space-between',
-  //   alignItems: 'flex-start',
-  //   marginBottom: verticalScale(8),
-  //   flexWrap: 'wrap',
-  // },
-
-  // DRC_Label: {
-  //   fontWeight: '600',
-  //   color: '#455A64',
-  //   fontSize: fontScale(14),
-  //   lineHeight: fontScale(18),
-  //   flex: 1,
-  // },
-
-  // DRC_Value: {
-  //   color: '#263238',
-  //   fontSize: fontScale(14),
-  //   lineHeight: fontScale(18),
-  //   flex: 1,
-  //   textAlign: 'right',
-  //   flexWrap: 'wrap',
-  // },
-
-  // DRC_StatusText: {
-  //   fontWeight: '700',
-  //   fontSize: fontScale(14),
-  //   color: '#112936',
-  //   textAlign: 'center',
-  // },
-
-  // DRC_SectionDivider: {
-  //   borderBottomWidth: moderateScale(1),
-  //   borderBottomColor: 'rgba(85, 85, 85, 0.3)',
-  //   marginVertical: verticalScale(8),
-  // },
-
-  // DRC_BottomContainer: {
-  //   flexDirection: 'column',
-  //   alignItems: 'center',
-  //   position: 'relative',
-  // },
-
-  // DRC_BottomButtonsContainer: {
-  //   position: 'absolute',
-  //   right: 0,
-  //   top: 0,
-  //   flexDirection: 'row',
-  //   gap: scale(8),
-  // },
-
-  // DRC_ExpandToggle: {
-  //   alignItems: 'center',
-  //   padding: moderateScale(4),
-  //   backgroundColor: '#0A66C2',
-  //   borderRadius: moderateScale(15),
-  //   alignSelf: 'center',
-  //   minWidth: moderateScale(30),
-  //   minHeight: moderateScale(30),
-  //   justifyContent: 'center',
-  // },
-
-  // DRC_NavigationArrow: {
-  //   position: 'absolute',
-  //   right: scale(12),
-  //   top: '50%',
-  //   transform: [{translateY: -12}],
-  //   width: scale(24),
-  //   height: scale(24),
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-
-  // DRC_ClickableContainer: {
-  //   position: 'relative',
-  // },
-
-  // DRC_HeaderContentWithArrow: {
-  //   flex: 1,
-  //   marginRight: scale(40),
-  // },
-
-  // DRC_ButtonsContainerWithArrow: {
-  //   marginRight: scale(30),
-  // },
-
-  // DRC_ValueWithArrow: {
-  //   marginRight: scale(30),
-  // },
-
-  // DRC_BottomButtonsContainerWithArrow: {
-  //   right: scale(30),
-  // },
 
   // ============================================
-  // DYNAMIC REQUEST CARD - FULLY DYNAMIC STYLES
+  // DYNAMIC REQUEST CARD - RESPONSIVE STYLES
   // ============================================
   DRC_CardContainer: {
     marginVertical: verticalScale(6),
-    marginHorizontal: scale(2),
+    marginHorizontal: scale(4),
   },
 
   DRC_HighlightedContainer: {
     borderWidth: moderateScale(2),
     borderColor: '#4CAF50',
-    borderRadius: moderateScale(16),
+    borderRadius: borderRadius.lg,
     elevation: 8,
     shadowColor: '#4CAF50',
     shadowOffset: {width: 0, height: 4},
@@ -1914,8 +4563,8 @@ const styles = StyleSheet.create({
   },
 
   DRC_Card: {
-    borderRadius: moderateScale(16),
-    padding: moderateScale(16),
+    borderRadius: borderRadius.lg,
+    padding: scale(16),
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
@@ -1927,7 +4576,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: verticalScale(12),
+    marginBottom: verticalScale(14),
+  },
+
+  DRC_HeaderContentWithArrow: {
+    flex: 1,
+    marginRight: scale(40),
   },
 
   DRC_CardHeaderText: {
@@ -1942,7 +4596,7 @@ const styles = StyleSheet.create({
     color: '#455A64',
     fontSize: fontScale(14),
     lineHeight: fontScale(18),
-    marginTop: verticalScale(2),
+    marginTop: verticalScale(3),
   },
 
   DRC_ButtonsContainer: {
@@ -1951,14 +4605,17 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
 
-  // Icon button with customizable background
+  DRC_ButtonsContainerWithArrow: {
+    marginRight: scale(30),
+  },
+
   DRC_IconButton: {
-    borderRadius: moderateScale(20),
-    padding: moderateScale(8),
+    borderRadius: borderRadius.lg,
+    padding: scale(9),
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: moderateScale(36),
-    minHeight: moderateScale(36),
+    minWidth: scale(36),
+    minHeight: scale(36),
   },
 
   DRC_TextButton: {
@@ -1967,9 +4624,15 @@ const styles = StyleSheet.create({
     borderColor: '#0A66C2',
     borderWidth: moderateScale(2),
     paddingHorizontal: scale(12),
-    paddingVertical: verticalScale(6),
-    borderRadius: moderateScale(20),
+    paddingVertical: verticalScale(7),
+    borderRadius: borderRadius.lg,
     gap: scale(6),
+  },
+
+  DRC_TextButtonText: {
+    color: '#0A66C2',
+    fontWeight: '600',
+    fontSize: fontScale(14),
   },
 
   DRC_Disabled: {
@@ -1979,20 +4642,14 @@ const styles = StyleSheet.create({
   },
 
   DRC_DisabledText: {
-    color: '#999',
-  },
-
-  DRC_TextButtonText: {
-    color: '#0A66C2',
-    fontWeight: '600',
-    fontSize: fontScale(14),
+    color: '#999999',
   },
 
   DRC_InfoBlock: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: verticalScale(8),
+    marginBottom: verticalScale(9),
     flexWrap: 'wrap',
   },
 
@@ -2013,6 +4670,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
 
+  DRC_ValueWithArrow: {
+    marginRight: scale(30),
+  },
+
   DRC_StatusText: {
     fontWeight: '800',
     fontSize: fontScale(14),
@@ -2024,15 +4685,14 @@ const styles = StyleSheet.create({
   DRC_SectionDivider: {
     borderBottomWidth: moderateScale(1),
     borderBottomColor: 'rgba(85, 85, 85, 0.3)',
-    marginVertical: verticalScale(8),
+    marginVertical: verticalScale(10),
   },
 
-  // Dynamic bottom container - adapts to content
   DRC_BottomContainer: {
     flexDirection: 'column',
     alignItems: 'center',
     position: 'relative',
-    marginTop: verticalScale(8),
+    marginTop: verticalScale(10),
   },
 
   DRC_BottomButtonsContainer: {
@@ -2043,18 +4703,21 @@ const styles = StyleSheet.create({
     gap: scale(8),
   },
 
+  DRC_BottomButtonsContainerWithArrow: {
+    right: scale(30),
+  },
+
   DRC_ExpandToggle: {
     alignItems: 'center',
-    padding: moderateScale(4),
+    padding: scale(5),
     backgroundColor: '#0A66C2',
-    borderRadius: moderateScale(15),
+    borderRadius: borderRadius.lg,
     alignSelf: 'center',
-    minWidth: moderateScale(30),
-    minHeight: moderateScale(30),
+    minWidth: scale(30),
+    minHeight: scale(30),
     justifyContent: 'center',
   },
 
-  // Navigation arrow styles
   DRC_NavigationArrow: {
     position: 'absolute',
     right: scale(12),
@@ -2071,284 +4734,802 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
 
-  DRC_HeaderContentWithArrow: {
-    flex: 1,
-    marginRight: scale(40),
-  },
-
-  DRC_ButtonsContainerWithArrow: {
-    marginRight: scale(30),
-  },
-
-  DRC_ValueWithArrow: {
-    marginRight: scale(30),
-  },
-
-  DRC_BottomButtonsContainerWithArrow: {
-    right: scale(30),
-  },
-
-  // ============================================
-  // NOTIFICATION PANEL - RESPONSIVE STYLES
-  // ============================================
-  notif_Overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-end',
+  DRC_BottomContainerCollapsed: {
     alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    paddingTop: verticalScale(4),
+    paddingBottom: verticalScale(4),
   },
-  notif_OverlayTouchable: {
-    ...StyleSheet.absoluteFillObject,
+
+  DRC_BottomButtonsContainerCollapsed: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
   },
-  notif_Panel: {
-    width: conditionalScale(300, 350, 400),
-    height: '100%',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {width: scale(-4), height: 0},
-    shadowOpacity: 0.1,
-    shadowRadius: scale(12),
-    elevation: 20,
-  },
-  notif_Header: {
+
+  // ============================================
+  // SAVE RECORD BUTTONS - RESPONSIVE STYLES
+  // ============================================
+  SRBtn_Footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(16),
-    backgroundColor: '#0A66C2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#0c5298',
+    paddingVertical: verticalScale(10),
+    paddingHorizontal: scale(8),
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    backgroundColor: '#FFF',
+    position: 'relative',
+    minHeight: verticalScale(70),
+    gap: scale(8),
   },
-  notif_HeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(12),
-  },
-  notif_BellIcon: {
-    fontSize: fontScale(24),
-    color: '#ffffff',
-  },
-  notif_HeaderTitle: {
-    fontSize: fontScale(18),
-    fontWeight: '700',
-    color: '#ffffff',
-  },
-  notif_HeaderCount: {
-    fontSize: fontScale(12),
-    color: '#e2e8f0',
-    marginTop: verticalScale(2),
-  },
-  notif_HeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(12),
-  },
-  notif_MarkAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: scale(12),
-    paddingVertical: verticalScale(6),
-    borderRadius: scale(16),
-    gap: scale(6),
-    marginRight: scale(45),
-  },
-  notif_MarkAllButtonDisabled: {
-    opacity: 0.5,
-  },
-  notif_MarkAllIcon: {
-    fontSize: fontScale(14),
-    color: '#ffffff',
-  },
-  notif_MarkAllText: {
-    fontSize: fontScale(12),
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  notif_RefreshButton: {
-    width: scale(36),
-    height: scale(36),
-    borderRadius: scale(18),
+
+  SRBtn_SingleButtonFooter: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  notif_RefreshIcon: {
-    fontSize: fontScale(20),
-    color: '#ffffff',
-  },
-  notif_ScrollView: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  notif_SectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: scale(20),
+
+  SRBtn_Button: {
+    borderWidth: moderateScale(2),
+    borderColor: '#0A66C2',
+    borderRadius: borderRadius.lg,
     paddingVertical: verticalScale(12),
-    backgroundColor: '#f8fafc',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    minWidth: scale(80),
+    minHeight: verticalScale(44),
   },
-  notif_SectionTitle: {
+
+  SRBtn_SingleButton: {
+    flex: 0.5,
+    alignSelf: 'center',
+    maxWidth: scale(250),
+  },
+
+  SRBtn_SubmitButton: {
+    borderColor: '#0A66C2',
+    backgroundColor: '#0A66C2',
+  },
+
+  SRBtn_CancelButton: {
+    borderColor: '#CCCCCC',
+    backgroundColor: 'transparent',
+  },
+
+  SRBtn_DisabledButton: {
+    opacity: 0.6,
+  },
+
+  SRBtn_ButtonText: {
+    fontWeight: '600',
     fontSize: fontScale(14),
-    fontWeight: '600',
-    color: '#475569',
+    color: '#0A66C2',
+    textAlign: 'center',
+    includeFontPadding: false,
   },
-  notif_CountBadge: {
-    backgroundColor: '#e2e8f0',
-    borderRadius: scale(12),
-    paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(2),
-    minWidth: scale(24),
-  },
-  notif_CountText: {
-    fontSize: fontScale(12),
+
+  SRBtn_SubmitButtonText: {
     fontWeight: '600',
-    color: '#475569',
+    fontSize: fontScale(14),
+    color: '#FFF',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+
+  SRBtn_CancelButtonText: {
+    fontWeight: '600',
+    fontSize: fontScale(14),
+    color: '#666666',
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+
+  SRBtn_SingleButtonText: {
+    fontSize: fontScale(16),
+    fontWeight: '700',
+  },
+
+  SRBtn_PressedButton: {
+    backgroundColor: '#0A66C2',
+    transform: [{scale: 0.98}],
+  },
+
+  SRBtn_pressedSubmitButton: {
+    backgroundColor: '#3D95ED',
+    borderColor: '#3D95ED',
+    transform: [{scale: 0.98}],
+  },
+
+  SRBtn_pressedCancelButton: {
+    backgroundColor: '#E6E6E6',
+    transform: [{scale: 0.98}],
+  },
+
+  SRBtn_pressedText: {
+    color: '#FFF',
+  },
+
+  SRBtn_pressedCancelText: {
+    color: '#959595',
+  },
+
+  // ============================================
+  // CALENDAR MODAL – RESPONSIVE STYLES
+  // ============================================
+
+  CalModal_modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+
+  CalModal_modalContent: {
+    width: '100%',
+    maxWidth: conditionalScale(300, 340, 380, 460),
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(10)},
+    shadowOpacity: 0.25,
+    shadowRadius: moderateScale(16),
+    elevation: 16,
+  },
+
+  CalModal_header: {
+    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+    paddingHorizontal: spacing.lg,
+    backgroundColor: '#0A66C2',
+  },
+
+  CalModal_headerTitle: {
+    fontSize: conditionalFontScale(15, 16, 17, 19),
+    fontWeight: '700',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
-  notif_NotificationItem: {
+
+  CalModal_datePicker: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+  },
+
+  CalModal_footer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: scale(20),
-    paddingVertical: verticalScale(16),
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-    backgroundColor: '#fff',
-  },
-  notif_NotificationItemToday: {
-    backgroundColor: '#f0f9ff',
-    borderLeftWidth: 2,
-    borderLeftColor: '#0A66C2',
-  },
-  notif_NotificationItemRead: {
-    backgroundColor: '#fafafa',
-    opacity: 0.8,
-  },
-  notif_LogoContainer: {
-    position: 'relative',
-    marginRight: scale(12),
-  },
-  notif_IconContainer: {
-    width: scale(44),
-    height: scale(44),
-    borderRadius: scale(22),
-    backgroundColor: '#e0f2fe',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
+    paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
+    paddingHorizontal: spacing.lg,
+    borderTopWidth: moderateScale(1),
+    borderTopColor: '#E5E7EB',
   },
-  notif_NotificationIcon: {
-    fontSize: fontScale(20),
-    color: '#0A66C2',
+
+  CalModal_cancelButton: {
+    paddingVertical: conditionalVerticalScale(8, 9, 10, 12),
+    paddingHorizontal: conditionalScale(14, 16, 18, 22),
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F3F4F6',
+    marginRight: spacing.sm,
   },
-  notif_NotificationIconToday: {
-    color: '#0369a1',
-  },
-  notif_MarkReadButtonContainer: {
-    position: 'absolute',
-    bottom: verticalScale(-4),
-    right: scale(-4),
-    zIndex: 1,
-  },
-  notif_MarkReadButton: {
-    width: scale(12),
-    height: scale(12),
-    borderRadius: scale(11),
-    backgroundColor: '#0A66C2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  notif_MarkReadButtonToday: {
-    backgroundColor: '#0A66C2',
-  },
-  notif_MarkReadButtonRead: {
-    backgroundColor: '#94a3b8',
-  },
-  notif_MarkReadButtonDisabled: {
-    opacity: 0.5,
-  },
-  notif_MarkReadIcon: {
-    fontSize: fontScale(4),
-    color: '#ffffff',
-  },
-  notif_MarkReadIconToday: {
-    color: '#ffffff',
-  },
-  notif_MarkReadIconRead: {
-    color: '#ffffff',
-  },
-  notif_ContentContainer: {
-    flex: 1,
-  },
-  notif_NotificationTitle: {
-    fontSize: fontScale(15),
+
+  CalModal_cancelButtonText: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
     fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: verticalScale(4),
+    color: '#374151',
   },
-  notif_NotificationTitleToday: {
-    color: '#0A66C2',
+
+  CalModal_okButton: {
+    paddingVertical: conditionalVerticalScale(8, 9, 10, 12),
+    paddingHorizontal: conditionalScale(14, 16, 18, 22),
+    borderRadius: borderRadius.md,
+    backgroundColor: '#0A66C2',
+
+    shadowColor: '#0A66C2',
+    shadowOffset: {width: 0, height: moderateScale(3)},
+    shadowOpacity: 0.25,
+    shadowRadius: moderateScale(6),
+    elevation: 5,
   },
-  notif_NotificationMessage: {
-    fontSize: fontScale(14),
-    color: '#64748b',
-    lineHeight: fontScale(20),
-    marginBottom: verticalScale(4),
+
+  CalModal_okButtonText: {
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  notif_NotificationMessageToday: {
+
+  // ============================================
+  // RECEIPT DETAILS MODAL – FULL & COMPLETE STYLES
+  // ============================================
+
+  RDM_ModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+
+  RDM_ModalContainer: {
+    backgroundColor: '#FFFFFF',
+    height: '85%',
+    padding: spacing.lg,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -moderateScale(4)},
+    shadowOpacity: 0.12,
+    shadowRadius: moderateScale(10),
+    elevation: 12,
+  },
+
+  /* ---------- Header ---------- */
+
+  RDM_ModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+
+  RDM_ModalTitle: {
+    fontSize: fontScale(20),
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+
+  RDM_CloseButton: {
+    width: scale(34),
+    height: scale(34),
+    borderRadius: scale(17),
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  RDM_CloseButtonText: {
+    fontSize: fontScale(18),
+    fontWeight: '600',
     color: '#475569',
   },
-  notif_NotificationTime: {
-    fontSize: fontScale(12),
-    color: '#94a3b8',
+
+  /* ---------- Details ---------- */
+
+  RDM_DetailsSection: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
-  notif_NotificationTimeToday: {
-    color: '#0A66C2',
+
+  RDM_SectionTitle: {
+    fontSize: fontScale(15),
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: spacing.sm,
   },
-  notif_EmptyContainer: {
+
+  RDM_DetailRow: {
+    flexDirection: 'row',
+    marginBottom: verticalScale(6),
+  },
+
+  RDM_DetailLabel: {
+    width: scale(95),
+    fontSize: fontScale(13),
+    fontWeight: '500',
+    color: '#64748B',
+  },
+
+  RDM_DetailValue: {
+    flex: 1,
+    fontSize: fontScale(13),
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+
+  /* ---------- Add Receipt ---------- */
+
+  RDM_ButtonSection: {
+    marginBottom: spacing.lg,
+  },
+
+  RDM_AddButtonContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+
+  RDM_AddButton: {
+    flex: 1,
+    backgroundColor: '#2563EB',
+    borderRadius: borderRadius.md,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+  },
+
+  RDM_AddButtonText: {
+    fontSize: fontScale(14),
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+
+  RDM_DisabledButton: {
+    backgroundColor: '#E2E8F0',
+  },
+
+  /* ---------- Receipts ---------- */
+
+  RDM_ReceiptsSection: {
+    flex: 1,
+    marginBottom: spacing.lg,
+  },
+
+  RDM_ReceiptsScrollView: {
+    flex: 1,
+  },
+
+  RDM_LoadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: verticalScale(80),
+    paddingVertical: verticalScale(20),
   },
-  notif_EmptyIcon: {
-    fontSize: fontScale(56),
-    color: '#cbd5e1',
-    marginBottom: verticalScale(16),
+
+  RDM_LoadingText: {
+    marginTop: verticalScale(8),
+    fontSize: fontScale(13),
+    color: '#64748B',
   },
-  notif_EmptyText: {
-    fontSize: fontScale(16),
-    color: '#64748b',
+
+  RDM_NoReceiptsText: {
+    textAlign: 'center',
+    fontSize: fontScale(13),
+    color: '#64748B',
+    paddingVertical: verticalScale(20),
+    fontStyle: 'italic',
   },
-  notif_CloseButton: {
-    position: 'absolute',
-    top: verticalScale(16),
-    right: scale(20),
-    width: scale(36),
-    height: scale(36),
-    borderRadius: scale(18),
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+
+  /* ---------- Receipt Item ---------- */
+
+  RDM_ReceiptItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: spacing.sm,
+    borderRadius: borderRadius.sm,
+    marginBottom: verticalScale(8),
+  },
+
+  RDM_ReceiptInfo: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+
+  RDM_ReceiptName: {
+    fontSize: fontScale(13),
+    fontWeight: '500',
+    color: '#1E293B',
+    marginBottom: verticalScale(4),
+  },
+
+  RDM_NewBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#10B981',
+    paddingHorizontal: scale(6),
+    paddingVertical: verticalScale(2),
+    borderRadius: borderRadius.xs,
+    color: '#FFFFFF',
+    fontSize: fontScale(10),
+    fontWeight: '600',
+  },
+
+  RDM_ExistingBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: scale(6),
+    paddingVertical: verticalScale(2),
+    borderRadius: borderRadius.xs,
+    color: '#FFFFFF',
+    fontSize: fontScale(10),
+    fontWeight: '600',
+  },
+
+  /* ---------- Actions ---------- */
+
+  RDM_ReceiptActions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+
+  RDM_DownloadButton: {
+    backgroundColor: '#16A34A',
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(8),
+    borderRadius: borderRadius.xs,
+    minWidth: scale(30),
+    alignItems: 'center',
+  },
+
+  RDM_RemoveButton: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(8),
+    borderRadius: borderRadius.xs,
+    minWidth: scale(30),
+    alignItems: 'center',
+  },
+
+  RDM_DisabledActionButton: {
+    backgroundColor: '#CBD5E1',
+    opacity: 0.6,
+  },
+
+  /* ---------- Footer ---------- */
+
+  RDM_ButtonContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingBottom: verticalScale(10),
+  },
+
+  RDM_CancelButton: {
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    borderRadius: borderRadius.md,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+  },
+
+  RDM_SaveButton: {
+    flex: 1,
+    backgroundColor: '#0A66C2',
+    borderRadius: borderRadius.md,
+    paddingVertical: verticalScale(12),
+    alignItems: 'center',
+  },
+
+  RDM_SaveButtonDisabled: {
+    backgroundColor: '#CBD5E1',
+  },
+
+  RDM_CancelButtonText: {
+    fontSize: fontScale(14),
+    fontWeight: '600',
+    color: '#475569',
+  },
+
+  RDM_SaveButtonText: {
+    fontSize: fontScale(14),
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // ============================================
+  // PROFILE PICTURE EDITOR - RESPONSIVE STYLES
+  // ============================================
+
+  PPEdit_headerContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 24, 28),
+  },
+
+  PPEdit_profileImageWrapper: {
+    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+  },
+
+  PPEdit_profilePictureContainer: {
+    position: 'relative',
+  },
+
+  PPEdit_profilePicture: {
+    width: conditionalScale(120, 135, 150, 165),
+    height: conditionalScale(120, 135, 150, 165),
+    borderRadius: conditionalScale(60, 67.5, 75, 82.5),
+    borderWidth: moderateScale(4),
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: moderateScale(8),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(4),
+    },
+    elevation: moderateScale(5),
+  },
+
+  PPEdit_loadingContainer: {
+    width: conditionalScale(120, 135, 150, 165),
+    height: conditionalScale(120, 135, 150, 165),
+    borderRadius: conditionalScale(60, 67.5, 75, 82.5),
+    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  notif_CloseIcon: {
+
+  PPEdit_initialsContainer: {
+    backgroundColor: '#E8E3F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  PPEdit_initialsText: {
+    fontSize: conditionalFontScale(32, 36, 40, 44),
+    fontWeight: '700',
+    color: '#6366F1',
+  },
+
+  PPEdit_headerTitle: {
+    fontSize: conditionalFontScale(20, 22, 24, 26),
+    fontWeight: '600',
+    color: '#111827',
+    textAlign: 'center',
+  },
+
+  PPEdit_modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  PPEdit_modalContent: {
+    width: '90%',
+    aspectRatio: 1,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+  },
+
+  PPEdit_modalImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  // ============================================
+  // SAVE BUTTON - RESPONSIVE STYLES
+  // ============================================
+
+  SB_saveButton: {
+    backgroundColor: '#0A66C2',
+    paddingVertical: conditionalVerticalScale(14, 16, 18, 20),
+    paddingHorizontal: conditionalScale(24, 28, 32, 36),
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: conditionalVerticalScale(20, 24, 28, 32),
+    shadowColor: '#0A66C2',
+    shadowOpacity: 0.3,
+    shadowRadius: moderateScale(8),
+    shadowOffset: {
+      width: 0,
+      height: moderateScale(4),
+    },
+    elevation: moderateScale(4),
+  },
+
+  SB_saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: conditionalFontScale(16, 17, 18, 19),
+    fontWeight: '700',
+  },
+
+  // ============================================
+  // DRAWER NAVIGATOR – RESPONSIVE STYLES
+  // ============================================
+
+  DNav_DrawerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: scale(20),
+    minHeight: 48,
+  },
+
+  DNav_DrawerIcon: {
+    width: iconSize.sm,
+    height: iconSize.sm,
+    marginRight: spacing.md,
+    resizeMode: 'contain',
+  },
+
+  DNav_DrawerItemText: {
+    fontSize: fontScale(14),
+    color: '#374151',
+    fontWeight: '500',
+  },
+
+  DNav_ActiveDrawerItem: {
+    backgroundColor: '#E0E7FF',
+    marginHorizontal: scale(12),
+    borderRadius: borderRadius.md,
+  },
+
+  DNav_ActiveDrawerItemText: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+
+  DNav_HeaderBackground: {
+    width: '100%',
+    height: verticalScale(180),
+    justifyContent: 'flex-end',
+    paddingBottom: spacing.md,
+  },
+
+  DNav_MaisonLogo: {
+    position: 'absolute',
+    top: verticalScale(14),
+    right: scale(16),
+    width: scale(96),
+    height: verticalScale(36),
+    resizeMode: 'contain',
+  },
+
+  DNav_EmpInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+  },
+
+  DNav_AvatarContainer: {
+    position: 'relative',
+    marginRight: spacing.md,
+  },
+
+  DNav_Avatar: {
+    width: scale(64),
+    height: scale(64),
+    borderRadius: scale(32),
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.5)',
+  },
+
+  DNav_ProfilePicture: {
+    width: '100%',
+    height: '100%',
+    borderRadius: scale(32),
+  },
+
+  DNav_AvatarText: {
+    color: '#FFFFFF',
     fontSize: fontScale(16),
-    color: '#64748b',
+    fontWeight: '600',
   },
+
+  DNav_OnlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: scale(12),
+    height: scale(12),
+    borderRadius: scale(6),
+    backgroundColor: '#10B981',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
+  DNav_UserInfo: {
+    flex: 1,
+  },
+
+  DNav_UserName: {
+    color: '#FFFFFF',
+    fontSize: fontScale(15),
+    fontWeight: '600',
+  },
+
+  DNav_UserEmail: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: fontScale(11),
+    marginTop: verticalScale(2),
+  },
+
+  DNav_LogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    minHeight: 48,
+
+    // Shadow (iOS)
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+
+  DNav_LogoutIconSection: {
+    backgroundColor: '#0A66C2',
+    paddingHorizontal: spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  DNav_LogoutTextSection: {
+    flex: 1,
+    backgroundColor: '#084C94',
+    justifyContent: 'center',
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: spacing.lg,
+  },
+
+  DNav_LogoutText: {
+    color: '#FFFFFF',
+    fontSize: fontScale(13),
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+
+  // ============================================
+  // ENTITLEMENT CARD COMPONENT – RESPONSIVE STYLES
+  // ============================================
+
+  EntCards_CardContainer: {
+    marginVertical: verticalScale(10),
+    marginHorizontal: scale(16),
+    borderRadius: borderRadius.lg,
+
+    // Shadow (iOS)
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+
+    // Elevation (Android)
+    elevation: 4,
+  },
+
+  EntCards_Card: {
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+  },
+
+  EntCards_CardHeader: {
+    borderBottomWidth: scale(1.5),
+    borderBottomColor: '#FFFFFF',
+    paddingBottom: verticalScale(8),
+    marginBottom: verticalScale(12),
+  },
+
+  EntCards_CardHeaderText: {
+    fontSize: fontScale(18),
+    fontWeight: '700',
+    color: '#004AAD',
+    textAlign: 'center',
+  },
+
+  EntCards_CardContent: {
+    flexDirection: 'column',
+    rowGap: verticalScale(8),
+  },
+
+  EntCards_TextContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: verticalScale(6),
+  },
+
+  EntCards_CardTextHeading: {
+    fontSize: fontScale(14),
+    fontWeight: '600',
+    color: '#333333',
+  },
+
+  EntCards_CardText: {
+    fontSize: fontScale(14),
+    fontWeight: '500',
+    color: '#111111',
+  },
+
+  // ==================================================================================================================
+  // END OF COMPONENT - RESPONSIVE COMPONENT STYLES
+  // ==================================================================================================================
 
   // ============================================
   // ??? - RESPONSIVE STYLES
@@ -2473,100 +5654,6 @@ const styles = StyleSheet.create({
     height: height * 0.05,
   },
   // end of Display List page
-
-  // Start of Salary Slip
-
-  SSlip_Container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7',
-  },
-  SSlip_ScrollContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: width * 0.05,
-    marginTop: width * 0.1,
-  },
-  SSlip_Icon: {
-    marginBottom: height * 0.03,
-  },
-  SSlip_ScreenTitle: {
-    fontSize: width * 0.06,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: height * 0.01,
-  },
-  SSlip_ScreenSubtitle: {
-    fontSize: width * 0.04,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: height * 0.025,
-  },
-  SSlip_FieldsHeading: {
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: height * 0.015,
-  },
-  SSlip_Dropdown: {
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.03,
-    backgroundColor: '#fff',
-    marginBottom: height * 0.025,
-    width: '100%',
-  },
-  SSlip_ItemText: {
-    color: '#000',
-    fontSize: width * 0.04,
-  },
-  SSlip_DropdownPlaceholder: {
-    color: '#999',
-    fontSize: width * 0.04,
-  },
-  SSlip_DropdownSelected: {
-    color: '#000',
-    fontSize: width * 0.04,
-  },
-  SSlip_Button: {
-    borderRadius: 8,
-    marginTop: height * 0.025,
-    width: '100%',
-    overflow: 'hidden', // Important for rounded corners with gradient
-  },
-  SSlip_ButtonContent: {
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.05,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  SSlip_ButtonText: {
-    color: '#FFFFFF',
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-  },
-  // SSlip_Button: {
-  //   borderRadius: 8,
-  //   paddingVertical: height * 0.015,
-  //   paddingHorizontal: width * 0.05,
-  //   elevation: 4,
-  //   alignItems: 'center',
-  //   justifyContent: 'center',
-  //   marginTop: height * 0.025,
-  //   width: '100%',
-  // },
-  // SSlip_ButtonContent: {
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  // },
-  // SSlip_ButtonText: {
-  //   color: '#FFFFFF',
-  //   fontSize: width * 0.045,
-  //   fontWeight: 'bold',
-  // },
-  // End oF Salary Slip
 
   // // Start of Leave Request Save Record
   LReqSR_SafeArea: {
@@ -2748,98 +5835,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1e293b',
   },
-  // LReqSR_SafeArea: {
-  //   flex: 1,
-  //   backgroundColor: '#fefefe',
-  // },
-  // LReqSR_ContentWrapper: {
-  //   flex: 1,
-  //   justifyContent: 'space-between',
-  //   paddingHorizontal: width * 0.04, // responsive padding
-  //   paddingTop: height * 0.015,
-  // },
-  // LReqSR_FormContainer: {
-  //   padding: width * 0.01,
-  //   paddingBottom: height * 0.02, // spacing relative to screen
-  // },
-  // LReqSR_Label: {
-  //   fontSize: width * 0.038, // scales with width
-  //   marginTop: height * 0.015,
-  //   fontWeight: '600',
-  //   color: '#444',
-  // },
-  // LReqSR_Input: {
-  //   borderWidth: 1,
-  //   borderColor: '#ddd',
-  //   borderRadius: width * 0.02,
-  //   padding: width * 0.025,
-  //   marginTop: height * 0.007,
-  //   fontSize: width * 0.04,
-  //   color: '#333',
-  //   backgroundColor: '#fff',
-  // },
-  // LReqSR_DropdownPlaceholder: {
-  //   color: '#444',
-  //   fontSize: width * 0.038,
-  // },
-  // LReqSR_DropdownSelectedText: {
-  //   color: '#444',
-  //   fontWeight: '400',
-  //   fontSize: width * 0.038,
-  // },
-  // LReqSR_DropdownItemText: {
-  //   color: '#444',
-  //   fontSize: width * 0.038,
-  // },
-  // LReqSR_DropdownContainer: {
-  //   borderWidth: 1.5,
-  //   borderColor: '#4A90E2',
-  //   borderRadius: width * 0.025,
-  //   backgroundColor: '#fff',
-  //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 0.25,
-  //   shadowRadius: 6,
-  //   elevation: 6,
-  // },
-  // LReqSR_DropdownItemContainer: {
-  //   paddingHorizontal: width * 0.03,
-  // },
-  // LReqSR_DropdownSearchInput: {
-  //   color: '#444',
-  //   backgroundColor: '#fff',
-  //   fontSize: width * 0.038,
-  // },
-  // LReqSR_DropdownIcon: {
-  //   width: width * 0.055,
-  //   height: width * 0.055,
-  // },
-  // LReqSR_Disabled: {
-  //   backgroundColor: '#f1f1f1',
-  //   color: '#999',
-  // },
-  // LReqSR_TextArea: {
-  //   height: height * 0.15,
-  //   textAlignVertical: 'top',
-  //   fontSize: width * 0.04,
-  // },
   LReqSR_CharCount: {
     fontSize: width * 0.034,
     color: '#333',
   },
-  // LReqSR_DateSelector: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   borderWidth: 1,
-  //   borderColor: '#ddd',
-  //   borderRadius: width * 0.02,
-  //   padding: width * 0.025,
-  //   marginTop: height * 0.007,
-  // },
-  // LReqSR_DateText: {
-  //   fontSize: width * 0.04,
-  //   color: '#333',
-  // },
   formHeader: {
     backgroundColor: '#f8f9fa',
     padding: 16,
@@ -2875,177 +5874,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#999999',
   },
-  // LReqLP_ListContainer: {
-  //   paddingBottom: height * 0.05,
-  //   paddingHorizontal: width * 0.03,
-  //   paddingTop: height * 0.01,
-  // },
-  // LReqLP_NoDataText: {
-  //   flex: 1,
-  //   textAlign: 'center',
-  //   textAlignVertical: 'center',
-  //   fontSize: width * 0.04,
-  //   fontWeight: 'bold',
-  //   color: '#999999',
-  // },
-  // End Of Leave Req List Page
-
-  // Start Of Display Personal Info
-  DPI_Container: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-  },
-  DPI_ScrollView: {
-    flex: 1,
-  },
-  DPI_ScrollContainer: {
-    flexGrow: 1,
-    //paddingBottom: screenHeight * 0.1, // Extra padding for fixed button
-  },
-  DPI_TopContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  DPI_ImageContainer: {
-    paddingHorizontal: width * 0.05,
-    paddingTop: height * 0.025,
-    paddingBottom: height * 0.01,
-    alignItems: 'center',
-  },
-  DPI_FixedButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    padding: width * 0.025,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  TCert_Container: {
-    flex: 1,
-    backgroundColor: '#f7f7f7', // Matches SSlip_Container for consistency
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  TCert_ScrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: width * 0.05,
-    paddingTop: height * 0.1,
-    paddingBottom: height * 0.1, // Ensure enough space for scrolling
-  },
-  TCert_Icon: {
-    marginBottom: height * 0.03,
-    alignSelf: 'center',
-  },
-  TCert_ScreenTitle: {
-    fontSize: width * 0.06,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: height * 0.01,
-    textAlign: 'center',
-  },
-  TCert_ScreenSubtitle: {
-    fontSize: width * 0.04,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: height * 0.025,
-    paddingHorizontal: width * 0.05,
-  },
-  TCert_Label: {
-    fontSize: width * 0.045,
-    fontWeight: '600',
-    color: '#444',
-    marginTop: height * 0.015,
-    marginBottom: height * 0.01,
-    textAlign: 'center',
-    width: '100%',
-  },
-  TCert_Input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
-    fontSize: width * 0.04,
-    color: '#333',
-    backgroundColor: '#fff',
-    width: '100%',
-    textAlign: 'center',
-  },
-  TCert_Disabled: {
-    backgroundColor: '#f1f1f1',
-    color: '#999',
-  },
-  TCert_DateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 6,
-    marginBottom: height * 0.015,
-    width: '100%',
-    justifyContent: 'space-between',
-  },
-  TCert_DateText: {
-    fontSize: width * 0.04,
-    color: '#333',
-    textAlign: 'center',
-    flex: 1,
-  },
-  TCert_Button: {
-    borderRadius: 8,
-    marginTop: height * 0.025,
-    width: '100%',
-    overflow: 'hidden', // Important for rounded corners with gradient
-    elevation: 4, // Keep elevation here for shadow
-  },
-  TCert_ButtonContent: {
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.05,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  TCert_ButtonText: {
-    color: '#FFFFFF',
-    fontSize: width * 0.045,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  // Add to your styles.js file
-  TCert_Dropdown: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: height * 0.02,
-    width: '100%',
-    backgroundColor: '#fff',
-  },
-  TCert_ItemText: {
-    fontSize: width * 0.04,
-    color: '#333',
-  },
-  TCert_DropdownPlaceholder: {
-    fontSize: width * 0.04,
-    color: '#999',
-  },
-  TCert_DropdownSelected: {
-    fontSize: width * 0.04,
-    color: '#333',
-  },
-  // end of tax certificate
 
   // start of display list page
 
@@ -3333,172 +6161,7 @@ const styles = StyleSheet.create({
   },
   // end of calendar modal
 
-  // start of page header component
-  // start of company dropdown
-  CD_Overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  CD_DropdownContainer: {
-    marginTop: 10,
-    marginRight: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    width: 200,
-    maxHeight: 400,
-  },
-  CD_DropdownContent: {
-    padding: 0,
-  },
-  CD_DropdownTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0A66C2',
-    textAlign: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  CD_ScrollView: {
-    maxHeight: 300,
-  },
-  CD_CompanyItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-  },
-  CD_CompanyInfo: {
-    flex: 1,
-  },
-  CD_CompanyName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 4,
-  },
-  CD_SelectedCompanyName: {
-    color: '#0A66C2',
-  },
-  CD_CheckIcon: {
-    marginLeft: 10,
-  },
-  CD_NoDataText: {
-    fontSize: 14,
-    color: '#999999',
-    textAlign: 'center',
-    paddingVertical: 20,
-    fontStyle: 'italic',
-  },
-  CD_FirstSelectedItem: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  CD_LastSelectedItem: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  CD_SelectedCompanyItem: {
-    backgroundColor: '#ebf5ff',
-    zIndex: 1,
-  },
-  // end of company dropdown
-
-  // start of logout
-
-  LgOut_ButtonContainer: {
-    marginRight: 10,
-    // Remove any background color or additional styles
-  },
-  // end of logout button
-
-  //start of Main page header
-  MPH_leftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: width * 0.02, // wp(2)
-  },
-  MPH_leftSide: {
-    width: width * 0.09, // wp(9)
-    alignItems: 'center',
-    height: height * 0.06, // hp(6)
-    justifyContent: 'center',
-    marginRight: width * 0.01, // wp(2)
-  },
-  MPH_title: {
-    color: '#ffffff',
-    fontSize: height * 0.02, // hp(4)
-    fontWeight: 'bold',
-  },
-  MPH_rightSideView: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: width * 0.03, // wp(3)
-  },
-  MPH_dropdownContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: width * 0.017, // wp(2.5)
-    paddingVertical: height * 0.01, // hp(2.2)
-    borderRadius: width * 0.018, // wp(1.8)
-    marginRight: width * 0.02, // wp(2)
-  },
-  MPH_dropdownText: {
-    color: '#ffffff',
-    fontSize: height * 0.016, // hp(3)
-    fontWeight: '600',
-  },
-  MPH_dropdownIcon: {
-    marginLeft: width * 0.01, // wp(1)
-  },
-  // end of Main Page header
-
-  // start of notification Button
-
-  NB_button: {
-    marginRight: 10, // Adjust the right margin for proper spacing
-  },
-  NB_iconContainer: {
-    position: 'relative', // Allows badge to position relative to the icon
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  NB_badgeContainer: {
-    position: 'absolute',
-    top: -5, // Adjust vertical position of the badge
-    right: -5, // Adjust horizontal position of the badge
-    backgroundColor: '#FF4500', // Badge background color
-    borderRadius: 10, // Makes the badge circular
-    width: 18, // Set width of the badge
-    height: 18, // Set height of the badge
-    justifyContent: 'center', // Center align text in the badge
-    alignItems: 'center', // Center align text in the badge
-    borderWidth: 1, // Optional: Add border to improve visibility
-    borderColor: '#FFFFFF', // Optional: Set border color
-  },
-  NB_badgeText: {
-    color: '#FFFFFF', // Text color
-    fontSize: 12, // Font size of the badge text
-    fontWeight: 'bold', // Font weight of the badge text
-  },
-
-  // End of notification button
+  // // End of notification button
   // start of notification dropdown
   NotDD_overlay: {
     position: 'absolute',
@@ -3746,42 +6409,6 @@ const styles = StyleSheet.create({
 
   // start of  profile picture editor
 
-  PPEdit_headerContainer: {
-    alignItems: 'center',
-    // marginBottom: 20,
-  },
-  PPEdit_profileImageWrapper: {
-    position: 'relative',
-    marginHorizontal: 18,
-  },
-  PPEdit_profilePictureContainer: {
-    width: PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2,
-    height: PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2,
-    borderRadius: (PROFILE_IMAGE_SIZE + BORDER_WIDTH * 2) / 2,
-    borderWidth: BORDER_WIDTH,
-    borderColor: '#0A66C2',
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 6,
-  },
-  PPEdit_profilePicture: {
-    width: PROFILE_IMAGE_SIZE,
-    height: PROFILE_IMAGE_SIZE,
-    borderRadius: PROFILE_IMAGE_SIZE / 2,
-  },
-  PPEdit_loadingContainer: {
-    width: PROFILE_IMAGE_SIZE,
-    height: PROFILE_IMAGE_SIZE,
-    borderRadius: PROFILE_IMAGE_SIZE / 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-  },
   PPEdit_editIconContainer: {
     position: 'absolute',
     bottom: 10,
@@ -3795,25 +6422,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
-  PPEdit_headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 15,
-    textAlign: 'center',
-  },
-
-  PPEdit_initialsContainer: {
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  PPEdit_initialsText: {
-    fontSize: 50,
-    fontWeight: 'bold',
-    color: '#374151',
-  },
 
   PPEdit_initialsTextModal: {
     fontSize: 50,
@@ -3822,49 +6430,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Modal Styles
-  PPEdit_modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  PPEdit_modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  PPEdit_modalImage: {
-    width: width * 0.8,
-    height: height * 0.8,
-    borderRadius: 10,
-  },
-
-  // end of profile picture editor
-
-  // start of save button
-  SB_saveButton: {
-    backgroundColor: '#0A66C2',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    position: 'relative',
-    alignSelf: 'center',
-    width: 320,
-    marginTop: 10,
-  },
-  SB_saveButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  // end of save button and also personal information component
-
   // Start of worker assigned to me component
-  // orgStyles_rootContainer: {
-  //   alignItems: 'center',
-  //   paddingHorizontal: 16,
-  // },
   orgStyles_rootCard: {
     backgroundColor: '#F8FAFC',
     borderRadius: 12,
@@ -3887,19 +6453,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 8,
   },
-  // orgStyles_rootName: {
-  //   fontSize: 18,
-  //   fontWeight: '700',
-  //   color: '#111827',
-  //   textAlign: 'center',
-  // },
-  // orgStyles_rootRole: {
-  //   fontSize: 14,
-  //   color: '#0A66C2',
-  //   textAlign: 'center',
-  //   marginTop: 4,
-  //   fontWeight: '600',
-  // },
   orgStyles_connectorFromRoot: {
     width: 2,
     height: 40,
@@ -4091,77 +6644,6 @@ const styles = StyleSheet.create({
   },
   // end of worker assigned to me card
 
-  // Tab Bar styles - More responsive
-  TNav_TabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-    height: Math.max(height * 0.08, 60), // Minimum 60px, responsive to screen
-    borderTopColor: '#ccc',
-    borderColor: '#0A66C2',
-    borderTopWidth: 3,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    paddingBottom: 4, // Add padding for better touch targets
-  },
-
-  APCont_customTabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8, // Increased for better touch area
-    minHeight: 48, // Minimum touch target size
-  },
-
-  TNav_TabLabel: {
-    fontSize: Math.max(width * 0.025, 11), // Responsive font size
-    fontWeight: '600',
-    marginTop: 2,
-    color: 'white',
-    textAlign: 'center',
-  },
-
-  // Floating button styles - More responsive positioning
-  APCont_container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  APCont_content: {
-    flex: 1,
-  },
-  APCont_floatingPlusButtonContainer: {
-    position: 'absolute',
-    bottom: Math.max(height * 0.1, 70), // Responsive positioning above tab bar
-    right: width * 0.05, // 5% from right edge
-    zIndex: 1000,
-  },
-
-  APCont_floatingPlusButton: {
-    width: Math.max(width * 0.15, 56), // Responsive size with minimum
-    height: Math.max(width * 0.15, 56),
-    borderRadius: Math.max(width * 0.075, 28),
-    backgroundColor: '#0A66C2',
-    borderWidth: 4,
-    borderColor: '#ffffff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-  },
-
-  APCont_plusIcon: {
-    fontSize: Math.max(width * 0.06, 20),
-    color: '#ffffff',
-  },
-  // End of ActionPaneContainer
-
   // Start of RequestTypeSelectionModal
   RTSModal_ModalOverlay: {
     flex: 1,
@@ -4253,365 +6735,64 @@ const styles = StyleSheet.create({
   },
   // End of RequestTypeSelectionModal
 
-  // Start of EntitlementCards
-  EntCards_CardContainer: {
-    marginVertical: 10,
-    marginHorizontal: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  EntCards_Card: {
-    borderRadius: 16,
-    padding: 16,
-  },
-  EntCards_CardHeader: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#ffffffff',
-    paddingBottom: 8,
-    marginBottom: 12,
-  },
-  EntCards_CardHeaderText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#004aad',
-    textAlign: 'center',
-  },
-  EntCards_CardContent: {
-    flexDirection: 'column',
-    gap: 8,
-  },
-  EntCards_TextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  EntCards_CardTextHeading: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  EntCards_CardText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#111',
-  },
-  // End of EntitlementCards
-
-  // Start of DrawerNavigator
-  // DNav_DrawerItem: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   paddingVertical: 12,
-  //   paddingHorizontal: 20,
-  // },
-  // DNav_DrawerIcon: {
-  //   width: 20,
-  //   height: 20,
-  //   marginRight: 12,
-  //   resizeMode: 'contain',
-  // },
-  // DNav_ActiveDrawerItem: {
-  //   backgroundColor: '#E0E7FF',
-  // },
-  // DNav_DrawerItemText: {
-  //   fontSize: 15,
-  //   color: '#374151',
-  // },
-  // DNav_ActiveDrawerItemText: {
-  //   color: '#2563EB',
-  //   fontWeight: '600',
-  // },
-  // DNav_HeaderBackground: {
-  //   width: '100%',
-  //   height: 150,
-  //   justifyContent: 'flex-end',
-  // },
-  // DNav_MaisonLogo: {
-  //   position: 'absolute',
-  //   top: 16,
-  //   right: 16,
-  //   width: 100,
-  //   height: 40,
-  // },
-  // DNav_EmpInfoContainer: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   marginVertical: 16,
-  //   marginLeft: 8,
-  // },
-  // DNav_AvatarContainer: {
-  //   position: 'relative',
-  //   marginRight: 12,
-  // },
-  // DNav_Avatar: {
-  //   width: 70,
-  //   height: 70,
-  //   borderRadius: 35,
-  //   backgroundColor: 'rgba(255,255,255,0.20)',
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   borderWidth: 1,
-  //   borderColor: 'rgba(255,255,255,0.5)',
-  // },
-  // DNav_AvatarText: {
-  //   color: '#FFFFFF',
-  //   fontSize: 18,
-  //   fontWeight: '600',
-  // },
-  // DNav_OnlineIndicator: {
-  //   position: 'absolute',
-  //   bottom: 0,
-  //   right: 0,
-  //   width: 14,
-  //   height: 14,
-  //   borderRadius: 7,
-  //   backgroundColor: '#10B981',
-  //   borderWidth: 2,
-  //   borderColor: '#FFFFFF',
-  // },
-  // DNav_UserInfo: {
-  //   flex: 1,
-  // },
-  // DNav_UserName: {
-  //   color: '#FFFFFF',
-  //   fontSize: 16,
-  //   fontWeight: '600',
-  // },
-  // DNav_UserEmail: {
-  //   color: 'rgba(255,255,255,0.9)',
-  //   fontSize: 10,
-  // },
-  // DNav_ProfilePicture: {
-  //   width: 70,
-  //   height: 70,
-  //   borderRadius: 35,
-  // },
-  // DNav_LogoutButton: {
-  //   flexDirection: 'row',
-  //   alignItems: 'stretch',
+  // // Start of EntitlementCards
+  // EntCards_CardContainer: {
+  //   marginVertical: 10,
   //   marginHorizontal: 16,
-  //   marginVertical: 16,
-  //   borderRadius: 8,
-  //   overflow: 'hidden',
+  //   borderRadius: 16,
   //   shadowColor: '#000',
-  //   shadowOffset: {width: 0, height: 2},
+  //   shadowOffset: {width: 0, height: 4},
   //   shadowOpacity: 0.15,
-  //   shadowRadius: 4,
+  //   shadowRadius: 6,
   //   elevation: 4,
   // },
-  // DNav_LogoutIconSection: {
-  //   backgroundColor: '#2196F3',
-  //   paddingHorizontal: 16,
-  //   justifyContent: 'center',
-  //   alignItems: 'center',
-  //   borderTopLeftRadius: 8,
-  //   borderBottomLeftRadius: 8,
+  // EntCards_Card: {
+  //   borderRadius: 16,
+  //   padding: 16,
   // },
-  // DNav_LogoutTextSection: {
-  //   backgroundColor: '#1976D2',
-  //   paddingVertical: 12,
-  //   paddingHorizontal: 24,
-  //   justifyContent: 'center',
-  //   flex: 1,
+  // EntCards_CardHeader: {
+  //   borderBottomWidth: 2,
+  //   borderBottomColor: '#ffffffff',
+  //   paddingBottom: 8,
+  //   marginBottom: 12,
   // },
-  // DNav_LogoutText: {
-  //   color: '#FFFFFF',
-  //   fontSize: 14,
+  // EntCards_CardHeaderText: {
+  //   fontSize: 18,
   //   fontWeight: '700',
-  //   letterSpacing: 0.5,
+  //   color: '#004aad',
+  //   textAlign: 'center',
   // },
-  DNav_DrawerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: height * 0.015, // Responsive vertical padding
-    paddingHorizontal: width * 0.05, // Responsive horizontal padding
-    minHeight: 48, // Minimum touch target
-  },
-
-  DNav_DrawerIcon: {
-    width: Math.max(width * 0.05, 20), // Responsive icon size
-    height: Math.max(width * 0.05, 20),
-    marginRight: width * 0.03,
-    resizeMode: 'contain',
-  },
-
-  DNav_ActiveDrawerItem: {
-    backgroundColor: '#E0E7FF',
-    marginHorizontal: width * 0.02,
-    borderRadius: 8,
-  },
-
-  DNav_DrawerItemText: {
-    fontSize: Math.max(width * 0.035, 14), // Responsive font size
-    color: '#374151',
-  },
-
-  DNav_ActiveDrawerItemText: {
-    color: '#2563EB',
-    fontWeight: '600',
-  },
-
-  DNav_HeaderBackground: {
-    width: '100%',
-    height: Math.max(height * 0.2, 140), // Responsive header height
-    justifyContent: 'flex-end',
-  },
-
-  DNav_MaisonLogo: {
-    position: 'absolute',
-    top: height * 0.02,
-    right: width * 0.04,
-    width: Math.max(width * 0.25, 80),
-    height: Math.max(height * 0.05, 30),
-  },
-
-  DNav_EmpInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: height * 0.02,
-    marginLeft: width * 0.02,
-  },
-
-  DNav_AvatarContainer: {
-    position: 'relative',
-    marginRight: width * 0.03,
-  },
-
-  DNav_Avatar: {
-    width: Math.max(width * 0.16, 60), // Responsive avatar size
-    height: Math.max(width * 0.16, 60),
-    borderRadius: Math.max(width * 0.08, 30),
-    backgroundColor: 'rgba(255,255,255,0.20)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.5)',
-  },
-
-  DNav_AvatarText: {
-    color: '#FFFFFF',
-    fontSize: Math.max(width * 0.04, 16),
-    fontWeight: '600',
-  },
-
-  DNav_OnlineIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: Math.max(width * 0.035, 12),
-    height: Math.max(width * 0.035, 12),
-    borderRadius: Math.max(width * 0.0175, 6),
-    backgroundColor: '#10B981',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-
-  DNav_UserInfo: {
-    flex: 1,
-    marginRight: width * 0.02,
-  },
-
-  DNav_UserName: {
-    color: '#FFFFFF',
-    fontSize: Math.max(width * 0.04, 15),
-    fontWeight: '600',
-  },
-
-  DNav_UserEmail: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: Math.max(width * 0.025, 10),
-    marginTop: 2,
-  },
-
-  DNav_ProfilePicture: {
-    width: Math.max(width * 0.16, 60),
-    height: Math.max(width * 0.16, 60),
-    borderRadius: Math.max(width * 0.08, 30),
-  },
-
-  DNav_LogoutButton: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    marginHorizontal: width * 0.04,
-    marginVertical: height * 0.02,
-    borderRadius: 8,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-    minHeight: 48, // Minimum touch target
-  },
-
-  DNav_LogoutIconSection: {
-    backgroundColor: '#2196F3',
-    paddingHorizontal: width * 0.04,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
-  },
-
-  DNav_LogoutTextSection: {
-    backgroundColor: '#1976D2',
-    paddingVertical: height * 0.015,
-    paddingHorizontal: width * 0.06,
-    justifyContent: 'center',
-    flex: 1,
-  },
-
-  DNav_LogoutText: {
-    color: '#FFFFFF',
-    fontSize: Math.max(width * 0.035, 13),
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  // End of DrawerNavigator
-
-  // Start of TabNavigator
-  // TNav_TabBarO: {
-  //   // backgroundColor: '#ebf5ff',
-  //   backgroundColor: '#0A66C2',
-  //   height: 60,
-  //   borderColor: '#0A66C2',
-  //   borderTopWidth: 3,
+  // EntCards_CardContent: {
+  //   flexDirection: 'column',
+  //   gap: 8,
   // },
-  // TNav_TabLabelO: {
-  //   fontSize: 11,
-  //   fontWeight: '600',
+  // EntCards_TextContainer: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
   //   marginBottom: 6,
-  //   color: 'white',
   // },
-  TNav_TabBarO: {
-    backgroundColor: '#0A66C2',
-    height: Math.max(height * 0.08, 60),
-    borderColor: '#0A66C2',
-    borderTopWidth: 3,
-    paddingBottom: 4,
-  },
-  TNav_TabLabelO: {
-    fontSize: Math.max(width * 0.025, 11),
-    fontWeight: '600',
-    marginTop: 2,
-    color: 'white',
-  },
-  // End of TabNavigator
+  // EntCards_CardTextHeading: {
+  //   fontSize: 14,
+  //   fontWeight: '600',
+  //   color: '#333',
+  // },
+  // EntCards_CardText: {
+  //   fontSize: 14,
+  //   fontWeight: '500',
+  //   color: '#111',
+  // },
+  // // End of EntitlementCards
 
-  // Start of EntitlementBalance
-  EntBal_NoDataText: {
-    flex: 1,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#cccccc',
-  },
-  // End of EntitlementBalance
+  // // Start of EntitlementBalance
+  // EntBal_NoDataText: {
+  //   flex: 1,
+  //   textAlign: 'center',
+  //   textAlignVertical: 'center',
+  //   fontSize: 16,
+  //   fontWeight: 'bold',
+  //   color: '#cccccc',
+  // },
+  // // End of EntitlementBalance
 
   //Start of IdentificationRequestCard
   ID_CardContainer: {

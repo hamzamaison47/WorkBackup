@@ -28,11 +28,12 @@ import {
   clearConfigById,
   updateConfigById,
 } from '../../Controller/secureConfig';
-// import {scale, fontScale} from '../../Controller/scaling';
+
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
+
 import styles from '../../styles/styles';
-import {fontScale, scale} from '../../store/utils/scaling';
+import {iconSize, scale} from '../../store/utils/scaling';
 
 const ConfigSelectionScreen = () => {
   const navigation = useNavigation();
@@ -218,7 +219,7 @@ const ConfigSelectionScreen = () => {
         {/* Active Badge */}
         {isActive && (
           <View style={styles.ConfigSelection_ActiveBadge}>
-            <Icon name="check-circle" size={fontScale(16)} color="#fff" />
+            <Icon name="check-circle" size={iconSize.xs} color="#fff" />
             <Text style={styles.ConfigSelection_ActiveBadgeText}>
               {t('configSelection.active').toUpperCase()}
             </Text>
@@ -235,7 +236,7 @@ const ConfigSelectionScreen = () => {
               ]}>
               <Icon
                 name="server"
-                size={fontScale(20)}
+                size={iconSize.sm}
                 color={isActive ? '#fff' : '#0A66C2'}
               />
             </View>
@@ -268,7 +269,7 @@ const ConfigSelectionScreen = () => {
               onPress={() => handleEditTitle(item)}>
               <Icon
                 name="edit"
-                size={fontScale(18)}
+                size={iconSize.xs}
                 color={isActive ? '#0A66C2' : '#666'}
               />
             </TouchableOpacity>
@@ -277,7 +278,7 @@ const ConfigSelectionScreen = () => {
               onPress={() =>
                 handleDeleteConfiguration(item.id, item.displayTitle)
               }>
-              <Icon name="trash" size={fontScale(18)} color="#dc3545" />
+              <Icon name="trash" size={iconSize.xs} color="#dc3545" />
             </TouchableOpacity>
           </View>
         </View>
@@ -287,7 +288,7 @@ const ConfigSelectionScreen = () => {
           <View style={styles.ConfigSelection_DetailRow}>
             <Icon
               name="globe"
-              size={fontScale(14)}
+              size={iconSize.xs}
               color="#666"
               style={styles.ConfigSelection_DetailIcon}
             />
@@ -306,7 +307,7 @@ const ConfigSelectionScreen = () => {
           <View style={styles.ConfigSelection_DetailRow}>
             <Icon
               name="link"
-              size={fontScale(14)}
+              size={iconSize.xs}
               color="#666"
               style={styles.ConfigSelection_DetailIcon}
             />
@@ -346,7 +347,7 @@ const ConfigSelectionScreen = () => {
         activeOpacity={0.8}>
         <Icon
           name="plus-circle"
-          size={fontScale(20)}
+          size={iconSize.sm}
           color="#fff"
           style={styles.ConfigSelection_ButtonIcon}
         />
@@ -364,10 +365,9 @@ const ConfigSelectionScreen = () => {
         <TouchableOpacity
           style={styles.ConfigSelection_HeaderButton}
           onPress={() => navigation.goBack()}>
-          {/* <Icon name="arrow-left" size={fontScale(22)} color="#0A66C2" /> */}
           <Icon
             name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
-            size={fontScale(22)}
+            size={iconSize.sm}
             color="#0A66C2"
           />
         </TouchableOpacity>
@@ -387,7 +387,7 @@ const ConfigSelectionScreen = () => {
         <TouchableOpacity
           style={styles.ConfigSelection_HeaderButton}
           onPress={handleAddConfiguration}>
-          <Icon name="plus" size={fontScale(22)} color="#0A66C2" />
+          <Icon name="plus" size={iconSize.sm} color="#0A66C2" />
         </TouchableOpacity>
       </View>
 
@@ -424,7 +424,7 @@ const ConfigSelectionScreen = () => {
             <Text
               style={{
                 marginTop: scale(16),
-                fontSize: fontScale(16),
+                fontSize: iconSize.xs,
                 color: '#666',
                 fontWeight: '500',
               }}>
@@ -449,7 +449,7 @@ const ConfigSelectionScreen = () => {
               <TouchableOpacity
                 onPress={() => setEditModalVisible(false)}
                 style={styles.ConfigSelection_ModalCloseButton}>
-                <Icon name="times" size={fontScale(20)} color="#666" />
+                <Icon name="times" size={iconSize.sm} color="#666" />
               </TouchableOpacity>
             </View>
 
@@ -479,7 +479,7 @@ const ConfigSelectionScreen = () => {
                 onPress={saveEditedTitle}>
                 <Icon
                   name="check"
-                  size={fontScale(16)}
+                  size={iconSize.xs}
                   color="#fff"
                   style={styles.ConfigSelection_ButtonIcon}
                 />

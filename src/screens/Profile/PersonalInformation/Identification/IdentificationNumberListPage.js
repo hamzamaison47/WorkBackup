@@ -1,9 +1,8 @@
-/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -147,8 +146,16 @@ const IdentificationNumberListPage = () => {
       subtitle: {key: 'IdentificationNumber'},
     },
     fields: [
-      {key: 'IssuedDate', label:identificationsData[0]?.IssuedDatelbl ||  'Issued Date', type: 'date'},
-      {key: 'ExpirationDate', label:identificationsData[0]?.ExpirationDatelbl || 'Expiration Date', type: 'date'},
+      {
+        key: 'IssuedDate',
+        label: identificationsData[0]?.IssuedDatelbl || 'Issued Date',
+        type: 'date',
+      },
+      {
+        key: 'ExpirationDate',
+        label: identificationsData[0]?.ExpirationDatelbl || 'Expiration Date',
+        type: 'date',
+      },
       //   {key: 'IssuingCountry', label: 'Issuing Agency', type: 'text'},
       {key: 'ApprovalStatus', label: '', type: 'status'},
     ],
@@ -441,10 +448,13 @@ const IdentificationNumberListPage = () => {
       showFooter={true}
       showFloatingButton={workflowEnabled}
       isHeaderActive={true}
+      onBackPress={handleGoBack}
       onRefresh={fetchIdentifications}
       onFloatingButtonPress={handleCreateRequest}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : identificationsData.length > 0 ? (
         <FlatList
           data={identificationsData}
@@ -452,7 +462,7 @@ const IdentificationNumberListPage = () => {
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.LReqLP_ListContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -460,15 +470,19 @@ const IdentificationNumberListPage = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.noDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            {workflowEnabled
+              ? 'Tap the + button to add your first identification'
+              : 'No identification records available'}
+          </Text>
         </ScrollView>
       )}
 
-      {/* Delete Confirmation Modal */}
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
@@ -479,7 +493,7 @@ const IdentificationNumberListPage = () => {
           setItemToDelete(null);
         }}
       />
-      {/* Alert Modal */}
+
       <AlertModal
         visible={alertModal}
         heading="Alert"

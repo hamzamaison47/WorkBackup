@@ -87,11 +87,11 @@
 //   // For iOS, wrap in custom modal
 //   return (
 //     <Modal visible={visible} transparent={true} animationType="slide">
-//       <View style={styles.modalContainer}>
-//         <View style={styles.modalContent}>
+//       <View style={styles.CalModal_modalContainer}>
+//         <View style={styles.CalModal_modalContent}>
 //           {/* Header */}
-//           <View style={styles.header}>
-//             <Text style={styles.headerTitle}>Select Date</Text>
+//           <View style={styles.CalModal_header}>
+//             <Text style={styles.CalModal_headerTitle}>Select Date</Text>
 //           </View>
 
 //           {/* iOS Date Picker */}
@@ -102,21 +102,21 @@
 //               display="inline"
 //               onChange={onChange}
 //               accentColor="#0A66C2"
-//               style={styles.datePicker}
+//               style={styles.CalModal_datePicker}
 //             />
 //           )}
 
 //           {/* Footer buttons for iOS */}
-//           <View style={styles.footer}>
+//           <View style={styles.CalModal_footer}>
 //             <TouchableOpacity
-//               style={styles.cancelButton}
+//               style={styles.CalModal_cancelButton}
 //               onPress={handleIOSCancel}>
-//               <Text style={styles.cancelButtonText}>CANCEL</Text>
+//               <Text style={styles.CalModal_cancelButtonText}>CANCEL</Text>
 //             </TouchableOpacity>
 //             <TouchableOpacity
-//               style={styles.okButton}
+//               style={styles.CalModal_okButton}
 //               onPress={handleIOSConfirm}>
-//               <Text style={styles.okButtonText}>OK</Text>
+//               <Text style={styles.CalModal_okButtonText}>OK</Text>
 //             </TouchableOpacity>
 //           </View>
 //         </View>
@@ -124,54 +124,56 @@
 //     </Modal>
 //   );
 // };
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 import React, {useState, useEffect} from 'react';
-import {
-  Modal,
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import {Modal, View, TouchableOpacity, Text, Platform} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+import styles from '../../styles/styles';
 
 const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
-  // Initialize date only when modal first opens
   useEffect(() => {
-    if (visible) {
-      // Only set date when modal opens, not on every render
-      if (current) {
-        const dateStr = current.includes('T') ? current.split('T')[0] : current;
-        setDate(new Date(dateStr));
-      } else {
-        setDate(new Date());
-      }
-      setShowPicker(true);
-    } else {
+    if (!visible) {
       setShowPicker(false);
+      return;
     }
-  }, [visible]); // Remove 'current' from dependency array
 
-  const onChange = (event, selectedDate) => {
+    if (current) {
+      const normalized =
+        typeof current === 'string' && current.includes('T')
+          ? current.split('T')[0]
+          : current;
+
+      setDate(new Date(normalized));
+    } else {
+      setDate(new Date());
+    }
+
+    setShowPicker(true);
+  }, [visible]);
+
+  const handleChange = (event, selectedDate) => {
     if (Platform.OS === 'android') {
       setShowPicker(false);
 
-      if (event.type === 'set' && selectedDate) {
-        // User clicked OK
+      if (event?.type === 'set' && selectedDate) {
         onDateSelected(selectedDate.toISOString().split('T')[0]);
-        onClose();
-      } else if (event.type === 'dismissed') {
-        // User clicked Cancel
-        onClose();
       }
-    } else {
-      // iOS - update the local state immediately
-      if (selectedDate) {
-        setDate(selectedDate);
-      }
+
+      onClose();
+      return;
+    }
+
+    if (selectedDate) {
+      setDate(selectedDate);
     }
   };
 
@@ -186,7 +188,6 @@ const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
     onClose();
   };
 
-  // For Android, the picker handles its own modal
   if (Platform.OS === 'android') {
     return (
       <>
@@ -195,7 +196,7 @@ const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
             value={date}
             mode="date"
             display="calendar"
-            onChange={onChange}
+            onChange={handleChange}
             accentColor="#0A66C2"
           />
         )}
@@ -203,39 +204,40 @@ const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
     );
   }
 
-  // For iOS, wrap in custom modal
   return (
-    <Modal visible={visible} transparent={true} animationType="slide">
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Select Date</Text>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={handleIOSCancel}>
+      <View style={styles.CalModal_modalContainer}>
+        <View style={styles.CalModal_modalContent}>
+          <View style={styles.CalModal_header}>
+            <Text style={styles.CalModal_headerTitle}>Select Date</Text>
           </View>
 
-          {/* iOS Date Picker */}
           {showPicker && (
             <DateTimePicker
               value={date}
               mode="date"
               display="inline"
-              onChange={onChange}
+              onChange={handleChange}
               accentColor="#0A66C2"
-              style={styles.datePicker}
+              style={styles.CalModal_datePicker}
             />
           )}
 
-          {/* Footer buttons for iOS */}
-          <View style={styles.footer}>
+          <View style={styles.CalModal_footer}>
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={styles.CalModal_cancelButton}
               onPress={handleIOSCancel}>
-              <Text style={styles.cancelButtonText}>CANCEL</Text>
+              <Text style={styles.CalModal_cancelButtonText}>CANCEL</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={styles.okButton}
+              style={styles.CalModal_okButton}
               onPress={handleIOSConfirm}>
-              <Text style={styles.okButtonText}>OK</Text>
+              <Text style={styles.CalModal_okButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -243,65 +245,5 @@ const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    width: '85%',
-    maxWidth: 400,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  header: {
-    backgroundColor: '#0A66C2',
-    padding: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  datePicker: {
-    width: '100%',
-    backgroundColor: '#ffffff',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  cancelButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
-  okButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  cancelButtonText: {
-    color: '#0A66C2',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  okButtonText: {
-    color: '#0A66C2',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-});
 
 export default CalendarModal;

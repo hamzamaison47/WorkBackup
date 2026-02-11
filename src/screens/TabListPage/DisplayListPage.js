@@ -1,6 +1,3 @@
-/* eslint-disable curly */
-/* eslint-disable no-unused-vars */
-/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
 import React, {useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
@@ -10,9 +7,7 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Dimensions,
   SafeAreaView,
-  StyleSheet,
   Image,
   useWindowDimensions,
   RefreshControl,
@@ -25,58 +20,48 @@ import {screenMapping, iconMapping} from '../../Controller/screenMapping';
 import {fetchEmployeeMenuItemsByCompany} from '../../Controller/authUtils';
 import {setMenuItems} from '../../store/slices/menuItemSlice';
 
-// Get initial screen dimensions
-const {width: initialScreenWidth} = Dimensions.get('window');
+import styles from '../../styles/styles';
 
-// Responsive utility functions
-const getResponsiveSize = (baseSize, screenWidth) => {
-  const scale = screenWidth / 375; // Base width (iPhone X)
-  const newSize = baseSize * scale;
-  return Math.max(Math.min(newSize, baseSize * 1.5), baseSize * 0.8);
-};
+// // Helper function to calculate grid dimensions - FIXED 3 COLUMNS
+// const getGridLayout = screenWidth => {
+//   const numColumns = 3; // Fixed 3 columns always
 
-const getResponsivePadding = (basePadding, screenWidth) => {
-  if (screenWidth < 360) return basePadding * 0.7; // Small phones
-  if (screenWidth > 414) return basePadding * 1.2; // Large phones
-  return basePadding;
-};
+//   const cardMargin = screenWidth < 360 ? 6 : screenWidth > 414 ? 10 : 8;
+//   const horizontalPadding = screenWidth < 360 ? 8 : screenWidth > 414 ? 16 : 12;
 
-const getResponsiveFontSize = (baseFontSize, screenWidth) => {
-  const scale = screenWidth / 375;
-  const newSize = baseFontSize * scale;
-  return Math.max(Math.min(newSize, baseFontSize * 1.3), baseFontSize * 0.85);
-};
+//   const totalMargins = horizontalPadding * 2 + cardMargin * (numColumns * 2);
+//   const cardWidth = (screenWidth - totalMargins) / numColumns;
+//   const cardHeight = screenWidth < 360 ? 130 : screenWidth > 414 ? 160 : 145;
 
-const getNumColumns = screenWidth => {
-  if (screenWidth < 360) return 2; // Small phones
-  if (screenWidth >= 360 && screenWidth <= 414) return 3; // Standard phones
-  return screenWidth > 500 ? 4 : 3; // Large phones/tablets
-};
+//   return {
+//     cardWidth: Math.max(cardWidth, 90),
+//     cardHeight: Math.max(cardHeight, 120),
+//     cardMargin,
+//     numColumns,
+//   };
+// };
 
-const getCardDimensions = screenWidth => {
-  const numColumns = getNumColumns(screenWidth);
-  const cardMargin = getResponsivePadding(12, screenWidth);
-  const horizontalPadding = getResponsivePadding(12, screenWidth); // 6px * 2 from paddingHorizontal
+// Helper function to calculate grid dimensions - FIXED 3 COLUMNS
+const getGridLayout = screenWidth => {
+  const numColumns = 3;
 
-  const totalMargins = horizontalPadding + cardMargin * numColumns;
+  // ↓ REDUCED margins
+  const cardMargin = screenWidth < 360 ? 4 : screenWidth > 414 ? 4 : 3;
+  const horizontalPadding = screenWidth < 360 ? 6 : screenWidth > 414 ? 10 : 8;
+
+  const totalMargins = horizontalPadding * 2 + cardMargin * (numColumns * 2);
+
   const cardWidth = (screenWidth - totalMargins) / numColumns;
 
-  // Responsive card height
-  const baseHeight = 130;
-  const cardHeight = getResponsiveSize(baseHeight, screenWidth);
+  // ✅ REDUCED HEIGHT (KEY FIX)
+  const cardHeight = screenWidth < 360 ? 110 : screenWidth > 414 ? 130 : 135;
 
   return {
-    cardWidth: Math.max(cardWidth, 80), // Minimum card width
-    cardHeight: Math.max(cardHeight, 100), // Minimum card height
+    cardWidth: Math.max(cardWidth, 88),
+    cardHeight,
     cardMargin,
     numColumns,
   };
-};
-
-const getIconSize = (cardWidth, screenWidth) => {
-  const baseIconSize = Math.floor(cardWidth * 0.4);
-  const responsiveIconSize = getResponsiveSize(32, screenWidth);
-  return Math.max(Math.min(baseIconSize, 60), Math.max(responsiveIconSize, 28));
 };
 
 const DisplayListPage = () => {
@@ -89,22 +74,13 @@ const DisplayListPage = () => {
   );
   const {width: screenWidth} = useWindowDimensions();
 
-  // Add refresh state
   const [refreshing, setRefreshing] = useState(false);
 
-  // Get responsive dimensions
+  // Get grid layout
   const {cardWidth, cardHeight, cardMargin, numColumns} =
-    getCardDimensions(screenWidth);
-  const iconSize = getIconSize(cardWidth, screenWidth);
+    getGridLayout(screenWidth);
 
-  // Screen size detection
-  const isSmallScreen = screenWidth < 360;
-  const isMediumScreen = screenWidth >= 360 && screenWidth <= 414;
-
-  // Filter menuItems like drawer (Type === 0 and in screenMapping)
-  // const filteredMenuItems = menuItems.filter(item => {
-  //   return screenMapping[item.MenuId] && [0, 2, 3].includes(Number(item.Type));
-  // });
+  // Filter menuItems
   const filteredMenuItems = menuItems.filter(item => {
     return (
       screenMapping[item.MenuId] &&
@@ -113,11 +89,9 @@ const DisplayListPage = () => {
     );
   });
 
-  // Add refresh handler
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Refetch menu items for current company
       const newMenuItems = await fetchEmployeeMenuItemsByCompany(
         userData?.employeeId,
         selectedLegalEntity,
@@ -125,63 +99,21 @@ const DisplayListPage = () => {
       dispatch(setMenuItems(newMenuItems));
     } catch (error) {
       console.error('Error refreshing menu items:', error);
-      // You might want to show an error message to the user
     } finally {
       setRefreshing(false);
     }
   };
 
-  const getResponsiveStyles = () =>
-    StyleSheet.create({
-      container: {
-        flex: 1,
-        backgroundColor: '#FAFAFA',
-      },
-      listContainer: {
-        paddingHorizontal: getResponsivePadding(1, screenWidth),
-        marginVertical: getResponsivePadding(20, screenWidth),
-        paddingBottom: getResponsivePadding(20, screenWidth),
-      },
-      card: {
-        margin: cardMargin / 2,
-        height: cardHeight,
-        width: cardWidth,
-        backgroundColor: '#fff',
-        borderRadius: getResponsiveSize(16, screenWidth),
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.08,
-        shadowRadius: getResponsiveSize(6, screenWidth),
-        elevation: 4,
-        paddingHorizontal: getResponsivePadding(8, screenWidth),
-        paddingVertical: getResponsivePadding(12, screenWidth),
-      },
-      iconWrapper: {
-        width: getResponsiveSize(56, screenWidth),
-        height: getResponsiveSize(56, screenWidth),
-        borderRadius: getResponsiveSize(28, screenWidth),
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: getResponsivePadding(12, screenWidth),
-      },
-      title: {
-        fontSize: getResponsiveFontSize(13, screenWidth),
-        fontWeight: '600',
-        color: '#111827',
-        textAlign: 'center',
-        lineHeight: getResponsiveFontSize(16, screenWidth),
-        numberOfLines: isSmallScreen ? 3 : 2,
-        flexShrink: 1,
-      },
-    });
-
-  const styles = getResponsiveStyles();
-
   const renderItem = ({item}) => (
     <TouchableOpacity
-      style={styles.card}
+      style={[
+        styles.DisplayList_Card,
+        {
+          margin: cardMargin,
+          height: cardHeight,
+          width: cardWidth,
+        },
+      ]}
       activeOpacity={0.85}
       onPress={() =>
         navigation.navigate(item.MenuId, {
@@ -192,50 +124,19 @@ const DisplayListPage = () => {
           cameFrom: 'DisplayListPage',
         })
       }>
-      <View style={styles.iconWrapper}>
+      <View style={styles.DisplayList_IconWrapper}>
         <Image
           source={
             iconMapping[item.MenuId] ||
             require('../../assets/Maindashboard/calendar.png')
           }
-          style={{
-            width: iconSize,
-            height: iconSize,
-            resizeMode: 'contain',
-          }}
+          style={styles.DisplayList_Icon}
         />
       </View>
-      <Text style={styles.title} numberOfLines={isSmallScreen ? 3 : 2}>
+      <Text style={styles.DisplayList_Title} numberOfLines={2}>
         {item.Label || item.MenuId}
       </Text>
     </TouchableOpacity>
-  );
-
-  // Custom FlatList component with responsive key
-  const ResponsiveFlatList = () => (
-    <FlatList
-      data={filteredMenuItems}
-      keyExtractor={item => item.MenuId}
-      renderItem={renderItem}
-      numColumns={numColumns}
-      key={`${numColumns}-${screenWidth}`} // Force re-render on orientation/size change
-      contentContainerStyle={styles.listContainer}
-      showsVerticalScrollIndicator={false}
-      columnWrapperStyle={
-        numColumns > 1
-          ? {
-              justifyContent: 'flex-start',
-              paddingHorizontal: getResponsivePadding(6, screenWidth),
-            }
-          : null
-      }
-      ItemSeparatorComponent={() => (
-        <View style={{height: getResponsivePadding(8, screenWidth)}} />
-      )}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
-    />
   );
 
   return (
@@ -250,8 +151,28 @@ const DisplayListPage = () => {
       {refreshing ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.container}>
-          <ResponsiveFlatList />
+        <SafeAreaView style={styles.DisplayList_Container}>
+          <FlatList
+            data={filteredMenuItems}
+            keyExtractor={item => item.MenuId}
+            renderItem={renderItem}
+            numColumns={numColumns}
+            key={`${numColumns}-${screenWidth}`}
+            contentContainerStyle={styles.DisplayList_ListContainer}
+            showsVerticalScrollIndicator={false}
+            columnWrapperStyle={
+              numColumns > 1 ? styles.DisplayList_ColumnWrapper : null
+            }
+            ItemSeparatorComponent={() => (
+              <View style={styles.DisplayList_ItemSeparator} />
+            )}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+              />
+            }
+          />
         </SafeAreaView>
       )}
     </ActionPaneContainer>

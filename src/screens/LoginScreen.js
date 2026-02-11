@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
@@ -39,7 +40,7 @@ import {
 } from '../Controller/authUtils';
 import {getActiveConfigData, getActiveConfig} from '../Controller/secureConfig';
 import styles from '../styles/styles';
-import {fontScale} from '../store/utils/scaling';
+import {iconSize} from '../store/utils/scaling';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -141,9 +142,6 @@ const LoginScreen = () => {
       const hasCredentials = await hasPersistentBiometricCredentials();
 
       if (!hasCredentials) {
-        // setAlertMessage(
-        //   'Biometric login is not configured.\nPlease login with Microsoft or Google first, then enable biometric in settings.',
-        // );
         setAlertMessage(t('login.biometricNotConfigured'));
         setAlertModal(true);
         return;
@@ -152,9 +150,6 @@ const LoginScreen = () => {
       // Check if there's an active configuration
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) {
-        // setAlertMessage(
-        //   'No active configuration found.\nPlease select a configuration first.',
-        // );
         setAlertMessage(t('login.noActiveConfig'));
         setAlertModal(true);
         global.onDialogOk = () => {
@@ -171,9 +166,6 @@ const LoginScreen = () => {
         !credentials.email ||
         !credentials.isBiometricEnabled
       ) {
-        // setAlertMessage(
-        //   'Biometric configuration is invalid.\nPlease login again and enable biometric in settings.',
-        // );
         setAlertMessage(t('login.biometricConfigInvalid'));
         setAlertModal(true);
         return;
@@ -182,7 +174,6 @@ const LoginScreen = () => {
       // Authenticate with biometrics
       const biometricSuccess = await authenticateWithBiometrics();
       if (!biometricSuccess) {
-        // setAlertMessage('Authentication cancelled or failed');
         setAlertMessage(t('login.authCancelled'));
         setAlertModal(true);
         return;
@@ -193,9 +184,6 @@ const LoginScreen = () => {
       // Get active configuration (fetched fresh at login time)
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
-        // setAlertMessage(
-        //   'Failed to load configuration.\nPlease check your configuration settings.',
-        // );
         setAlertMessage(t('login.configLoadFailed'));
         setAlertModal(true);
         setLoading(false);
@@ -209,7 +197,6 @@ const LoginScreen = () => {
       setLoading(false);
     } catch (error) {
       console.error('Biometric login error:', error);
-      // setAlertMessage('Biometric login failed. Please try again.');
       setAlertMessage(t('login.biometricLoginFailed'));
       setAlertModal(true);
       setLoading(false);
@@ -293,7 +280,7 @@ const LoginScreen = () => {
           <TouchableOpacity
             style={styles.Login_QRButton}
             onPress={() => navigation.navigate('ConfigSelectionScreen')}>
-            <Icon name="qrcode" size={fontScale(25)} color="#0A66C2" />
+            <Icon name="qrcode" size={iconSize.md} color="#0A66C2" />
           </TouchableOpacity>
 
           {/* Header */}
@@ -302,10 +289,6 @@ const LoginScreen = () => {
               source={require('../assets/cloud.png')}
               style={styles.Login_Logo}
             />
-            {/* <Text style={styles.Login_Title}>Welcome to Dynaface</Text>
-            <Text style={styles.Login_Subtitle}>
-              Manage your HR services anytime, anywhere
-            </Text> */}
             <Text style={styles.Login_Title}>{t('login.welcomeTitle')}</Text>
             <Text style={styles.Login_Subtitle}>
               {t('login.welcomeSubtitle')}
@@ -321,13 +304,10 @@ const LoginScreen = () => {
               disabled={loading}>
               <Icon
                 name="windows"
-                size={fontScale(20)}
+                size={iconSize.sm}
                 color="#0A66C2"
                 style={styles.Login_Icon}
               />
-              {/* <Text style={styles.Login_ButtonText}>
-                Sign in with Microsoft
-              </Text> */}
               <Text style={styles.Login_ButtonText}>
                 {t('login.signInMicrosoft')}
               </Text>
@@ -340,11 +320,10 @@ const LoginScreen = () => {
               disabled={loading}>
               <Icon
                 name="google"
-                size={fontScale(20)}
+                size={iconSize.sm}
                 color="#0A66C2"
                 style={styles.Login_Icon}
               />
-              {/* <Text style={styles.Login_ButtonText}>Sign in with Google</Text> */}
               <Text style={styles.Login_ButtonText}>
                 {t('login.signInGoogle')}
               </Text>
@@ -358,7 +337,7 @@ const LoginScreen = () => {
             disabled={loading}>
             <MaterialCommunityIcons
               name="fingerprint"
-              size={fontScale(32)}
+              size={iconSize.lg}
               color="#0A66C2"
             />
           </TouchableOpacity>
@@ -368,9 +347,6 @@ const LoginScreen = () => {
       {loading && (
         <View style={styles.Login_LoadingContainer}>
           <CustomIndicator />
-          {/* <Text style={styles.Login_LoadingText}>
-            Connecting to your account, Please wait...
-          </Text> */}
           <Text style={styles.Login_LoadingText}>
             {t('login.connectingMessage')}
           </Text>
@@ -384,7 +360,6 @@ const LoginScreen = () => {
         width={0.8}
         height={0.3}
         dialogTitle={
-          // <Text style={styles.Login_DialogTitle}>Notification</Text>
           <Text style={styles.Login_DialogTitle}>
             {t('login.notification')}
           </Text>
@@ -395,7 +370,6 @@ const LoginScreen = () => {
           <TouchableOpacity
             style={[styles.Login_DialogButton, {backgroundColor: '#999'}]}
             onPress={() => setDialogVisible(false)}>
-            {/* <Text style={styles.Login_DialogButtonText}>Cancel</Text> */}
             <Text style={styles.Login_DialogButtonText}>
               {t('common.cancel')}
             </Text>
@@ -410,7 +384,6 @@ const LoginScreen = () => {
                 global.onDialogOk = null;
               }
             }}>
-            {/* <Text style={styles.Login_DialogButtonText}>OK</Text> */}
             <Text style={styles.Login_DialogButtonText}>{t('common.ok')}</Text>
           </TouchableOpacity>
         </View>
@@ -418,7 +391,6 @@ const LoginScreen = () => {
 
       <AlertModal
         visible={alertModal}
-        // heading="Alert"
         heading={t('common.alert')}
         text={alertMessage}
         onPress={() => {

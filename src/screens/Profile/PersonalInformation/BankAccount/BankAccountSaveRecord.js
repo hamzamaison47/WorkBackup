@@ -6,7 +6,6 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   ScrollView,
   SafeAreaView,
@@ -20,21 +19,19 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
-import {Dropdown} from 'react-native-element-dropdown';
-import Icon from 'react-native-vector-icons/FontAwesome';
 import {translate as t} from '../../../../store/utils/translate';
 
 import {createBankAccountRecord} from '../../../../API/PersonalInformation/BankAccounts/BankAccountCreate';
 import {UpdateBankAccountRecord} from '../../../../API/PersonalInformation/BankAccounts/BankAccountUpdate';
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
+import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
-import styles from '../../../../styles/styles';
-import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
 
+import styles from '../../../../styles/styles';
 
 const BankAccountSaveRecord = () => {
   const route = useRoute();
@@ -188,66 +185,63 @@ const BankAccountSaveRecord = () => {
   //     bankaccountdata,
   //   ]),
   // );
-   const fetchGetBankAccountLabel = async () => {
-  try {
-    const labels = await GetBankAccountLabels();
-    console.log('Labels fetched:', labels);
-    return labels; // ✅ IMPORTANT
-  } catch (error) {
-    console.error('Error fetching Bank Account labels:', error);
-    return {};
-  }
-};
+  const fetchGetBankAccountLabel = async () => {
+    try {
+      const labels = await GetBankAccountLabels();
+      console.log('Labels fetched:', labels);
+      return labels; // ✅ IMPORTANT
+    } catch (error) {
+      console.error('Error fetching Bank Account labels:', error);
+      return {};
+    }
+  };
 
- useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-    const initializeForm = async () => {
-      setIsLoading(true);
+      const initializeForm = async () => {
+        setIsLoading(true);
 
-      try {
-        // 🔹 Fetch labels FIRST
-        const labels = await fetchGetBankAccountLabel();
-        if (!isActive) return;
+        try {
+          // 🔹 Fetch labels FIRST
+          const labels = await fetchGetBankAccountLabel();
+          if (!isActive) return;
 
-        setBankAccountLabelsData(labels || {});
+          setBankAccountLabelsData(labels || {});
 
-        // 🔹 CREATE MODE
-        if (mode === 'create') {
-          setFormData(createInitialFormData());
-          setAlertMessage('');
+          // 🔹 CREATE MODE
+          if (mode === 'create') {
+            setFormData(createInitialFormData());
+            setAlertMessage('');
+          }
+
+          // 🔹 EDIT MODE
+          else if (mode === 'edit' && bankaccountdata?.recId) {
+            setFormData({
+              ...createInitialFormData(),
+              ...bankaccountdata,
+              employeeId: bankaccountdata.employeeId || employeeId,
+              employeeName: bankaccountdata.employeeName || employeeName,
+              WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing Bank Account form:', error);
+          setAlertMessage('Failed to load bank account screen');
+          setAlertModal(true);
+        } finally {
+          if (isActive) setIsLoading(false);
         }
+      };
 
-        // 🔹 EDIT MODE
-        else if (mode === 'edit' && bankaccountdata?.recId) {
-          setFormData({
-            ...createInitialFormData(),
-            ...bankaccountdata,
-            employeeId: bankaccountdata.employeeId || employeeId,
-            employeeName: bankaccountdata.employeeName || employeeName,
-            WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
-          });
-        }
-      } catch (error) {
-        console.error('Error initializing Bank Account form:', error);
-        setAlertMessage('Failed to load bank account screen');
-        setAlertModal(true);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
+      initializeForm();
 
-    initializeForm();
-
-    return () => {
-      isActive = false;
-    };
-  }, [mode, bankaccountdata?.recId, employeeId, employeeName, WorkerRecId]),
-);
-
-
-
+      return () => {
+        isActive = false;
+      };
+    }, [mode, bankaccountdata?.recId, employeeId, employeeName, WorkerRecId]),
+  );
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -283,8 +277,6 @@ const BankAccountSaveRecord = () => {
     }
     return true;
   };
- 
-
 
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
@@ -427,20 +419,19 @@ const BankAccountSaveRecord = () => {
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
-      {/* Show loading indicator when isLoading is true */}
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}
+            style={styles.DSR_ContentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
             {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
                   <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
+                  <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
                 </View>
@@ -448,104 +439,87 @@ const BankAccountSaveRecord = () => {
             )}
             <ScrollView
               ref={scrollViewRef}
-              contentContainerStyle={[
-                styles.LReqSR_FormContainer,
-                // {paddingBottom: 20},
-              ]}
+              contentContainerStyle={styles.DSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              {/* <Text style={styles.LReqSR_Label}>Account identification *</Text>
-              <TextInput */}
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
-                </Text>
-                <Text
-                style={styles.LReqSR_Input}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountIdlbl ||
+                  'Account Identification *'}
+              </Text>
+              <TextInput
+                style={styles.DSR_Input}
                 value={formData.AccountId}
                 onChangeText={text => handleInputChange('AccountId', text)}
-                // editable={mode === 'create'}
                 placeholder="Enter Account ID"
                 placeholderTextColor="#888"
                 maxLength={10}
               />
 
-            
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.Namelbl || 'Name'}
-                </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.Namelbl || 'Name *'}
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.Name}
                 onChangeText={text => handleInputChange('Name', text)}
-                // editable={mode === 'create'}
                 placeholder="Enter Name"
                 placeholderTextColor="#888"
               />
 
-             
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
-                </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.AccountNumlbl || 'Bank Account Number'}
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.AccountNum}
                 onChangeText={text => handleInputChange('AccountNum', text)}
-                // editable={mode === 'create'}
                 placeholder="Enter Account Number"
                 placeholderTextColor="#888"
                 keyboardType="numeric"
               />
 
-            
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BankIBANlbl || 'IBAN*'}
-                </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BankIBANlbl || 'IBAN *'}
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.BankIBAN}
                 onChangeText={text => handleInputChange('BankIBAN', text)}
-                // editable={mode === 'create'}
                 placeholder="Enter IBAN"
                 placeholderTextColor="#888"
               />
 
-             
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
-                </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BranchNumberlbl || 'Branch Number'}
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.BranchNumber}
                 onChangeText={text => handleInputChange('BranchNumber', text)}
-                // editable={mode === 'create'}
-                placeholder="Enter Branch number"
+                placeholder="Enter Branch Number"
                 placeholderTextColor="#888"
               />
 
-             
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
-                </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {BankAccountLabelData?.BranchNamelbl || 'Branch Name'}
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.BranchName}
                 onChangeText={text => handleInputChange('BranchName', text)}
-                // editable={mode === 'create'}
-                placeholder="Enter Branch name"
+                placeholder="Enter Branch Name"
                 placeholderTextColor="#888"
               />
 
-              
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
-                </Text>
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.AccountHolder}
                 onChangeText={text => handleInputChange('AccountHolder', text)}
-                // editable={mode === 'create'}
-                placeholder="Enter Account Title"
+                placeholder="Enter Account Holder"
                 placeholderTextColor="#888"
               />
             </ScrollView>
@@ -565,9 +539,7 @@ const BankAccountSaveRecord = () => {
             visible={alertModal}
             heading="Alert"
             text={alertMessage}
-            onPress={() => {
-              setAlertModal(false);
-            }}
+            onPress={() => setAlertModal(false)}
           />
         </SafeAreaView>
       )}

@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
@@ -9,6 +8,7 @@ import {
   RefreshControl,
   ScrollView,
   I18nManager,
+  View,
 } from 'react-native';
 import {
   useNavigation,
@@ -16,6 +16,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 import {translate as t} from '../../store/utils/translate';
+import {useSelector} from 'react-redux';
 
 import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
@@ -29,7 +30,6 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 // import RequestTypeSelectionModal from '../../components/EmployeeAdvanceRequest/RequestTypeSelectionModal';
 import styles from '../../styles/styles';
-import {useSelector} from 'react-redux';
 
 const GenericAdvanceListScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -281,20 +281,49 @@ const GenericAdvanceListScreen = () => {
       subtitle: {key: 'employeeName'},
     },
     fields: [
-      {key: 'AdvanceAmount', label: allAdvanceData[0]?.AdvanceAmountlbl || 'Amount', type: 'currency'},
-      {key: 'RequestedPaymentDate', label:allAdvanceData[0]?.RequestedPaymentDatelbl ||  'Payment Date', type: 'date'},
-      {key: 'RecoveryStartDate', label:allAdvanceData[0]?.RecoveryStartDatelbl || 'Recovery Start Date', type: 'text'},
-      {key: 'WFStatus', label:allAdvanceData[0]?.WFStatuslbl|| 'Workflow status', type: 'status'},
-    ],
-    expandableFields: [
-      {key: 'AdvanceRequestId', label:allAdvanceData[0]?.AdvanceRequestIdlbl||'Request Id', type: 'text'},
-      {key: 'RequestDate', label:allAdvanceData[0]?.RequestDatelbl|| 'Request Date', type: 'date'},
       {
-        key: 'RequestedInstallmentAmount',
-        label: allAdvanceData[0]?.RequestedInstallmentAmountlbl||'Recovery Amount',
+        key: 'AdvanceAmount',
+        label: allAdvanceData[0]?.AdvanceAmountlbl || 'Amount',
+        type: 'currency',
+      },
+      {
+        key: 'RequestedPaymentDate',
+        label: allAdvanceData[0]?.RequestedPaymentDatelbl || 'Payment Date',
+        type: 'date',
+      },
+      {
+        key: 'RecoveryStartDate',
+        label: allAdvanceData[0]?.RecoveryStartDatelbl || 'Recovery Start Date',
         type: 'text',
       },
-      {key: 'RequestedInstallments', label:allAdvanceData[0]?.recoverieslbl||'Recoveries', type: 'text'},
+      {
+        key: 'WFStatus',
+        label: allAdvanceData[0]?.WFStatuslbl || 'Workflow status',
+        type: 'status',
+      },
+    ],
+    expandableFields: [
+      {
+        key: 'AdvanceRequestId',
+        label: allAdvanceData[0]?.AdvanceRequestIdlbl || 'Request Id',
+        type: 'text',
+      },
+      {
+        key: 'RequestDate',
+        label: allAdvanceData[0]?.RequestDatelbl || 'Request Date',
+        type: 'date',
+      },
+      {
+        key: 'RequestedInstallmentAmount',
+        label:
+          allAdvanceData[0]?.RequestedInstallmentAmountlbl || 'Recovery Amount',
+        type: 'text',
+      },
+      {
+        key: 'RequestedInstallments',
+        label: allAdvanceData[0]?.recoverieslbl || 'Recoveries',
+        type: 'text',
+      },
     ],
     isRTL: isRTL,
   };
@@ -582,7 +611,9 @@ const GenericAdvanceListScreen = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : allAdvanceData.length > 0 ? (
         <FlatList
           data={allAdvanceData}
@@ -590,7 +621,7 @@ const GenericAdvanceListScreen = () => {
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.LReqLP_ListContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -598,20 +629,16 @@ const GenericAdvanceListScreen = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            Tap the + button to create your first loan request
+          </Text>
         </ScrollView>
       )}
-
-      {/* Type Selection Modal */}
-      {/* <RequestTypeSelectionModal
-        visible={typeSelectionModal}
-        onClose={() => setTypeSelectionModal(false)}
-        onSelectType={handleTypeSelection}
-      /> */}
 
       {/* Alert Modal */}
       <AlertModal

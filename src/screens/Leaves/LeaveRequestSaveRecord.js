@@ -745,9 +745,6 @@ const LeaveRequestSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      // pageTitle={
-      //   mode === 'edit' ? 'Edit Leave Request' : 'Create Leave Request'
-      // }
       pageTitle={getPageLabel()}
       isBackButton={true}
       showFooter={false}
@@ -759,16 +756,16 @@ const LeaveRequestSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}
+            style={styles.DSR_ContentWrapper}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
             {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
                   <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
+                  <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
                 </View>
@@ -776,42 +773,42 @@ const LeaveRequestSaveRecord = () => {
             )}
             <ScrollView
               ref={scrollViewRef}
-              contentContainerStyle={styles.LReqSR_FormContainer}
+              contentContainerStyle={styles.DSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
               {/* Employee Name */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.EmployeeNameLabel || 'Employee Name'}
               </Text>
               <Text
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
                   isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                 ]}>
                 {formData.employeeName}
               </Text>
 
               {/* Request Date */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveReqDateLabel || 'Request Date'}
               </Text>
               <Text
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
                   isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                 ]}>
                 {formatDate(today)}
               </Text>
 
-              {/* Leave Category Label */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* Leave Category */}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveCategoryLabel || 'Leave Category'}
               </Text>
               <Dropdown
-                style={[styles.LReqSR_Input, isRTL && {textAlign: 'left'}]}
+                style={[styles.DSR_Input, isRTL && {textAlign: 'left'}]}
                 data={leaveCategoryOptions}
                 labelField="label"
                 valueField="value"
@@ -819,20 +816,20 @@ const LeaveRequestSaveRecord = () => {
                 value={formData.leaveCategory}
                 onChange={handleLeaveCategoryChange}
                 placeholderStyle={[
-                  styles.LReqSR_DropdownPlaceholder,
+                  styles.DSR_DropdownPlaceholder,
                   isRTL && {textAlign: 'left'},
                 ]}
                 selectedTextStyle={[
-                  styles.LReqSR_DropdownSelectedText,
+                  styles.DSR_DropdownSelectedText,
                   isRTL && {textAlign: 'left'},
                 ]}
                 itemTextStyle={[
-                  styles.LReqSR_DropdownItemText,
+                  styles.DSR_DropdownItemText,
                   isRTL && {textAlign: 'left'},
                 ]}
                 activeColor="#E6F0FF"
                 containerStyle={[
-                  styles.LReqSR_DropdownContainer,
+                  styles.DSR_DropdownContainer,
                   {
                     marginTop: Platform.OS === 'ios' ? 5 : 2,
                     zIndex: 1000,
@@ -863,18 +860,18 @@ const LeaveRequestSaveRecord = () => {
                     : null
                 }
                 iconStyle={{width: 0, height: 0}}
-                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
                 maxHeight={280}
                 dropdownPosition="auto"
                 inverted={isRTL}
               />
 
               {/* Leave Code */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveCodeLabel || 'Leave Code *'}
               </Text>
               <Dropdown
-                style={[styles.LReqSR_Input, isRTL && {textAlign: 'left'}]}
+                style={[styles.DSR_Input, isRTL && {textAlign: 'left'}]}
                 data={LeaveCodesForEmployee}
                 labelField="label"
                 valueField="value"
@@ -883,29 +880,29 @@ const LeaveRequestSaveRecord = () => {
                 onFocus={fetchLeaveCodesForEmployee}
                 onChange={handleLeaveCodeChange}
                 placeholderStyle={[
-                  styles.LReqSR_DropdownPlaceholder,
+                  styles.DSR_DropdownPlaceholder,
                   isRTL && {textAlign: 'left'},
                 ]}
                 selectedTextStyle={[
-                  styles.LReqSR_DropdownSelectedText,
+                  styles.DSR_DropdownSelectedText,
                   isRTL && {textAlign: 'left'},
                 ]}
                 itemTextStyle={[
-                  styles.LReqSR_DropdownItemText,
+                  styles.DSR_DropdownItemText,
                   isRTL && {textAlign: 'left'},
                 ]}
                 activeColor="#E6F0FF"
                 containerStyle={[
-                  styles.LReqSR_DropdownContainer,
+                  styles.DSR_DropdownContainer,
                   {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
                 ]}
-                itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
                 maxHeight={280}
                 dropdownPosition="auto"
                 search
                 searchPlaceholder={t('leaveSaveRecord.searchLeaveCode')}
                 inputSearchStyle={[
-                  styles.LReqSR_DropdownSearchInput,
+                  styles.DSR_DropdownSearchInput,
                   isRTL && {textAlign: 'right'},
                 ]}
                 renderLeftIcon={
@@ -938,15 +935,14 @@ const LeaveRequestSaveRecord = () => {
               />
 
               {/* Leave Start Date */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveStartDateLabel || 'Leave Start Date *'}
               </Text>
               <TouchableOpacity
                 style={[
-                  styles.LReqSR_DateSelector,
+                  styles.DSR_DateSelector,
                   isRTL && {flexDirection: 'row'},
                 ]}
-                // onPress={() => setShowStartCalendar(true)}>
                 onPress={() => {
                   if (handleDatePickerOpen('start')) {
                     setShowStartCalendar(true);
@@ -955,7 +951,7 @@ const LeaveRequestSaveRecord = () => {
                 <View style={{flex: 1}}>
                   <Text
                     style={[
-                      styles.LReqSR_DateText,
+                      styles.DSR_DateText,
                       isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                     ]}>
                     {formData.leaveStartDate
@@ -967,15 +963,14 @@ const LeaveRequestSaveRecord = () => {
               </TouchableOpacity>
 
               {/* Leave End Date */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveEndDateLabel || 'Leave End Date *'}
               </Text>
               <TouchableOpacity
                 style={[
-                  styles.LReqSR_DateSelector,
+                  styles.DSR_DateSelector,
                   isRTL && {flexDirection: 'row'},
                 ]}
-                // onPress={() => setShowEndCalendar(true)}>
                 onPress={() => {
                   if (handleDatePickerOpen('end')) {
                     setShowEndCalendar(true);
@@ -984,7 +979,7 @@ const LeaveRequestSaveRecord = () => {
                 <View style={{flex: 1}}>
                   <Text
                     style={[
-                      styles.LReqSR_DateText,
+                      styles.DSR_DateText,
                       isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                     ]}>
                     {formData.leaveEndDate
@@ -995,66 +990,66 @@ const LeaveRequestSaveRecord = () => {
                 <Icon name="calendar" size={20} color="#0A66C2" />
               </TouchableOpacity>
 
-              {/* Leave Days - Disabled */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* Leave Days */}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveDaysLabel || 'Leave Days'}
               </Text>
               <Text
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
                   isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                 ]}>
                 {formData.leaveDays || '0'}
               </Text>
 
-              {/* Balance - Disabled */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* Balance */}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.BalanceLabel || 'Balance'}
               </Text>
               <Text
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
                   isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                 ]}>
                 {formData.balance}
               </Text>
 
-              {/* Quota - Disabled */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* Quota */}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.QuotaLabel || 'Quota'}
               </Text>
               <Text
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
                   isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                 ]}>
                 {formData.quota}
               </Text>
 
-              {/* Eligibility - Disabled */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              {/* Eligibility */}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.EligibilityLabel || 'Eligibility'}
               </Text>
               <Text
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
                   isRTL && {textAlign: 'left', writingDirection: 'rtl'},
                 ]}>
                 {formData.eligibility}
               </Text>
 
               {/* Reason */}
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.ReasonLabel || 'Reason'}
               </Text>
               <TextInput
                 style={[
-                  styles.LReqSR_Input,
-                  styles.LReqSR_TextArea,
+                  styles.DSR_Input,
+                  styles.DSR_TextArea,
                   isRTL && {textAlign: 'right', writingDirection: 'rtl'},
                 ]}
                 value={formData.reason}
@@ -1064,16 +1059,7 @@ const LeaveRequestSaveRecord = () => {
                 numberOfLines={6}
               />
             </ScrollView>
-            {/*
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-            />*/}
+
             {isWorkflowConfigured ? (
               <SaveRecordButtons
                 mode={mode}

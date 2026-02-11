@@ -1,23 +1,29 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useRef} from 'react';
-import {
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  Animated,
-  Text,
-} from 'react-native';
+import {TouchableOpacity, Dimensions, Animated, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import styles from '../../styles/styles';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
-const AIFloatingButton = ({onPress, scrollY}) => {
+const AIFloatingButton = ({onPress, scrollY, hasLeaveData = true}) => {
   const animation = useRef(new Animated.Value(0)).current;
 
+  // Dynamic offset calculation based on whether leave data is visible
+  const getOffset = () => {
+    // When leave data is visible, use the original offset (280)
+    // When leave data is hidden, reduce the offset since there's less content
+    return hasLeaveData ? 280 : 180;
+  };
+
+  const getExpansionDistance = () => {
+    return hasLeaveData ? 80 : 60;
+  };
+
   useEffect(() => {
-    const offset = 280;
-    const expansionDistance = 80;
+    const offset = getOffset();
+    const expansionDistance = getExpansionDistance();
 
     const listener = scrollY.addListener(({value}) => {
       if (value <= offset) {
@@ -32,7 +38,7 @@ const AIFloatingButton = ({onPress, scrollY}) => {
     return () => {
       scrollY.removeListener(listener);
     };
-  }, [scrollY]);
+  }, [scrollY, hasLeaveData]);
 
   const compactWidth = 56;
   const wideWidth = SCREEN_WIDTH - 32;
@@ -83,10 +89,10 @@ const AIFloatingButton = ({onPress, scrollY}) => {
   return (
     <Animated.View
       style={[
-        styles.container,
+        styles.AIFloat_container,
         {
           position: 'absolute',
-          bottom: 24,
+          bottom: 10,
           right: animatedRight,
           width: animatedWidth,
           height: animatedHeight,
@@ -96,7 +102,7 @@ const AIFloatingButton = ({onPress, scrollY}) => {
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
-        style={styles.button}>
+        style={styles.AIFloat_button}>
         <Icon name="robot-excited" size={24} color="#fff" />
 
         <Animated.View
@@ -106,7 +112,7 @@ const AIFloatingButton = ({onPress, scrollY}) => {
             marginLeft: textMarginLeft,
             overflow: 'hidden',
           }}>
-          <Text style={styles.text} numberOfLines={1}>
+          <Text style={styles.AIFloat_text} numberOfLines={1}>
             Ask AI Assistant
           </Text>
         </Animated.View>
@@ -114,31 +120,5 @@ const AIFloatingButton = ({onPress, scrollY}) => {
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#0066ff',
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    overflow: 'hidden',
-  },
-  button: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  text: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-});
 
 export default AIFloatingButton;

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable quotes */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -8,7 +9,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -21,10 +21,12 @@ import {DeleteReceipts} from '../../API/ExpenseManagment/Receipt/DeleteReceipts'
 import {RetrieveAttachment} from '../../API/ExpenseManagment/Receipt/RetrieveAttachment';
 import {UploadReceipt} from '../../API/ExpenseManagment/Receipt/UploadReceipt';
 import {AttachReceiptToExpenseLine} from '../../API/ExpenseManagment/Receipt/AttachReceiptToExpenseLine';
+import notificationService from '../../Controller/notificationService';
 
 import AlertDeleteModal from '../Alert/AlertDeleteModal';
 import AlertModal from '../Alert/AlertModal';
-import notificationService from '../../Controller/notificationService';
+
+import styles from '../../styles/styles';
 
 const ReceiptDetailsModal = ({
   visible,
@@ -58,7 +60,7 @@ const ReceiptDetailsModal = ({
 
   const loadExistingReceipts = async () => {
     if (!expenseLine?.recId && !expenseLine?.RecId) {
-      console.log('No RecId found for expense line');
+      // console.log('No RecId found for expense line');
       return;
     }
 
@@ -100,9 +102,6 @@ const ReceiptDetailsModal = ({
     }
   };
 
-  // const getFileExtension = filename => {
-  //   return filename.split('.').pop().toLowerCase();
-  // };
   const getFileExtension = filename => {
     const parts = filename.split('.');
 
@@ -117,38 +116,6 @@ const ReceiptDetailsModal = ({
     return extension;
   };
 
-  // const takePhoto = async () => {
-  //   try {
-  //     const options = {
-  //       mediaType: 'photo',
-  //       quality: 0.8,
-  //       maxWidth: 1024,
-  //       maxHeight: 1024,
-  //     };
-
-  //     const result = await launchCamera(options);
-
-  //     if (result.assets && result.assets.length > 0) {
-  //       const asset = result.assets[0];
-  //       const base64 = await convertToBase64(asset.uri);
-
-  //       const newReceipt = {
-  //         id: `temp_${Date.now()}`,
-  //         uri: asset.uri,
-  //         name: `receipt_${Date.now()}.jpg`,
-  //         base64: base64,
-  //         type: 'image/jpeg',
-  //         extension: 'jpg',
-  //         isNew: true,
-  //       };
-  //       setReceipts(prev => [...prev, newReceipt]);
-  //     }
-  //   } catch (error) {
-  //     console.error('Error taking photo:', error);
-  //     setAlertMessage('Failed to take photo');
-  //     setAlertModal(true);
-  //   }
-  // };
   const takePhoto = async () => {
     try {
       const options = {
@@ -281,46 +248,6 @@ const ReceiptDetailsModal = ({
     return contentTypeMap[extension] || 'application/octet-stream';
   };
 
-  // const pickDocument = async () => {
-  //   try {
-  //     const result = await DocumentPicker.pick({
-  //       type: [
-  //         DocumentPicker.types.images,
-  //         DocumentPicker.types.pdf,
-  //         DocumentPicker.types.doc,
-  //         DocumentPicker.types.docx,
-  //         DocumentPicker.types.xls,
-  //         DocumentPicker.types.xlsx,
-  //         DocumentPicker.types.ppt,
-  //         DocumentPicker.types.pptx,
-  //         DocumentPicker.types.plainText,
-  //         DocumentPicker.types.allFiles,
-  //       ],
-  //     });
-
-  //     const file = result[0];
-  //     const base64 = await convertToBase64(file.uri);
-  //     const extension = getFileExtension(file.name);
-
-  //     const newReceipt = {
-  //       id: `temp_${Date.now()}`,
-  //       uri: file.uri,
-  //       name: file.name,
-  //       base64: base64,
-  //       type: file.type,
-  //       extension: extension,
-  //       isNew: true,
-  //     };
-  //     setReceipts(prev => [...prev, newReceipt]);
-  //   } catch (error) {
-  //     if (!DocumentPicker.isCancel(error)) {
-  //       console.error('Error picking document:', error);
-  //       setAlertMessage('Failed to pick document');
-  //       setAlertModal(true);
-  //     }
-  //   }
-  // };
-
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.pick({
@@ -392,25 +319,25 @@ const ReceiptDetailsModal = ({
     setProcessingAction(`download_${receipt.id}`);
 
     try {
-      console.log('=== Starting Download ===');
-      console.log('Receipt info:', {
-        name: receipt.name,
-        type: receipt.type,
-        docuRefRecId: receipt.docuRefRecId,
-      });
+      // console.log('=== Starting Download ===');
+      // console.log('Receipt info:', {
+      //   name: receipt.name,
+      //   type: receipt.type,
+      //   docuRefRecId: receipt.docuRefRecId,
+      // });
 
       const result = await RetrieveAttachment({
         docuRefRecId: receipt.docuRefRecId,
       });
 
-      console.log('RetrieveAttachment result:', {
-        success: result.success,
-        base64Length: result.base64?.length,
-        fileType: result.fileType,
-        fileName: result.fileName,
-        message: result.message,
-        debugInfo: result.debugInfo,
-      });
+      // console.log('RetrieveAttachment result:', {
+      //   success: result.success,
+      //   base64Length: result.base64?.length,
+      //   fileType: result.fileType,
+      //   fileName: result.fileName,
+      //   message: result.message,
+      //   debugInfo: result.debugInfo,
+      // });
 
       if (result.success && result.base64) {
         let cleanBase64 = result.base64.trim();
@@ -434,26 +361,26 @@ const ReceiptDetailsModal = ({
           fileName = `${fileName}.${extension}`;
         }
 
-        console.log('Final download details:', {
-          fileName,
-          base64Length: cleanBase64.length,
-          hasProperPadding: cleanBase64.length % 4 === 0,
-        });
+        // console.log('Final download details:', {
+        //   fileName,
+        //   base64Length: cleanBase64.length,
+        //   hasProperPadding: cleanBase64.length % 4 === 0,
+        // });
 
         const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
 
-        console.log('Writing file to:', filePath);
+        // console.log('Writing file to:', filePath);
 
         await RNFS.writeFile(filePath, cleanBase64, 'base64');
 
         const fileExists = await RNFS.exists(filePath);
         const fileInfo = await RNFS.stat(filePath);
 
-        console.log('File write results:', {
-          fileExists,
-          fileSize: fileInfo.size,
-          filePath: fileInfo.path,
-        });
+        // console.log('File write results:', {
+        //   fileExists,
+        //   fileSize: fileInfo.size,
+        //   filePath: fileInfo.path,
+        // });
 
         if (fileExists && fileInfo.size > 0) {
           notificationService.showReceiptDownloadNotification(
@@ -477,7 +404,7 @@ const ReceiptDetailsModal = ({
           errorMsg += `Has Buffer Tag: ${result.debugInfo.hasBuffer}\n`;
           errorMsg += `Has Base64 Pattern: ${result.debugInfo.hasBase64Pattern}`;
 
-          console.log('Full debug info:', result.debugInfo);
+          // console.log('Full debug info:', result.debugInfo);
         }
 
         notificationService.showErrorNotification(errorMsg);
@@ -500,106 +427,46 @@ const ReceiptDetailsModal = ({
     }
   };
 
-  // const handleSave = async () => {
-  //   const newReceipts = receipts.filter(r => r.isNew);
-
-  //   if (newReceipts.length === 0) {
-  //     setAlertMessage('No new receipts to upload');
-  //     setAlertModal(true);
-  //     return;
-  //   }
-
-  //   setProcessingAction('save');
-
-  //   try {
-  //     for (const receipt of newReceipts) {
-  //       const uploadResult = await UploadReceipt({
-  //         legalEntity: legalEntity,
-  //         fileName: receipt.name,
-  //         capturedReceipt: receipt.base64,
-  //         contentType: getContentType(receipt.name),
-  //         fileExtension: receipt.extension,
-  //         employeeId: employeeId,
-  //       });
-
-  //       if (!uploadResult.IsSuccess || !uploadResult.Receipts?.length) {
-  //         throw new Error(uploadResult.Message || 'Failed to upload receipt');
-  //       }
-
-  //       const uploadedReceipt = uploadResult.Receipts[0];
-  //       const attachResult = await AttachReceiptToExpenseLine({
-  //         docuRefRecId: uploadedReceipt.RecId || uploadedReceipt.recId,
-  //         expenseTransactionNumber: expenseLine.ExpenseTransactionNumber,
-  //         legalEntity: legalEntity,
-  //         employeeId: employeeId,
-  //         isAttach: true,
-  //       });
-
-  //       if (!attachResult.IsSuccess) {
-  //         throw new Error(
-  //           attachResult.Message || 'Failed to attach receipt to expense line',
-  //         );
-  //       }
-  //     }
-
-  //     notificationService.showReceiptUploadNotification(newReceipts.length);
-
-  //     setAlertMessage(`${newReceipts.length} receipt(s) uploaded successfully`);
-  //     setAlertModal(true);
-
-  //     if (onSave) {
-  //       onSave();
-  //     }
-
-  //     await loadExistingReceipts();
-  //   } catch (error) {
-  //     console.error('Error saving receipts:', error);
-  //     setAlertMessage(error.message || 'Failed to save receipts');
-  //     setAlertModal(true);
-  //   } finally {
-  //     setProcessingAction(null);
-  //   }
-  // };
   const handleSave = async () => {
-    console.log('🔵 [handleSave] START - Saving receipts...');
+    // console.log('🔵 [handleSave] START - Saving receipts...');
     const newReceipts = receipts.filter(r => r.isNew);
-    console.log('🔵 [handleSave] New receipts to upload:', newReceipts.length);
-    console.log(
-      '🔵 [handleSave] Receipts details:',
-      newReceipts.map(r => ({
-        name: r.name,
-        extension: r.extension,
-        base64Length: r.base64?.length,
-      })),
-    );
+    // console.log('🔵 [handleSave] New receipts to upload:', newReceipts.length);
+    // console.log(
+    //   '🔵 [handleSave] Receipts details:',
+    //   newReceipts.map(r => ({
+    //     name: r.name,
+    //     extension: r.extension,
+    //     base64Length: r.base64?.length,
+    //   })),
+    // );
 
     if (newReceipts.length === 0) {
-      console.log('❌ [handleSave] No new receipts to upload');
+      // console.log('❌ [handleSave] No new receipts to upload');
       setAlertMessage('No new receipts to upload');
       setAlertModal(true);
       return;
     }
 
     setProcessingAction('save');
-    console.log('🔵 [handleSave] Processing action set to "save"');
+    // console.log('🔵 [handleSave] Processing action set to "save"');
 
     try {
       for (const [index, receipt] of newReceipts.entries()) {
-        console.log(
-          `🔵 [handleSave] Processing receipt ${index + 1}/${
-            newReceipts.length
-          }:`,
-          receipt.name,
-        );
+        // console.log(
+        //   `🔵 [handleSave] Processing receipt ${index + 1}/${
+        //     newReceipts.length
+        //   }:`,
+        //   receipt.name,
+        // );
 
-        console.log('🔵 [handleSave] Calling UploadReceipt with:', {
-          legalEntity,
-          fileName: receipt.name,
-          contentType: getContentType(receipt.name),
-          fileExtension: receipt.extension,
-          employeeId,
-          base64Length: receipt.base64?.length,
-        });
+        // console.log('🔵 [handleSave] Calling UploadReceipt with:', {
+        //   legalEntity,
+        //   fileName: receipt.name,
+        //   contentType: getContentType(receipt.name),
+        //   fileExtension: receipt.extension,
+        //   employeeId,
+        //   base64Length: receipt.base64?.length,
+        // });
 
         const uploadResult = await UploadReceipt({
           legalEntity: legalEntity,
@@ -610,36 +477,36 @@ const ReceiptDetailsModal = ({
           employeeId: employeeId,
         });
 
-        console.log('🔵 [handleSave] UploadReceipt result:', uploadResult);
+        // console.log('🔵 [handleSave] UploadReceipt result:', uploadResult);
 
         if (!uploadResult.IsSuccess || !uploadResult.Receipts?.length) {
-          console.log(
-            '❌ [handleSave] UploadReceipt failed:',
-            uploadResult.Message,
-          );
+          // console.log(
+          //   '❌ [handleSave] UploadReceipt failed:',
+          //   uploadResult.Message,
+          // );
           throw new Error(uploadResult.Message || 'Failed to upload receipt');
         }
 
         const uploadedReceipt = uploadResult.Receipts[0];
-        console.log(
-          '🔵 [handleSave] Uploaded receipt details:',
-          uploadedReceipt,
-        );
-        console.log(
-          '🔵 [handleSave] Using docuRefRecId:',
-          uploadedReceipt.RecId || uploadedReceipt.recId,
-        );
+        // console.log(
+        //   '🔵 [handleSave] Uploaded receipt details:',
+        //   uploadedReceipt,
+        // );
+        // console.log(
+        //   '🔵 [handleSave] Using docuRefRecId:',
+        //   uploadedReceipt.RecId || uploadedReceipt.recId,
+        // );
 
-        console.log(
-          '🔵 [handleSave] Calling AttachReceiptToExpenseLine with:',
-          {
-            docuRefRecId: uploadedReceipt.RecId || uploadedReceipt.recId,
-            expenseTransactionNumber: expenseLine.ExpenseTransactionNumber,
-            legalEntity,
-            employeeId,
-            isAttach: true,
-          },
-        );
+        // console.log(
+        //   '🔵 [handleSave] Calling AttachReceiptToExpenseLine with:',
+        //   {
+        //     docuRefRecId: uploadedReceipt.docuRefRecId,
+        //     expenseTransactionNumber: expenseLine.ExpenseTransactionNumber,
+        //     legalEntity,
+        //     employeeId,
+        //     isAttach: true,
+        //   },
+        // );
 
         const attachResult = await AttachReceiptToExpenseLine({
           docuRefRecId: uploadedReceipt.docuRefRecId,
@@ -649,39 +516,39 @@ const ReceiptDetailsModal = ({
           isAttach: true,
         });
 
-        console.log(
-          '🔵 [handleSave] AttachReceiptToExpenseLine result:',
-          attachResult,
-        );
+        // console.log(
+        //   '🔵 [handleSave] AttachReceiptToExpenseLine result:',
+        //   attachResult,
+        // );
 
         if (!attachResult.IsSuccess) {
-          console.log(
-            '❌ [handleSave] AttachReceiptToExpenseLine failed:',
-            attachResult.Message,
-          );
+          // console.log(
+          //   '❌ [handleSave] AttachReceiptToExpenseLine failed:',
+          //   attachResult.Message,
+          // );
           throw new Error(
             attachResult.Message || 'Failed to attach receipt to expense line',
           );
         }
 
-        console.log(
-          `✅ [handleSave] Successfully processed receipt ${index + 1}:`,
-          receipt.name,
-        );
+        // console.log(
+        //   `✅ [handleSave] Successfully processed receipt ${index + 1}:`,
+        //   receipt.name,
+        // );
       }
 
-      console.log('✅ [handleSave] ALL receipts processed successfully');
+      // console.log('✅ [handleSave] ALL receipts processed successfully');
       notificationService.showReceiptUploadNotification(newReceipts.length);
 
       setAlertMessage(`${newReceipts.length} receipt(s) uploaded successfully`);
       setAlertModal(true);
 
       if (onSave) {
-        console.log('🔵 [handleSave] Calling onSave callback');
+        // console.log('🔵 [handleSave] Calling onSave callback');
         onSave();
       }
 
-      console.log('🔵 [handleSave] Reloading existing receipts...');
+      // console.log('🔵 [handleSave] Reloading existing receipts...');
       await loadExistingReceipts();
     } catch (error) {
       console.error('❌ [handleSave] CATCH ERROR:', error);
@@ -705,128 +572,121 @@ const ReceiptDetailsModal = ({
       animationType="slide"
       transparent
       onRequestClose={onCancel}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
+      <View style={styles.RDM_ModalOverlay}>
+        <View style={styles.RDM_ModalContainer}>
           {/* Header */}
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Manage Receipts</Text>
+          <View style={styles.RDM_ModalHeader}>
+            <Text style={styles.RDM_ModalTitle}>Manage Receipts</Text>
             <TouchableOpacity
               onPress={onCancel}
-              style={styles.closeButton}
+              style={styles.RDM_CloseButton}
               disabled={isAnyProcessing}>
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={styles.RDM_CloseButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
 
           {/* Expense Line Details */}
-          <View style={styles.detailsSection}>
-            <Text style={styles.sectionTitle}>Expense Details</Text>
+          <View style={styles.RDM_DetailsSection}>
+            <Text style={styles.RDM_SectionTitle}>Expense Details</Text>
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Type:</Text>
-              <Text style={styles.detailValue}>
+            <View style={styles.RDM_DetailRow}>
+              <Text style={styles.RDM_DetailLabel}>Type:</Text>
+              <Text style={styles.RDM_DetailValue}>
                 {expenseLine?.ExpenseType || 'N/A'}
               </Text>
             </View>
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Amount:</Text>
-              <Text style={styles.detailValue}>
+            <View style={styles.RDM_DetailRow}>
+              <Text style={styles.RDM_DetailLabel}>Amount:</Text>
+              <Text style={styles.RDM_DetailValue}>
                 {expenseLine?.AmountCurr || '0.00'}
               </Text>
             </View>
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Date:</Text>
-              <Text style={styles.detailValue}>
+            <View style={styles.RDM_DetailRow}>
+              <Text style={styles.RDM_DetailLabel}>Date:</Text>
+              <Text style={styles.RDM_DetailValue}>
                 {expenseLine?.TransDate || 'N/A'}
               </Text>
             </View>
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Description:</Text>
-              <Text style={styles.detailValue}>
+            <View style={styles.RDM_DetailRow}>
+              <Text style={styles.RDM_DetailLabel}>Description:</Text>
+              <Text style={styles.RDM_DetailValue}>
                 {expenseLine?.Description || 'N/A'}
               </Text>
             </View>
           </View>
 
           {/* Add Receipt Buttons */}
-          <View style={styles.buttonSection}>
-            <Text style={styles.sectionTitle}>Add Receipt</Text>
+          <View style={styles.RDM_ButtonSection}>
+            <Text style={styles.RDM_SectionTitle}>Add Receipt</Text>
 
-            <View style={styles.addButtonContainer}>
+            <View style={styles.RDM_AddButtonContainer}>
               <TouchableOpacity
                 style={[
-                  styles.addButton,
-                  isAnyProcessing && styles.disabledButton,
+                  styles.RDM_AddButton,
+                  isAnyProcessing && styles.RDM_DisabledButton,
                 ]}
                 onPress={takePhoto}
                 disabled={isAnyProcessing}>
-                <Text style={styles.addButtonText}>📸 Take Photo</Text>
+                <Text style={styles.RDM_AddButtonText}>📸 Take Photo</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
-                  styles.addButton,
-                  isAnyProcessing && styles.disabledButton,
+                  styles.RDM_AddButton,
+                  isAnyProcessing && styles.RDM_DisabledButton,
                 ]}
                 onPress={pickDocument}
                 disabled={isAnyProcessing}>
-                <Text style={styles.addButtonText}>📁 Choose File</Text>
+                <Text style={styles.RDM_AddButtonText}>📁 Choose File</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Receipts List */}
-          <View style={styles.receiptsSection}>
-            <Text style={styles.sectionTitle}>
+          <View style={styles.RDM_ReceiptsSection}>
+            <Text style={styles.RDM_SectionTitle}>
               Receipts ({receipts.length})
             </Text>
 
             {isLoading ? (
-              <View style={styles.loadingContainer}>
+              <View style={styles.RDM_LoadingContainer}>
                 <ActivityIndicator size="large" color="#2563eb" />
-                <Text style={styles.loadingText}>Loading receipts...</Text>
+                <Text style={styles.RDM_LoadingText}>Loading receipts...</Text>
               </View>
             ) : (
               <ScrollView
-                style={styles.receiptsScrollView}
+                style={styles.RDM_ReceiptsScrollView}
                 showsVerticalScrollIndicator={false}>
                 {receipts.length === 0 ? (
-                  <Text style={styles.noReceiptsText}>
+                  <Text style={styles.RDM_NoReceiptsText}>
                     No receipts attached. Add receipts using the buttons above.
                   </Text>
                 ) : (
                   receipts.map((receipt, index) => (
                     <View
                       key={receipt.id || `receipt-${index}-${Date.now()}`}
-                      style={styles.receiptItem}>
-                      <View style={styles.receiptInfo}>
-                        {/* <Text style={styles.receiptName} numberOfLines={2}>
-                          {receipt.name && receipt.type
-                            ? `${receipt.name}.${
-                                receipt.extension ||
-                                receipt.type.split('/').pop()
-                              }`
-                            : `Receipt ${index + 1}`}
-                        </Text> */}
-                        <Text style={styles.receiptName} numberOfLines={2}>
+                      style={styles.RDM_ReceiptItem}>
+                      <View style={styles.RDM_ReceiptInfo}>
+                        <Text style={styles.RDM_ReceiptName} numberOfLines={2}>
                           {receipt.name || `Receipt ${index + 1}`}
                         </Text>
                         {receipt.isNew && (
-                          <Text style={styles.newBadge}>New</Text>
+                          <Text style={styles.RDM_NewBadge}>New</Text>
                         )}
                         {receipt.isExisting && (
-                          <Text style={styles.existingBadge}>Uploaded</Text>
+                          <Text style={styles.RDM_ExistingBadge}>Uploaded</Text>
                         )}
                       </View>
-                      <View style={styles.receiptActions}>
+                      <View style={styles.RDM_ReceiptActions}>
                         {receipt.isExisting && (
                           <TouchableOpacity
                             style={[
-                              styles.downloadButton,
-                              isAnyProcessing && styles.disabledActionButton,
+                              styles.RDM_DownloadButton,
+                              isAnyProcessing &&
+                                styles.RDM_DisabledActionButton,
                             ]}
                             onPress={() => downloadReceipt(receipt)}
                             disabled={isAnyProcessing}>
@@ -843,8 +703,8 @@ const ReceiptDetailsModal = ({
                         )}
                         <TouchableOpacity
                           style={[
-                            styles.removeButton,
-                            isAnyProcessing && styles.disabledActionButton,
+                            styles.RDM_RemoveButton,
+                            isAnyProcessing && styles.RDM_DisabledActionButton,
                           ]}
                           onPress={() => removeReceipt(receipt.id)}
                           disabled={isAnyProcessing}>
@@ -867,28 +727,28 @@ const ReceiptDetailsModal = ({
           </View>
 
           {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
+          <View style={styles.RDM_ButtonContainer}>
             <TouchableOpacity
               style={[
-                styles.cancelButton,
-                isAnyProcessing && styles.disabledButton,
+                styles.RDM_CancelButton,
+                isAnyProcessing && styles.RDM_DisabledButton,
               ]}
               onPress={onCancel}
               disabled={isAnyProcessing}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.RDM_CancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.saveButton,
-                isSaveDisabled && styles.saveButtonDisabled,
+                styles.RDM_SaveButton,
+                isSaveDisabled && styles.RDM_SaveButtonDisabled,
               ]}
               onPress={handleSave}
               disabled={isSaveDisabled}>
               {processingAction === 'save' ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>
+                <Text style={styles.RDM_SaveButtonText}>
                   Save Receipts ({receipts.filter(r => r.isNew).length})
                 </Text>
               )}
@@ -921,219 +781,5 @@ const ReceiptDetailsModal = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    height: '85%',
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -4},
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1e293b',
-    letterSpacing: 0.3,
-  },
-  closeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  detailsSection: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    width: 100,
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#1e293b',
-    flex: 1,
-    fontWeight: '600',
-  },
-  buttonSection: {
-    marginBottom: 20,
-  },
-  addButtonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  addButton: {
-    flex: 1,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  receiptsSection: {
-    flex: 1,
-    marginBottom: 20,
-  },
-  receiptsScrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    color: '#64748b',
-    fontSize: 14,
-  },
-  noReceiptsText: {
-    textAlign: 'center',
-    color: '#64748b',
-    fontStyle: 'italic',
-    padding: 20,
-  },
-  receiptItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  receiptInfo: {
-    flex: 1,
-    flexDirection: 'column',
-    marginRight: 12,
-  },
-  receiptName: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  newBadge: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  existingBadge: {
-    backgroundColor: '#3b82f6',
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  receiptActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  downloadButton: {
-    backgroundColor: '#0eaa11ff',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 6,
-    minWidth: 30,
-    alignItems: 'center',
-  },
-  removeButton: {
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 6,
-    minWidth: 30,
-    alignItems: 'center',
-  },
-  disabledActionButton: {
-    backgroundColor: '#cbd5e1',
-    opacity: 0.6,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingBottom: 10,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveButton: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#cbd5e1',
-  },
-  disabledButton: {
-    backgroundColor: '#e2e8f0',
-  },
-  cancelButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  saveButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
-  },
-});
 
 export default ReceiptDetailsModal;

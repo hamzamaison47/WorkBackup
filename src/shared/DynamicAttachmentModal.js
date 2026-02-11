@@ -1,7 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable quotes */
 /* eslint-disable curly */
+/* eslint-disable quotes */
 /* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
 import {
   Modal,
@@ -20,11 +20,12 @@ import RNFS from 'react-native-fs';
 import {RetrieveReceipts} from '../API/ExpenseManagment/Receipt/RetrieveReciepts';
 import {DeleteReceipts} from '../API/ExpenseManagment/Receipt/DeleteReceipts';
 import {RetrieveAttachment} from '../API/ExpenseManagment/Receipt/RetrieveAttachment';
-import {UploadReceipt} from '../API/ExpenseManagment/Receipt/UploadReceipt';
-import {AttachReceiptToExpenseLine} from '../API/ExpenseManagment/Receipt/AttachReceiptToExpenseLine';
+// import {UploadReceipt} from '../API/ExpenseManagment/Receipt/UploadReceipt';
+// import {AttachReceiptToExpenseLine} from '../API/ExpenseManagment/Receipt/AttachReceiptToExpenseLine';
 
 import AlertModal from '../components/Alert/AlertModal';
 import AlertDeleteModal from '../components/Alert/AlertDeleteModal';
+
 import notificationService from '../Controller/notificationService';
 import {SaveAttachmentByteArray} from '../API/ExpenseManagment/Receipt/SaveAttachmentByteArray';
 
@@ -84,19 +85,9 @@ const DynamicAttachmentModal = ({
     recordData?.recId ||
     recordData?.RecId ||
     recordData?.ExpenseTransactionNumber ||
-    recordData?.leaveReqId || // Add this for leaves
-    recordData?.LeaveReqId; // Add this for leaves
+    recordData?.leaveReqId ||
+    recordData?.LeaveReqId;
 
-  //   useEffect(() => {
-  //     if (visible && recordId) {
-  //       loadExistingAttachments();
-  //     } else {
-  //       setAttachments([]);
-  //       setIsLoading(false);
-  //       setProcessingAction(null);
-  //       setAttachmentToDelete(null);
-  //     }
-  //   }, [visible, recordId]);
   useEffect(() => {
     if (visible && recordId) {
       loadExistingAttachments();
@@ -108,52 +99,11 @@ const DynamicAttachmentModal = ({
     }
   }, [visible, recordId]);
 
-  //   const loadExistingAttachments = async () => {
-  //     if (!recordId) {
-  //       console.log('No Record ID found');
-  //       return;
-  //     }
-
-  //     setIsLoading(true);
-  //     try {
-  //       const result = await RetrieveReceipts({
-  //         recordRefRecId: recordId,
-  //         tableName: tableName,
-  //       });
-
-  //       if (result.success && result.attachments) {
-  //         const formattedAttachments = Array.isArray(result.attachments)
-  //           ? result.attachments.map((att, index) => ({
-  //               id: att['a:RecId'] || `attachment-${index}-${Date.now()}`,
-  //               docuRefRecId: att['a:RecId'],
-  //               name: att['a:Name'] || att['a:OriginalFileName'] || 'Attachment',
-  //               type: att['a:FileType'] || 'application/octet-stream',
-  //               isExisting: true,
-  //             }))
-  //           : [];
-  //         setAttachments(formattedAttachments);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error loading attachments:', error);
-  //       setAlertMessage('Failed to load existing attachments');
-  //       setAlertModal(true);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
   const loadExistingAttachments = async () => {
     if (!recordId) {
       console.log('No Record ID found');
       return;
     }
-
-    // console.log('DEBUG: Loading attachments with:', {
-    //   recordId,
-    //   tableName,
-    //   hasRecId: !!recordData?.recId,
-    //   hasRecIdAlt: !!recordData?.RecId,
-    //   hasExpenseTransactionNumber: !!recordData?.ExpenseTransactionNumber,
-    // });
 
     setIsLoading(true);
     try {
@@ -161,8 +111,6 @@ const DynamicAttachmentModal = ({
         recordRefRecId: recordId,
         tableName: tableName || 'TrvExpTrans',
       });
-
-      // console.log('DEBUG: RetrieveReceipts result:', result);
 
       if (result.success && result.attachments) {
         const formattedAttachments = Array.isArray(result.attachments)
@@ -174,7 +122,6 @@ const DynamicAttachmentModal = ({
               isExisting: true,
             }))
           : [];
-        // console.log('DEBUG: Formatted attachments:', formattedAttachments);
         setAttachments(formattedAttachments);
       } else {
         console.log('DEBUG: No attachments or result not successful');
@@ -212,40 +159,6 @@ const DynamicAttachmentModal = ({
     return extension;
   };
 
-  //   const takePhoto = async () => {
-  //     try {
-  //       const options = {
-  //         mediaType: 'photo',
-  //         quality: 0.8,
-  //         maxWidth: 1024,
-  //         maxHeight: 1024,
-  //       };
-
-  //       const result = await launchCamera(options);
-
-  //       if (result.assets && result.assets.length > 0) {
-  //         const asset = result.assets[0];
-  //         const base64 = await convertToBase64(asset.uri);
-  //         const timestamp = Date.now();
-  //         const fileName = `attachment_${timestamp}.jpg`;
-
-  //         const newAttachment = {
-  //           id: `temp_${timestamp}`,
-  //           uri: asset.uri,
-  //           name: fileName,
-  //           base64: base64,
-  //           type: 'image/jpeg',
-  //           extension: 'jpg',
-  //           isNew: true,
-  //         };
-  //         setAttachments(prev => [...prev, newAttachment]);
-  //       }
-  //     } catch (error) {
-  //       console.error('Error taking photo:', error);
-  //       setAlertMessage('Failed to take photo');
-  //       setAlertModal(true);
-  //     }
-  //   };
   const takePhoto = async () => {
     try {
       const options = {
@@ -253,15 +166,13 @@ const DynamicAttachmentModal = ({
         quality: 0.8,
         maxWidth: 1024,
         maxHeight: 1024,
-        includeBase64: true, // Add this line to get base64 directly
+        includeBase64: true,
       };
 
       const result = await launchCamera(options);
 
       if (result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-
-        // Try to get base64 from asset first, if not available, convert from URI
         let base64 = asset.base64;
         if (!base64 && asset.uri) {
           base64 = await convertToBase64(asset.uri);
@@ -279,12 +190,6 @@ const DynamicAttachmentModal = ({
           extension: 'jpg',
           isNew: true,
         };
-
-        // console.log('DEBUG: New camera photo added:', {
-        //   fileName,
-        //   hasBase64: !!base64,
-        //   base64Length: base64?.length,
-        // });
 
         setAttachments(prev => [...prev, newAttachment]);
       }
@@ -347,38 +252,38 @@ const DynamicAttachmentModal = ({
     }
   };
 
-  const getContentType = filename => {
-    const extension = filename.split('.').pop().toLowerCase();
+  // const getContentType = filename => {
+  //   const extension = filename.split('.').pop().toLowerCase();
 
-    const contentTypeMap = {
-      pdf: 'application/pdf',
-      doc: 'application/msword',
-      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      xls: 'application/vnd.ms-excel',
-      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      ppt: 'application/vnd.ms-powerpoint',
-      pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      txt: 'text/plain',
-      rtf: 'application/rtf',
-      csv: 'text/csv',
-      odt: 'application/vnd.oasis.opendocument.text',
-      ods: 'application/vnd.oasis.opendocument.spreadsheet',
-      odp: 'application/vnd.oasis.opendocument.presentation',
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      gif: 'image/gif',
-      webp: 'image/webp',
-      bmp: 'image/bmp',
-      tiff: 'image/tiff',
-      tif: 'image/tiff',
-      svg: 'image/svg+xml',
-      heic: 'image/heic',
-      heif: 'image/heif',
-    };
+  //   const contentTypeMap = {
+  //     pdf: 'application/pdf',
+  //     doc: 'application/msword',
+  //     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  //     xls: 'application/vnd.ms-excel',
+  //     xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  //     ppt: 'application/vnd.ms-powerpoint',
+  //     pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  //     txt: 'text/plain',
+  //     rtf: 'application/rtf',
+  //     csv: 'text/csv',
+  //     odt: 'application/vnd.oasis.opendocument.text',
+  //     ods: 'application/vnd.oasis.opendocument.spreadsheet',
+  //     odp: 'application/vnd.oasis.opendocument.presentation',
+  //     jpg: 'image/jpeg',
+  //     jpeg: 'image/jpeg',
+  //     png: 'image/png',
+  //     gif: 'image/gif',
+  //     webp: 'image/webp',
+  //     bmp: 'image/bmp',
+  //     tiff: 'image/tiff',
+  //     tif: 'image/tiff',
+  //     svg: 'image/svg+xml',
+  //     heic: 'image/heic',
+  //     heif: 'image/heif',
+  //   };
 
-    return contentTypeMap[extension] || 'application/octet-stream';
-  };
+  //   return contentTypeMap[extension] || 'application/octet-stream';
+  // };
 
   const handleDeleteAttachment = async () => {
     if (!attachmentToDelete) return;
@@ -525,12 +430,8 @@ const DynamicAttachmentModal = ({
 
     try {
       for (const attachment of newAttachments) {
-        // console.log('Uploading attachment:', attachment.name);
-
-        // Get file extension
         let fileExt = getFileExtension(attachment.name);
         if (!fileExt) {
-          // Try to get from MIME type
           if (attachment.type) {
             const mimeParts = attachment.type.split('/');
             if (mimeParts.length > 1) {
@@ -539,28 +440,23 @@ const DynamicAttachmentModal = ({
           }
         }
 
-        // Ensure fileExt starts with dot
         if (fileExt && !fileExt.startsWith('.')) {
           fileExt = '.' + fileExt;
         }
 
         if (!fileExt) {
-          fileExt = '.bin'; // Default
+          fileExt = '.bin';
         }
 
-        // Try two simple approaches
         const approaches = [
-          // Approach 1: Send base64 as-is
           {
             name: 'base64',
             fileByteArray: attachment.base64,
           },
-          // Approach 2: Fix base64 padding if needed
           {
             name: 'base64_with_padding',
             fileByteArray: (() => {
               let base64 = attachment.base64;
-              // Add padding if missing
               while (base64.length % 4 !== 0) {
                 base64 += '=';
               }
@@ -573,8 +469,6 @@ const DynamicAttachmentModal = ({
         let success = false;
 
         for (const approach of approaches) {
-          // console.log(`Trying approach: ${approach.name}`);
-
           try {
             const saveResult = await SaveAttachmentByteArray({
               recordRefRecId: recordId,
@@ -586,19 +480,14 @@ const DynamicAttachmentModal = ({
               fileByteArray: approach.fileByteArray,
             });
 
-            // console.log(`Result for ${approach.name}:`, saveResult);
-
             if (saveResult.IsSuccess) {
               success = true;
-              // console.log(`✅ Success with ${approach.name}`);
               break;
             } else {
               lastError = saveResult.Message;
-              // console.log(`❌ ${approach.name} failed: ${saveResult.Message}`);
             }
           } catch (error) {
             lastError = error.message;
-            console.log(`❌ ${approach.name} error: ${error.message}`);
           }
         }
 
@@ -606,7 +495,6 @@ const DynamicAttachmentModal = ({
           throw new Error(lastError || 'Failed to save attachment');
         }
 
-        // Mark attachment as uploaded
         const attachmentIndex = attachments.findIndex(
           a => a.id === attachment.id,
         );
@@ -620,7 +508,6 @@ const DynamicAttachmentModal = ({
           setAttachments(updatedAttachments);
         }
 
-        // Small delay between uploads
         await new Promise(resolve => setTimeout(resolve, 300));
       }
 
@@ -634,7 +521,6 @@ const DynamicAttachmentModal = ({
         onSave();
       }
 
-      // Refresh attachments
       setTimeout(async () => {
         await loadExistingAttachments();
       }, 1000);
@@ -681,13 +567,6 @@ const DynamicAttachmentModal = ({
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Employee Info (Optional) */}
-          {/* {employeeName && (
-            <View style={styles.employeeSection}>
-              <Text style={styles.employeeText}>{employeeName}</Text>
-            </View>
-          )} */}
 
           {/* Details Section (Conditional) */}
           {showDetails && detailFields.length > 0 && (
@@ -914,18 +793,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#475569',
     fontWeight: '600',
-  },
-  employeeSection: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  employeeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
   },
   detailsSection: {
     backgroundColor: '#f8fafc',

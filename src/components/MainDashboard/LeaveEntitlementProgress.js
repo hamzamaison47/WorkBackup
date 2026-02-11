@@ -3,13 +3,14 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react/no-unstable-nested-components */
 import React, {useState, useEffect, useCallback, useRef} from 'react';
-import {View, Text, StyleSheet, ScrollView} from 'react-native';
+import {View, Text, ScrollView} from 'react-native';
 import Svg, {Path} from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/RetrieveEntitlementBalanceRequest';
+import styles from '../../styles/styles';
 
-const LeaveEntitlementProgress = ({userData, screenWidth}) => {
+const LeaveEntitlementProgress = ({userData, screenWidth, onDataStatus}) => {
   const [leaveData, setLeaveData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -17,6 +18,66 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
   const scrollViewRef = useRef(null);
   const contentWidthRef = useRef(0);
   const scrollPositionRef = useRef(0);
+
+  // Predefined color palette for leaves (15 colors)
+  const LEAVE_COLORS = [
+    '#4CAF50', // Green
+    '#3F51B5', // Indigo
+    '#9C27B0', // Purple
+    '#E91E63', // Pink
+    '#FF9800', // Orange
+    '#00BCD4', // Cyan
+    '#8BC34A', // Light Green
+    '#FF5722', // Deep Orange
+    '#673AB7', // Deep Purple
+    '#009688', // Teal
+    '#FFC107', // Amber
+    '#795548', // Brown
+    '#607D8B', // Blue Grey
+    '#F44336', // Red
+    '#2196F3', // Blue
+  ];
+
+  // Cache for mapping leave types to colors
+  const leaveColorMapRef = useRef(new Map());
+  const defaultColor = '#2196F3'; // Grey for any additional leaves beyond 15
+
+  // Function to get color for a leave type
+  const getLeaveColor = useCallback(entitlementCode => {
+    // Return cached color if exists
+    if (leaveColorMapRef.current.has(entitlementCode)) {
+      return leaveColorMapRef.current.get(entitlementCode);
+    }
+
+    // Find next available color
+    let assignedColor = defaultColor;
+
+    // Count how many unique leaves we've assigned colors to
+    const assignedCount = leaveColorMapRef.current.size;
+
+    // If we have colors left in our palette, assign the next one
+    if (assignedCount < LEAVE_COLORS.length) {
+      assignedColor = LEAVE_COLORS[assignedCount];
+    }
+
+    // Cache the assignment
+    leaveColorMapRef.current.set(entitlementCode, assignedColor);
+
+    return assignedColor;
+  }, []);
+
+  // Clear color cache when leave data changes significantly
+  useEffect(() => {
+    // Reset color map when leave data changes
+    leaveColorMapRef.current.clear();
+
+    // Pre-assign colors to all leave types in the data
+    if (leaveData.length > 0) {
+      leaveData.forEach(item => {
+        getLeaveColor(item.EntitlementCode);
+      });
+    }
+  }, [leaveData, getLeaveColor]);
 
   // Fetch entitlement data
   const fetchEntitlementData = useCallback(async () => {
@@ -35,6 +96,10 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
         e => e.EmployeeId === userData.employeeId,
       );
 
+      console.log('filteredEntitlementData on dashboard:', {
+        filteredEntitlementData,
+      });
+
       setLeaveData(filteredEntitlementData);
     } catch (error) {
       console.error('Failed to fetch entitlement data:', error);
@@ -47,6 +112,13 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
   useEffect(() => {
     fetchEntitlementData();
   }, [fetchEntitlementData]);
+
+  // Notify parent component about data status
+  useEffect(() => {
+    if (!loading && onDataStatus) {
+      onDataStatus(leaveData.length === 0);
+    }
+  }, [loading, leaveData, onDataStatus]);
 
   // Check arrow visibility after data loads and layout
   useEffect(() => {
@@ -88,18 +160,6 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
     checkArrowVisibility();
   };
 
-  // Define colors for different leave types
-  const getLeaveColor = entitlementCode => {
-    const colors = {
-      'Annual Leave': '#4CAF50',
-      'Casual Leave': '#2196F3',
-      'Maternity Leaves': '#E91E63',
-      'Sick Leaves': '#FF9800',
-      default: '#9C27B0',
-    };
-    return colors[entitlementCode] || colors.default;
-  };
-
   const SemiCircleProgress = ({percentage, color, taken, accrued}) => {
     const size = 110;
     const strokeWidth = 10;
@@ -109,8 +169,8 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
     const strokeDashoffset = circumference - (progress / 100) * circumference;
 
     return (
-      <View style={styles.semiCircleContainer}>
-        <Svg width={size} height={size / 2 + 10} style={styles.svg}>
+      <View style={styles.LeaveEnt_semiCircleContainer}>
+        <Svg width={size} height={size / 2 + 10} style={styles.LeaveEnt_svg}>
           {/* Background Semi-Circle */}
           <Path
             d={`M ${strokeWidth / 2} ${size / 2} A ${radius} ${radius} 0 0 1 ${
@@ -137,14 +197,14 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
         </Svg>
 
         {/* Center Text */}
-        <View style={styles.centerText}>
-          <Text style={styles.takenText}>{taken}</Text>
-          <Text style={styles.divider}>/</Text>
-          <Text style={styles.totalText}>{accrued}</Text>
+        <View style={styles.LeaveEnt_centerText}>
+          <Text style={styles.LeaveEnt_takenText}>{taken}</Text>
+          <Text style={styles.LeaveEnt_divider}>/</Text>
+          <Text style={styles.LeaveEnt_totalText}>{accrued}</Text>
         </View>
 
         {/* Base Line */}
-        <View style={[styles.baseLine, {width: size}]} />
+        <View style={[styles.LeaveEnt_baseLine, {width: size}]} />
       </View>
     );
   };
@@ -158,9 +218,9 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
 
     return (
       <>
-        <View style={styles.leaveItem}>
+        <View style={styles.LeaveEnt_leaveItem}>
           {/* Semi-Circle Progress */}
-          <View style={styles.progressSection}>
+          <View style={styles.LeaveEnt_progressSection}>
             <SemiCircleProgress
               percentage={percentage}
               color={color}
@@ -169,27 +229,32 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
             />
 
             {/* Leave Type Label */}
-            <Text style={[styles.leaveLabel, {color}]} numberOfLines={1}>
+            <Text
+              style={[styles.LeaveEnt_leaveLabel, {color}]}
+              numberOfLines={1}
+              ellipsizeMode="tail">
               {item.EntitlementCode}
             </Text>
           </View>
 
           {/* Stats Box */}
-          <View style={styles.statsBox}>
-            <View style={styles.statRow}>
-              <View style={styles.stat}>
-                <Text style={styles.statLabel}>TOTAL</Text>
-                <Text style={[styles.statValue, {color}]}>{accrued}</Text>
+          <View style={styles.LeaveEnt_statsBox}>
+            <View style={styles.LeaveEnt_statRow}>
+              <View style={styles.LeaveEnt_stat}>
+                <Text style={styles.LeaveEnt_statLabel}>TOTAL</Text>
+                <Text style={[styles.LeaveEnt_statValue, {color}]}>
+                  {accrued}
+                </Text>
               </View>
-              <View style={styles.stat}>
-                <Text style={styles.statLabel}>TAKEN</Text>
-                <Text style={[styles.statValue, {color: '#757575'}]}>
+              <View style={styles.LeaveEnt_stat}>
+                <Text style={styles.LeaveEnt_statLabel}>TAKEN</Text>
+                <Text style={[styles.LeaveEnt_statValue, {color: '#757575'}]}>
                   {taken}
                 </Text>
               </View>
-              <View style={styles.stat}>
-                <Text style={styles.statLabel}>BALANCE</Text>
-                <Text style={[styles.statValue, {color: '#4CAF50'}]}>
+              <View style={styles.LeaveEnt_stat}>
+                <Text style={styles.LeaveEnt_statLabel}>BALANCE</Text>
+                <Text style={[styles.LeaveEnt_statValue, {color}]}>
                   {balance}
                 </Text>
               </View>
@@ -197,65 +262,69 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
           </View>
 
           {/* Unit Badge */}
-          <View style={styles.unitBadge}>
-            <Text style={styles.unitText}>{item.EntitlementUnit}</Text>
+          <View style={styles.LeaveEnt_unitBadge}>
+            <Text style={styles.LeaveEnt_unitText}>{item.EntitlementUnit}</Text>
           </View>
         </View>
 
         {/* Divider */}
-        {showDivider && <View style={styles.itemDivider} />}
+        {showDivider && <View style={styles.LeaveEnt_itemDivider} />}
       </>
     );
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, {paddingHorizontal: screenWidth * 0.05}]}>
-        <Text style={styles.loadingText}>Loading leave entitlements...</Text>
-      </View>
-    );
+  // If no data after loading, return null to hide the component completely
+  if (!loading && leaveData.length === 0) {
+    return null;
   }
 
-  if (leaveData.length === 0) {
+  if (loading) {
     return (
-      <View style={[styles.container, {paddingHorizontal: screenWidth * 0.05}]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Leave Entitlements</Text>
-        </View>
-        <Text style={styles.noDataText}>No leave entitlements available</Text>
+      <View
+        style={[
+          styles.LeaveEnt_container,
+          {paddingHorizontal: screenWidth * 0.05},
+        ]}>
+        <Text style={styles.LeaveEnt_loadingText}>
+          Loading leave entitlements...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, {paddingHorizontal: screenWidth * 0.05}]}>
+    <View
+      style={[
+        styles.LeaveEnt_container,
+        {paddingHorizontal: screenWidth * 0.05},
+      ]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Leave Entitlements</Text>
-        <Text style={styles.subtitle}>Swipe to view all types</Text>
+      <View style={styles.LeaveEnt_header}>
+        <Text style={styles.LeaveEnt_title}>Leave Entitlements</Text>
+        <Text style={styles.LeaveEnt_subtitle}>Swipe to view all types</Text>
       </View>
 
       {/* Left Arrow */}
       {showLeftArrow && (
-        <View style={[styles.arrowButton, styles.leftArrow]}>
+        <View style={[styles.LeaveEnt_arrowButton, styles.LeaveEnt_leftArrow]}>
           <Icon name="chevron-left" size={24} color="#666" />
         </View>
       )}
 
       {/* Content with Arrows */}
-      <View style={styles.scrollContainer}>
+      <View style={styles.LeaveEnt_scrollContainer}>
         {/* Scrollable Content */}
         <ScrollView
           ref={scrollViewRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.LeaveEnt_scrollContent}
           onScroll={handleScroll}
           scrollEventThrottle={16}
           onContentSizeChange={handleContentSizeChange}>
           {leaveData.map((item, index) => (
             <LeaveItem
-              key={index}
+              key={`${item.EntitlementCode}-${index}`}
               item={item}
               showDivider={index < leaveData.length - 1}
             />
@@ -265,182 +334,12 @@ const LeaveEntitlementProgress = ({userData, screenWidth}) => {
 
       {/* Right Arrow */}
       {showRightArrow && (
-        <View style={[styles.arrowButton, styles.rightArrow]}>
+        <View style={[styles.LeaveEnt_arrowButton, styles.LeaveEnt_rightArrow]}>
           <Icon name="chevron-right" size={24} color="#666" />
         </View>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: 16,
-  },
-  header: {
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-    paddingLeft: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#757575',
-    fontWeight: '500',
-  },
-  scrollContainer: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  scrollContent: {
-    paddingVertical: 8,
-  },
-  leaveItem: {
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    minWidth: 160,
-  },
-  progressSection: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  semiCircleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 75,
-    marginBottom: 8,
-    position: 'relative',
-  },
-  svg: {
-    position: 'absolute',
-    top: 0,
-  },
-  centerText: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    bottom: 8,
-  },
-  takenText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  divider: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#BDBDBD',
-    marginHorizontal: 2,
-  },
-  totalText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#757575',
-  },
-  baseLine: {
-    position: 'absolute',
-    bottom: 0,
-    height: 2,
-    backgroundColor: '#d1d1d1ff',
-  },
-  leaveLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  statsBox: {
-    width: '100%',
-    backgroundColor: '#f3f3f3ff',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
-  },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  stat: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 7,
-    color: '#9E9E9E',
-    fontWeight: '600',
-    marginBottom: 3,
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  unitBadge: {
-    backgroundColor: '#ebebebff',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  unitText: {
-    fontSize: 9,
-    color: '#757575',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  itemDivider: {
-    width: 1,
-    height: '80%',
-    backgroundColor: '#E0E0E0',
-    marginHorizontal: 12,
-    alignSelf: 'center',
-  },
-  arrowButton: {
-    position: 'absolute',
-    top: '55%',
-    // marginTop: -20,
-    // width: 30,
-    // height: 30,
-    // borderRadius: 15,
-    // backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 2,
-    // },
-    // shadowOpacity: 0.25,
-    // shadowRadius: 3.84,
-    // elevation: 5,
-    // zIndex: 10,
-  },
-  leftArrow: {
-    left: 8,
-  },
-  rightArrow: {
-    right: 8,
-  },
-  loadingText: {
-    textAlign: 'center',
-    color: '#757575',
-    fontSize: 14,
-    marginTop: 20,
-  },
-  noDataText: {
-    textAlign: 'center',
-    color: '#9E9E9E',
-    fontSize: 14,
-    marginTop: 12,
-    fontStyle: 'italic',
-  },
-});
 
 export default LeaveEntitlementProgress;

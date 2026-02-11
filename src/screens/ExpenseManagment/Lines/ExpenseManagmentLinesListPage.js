@@ -7,7 +7,6 @@ import {
   Text,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   FlatList,
   View,
   BackHandler,
@@ -32,6 +31,7 @@ import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 import ReceiptDetailsModal from '../../../components/ExpenseManagment/ReceiptDetailsModal';
+import styles from '../../../styles/styles';
 
 const ExpenseManagmentLinesListPage = () => {
   const navigation = useNavigation();
@@ -507,10 +507,10 @@ const ExpenseManagmentLinesListPage = () => {
         headerConfig={CARD_CONFIG.headerConfig}
         fields={CARD_CONFIG.fields}
         expandableFields={CARD_CONFIG.expandableFields}
-        // DELETE THIS LINE: headerButtons={headerButtons}
-        buttons={buttonConfig} // Only need this
+        buttons={buttonConfig}
         onButtonPress={handleButtonPress}
         isExpandable={true}
+        showNavigationArrow={false}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         processingButtons={itemProcessingButtons}
       />
@@ -558,8 +558,8 @@ const ExpenseManagmentLinesListPage = () => {
 
       {!isLoading && (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
-          <View style={styles.summaryContainer}>
-            <Text style={styles.summaryText}>
+          <View style={styles.DLP_SummaryContainer}>
+            <Text style={styles.DLP_SummaryText}>
               Total Amount: {getTotalAmount()}
             </Text>
           </View>
@@ -576,7 +576,7 @@ const ExpenseManagmentLinesListPage = () => {
                   `line-${index}`
                 );
               }}
-              contentContainerStyle={styles.listContainer}
+              contentContainerStyle={styles.DLP_ListContainer}
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
@@ -589,15 +589,15 @@ const ExpenseManagmentLinesListPage = () => {
 
           {expenseLinesData.length === 0 && (
             <ScrollView
-              contentContainerStyle={styles.noDataContainer}
+              contentContainerStyle={styles.DLP_NoDataContainer}
               refreshControl={
                 <RefreshControl
                   refreshing={isLoading}
                   onRefresh={handleRefresh}
                 />
               }>
-              <Text style={styles.noDataText}>No Expense Lines</Text>
-              <Text style={styles.noDataSubText}>
+              <Text style={styles.DLP_NoDataText}>No Expense Lines</Text>
+              <Text style={styles.DLP_NoDataSubText}>
                 Tap the + button to add your first expense line
               </Text>
             </ScrollView>
@@ -636,49 +636,5 @@ const ExpenseManagmentLinesListPage = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  summaryContainer: {
-    backgroundColor: '#bfe3ffff',
-    padding: 12,
-    marginHorizontal: 10,
-    marginTop: 10,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#0A66C2',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  summaryText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0A66C2',
-    textAlign: 'center',
-  },
-  listContainer: {
-    padding: 10,
-  },
-  noDataContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  noDataText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0A66C2',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  noDataSubText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-});
 
 export default ExpenseManagmentLinesListPage;

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
@@ -22,21 +23,21 @@ import {
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {translate as t} from '../../../../store/utils/translate';
 
 import {CreateIdentityRequest} from '../../../../API/PersonalInformation/Identification/CreateIdentityRequest';
 import {UpdateIdentityRequest} from '../../../../API/PersonalInformation/Identification/UpdateIdentityRequest';
 import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/Identification/SubmitIdentificationRequest';
 import {FindIdentificationTypeRequest} from '../../../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
+import {getpersonalContactsLabels} from '../../../../API/PersonalInformation/Identification/GetIdentificationLabels';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
 import CalendarModal from '../../../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
+
 import styles from '../../../../styles/styles';
-import {getpersonalContactsLabels} from '../../../../API/PersonalInformation/Identification/GetIdentificationLabels';
 
 const IdentificationNumberSaveRecord = () => {
   const route = useRoute();
@@ -70,7 +71,9 @@ const IdentificationNumberSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState({});
+  const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
+    {},
+  );
   const createInitialFormData = () => ({
     recId:
       !identityData.recId || identityData.recId === '0'
@@ -178,84 +181,76 @@ const IdentificationNumberSaveRecord = () => {
   //     }
   //   }, [mode, identityData?.RecId, employeeId, employeeName, WorkerRecId]),
   // );
- const fetchPersonalContactsLabels = async () => {
+  const fetchPersonalContactsLabels = async () => {
     try {
       const labels = await getpersonalContactsLabels();
       return labels || {};
-      
     } catch (error) {
       console.error('Error fetching Personal Contacts labels:', error);
       return {};
     }
   };
   useFocusEffect(
-  useCallback(() => {
-    let isActive = true;
+    useCallback(() => {
+      let isActive = true;
 
-    const initializeForm = async () => {
-      setIsLoading(true);
+      const initializeForm = async () => {
+        setIsLoading(true);
 
-      try {
-        // 🔹 Fetch labels FIRST
-        const labels = await fetchPersonalContactsLabels();
-        if (!isActive) return;
-        setPersonalContactsLabelsData(labels || {});
+        try {
+          // 🔹 Fetch labels FIRST
+          const labels = await fetchPersonalContactsLabels();
+          if (!isActive) return;
+          setPersonalContactsLabelsData(labels || {});
 
-        console.log("ashan",setPersonalContactsLabelsData);
+          console.log('ashan', setPersonalContactsLabelsData);
 
-        // 🔹 Fetch Identification Types
-        const identResponse = await FindIdentificationTypeRequest();
-        if (!isActive) return;
+          // 🔹 Fetch Identification Types
+          const identResponse = await FindIdentificationTypeRequest();
+          if (!isActive) return;
 
-        if (identResponse && Array.isArray(identResponse)) {
-          setIdentTypes(
-            identResponse.map(item => ({
-              label: item.IdentificationTypeId,
-              value: item.RecId,
-            })),
-          );
+          if (identResponse && Array.isArray(identResponse)) {
+            setIdentTypes(
+              identResponse.map(item => ({
+                label: item.IdentificationTypeId,
+                value: item.RecId,
+              })),
+            );
+          }
+
+          // 🔹 CREATE MODE
+          if (mode === 'create') {
+            setFormData(createInitialFormData());
+            setAlertMessage('');
+          }
+
+          // 🔹 EDIT MODE
+          else if (mode === 'edit' && identityData?.recId) {
+            setFormData({
+              ...createInitialFormData(),
+              ...identityData,
+              employeeId: identityData.employeeId || employeeId,
+              employeeName: identityData.employeeName || employeeName,
+              WorkerRecId: identityData.WorkerRecId || WorkerRecId,
+            });
+          }
+        } catch (error) {
+          console.error('Error initializing Identification form:', error);
+          setAlertMessage('Failed to load identification screen');
+          setAlertModal(true);
+        } finally {
+          if (isActive) setIsLoading(false);
         }
+      };
 
-        // 🔹 CREATE MODE
-        if (mode === 'create') {
-          setFormData(createInitialFormData());
-          setAlertMessage('');
-        }
+      initializeForm();
 
-        // 🔹 EDIT MODE
-        else if (mode === 'edit' && identityData?.recId) {
-          setFormData({
-            ...createInitialFormData(),
-            ...identityData,
-            employeeId: identityData.employeeId || employeeId,
-            employeeName: identityData.employeeName || employeeName,
-            WorkerRecId: identityData.WorkerRecId || WorkerRecId,
-          });
-        }
-      } catch (error) {
-        console.error('Error initializing Identification form:', error);
-        setAlertMessage('Failed to load identification screen');
-        setAlertModal(true);
-      } finally {
-        if (isActive) setIsLoading(false);
-      }
-    };
-
-    initializeForm();
-
-    // ✅ Proper cleanup (VERY IMPORTANT)
-    return () => {
-      isActive = false;
-    };
-  }, [
-    mode,
-    identityData?.recId,
-    employeeId,
-    employeeName,
-    WorkerRecId,
-  ]),
-);
-
+      // ✅ Proper cleanup (VERY IMPORTANT)
+      return () => {
+        isActive = false;
+      };
+    }, [mode, identityData?.recId, employeeId, employeeName, WorkerRecId]),
+  );
 
   const handleRefresh = async () => {
     setIsLoading(true);
@@ -317,7 +312,6 @@ const IdentificationNumberSaveRecord = () => {
       }));
   };
 
-
   const validateFields = () => {
     const missing = [];
     if (!formData.employeeId) missing.push('Employee Id');
@@ -332,7 +326,6 @@ const IdentificationNumberSaveRecord = () => {
     }
     return true;
   };
-   
 
   // 🔧 Centralized Save/Update/Submit logic
   const handleAction = async (actionType, modalMode, data) => {
@@ -443,15 +436,16 @@ const IdentificationNumberSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}>
+            style={styles.DSR_ContentWrapper}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
             {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
                   <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
+                  <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
                 </View>
@@ -459,32 +453,31 @@ const IdentificationNumberSaveRecord = () => {
             )}
             <ScrollView
               ref={scrollViewRef}
-              contentContainerStyle={styles.LReqSR_FormContainer}
-              showsVerticalScrollIndicator={false}>
-               
-           <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                     {PersonalContactsLabelData?.employeeNamelbl || 'Employee Name'}
-                   </Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              contentContainerStyle={styles.DSR_FormContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled">
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.employeeNamelbl || 'Employee Name'}
+              </Text>
+              <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
                 {formData.employeeName}
               </Text>
 
-              
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.IdentificationTypelbl || 'Request Date'}
-                              </Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                Request Date
+              </Text>
+              <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
                 {formatDate(today)}
               </Text>
 
-             
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                        {PersonalContactsLabelData?.IdentificationTypelbl || 'Identification Type *'}
-                        </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IdentificationTypelbl ||
+                  'Identification Type *'}
+              </Text>
               <Dropdown
                 style={[
-                  styles.LReqSR_Input,
-                  isEditRecordESS && styles.LReqSR_Disabled,
+                  styles.DSR_Input,
+                  isEditRecordESS && styles.DSR_Disabled,
                 ]}
                 data={identTypes}
                 labelField="label"
@@ -499,30 +492,35 @@ const IdentificationNumberSaveRecord = () => {
                     IdentificationTypeDescription: item.label,
                   }))
                 }
-                placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                placeholderTextColor="#888"
-                selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                itemTextStyle={styles.LReqSR_DropdownItemText}
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={[
+                  styles.DSR_DropdownContainer,
+                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
+                ]}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
+                maxHeight={280}
               />
 
-             
-                <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.IdentificationNumberlbl || 'Account Identification'}
-                              </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IdentificationNumberlbl ||
+                  'Identification Number *'}
+              </Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.IdentificationNumber}
                 onChangeText={v => handleInputChange('IdentificationNumber', v)}
                 placeholder="Enter Identification Number"
                 placeholderTextColor="#888"
               />
 
-            
-              <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.Descriptionlbl || 'Description'}
-                              </Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.Descriptionlbl || 'Description'}
+              </Text>
               <TextInput
-                style={[styles.LReqSR_Input, styles.LReqSR_TextArea]}
+                style={[styles.DSR_Input, styles.DSR_TextArea]}
                 value={formData.Description}
                 onChangeText={v => handleInputChange('Description', v)}
                 placeholder="Enter Description"
@@ -530,53 +528,17 @@ const IdentificationNumberSaveRecord = () => {
                 multiline
               />
 
-              {/* <Text style={styles.LReqSR_Label}>Issuing Agency</Text>
-              <TextInput
-                style={styles.LReqSR_Input}
-                value={formData.IssuingAgency}
-                onChangeText={v => handleInputChange('IssuingAgency', v)}
-                placeholder="Enter Issuing Agency"
-              /> */}
-
-              {/* <Text style={styles.LReqSR_Label}>Issue Date</Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date *'}
+              </Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
-                onPress={() => setShowIssuePicker(true)}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
-                    {formData.IssueDate
-                      ? formatDate(formData.IssueDate)
-                      : 'Select Issue Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-              {showIssuePicker && (
-                <DateTimePicker
-                  value={
-                    formData.IssueDate
-                      ? new Date(formData.IssueDate)
-                      : new Date()
-                  }
-                  mode="date"
-                  display="default"
-                  onChange={onIssueDateSelected}
-                  placeholderTextColor="#888"
-                />
-              )} */}
-
-             
-               <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date *'}
-                              </Text>
-              <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={styles.DSR_DateSelector}
                 onPress={() => {
                   setCalendarField('IssueDate');
                   setShowCalendar(true);
                 }}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text style={styles.DSR_DateText}>
                     {formData.IssueDate
                       ? formatDate(formData.IssueDate)
                       : 'Select Issue Date'}
@@ -585,45 +547,18 @@ const IdentificationNumberSaveRecord = () => {
                 <Icon name="calendar" size={20} color="#0A66C2" />
               </TouchableOpacity>
 
-              {/* <Text style={styles.LReqSR_Label}>Expiration Date</Text>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                {PersonalContactsLabelData?.ExpirationDatelbl ||
+                  'Expiration Date *'}
+              </Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
-                onPress={() => setShowExpirationPicker(true)}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
-                    {formData.ExpirationDate
-                      ? formatDate(formData.ExpirationDate)
-                      : 'Select Expiration Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-              {showExpirationPicker && (
-                <DateTimePicker
-                  value={
-                    formData.ExpirationDate
-                      ? new Date(formData.ExpirationDate)
-                      : new Date()
-                  }
-                  mode="date"
-                  display="default"
-                  onChange={onExpirationDateSelected}
-                  placeholderTextColor="#888"
-                />
-              )} */}
-
-             
-                 <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
-                              {PersonalContactsLabelData?.ExpirationDatelbl || 'Expiration Date *'}
-                              </Text>
-              <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={styles.DSR_DateSelector}
                 onPress={() => {
                   setCalendarField('ExpirationDate');
                   setShowCalendar(true);
                 }}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text style={styles.DSR_DateText}>
                     {formData.ExpirationDate
                       ? formatDate(formData.ExpirationDate)
                       : 'Select Expiration Date'}
@@ -650,6 +585,7 @@ const IdentificationNumberSaveRecord = () => {
             text={alertMessage}
             onPress={() => setAlertModal(false)}
           />
+
           <CalendarModal
             visible={showCalendar}
             current={formData[calendarField]}

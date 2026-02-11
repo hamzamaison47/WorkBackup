@@ -1,7 +1,6 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useCallback} from 'react';
 import {
   Text,
@@ -10,6 +9,7 @@ import {
   RefreshControl,
   ScrollView,
   I18nManager,
+  View,
 } from 'react-native';
 import {
   useNavigation,
@@ -549,7 +549,6 @@ const LeaveRequestListPage = () => {
 
   return (
     <ActionPaneContainer
-      // pageTitle="Leave Requests"
       pageTitle={getPageLabel()}
       isBackButton={false}
       showFooter={true}
@@ -558,9 +557,10 @@ const LeaveRequestListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}>
-      {/* Main content */}
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : leavesData.length > 0 ? (
         <FlatList
           data={leavesData}
@@ -568,7 +568,7 @@ const LeaveRequestListPage = () => {
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.LReqLP_ListContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -576,12 +576,15 @@ const LeaveRequestListPage = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>
+          <Text style={styles.DLP_NoDataText}>
             {t('leaveRequest.noDataFound')}
+          </Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            Tap the + button to create your first leave request
           </Text>
         </ScrollView>
       )}

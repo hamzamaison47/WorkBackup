@@ -19,15 +19,21 @@ const SaveRecordButtons = ({
   showButtons = [BUTTON_TYPES.CREATE, BUTTON_TYPES.SUBMIT, BUTTON_TYPES.CANCEL],
 }) => {
   const handleCreatePress = () => {
-    onSave?.('create');
+    if (!isDisabled && processingButton === '') {
+      onSave?.('create');
+    }
   };
 
   const handleSubmitPress = () => {
-    onSave?.('submit');
+    if (!isDisabled && processingButton === '') {
+      onSave?.('submit');
+    }
   };
 
   const handleCancelPress = () => {
-    onCancel?.();
+    if (!isDisabled && processingButton === '') {
+      onCancel?.();
+    }
   };
 
   const getButtonFlex = () => {
@@ -46,19 +52,31 @@ const SaveRecordButtons = ({
       return 'Processing...';
     }
 
-    if (buttonType === 'CREATE') {
-      return mode === 'edit' ? 'Update' : 'Create';
+    switch (buttonType) {
+      case 'CREATE':
+        return mode === 'edit' ? 'Update' : 'Create';
+      case 'SUBMIT':
+        return mode === 'edit' ? 'Update & Submit' : 'Create & Submit';
+      case 'CANCEL':
+        return 'Cancel';
+      default:
+        return '';
     }
+  };
 
-    if (buttonType === 'SUBMIT') {
-      return mode === 'edit' ? 'Update & Submit' : 'Create & Submit';
-    }
+  // Check if specific button is processing
+  const isButtonProcessing = buttonType => {
+    if (buttonType === 'CREATE') return processingButton === 'create';
+    if (buttonType === 'SUBMIT') return processingButton === 'submit';
+    return false;
+  };
 
-    if (buttonType === 'CANCEL') {
-      return 'Cancel';
-    }
-
-    return '';
+  // Check if button should be disabled
+  const isButtonDisabled = buttonType => {
+    if (isDisabled) return true;
+    if (processingButton === '') return false;
+    // Disable all buttons when any button is processing
+    return true;
   };
 
   return (
@@ -73,23 +91,24 @@ const SaveRecordButtons = ({
           style={({pressed}) => [
             styles.SRBtn_Button,
             {flex: buttonFlex},
-            pressed && styles.SRBtn_PressedButton,
-            isDisabled && styles.SRBtn_DisabledButton,
+            pressed &&
+              !isButtonDisabled('CREATE') &&
+              styles.SRBtn_PressedButton,
+            isButtonDisabled('CREATE') && styles.SRBtn_DisabledButton,
             isSingleButton && styles.SRBtn_SingleButton,
           ]}
           onPress={handleCreatePress}
-          disabled={isDisabled}>
+          disabled={isButtonDisabled('CREATE')}>
           {({pressed}) => (
             <Text
               style={[
                 styles.SRBtn_ButtonText,
-                pressed && styles.SRBtn_pressedText,
+                pressed &&
+                  !isButtonDisabled('CREATE') &&
+                  styles.SRBtn_pressedText,
                 isSingleButton && styles.SRBtn_SingleButtonText,
               ]}>
-              {getButtonText(
-                BUTTON_TYPES.CREATE,
-                processingButton === 'create',
-              )}
+              {getButtonText(BUTTON_TYPES.CREATE, isButtonProcessing('CREATE'))}
             </Text>
           )}
         </Pressable>
@@ -102,23 +121,21 @@ const SaveRecordButtons = ({
             styles.SRBtn_Button,
             styles.SRBtn_SubmitButton,
             {flex: buttonFlex},
-            pressed && styles.SRBtn_pressedSubmitButton,
-            isDisabled && styles.SRBtn_DisabledButton,
+            pressed &&
+              !isButtonDisabled('SUBMIT') &&
+              styles.SRBtn_pressedSubmitButton,
+            isButtonDisabled('SUBMIT') && styles.SRBtn_DisabledButton,
             isSingleButton && styles.SRBtn_SingleButton,
           ]}
           onPress={handleSubmitPress}
-          disabled={isDisabled}>
+          disabled={isButtonDisabled('SUBMIT')}>
           {({pressed}) => (
             <Text
               style={[
                 styles.SRBtn_SubmitButtonText,
-                pressed && styles.SRBtn_pressedText,
                 isSingleButton && styles.SRBtn_SingleButtonText,
               ]}>
-              {getButtonText(
-                BUTTON_TYPES.SUBMIT,
-                processingButton === 'submit',
-              )}
+              {getButtonText(BUTTON_TYPES.SUBMIT, isButtonProcessing('SUBMIT'))}
             </Text>
           )}
         </Pressable>
@@ -131,17 +148,21 @@ const SaveRecordButtons = ({
             styles.SRBtn_Button,
             styles.SRBtn_CancelButton,
             {flex: buttonFlex},
-            pressed && styles.SRBtn_pressedCancelButton,
-            isDisabled && styles.SRBtn_DisabledButton,
+            pressed &&
+              !isButtonDisabled('CANCEL') &&
+              styles.SRBtn_pressedCancelButton,
+            isButtonDisabled('CANCEL') && styles.SRBtn_DisabledButton,
             isSingleButton && styles.SRBtn_SingleButton,
           ]}
           onPress={handleCancelPress}
-          disabled={isDisabled}>
+          disabled={isButtonDisabled('CANCEL')}>
           {({pressed}) => (
             <Text
               style={[
                 styles.SRBtn_CancelButtonText,
-                pressed && styles.SRBtn_pressedCancelText,
+                pressed &&
+                  !isButtonDisabled('CANCEL') &&
+                  styles.SRBtn_pressedCancelText,
                 isSingleButton && styles.SRBtn_SingleButtonText,
               ]}>
               {getButtonText(BUTTON_TYPES.CANCEL, false)}

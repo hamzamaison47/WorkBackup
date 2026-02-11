@@ -47,15 +47,14 @@ export const getAzureAIConfig = async () => {
       throw new Error('Azure API Key is missing in environment variables');
     }
 
-    console.log('✅ Azure AI Config loaded from environment:', {
+    // SECURE: Only log non-sensitive info
+    console.log('✅ Azure AI Config loaded:', {
       endpoint: config.endpoint,
       deployment: config.deployment,
       apiVersion: config.apiVersion,
+      apiKeyPresent: !!config.apiKey,
       apiKeyLength: config.apiKey.length,
-      apiKeyPreview: `${config.apiKey.substring(
-        0,
-        8,
-      )}...${config.apiKey.substring(config.apiKey.length - 4)}`,
+      // NEVER log partial keys in production
     });
 
     return config;
@@ -64,6 +63,41 @@ export const getAzureAIConfig = async () => {
     throw error;
   }
 };
+/**
+ * Get Azure AI configuration from environment variables
+ */
+// export const getAzureAIConfig = async () => {
+//   try {
+//     // Always use environment variables directly
+//     const config = {
+//       endpoint: AZURE_ENDPOINT,
+//       apiKey: AZURE_API_KEY,
+//       deployment: AZURE_DEPLOYMENT,
+//       apiVersion: AZURE_API_VERSION,
+//     };
+
+//     // Validate config
+//     if (!config.apiKey || config.apiKey.trim() === '') {
+//       throw new Error('Azure API Key is missing in environment variables');
+//     }
+
+//     console.log('✅ Azure AI Config loaded from environment:', {
+//       endpoint: config.endpoint,
+//       deployment: config.deployment,
+//       apiVersion: config.apiVersion,
+//       apiKeyLength: config.apiKey.length,
+//       apiKeyPreview: `${config.apiKey.substring(
+//         0,
+//         8,
+//       )}...${config.apiKey.substring(config.apiKey.length - 4)}`,
+//     });
+
+//     return config;
+//   } catch (error) {
+//     console.error('❌ Failed to get Azure AI config:', error.message);
+//     throw error;
+//   }
+// };
 
 /**
  * Store configuration in encrypted storage (optional backup)

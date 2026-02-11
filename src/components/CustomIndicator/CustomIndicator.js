@@ -1,7 +1,8 @@
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useRef} from 'react';
-import {View, Animated, Dimensions, StyleSheet} from 'react-native';
+import {View, Animated, Dimensions} from 'react-native';
+import styles from '../../styles/styles';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
@@ -93,8 +94,12 @@ const CustomIndicator = ({
   }, [dotCount, animationDuration]);
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.innerContainer, {height: containerHeight}]}>
+    <View style={styles.CustomIndicator_container}>
+      <View
+        style={[
+          styles.CustomIndicator_innerContainer,
+          {height: containerHeight},
+        ]}>
         {animationsRef.current.map((anim, index) => (
           <Animated.View
             key={`dot-${index}`}
@@ -113,18 +118,5 @@ const CustomIndicator = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  innerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default CustomIndicator;

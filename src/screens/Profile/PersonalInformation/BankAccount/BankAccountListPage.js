@@ -1,8 +1,7 @@
-/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl} from 'react-native';
+import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -197,21 +196,49 @@ const BankAccountListPage = () => {
   // Card Configuration
   const cardConfig = {
     headerConfig: {
-      title: {key:  'AccountId'},
+      title: {key: 'AccountId'},
     },
 
     fields: [
-      {key: 'Name', label:banksaccountdata[0]?.Namelbl ||  'Account Name', type: 'text'},
-      {key: 'AccountNum', label:banksaccountdata[0]?.AccountNumlbl || 'Account Number', type: 'text'},
-      {key: 'AccountHolder', label:banksaccountdata[0]?.AccountHolderlbl || 'Account Holder', type: 'text'},
+      {
+        key: 'Name',
+        label: banksaccountdata[0]?.Namelbl || 'Account Name',
+        type: 'text',
+      },
+      {
+        key: 'AccountNum',
+        label: banksaccountdata[0]?.AccountNumlbl || 'Account Number',
+        type: 'text',
+      },
+      {
+        key: 'AccountHolder',
+        label: banksaccountdata[0]?.AccountHolderlbl || 'Account Holder',
+        type: 'text',
+      },
       {key: 'WFStatus', label: '', type: 'status'},
     ],
 
     expandableFields: [
-      {key: 'AccountId', label:banksaccountdata[0]?.AccountIdlbl || 'Account Id',  type: 'text'},
-      {key: 'BankIBAN', label:banksaccountdata[0]?.BankIBANlbl || 'IBAN', type: 'text'},
-      {key: 'BranchNumber', label:banksaccountdata[0]?.BranchNumberlbl||'Branch Number', type: 'text'},
-      {key: 'BranchName', label:banksaccountdata[0]?.BranchNamelbl|| 'Branch Name', type: 'text'},
+      {
+        key: 'AccountId',
+        label: banksaccountdata[0]?.AccountIdlbl || 'Account Id',
+        type: 'text',
+      },
+      {
+        key: 'BankIBAN',
+        label: banksaccountdata[0]?.BankIBANlbl || 'IBAN',
+        type: 'text',
+      },
+      {
+        key: 'BranchNumber',
+        label: banksaccountdata[0]?.BranchNumberlbl || 'Branch Number',
+        type: 'text',
+      },
+      {
+        key: 'BranchName',
+        label: banksaccountdata[0]?.BranchNamelbl || 'Branch Name',
+        type: 'text',
+      },
       // {key: 'CreatedBy', label: 'Created By', type: 'text'},
     ],
   };
@@ -434,7 +461,9 @@ const BankAccountListPage = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleBankAccountRecordCreation}>
       {isLoading ? (
-        <CustomIndicator />
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
       ) : banksaccountdata.length > 0 ? (
         <FlatList
           data={banksaccountdata}
@@ -442,7 +471,7 @@ const BankAccountListPage = () => {
           keyExtractor={(item, index) =>
             item.recId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.LReqLP_ListContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -450,11 +479,14 @@ const BankAccountListPage = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            Tap the + button to create your first bank account
+          </Text>
         </ScrollView>
       )}
 

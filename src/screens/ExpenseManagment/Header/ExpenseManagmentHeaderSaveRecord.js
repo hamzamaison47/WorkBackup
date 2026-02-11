@@ -503,16 +503,16 @@ const ExpenseManagementHeaderSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
-          <SafeAreaView style={styles.LReqSR_SafeArea}>
+          <SafeAreaView style={styles.DSR_SafeArea}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.LReqSR_ContentWrapper}
+              style={styles.DSR_ContentWrapper}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
               {isProcessing && (
-                <View style={styles.LReqSR_ProcessingOverlay}>
-                  <View style={styles.LReqSR_ProcessingContainer}>
+                <View style={styles.DSR_ProcessingOverlay}>
+                  <View style={styles.DSR_ProcessingContainer}>
                     <ActivityIndicator size="large" color="#0A66C2" />
-                    <Text style={styles.LReqSR_ProcessingText}>
+                    <Text style={styles.DSR_ProcessingText}>
                       {t('common.processing')}
                     </Text>
                   </View>
@@ -520,13 +520,13 @@ const ExpenseManagementHeaderSaveRecord = () => {
               )}
               <ScrollView
                 ref={scrollViewRef}
-                contentContainerStyle={styles.LReqSR_FormContainer}
+                contentContainerStyle={styles.DSR_FormContainer}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled={true}>
-                <Text style={styles.LReqSR_Label}>Location</Text>
+                <Text style={styles.DSR_Label}>Location</Text>
                 <Dropdown
-                  style={styles.LReqSR_Input}
+                  style={styles.DSR_Input}
                   data={locationOptions}
                   labelField="label"
                   valueField="value"
@@ -534,30 +534,30 @@ const ExpenseManagementHeaderSaveRecord = () => {
                   value={formData.location}
                   onFocus={handleLocationDropdownFocus}
                   onChange={handleLocationChange}
-                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
                   activeColor="#E6F0FF"
                   containerStyle={[
-                    styles.LReqSR_DropdownContainer,
+                    styles.DSR_DropdownContainer,
                     {
                       marginTop: Platform.OS === 'ios' ? 5 : 2,
                       zIndex: 1000,
                     },
                   ]}
-                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
                   dropdownPosition="auto"
                   search
                   searchPlaceholder="Search Location"
-                  inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                  iconStyle={styles.LReqSR_DropdownIcon}
+                  inputSearchStyle={styles.DSR_DropdownSearchInput}
+                  iconStyle={styles.DSR_DropdownIcon}
                   keyboardAvoiding={true}
                 />
 
-                <Text style={styles.LReqSR_Label}>Purpose</Text>
+                <Text style={styles.DSR_Label}>Purpose</Text>
                 <Dropdown
-                  style={styles.LReqSR_Input}
+                  style={styles.DSR_Input}
                   data={purposeOptions}
                   labelField="label"
                   valueField="value"
@@ -565,24 +565,24 @@ const ExpenseManagementHeaderSaveRecord = () => {
                   value={formData.purpose}
                   onFocus={handlePurposeDropdownFocus}
                   onChange={handlePurposeChange}
-                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
                   activeColor="#E6F0FF"
                   containerStyle={[
-                    styles.LReqSR_DropdownContainer,
+                    styles.DSR_DropdownContainer,
                     {
                       marginTop: Platform.OS === 'ios' ? 5 : 2,
                       zIndex: 999,
                     },
                   ]}
-                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
                   dropdownPosition="auto"
                   search
                   searchPlaceholder="Search Purpose"
-                  inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                  iconStyle={styles.LReqSR_DropdownIcon}
+                  inputSearchStyle={styles.DSR_DropdownSearchInput}
+                  iconStyle={styles.DSR_DropdownIcon}
                   keyboardAvoiding={true}
                 />
               </ScrollView>

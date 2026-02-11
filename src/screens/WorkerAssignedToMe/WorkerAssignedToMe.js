@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
@@ -9,9 +8,6 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  StyleSheet,
-  useWindowDimensions,
-  Dimensions,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
@@ -24,40 +20,12 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
 
-// Get initial screen dimensions
-const {width: initialScreenWidth} = Dimensions.get('window');
-
-// Enhanced responsive utility functions
-const getResponsiveSize = (baseSize, screenWidth) => {
-  const scale = screenWidth / 375; // Base width (iPhone X)
-  const newSize = baseSize * scale;
-  return Math.max(Math.min(newSize, baseSize * 1.2), baseSize * 0.7); // Tighter bounds
-};
-
-const getResponsivePadding = (basePadding, screenWidth) => {
-  const scale = screenWidth / 375;
-  return basePadding * Math.max(Math.min(scale, 1.2), 0.7);
-};
-
-const getResponsiveFontSize = (baseFontSize, screenWidth) => {
-  const scale = screenWidth / 375;
-  const newSize = baseFontSize * scale;
-  return Math.max(Math.min(newSize, baseFontSize * 1.2), baseFontSize * 0.75);
-};
-
-const getResponsiveCardWidth = screenWidth => {
-  const baseWidth = 370;
-  const padding = getResponsivePadding(32, screenWidth);
-  const availableWidth = screenWidth - padding;
-  return Math.min(baseWidth, availableWidth);
-};
+import styles from '../../styles/styles';
+import {iconSize} from '../../store/utils/scaling';
 
 // ---------------- Employee Node ----------------
-const EmployeeNode = ({employee, onPress, screenWidth}) => {
+const EmployeeNode = ({employee, onPress}) => {
   const [profilePictureUrl, setProfilePictureUrl] = useState(null);
-
-  // Use fixed breakpoints instead of screen size detection for layout
-  const shouldUseCompactLayout = screenWidth < 400;
 
   useEffect(() => {
     fetchProfilePicture(employee.id);
@@ -86,113 +54,41 @@ const EmployeeNode = ({employee, onPress, screenWidth}) => {
     }
   };
 
-  const getEmployeeStyles = () => ({
-    employeeContainer: {
-      marginRight: getResponsivePadding(16, screenWidth),
-      marginVertical: getResponsivePadding(6, screenWidth),
-      position: 'relative',
-      paddingLeft: getResponsivePadding(16, screenWidth),
-    },
-    horizontalConnector: {
-      position: 'absolute',
-      left: getResponsiveSize(25, screenWidth),
-      top: '50%',
-      width: getResponsivePadding(16, screenWidth),
-      height: 2,
-      backgroundColor: '#0A66C2',
-    },
-    employeeCard: {
-      flexDirection: 'row', // Always row layout
-      alignItems: 'center',
-      backgroundColor: '#FFFFFF',
-      paddingVertical: getResponsivePadding(10, screenWidth),
-      paddingHorizontal: getResponsivePadding(12, screenWidth),
-      borderRadius: getResponsiveSize(8, screenWidth),
-      borderWidth: 1,
-      borderColor: '#E5E7EB',
-      marginLeft: getResponsivePadding(16, screenWidth),
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 1},
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
-      minHeight: getResponsiveSize(60, screenWidth),
-    },
-    employeeAvatar: {
-      width: getResponsiveSize(40, screenWidth),
-      height: getResponsiveSize(40, screenWidth),
-      borderRadius: getResponsiveSize(20, screenWidth),
-      marginRight: getResponsivePadding(10, screenWidth),
-      borderWidth: 2,
-      borderColor: '#E5E7EB',
-    },
-    employeeInfo: {
-      flex: 1,
-      alignItems: 'flex-start', // Always left aligned
-    },
-    employeeName: {
-      fontSize: getResponsiveFontSize(14, screenWidth),
-      fontWeight: '600',
-      color: '#111827',
-      textAlign: 'left', // Always left aligned
-    },
-    employeeRole: {
-      fontSize: getResponsiveFontSize(12, screenWidth),
-      color: '#6B7280',
-      marginTop: 2,
-      textAlign: 'left', // Always left aligned
-    },
-    chevronIcon: {
-      marginLeft: getResponsivePadding(8, screenWidth),
-    },
-  });
-
-  const employeeStyles = getEmployeeStyles();
-
   return (
-    <View style={employeeStyles.employeeContainer}>
-      <View style={employeeStyles.horizontalConnector} />
+    <View style={styles.WorkerATM_EmployeeContainer}>
+      <View style={styles.WorkerATM_HorizontalConnector} />
       <TouchableOpacity
-        activeOpacity={0.7}
-        style={employeeStyles.employeeCard}
+        activeOpacity={0.9}
+        style={styles.WorkerATM_EmployeeCard}
         onPress={onPress}>
         {profilePictureUrl ? (
           <Image
             source={{uri: profilePictureUrl}}
-            style={employeeStyles.employeeAvatar}
+            style={styles.WorkerATM_EmployeeAvatar}
           />
         ) : (
           <View
             style={[
-              employeeStyles.employeeAvatar,
-              {
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#E5E7EB',
-              },
+              styles.WorkerATM_EmployeeAvatar,
+              styles.WorkerATM_EmployeeAvatarPlaceholder,
             ]}>
-            <Text
-              style={{
-                fontSize: getResponsiveFontSize(14, screenWidth),
-                fontWeight: '600',
-                color: '#374151',
-              }}>
+            <Text style={styles.WorkerATM_EmployeeInitials}>
               {getInitials(employee?.name)}
             </Text>
           </View>
         )}
-        <View style={employeeStyles.employeeInfo}>
-          <Text style={employeeStyles.employeeName} numberOfLines={1}>
+        <View style={styles.WorkerATM_EmployeeInfo}>
+          <Text style={styles.WorkerATM_EmployeeName} numberOfLines={1}>
             {employee.name}
           </Text>
-          <Text style={employeeStyles.employeeRole} numberOfLines={1}>
+          <Text style={styles.WorkerATM_EmployeeRole} numberOfLines={1}>
             {employee.role}
           </Text>
         </View>
-        <View style={employeeStyles.chevronIcon}>
+        <View style={styles.WorkerATM_ChevronIcon}>
           <FontAwesome
             name="chevron-right"
-            size={getResponsiveSize(12, screenWidth)}
+            size={iconSize.xs}
             color="#9CA3AF"
           />
         </View>
@@ -206,7 +102,6 @@ const RootUser = ({
   employee,
   profilePictureUrl,
   isRootEmployee,
-  screenWidth,
   isSelected = false,
   isShrunk = false,
   showConnector = false,
@@ -214,7 +109,6 @@ const RootUser = ({
 }) => {
   const navigation = useNavigation();
 
-  // Use fixed layout regardless of screen size
   const getInitials = name => {
     if (!name) return 'UN';
     return name
@@ -234,217 +128,102 @@ const RootUser = ({
     });
   };
 
-  const getRootStyles = () => {
-    // Current selected user (largest) vs upper users (shrunk)
-    const avatarSize = isShrunk
-      ? getResponsiveSize(50, screenWidth) // Shrunk size for upper users
-      : getResponsiveSize(70, screenWidth); // Full size for current selected
-
-    const nameFontSize = isShrunk
-      ? getResponsiveFontSize(13, screenWidth)
-      : getResponsiveFontSize(16, screenWidth);
-
-    const roleFontSize = isShrunk
-      ? getResponsiveFontSize(11, screenWidth)
-      : getResponsiveFontSize(13, screenWidth);
-
-    const metaFontSize = isShrunk
-      ? getResponsiveFontSize(10, screenWidth)
-      : getResponsiveFontSize(11, screenWidth);
-
-    const paddingVertical = isShrunk
-      ? getResponsivePadding(8, screenWidth)
-      : getResponsivePadding(12, screenWidth);
-
-    const cardWidth = isShrunk
-      ? getResponsiveCardWidth(screenWidth) * 0.9
-      : getResponsiveCardWidth(screenWidth);
-
-    return {
-      rootContainer: {
-        alignItems: 'center',
-        paddingHorizontal: getResponsivePadding(12, screenWidth),
-        position: 'relative',
-      },
-      rootCardRow: {
-        flexDirection: 'row', // Always row layout
-        alignItems: 'center',
-        backgroundColor: isShrunk ? '#F0F7FF' : '#F8FAFC',
-        borderRadius: getResponsiveSize(10, screenWidth),
-        padding: paddingVertical,
-        borderWidth: 2,
-        borderColor: '#0A66C2',
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: isShrunk ? 1 : 2},
-        shadowOpacity: isShrunk ? 0.06 : 0.1,
-        shadowRadius: isShrunk ? 2 : 4,
-        elevation: isShrunk ? 1 : 3,
-        width: cardWidth,
-        maxWidth: '100%',
-        marginTop: getResponsivePadding(6, screenWidth),
-        transform: isShrunk ? [{scale: 0.85}] : [{scale: 1}],
-      },
-      rootAvatarLarge: {
-        width: avatarSize,
-        height: avatarSize,
-        borderRadius: avatarSize / 2,
-        borderWidth: isShrunk
-          ? getResponsiveSize(2, screenWidth)
-          : getResponsiveSize(3, screenWidth),
-        borderColor: '#0A66C2',
-        marginRight: getResponsivePadding(12, screenWidth),
-      },
-      rootInfo: {
-        flex: 1,
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-      },
-      rootInfoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: getResponsivePadding(2, screenWidth),
-        flexWrap: 'wrap',
-        justifyContent: 'flex-start',
-      },
-      rootName: {
-        fontSize: nameFontSize,
-        fontWeight: '700',
-        color: '#111827',
-        marginRight: getResponsivePadding(8, screenWidth),
-        flexShrink: 1,
-        textAlign: 'left',
-      },
-      rootRole: {
-        fontSize: roleFontSize,
-        color: '#0A66C2',
-        fontWeight: '600',
-        flexShrink: 1,
-        textAlign: 'left',
-      },
-      rootMeta: {
-        fontSize: metaFontSize,
-        color: '#374151',
-        marginRight: getResponsivePadding(8, screenWidth),
-        flexShrink: 1,
-        textAlign: 'left',
-        lineHeight: getResponsiveFontSize(13, screenWidth),
-      },
-      buttonRow: {
-        flexDirection: 'row',
-        marginTop: getResponsivePadding(6, screenWidth),
-        justifyContent: 'flex-start',
-      },
-      actionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#0A66C2',
-        paddingVertical: getResponsivePadding(6, screenWidth),
-        paddingHorizontal: getResponsivePadding(10, screenWidth),
-        borderRadius: getResponsiveSize(14, screenWidth),
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: 1},
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 1,
-        marginRight: getResponsivePadding(6, screenWidth),
-      },
-      actionButtonText: {
-        color: '#fff',
-        fontSize: getResponsiveFontSize(11, screenWidth),
-        fontWeight: '600',
-        marginLeft: getResponsivePadding(4, screenWidth),
-      },
-      // Bottom connector for shrunk users
-      bottomConnector: {
-        position: 'absolute',
-        bottom: -getResponsivePadding(22, screenWidth),
-        alignSelf: 'center',
-        width: 2,
-        height: getResponsivePadding(28, screenWidth),
-        backgroundColor: showConnector ? '#0A66C2' : 'transparent',
-        zIndex: 1,
-      },
-    };
-  };
-
-  const rootStyles = getRootStyles();
-
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      style={rootStyles.rootContainer}
+      style={styles.WorkerATM_RootContainer}
       onPress={onPress}
       disabled={!onPress}>
-      <View style={rootStyles.rootCardRow}>
+      <View
+        style={[
+          styles.WorkerATM_RootCard,
+          isShrunk && styles.WorkerATM_RootCardShrunk,
+        ]}>
         {profilePictureUrl ? (
           <Image
             source={{uri: profilePictureUrl}}
-            style={rootStyles.rootAvatarLarge}
+            style={[
+              styles.WorkerATM_RootAvatar,
+              isShrunk && styles.WorkerATM_RootAvatarShrunk,
+            ]}
           />
         ) : (
           <View
             style={[
-              rootStyles.rootAvatarLarge,
-              {
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: '#E5E7EB',
-              },
+              styles.WorkerATM_RootAvatar,
+              isShrunk && styles.WorkerATM_RootAvatarShrunk,
+              styles.WorkerATM_RootAvatarPlaceholder,
             ]}>
             <Text
-              style={{
-                fontSize: getResponsiveFontSize(
-                  isShrunk ? 14 : 18,
-                  screenWidth,
-                ),
-                fontWeight: '700',
-                color: '#374151',
-              }}>
+              style={[
+                styles.WorkerATM_RootInitials,
+                isShrunk && styles.WorkerATM_RootInitialsShrunk,
+              ]}>
               {getInitials(employee?.employeeName || employee?.name)}
             </Text>
           </View>
         )}
-        <View style={rootStyles.rootInfo}>
-          <View style={rootStyles.rootInfoRow}>
-            <Text style={rootStyles.rootName} numberOfLines={1}>
+        <View style={styles.WorkerATM_RootInfo}>
+          <View style={styles.WorkerATM_RootInfoRow}>
+            <Text
+              style={[
+                styles.WorkerATM_RootName,
+                isShrunk && styles.WorkerATM_RootNameShrunk,
+              ]}
+              numberOfLines={1}>
               {employee?.employeeName || employee?.name || 'No name'}
             </Text>
-            <Text style={rootStyles.rootRole} numberOfLines={1}>
+            <Text
+              style={[
+                styles.WorkerATM_RootRole,
+                isShrunk && styles.WorkerATM_RootRoleShrunk,
+              ]}
+              numberOfLines={1}>
               {employee?.employeeId || employee?.id || '—'}
             </Text>
           </View>
-          <View style={rootStyles.rootInfoRow}>
-            <Text style={rootStyles.rootMeta} numberOfLines={1}>
+          <View style={styles.WorkerATM_RootInfoRow}>
+            <Text
+              style={[
+                styles.WorkerATM_RootMeta,
+                isShrunk && styles.WorkerATM_RootMetaShrunk,
+              ]}
+              numberOfLines={1}>
               Department: {employee?.department || employee?.department || '—'}
             </Text>
           </View>
-          <View style={rootStyles.rootInfoRow}>
-            <Text style={rootStyles.rootMeta} numberOfLines={1}>
+          <View style={styles.WorkerATM_RootInfoRow}>
+            <Text
+              style={[
+                styles.WorkerATM_RootMeta,
+                isShrunk && styles.WorkerATM_RootMetaShrunk,
+              ]}
+              numberOfLines={1}>
               Position: {employee?.role || employee?.PositionDescription || '—'}
             </Text>
           </View>
 
-          {/* Only show action buttons for current selected user (not shrunk) */}
-          {/* {!isRootEmployee && !isShrunk && (
-            <View style={rootStyles.buttonRow}>
+          {/* Action buttons only for current selected user (not shrunk) */}
+          {!isRootEmployee && !isShrunk && (
+            <View style={styles.WorkerATM_ActionButtonRow}>
               <TouchableOpacity
                 activeOpacity={0.8}
-                style={rootStyles.actionButton}
+                style={styles.WorkerATM_ActionButton}
                 onPress={handleLeaveHistoryPress}>
-                <FontAwesome
-                  name="calendar"
-                  size={getResponsiveSize(12, screenWidth)}
-                  color="#fff"
-                />
-                <Text style={rootStyles.actionButtonText}>Leave History</Text>
+                <FontAwesome name="calendar" size={iconSize.xs} color="#fff" />
+                <Text style={styles.WorkerATM_ActionButtonText}>
+                  Leave History
+                </Text>
               </TouchableOpacity>
             </View>
-          )} */}
+          )}
         </View>
       </View>
 
       {/* Bottom connector line for shrunk users */}
-      {isShrunk && showConnector && <View style={rootStyles.bottomConnector} />}
+      {isShrunk && showConnector && (
+        <View style={styles.WorkerATM_BottomConnector} />
+      )}
     </TouchableOpacity>
   );
 };
@@ -459,7 +238,6 @@ const WorkerAssignedToMe = () => {
   const [profilePictures, setProfilePictures] = useState({});
 
   const {userData} = useSelector(state => state.user);
-  const {width: screenWidth} = useWindowDimensions();
 
   const getEmployeeId = emp => emp?.employeeId || emp?.id;
 
@@ -531,47 +309,6 @@ const WorkerAssignedToMe = () => {
     }
   }, [userData?.employeeId]);
 
-  // Responsive styles
-  const getResponsiveStyles = () => ({
-    scrollContainer: {
-      flex: 1,
-      backgroundColor: '#FAFAFA',
-      paddingTop: getResponsivePadding(12, screenWidth),
-    },
-    contentWrapper: {
-      paddingBottom: getResponsivePadding(30, screenWidth),
-    },
-    noDataText: {
-      textAlign: 'center',
-      marginTop: getResponsivePadding(30, screenWidth),
-      fontSize: getResponsiveFontSize(14, screenWidth),
-      fontWeight: '500',
-      color: '#6B7280',
-      paddingHorizontal: getResponsivePadding(16, screenWidth),
-    },
-    connectorFromRoot: {
-      width: 2,
-      height: getResponsivePadding(18, screenWidth),
-      left: getResponsiveSize(25, screenWidth),
-      backgroundColor: '#0A66C2',
-      alignSelf: 'flex-start',
-      marginBottom: -1,
-    },
-    verticalLine: {
-      position: 'absolute',
-      left: getResponsiveSize(25, screenWidth),
-      top: -1,
-      bottom: getResponsivePadding(35, screenWidth),
-      width: 2,
-      backgroundColor: '#0A66C2',
-    },
-    chainContainer: {
-      position: 'relative',
-    },
-  });
-
-  const responsiveStyles = getResponsiveStyles();
-
   return (
     <ActionPaneContainer
       pageTitle="My Team"
@@ -587,7 +324,7 @@ const WorkerAssignedToMe = () => {
         <CustomIndicator />
       ) : (
         <ScrollView
-          style={responsiveStyles.scrollContainer}
+          style={styles.WorkerATM_ScrollContainer}
           refreshControl={
             <RefreshControl
               refreshing={isLoading}
@@ -598,8 +335,8 @@ const WorkerAssignedToMe = () => {
               }
             />
           }>
-          <View style={responsiveStyles.contentWrapper}>
-            <View style={responsiveStyles.chainContainer}>
+          <View style={styles.WorkerATM_ContentWrapper}>
+            <View style={styles.WorkerATM_ChainContainer}>
               {rootChain.map((emp, index) => {
                 const isCurrentSelected = index === rootChain.length - 1;
                 const isShrunk = index < rootChain.length - 1;
@@ -617,30 +354,28 @@ const WorkerAssignedToMe = () => {
                     isShrunk={isShrunk}
                     showConnector={showConnector}
                     onPress={() => handleChainClick(emp, index)}
-                    screenWidth={screenWidth}
                   />
                 );
               })}
             </View>
 
             {rootChain.length > 0 && employees.length > 0 && (
-              <View style={responsiveStyles.connectorFromRoot} />
+              <View style={styles.WorkerATM_ConnectorFromRoot} />
             )}
 
             {employees.length > 0 ? (
               <View>
-                <View style={responsiveStyles.verticalLine} />
+                <View style={styles.WorkerATM_VerticalLine} />
                 {employees.map(emp => (
                   <EmployeeNode
                     key={emp.id}
                     employee={emp}
                     onPress={() => handleSelectEmployee(emp)}
-                    screenWidth={screenWidth}
                   />
                 ))}
               </View>
             ) : rootChain.length === 1 ? (
-              <Text style={responsiveStyles.noDataText}>
+              <Text style={styles.WorkerATM_NoDataText}>
                 No Team Members Found
               </Text>
             ) : null}

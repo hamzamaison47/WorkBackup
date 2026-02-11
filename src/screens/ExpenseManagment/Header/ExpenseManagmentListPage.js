@@ -1,16 +1,15 @@
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-native/no-inline-styles */
 import React, {useCallback, useState} from 'react';
 import {
   Text,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   FlatList,
   Pressable,
   BackHandler,
   Animated,
+  View,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {
@@ -28,6 +27,7 @@ import DynamicRequestCard from '../../../components/DynamicRequestCard';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
+import styles from '../../../styles/styles';
 
 const ExpenseManagmentListPage = () => {
   const navigation = useNavigation();
@@ -412,8 +412,8 @@ const ExpenseManagmentListPage = () => {
       <Pressable
         onPress={() => handleCardPress(processedItem)}
         style={({pressed}) => [
-          styles.cardContainer,
-          {opacity: pressed ? 0.85 : 1},
+          styles.DLP_PressableCard,
+          pressed && styles.DLP_PressableCardPressed,
         ]}>
         <DynamicRequestCard
           data={processedItem}
@@ -441,45 +441,46 @@ const ExpenseManagmentListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateExpense}>
-      {isLoading && <CustomIndicator />}
-
-      {!isLoading && expenseData.length > 0 && (
-        <Animated.View style={{flex: 1, opacity: fadeAnim}}>
-          <FlatList
-            data={expenseData}
-            renderItem={renderExpenseCard}
-            keyExtractor={(item, index) =>
-              normalizeRecId(item)?.toString() ||
-              item.ExpenseReportNumber?.toString() ||
-              index.toString()
-            }
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={handleRefresh}
-              />
-            }
-          />
-        </Animated.View>
-      )}
-
-      {!isLoading && expenseData.length === 0 && (
-        <Animated.View style={{flex: 1, opacity: fadeAnim}}>
-          <ScrollView
-            contentContainerStyle={styles.noDataContainer}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={handleRefresh}
-              />
-            }>
-            <Text style={styles.noDataText}>No Expense Reports</Text>
-            <Text style={styles.noDataSubText}>
-              Tap the + button to create your first expense report
-            </Text>
-          </ScrollView>
+      {isLoading ? (
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
+      ) : (
+        <Animated.View
+          style={[styles.DLP_AnimatedContainer, {opacity: fadeAnim}]}>
+          {expenseData.length > 0 ? (
+            <FlatList
+              data={expenseData}
+              renderItem={renderExpenseCard}
+              keyExtractor={(item, index) =>
+                normalizeRecId(item)?.toString() ||
+                item.ExpenseReportNumber?.toString() ||
+                index.toString()
+              }
+              contentContainerStyle={styles.DLP_ListContainer}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoading}
+                  onRefresh={handleRefresh}
+                />
+              }
+            />
+          ) : (
+            <ScrollView
+              contentContainerStyle={styles.DLP_NoDataContainer}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isLoading}
+                  onRefresh={handleRefresh}
+                />
+              }>
+              <Text style={styles.DLP_NoDataText}>No Expense Reports</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap the + button to create your first expense report
+              </Text>
+            </ScrollView>
+          )}
         </Animated.View>
       )}
 
@@ -503,32 +504,5 @@ const ExpenseManagmentListPage = () => {
     </ActionPaneContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  listContainer: {
-    padding: 10,
-  },
-  cardContainer: {
-    marginBottom: 10,
-  },
-  noDataContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  noDataText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0A66C2',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  noDataSubText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-});
 
 export default ExpenseManagmentListPage;

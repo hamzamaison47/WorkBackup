@@ -1,3 +1,5 @@
+// screens/MainDashboard.js
+
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useCallback, useState, useRef} from 'react';
@@ -17,10 +19,11 @@ import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import AttendanceCalendar from '../components/Attendance/AttendanceCalender';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
-import LeaveEntitlementProgress from '../components/MainDashboard/LeaveEntitlementProgress';
 import AIChatbot from '../components/AIChatbot/AIChatbot';
 import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
+import LeaveEntitlementProgress from '../components/MainDashboard/LeaveEntitlementProgress';
 
+import MasterService from '../services/MasterService';
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {useDashboardDimensions} from '../hooks/useDashboardDimensions';
 import {useDashboardData} from '../hooks/useDashboardData';
@@ -54,6 +57,18 @@ const MainDashboard = () => {
     selectedLegalEntity,
     navigation,
   );
+
+  // State to track if leave data is available
+  const [hasLeaveData, setHasLeaveData] = useState(true);
+
+  // Initialize Leave Service
+  const masterService = MasterService();
+
+  useEffect(() => {
+    if (userData?.employeeId) {
+      masterService.initialize(userData);
+    }
+  }, [userData, masterService]);
 
   useEffect(() => {
     if (userData?.defaultLegalEntity && !selectedLegalEntity) {
@@ -92,7 +107,11 @@ const MainDashboard = () => {
   const cancelLogout = () => setModalVisible(false);
 
   const [chatVisible, setChatVisible] = useState(false);
-  const [chatInitialMessages, setChatInitialMessages] = useState([]);
+
+  // Callback to handle when leave data is empty
+  const handleLeaveDataStatus = useCallback(isEmpty => {
+    setHasLeaveData(!isEmpty);
+  }, []);
 
   return (
     <ActionPaneContainer
@@ -112,7 +131,7 @@ const MainDashboard = () => {
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event(
               [{nativeEvent: {contentOffset: {y: scrollY}}}],
-              {useNativeDriver: false}, // REQUIRED for width/height animations
+              {useNativeDriver: false},
             )}
             scrollEventThrottle={16}
             refreshControl={
@@ -136,10 +155,14 @@ const MainDashboard = () => {
               H_PADDING={dimensions.H_PADDING}
             />
 
-            <LeaveEntitlementProgress
-              userData={userData}
-              screenWidth={dimensions.screenWidth}
-            />
+            {/* Only render LeaveEntitlementProgress if there's data */}
+            {hasLeaveData && (
+              <LeaveEntitlementProgress
+                userData={userData}
+                screenWidth={dimensions.screenWidth}
+                onDataStatus={handleLeaveDataStatus}
+              />
+            )}
 
             <MenuGrid
               dynamicMenus={dynamicMenus}
@@ -147,7 +170,6 @@ const MainDashboard = () => {
               onCardPress={handleCardPress}
             />
 
-            {/* Bottom spacing so content isn't hidden behind the button */}
             <View style={{height: 100}} />
           </Animated.ScrollView>
         </SafeAreaView>
@@ -163,22 +185,15 @@ const MainDashboard = () => {
 
       <AIFloatingButton
         scrollY={scrollY}
-        onPress={() => {
-          setChatInitialMessages([
-            {
-              id: String(Date.now()),
-              from: 'bot',
-              text: 'Hey! How may I help you?',
-            },
-          ]);
-          setChatVisible(true);
-        }}
+        onPress={() => setChatVisible(true)}
+        hasLeaveData={hasLeaveData} // Pass the leave data status
       />
 
+      {/* GENERIC: Pass service instance */}
       <AIChatbot
         visible={chatVisible}
         onClose={() => setChatVisible(false)}
-        initialMessages={chatInitialMessages}
+        serviceInstance={masterService}
       />
     </ActionPaneContainer>
   );

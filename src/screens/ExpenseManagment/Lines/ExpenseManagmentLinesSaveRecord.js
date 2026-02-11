@@ -49,6 +49,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
   const {selectedLegalEntity, defaultLegalEntity} = useSelector(
     state => state.company,
   );
+  const isRTL = useSelector(state => state.language.isRTL);
 
   const effectiveUserData = route.params?.userData || userData || {};
   const effectiveLegalEntity =
@@ -661,16 +662,16 @@ const ExpenseManagmentLinesSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
-          <SafeAreaView style={styles.LReqSR_SafeArea}>
+          <SafeAreaView style={styles.DSR_SafeArea}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.LReqSR_ContentWrapper}
+              style={styles.DSR_ContentWrapper}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
               {isProcessing && (
-                <View style={styles.LReqSR_ProcessingOverlay}>
-                  <View style={styles.LReqSR_ProcessingContainer}>
+                <View style={styles.DSR_ProcessingOverlay}>
+                  <View style={styles.DSR_ProcessingContainer}>
                     <ActivityIndicator size="large" color="#0A66C2" />
-                    <Text style={styles.LReqSR_ProcessingText}>
+                    <Text style={styles.DSR_ProcessingText}>
                       {t('common.processing')}
                     </Text>
                   </View>
@@ -678,16 +679,18 @@ const ExpenseManagmentLinesSaveRecord = () => {
               )}
               <ScrollView
                 ref={scrollViewRef}
-                contentContainerStyle={styles.LReqSR_FormContainer}
+                contentContainerStyle={styles.DSR_FormContainer}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled={true}>
-                <Text style={styles.LReqSR_Label}>Transaction Date *</Text>
+                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                  Transaction Date *
+                </Text>
                 <TouchableOpacity
-                  style={styles.LReqSR_DateSelector}
+                  style={styles.DSR_DateSelector}
                   onPress={() => setShowCalendar(true)}>
                   <View style={{flex: 1}}>
-                    <Text style={styles.LReqSR_DateText}>
+                    <Text style={styles.DSR_DateText}>
                       {formData.transactionDate
                         ? formatDate(formData.transactionDate)
                         : 'Select Transaction Date'}
@@ -695,16 +698,12 @@ const ExpenseManagmentLinesSaveRecord = () => {
                   </View>
                   <Icon name="calendar" size={20} color="#0A66C2" />
                 </TouchableOpacity>
-                <CalendarModal
-                  visible={showCalendar}
-                  current={formData.transactionDate}
-                  onDateSelected={handleDateChange}
-                  onClose={() => setShowCalendar(false)}
-                />
 
-                <Text style={styles.LReqSR_Label}>Expense Category *</Text>
+                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                  Expense Category *
+                </Text>
                 <Dropdown
-                  style={styles.LReqSR_Input}
+                  style={styles.DSR_Input}
                   data={categoryOptions}
                   labelField="label"
                   valueField="value"
@@ -712,30 +711,29 @@ const ExpenseManagmentLinesSaveRecord = () => {
                   value={formData.expenseCategory}
                   onFocus={handleCategoryDropdownFocus}
                   onChange={handleCategoryChange}
-                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
                   activeColor="#E6F0FF"
                   containerStyle={[
-                    styles.LReqSR_DropdownContainer,
-                    {
-                      marginTop: Platform.OS === 'ios' ? 5 : 2,
-                      zIndex: 1000,
-                    },
+                    styles.DSR_DropdownContainer,
+                    {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
                   ]}
-                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
                   dropdownPosition="auto"
                   search
                   searchPlaceholder="Search Expense Category"
-                  inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                  iconStyle={styles.LReqSR_DropdownIcon}
+                  inputSearchStyle={styles.DSR_DropdownSearchInput}
+                  iconStyle={styles.DSR_DropdownIcon}
                   keyboardAvoiding={true}
                 />
 
-                <Text style={styles.LReqSR_Label}>Transaction Amount *</Text>
+                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                  Transaction Amount *
+                </Text>
                 <TextInput
-                  style={styles.LReqSR_Input}
+                  style={styles.DSR_Input}
                   value={formData.transactionAmount}
                   onChangeText={value =>
                     handleInputChange('transactionAmount', value)
@@ -745,9 +743,11 @@ const ExpenseManagmentLinesSaveRecord = () => {
                   placeholderTextColor="#888"
                 />
 
-                <Text style={styles.LReqSR_Label}>Currency *</Text>
+                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                  Currency *
+                </Text>
                 <Dropdown
-                  style={styles.LReqSR_Input}
+                  style={styles.DSR_Input}
                   data={currencyOptions}
                   labelField="label"
                   valueField="value"
@@ -755,24 +755,21 @@ const ExpenseManagmentLinesSaveRecord = () => {
                   value={formData.currency}
                   onFocus={handleCurrencyDropdownFocus}
                   onChange={handleCurrencyChange}
-                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
                   activeColor="#E6F0FF"
                   containerStyle={[
-                    styles.LReqSR_DropdownContainer,
-                    {
-                      marginTop: Platform.OS === 'ios' ? 5 : 2,
-                      zIndex: 999,
-                    },
+                    styles.DSR_DropdownContainer,
+                    {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
                   ]}
-                  itemContainerStyle={styles.LReqSR_DropdownItemContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
                   dropdownPosition="auto"
                   search
                   searchPlaceholder="Search Currency"
-                  inputSearchStyle={styles.LReqSR_DropdownSearchInput}
-                  iconStyle={styles.LReqSR_DropdownIcon}
+                  inputSearchStyle={styles.DSR_DropdownSearchInput}
+                  iconStyle={styles.DSR_DropdownIcon}
                   keyboardAvoiding={true}
                 />
               </ScrollView>
@@ -788,6 +785,13 @@ const ExpenseManagmentLinesSaveRecord = () => {
                 showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
               />
             </KeyboardAvoidingView>
+
+            <CalendarModal
+              visible={showCalendar}
+              current={formData.transactionDate}
+              onDateSelected={handleDateChange}
+              onClose={() => setShowCalendar(false)}
+            />
 
             <AlertModal
               visible={alertModal}

@@ -1,10 +1,11 @@
 /* eslint-disable no-unused-vars */
 import React from 'react';
-import {View, TouchableOpacity, Text, StyleSheet} from 'react-native';
+import {View, TouchableOpacity, Text} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {translate as t} from '../store/utils/translate';
+import styles from '../styles/styles';
 
 export default function CustomTabBar(props) {
   const tabBarState = props?.state;
@@ -91,13 +92,13 @@ export default function CustomTabBar(props) {
   };
 
   return (
-    <View style={[styles.container, props.style]}>
+    <View style={[styles.TabBar_container, props.style]}>
       {tabs.map(tab => {
         const isActive = activeTab === tab.name;
         return (
           <TouchableOpacity
             key={tab.name}
-            style={styles.tabItem}
+            style={styles.TabBar_tabItem}
             onPress={() => handlePress(tab.name)}
             activeOpacity={0.75}
             accessibilityLabel={tab.label}
@@ -107,7 +108,11 @@ export default function CustomTabBar(props) {
               size={24}
               color={isActive ? '#ffffff' : '#d1e0ee'}
             />
-            <Text style={[styles.label, isActive && styles.labelActive]}>
+            <Text
+              style={[
+                styles.TabBar_label,
+                isActive && styles.TabBar_labelActive,
+              ]}>
               {tab.label}
             </Text>
           </TouchableOpacity>
@@ -116,27 +121,3 @@ export default function CustomTabBar(props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 8,
-    backgroundColor: '#0A66C2',
-    borderTopWidth: 0.5,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontSize: 11,
-    marginTop: 2,
-    color: '#ffffff',
-  },
-  labelActive: {
-    fontWeight: '600',
-  },
-});

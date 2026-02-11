@@ -17,10 +17,10 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import {PREmailTaxCertificate} from '../../API/TaxCertificate/TaxCertificate';
 import {PayGroupPayperiodByEmployeeId} from '../../API/PayGroupPayPeriod/PayGroupPayperiodByEmployeeId';
 
-import styles from '../../styles/styles';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
+import styles from '../../styles/styles';
 
 const PRTaxCertificate = () => {
   const navigation = useNavigation();
