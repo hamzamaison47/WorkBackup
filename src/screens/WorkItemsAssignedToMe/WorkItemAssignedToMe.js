@@ -7,6 +7,10 @@ import {
   BackHandler,
   RefreshControl,
   ScrollView,
+  TouchableOpacity,
+  View,
+  Modal,
+  StyleSheet,
 } from 'react-native';
 import {
   useNavigation,
@@ -28,7 +32,7 @@ import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowIt
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
-
+  console.log('I MA HEREERRERE');
   const {
     userData: routeUserData,
     highlightRecId,
@@ -44,6 +48,7 @@ const WorkItemsAssignedToMePage = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [menuVisible, setMenuVisible] = useState({});
 
   const fetchWorkItems = useCallback(async () => {
     if (!effectiveUserData?.email) return;
@@ -56,6 +61,8 @@ const WorkItemsAssignedToMePage = () => {
         documentType: item.DocumentType,
         correlationId: item.CorrelationId,
         recId: item.workflowWorkItemRecId,
+        ContextRecId: item.ContextRecId,
+        ContextTableId: item.ContextTableId,
         additionalDetails:
           item.AdditionalDetails || `Details for ${item.Document}`,
       }));
@@ -69,6 +76,24 @@ const WorkItemsAssignedToMePage = () => {
       setRefreshing(false);
     }
   }, [effectiveUserData?.email]);
+
+  // Add this function to handle workflow history navigation
+  const handleWorkflowHistory = item => {
+    console.log('Opening workflow history for:', item);
+    setMenuVisible({});
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: item.ContextRecId,
+      tableId: item.ContextTableId,
+    });
+  };
+
+  // Add this function to toggle menu
+  const toggleMenu = correlationId => {
+    setMenuVisible(prev => ({
+      ...prev,
+      [correlationId]: !prev[correlationId],
+    }));
+  };
 
   // Refresh on focus
   useFocusEffect(
@@ -236,28 +261,57 @@ const WorkItemsAssignedToMePage = () => {
     };
 
     return (
-      <DynamicRequestCard
-        data={cardData}
-        headerConfig={{
-          title: {key: 'document'},
-          subtitle: {key: 'documentType'},
-        }}
-        fields={[
-          {key: 'document', label: 'Document', type: 'text'},
-          {key: 'documentType', label: 'Document Type', type: 'text'},
-          {key: 'wfStatus', label: '', type: 'status'},
-        ]}
-        expandableFields={[
-          {key: 'additionalDetails', label: 'Details', type: 'text'},
-        ]}
-        buttons={getCardButtons(item)}
-        isHighlighted={isHighlighted}
-        onButtonPress={handleButtonPress}
-        isExpandable={false}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
-        highlightGradientColors={['#E8F5E8', '#F0FFF0']}
-        processingButtons={itemProcessingButtons}
-      />
+      <View>
+        <DynamicRequestCard
+          data={cardData}
+          headerConfig={{
+            title: {key: 'document'},
+            subtitle: {key: 'documentType'},
+          }}
+          fields={[
+            {key: 'document', label: 'Document', type: 'text'},
+            {key: 'documentType', label: 'Document Type', type: 'text'},
+            {key: 'wfStatus', label: '', type: 'status'},
+          ]}
+          expandableFields={[
+            {key: 'additionalDetails', label: 'Details', type: 'text'},
+          ]}
+          buttons={getCardButtons(item)}
+          isHighlighted={isHighlighted}
+          onButtonPress={handleButtonPress}
+          isExpandable={false}
+          gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
+          highlightGradientColors={['#E8F5E8', '#F0FFF0']}
+          processingButtons={itemProcessingButtons}
+        />
+
+        {/* Three-dot menu button */}
+        <TouchableOpacity
+          style={cardStyles.menuButton}
+          onPress={() => toggleMenu(item.correlationId)}>
+          <Text style={cardStyles.menuDots}>⋮</Text>
+        </TouchableOpacity>
+
+        {/* Menu Modal */}
+        <Modal
+          visible={menuVisible[item.correlationId] || false}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => toggleMenu(item.correlationId)}>
+          <TouchableOpacity
+            style={cardStyles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => toggleMenu(item.correlationId)}>
+            <View style={cardStyles.menuContainer}>
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() => handleWorkflowHistory(item)}>
+                <Text style={cardStyles.menuText}>Workflow History</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      </View>
     );
   };
 
@@ -306,3 +360,45 @@ const WorkItemsAssignedToMePage = () => {
 };
 
 export default WorkItemsAssignedToMePage;
+
+const cardStyles = StyleSheet.create({
+  menuButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 8,
+    zIndex: 10,
+  },
+  menuDots: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 60,
+    marginRight: 20,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    minWidth: 180,
+  },
+  menuItem: {
+    padding: 16,
+    borderBottomWidth: 0,
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+});
