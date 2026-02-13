@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     width: isTablet ? '70%' : '85%',
     maxWidth: conditionalScale(300, 320, 340, 450),
     height: conditionalVerticalScale(48, 52, 56, 64),
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.xxl,
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
     marginVertical: conditionalVerticalScale(6, 8, 10, 12),
@@ -1081,10 +1081,10 @@ const styles = StyleSheet.create({
 
   MainDash_HeaderContainer: {
     paddingHorizontal: conditionalScale(16, 20, 24, 28),
-    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
-    paddingBottom: conditionalVerticalScale(16, 20, 24, 28),
-    borderBottomLeftRadius: borderRadius.xl,
-    borderBottomRightRadius: borderRadius.xl,
+    paddingTop: conditionalVerticalScale(13, 15, 17, 19),
+    paddingBottom: conditionalVerticalScale(21, 25, 29, 33),
+    borderBottomLeftRadius: borderRadius.xxl,
+    borderBottomRightRadius: borderRadius.xxl,
     backgroundColor: '#0A66C2',
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -1121,7 +1121,7 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(3),
     borderColor: '#fff',
     backgroundColor: '#bed8f6ff',
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1156,37 +1156,37 @@ const styles = StyleSheet.create({
   },
 
   MainDash_NameText: {
-    fontSize: conditionalFontScale(18, 20, 22, 26),
+    fontSize: conditionalFontScale(14, 16, 18, 20),
     fontWeight: '700',
     color: '#fff',
-    marginBottom: conditionalVerticalScale(1, 2, 2, 3),
+    marginBottom: conditionalVerticalScale(0, 1, 1, 2),
     textAlign: 'left',
   },
 
   MainDash_NameTextSmall: {
-    fontSize: conditionalFontScale(18, 20, 22, 26),
+    fontSize: conditionalFontScale(14, 16, 18, 20),
     fontWeight: '700',
     color: '#fff',
-    marginBottom: conditionalVerticalScale(1, 2, 2, 3),
+    marginBottom: conditionalVerticalScale(0, 1, 1, 2),
     textAlign: 'center',
   },
 
   MainDash_EmailText: {
-    fontSize: conditionalFontScale(12, 13, 14, 16),
+    fontSize: conditionalFontScale(10, 11, 12, 13),
     color: '#DCE6F5',
     textAlign: 'left',
-    lineHeight: conditionalFontScale(15, 16, 18, 20),
+    lineHeight: conditionalFontScale(13, 14, 15, 16),
   },
 
   MainDash_EmailTextSmall: {
-    fontSize: conditionalFontScale(12, 13, 14, 16),
+    fontSize: conditionalFontScale(10, 11, 12, 13),
     color: '#DCE6F5',
     textAlign: 'center',
-    lineHeight: conditionalFontScale(15, 16, 18, 20),
+    lineHeight: conditionalFontScale(13, 14, 15, 16),
   },
 
   MainDash_BoldText: {
-    fontSize: conditionalFontScale(12, 13, 14, 16),
+    fontSize: conditionalFontScale(10, 11, 12, 13),
     color: '#DCE6F5',
     fontWeight: 'bold',
   },
@@ -1604,11 +1604,11 @@ const styles = StyleSheet.create({
   },
 
   DisplayList_Title: {
-    fontSize: conditionalFontScale(13, 14, 15, 17),
+    fontSize: conditionalFontScale(11, 12, 13, 14),
     fontWeight: '600',
     color: '#111827',
     textAlign: 'center',
-    lineHeight: conditionalFontScale(16, 18, 20, 22),
+    lineHeight: conditionalFontScale(14, 15, 16, 18),
   },
 
   DisplayList_ColumnWrapper: {
@@ -2009,7 +2009,7 @@ const styles = StyleSheet.create({
   Biometric_headerIconSize: conditionalFontScale(22, 24, 26, 28),
 
   Biometric_headerTitle: {
-    fontSize: conditionalFontScale(24, 26, 28, 30),
+    fontSize: conditionalFontScale(20, 22, 24, 26),
     fontWeight: '700',
     color: '#FFFFFF',
     flex: 1,
@@ -2129,13 +2129,13 @@ const styles = StyleSheet.create({
   },
 
   Biometric_accountIcon: {
-    width: conditionalScale(36, 38, 40, 42),
-    height: conditionalScale(36, 38, 40, 42),
-    borderRadius: conditionalScale(18, 19, 20, 21),
+    width: conditionalScale(30, 32, 34, 36),
+    height: conditionalScale(30, 32, 34, 36),
+    borderRadius: conditionalScale(15, 16, 17, 18),
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: conditionalScale(10, 11, 12, 13),
+    marginRight: conditionalScale(7, 8, 9, 10),
     borderWidth: moderateScale(1),
     borderColor: '#F0F0F0',
     shadowColor: '#000',
@@ -2145,17 +2145,17 @@ const styles = StyleSheet.create({
     elevation: moderateScale(1),
   },
 
-  Biometric_accountIconSize: conditionalFontScale(18, 19, 20, 21),
+  Biometric_accountIconSize: conditionalFontScale(14, 15, 16, 17),
 
   Biometric_accountInfo: {
     flex: 1,
   },
 
   Biometric_accountEmail: {
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     fontWeight: '500',
     color: '#1A1A1A',
-    marginBottom: conditionalVerticalScale(2, 2.5, 3, 3.5),
+    marginBottom: conditionalVerticalScale(1.5, 2, 2.5, 3),
     letterSpacing: 0.2,
   },
 
@@ -2522,6 +2522,41 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  DLP_ProcessingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+
+  DLP_ProcessingContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.xl,
+    padding: conditionalScale(24, 28, 32, 36),
+    alignItems: 'center',
+    minWidth: conditionalScale(200, 220, 240, 260),
+    shadowColor: '#6366F1',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.15,
+    shadowRadius: moderateScale(12),
+    elevation: 8,
+    borderWidth: moderateScale(1),
+    borderColor: '#F0F0F0',
+  },
+
+  DLP_ProcessingText: {
+    marginTop: conditionalVerticalScale(12, 14, 16, 18),
+    fontSize: conditionalFontScale(16, 17, 18, 19),
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: 0.3,
+  },
+
   // ============================================
   // DYNAMIC SAVE RECORD - RESPONSIVE STYLES
   // ============================================
@@ -2645,8 +2680,8 @@ const styles = StyleSheet.create({
     fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
     borderBottomWidth: moderateScale(1),
     borderBottomColor: '#F0F0F0',
-    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(2, 3, 4, 5),
+    paddingHorizontal: conditionalScale(4, 5, 6, 7),
   },
 
   DSR_DropdownIcon: {
@@ -3276,7 +3311,7 @@ const styles = StyleSheet.create({
 
   MPH_title: {
     color: '#ffffff',
-    fontSize: conditionalFontScale(15, 17, 19, 22),
+    fontSize: conditionalFontScale(12, 14, 16, 18),
     fontWeight: 'bold',
   },
 
@@ -4753,14 +4788,14 @@ const styles = StyleSheet.create({
   SRBtn_Footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: verticalScale(10),
-    paddingHorizontal: scale(8),
+    paddingVertical: conditionalVerticalScale(8, 10, 12, 14),
+    paddingHorizontal: conditionalScale(6, 8, 10, 12),
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     backgroundColor: '#FFF',
     position: 'relative',
-    minHeight: verticalScale(70),
-    gap: scale(8),
+    minHeight: conditionalVerticalScale(60, 65, 70, 75),
+    gap: conditionalScale(6, 8, 10, 12),
   },
 
   SRBtn_SingleButtonFooter: {
@@ -4772,18 +4807,18 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
     borderRadius: borderRadius.lg,
-    paddingVertical: verticalScale(12),
+    paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
-    minWidth: scale(80),
-    minHeight: verticalScale(44),
+    minWidth: conditionalScale(70, 75, 80, 85),
+    minHeight: conditionalVerticalScale(40, 42, 44, 46),
   },
 
   SRBtn_SingleButton: {
     flex: 0.5,
     alignSelf: 'center',
-    maxWidth: scale(250),
+    maxWidth: conditionalScale(220, 235, 250, 265),
   },
 
   SRBtn_SubmitButton: {
@@ -4802,7 +4837,7 @@ const styles = StyleSheet.create({
 
   SRBtn_ButtonText: {
     fontWeight: '600',
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(12, 13, 14, 15),
     color: '#0A66C2',
     textAlign: 'center',
     includeFontPadding: false,
@@ -4810,7 +4845,7 @@ const styles = StyleSheet.create({
 
   SRBtn_SubmitButtonText: {
     fontWeight: '600',
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(10, 11, 12, 13),
     color: '#FFF',
     textAlign: 'center',
     includeFontPadding: false,
@@ -4818,14 +4853,14 @@ const styles = StyleSheet.create({
 
   SRBtn_CancelButtonText: {
     fontWeight: '600',
-    fontSize: fontScale(14),
+    fontSize: conditionalFontScale(12, 13, 14, 15),
     color: '#666666',
     textAlign: 'center',
     includeFontPadding: false,
   },
 
   SRBtn_SingleButtonText: {
-    fontSize: fontScale(16),
+    fontSize: conditionalFontScale(14, 15, 16, 17),
     fontWeight: '700',
   },
 
