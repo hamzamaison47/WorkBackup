@@ -633,7 +633,7 @@ const LeaveRequestSaveRecord = () => {
         }
       }
 
-      if (response?.IsSuccess) {
+      if (response.IsSuccess === 'true') {
         const actionText =
           modalMode === 'create' ? t('common.create') : t('common.update');
         const submitText =

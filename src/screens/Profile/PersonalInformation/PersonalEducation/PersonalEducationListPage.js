@@ -331,9 +331,9 @@ const PersonalEducation = () => {
 
   /* ---------- card ---------- */
   const cardConfig = {
-    headerConfig: {title: {key: 'EducationTitle', label: 'Education'}},
+    headerConfig: {title: {key: 'EducationDisciplineId', label: 'Education'}},
     fields: [
-      {key: 'EducationDisciplineId', label: 'Education', type: 'text'},
+      // {key: 'EducationDisciplineId', label: 'Education', type: 'text'},
       {key: 'Description', label: 'Description', type: 'text'},
       {key: 'DurationUnit', label: 'Duration Unit', type: 'text'},
       {key: 'Duration', label: 'Duration', type: 'number'},

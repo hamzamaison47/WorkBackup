@@ -111,7 +111,7 @@ const FamilyContacts_ListPageScreen = () => {
     fields: [
       {
         key: 'Name',
-        label: familycontactsdata[0]?.firstNamelbl || 'First Name',
+        label: familycontactsdata[0]?.firstNamelbl || 'Name',
         type: 'text',
       },
       {

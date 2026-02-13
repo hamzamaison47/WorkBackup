@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { XMLParser } from 'fast-xml-parser';
-import { getToken } from '../../Token/getToken';
-import { createSoapEnvelope } from '../../../store/utils/soapHeaderUtils';
-import { getActiveConfigData } from '../../../Controller/secureConfig';
+import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../../Token/getToken';
+import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const canEnableEditButton = async (recId, recVersion) => {
   try {
@@ -25,7 +25,7 @@ const canEnableEditButton = async (recId, recVersion) => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     // 4️⃣ Make SOAP request
-    const { data: xml } = await axios.post(
+    const {data: xml} = await axios.post(
       `${config.resource}soap/services/HcmPersonIdentificationNumberSvcGroup`,
       soapEnvelope,
       {
@@ -36,7 +36,7 @@ const canEnableEditButton = async (recId, recVersion) => {
             'http://tempuri.org/HcmPersonIdentificationNumberSvc/canEnableEditButton',
         },
         responseType: 'text',
-      }
+      },
     );
 
     // 5️⃣ Parse XML response
@@ -49,16 +49,18 @@ const canEnableEditButton = async (recId, recVersion) => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['canEnableEditButtonResponse']?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.['canEnableEditButtonResponse']
+        ?.result;
 
-      const canEdit = result === true ||
+    const canEdit =
+      result === true ||
       result === 'true' ||
       result === '1' ||
       result === 'yes';
 
     return Boolean(canEdit);
     // 6️⃣ Convert SOAP result to boolean
-    return result;
+    //return result;
   } catch (err) {
     console.error('canEnableEditButton SOAP error:', {
       message: err.message,

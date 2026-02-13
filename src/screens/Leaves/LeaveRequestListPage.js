@@ -235,7 +235,19 @@ const LeaveRequestListPage = () => {
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
-      setSelectedLeaveItem(itemData);
+      const formatDateOnly = date => {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toISOString().split('T')[0]; // YYYY-MM-DD
+      };
+
+      const cleanedItem = {
+        ...itemData,
+        LeaveStartDate: formatDateOnly(itemData.LeaveStartDate),
+        LeaveEndDate: formatDateOnly(itemData.LeaveEndDate),
+      };
+
+      setSelectedLeaveItem(cleanedItem);
       setAttachmentModalVisible(true);
     } catch (error) {
       setAlertMessage(t('leaveRequest.attachmentFailed'));
@@ -278,11 +290,11 @@ const LeaveRequestListPage = () => {
         label: leavesData[0]?.LeaveReqIdLabel || 'Leave Request ID',
         type: 'text',
       },
-      {
-        key: 'LeaveCategory',
-        label: leavesData[0]?.LeaveCategoryLabel || 'Leave Category',
-        type: 'text',
-      },
+      // {
+      //   key: 'LeaveCategory',
+      //   label: leavesData[0]?.LeaveCategoryLabel || 'Leave Category',
+      //   type: 'text',
+      // },
       {
         key: 'LeaveReqDate',
         label: leavesData[0]?.LeaveReqDateLabel || 'Leave Request Date',
@@ -446,6 +458,7 @@ const LeaveRequestListPage = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
+    setDeleteModal(false);
     setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
     try {
@@ -453,30 +466,30 @@ const LeaveRequestListPage = () => {
         recordsRecId: [itemToDelete.RecId],
       });
 
-      if (response[0].IsSuccess) {
+      const resObj = Array.isArray(response) ? response[0] : response;
+
+      if (resObj?.IsSuccess === true || resObj?.IsSuccess === 'true') {
         setAlertMessage(t('leaveRequest.deleteSuccess'));
+
         setLeavesData(prev =>
           prev.filter(leave => leave.RecId !== itemToDelete.RecId),
         );
       } else {
-        setAlertMessage(t('leaveRequest.deleteFailed'));
+        throw new Error(resObj?.Message || 'Delete failed');
       }
     } catch (error) {
       setAlertMessage(t('leaveRequest.deleteFailed'));
-      console.log('Delete Leave Request response', error);
     } finally {
       setButtonProcessing(itemToDelete.RecId, 'delete', false);
-      setDeleteModal(false);
       setItemToDelete(null);
       setAlertModal(true);
-      setTimeout(() => {
-        fetchLeavesData();
-      }, 1000);
+      fetchLeavesData();
     }
   };
 
   /** Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
+    setDeleteModal(false);
     setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
@@ -513,7 +526,9 @@ const LeaveRequestListPage = () => {
       setAlertMessage(`Failed to Submit ${itemData.LeaveCode} Request`);
       setAlertModal(true);
     } finally {
-      setButtonProcessing(itemData.RecId, 'submit', false);
+      setButtonProcessing(itemToDelete.RecId, 'delete', false);
+      setItemToDelete(null);
+      setAlertModal(true);
     }
   };
 

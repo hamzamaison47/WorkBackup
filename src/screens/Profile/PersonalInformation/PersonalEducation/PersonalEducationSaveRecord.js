@@ -159,7 +159,7 @@ const PersonalEducationSaveRecord = () => {
     Person: Number(data.Person),
     PersonEducationRecVersion: data.PersonEducationRecVersion || 1,
     ApprovalStatus: data.ApprovalStatus || 'Draft',
-    WorkflowOperation: data.ApprovalStatus ? 'Update' : '',
+    WorkflowOperation: data.ApprovalStatus ? 'Update' : 'Insert',
   });
 
   /* ---------- back ---------- */
@@ -288,6 +288,7 @@ const PersonalEducationSaveRecord = () => {
     setProcessingButton(actionType);
     setIsProcessing(true);
     try {
+      console.log('Form Data :', formData);
       const payload = buildPayload(formData);
       let response;
       if (mode === 'edit') {

@@ -7,6 +7,9 @@ import {
   BackHandler,
   RefreshControl,
   ScrollView,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -20,48 +23,52 @@ import AlertModal from '../../components/Alert/AlertModal';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
-import ApproveWorkItem from '../../API/WorkflowTrackingStatusTable/ApproveWorkItem';
-import RejectWorkItem from '../../API/WorkflowTrackingStatusTable/RejectWorkItem';
-import styles from '../../styles/styles';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+
+import styles from '../../styles/styles';
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const {
-    userData: routeUserData,
-    highlightRecId,
-    cameFrom,
-  } = route.params || {};
+  const {userData: routeUserData} = route.params || {};
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = routeUserData || reduxUserData;
 
   const [tableData, setTableData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [highlightedRecId, setHighlightedRecId] = useState(null);
-  const [processingButtons, setProcessingButtons] = useState({});
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedRecIds, setSelectedRecIds] = useState([]);
+
+  /* ==============================
+     Fetch Data
+  ============================== */
+
   const fetchWorkItems = useCallback(async () => {
     if (!effectiveUserData?.email) return;
+
     setIsLoading(true);
     try {
-      const data = await RetrieveByEmail({email: effectiveUserData.email});
+      const data = await RetrieveByEmail({
+        email: effectiveUserData.email,
+      });
+
       const formattedData = (data || []).map((item, index) => ({
-        id: item.CorrelationId ?? index,
+        id: item.workflowWorkItemRecId ?? index,
         document: item.Document,
         documentType: item.DocumentType,
-        correlationId: item.CorrelationId,
         recId: item.workflowWorkItemRecId,
         additionalDetails:
           item.AdditionalDetails || `Details for ${item.Document}`,
       }));
+
       setTableData(formattedData);
     } catch (error) {
-      console.error(error);
       setAlertMessage('Failed to fetch work items.');
       setAlertModal(true);
     } finally {
@@ -70,227 +77,261 @@ const WorkItemsAssignedToMePage = () => {
     }
   }, [effectiveUserData?.email]);
 
-  // Refresh on focus
   useFocusEffect(
     useCallback(() => {
       fetchWorkItems();
     }, [fetchWorkItems]),
   );
 
-  // Highlight record if provided
-  useFocusEffect(
-    useCallback(() => {
-      if (highlightRecId) {
-        setHighlightedRecId(highlightRecId);
-        fetchWorkItems();
-        const timer = setTimeout(() => setHighlightedRecId(null), 3000);
-        return () => clearTimeout(timer);
-      }
-    }, [highlightRecId, fetchWorkItems]),
-  );
+  /* ==============================
+     Back Handling
+  ============================== */
 
-  // Back handler
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        handleGoBack();
+        if (selectionMode) {
+          exitSelectionMode();
+          return true;
+        }
+        navigation.goBack();
         return true;
       };
+
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+    }, [selectionMode]),
   );
 
-  const handleGoBack = () => {
-    let targetRoute = 'MainDashboard';
-    switch (cameFrom) {
-      case 'MainDashboard':
-      case 'DrawerNavigator':
-        targetRoute = 'MainDashboard';
-        break;
-      default:
-        navigation.goBack();
-        return;
+  /* ==============================
+     Selection Logic
+  ============================== */
+
+  const enterSelectionMode = recId => {
+    setSelectionMode(true);
+    setSelectedRecIds([recId]);
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedRecIds([]);
+  };
+
+  const toggleSelection = recId => {
+    setSelectedRecIds(prev =>
+      prev.includes(recId) ? prev.filter(id => id !== recId) : [...prev, recId],
+    );
+  };
+
+  const selectAll = () => {
+    if (selectedRecIds.length === tableData.length) {
+      setSelectedRecIds([]);
+    } else {
+      setSelectedRecIds(tableData.map(item => item.recId));
     }
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
-    });
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchWorkItems();
-  };
+  /* ==============================
+     Bulk Action
+  ============================== */
 
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
-    setProcessingButtons(prev => ({
-      ...prev,
-      [recId]: isProcessing
-        ? [...(prev[recId] || []), buttonType]
-        : (prev[recId] || []).filter(btn => btn !== buttonType),
-    }));
-  };
+  const handleBulkAction = async actionType => {
+    if (selectedRecIds.length === 0 || isActionLoading) return;
 
-  const handleApprovePress = async item => {
-    console.log(item);
-    setButtonProcessing(item.correlationId, 'approve', true);
     try {
-      console.log('Correlation Id Outside Approve Request : ', item.recId);
+      setIsActionLoading(true);
+
       const response = await WorkflowItemAction({
-        recId: [item.recId],
-        action: 'Approve',
+        recId: selectedRecIds,
+        action: actionType,
       });
-      console.log('Response: ', response);
+
       if (response?.IsSuccess) {
-        setAlertMessage(`Approved ${item.document}`);
-        setHighlightedRecId(item.correlationId);
-        setTimeout(() => setHighlightedRecId(null), 3000);
+        setAlertMessage(
+          `${actionType} successful for ${selectedRecIds.length} item(s)`,
+        );
+        exitSelectionMode();
         fetchWorkItems();
       } else {
-        setAlertMessage(`Failed to approve ${item.document}`);
+        setAlertMessage(`Failed to ${actionType}`);
       }
-    } catch (error) {
-      console.error(error);
-      setAlertMessage(`Error approving ${item.document}`);
+    } catch {
+      setAlertMessage(`Error during ${actionType}`);
     } finally {
-      setButtonProcessing(item.correlationId, 'approve', false);
+      setIsActionLoading(false);
       setAlertModal(true);
     }
   };
 
-  const handleRejectPress = async item => {
-    setButtonProcessing(item.correlationId, 'reject', true);
-    try {
-      // const response = await RejectWorkItem({
-      //   correlationId: item.correlationId,
-      // });
-      const response = await WorkflowItemAction({
-        recId: [item.recId],
-        action: 'Reject',
-      });
-      if (response?.IsSuccess) {
-        setAlertMessage(`Rejected ${item.document}`);
-        setHighlightedRecId(item.correlationId);
-        setTimeout(() => setHighlightedRecId(null), 3000);
-        fetchWorkItems();
-      } else {
-        setAlertMessage(`Failed to reject ${item.document}`);
-      }
-    } catch (error) {
-      console.error(error);
-      setAlertMessage(`Error rejecting ${item.document}`);
-    } finally {
-      setButtonProcessing(item.correlationId, 'reject', false);
-      setAlertModal(true);
-    }
-  };
-
-  const getCardButtons = item => ({
-    approve: {
-      show: true,
-      position: 'bottom',
-      style: 'text',
-      text: 'Approve',
-      textColor: '#4CAF50',
-      onPress: () => handleApprovePress(item),
-      customStyle: {
-        transform: [{translateY: -30}],
-      },
-    },
-    reject: {
-      show: true,
-      position: 'bottom',
-      style: 'text',
-      text: 'Reject',
-      textColor: '#ff4c4c',
-      disabled: processingButtons[item.correlationId]?.includes('reject'),
-      onPress: () => handleRejectPress(item),
-      customStyle: {
-        transform: [{translateY: -30}],
-      },
-    },
-  });
+  /* ==============================
+     Render Card
+  ============================== */
 
   const renderWorkItemCard = ({item}) => {
-    const isHighlighted = highlightedRecId === item.correlationId;
-    const itemProcessingButtons = processingButtons[item.correlationId] || [];
+    const isSelected = selectedRecIds.includes(item.recId);
+
     const cardData = {
       ...item,
       wfStatus: 'Pending',
     };
 
-    // Handle button presses
-    const handleButtonPress = (buttonType, itemData) => {
-      switch (buttonType) {
-        case 'approve':
-          handleApprovePress(itemData);
-          break;
-        case 'reject':
-          handleRejectPress(itemData);
-          break;
-        default:
-          console.log('Unknown button pressed:', buttonType);
-      }
-    };
-
     return (
-      <DynamicRequestCard
-        data={cardData}
-        headerConfig={{
-          title: {key: 'document'},
-          subtitle: {key: 'documentType'},
-        }}
-        fields={[
-          {key: 'document', label: 'Document', type: 'text'},
-          {key: 'documentType', label: 'Document Type', type: 'text'},
-          {key: 'wfStatus', label: '', type: 'status'},
-        ]}
-        expandableFields={[
-          {key: 'additionalDetails', label: 'Details', type: 'text'},
-        ]}
-        buttons={getCardButtons(item)}
-        isHighlighted={isHighlighted}
-        onButtonPress={handleButtonPress}
-        isExpandable={false}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
-        highlightGradientColors={['#E8F5E8', '#F0FFF0']}
-        processingButtons={itemProcessingButtons}
-      />
+      <TouchableOpacity
+        activeOpacity={0.9}
+        disabled={isActionLoading}
+        onLongPress={() => enterSelectionMode(item.recId)}
+        onPress={() => (selectionMode ? toggleSelection(item.recId) : null)}>
+        <View style={{marginVertical: 6}}>
+          {selectionMode && (
+            <View
+              style={{
+                position: 'absolute',
+                right: 18,
+                top: 18,
+                zIndex: 10,
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                borderWidth: 2,
+                borderColor: isSelected ? '#4CAF50' : '#ccc',
+                backgroundColor: isSelected ? '#4CAF50' : '#fff',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              {isSelected && (
+                <Text style={{color: '#fff', fontWeight: 'bold'}}>✓</Text>
+              )}
+            </View>
+          )}
+
+          <DynamicRequestCard
+            data={cardData}
+            headerConfig={{
+              title: {key: 'document'},
+              subtitle: {key: 'documentType'},
+            }}
+            fields={[
+              {key: 'document', label: 'Document', type: 'text'},
+              {key: 'documentType', label: 'Document Type', type: 'text'},
+              {key: 'wfStatus', label: '', type: 'status'},
+            ]}
+            expandableFields={[
+              {key: 'additionalDetails', label: 'Details', type: 'text'},
+            ]}
+            isHighlighted={isSelected}
+            isExpandable={false}
+            gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
+            highlightGradientColors={['#E8F5E8', '#F0FFF0']}
+          />
+        </View>
+      </TouchableOpacity>
     );
   };
 
+  /* ==============================
+     UI
+  ============================== */
+
   return (
     <ActionPaneContainer
-      pageTitle="Work Items Assigned To Me"
+      pageTitle={
+        selectionMode
+          ? `${selectedRecIds.length} Selected`
+          : 'Work Items Assigned To Me'
+      }
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
       showTabNavigator={false}
-      onRefresh={handleRefresh}>
+      onRefresh={fetchWorkItems}>
+      {/* 🔥 Enhanced Bulk Toolbar */}
+      {selectionMode && (
+        <View
+          style={{
+            backgroundColor: '#ffffff',
+            paddingVertical: 14,
+            paddingHorizontal: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: '#e5e5e5',
+            elevation: 4,
+          }}>
+          <View style={{flexDirection: 'row', marginBottom: 12}}>
+            <TouchableOpacity
+              disabled={isActionLoading}
+              onPress={() => handleBulkAction('Approve')}
+              style={{
+                flex: 1,
+                marginRight: 8,
+                paddingVertical: 10,
+                borderRadius: 25,
+                backgroundColor: '#E8F5E8',
+                alignItems: 'center',
+              }}>
+              {isActionLoading ? (
+                <ActivityIndicator />
+              ) : (
+                <Text style={{color: '#2e7d32', fontWeight: '600'}}>
+                  Approve
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              disabled={isActionLoading}
+              onPress={() => handleBulkAction('Reject')}
+              style={{
+                flex: 1,
+                marginLeft: 8,
+                paddingVertical: 10,
+                borderRadius: 25,
+                backgroundColor: '#fdecea',
+                alignItems: 'center',
+              }}>
+              <Text style={{color: '#c62828', fontWeight: '600'}}>Reject</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}>
+            <TouchableOpacity onPress={selectAll}>
+              <Text style={{color: '#007bff', fontWeight: '500'}}>
+                {selectedRecIds.length === tableData.length
+                  ? 'Unselect All'
+                  : 'Select All'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={exitSelectionMode}>
+              <Text style={{color: '#666', fontWeight: '500'}}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {isLoading ? (
         <CustomIndicator />
       ) : tableData.length > 0 ? (
         <FlatList
           data={tableData}
           renderItem={renderWorkItemCard}
-          keyExtractor={(item, index) =>
-            item.correlationId?.toString() || index.toString()
-          }
+          keyExtractor={item => item.recId?.toString()}
           contentContainerStyle={styles.LReqLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={fetchWorkItems}
+            />
           }
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }>
+          contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
           <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
         </ScrollView>
       )}
