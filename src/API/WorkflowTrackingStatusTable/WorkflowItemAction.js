@@ -8,6 +8,17 @@ import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const WorkflowItemAction = async ({recId, action}) => {
   try {
+    if (!recId || (Array.isArray(recId) && recId.length === 0)) {
+      throw new Error('recId is required and cannot be empty.');
+    }
+
+    if (!action) {
+      throw new Error('workflow action is required.');
+    }
+
+    // 🔵 Normalize to array (supports single or list)
+    const recIdList = Array.isArray(recId) ? recId : [recId];
+
     // Get active environment configuration
     const config = await getActiveConfigData();
     if (!config || !config.resource) {
@@ -16,22 +27,20 @@ const WorkflowItemAction = async ({recId, action}) => {
 
     // Get access token
     const token = await getToken();
-    // Build SOAP body for rejection
-    //User Id is to be filled inside Dynamics
+
+    // 🔵 Build SOAP body for bulk processing
     const soapBody = `
       <workflowBulkActionProcess xmlns="http://tempuri.org">
-      <_comments>Mobile</_comments>
-      <_userId></_userId> 
-      <_workflowAction>${action}</_workflowAction>
+        <_comments>Mobile</_comments>
+        <_userId></_userId>
+        <_workflowAction>${action}</_workflowAction>
         <_workflowWorkItemRecId xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
-          ${recId.map(id => `<a:long>${id}</a:long>`).join('')}
+          ${recIdList.map(id => `<a:long>${Number(id)}</a:long>`).join('')}
         </_workflowWorkItemRecId>
       </workflowBulkActionProcess>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-
-    console.log(soapEnvelope);
-    // Send SOAP request via axios
+    console.log('Soap Envelope: ', soapEnvelope);
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,
@@ -45,8 +54,8 @@ const WorkflowItemAction = async ({recId, action}) => {
         responseType: 'text',
       },
     );
-    console.log('After API Call', xml);
-    // Parse XML response
+    console.log('Response XML:', xml);
+    // 🔵 Parse XML response
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -56,7 +65,7 @@ const WorkflowItemAction = async ({recId, action}) => {
     });
 
     const parsed = parser.parse(xml);
-    // Extract result (namespace-safe)
+
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.[
         'workflowBulkActionProcessResponse'
@@ -66,11 +75,11 @@ const WorkflowItemAction = async ({recId, action}) => {
       ];
 
     if (!result) {
-      console.log('No result found in Reject SOAP response');
+      console.log('No result found in workflowBulkActionProcess response');
       return null;
     }
 
-    // Recursively clean namespace prefixes
+    // 🔵 Remove namespace prefixes recursively
     const cleanObject = obj => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj !== 'object') return obj;
@@ -85,10 +94,11 @@ const WorkflowItemAction = async ({recId, action}) => {
     };
 
     const cleanedResult = cleanObject(result);
+
     return cleanedResult;
   } catch (error) {
     console.error(
-      'Failed to reject workflow:',
+      'Workflow bulk action failed:',
       error.response?.data || error.message,
     );
     throw error;

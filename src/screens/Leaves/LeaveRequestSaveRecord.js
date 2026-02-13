@@ -292,6 +292,7 @@ const LeaveRequestSaveRecord = () => {
               leaveData.leaveCategory,
             );
 
+            // First set the form data with values from leaveData
             const editFormData = {
               ...createInitialFormData(),
               ...leaveData,
@@ -308,14 +309,22 @@ const LeaveRequestSaveRecord = () => {
 
             setFormData(editFormData);
 
-            // Fetch balance, quota, and eligibility for edit mode
+            // Then fetch fresh balance/quota/eligibility data using the parameters directly
             if (leaveData.leaveCode && leaveData.leaveStartDate) {
+              // No setTimeout needed now
               await fetchBalanceQuotaEligibility(
                 leaveData.leaveCode,
                 leaveData.leaveStartDate,
               );
+            } else if (leaveData.leaveCode) {
+              await fetchBalanceQuotaEligibility(
+                leaveData.leaveCode,
+                formatToISOWithTime(new Date()),
+              );
             }
           }
+        } catch (error) {
+          console.error('Error initializing form:', error);
         } finally {
           setIsLoading(false);
         }
@@ -369,23 +378,30 @@ const LeaveRequestSaveRecord = () => {
   const fetchBalanceQuotaEligibility = async (leaveCode, startDate) => {
     try {
       const effectiveStartDate = startDate || formatToISOWithTime(new Date());
-      const leaveRequestId =
-        mode === 'edit' && formData.leaveRequestId
-          ? formData.leaveRequestId
-          : leaveData?.leaveReqId || '';
+
+      // Use the parameters directly instead of formData
+      const empId = employeeId; // Use the employeeId from props
+      const leaveRecId =
+        mode === 'edit' && leaveData?.recId ? leaveData.recId : '0';
+      const leaveReqId = leaveData?.leaveReqId || '';
+
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
 
       const balanceResult = await GetLeaveBalance({
-        employeeId: formData.employeeId || employeeId,
+        employeeId: empId,
         leaveCode: leaveCode,
         leaveStartDate: effectiveStartDate,
-        leaveRequestId: leaveRequestId,
+        leaveRequestId: leaveReqId,
+        _t: timestamp,
       });
 
       const quotaResult = await GetEmployeeQuota({
-        employeeId: formData.employeeId || employeeId,
+        employeeId: empId,
         leaveCode: leaveCode,
         leaveStartDate: effectiveStartDate,
-        leaveRecId: mode === 'edit' && formData.recId ? formData.recId : '0',
+        leaveRecId: leaveRecId,
+        _t: timestamp,
       });
 
       const balance =
@@ -633,7 +649,7 @@ const LeaveRequestSaveRecord = () => {
         }
       }
 
-      if (response?.IsSuccess) {
+      if (response.IsSuccess === 'true') {
         const actionText =
           modalMode === 'create' ? t('common.create') : t('common.update');
         const submitText =
@@ -1072,31 +1088,31 @@ const LeaveRequestSaveRecord = () => {
               />
             )}
           </KeyboardAvoidingView>
-
-          <CalendarModal
-            visible={showStartCalendar}
-            current={formData.leaveStartDate}
-            onDateSelected={handleStartDateChange}
-            onClose={() => setShowStartCalendar(false)}
-          />
-
-          <CalendarModal
-            visible={showEndCalendar}
-            current={formData.leaveEndDate}
-            onDateSelected={handleEndDateChange}
-            onClose={() => setShowEndCalendar(false)}
-          />
-
-          <AlertModal
-            visible={alertModal}
-            heading={t('common.alert')}
-            text={alertMessage}
-            onPress={() => {
-              setAlertModal(false);
-            }}
-          />
         </SafeAreaView>
       )}
+
+      <CalendarModal
+        visible={showStartCalendar}
+        current={formData.leaveStartDate}
+        onDateSelected={handleStartDateChange}
+        onClose={() => setShowStartCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showEndCalendar}
+        current={formData.leaveEndDate}
+        onDateSelected={handleEndDateChange}
+        onClose={() => setShowEndCalendar(false)}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading={t('common.alert')}
+        text={alertMessage}
+        onPress={() => {
+          setAlertModal(false);
+        }}
+      />
     </ActionPaneContainer>
   );
 };

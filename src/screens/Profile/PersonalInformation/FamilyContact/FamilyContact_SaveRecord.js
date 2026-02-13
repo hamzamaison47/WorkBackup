@@ -74,7 +74,12 @@ const FamilyContact_SaveRecord = () => {
 
   const today = new Date().toISOString().split('T')[0];
   const D365_MAX_DATE = '2154-12-31T23:59:59Z';
-  const D365_MIN_DATE = '1900-01-01';
+  const D365_MIN_DATE = '1900-01-01T00:00:00Z';
+  const D365_MIN_DATETIME = '1900-01-01T12:00:00';
+  const D365_MAX_DATE_ONLY = '2154-12-31';
+  const D365_MAX_DATETIME = '2154-12-31T23:59:59.000Z';
+
+  const getTodayISO = () => new Date().toISOString().split('T')[0];
 
   const createInitialFormData = useCallback(
     () => ({
@@ -92,16 +97,16 @@ const FamilyContact_SaveRecord = () => {
       isBeneficiary: false,
       isDependent: false,
       Gender: '',
-      BirthDate: today,
+      BirthDate: '',
       IsFullTimeStudent: false,
       IsPersonWithDisabilities: false,
       WorkflowOperation: '',
-      beneficiaryValidFrom: today,
-      dependentValidFrom: today,
+      beneficiaryValidFrom: '',
+      dependentValidFrom: '',
       beneficiaryValidTo: '',
       dependentValidTo: '',
     }),
-    [employeeId, employeeName, WorkerRecId, familyContactDataSet?.RecId, today],
+    [employeeId, employeeName, WorkerRecId, familyContactDataSet?.RecId],
   );
 
   const [relationshipTypes, setRelationshipTypes] = useState([]);
@@ -132,15 +137,18 @@ const FamilyContact_SaveRecord = () => {
   const normalizeD365Date = useCallback(
     dateString => {
       if (!dateString) return '';
-      if (
-        dateString.startsWith(D365_MAX_DATE) ||
-        dateString.startsWith(D365_MIN_DATE)
-      ) {
+
+      if (dateString.startsWith(D365_MIN_DATE)) {
         return '';
       }
+
+      if (dateString.startsWith(D365_MAX_DATE)) {
+        return 'MAX_DATE';
+      }
+
       return dateString;
     },
-    [D365_MAX_DATE, D365_MIN_DATE],
+    [D365_MIN_DATE, D365_MAX_DATE],
   );
 
   const goBack = useCallback(() => {
@@ -211,19 +219,28 @@ const FamilyContact_SaveRecord = () => {
               isBeneficiary: toBoolean(familyContactDataSet.isBeneficiary),
               isDependent: toBoolean(familyContactDataSet.isDependent),
               Gender: familyContactDataSet.Gender || '',
-              BirthDate: familyContactDataSet.BirthDate || today,
-              beneficiaryValidFrom:
-                normalizeD365Date(familyContactDataSet.BeneficiaryFromDate) ||
-                today,
+              BirthDate: familyContactDataSet.BirthDate.startsWith(
+                D365_MIN_DATETIME,
+              )
+                ? ''
+                : familyContactDataSet.BirthDate,
+
+              beneficiaryValidFrom: normalizeD365Date(
+                familyContactDataSet.BeneficiaryFromDate,
+              ),
+
               beneficiaryValidTo: normalizeD365Date(
                 familyContactDataSet.BeneficiaryToDate,
               ),
-              dependentValidFrom:
-                normalizeD365Date(familyContactDataSet.DependentValidFrom) ||
-                today,
+
+              dependentValidFrom: normalizeD365Date(
+                familyContactDataSet.DependentValidFrom,
+              ),
+
               dependentValidTo: normalizeD365Date(
                 familyContactDataSet.DependentValidTo,
               ),
+
               IsFullTimeStudent: toBoolean(
                 familyContactDataSet.IsFullTimeStudent,
               ),
@@ -259,7 +276,6 @@ const FamilyContact_SaveRecord = () => {
       createInitialFormData,
       toBoolean,
       normalizeD365Date,
-      today,
     ]),
   );
 
@@ -365,18 +381,24 @@ const FamilyContact_SaveRecord = () => {
         EmergencyContact: data.EmergencyContact ? 1 : 0,
         isDependent: data.isDependent ? 1 : 0,
         isBeneficiary: data.isBeneficiary ? 1 : 0,
-        BeneficiaryFromDate:
-          data.beneficiaryValidFrom || '1900-01-01T00:00:00.000Z',
+        BeneficiaryFromDate: data.beneficiaryValidFrom
+          ? `${data.beneficiaryValidFrom}T00:00:00.000Z`
+          : '1900-01-01T00:00:00.000Z',
+
         BeneficiaryToDate: data.beneficiaryValidTo
-          ? data.beneficiaryValidTo
-          : '2154-12-31T23:59:59.000Z',
+          ? `${data.beneficiaryValidTo}T23:59:59.000Z`
+          : D365_MAX_DATETIME,
+
         Gender: data.Gender || '',
         BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
-        DependentValidFrom:
-          data.dependentValidFrom || '1900-01-01T00:00:00.000Z',
+        DependentValidFrom: data.dependentValidFrom
+          ? `${data.dependentValidFrom}T00:00:00.000Z`
+          : '1900-01-01T00:00:00.000Z',
+
         DependentValidTo: data.dependentValidTo
-          ? data.dependentValidTo
-          : '2154-12-31T23:59:59.000Z',
+          ? `${data.dependentValidTo}T23:59:59.000Z`
+          : D365_MAX_DATETIME,
+
         IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
         IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
         Worker: Number(data.WorkerRecId) || 0,
@@ -465,10 +487,37 @@ const FamilyContact_SaveRecord = () => {
   );
 
   const toggleSwitch = useCallback(field => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+    setFormData(prev => {
+      const newValue = !prev[field];
+      const today = getTodayISO();
+
+      if (field === 'isBeneficiary') {
+        return {
+          ...prev,
+          isBeneficiary: newValue,
+          beneficiaryValidFrom: newValue
+            ? prev.beneficiaryValidFrom || today
+            : '',
+          beneficiaryValidTo: newValue
+            ? prev.beneficiaryValidTo || 'MAX_DATE'
+            : '',
+        };
+      }
+
+      if (field === 'isDependent') {
+        return {
+          ...prev,
+          isDependent: newValue,
+          dependentValidFrom: newValue ? prev.dependentValidFrom || today : '',
+          dependentValidTo: newValue ? prev.dependentValidTo || 'MAX_DATE' : '',
+        };
+      }
+
+      return {
+        ...prev,
+        [field]: newValue,
+      };
+    });
   }, []);
 
   return (
@@ -620,7 +669,7 @@ const FamilyContact_SaveRecord = () => {
                       <Text style={styles.DSR_DateText}>
                         {formData.beneficiaryValidFrom
                           ? formatDisplayDate(formData.beneficiaryValidFrom)
-                          : formatDisplayDate(new Date().toISOString())}
+                          : 'Select Date'}
                       </Text>
                       <Icon name="calendar" size={20} color="#04739cff" />
                     </TouchableOpacity>
@@ -653,9 +702,11 @@ const FamilyContact_SaveRecord = () => {
                           color: formData.beneficiaryValidTo ? '#000' : '#888',
                           fontSize: 16,
                         }}>
-                        {formData.beneficiaryValidTo
+                        {formData.beneficiaryValidTo === 'MAX_DATE'
+                          ? 'Never'
+                          : formData.beneficiaryValidTo
                           ? formatDisplayDate(formData.beneficiaryValidTo)
-                          : 'Never'}
+                          : 'Select Date'}
                       </Text>
                       <Icon name="calendar" size={20} color="#04739cff" />
                     </TouchableOpacity>
@@ -734,7 +785,7 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.dependentValidFrom
                                 ? formatDisplayDate(formData.dependentValidFrom)
-                                : formatDisplayDate(new Date().toISOString())}
+                                : 'Select Date'}
                             </Text>
                             <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
@@ -772,9 +823,11 @@ const FamilyContact_SaveRecord = () => {
                                   : '#888',
                                 fontSize: 16,
                               }}>
-                              {formData.dependentValidTo
+                              {formData.dependentValidTo === 'MAX_DATE'
+                                ? 'Never'
+                                : formData.dependentValidTo
                                 ? formatDisplayDate(formData.dependentValidTo)
-                                : 'Never'}
+                                : 'Select Date'}
                             </Text>
                             <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
@@ -852,7 +905,7 @@ const FamilyContact_SaveRecord = () => {
                               }}>
                               {formData.BirthDate
                                 ? formatDisplayDate(formData.BirthDate)
-                                : formatDisplayDate(new Date().toISOString())}
+                                : 'Select Date'}
                             </Text>
                             <Icon name="calendar" size={20} color="#04739cff" />
                           </TouchableOpacity>
