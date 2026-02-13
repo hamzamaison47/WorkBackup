@@ -2,7 +2,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {FlatList, BackHandler, RefreshControl, Text, View} from 'react-native';
+import {
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  Text,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -272,6 +279,45 @@ const PurchaseRequisitionLinesListPage = () => {
       onFloatingButtonPress={handlePurchaseRequisitionLinesRecordCreation}
       floatingButtonDisabled={isActionsDisabled} // Disable floating button
     >
+      {/* ✅ ADD PROCESSING OVERLAY HERE */}
+      {isLoading && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+          }}>
+          <View
+            style={{
+              backgroundColor: '#fff',
+              padding: 30,
+              borderRadius: 10,
+              alignItems: 'center',
+              elevation: 5,
+              shadowColor: '#000',
+              shadowOffset: {width: 0, height: 2},
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+            }}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text
+              style={{
+                marginTop: 15,
+                fontSize: 16,
+                color: '#333',
+                fontWeight: '600',
+              }}>
+              Processing...
+            </Text>
+          </View>
+        </View>
+      )}
       {loading ? (
         <CustomIndicator />
       ) : (
@@ -309,9 +355,10 @@ const PurchaseRequisitionLinesListPage = () => {
             return;
           }
 
-          try {
-            setIsLoading(true);
+          setDeleteModal(false); // ✅ Close modal first
+          setIsLoading(true); // ✅ Show processing overlay
 
+          try {
             await deletePurchaseRequisitionLineRecord({
               recordsRecId: [itemToDelete.RecId],
             });
@@ -334,8 +381,7 @@ const PurchaseRequisitionLinesListPage = () => {
             );
             setAlertModal(true);
           } finally {
-            setIsLoading(false);
-            setDeleteModal(false);
+            setIsLoading(false); // ✅ Hide processing overlay
             setItemToDelete(null);
           }
         }}

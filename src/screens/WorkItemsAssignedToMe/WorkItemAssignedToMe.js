@@ -63,6 +63,8 @@ const WorkItemsAssignedToMePage = () => {
         document: item.Document,
         documentType: item.DocumentType,
         recId: item.workflowWorkItemRecId,
+        ContextRecId: item.ContextRecId,
+        ContextTableId: item.ContextTableId,
         additionalDetails:
           item.AdditionalDetails || `Details for ${item.Document}`,
       }));
@@ -347,3 +349,45 @@ const WorkItemsAssignedToMePage = () => {
 };
 
 export default WorkItemsAssignedToMePage;
+
+const cardStyles = StyleSheet.create({
+  menuButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 8,
+    zIndex: 10,
+  },
+  menuDots: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#666',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 60,
+    marginRight: 20,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    minWidth: 180,
+  },
+  menuItem: {
+    padding: 16,
+    borderBottomWidth: 0,
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+});
