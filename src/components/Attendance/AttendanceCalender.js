@@ -162,695 +162,715 @@ const DetailRow = ({label, value}) => (
 const monthKeyFromMoment = m => m.format('YYYY-MM');
 const monthKeyFromAny = v => moment(v).format('YYYY-MM');
 
-const AttendanceCalendar = ({userData, navigation, screenWidth, H_PADDING}) => {
-  // Calendar states
-  const [attendanceData, setAttendanceData] = useState({});
-  const [markedDates, setMarkedDates] = useState({});
-  const [currentMonth, setCurrentMonth] = useState(moment());
-  const [calendarLoading, setCalendarLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedDayDetails, setSelectedDayDetails] = useState(null);
-  const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
-  // NEW: per-month cache to avoid stale flashes + speed up back/forward
-  const [markedDatesCache, setMarkedDatesCache] = useState({}); // { 'YYYY-MM': markedDates }
-  const [dataCache, setDataCache] = useState({}); // { 'YYYY-MM': attendanceMap }
-  const latestRequestId = useRef(0);
-  // Computed keys
-  const monthKey = useMemo(
-    () => monthKeyFromMoment(currentMonth),
-    [currentMonth],
-  );
-  const selectedLegalEntity = useSelector(
-    state => state.company.selectedLegalEntity,
-  );
+const AttendanceCalendar = React.forwardRef(
+  ({userData, navigation, screenWidth, H_PADDING}, ref) => {
+    // Calendar states
+    const [attendanceData, setAttendanceData] = useState({});
+    const [markedDates, setMarkedDates] = useState({});
+    const [currentMonth, setCurrentMonth] = useState(moment());
+    const [calendarLoading, setCalendarLoading] = useState(false);
+    const [selectedDate, setSelectedDate] = useState('');
+    const [selectedDayDetails, setSelectedDayDetails] = useState(null);
+    const [attendanceModalVisible, setAttendanceModalVisible] = useState(false);
+    // NEW: per-month cache to avoid stale flashes + speed up back/forward
+    const [markedDatesCache, setMarkedDatesCache] = useState({}); // { 'YYYY-MM': markedDates }
+    const [dataCache, setDataCache] = useState({}); // { 'YYYY-MM': attendanceMap }
+    const latestRequestId = useRef(0);
+    // Computed keys
+    const monthKey = useMemo(
+      () => monthKeyFromMoment(currentMonth),
+      [currentMonth],
+    );
+    const selectedLegalEntity = useSelector(
+      state => state.company.selectedLegalEntity,
+    );
 
-  // Expose refresh method via ref
-  const calendarRef = useRef();
-  React.useImperativeHandle(calendarRef, () => ({
-    refreshCalendar: () => {
-      warmLoadMonth(currentMonth);
-    },
-  }));
+    // Expose refresh method via forwarded ref
+    React.useImperativeHandle(ref, () => ({
+      refreshCalendar: () => {
+        warmLoadMonth(currentMonth);
+      },
+    }));
 
-  // Accept forwarded ref from parent
-  React.useEffect(() => {
-    if (typeof navigation?.setCalendarRef === 'function') {
-      navigation.setCalendarRef(calendarRef);
-    }
-  }, [navigation]);
-  useEffect(() => {
-    if (userData?.employeeId) {
-      // Clear caches and reload current month
-      setMarkedDatesCache({});
-      setDataCache({});
-      setMarkedDates({});
-      setAttendanceData({});
-      warmLoadMonth(currentMonth);
-    }
-  }, [selectedLegalEntity]);
-  // initial month fetch
-  useEffect(() => {
-    warmLoadMonth(currentMonth);
-  }, []); // run once on mount
-
-  // Build markedDates + map for one month
-  const buildMonthMaps = useCallback(rows => {
-    const marked = {};
-    const map = {};
-    const normalizedRows = normalizeArray(rows);
-    normalizedRows.forEach(item => {
-      const dateSrc = pick(
-        item,
-        'attendaceDate',
-        'attendanceDate',
-        'AttendaceDate',
-        'AttendanceDate',
-      );
-      if (!dateSrc) return;
-      try {
-        const dateStr = moment(dateSrc).format('YYYY-MM-DD');
-        const color = determineColor(item);
-        marked[dateStr] = {
-          customStyles: {
-            container: {
-              backgroundColor: color,
-              borderRadius: 50,
-              margin: 2,
-              paddingVertical: 2,
-              aspectRatio: 1,
-              justifyContent: 'center',
-              alignItems: 'center',
-            },
-            text: {color: getTextColor(color), fontWeight: 'bold'},
-          },
-        };
-        map[dateStr] = {...item, color};
-      } catch {
-        /* ignore row */
-      }
-    });
-    return {marked, map};
-  }, []);
-
-  // Cancel-safe fetch for a given month
-  const fetchMonth = useCallback(
-    async targetMoment => {
-      if (!userData?.employeeId) return {marked: {}, map: {}};
-      const reqId = ++latestRequestId.current; // only latest can update
-      setCalendarLoading(true);
-      try {
-        const fromDate = moment(targetMoment)
-          .startOf('month')
-          .format('YYYY-MM-DD');
-        const toDate = moment(targetMoment).endOf('month').format('YYYY-MM-DD');
-        const rows = await getRegisterDetailsByDate({
-          employeeId: userData.employeeId,
-          fromDate,
-          toDate,
+    // Still notify navigation about the ref if needed (legacy support)
+    React.useEffect(() => {
+      if (typeof navigation?.setCalendarRef === 'function') {
+        navigation.setCalendarRef({
+          current: {refreshCalendar: () => warmLoadMonth(currentMonth)},
         });
-        // If a newer request started meanwhile, ignore this result
-        if (reqId !== latestRequestId.current) return null;
-        const {marked, map} = buildMonthMaps(rows);
-        return {marked, map};
-      } catch (err) {
-        console.error('Attendance fetch error:', err?.message || err);
-        return {marked: {}, map: {}};
-      } finally {
-        if (reqId === latestRequestId.current) setCalendarLoading(false);
       }
-    },
-    [userData?.employeeId, buildMonthMaps],
-  );
+    }, [navigation, currentMonth]);
+    useEffect(() => {
+      if (userData?.employeeId) {
+        // Clear caches and reload current month
+        setMarkedDatesCache({});
+        setDataCache({});
+        setMarkedDates({});
+        setAttendanceData({});
+        warmLoadMonth(currentMonth);
+      }
+    }, [selectedLegalEntity]);
+    // initial month fetch
+    useEffect(() => {
+      warmLoadMonth(currentMonth);
+    }, []); // run once on mount
 
-  // Warm-load current month: use cache if present; fetch and update cache/state
-  const warmLoadMonth = useCallback(
-    async m => {
-      const key = monthKeyFromAny(m);
-      // If we already have the month cached, show it immediately
-      if (markedDatesCache[key]) {
-        setMarkedDates(markedDatesCache[key]);
-        setAttendanceData(dataCache[key] || {});
+    // Build markedDates + map for one month
+    const buildMonthMaps = useCallback(rows => {
+      const marked = {};
+      const map = {};
+      const normalizedRows = normalizeArray(rows);
+      normalizedRows.forEach(item => {
+        const dateSrc = pick(
+          item,
+          'attendaceDate',
+          'attendanceDate',
+          'AttendaceDate',
+          'AttendanceDate',
+        );
+        if (!dateSrc) return;
+        try {
+          const dateStr = moment(dateSrc).format('YYYY-MM-DD');
+          const color = determineColor(item);
+          marked[dateStr] = {
+            customStyles: {
+              container: {
+                backgroundColor: color,
+                borderRadius: 50,
+                margin: 2,
+                paddingVertical: 2,
+                aspectRatio: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+              },
+              text: {color: getTextColor(color), fontWeight: 'bold'},
+            },
+          };
+          map[dateStr] = {...item, color};
+        } catch {
+          /* ignore row */
+        }
+      });
+      return {marked, map};
+    }, []);
+
+    // Cancel-safe fetch for a given month
+    const fetchMonth = useCallback(
+      async targetMoment => {
+        if (!userData?.employeeId) return {marked: {}, map: {}};
+        const reqId = ++latestRequestId.current; // only latest can update
+        setCalendarLoading(true);
+        try {
+          const fromDate = moment(targetMoment)
+            .startOf('month')
+            .format('YYYY-MM-DD');
+          const toDate = moment(targetMoment)
+            .endOf('month')
+            .format('YYYY-MM-DD');
+          const rows = await getRegisterDetailsByDate({
+            employeeId: userData.employeeId,
+            fromDate,
+            toDate,
+          });
+          // If a newer request started meanwhile, ignore this result
+          if (reqId !== latestRequestId.current) return null;
+          const {marked, map} = buildMonthMaps(rows);
+          return {marked, map};
+        } catch (err) {
+          console.error('Attendance fetch error:', err?.message || err);
+          return {marked: {}, map: {}};
+        } finally {
+          if (reqId === latestRequestId.current) setCalendarLoading(false);
+        }
+      },
+      [userData?.employeeId, buildMonthMaps],
+    );
+
+    // Warm-load current month: use cache if present; fetch and update cache/state
+    const warmLoadMonth = useCallback(
+      async m => {
+        const key = monthKeyFromAny(m);
+        // If we already have the month cached, show it immediately
+        if (markedDatesCache[key]) {
+          setMarkedDates(markedDatesCache[key]);
+          setAttendanceData(dataCache[key] || {});
+        } else {
+          // Otherwise, clear to avoid flashing previous month
+          setMarkedDates({});
+          setAttendanceData({});
+        }
+        const result = await fetchMonth(m);
+        if (!result) return; // cancelled/older request
+        const {marked, map} = result;
+        // Update caches
+        setMarkedDatesCache(prev => ({...prev, [key]: marked}));
+        setDataCache(prev => ({...prev, [key]: map}));
+        // Apply to screen (still latest month thanks to cancel guard)
+        setMarkedDates(marked);
+        setAttendanceData(map);
+      },
+      [markedDatesCache, dataCache, fetchMonth],
+    );
+
+    // Month changed by user
+    const handleMonthChange = month => {
+      const nextMoment = moment(month.dateString);
+      setCurrentMonth(nextMoment);
+      const nextKey = monthKeyFromAny(nextMoment);
+      // Show cached instantly if we have it; otherwise clear to prevent stale flash
+      if (markedDatesCache[nextKey]) {
+        setMarkedDates(markedDatesCache[nextKey]);
+        setAttendanceData(dataCache[nextKey] || {});
       } else {
-        // Otherwise, clear to avoid flashing previous month
         setMarkedDates({});
         setAttendanceData({});
       }
-      const result = await fetchMonth(m);
-      if (!result) return; // cancelled/older request
-      const {marked, map} = result;
-      // Update caches
-      setMarkedDatesCache(prev => ({...prev, [key]: marked}));
-      setDataCache(prev => ({...prev, [key]: map}));
-      // Apply to screen (still latest month thanks to cancel guard)
-      setMarkedDates(marked);
-      setAttendanceData(map);
-    },
-    [markedDatesCache, dataCache, fetchMonth],
-  );
+      // Fetch (cancel-safe); only latest request will land
+      warmLoadMonth(nextMoment);
+    };
 
-  // Month changed by user
-  const handleMonthChange = month => {
-    const nextMoment = moment(month.dateString);
-    setCurrentMonth(nextMoment);
-    const nextKey = monthKeyFromAny(nextMoment);
-    // Show cached instantly if we have it; otherwise clear to prevent stale flash
-    if (markedDatesCache[nextKey]) {
-      setMarkedDates(markedDatesCache[nextKey]);
-      setAttendanceData(dataCache[nextKey] || {});
-    } else {
-      setMarkedDates({});
-      setAttendanceData({});
-    }
-    // Fetch (cancel-safe); only latest request will land
-    warmLoadMonth(nextMoment);
-  };
+    // Check if date has color (attendance record exists)
+    const hasColor = useCallback(
+      dateKey => {
+        const details = attendanceData[dateKey];
+        if (!details) return false;
 
-  // Check if date has color (attendance record exists)
-  const hasColor = useCallback(
-    dateKey => {
-      const details = attendanceData[dateKey];
-      if (!details) return false;
+        const color = details.color || determineColor(details);
+        // Check if color exists and is not the default #f0f0f0
+        return color && color.toLowerCase() !== '#f0f0f0';
+      },
+      [attendanceData],
+    );
 
-      const color = details.color || determineColor(details);
-      // Check if color exists and is not the default #f0f0f0
-      return color && color.toLowerCase() !== '#f0f0f0';
-    },
-    [attendanceData],
-  );
+    const getRecordActionType = useCallback(
+      details => {
+        if (!details) return 'noRecord'; // No attendance record at all
 
-  const getRecordActionType = useCallback(
-    details => {
-      if (!details) return 'noRecord'; // No attendance record at all
+        const hasRecordColor = hasColor(
+          moment(details.attendanceDate || details.AttendanceDate).format(
+            'YYYY-MM-DD',
+          ),
+        );
 
-      const hasRecordColor = hasColor(
-        moment(details.attendanceDate || details.AttendanceDate).format(
-          'YYYY-MM-DD',
-        ),
-      );
+        if (!hasRecordColor) {
+          return 'noRecord'; // No color means no attendance record
+        }
 
-      if (!hasRecordColor) {
-        return 'noRecord'; // No color means no attendance record
-      }
+        // If we have color (attendance record exists), check status
+        const rawStatus = (details.Status ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+        const ABSENT_ALIASES = [
+          'absent',
+          'a',
+          'no in/out',
+          'no in out',
+          'missing',
+          'abs',
+          'leave without pay',
+        ];
+        const offDay = bool(pick(details, 'offDay', 'OffDay'));
+        const gazettedDay = bool(pick(details, 'gazettedDay', 'GazettedDay'));
+        const noIn =
+          isBlankTime(details.ClockIn) ||
+          looksLikeMissingDate(details.ClockInDate);
+        const noOut =
+          isBlankTime(details.ClockOut) ||
+          looksLikeMissingDate(details.ClockOutDate);
+        const computedAbsent = noIn && noOut;
+        const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
+        const isPresent =
+          rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
 
-      // If we have color (attendance record exists), check status
-      const rawStatus = (details.Status ?? '').toString().trim().toLowerCase();
-      const ABSENT_ALIASES = [
-        'absent',
-        'a',
-        'no in/out',
-        'no in out',
-        'missing',
-        'abs',
-        'leave without pay',
-      ];
-      const offDay = bool(pick(details, 'offDay', 'OffDay'));
-      const gazettedDay = bool(pick(details, 'gazettedDay', 'GazettedDay'));
-      const noIn =
-        isBlankTime(details.ClockIn) ||
-        looksLikeMissingDate(details.ClockInDate);
-      const noOut =
-        isBlankTime(details.ClockOut) ||
-        looksLikeMissingDate(details.ClockOutDate);
-      const computedAbsent = noIn && noOut;
-      const isAbsent = computedAbsent || ABSENT_ALIASES.includes(rawStatus);
-      const isPresent =
-        rawStatus === 'present' || (!noIn && !noOut && rawStatus === '');
-
-      if (offDay || gazettedDay || isAbsent) {
-        return 'markPresent';
-      } else if (!isPresent) {
-        return 'edit';
-      }
-      return 'none';
-    },
-    [hasColor],
-  );
-
-  // Check if date should be clickable
-  const isDateClickable = useCallback(
-    dateKey => {
-      const details = attendanceData[dateKey];
-      if (!details) return true; // No data - allow click to show "No attendance data"
-
-      const color = details.color || determineColor(details);
-
-      // Don't open modal for records with no color or #6ce66c color
-      if (!color || color.toLowerCase() === '#6ce66c') {
-        return false;
-      }
-
-      return true;
-    },
-    [attendanceData],
-  );
-
-  const handleDateSelect = day => {
-    const key = day?.dateString;
+        if (offDay || gazettedDay || isAbsent) {
+          return 'markPresent';
+        } else if (!isPresent) {
+          return 'edit';
+        }
+        return 'none';
+      },
+      [hasColor],
+    );
 
     // Check if date should be clickable
-    if (!isDateClickable(key)) {
-      return; // Don't open modal for records with no color or #6ce66c color
-    }
+    const isDateClickable = useCallback(
+      dateKey => {
+        const details = attendanceData[dateKey];
+        if (!details) return true; // No data - allow click to show "No attendance data"
 
-    setSelectedDate(key);
-    setSelectedDayDetails(attendanceData[key]);
-    setAttendanceModalVisible(true);
-  };
+        const color = details.color || determineColor(details);
 
-  const handleMarkPresent = () => {
-    if (!selectedDate) return;
-    const selectedDateISO = normalizeDateISO(selectedDate);
-    navigation.navigate('MarkPresentScreen', {
-      employeeId: userData?.employeeId,
-      employeeName: userData?.employeeName,
-      attendanceDate: selectedDateISO,
-      sourceScreen: 'MainDashboard',
-    });
-    setAttendanceModalVisible(false);
-  };
+        // Don't open modal for records with no color or #6ce66c color
+        if (!color || color.toLowerCase() === '#6ce66c') {
+          return false;
+        }
 
-  const handleEditAttendance = () => {
-    if (!selectedDate || !selectedDayDetails) return;
-    const selectedDateISO = normalizeDateISO(selectedDate);
-    const normalizedClockIn = normalizeTimeTo24h(selectedDayDetails.ClockIn);
-    const normalizedClockOut = normalizeTimeTo24h(selectedDayDetails.ClockOut);
-    navigation.navigate('EditAttendanceScreen', {
-      employeeId: userData?.employeeId,
-      employeeName: userData?.employeeName,
-      attendanceDate: selectedDateISO,
-      clockIn: normalizedClockIn,
-      clockOut: normalizedClockOut,
-      remarks: selectedDayDetails?.Remarks || '',
-      sourceScreen: 'MainDashboard',
-    });
-    setAttendanceModalVisible(false);
-  };
-
-  const handleShortLeave = () => {
-    if (!selectedDate) return;
-    const selectedDateISO = normalizeDateISO(selectedDate);
-    navigation.navigate('LeaveSaveRecord', {
-      mode: 'create',
-      employeeId: userData?.employeeId,
-      employeeName: userData?.employeeName,
-      WorkerRecId: userData?.WorkerRecId,
-      cameFrom: 'MainDashboard',
-      isShortLeave: true,
-      attendanceDate: selectedDateISO,
-      prefillData: {leaveCategory: 'Half Day Leave'},
-    });
-    setAttendanceModalVisible(false);
-  };
-
-  const handleLeaveRequest = () => {
-    if (!selectedDate) return;
-    const selectedDateISO = normalizeDateISO(selectedDate);
-    navigation.navigate('LeaveSaveRecord', {
-      mode: 'create',
-      employeeId: userData?.employeeId,
-      employeeName: userData?.employeeName,
-      WorkerRecId: userData?.WorkerRecId,
-      cameFrom: 'MainDashboard',
-      isLeaveRequest: true,
-      attendanceDate: selectedDateISO,
-      prefillData: {leaveStartDate: selectedDateISO},
-    });
-    setAttendanceModalVisible(false);
-  };
-
-  // Calendar marked dates with today highlight (kept lightweight)
-  const todayStr = moment().format('YYYY-MM-DD');
-  const withTodayMarked = useMemo(() => {
-    const base = {...markedDates};
-    base[todayStr] = {
-      customStyles: {
-        container: {
-          borderWidth: 2,
-          borderColor: '#0EA5E9',
-          borderRadius: 50,
-          margin: 2,
-          paddingVertical: 2,
-          aspectRatio: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor:
-            markedDates[todayStr]?.customStyles?.container?.backgroundColor ||
-            '#FFFFFF',
-        },
-        text: {
-          fontWeight: '800',
-          color: markedDates[todayStr]?.customStyles?.text?.color || '#0F172A',
-        },
+        return true;
       },
+      [attendanceData],
+    );
+
+    const handleDateSelect = day => {
+      const key = day?.dateString;
+
+      // Check if date should be clickable
+      if (!isDateClickable(key)) {
+        return; // Don't open modal for records with no color or #6ce66c color
+      }
+
+      setSelectedDate(key);
+      setSelectedDayDetails(attendanceData[key]);
+      setAttendanceModalVisible(true);
     };
-    return base;
-  }, [markedDates, todayStr]);
 
-  // Get responsive styles (extracted calendar-specific styles)
-  const getResponsiveStyles = () => ({
-    calendarSection: {
-      marginTop: getResponsivePadding(16, screenWidth),
-      paddingHorizontal: H_PADDING,
-    },
-    calendarCard: {
-      borderRadius: getResponsiveSize(16, screenWidth),
-      backgroundColor: '#FFFFFF',
-      shadowColor: '#0F172A',
-      shadowOffset: {width: 0, height: 8},
-      shadowOpacity: 0.08,
-      shadowRadius: 16,
-      elevation: 6,
-      overflow: 'hidden',
-      marginBottom: getResponsivePadding(16, screenWidth),
-    },
-    calendarContainer: {
-      paddingHorizontal: getResponsivePadding(6, screenWidth),
-      paddingBottom: getResponsivePadding(12, screenWidth),
-      position: 'relative',
-      minHeight: 340,
-      justifyContent: 'center',
-    },
-    calendarLoadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(255,255,255,0.6)',
-    },
-  });
+    const handleMarkPresent = () => {
+      if (!selectedDate) return;
+      const selectedDateISO = normalizeDateISO(selectedDate);
+      navigation.navigate('MarkPresentScreen', {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        attendanceDate: selectedDateISO,
+        sourceScreen: 'MainDashboard',
+      });
+      setAttendanceModalVisible(false);
+    };
 
-  const styles = getResponsiveStyles();
+    const handleEditAttendance = () => {
+      if (!selectedDate || !selectedDayDetails) return;
+      const selectedDateISO = normalizeDateISO(selectedDate);
+      const normalizedClockIn = normalizeTimeTo24h(selectedDayDetails.ClockIn);
+      const normalizedClockOut = normalizeTimeTo24h(
+        selectedDayDetails.ClockOut,
+      );
+      navigation.navigate('EditAttendanceScreen', {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        attendanceDate: selectedDateISO,
+        clockIn: normalizedClockIn,
+        clockOut: normalizedClockOut,
+        remarks: selectedDayDetails?.Remarks || '',
+        sourceScreen: 'MainDashboard',
+      });
+      setAttendanceModalVisible(false);
+    };
 
-  return (
-    <>
-      {/* Calendar Section */}
-      <View style={styles.calendarSection}>
-        <View style={styles.calendarCard}>
-          <View style={styles.calendarContainer}>
-            {/* Force calendar to reset internal state on month switch */}
-            <DFCalendar
-              key={monthKey}
-              currentDate={currentMonth.toDate()}
-              markedDates={withTodayMarked}
-              onDayPress={handleDateSelect}
-              onMonthChange={handleMonthChange}
-              enableSwipeMonths
-              hideArrows={false}
-              hideExtraDays={false}
-              firstDay={1}
-              hideDayNames={false}
-              markingType="custom"
-              themeOverrides={{
-                backgroundColor: '#F5F7FB',
-                calendarBackground: '#FFFFFF',
-                textSectionTitleColor: '#8E99A4',
-                monthTextColor: '#0F172A',
-                arrowColor: '#0EA5E9',
-                todayTextColor: '#0EA5E9',
-                dayTextColor: '#0F172A',
-                textDisabledColor: '#C7CED6',
-                selectedDayTextColor: '#0F172A',
-                textMonthFontWeight: '800',
-                textMonthFontSize: 20,
-                textDayFontSize: 14,
-                textDayHeaderFontSize: 12,
-              }}
-            />
-            {/* Subtle overlay while the next month is loading */}
-            {calendarLoading && (
-              <View style={styles.calendarLoadingOverlay}>
-                <ActivityIndicator size="large" />
-              </View>
-            )}
+    const handleShortLeave = () => {
+      if (!selectedDate) return;
+      const selectedDateISO = normalizeDateISO(selectedDate);
+      navigation.navigate('LeaveSaveRecord', {
+        mode: 'create',
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        WorkerRecId: userData?.WorkerRecId,
+        cameFrom: 'MainDashboard',
+        isShortLeave: true,
+        attendanceDate: selectedDateISO,
+        prefillData: {leaveCategory: 'Half Day Leave'},
+      });
+      setAttendanceModalVisible(false);
+    };
+
+    const handleLeaveRequest = () => {
+      if (!selectedDate) return;
+      const selectedDateISO = normalizeDateISO(selectedDate);
+      navigation.navigate('LeaveSaveRecord', {
+        mode: 'create',
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        WorkerRecId: userData?.WorkerRecId,
+        cameFrom: 'MainDashboard',
+        isLeaveRequest: true,
+        attendanceDate: selectedDateISO,
+        prefillData: {leaveStartDate: selectedDateISO},
+      });
+      setAttendanceModalVisible(false);
+    };
+
+    // Calendar marked dates with today highlight (kept lightweight)
+    const todayStr = moment().format('YYYY-MM-DD');
+    const withTodayMarked = useMemo(() => {
+      const base = {...markedDates};
+      base[todayStr] = {
+        customStyles: {
+          container: {
+            borderWidth: 2,
+            borderColor: '#0EA5E9',
+            borderRadius: 50,
+            margin: 2,
+            paddingVertical: 2,
+            aspectRatio: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor:
+              markedDates[todayStr]?.customStyles?.container?.backgroundColor ||
+              '#FFFFFF',
+          },
+          text: {
+            fontWeight: '800',
+            color:
+              markedDates[todayStr]?.customStyles?.text?.color || '#0F172A',
+          },
+        },
+      };
+      return base;
+    }, [markedDates, todayStr]);
+
+    // Get responsive styles (extracted calendar-specific styles)
+    const getResponsiveStyles = () => ({
+      calendarSection: {
+        marginTop: getResponsivePadding(16, screenWidth),
+        paddingHorizontal: H_PADDING,
+      },
+      calendarCard: {
+        borderRadius: getResponsiveSize(16, screenWidth),
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#0F172A',
+        shadowOffset: {width: 0, height: 8},
+        shadowOpacity: 0.08,
+        shadowRadius: 16,
+        elevation: 6,
+        overflow: 'hidden',
+        marginBottom: getResponsivePadding(16, screenWidth),
+      },
+      calendarContainer: {
+        paddingHorizontal: getResponsivePadding(6, screenWidth),
+        paddingBottom: getResponsivePadding(12, screenWidth),
+        position: 'relative',
+        minHeight: 340,
+        justifyContent: 'center',
+      },
+      calendarLoadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.6)',
+      },
+    });
+
+    const styles = getResponsiveStyles();
+
+    return (
+      <>
+        {/* Calendar Section */}
+        <View style={styles.calendarSection}>
+          <View style={styles.calendarCard}>
+            <View style={styles.calendarContainer}>
+              {/* Force calendar to reset internal state on month switch */}
+              <DFCalendar
+                key={monthKey}
+                currentDate={currentMonth.toDate()}
+                markedDates={withTodayMarked}
+                onDayPress={handleDateSelect}
+                onMonthChange={handleMonthChange}
+                enableSwipeMonths
+                hideArrows={false}
+                hideExtraDays={false}
+                firstDay={1}
+                hideDayNames={false}
+                markingType="custom"
+                themeOverrides={{
+                  backgroundColor: '#F5F7FB',
+                  calendarBackground: '#FFFFFF',
+                  textSectionTitleColor: '#8E99A4',
+                  monthTextColor: '#0F172A',
+                  arrowColor: '#0EA5E9',
+                  todayTextColor: '#0EA5E9',
+                  dayTextColor: '#0F172A',
+                  textDisabledColor: '#C7CED6',
+                  selectedDayTextColor: '#0F172A',
+                  textMonthFontWeight: '800',
+                  textMonthFontSize: 20,
+                  textDayFontSize: 14,
+                  textDayHeaderFontSize: 12,
+                }}
+              />
+              {/* Subtle overlay while the next month is loading */}
+              {calendarLoading && (
+                <View style={styles.calendarLoadingOverlay}>
+                  <ActivityIndicator size="large" />
+                </View>
+              )}
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Attendance Details Modal */}
-      <Modal
-        animationType="slide"
-        transparent
-        visible={attendanceModalVisible}
-        onRequestClose={() => setAttendanceModalVisible(false)}>
-        <View style={detailStyles.modalContainer}>
-          <View style={detailStyles.modalContent}>
-            <View style={detailStyles.modalHeader}>
-              <Text style={detailStyles.modalTitle}>
-                {selectedDate
-                  ? moment(selectedDate).format('dddd, MMMM Do, YYYY')
-                  : ''}
-              </Text>
-              <TouchableOpacity
-                style={detailStyles.closeButton}
-                onPress={() => setAttendanceModalVisible(false)}>
-                <Text style={detailStyles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            {selectedDayDetails ? (
-              <ScrollView
-                contentContainerStyle={detailStyles.detailsContent}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled">
-                <View style={detailStyles.detailsGrid}>
-                  <DetailRow
-                    label="Clock In"
-                    value={fmtTime12Hour(
-                      pick(selectedDayDetails, 'clockIn', 'ClockIn'),
-                    )}
-                  />
-                  <DetailRow
-                    label="Clock Out"
-                    value={fmtTime12Hour(
-                      pick(selectedDayDetails, 'clockOut', 'ClockOut'),
-                    )}
-                  />
-                  <DetailRow
-                    label="Total Working Time"
-                    value={fmtHours(
-                      pick(
-                        selectedDayDetails,
-                        'totalWorkingTime',
-                        'TotalWorkingTime',
-                      ),
-                    )}
-                  />
-                  <DetailRow
-                    label="Overtime"
-                    value={fmtHours(
-                      pick(
-                        selectedDayDetails,
-                        'totalOvertime',
-                        'TotalOvertime',
-                      ),
-                    )}
-                  />
-                  <DetailRow
-                    label="Late Arrival"
-                    value={fmtHours(
-                      pick(
-                        selectedDayDetails,
-                        'lateArrivalTime',
-                        'LateArrivalTime',
-                      ),
-                    )}
-                  />
-                  <DetailRow
-                    label="Early Out"
-                    value={fmtHours(
-                      pick(selectedDayDetails, 'earlyOutTime', 'EarlyOutTime'),
-                    )}
-                  />
-                  {pick(selectedDayDetails, 'leaveCode', 'LeaveCode') && (
+        {/* Attendance Details Modal */}
+        <Modal
+          animationType="slide"
+          transparent
+          visible={attendanceModalVisible}
+          onRequestClose={() => setAttendanceModalVisible(false)}>
+          <View style={detailStyles.modalContainer}>
+            <View style={detailStyles.modalContent}>
+              <View style={detailStyles.modalHeader}>
+                <Text style={detailStyles.modalTitle}>
+                  {selectedDate
+                    ? moment(selectedDate).format('dddd, MMMM Do, YYYY')
+                    : ''}
+                </Text>
+                <TouchableOpacity
+                  style={detailStyles.closeButton}
+                  onPress={() => setAttendanceModalVisible(false)}>
+                  <Text style={detailStyles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              {selectedDayDetails ? (
+                <ScrollView
+                  contentContainerStyle={detailStyles.detailsContent}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled">
+                  <View style={detailStyles.detailsGrid}>
                     <DetailRow
-                      label="Leave Code"
-                      value={pick(selectedDayDetails, 'leaveCode', 'LeaveCode')}
+                      label="Clock In"
+                      value={fmtTime12Hour(
+                        pick(selectedDayDetails, 'clockIn', 'ClockIn'),
+                      )}
                     />
-                  )}
-                  {pick(selectedDayDetails, 'remarks', 'Remarks') && (
                     <DetailRow
-                      label="Remarks"
-                      value={pick(selectedDayDetails, 'remarks', 'Remarks')}
+                      label="Clock Out"
+                      value={fmtTime12Hour(
+                        pick(selectedDayDetails, 'clockOut', 'ClockOut'),
+                      )}
                     />
-                  )}
-                  {Number(
-                    pick(
-                      selectedDayDetails,
-                      'lateArrivalTimeDeduction',
-                      'LateArrivalTimeDeduction',
-                    ),
-                  ) > 0 && (
                     <DetailRow
-                      label="Late Arrival Deduction"
+                      label="Total Working Time"
                       value={fmtHours(
                         pick(
                           selectedDayDetails,
-                          'lateArrivalTimeDeduction',
-                          'LateArrivalTimeDeduction',
+                          'totalWorkingTime',
+                          'TotalWorkingTime',
                         ),
                       )}
                     />
-                  )}
-                  {Number(
-                    pick(
-                      selectedDayDetails,
-                      'earlyOutTimeDeduction',
-                      'EarlyOutTimeDeduction',
-                    ),
-                  ) > 0 && (
                     <DetailRow
-                      label="Early Out Deduction"
+                      label="Overtime"
                       value={fmtHours(
                         pick(
                           selectedDayDetails,
-                          'earlyOutTimeDeduction',
-                          'EarlyOutTimeDeduction',
+                          'totalOvertime',
+                          'TotalOvertime',
                         ),
                       )}
                     />
-                  )}
-                  {Number(
-                    pick(
-                      selectedDayDetails,
-                      'totalTimeDeduction',
-                      'TotalTimeDeduction',
-                    ),
-                  ) > 0 && (
                     <DetailRow
-                      label="Total Deduction"
+                      label="Late Arrival"
                       value={fmtHours(
                         pick(
                           selectedDayDetails,
-                          'totalTimeDeduction',
-                          'TotalTimeDeduction',
+                          'lateArrivalTime',
+                          'LateArrivalTime',
                         ),
                       )}
                     />
-                  )}
-                  {pick(selectedDayDetails, 'shiftId', 'ShiftId') && (
                     <DetailRow
-                      label="Shift ID"
-                      value={pick(selectedDayDetails, 'shiftId', 'ShiftId')}
+                      label="Early Out"
+                      value={fmtHours(
+                        pick(
+                          selectedDayDetails,
+                          'earlyOutTime',
+                          'EarlyOutTime',
+                        ),
+                      )}
                     />
-                  )}
-                </View>
-                {/* Action Buttons */}
-                <View style={detailStyles.actionButtonsContainer}>
-                  {getRecordActionType(selectedDayDetails) === 'noRecord' && (
-                    <>
-                      {/* No color - only Leave Request button */}
+                    {pick(selectedDayDetails, 'leaveCode', 'LeaveCode') && (
+                      <DetailRow
+                        label="Leave Code"
+                        value={pick(
+                          selectedDayDetails,
+                          'leaveCode',
+                          'LeaveCode',
+                        )}
+                      />
+                    )}
+                    {pick(selectedDayDetails, 'remarks', 'Remarks') && (
+                      <DetailRow
+                        label="Remarks"
+                        value={pick(selectedDayDetails, 'remarks', 'Remarks')}
+                      />
+                    )}
+                    {Number(
+                      pick(
+                        selectedDayDetails,
+                        'lateArrivalTimeDeduction',
+                        'LateArrivalTimeDeduction',
+                      ),
+                    ) > 0 && (
+                      <DetailRow
+                        label="Late Arrival Deduction"
+                        value={fmtHours(
+                          pick(
+                            selectedDayDetails,
+                            'lateArrivalTimeDeduction',
+                            'LateArrivalTimeDeduction',
+                          ),
+                        )}
+                      />
+                    )}
+                    {Number(
+                      pick(
+                        selectedDayDetails,
+                        'earlyOutTimeDeduction',
+                        'EarlyOutTimeDeduction',
+                      ),
+                    ) > 0 && (
+                      <DetailRow
+                        label="Early Out Deduction"
+                        value={fmtHours(
+                          pick(
+                            selectedDayDetails,
+                            'earlyOutTimeDeduction',
+                            'EarlyOutTimeDeduction',
+                          ),
+                        )}
+                      />
+                    )}
+                    {Number(
+                      pick(
+                        selectedDayDetails,
+                        'totalTimeDeduction',
+                        'TotalTimeDeduction',
+                      ),
+                    ) > 0 && (
+                      <DetailRow
+                        label="Total Deduction"
+                        value={fmtHours(
+                          pick(
+                            selectedDayDetails,
+                            'totalTimeDeduction',
+                            'TotalTimeDeduction',
+                          ),
+                        )}
+                      />
+                    )}
+                    {pick(selectedDayDetails, 'shiftId', 'ShiftId') && (
+                      <DetailRow
+                        label="Shift ID"
+                        value={pick(selectedDayDetails, 'shiftId', 'ShiftId')}
+                      />
+                    )}
+                  </View>
+                  {/* Action Buttons */}
+                  <View style={detailStyles.actionButtonsContainer}>
+                    {getRecordActionType(selectedDayDetails) === 'noRecord' && (
+                      <>
+                        {/* No color - only Leave Request button */}
+                        <TouchableOpacity
+                          style={[
+                            detailStyles.actionButton,
+                            detailStyles.leaveRequestButton,
+                          ]}
+                          onPress={handleLeaveRequest}>
+                          <Text style={detailStyles.actionButtonText}>
+                            Leave Request
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    {getRecordActionType(selectedDayDetails) ===
+                      'markPresent' && (
+                      <>
+                        {/* Has color - show Mark Present and Leave Request */}
+                        <TouchableOpacity
+                          style={[
+                            detailStyles.actionButton,
+                            detailStyles.markPresentButton,
+                          ]}
+                          onPress={handleMarkPresent}>
+                          <Text style={detailStyles.actionButtonText}>
+                            Mark Present
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            detailStyles.actionButton,
+                            detailStyles.leaveRequestButton,
+                          ]}
+                          onPress={handleLeaveRequest}>
+                          <Text style={detailStyles.actionButtonText}>
+                            Leave Request
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    {getRecordActionType(selectedDayDetails) === 'edit' && (
+                      <>
+                        {/* Has color with existing data - show Edit and Short Leave */}
+                        <TouchableOpacity
+                          style={[
+                            detailStyles.actionButton,
+                            detailStyles.editButton,
+                          ]}
+                          onPress={handleEditAttendance}>
+                          <Text style={detailStyles.actionButtonText}>
+                            Edit Attendance
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            detailStyles.actionButton,
+                            detailStyles.shortLeaveButton,
+                          ]}
+                          onPress={handleShortLeave}>
+                          <Text style={detailStyles.actionButtonText}>
+                            Short Leave
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    {(getRecordActionType(selectedDayDetails) === 'noRecord' ||
+                      getRecordActionType(selectedDayDetails) ===
+                        'markPresent' ||
+                      getRecordActionType(selectedDayDetails) === 'edit') && (
                       <TouchableOpacity
                         style={[
                           detailStyles.actionButton,
-                          detailStyles.leaveRequestButton,
+                          detailStyles.cancelButton,
                         ]}
-                        onPress={handleLeaveRequest}>
-                        <Text style={detailStyles.actionButtonText}>
-                          Leave Request
+                        onPress={() => setAttendanceModalVisible(false)}>
+                        <Text
+                          style={[
+                            detailStyles.actionButtonText,
+                            detailStyles.cancelButtonText,
+                          ]}>
+                          Cancel
                         </Text>
                       </TouchableOpacity>
-                    </>
-                  )}
-                  {getRecordActionType(selectedDayDetails) ===
-                    'markPresent' && (
-                    <>
-                      {/* Has color - show Mark Present and Leave Request */}
-                      <TouchableOpacity
-                        style={[
-                          detailStyles.actionButton,
-                          detailStyles.markPresentButton,
-                        ]}
-                        onPress={handleMarkPresent}>
-                        <Text style={detailStyles.actionButtonText}>
-                          Mark Present
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          detailStyles.actionButton,
-                          detailStyles.leaveRequestButton,
-                        ]}
-                        onPress={handleLeaveRequest}>
-                        <Text style={detailStyles.actionButtonText}>
-                          Leave Request
-                        </Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                  {getRecordActionType(selectedDayDetails) === 'edit' && (
-                    <>
-                      {/* Has color with existing data - show Edit and Short Leave */}
-                      <TouchableOpacity
-                        style={[
-                          detailStyles.actionButton,
-                          detailStyles.editButton,
-                        ]}
-                        onPress={handleEditAttendance}>
-                        <Text style={detailStyles.actionButtonText}>
-                          Edit Attendance
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          detailStyles.actionButton,
-                          detailStyles.shortLeaveButton,
-                        ]}
-                        onPress={handleShortLeave}>
-                        <Text style={detailStyles.actionButtonText}>
-                          Short Leave
-                        </Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
-                  {(getRecordActionType(selectedDayDetails) === 'noRecord' ||
-                    getRecordActionType(selectedDayDetails) === 'markPresent' ||
-                    getRecordActionType(selectedDayDetails) === 'edit') && (
+                    )}
+                  </View>
+                </ScrollView>
+              ) : (
+                <View style={detailStyles.noDataContainer}>
+                  <Text style={detailStyles.noDataText}>
+                    No attendance data for this date
+                  </Text>
+                  <View style={detailStyles.noDataButtons}>
+                    {/* No record at all - only Leave Request button */}
                     <TouchableOpacity
                       style={[
                         detailStyles.actionButton,
-                        detailStyles.cancelButton,
+                        detailStyles.leaveRequestButton,
+                        detailStyles.fullWidthButton,
                       ]}
-                      onPress={() => setAttendanceModalVisible(false)}>
-                      <Text
-                        style={[
-                          detailStyles.actionButtonText,
-                          detailStyles.cancelButtonText,
-                        ]}>
-                        Cancel
+                      onPress={handleLeaveRequest}>
+                      <Text style={detailStyles.actionButtonText}>
+                        Leave Request
                       </Text>
                     </TouchableOpacity>
-                  )}
+                  </View>
                 </View>
-              </ScrollView>
-            ) : (
-              <View style={detailStyles.noDataContainer}>
-                <Text style={detailStyles.noDataText}>
-                  No attendance data for this date
-                </Text>
-                <View style={detailStyles.noDataButtons}>
-                  {/* No record at all - only Leave Request button */}
-                  <TouchableOpacity
-                    style={[
-                      detailStyles.actionButton,
-                      detailStyles.leaveRequestButton,
-                      detailStyles.fullWidthButton,
-                    ]}
-                    onPress={handleLeaveRequest}>
-                    <Text style={detailStyles.actionButtonText}>
-                      Leave Request
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
+              )}
+            </View>
           </View>
-        </View>
-      </Modal>
-    </>
-  );
-};
+        </Modal>
+      </>
+    );
+  },
+);
 
 // Detail Modal Styles (moved here)
 const detailStyles = {

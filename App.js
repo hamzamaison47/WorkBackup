@@ -2,7 +2,7 @@
 import React, {useEffect, useMemo, useCallback} from 'react';
 import {Provider, useSelector} from 'react-redux';
 import {NavigationContainer} from '@react-navigation/native';
-import {I18nManager} from 'react-native';
+import {I18nManager, Text, TextInput} from 'react-native';
 import RNRestart from 'react-native-restart';
 import {PersistGate} from 'redux-persist/integration/react';
 
@@ -13,6 +13,31 @@ import {initializeAzureConfig} from './src/services/SecureConfigService';
 import azureAIService from './src/services/AzureAIService';
 import {performanceMonitor} from './src/utils/performanceMonitor';
 import {selectIsRTL, selectCurrentLanguage} from './src/store/selectors';
+
+// ============================================
+// DISABLE ANDROID SYSTEM FONT & DISPLAY SCALING
+// ============================================
+// This prevents Android system-level font size and display size changes
+// from breaking the app's layout. The app uses its own responsive scaling
+// system defined in src/store/utils/scaling.js instead.
+//
+// Without this, when users change Settings > Display > Font size or
+// Settings > Display > Display size, text can overflow and layouts can break.
+// ============================================
+
+if (Text.defaultProps == null) {
+  Text.defaultProps = {};
+}
+Text.defaultProps.allowFontScaling = false;
+
+if (TextInput.defaultProps == null) {
+  TextInput.defaultProps = {};
+}
+TextInput.defaultProps.allowFontScaling = false;
+
+console.log(
+  '✅ System font scaling disabled - using app-controlled responsive scaling',
+);
 
 const AppContent = () => {
   // Use memoized selectors to prevent unnecessary re-renders
