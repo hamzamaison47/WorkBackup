@@ -153,119 +153,114 @@
 // };
 
 // export default CalendarModal;
+
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useMemo} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Modal, View, TouchableOpacity, Text, Platform} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import styles from '../../styles/styles';
 
-const CalendarModal = React.memo(
-  ({visible, initialDate, onDateSelected, onClose}) => {
-    // Memoize the initial date so it NEVER changes
-    const staticInitialDate = useMemo(() => {
-      return initialDate ? new Date(initialDate.split('T')[0]) : new Date();
-    }, []); // Empty deps - computed only once
+const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
+  const [date, setDate] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
 
-    const [date, setDate] = useState(staticInitialDate);
-    const [showPicker, setShowPicker] = useState(false);
+  // Only run once when component mounts
+  useEffect(() => {
+    const parsedDate = initialDate
+      ? new Date(initialDate.split('T')[0])
+      : new Date();
+    setDate(parsedDate);
 
-    useEffect(() => {
-      // Reset to static initial date
-      setDate(staticInitialDate);
-
-      if (Platform.OS === 'android') {
-        setTimeout(() => setShowPicker(true), 100);
-      }
-    }, []); // Empty dependency array
-
-    const handleChange = (event, selectedDate) => {
-      if (Platform.OS === 'android') {
-        if (event?.type === 'set' && selectedDate) {
-          onDateSelected(selectedDate.toISOString().split('T')[0]);
-          setShowPicker(false);
-          onClose();
-        } else if (event?.type === 'dismissed') {
-          setShowPicker(false);
-          onClose();
-        }
-        return;
-      }
-
-      // iOS: update date as user scrolls
-      if (selectedDate) {
-        setDate(selectedDate);
-      }
-    };
-
-    const handleIOSConfirm = () => {
-      onDateSelected(date.toISOString().split('T')[0]);
-      onClose();
-    };
-
-    const handleIOSCancel = () => {
-      onClose();
-    };
-
-    // Android
     if (Platform.OS === 'android') {
-      if (!visible || !showPicker) {
-        return null;
-      }
+      setTimeout(() => setShowPicker(true), 100);
+    }
+  }, []); // Empty dependency array - only run on mount
 
-      return (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display="calendar"
-          onChange={handleChange}
-          accentColor="#0A66C2"
-        />
-      );
+  const handleChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      if (event?.type === 'set' && selectedDate) {
+        onDateSelected(selectedDate.toISOString().split('T')[0]);
+        setShowPicker(false);
+        onClose();
+      } else if (event?.type === 'dismissed') {
+        setShowPicker(false);
+        onClose();
+      }
+      return;
     }
 
-    // iOS
+    // iOS: update date as user scrolls
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
+
+  const handleIOSConfirm = () => {
+    onDateSelected(date.toISOString().split('T')[0]);
+    onClose();
+  };
+
+  const handleIOSCancel = () => {
+    onClose();
+  };
+
+  // Android
+  if (Platform.OS === 'android') {
+    if (!visible || !showPicker) {
+      return null;
+    }
+
     return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleIOSCancel}>
-        <View style={styles.CalModal_modalContainer}>
-          <View style={styles.CalModal_modalContent}>
-            <View style={styles.CalModal_header}>
-              <Text style={styles.CalModal_headerTitle}>Select Date</Text>
-            </View>
+      <DateTimePicker
+        value={date}
+        mode="date"
+        display="calendar"
+        onChange={handleChange}
+        accentColor="#0A66C2"
+      />
+    );
+  }
 
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="inline"
-              onChange={handleChange}
-              accentColor="#0A66C2"
-              style={styles.CalModal_datePicker}
-            />
+  // iOS
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={handleIOSCancel}>
+      <View style={styles.CalModal_modalContainer}>
+        <View style={styles.CalModal_modalContent}>
+          <View style={styles.CalModal_header}>
+            <Text style={styles.CalModal_headerTitle}>Select Date</Text>
+          </View>
 
-            <View style={styles.CalModal_footer}>
-              <TouchableOpacity
-                style={styles.CalModal_cancelButton}
-                onPress={handleIOSCancel}>
-                <Text style={styles.CalModal_cancelButtonText}>CANCEL</Text>
-              </TouchableOpacity>
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="inline"
+            onChange={handleChange}
+            accentColor="#0A66C2"
+            style={styles.CalModal_datePicker}
+          />
 
-              <TouchableOpacity
-                style={styles.CalModal_okButton}
-                onPress={handleIOSConfirm}>
-                <Text style={styles.CalModal_okButtonText}>OK</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.CalModal_footer}>
+            <TouchableOpacity
+              style={styles.CalModal_cancelButton}
+              onPress={handleIOSCancel}>
+              <Text style={styles.CalModal_cancelButtonText}>CANCEL</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.CalModal_okButton}
+              onPress={handleIOSConfirm}>
+              <Text style={styles.CalModal_okButtonText}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-    );
-  },
-);
-
-CalendarModal.displayName = 'CalendarModal';
+      </View>
+    </Modal>
+  );
+};
 
 export default CalendarModal;
