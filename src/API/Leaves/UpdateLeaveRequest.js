@@ -98,7 +98,7 @@ const buildContractXml = contract => {
     'LeaveDays',
     'LeaveEndDate',
     'LeaveReqDate',
-    'LeaveRequestId',
+    'LeaveReqId',
     'LeaveStartDate',
     'Quota',
     'Reason',

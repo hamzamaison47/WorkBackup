@@ -81,6 +81,8 @@ const LeaveRequestSaveRecord = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [leaveLabelsData, setLeaveLabelsData] = useState({});
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  const [startCalendarKey, setStartCalendarKey] = useState(Date.now());
+  const [endCalendarKey, setEndCalendarKey] = useState(Date.now());
 
   const createInitialFormData = () => ({
     recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
@@ -460,22 +462,25 @@ const LeaveRequestSaveRecord = () => {
     const formatted = formatToISOWithTime(date);
     const startDate = new Date(formatted);
 
+    // Close modal FIRST
+    setShowStartCalendar(false);
+
     if (formData.leaveEndDate) {
       const endDate = new Date(formData.leaveEndDate);
       if (startDate > endDate) {
         setAlertMessage(t('leaveSaveRecord.startDateAfterEnd'));
         setAlertModal(true);
-        setShowStartCalendar(false);
         return;
       }
     }
 
+    // Then update form data
     setFormData(prev => ({
       ...prev,
       leaveStartDate: formatted,
     }));
 
-    // Add these lines:
+    // Fetch data after state update
     if (formData.leaveCode) {
       await fetchBalanceQuotaEligibility(formData.leaveCode, formatted);
 
@@ -483,12 +488,13 @@ const LeaveRequestSaveRecord = () => {
         await fetchLeaveDaysFromAPI(formatted, formData.leaveEndDate);
       }
     }
-
-    setShowStartCalendar(false);
   };
 
   const handleEndDateChange = async date => {
     const formatted = formatToISOWithTime(date);
+
+    // Close modal FIRST
+    setShowEndCalendar(false);
 
     if (formData.leaveStartDate) {
       const startDate = new Date(formData.leaveStartDate);
@@ -504,17 +510,17 @@ const LeaveRequestSaveRecord = () => {
           leaveDays: '',
         }));
 
-        setShowEndCalendar(false);
         return;
       }
     }
 
+    // Then update form data
     setFormData(prev => ({
       ...prev,
       leaveEndDate: formatted,
     }));
 
-    // Add these lines:
+    // Fetch data after state update
     if (formData.leaveStartDate && formData.leaveCode) {
       await fetchLeaveDaysFromAPI(formData.leaveStartDate, formatted);
       await fetchBalanceQuotaEligibility(
@@ -522,8 +528,6 @@ const LeaveRequestSaveRecord = () => {
         formData.leaveStartDate,
       );
     }
-
-    setShowEndCalendar(false); // Add this line
   };
 
   const handleDatePickerOpen = dateType => {
@@ -622,8 +626,10 @@ const LeaveRequestSaveRecord = () => {
         EmployeeId: data.employeeId,
         EmployeeName: data.employeeName,
         RecId: data.recId === '' ? '0' : data.recId,
-        LeaveRequestId: modalMode === 'create' ? '' : data.leaveRequestId || '',
+        LeaveReqId: modalMode === 'create' ? '' : data.leaveRequestId || '',
       };
+
+      console.log({leaveData});
 
       if (
         !leavesData.LeaveCode ||
@@ -950,6 +956,7 @@ const LeaveRequestSaveRecord = () => {
                 ]}
                 onPress={() => {
                   if (handleDatePickerOpen('start')) {
+                    setStartCalendarKey(Date.now());
                     setShowStartCalendar(true);
                   }
                 }}>
@@ -978,6 +985,7 @@ const LeaveRequestSaveRecord = () => {
                 ]}
                 onPress={() => {
                   if (handleDatePickerOpen('end')) {
+                    setEndCalendarKey(Date.now());
                     setShowEndCalendar(true);
                   }
                 }}>
@@ -1090,20 +1098,25 @@ const LeaveRequestSaveRecord = () => {
           </KeyboardAvoidingView>
         </SafeAreaView>
       )}
+      {showStartCalendar && (
+        <CalendarModal
+          key={`start-${startCalendarKey}`}
+          visible={showStartCalendar}
+          initialDate={formData.leaveStartDate}
+          onDateSelected={handleStartDateChange}
+          onClose={() => setShowStartCalendar(false)}
+        />
+      )}
 
-      <CalendarModal
-        visible={showStartCalendar}
-        current={formData.leaveStartDate}
-        onDateSelected={handleStartDateChange}
-        onClose={() => setShowStartCalendar(false)}
-      />
-
-      <CalendarModal
-        visible={showEndCalendar}
-        current={formData.leaveEndDate}
-        onDateSelected={handleEndDateChange}
-        onClose={() => setShowEndCalendar(false)}
-      />
+      {showEndCalendar && (
+        <CalendarModal
+          key={`end-${endCalendarKey}`}
+          visible={showEndCalendar}
+          initialDate={formData.leaveEndDate}
+          onDateSelected={handleEndDateChange}
+          onClose={() => setShowEndCalendar(false)}
+        />
+      )}
 
       <AlertModal
         visible={alertModal}
