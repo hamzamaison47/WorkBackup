@@ -10,6 +10,7 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import {
   useNavigation,
