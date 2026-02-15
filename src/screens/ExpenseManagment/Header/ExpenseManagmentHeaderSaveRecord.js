@@ -283,7 +283,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       setLocationOptions(formatted);
     } catch (error) {
       console.error('Error fetching locations:', error);
-      setAlertMessage('Failed to fetch location options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -306,7 +306,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       setPurposeOptions(formatted);
     } catch (error) {
       console.error('Error fetching purposes:', error);
-      setAlertMessage('Failed to fetch purpose options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -369,9 +369,9 @@ const ExpenseManagementHeaderSaveRecord = () => {
         response?.AlertType === 'Success';
 
       if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const successAction = modalMode === 'create' ? 'created' : 'updated';
         setAlertMessage(
-          response?.Message || `Expense Report ${actionText} Successfully`,
+          response?.Message || `Record ${successAction} successfully`,
         );
         setAlertModal(true);
 
@@ -480,7 +480,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving expense:', error);
-      setAlertMessage('Failed to save expense. Please try again.');
+      setAlertMessage('Failed to save record. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');

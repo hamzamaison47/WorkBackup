@@ -349,7 +349,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       setCategoryOptions(formatted);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setAlertMessage('Failed to fetch expense category options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -370,7 +370,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       setCurrencyOptions(formatted);
     } catch (error) {
       console.error('Error fetching currencies:', error);
-      setAlertMessage('Failed to fetch currency options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -497,9 +497,9 @@ const ExpenseManagmentLinesSaveRecord = () => {
         response?.IsSuccess === true || response?.AlertType === 'Success';
 
       if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const successAction = modalMode === 'create' ? 'created' : 'updated';
         const message =
-          response?.Message || `Expense Line ${actionText} Successfully`;
+          response?.Message || `Record ${successAction} successfully`;
 
         setAlertMessage(message);
         setAlertModal(true);
@@ -515,8 +515,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
         };
       } else {
         const actionText = modalMode === 'create' ? 'Creating' : 'Updating';
-        const errorMessage =
-          response?.Message || `Error ${actionText} Expense Line`;
+        const errorMessage = response?.Message || `Error ${actionText} request`;
 
         setAlertMessage(errorMessage);
         setAlertModal(true);
@@ -535,7 +534,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
 
     if (mode === 'edit' && !formData.expenseTransactionNumber) {
       setAlertMessage(
-        'Error: Cannot update expense line. Missing transaction number.',
+        'Error: Cannot update record. Missing transaction number.',
       );
       setAlertModal(true);
       return;
@@ -639,7 +638,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving expense:', error);
-      setAlertMessage('Failed to save expense. Please try again.');
+      setAlertMessage('Failed to save record. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');

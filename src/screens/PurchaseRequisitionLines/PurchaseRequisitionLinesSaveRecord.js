@@ -667,13 +667,12 @@ const PurchaseRequisitionLinesSaveRecord = () => {
         setProcessingButton('');
         setIsProcessing(false);
 
-        setAlertMessage('Purchase Requisition Line Created Successfully');
+        setAlertMessage('Record created successfully.');
         setAlertModal(true);
 
         setTimeout(() => goBack(), 2000); // ✅ Reduced to 2 seconds
       } else {
-        const errorMessage =
-          result?.Message || 'Failed to create purchase requisition line';
+        const errorMessage = result?.Message || 'Failed to create record.';
         setAlertMessage(errorMessage);
         setAlertModal(true);
         setIsLoading(false);
@@ -682,7 +681,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       }
     } catch (err) {
       console.error('Error creating requisition line:', err);
-      setAlertMessage('Error creating requisition line. Please try again.');
+      setAlertMessage('Error creating record. Please try again.');
       setAlertModal(true);
       setIsLoading(false);
       setProcessingButton('');
@@ -730,19 +729,18 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       console.log('UPDATE API RESPONSE:', result);
 
       if (result && result.IsSuccess) {
-        setAlertMessage('Purchase Requisition Line Updated Successfully');
+        setAlertMessage('Record updated successfully.');
         setAlertModal(true);
 
         setTimeout(() => goBack(), 1500);
       } else {
-        const errorMessage =
-          result?.Message || 'Failed to update purchase requisition line';
+        const errorMessage = result?.Message || 'Failed to update record.';
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (err) {
       console.error('Error updating requisition line:', err);
-      setAlertMessage('Error updating requisition line. Please try again.');
+      setAlertMessage('Error updating record.');
       setAlertModal(true);
     } finally {
       setIsLoading(false);

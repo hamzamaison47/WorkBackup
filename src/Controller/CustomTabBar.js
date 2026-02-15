@@ -40,6 +40,12 @@ export default function CustomTabBar(props) {
       iconUnfocused: 'clipboard-outline',
     },
     {
+      name: 'ESSMyRequestStatusListPage',
+      label: t('My Request Status'),
+      iconFocused: 'document-text',
+      iconUnfocused: 'document-text-outline',
+    },
+    {
       name: 'Profile',
       label: t('tabNavigator.profile'),
       iconFocused: 'person',

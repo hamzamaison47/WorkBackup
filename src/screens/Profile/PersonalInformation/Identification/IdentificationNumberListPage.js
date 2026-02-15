@@ -14,7 +14,7 @@ import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/I
 import {isWorkflowConfigured} from '../../../../API/PersonalInformation/Identification/IsIdentificationWorkflowEnabled';
 import {IdentificationFindRequest} from '../../../../API/PersonalInformation/Identification/IdentificationFindRequest';
 import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identification/DeleteIdentityRequest';
-import { canEnableEditButton } from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
+import {canEnableEditButton} from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
 
 import IdentificationRequestCard from '../../../../components/IdentificationRequestCard';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -24,7 +24,7 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import styles from '../../../../styles/styles';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import {ScrollView} from 'react-native-gesture-handler';
-import { itemModifiedforPurchaseRequisitionLines } from '../../../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesItemModified';
+import {itemModifiedforPurchaseRequisitionLines} from '../../../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesItemModified';
 
 const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
@@ -73,34 +73,30 @@ const IdentificationNumberListPage = () => {
           new Date(a.CreatedDateTime).getTime(),
       );
 
-     const dataWithPermissions = await Promise.all(
+      const dataWithPermissions = await Promise.all(
         data.map(async item => {
           let canEdit = false;
           try {
-            canEdit = await canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
+            canEdit = await canEnableEditButton(
+              item.RecId,
+              item.PersonIdentificationNumberRecVersion,
+            );
           } catch {
             canEdit = false;
           }
           return {...item, canEdit};
-        })
+        }),
       );
 
       setIdentificationsData(dataWithPermissions);
-   
     } catch (error) {
       console.error('Failed to fetch identification data:', error);
-      setAlertMessage('Failed to fetch identification data.');
+      setAlertMessage('Failed to fetch data');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
     }
   }, [effectiveEmployeeId]);
-
- 
-
-
-
-
 
   // const checkEditButton = async (recId, recVersion) => {
   //   try {
@@ -288,17 +284,17 @@ const IdentificationNumberListPage = () => {
       });
 
       if (response[0].IsSuccess) {
-        setAlertMessage('Identification Request Deleted Successfully.');
+        setAlertMessage('Record deleted successfully');
         setIdentificationsData(prev =>
           prev.filter(
             identification => identification.recId !== itemToDelete.recId,
           ),
         );
       } else {
-        setAlertMessage('Unable to Delete Identification Request.');
+        setAlertMessage('Unable to delete record. Please try again.');
       }
     } catch (error) {
-      setAlertMessage('Failed to Delete Identification Request');
+      setAlertMessage('Failed to delete record');
       console.log('Delete Identification Request response', error);
     } finally {
       setButtonProcessing(itemToDelete.recId, 'delete', false);
@@ -327,9 +323,7 @@ const IdentificationNumberListPage = () => {
           (Array.isArray(response) ? response[0] : response).IsSuccess,
         ).toLowerCase() === 'true'
       ) {
-        setAlertMessage(
-          `${itemData.IdentificationTypeId} is Submitted Successfully.`,
-        );
+        setAlertMessage('Request submitted successfully');
         setAlertModal(true);
         setHighlightedRecId(itemData.recId);
 
@@ -345,13 +339,13 @@ const IdentificationNumberListPage = () => {
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : 'Failed to Submit Identification Request';
+            : 'Failed to submit request';
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to Submit Identification Request');
+      setAlertMessage('Failed to submit request');
       setAlertModal(true);
     } finally {
       setButtonProcessing(itemData.recId, 'submit', false);
@@ -369,10 +363,10 @@ const IdentificationNumberListPage = () => {
   };
 
   const getButtonConfig = item => {
-    console.log("Item Data: ",item);
+    console.log('Item Data: ', item);
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
-   // const apiEditEnabled = canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
+    // const apiEditEnabled = canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
     // console.log("Item Number : ", item.ApprovalStatus);
     // console.log("apiEditEnabled : ", apiEditEnabled);
     // console.log(
@@ -393,7 +387,7 @@ const IdentificationNumberListPage = () => {
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
         disabled: isHCMRecord ? !item.canEdit : !isDraft,
-          customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
+        customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: workflowEnabled,
@@ -514,11 +508,9 @@ const IdentificationNumberListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            {workflowEnabled
-              ? 'Tap the + button to add your first identification'
-              : 'No identification records available'}
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}

@@ -8,6 +8,7 @@ import {Animated} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {useSelector} from 'react-redux';
 
+import ESSMyRequestStatusListPage from '../screens/ESSMyRequestStatus';
 import MainDashboard from '../screens/Maindasboard';
 import DisplayListPage from '../screens/TabListPage/DisplayListPage';
 import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
@@ -84,6 +85,11 @@ const TabNavigator = () => {
         name="WorkItemAssigned"
         component={WorkItemsAssignedToMePage}
         options={{tabBarLabel: t('tabNavigator.MyWorkItems')}}
+      />
+      <Tab.Screen
+        name="ESSMyRequestStatusListPage"
+        component={ESSMyRequestStatusListPage}
+        options={{tabBarLabel: t('tabNavigator.ESSMyRequestStatusListPage')}}
       />
       <Tab.Screen
         name="Profile"

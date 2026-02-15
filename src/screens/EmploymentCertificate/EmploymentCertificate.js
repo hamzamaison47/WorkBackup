@@ -40,7 +40,9 @@ const EmploymentCertificate = () => {
       setAllCertificateTypeCode(result || []);
     } catch (error) {
       console.error('Failed to fetch Certificate Type Code data:', error);
-      setAlertMessage('Failed to fetch data.');
+      setAlertMessage(
+        'Unable to load data. Please check your connection and try again.',
+      );
       setAlertModal(true);
     }
   }, []);
@@ -51,7 +53,9 @@ const EmploymentCertificate = () => {
       setAllRequestedFor(result || []);
     } catch (error) {
       console.error('Failed to fetch Requested For data:', error);
-      setAlertMessage('Failed to fetch Requested For data.');
+      setAlertMessage(
+        'Unable to load data. Please check your connection and try again.',
+      );
       setAlertModal(true);
     }
   }, []);
@@ -141,7 +145,8 @@ const EmploymentCertificate = () => {
         setProcessingButton(''); // Reset processing state
         return {success: true, recId: recId};
       } else {
-        const errorMessage = submitResponse?.Message || 'Submission failed';
+        const errorMessage =
+          submitResponse?.Message || 'Failed to submit request.';
         setAlertMessage(errorMessage);
         setAlertModal(true);
         setProcessingButton(''); // Reset processing state

@@ -228,7 +228,7 @@ const BankAccountSaveRecord = () => {
           }
         } catch (error) {
           console.error('Error initializing Bank Account form:', error);
-          setAlertMessage('Failed to load bank account screen');
+          setAlertMessage('Failed to load screen');
           setAlertModal(true);
         } finally {
           if (isActive) setIsLoading(false);
@@ -339,15 +339,14 @@ const BankAccountSaveRecord = () => {
 
         return {success: true, recId: response?.RecId};
       } else {
-        const errorMessage = response?.Message || 'Operation Failed';
+        const errorMessage = response?.Message || 'Failed to process request';
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};
       }
     } catch (error) {
       console.error('Error in handleAction:', error);
-      const errorMessage =
-        error.message || 'An error occurred while processing the request.';
+      const errorMessage = error.message || 'Failed to process request';
       setAlertMessage(errorMessage);
       setAlertModal(true);
       return {success: false, message: 'Network or server error'};
@@ -407,7 +406,7 @@ const BankAccountSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving bank account record:', error);
-      setAlertMessage('Failed to save bank account record. Please try again.');
+      setAlertMessage('Failed to save record. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');

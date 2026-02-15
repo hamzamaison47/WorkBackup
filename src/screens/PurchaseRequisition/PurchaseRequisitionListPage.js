@@ -207,9 +207,7 @@ const PurchaseRequisitionListPage = () => {
 
       // ✔ Success Condition (like your BankAccount code)
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
-        setAlertMessage(
-          `Purchase requisition "${itemToSubmit.PurchReqId}" submitted successfully.`,
-        );
+        setAlertMessage('Request submitted successfully.');
         setAlertModal(true);
 
         // highlight the row (UI feedback)
@@ -225,15 +223,14 @@ const PurchaseRequisitionListPage = () => {
         }, 1000);
       } else {
         // Failed — show server message if exists
-        const errorMessage =
-          resObj?.Message || 'Failed to submit purchase requisition';
+        const errorMessage = resObj?.Message || 'Failed to submit request.';
 
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to submit purchase requisition');
+      setAlertMessage('Failed to submit request.');
       setAlertModal(true);
     } finally {
       setButtonProcessing(itemToSubmit.RecId, 'submit', false); // stop button spinner
@@ -404,7 +401,10 @@ const PurchaseRequisitionListPage = () => {
           }
           ListEmptyComponent={
             <View style={{paddingTop: 350, alignItems: 'center'}}>
-              <Text style={{fontSize: 16, color: '#999'}}>No Data Found</Text>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
             </View>
           }
         />
@@ -442,12 +442,10 @@ const PurchaseRequisitionListPage = () => {
               prevData.filter(item => item.RecId !== itemToDelete.RecId),
             );
 
-            setAlertMessage(
-              `Purchase requisition "${itemToDelete.PurchReqId}" deleted successfully`,
-            );
+            setAlertMessage('Record deleted successfully.');
             setAlertModal(true);
           } catch (error) {
-            setAlertMessage('Failed to delete record');
+            setAlertMessage('Failed to delete record.');
             setAlertModal(true);
           } finally {
             setButtonProcessing(itemToDelete.RecId, 'delete', false);

@@ -236,7 +236,7 @@ const IdentificationNumberSaveRecord = () => {
           }
         } catch (error) {
           console.error('Error initializing Identification form:', error);
-          setAlertMessage('Failed to load identification screen');
+          setAlertMessage('Failed to fetch data');
           setAlertModal(true);
         } finally {
           if (isActive) setIsLoading(false);

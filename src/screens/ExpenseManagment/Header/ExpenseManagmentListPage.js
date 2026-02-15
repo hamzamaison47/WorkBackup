@@ -21,6 +21,7 @@ import {
 import {GetAllExpenseReports} from '../../../API/ExpenseManagment/Headers/GetAllExpenseReports';
 import {DeleteExpenseReports} from '../../../API/ExpenseManagment/Headers/DeleteExpenseReports';
 import SubmitExpenseReportsToWorkflow from '../../../API/ExpenseManagment/Headers/SubmitExpenseReportsToWorkflow';
+import {translate as t} from '../../store/utils/translate';
 
 import AlertModal from '../../../components/Alert/AlertModal';
 import DynamicRequestCard from '../../../components/DynamicRequestCard';
@@ -141,7 +142,7 @@ const ExpenseManagmentListPage = () => {
         useNativeDriver: true,
       }).start();
     } catch (error) {
-      setAlertMessage(`Failed to fetch data: ${error.message}`);
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -327,18 +328,13 @@ const ExpenseManagmentListPage = () => {
       });
 
       if (result.success) {
-        setAlertMessage(
-          `Expense report ${itemData.ExpenseReportNumber} submitted successfully`,
-        );
+        setAlertMessage('Request submitted successfully.');
         setTimeout(() => fetchExpenseData(), 1000);
       } else {
-        setAlertMessage(
-          result.message ||
-            `Failed to submit expense report ${itemData.ExpenseReportNumber}`,
-        );
+        setAlertMessage(result.message || 'Failed to submit request');
       }
     } catch (error) {
-      setAlertMessage(`Failed to submit expense report: ${error.message}`);
+      setAlertMessage(`Failed to submit request: ${error.message}`);
     } finally {
       setButtonProcessing(itemRecId, 'submit', false);
       setAlertModal(true);
@@ -357,17 +353,15 @@ const ExpenseManagmentListPage = () => {
       });
 
       if (result.success) {
-        setAlertMessage(
-          `Expense report ${itemToDelete.ExpenseReportNumber} deleted successfully`,
-        );
+        setAlertMessage('Record deleted successfully');
         setExpenseData(prev =>
           prev.filter(exp => normalizeRecId(exp) !== itemRecId),
         );
       } else {
-        setAlertMessage('Unable to delete expense report. Please try again.');
+        setAlertMessage('Unable to delete record. Please try again.');
       }
     } catch (error) {
-      setAlertMessage('Failed to delete expense report. Please try again.');
+      setAlertMessage('Failed to delete record. Please try again.');
     } finally {
       setButtonProcessing(itemRecId, 'delete', false);
       setDeleteModal(false);
@@ -475,9 +469,9 @@ const ExpenseManagmentListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              <Text style={styles.DLP_NoDataText}>No Expense Reports</Text>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
-                Tap the + button to create your first expense report
+                Tap + to add a new record
               </Text>
             </ScrollView>
           )}

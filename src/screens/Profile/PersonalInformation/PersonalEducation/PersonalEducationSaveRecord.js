@@ -238,7 +238,7 @@ const PersonalEducationSaveRecord = () => {
         setOriginalDisciplineId(map[originalLabel] || '');
       }
     } catch {
-      setAlertMessage('Failed to fetch disciplines.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -299,7 +299,8 @@ const PersonalEducationSaveRecord = () => {
 
       const isSuccess =
         response?.IsSuccess === true || response?.IsSuccess === 'true';
-      if (!isSuccess) throw new Error(response?.Message || 'Operation failed');
+      if (!isSuccess)
+        throw new Error(response?.Message || 'Failed to save record.');
 
       const recId = response?.RecId || payload.RecId;
 
@@ -309,10 +310,11 @@ const PersonalEducationSaveRecord = () => {
           const submitRes = await SubmitEducationRequest({recId});
           const submitOk =
             submitRes?.IsSuccess === true || submitRes?.IsSuccess === 'true';
-          if (!submitOk) throw new Error(submitRes?.Message || 'Submit failed');
+          if (!submitOk)
+            throw new Error(submitRes?.Message || 'Failed to submit request.');
         } catch (submitErr) {
           // make sure the user sees the submit error
-          setAlertMessage(submitErr.message || 'Submit failed');
+          setAlertMessage(submitErr.message || 'Failed to submit request.');
           setAlertModal(true);
           return; // stop the success flow
         }
@@ -320,9 +322,9 @@ const PersonalEducationSaveRecord = () => {
 
       /* ---- success flow ---- */
       setAlertMessage(
-        `Education Record ${
-          actionType === 'submit' ? 'Submitted' : 'Saved'
-        } Successfully`,
+        actionType === 'submit'
+          ? 'Request submitted successfully.'
+          : 'Record saved successfully.',
       );
       setAlertModal(true);
       setTimeout(() => {
@@ -352,7 +354,9 @@ const PersonalEducationSaveRecord = () => {
         }
       }, 1200);
     } catch (err) {
-      setAlertMessage(err.message || 'Network / server error');
+      setAlertMessage(
+        err.message || 'An error occurred while processing the request.',
+      );
       setAlertModal(true);
     } finally {
       setProcessingButton('');

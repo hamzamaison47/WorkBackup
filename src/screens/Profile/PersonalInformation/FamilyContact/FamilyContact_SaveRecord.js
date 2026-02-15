@@ -254,7 +254,7 @@ const FamilyContact_SaveRecord = () => {
           }
         } catch (error) {
           console.error('Error initializing Family Contact form:', error);
-          setAlertMessage('Failed to load Family Contact screen');
+          setAlertMessage('Failed to load screen');
           setAlertModal(true);
         } finally {
           if (isActive) setIsLoading(false);
@@ -422,7 +422,7 @@ const FamilyContact_SaveRecord = () => {
       }
 
       const actionText = mode === 'edit' ? 'Updated' : 'Created';
-      setAlertMessage(`Personal Contact is ${actionText} Successfully`);
+      setAlertMessage(`Record ${actionText} successfully`);
       setAlertModal(true);
 
       return {
