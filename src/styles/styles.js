@@ -3515,7 +3515,7 @@ const styles = StyleSheet.create({
   },
 
   Alert_heading: {
-    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontSize: conditionalFontScale(16, 18, 20, 22),
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
@@ -3524,10 +3524,10 @@ const styles = StyleSheet.create({
   },
 
   Alert_description: {
-    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontSize: conditionalFontScale(13, 14, 15, 16),
     color: '#6B7280',
     textAlign: 'center',
-    lineHeight: conditionalFontScale(20, 22, 24, 26),
+    lineHeight: conditionalFontScale(18, 20, 22, 24),
   },
 
   Alert_button: {
@@ -3607,11 +3607,11 @@ const styles = StyleSheet.create({
   },
 
   LogoutAlert_heading: {
-    fontSize: conditionalFontScale(18, 20, 22, 24),
+    fontSize: conditionalFontScale(16, 18, 20, 22),
     fontWeight: '700',
     color: '#1F2937',
     textAlign: 'center',
-    lineHeight: conditionalFontScale(24, 26, 28, 32),
+    lineHeight: conditionalFontScale(22, 24, 26, 28),
   },
 
   LogoutAlert_buttonContainer: {
