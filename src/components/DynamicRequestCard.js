@@ -187,24 +187,32 @@ const DynamicRequestCard = ({
       case 'date': {
         const d = new Date(value);
         if (isNaN(d.getTime())) return value;
-        return d.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+        return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
       }
-      case 'currency':
+      case 'currency': {
         const num = Number(value);
         if (isNaN(num)) return value;
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2,
-        }).format(num);
-      case 'number':
+        return `$${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+      }
+      case 'number': {
         const n = Number(value);
         if (isNaN(n)) return value;
-        return new Intl.NumberFormat('en-US').format(n);
+        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
       case 'status':
         return value;
       case 'boolean':
