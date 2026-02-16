@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {store} from './index';
 import {setUserData, clearUserData} from './slices/userSlice';
 import {setFirebaseUserData, clearFirebaseData} from './slices/firebaseSlice';
