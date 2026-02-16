@@ -45,6 +45,7 @@ import Preferences from '../screens/Profile/Preferences/Preferences';
 import {FamilyContacts_ListPageScreen} from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_ListPage';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
 import FamilyContact_SaveRecord from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_SaveRecord';
+import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
 
 const Drawer = createDrawerNavigator();
 
@@ -534,6 +535,15 @@ const DrawerNavigator = () => {
           drawerIcon: () => (
             <Ionicons name="calendar" size={24} color="#0A66C2" />
           ),
+          headerShown: true,
+        }}
+      />
+      <Drawer.Screen
+        name="WorkflowHistoryScreen"
+        component={WorkflowHistoryScreen}
+        options={{
+          title: 'Workflow History',
+          drawerItemStyle: {display: 'none'}, // hides from drawer
           headerShown: true,
         }}
       />

@@ -18,6 +18,8 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+
 import {useSelector} from 'react-redux';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
@@ -364,12 +366,19 @@ const WorkItemsAssignedToMePage = () => {
                   </TouchableOpacity>
 
                   {/* Three Dots Menu */}
+                  {/* <TouchableOpacity
+                    style={cardStyles.menuButton}
+                    onPress={() =>
+                      setMenuVisible(isMenuOpen ? null : item.recId)
+                    }>
+                    <Text style={cardStyles.menuDots}>⋮</Text>
+                  </TouchableOpacity> */}
                   <TouchableOpacity
                     style={cardStyles.menuButton}
                     onPress={() =>
                       setMenuVisible(isMenuOpen ? null : item.recId)
                     }>
-                    <Text style={cardStyles.menuDots}>⋯</Text>
+                    <FontAwesome name="ellipsis-v" size={18} color="#666666" />
                   </TouchableOpacity>
                 </View>
               )}

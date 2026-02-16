@@ -5,7 +5,7 @@ import {XMLParser} from 'fast-xml-parser';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-const retrieveWorkflowHistory = async ({_recId, _tableId}) => {
+const retrieveWorkflowHistory = async ({_recId, _tableName}) => {
   try {
     const config = await getActiveConfigData();
 
@@ -17,10 +17,10 @@ const retrieveWorkflowHistory = async ({_recId, _tableId}) => {
 
     // SOAP body
     const soapBody = `
-      <retrieveAll xmlns="http://tempuri.org">
+      <retrieve xmlns="http://tempuri.org">
         <_recId>${_recId}</_recId>
-        <_tableId>${_tableId}</_tableId>
-      </retrieveAll>
+        <_tableName>${_tableName}</_tableName>
+      </retrieve>
     `;
 
     // Wrap in SOAP envelope
@@ -28,13 +28,13 @@ const retrieveWorkflowHistory = async ({_recId, _tableId}) => {
 
     // API call with axios
     const {data: xml} = await axios.post(
-      `${config.resource}soap/services/ESSWorkflowHistorySvcGroup`,
+      `${config.resource}soap/services/WorkflowStatusTrackingSvcGroup`,
       soapEnvelope,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction: 'http://tempuri.org/ESSWorkflowHistorySvc/retrieveAll',
+          SOAPAction: 'http://tempuri.org/WorkflowStatusTrackingSvc/retrieve',
         },
         responseType: 'text',
       },
@@ -50,8 +50,9 @@ const retrieveWorkflowHistory = async ({_recId, _tableId}) => {
 
     const parsed = parser.parse(xml);
     const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['retrieveAllResponse']?.['result']?.[
-        'a:ESSWorkflowHistoryContract'
+      // eslint-disable-next-line dot-notation
+      parsed?.['s:Envelope']?.['s:Body']?.['retrieveResponse']?.['result']?.[
+        'a:WorkflowStatusTrackingSvcContract'
       ];
     if (!rawData) {
       console.log('No workflow data found');
