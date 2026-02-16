@@ -49,7 +49,7 @@ const GetGPSCoordinates = async () => {
     const rawListNode =
       container?.['return']?.['a:DFgpsCoordinatesSvcContract'] ??
       container?.['result']?.['a:DFgpsCoordinatesSvcContract'];
-    console.log('rawListNode22222222222222222', rawListNode);
+    console.log('rawListNode', rawListNode);
 
     if (!rawListNode) {
       return [];
@@ -70,6 +70,7 @@ const GetGPSCoordinates = async () => {
         latitude: Number(r.Latitude),
         longitude: Number(r.Longitude),
         radius: Number(r.Radius),
+        machineIPAddress: r.MachineIPAddress || r.IPAddress || '', // Handle both possible field names
       }))
       .filter(
         p =>
