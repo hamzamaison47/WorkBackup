@@ -206,7 +206,7 @@ const DynamicRequestCard = ({
       case 'currency': {
         const num = Number(value);
         if (isNaN(num)) return value;
-        return `$${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       }
       case 'number': {
         const n = Number(value);
@@ -343,18 +343,128 @@ const DynamicRequestCard = ({
     });
   };
 
+  // const renderField = (field, index) => {
+  //   const value = data[field.key];
+  //   const formattedValue = formatValue(value, field.type);
+
+  //   if (field.type === 'status') return null;
+
+  //   if (field.type === 'boolean') {
+  //     const isTrue =
+  //       formattedValue === true ||
+  //       formattedValue === 'true' ||
+  //       formattedValue === 1 ||
+  //       formattedValue === '1';
+  //     return (
+  //       <View key={index} style={styles.fieldRow}>
+  //         <Text style={styles.fieldLabel}>{field.label}</Text>
+  //         <View
+  //           style={[
+  //             styles.booleanBadge,
+  //             isTrue ? styles.booleanTrue : styles.booleanFalse,
+  //           ]}>
+  //           <FontAwesome
+  //             name={isTrue ? 'check' : 'times'}
+  //             size={12}
+  //             color={isTrue ? '#065f46' : COLOR_PALETTE.gray[400]}
+  //           />
+  //           <Text
+  //             style={[
+  //               styles.booleanText,
+  //               isTrue ? styles.booleanTextTrue : styles.booleanTextFalse,
+  //             ]}>
+  //             {isTrue ? 'Yes' : 'No'}
+  //           </Text>
+  //         </View>
+  //       </View>
+  //     );
+  //   }
+
+  //   return (
+  //     <View key={index} style={styles.fieldRow}>
+  //       <Text style={styles.fieldLabel}>{field.label}</Text>
+  //       <View style={styles.fieldValueWrapper}>
+  //         <Text
+  //           style={[
+  //             styles.fieldValue,
+  //             showNavigationArrow && styles.fieldValueWithArrow,
+  //           ]}>
+  //           {formattedValue}
+  //         </Text>
+  //         {field.trend && (
+  //           <View style={styles.trendIndicator}>
+  //             <FontAwesome
+  //               name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
+  //               size={10}
+  //               color={
+  //                 field.trend === 'up'
+  //                   ? COLOR_PALETTE.success
+  //                   : COLOR_PALETTE.danger
+  //               }
+  //             />
+  //           </View>
+  //         )}
+  //       </View>
+  //     </View>
+  //   );
+  // };
+
   const renderField = (field, index) => {
     const value = data[field.key];
     const formattedValue = formatValue(value, field.type);
 
+    // Never show status fields here (they're shown in header)
     if (field.type === 'status') return null;
 
+    // Check if we have a meaningful label
+    const hasLabel = field.label && String(field.label).trim().length > 0;
+
+    // ────────────────────────────────────────────────
+    //  CASE 1: NO LABEL → full-width, left-aligned value
+    // ────────────────────────────────────────────────
+    if (!hasLabel) {
+      return (
+        <View key={index} style={styles.fieldRowNoLabel}>
+          <View style={styles.fieldValueFull}>
+            <Text
+              style={[
+                styles.fieldValueNoLabel,
+                showNavigationArrow && styles.fieldValueNoLabelWithArrow,
+                field.trend && styles.fieldValueWithTrend,
+              ]}>
+              {formattedValue}
+            </Text>
+
+            {field.trend && (
+              <View style={styles.trendIndicator}>
+                <FontAwesome
+                  name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
+                  size={11}
+                  color={
+                    field.trend === 'up'
+                      ? COLOR_PALETTE.success
+                      : COLOR_PALETTE.danger
+                  }
+                />
+              </View>
+            )}
+          </View>
+        </View>
+      );
+    }
+
+    // ────────────────────────────────────────────────
+    //  CASE 2: HAS LABEL → normal label | value layout
+    // ────────────────────────────────────────────────
+
+    // Boolean field with badge
     if (field.type === 'boolean') {
       const isTrue =
         formattedValue === true ||
         formattedValue === 'true' ||
         formattedValue === 1 ||
         formattedValue === '1';
+
       return (
         <View key={index} style={styles.fieldRow}>
           <Text style={styles.fieldLabel}>{field.label}</Text>
@@ -380,18 +490,20 @@ const DynamicRequestCard = ({
       );
     }
 
+    // Default case: regular field with label + value on right
     return (
       <View key={index} style={styles.fieldRow}>
         <Text style={styles.fieldLabel}>{field.label}</Text>
+
         <View style={styles.fieldValueWrapper}>
           <Text
             style={[
               styles.fieldValue,
               showNavigationArrow && styles.fieldValueWithArrow,
-            ]}
-            numberOfLines={1}>
+            ]}>
             {formattedValue}
           </Text>
+
           {field.trend && (
             <View style={styles.trendIndicator}>
               <FontAwesome
@@ -1099,6 +1211,35 @@ const styles = StyleSheet.create({
   // Animations
   spinning: {
     transform: [{rotate: '45deg'}],
+  },
+  fieldRowNoLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 22, // consistent with other rows
+  },
+
+  fieldValueFull: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start', // ← left aligned
+    gap: 6,
+  },
+
+  fieldValueNoLabel: {
+    fontSize: 15, // usually a bit larger when no label
+    fontWeight: '600',
+    color: COLOR_PALETTE.gray[900],
+    letterSpacing: -0.1,
+    flexShrink: 1,
+  },
+
+  fieldValueNoLabelWithArrow: {
+    paddingRight: 36, // space for chevron-right arrow
+  },
+
+  fieldValueWithTrend: {
+    flexShrink: 1,
   },
 });
 

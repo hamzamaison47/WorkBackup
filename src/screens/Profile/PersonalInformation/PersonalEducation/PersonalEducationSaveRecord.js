@@ -107,8 +107,10 @@ const PersonalEducationSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [educationDisciplines, setEducationDisciplines] = useState([]);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarField, setCalendarField] = useState('');
+  const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
+  const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
+  const [startDateCalendarField, setstartDateCalendarField] = useState('');
+  const [endDateCalendarField, setendDateCalendarField] = useState('');
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -277,11 +279,21 @@ const PersonalEducationSaveRecord = () => {
   const handleInputChange = (field, value) =>
     setFormData(prev => ({...prev, [field]: value}));
 
-  const handleDateChange = date => {
-    setFormData(prev => ({...prev, [calendarField]: convertDateFormat(date)}));
-    setShowCalendar(false);
+  const handleStartDateChange = date => {
+    setFormData(prev => ({
+      ...prev,
+      [startDateCalendarField]: convertDateFormat(date),
+    }));
+    setShowStartDateCalendar(false);
   };
 
+  const handleEndDateChange = date => {
+    setFormData(prev => ({
+      ...prev,
+      [endDateCalendarField]: convertDateFormat(date),
+    }));
+    setShowEndDateCalendar(false);
+  };
   /* ---------- validation ---------- */
   const validate = () => {
     const missing = [];
@@ -512,8 +524,8 @@ const PersonalEducationSaveRecord = () => {
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => {
-                setCalendarField('StartDate');
-                setShowCalendar(true);
+                setstartDateCalendarField('StartDate');
+                setShowStartDateCalendar(true);
               }}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
@@ -529,8 +541,8 @@ const PersonalEducationSaveRecord = () => {
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => {
-                setCalendarField('EndDate');
-                setShowCalendar(true);
+                setendDateCalendarField('EndDate');
+                setShowEndDateCalendar(true);
               }}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
@@ -586,10 +598,23 @@ const PersonalEducationSaveRecord = () => {
           />
 
           <CalendarModal
-            visible={showCalendar}
-            current={formData[calendarField]}
-            onDateSelected={handleDateChange}
-            onClose={() => setShowCalendar(false)}
+            visible={showStartDateCalendar}
+            initialDate={formData[endDateCalendarField]}
+            current={
+              formData[startDateCalendarField]
+                ? new Date(formData[startDateCalendarField])
+                : null
+            }
+            onDateSelected={handleStartDateChange}
+            onClose={() => setShowStartDateCalendar(false)}
+          />
+
+          <CalendarModal
+            visible={showEndDateCalendar}
+            initialDate={formData[endDateCalendarField]}
+            current={formData[endDateCalendarField]}
+            onDateSelected={handleEndDateChange}
+            onClose={() => setShowEndDateCalendar(false)}
           />
         </SafeAreaView>
       )}

@@ -180,7 +180,6 @@ const ContactDetailsListPage = () => {
       // },
       {
         key: 'Locator',
-        label: contactsData[0]?.Locatorlbl || 'Address',
         type: 'text',
       },
     ],
