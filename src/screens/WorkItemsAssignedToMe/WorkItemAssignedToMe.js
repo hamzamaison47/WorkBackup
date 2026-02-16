@@ -21,7 +21,6 @@ import {useSelector} from 'react-redux';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
-import DynamicRequestCard from '../../components/DynamicRequestCard';
 
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
@@ -50,7 +49,7 @@ const WorkItemsAssignedToMePage = () => {
   const [activeTab, setActiveTab] = useState('All');
 
   // State for managing menu visibility
-  const [menuVisible, setMenuVisible] = useState(null); // stores the recId of the card with open menu
+  const [menuVisible, setMenuVisible] = useState(null);
 
   /* ==============================
      Fetch Data
@@ -65,16 +64,34 @@ const WorkItemsAssignedToMePage = () => {
         email: effectiveUserData.email,
       });
 
-      const formattedData = (data || []).map((item, index) => ({
-        id: item.workflowWorkItemRecId ?? index,
-        document: item.Document,
-        documentType: item.DocumentType,
-        recId: item.workflowWorkItemRecId,
-        ContextRecId: item.ContextRecId,
-        ContextTableId: item.ContextTableId,
-        additionalDetails:
-          item.AdditionalDetails || `Details for ${item.Document}`,
-      }));
+      const formattedData = (data || []).map((item, index) => {
+        // Parse Document string: "Purchase requisition: 007488, NewTest"
+        const documentStr = item.Document || '';
+
+        // Extract document number (007488)
+        const numberMatch = documentStr.match(/:?\s*(\d+)/);
+        const documentNumber = numberMatch ? numberMatch[1] : '';
+
+        // Extract document type (Purchase requisition)
+        const typeMatch = documentStr.match(/^([^:]+)/);
+        let documentType = typeMatch ? typeMatch[1].trim() : '';
+        // Capitalize first letter of each word
+        documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+        // Extract requester (NewTest)
+        const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+        const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
+        return {
+          id: item.workflowWorkItemRecId ?? index,
+          recId: item.workflowWorkItemRecId,
+          documentNumber: documentNumber,
+          documentType: documentType,
+          requester: requester,
+          ContextRecId: item.ContextRecId,
+          ContextTableId: item.ContextTableId,
+        };
+      });
 
       setTableData(formattedData);
     } catch (error) {
@@ -147,17 +164,44 @@ const WorkItemsAssignedToMePage = () => {
   ============================== */
 
   const getFilteredData = () => {
-    // For now, all data is shown in "All" tab
-    // Approved and Rejected tabs will be empty until you implement status tracking
     switch (activeTab) {
       case 'All':
         return tableData;
       case 'Approved':
-        return []; // Will be implemented later
+        return [];
       case 'Rejected':
-        return []; // Will be implemented later
+        return [];
       default:
         return tableData;
+    }
+  };
+
+  /* ==============================
+     Single Item Actions
+  ============================== */
+
+  const handleSingleAction = async (recId, actionType) => {
+    if (isActionLoading) return;
+
+    try {
+      setIsActionLoading(true);
+
+      const response = await WorkflowItemAction({
+        recId: [recId],
+        action: actionType,
+      });
+
+      if (response?.IsSuccess) {
+        setAlertMessage(`${actionType} successful`);
+        fetchWorkItems();
+      } else {
+        setAlertMessage(`Failed to ${actionType}`);
+      }
+    } catch {
+      setAlertMessage(`Error during ${actionType}`);
+    } finally {
+      setIsActionLoading(false);
+      setAlertModal(true);
     }
   };
 
@@ -166,8 +210,9 @@ const WorkItemsAssignedToMePage = () => {
   ============================== */
 
   const handleViewHistory = (contextRecId, contextTableId) => {
-    setMenuVisible(null); // Close menu
-    navigation.navigate('WorkflowHistoryScreen', {
+    setMenuVisible(null);
+    // Navigate with the correct parameter names
+    navigation.getParent()?.navigate('WorkflowHistoryScreen', {
       recId: contextRecId,
       tableId: contextTableId,
     });
@@ -209,78 +254,93 @@ const WorkItemsAssignedToMePage = () => {
     const isSelected = selectedRecIds.includes(item.recId);
     const isMenuOpen = menuVisible === item.recId;
 
-    const cardData = {
-      ...item,
-      wfStatus: 'Pending',
-    };
-
     return (
-      <TouchableOpacity
-        activeOpacity={0.9}
-        disabled={isActionLoading}
-        onLongPress={() => enterSelectionMode(item.recId)}
-        onPress={() => (selectionMode ? toggleSelection(item.recId) : null)}>
-        <View style={{marginVertical: 6}}>
-          {/* Selection Checkbox */}
+      <View style={cardStyles.container}>
+        {/* Selection Overlay for long press */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onLongPress={() => enterSelectionMode(item.recId)}
+          onPress={() => (selectionMode ? toggleSelection(item.recId) : null)}
+          style={cardStyles.touchableArea}>
+          {/* Selection Checkbox - Only visible in selection mode */}
           {selectionMode && (
-            <View style={selectionStyles.checkboxContainer}>
+            <View style={cardStyles.checkboxContainer}>
               <View
                 style={[
-                  selectionStyles.checkbox,
-                  isSelected && selectionStyles.checkboxSelected,
+                  cardStyles.checkbox,
+                  isSelected && cardStyles.checkboxSelected,
                 ]}>
-                {isSelected && <Text style={selectionStyles.checkmark}>✓</Text>}
+                {isSelected && <Text style={cardStyles.checkmark}>✓</Text>}
               </View>
             </View>
           )}
 
-          {/* Three Dots Menu Button */}
-          {!selectionMode && (
-            <View
-              style={{position: 'absolute', top: 16, right: 16, zIndex: 10}}>
-              <TouchableOpacity
-                style={menuStyles.menuButton}
-                onPress={() => setMenuVisible(isMenuOpen ? null : item.recId)}
-                activeOpacity={0.7}>
-                <Text style={menuStyles.menuDots}>⋮</Text>
-              </TouchableOpacity>
+          {/* Card Content */}
+          <View
+            style={[cardStyles.card, isSelected && cardStyles.cardSelected]}>
+            {/* Top Row - Document Number and Action Buttons */}
+            <View style={cardStyles.topRow}>
+              <View style={cardStyles.documentNumberContainer}>
+                <Text style={cardStyles.documentNumber}>
+                  {item.documentNumber}
+                </Text>
+              </View>
 
-              {/* Dropdown Menu */}
-              {isMenuOpen && (
-                <View style={menuStyles.menuContainer}>
+              {/* Action Buttons - Only show when not in selection mode */}
+              {!selectionMode && (
+                <View style={cardStyles.actionButtons}>
                   <TouchableOpacity
-                    style={menuStyles.menuItem}
+                    style={[cardStyles.actionButton, cardStyles.approveButton]}
+                    onPress={() => handleSingleAction(item.recId, 'Approve')}
+                    disabled={isActionLoading}>
+                    <Text style={cardStyles.approveButtonText}>Approve</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[cardStyles.actionButton, cardStyles.rejectButton]}
+                    onPress={() => handleSingleAction(item.recId, 'Reject')}
+                    disabled={isActionLoading}>
+                    <Text style={cardStyles.rejectButtonText}>Reject</Text>
+                  </TouchableOpacity>
+
+                  {/* Three Dots Menu */}
+                  <TouchableOpacity
+                    style={cardStyles.menuButton}
                     onPress={() =>
-                      handleViewHistory(item.ContextRecId, item.ContextTableId)
+                      setMenuVisible(isMenuOpen ? null : item.recId)
                     }>
-                    <Text style={menuStyles.menuText}>📜 View History</Text>
+                    <Text style={cardStyles.menuDots}>⋯</Text>
                   </TouchableOpacity>
                 </View>
               )}
             </View>
-          )}
 
-          <DynamicRequestCard
-            data={cardData}
-            headerConfig={{
-              title: {key: 'document'},
-              subtitle: {key: 'documentType'},
-            }}
-            fields={[
-              {key: 'document', label: 'Document', type: 'text'},
-              {key: 'documentType', label: 'Document Type', type: 'text'},
-              {key: 'wfStatus', label: '', type: 'status'},
-            ]}
-            expandableFields={[
-              {key: 'additionalDetails', label: 'Details', type: 'text'},
-            ]}
-            isHighlighted={isSelected}
-            isExpandable={false}
-            gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
-            highlightGradientColors={['#E8F5E8', '#F0FFF0']}
-          />
-        </View>
-      </TouchableOpacity>
+            {/* Title */}
+            <Text style={cardStyles.title}>{item.documentType}</Text>
+
+            {/* Requester Info */}
+            {item.requester ? (
+              <View style={cardStyles.requesterContainer}>
+                <Text style={cardStyles.requesterLabel}>Requester</Text>
+                <Text style={cardStyles.requesterValue}>{item.requester}</Text>
+              </View>
+            ) : null}
+          </View>
+
+          {/* Dropdown Menu */}
+          {isMenuOpen && (
+            <View style={cardStyles.menuContainer}>
+              <TouchableOpacity
+                style={cardStyles.menuItem}
+                onPress={() =>
+                  handleViewHistory(item.ContextRecId, item.ContextTableId)
+                }>
+                <Text style={cardStyles.menuItemText}>View History</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
     );
   };
 
@@ -291,16 +351,16 @@ const WorkItemsAssignedToMePage = () => {
   const renderTabs = () => {
     const tabs = [
       {key: 'All', label: 'All', count: tableData.length},
-      {key: 'Approved', label: 'Approved', count: 0}, // Will be updated when filtering is implemented
-      {key: 'Rejected', label: 'Rejected', count: 0}, // Will be updated when filtering is implemented
+      {key: 'Approved', label: 'Approved', count: 0},
+      {key: 'Rejected', label: 'Rejected', count: 0},
     ];
 
     return (
-      <View style={tabStyles.tabContainer}>
+      <View style={tabStyles.container}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={tabStyles.tabScrollContent}>
+          contentContainerStyle={tabStyles.scrollContent}>
           {tabs.map(tab => (
             <TouchableOpacity
               key={tab.key}
@@ -310,7 +370,7 @@ const WorkItemsAssignedToMePage = () => {
               ]}
               onPress={() => {
                 setActiveTab(tab.key);
-                exitSelectionMode(); // Exit selection mode when switching tabs
+                exitSelectionMode();
               }}>
               <Text
                 style={[
@@ -350,9 +410,7 @@ const WorkItemsAssignedToMePage = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        selectionMode
-          ? `${selectedRecIds.length} Selected`
-          : 'Work Items Assigned To Me'
+        selectionMode ? `${selectedRecIds.length} selected` : 'Work Items'
       }
       isBackButton={false}
       showFooter={false}
@@ -372,12 +430,9 @@ const WorkItemsAssignedToMePage = () => {
               onPress={() => handleBulkAction('Approve')}
               style={bulkToolbarStyles.approveButton}>
               {isActionLoading ? (
-                <ActivityIndicator color="#2e7d32" size="small" />
+                <ActivityIndicator color="#2E7D32" size="small" />
               ) : (
-                <>
-                  <Text style={bulkToolbarStyles.approveIcon}>✓</Text>
-                  <Text style={bulkToolbarStyles.approveText}>Approve</Text>
-                </>
+                <Text style={bulkToolbarStyles.approveText}>Approve All</Text>
               )}
             </TouchableOpacity>
 
@@ -386,12 +441,9 @@ const WorkItemsAssignedToMePage = () => {
               onPress={() => handleBulkAction('Reject')}
               style={bulkToolbarStyles.rejectButton}>
               {isActionLoading ? (
-                <ActivityIndicator color="#c62828" size="small" />
+                <ActivityIndicator color="#C62828" size="small" />
               ) : (
-                <>
-                  <Text style={bulkToolbarStyles.rejectIcon}>✕</Text>
-                  <Text style={bulkToolbarStyles.rejectText}>Reject</Text>
-                </>
+                <Text style={bulkToolbarStyles.rejectText}>Reject All</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -402,8 +454,8 @@ const WorkItemsAssignedToMePage = () => {
               style={bulkToolbarStyles.textButton}>
               <Text style={bulkToolbarStyles.primaryButtonText}>
                 {selectedRecIds.length === filteredData.length
-                  ? '☐ Unselect All'
-                  : '☑ Select All'}
+                  ? 'Unselect all'
+                  : 'Select all'}
               </Text>
             </TouchableOpacity>
 
@@ -425,7 +477,7 @@ const WorkItemsAssignedToMePage = () => {
               data={filteredData}
               renderItem={renderWorkItemCard}
               keyExtractor={item => item.recId?.toString()}
-              contentContainerStyle={styles.LReqLP_ListContainer}
+              contentContainerStyle={cardStyles.listContainer}
               showsVerticalScrollIndicator={false}
               refreshControl={
                 <RefreshControl
@@ -441,8 +493,8 @@ const WorkItemsAssignedToMePage = () => {
           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
           <Text style={styles.LReqLP_NoDataText}>
             {activeTab === 'All'
-              ? 'No Data Found'
-              : `No ${activeTab} items found`}
+              ? 'No work items found'
+              : `No ${activeTab.toLowerCase()} items found`}
           </Text>
         </ScrollView>
       )}
@@ -459,156 +511,120 @@ const WorkItemsAssignedToMePage = () => {
 
 export default WorkItemsAssignedToMePage;
 
-const tabStyles = StyleSheet.create({
-  tabContainer: {
-    backgroundColor: '#f8f9fa',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  tabScrollContent: {
-    gap: 10,
-  },
-  tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderColor: '#dee2e6',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  activeTab: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
-    shadowColor: '#007bff',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6c757d',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  badge: {
-    backgroundColor: '#e9ecef',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    minWidth: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#495057',
-  },
-  activeBadgeText: {
-    color: '#ffffff',
-  },
-});
+/* ==============================
+     Styles
+  ============================== */
 
-const bulkToolbarStyles = StyleSheet.create({
+const cardStyles = StyleSheet.create({
+  listContainer: {
+    padding: 16,
+    paddingBottom: 24,
+  },
   container: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    marginBottom: 12,
+    position: 'relative',
+  },
+  touchableArea: {
+    position: 'relative',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 14,
-  },
-  approveButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#d4edda',
+  cardSelected: {
+    backgroundColor: '#F8F9FF',
+    borderColor: '#0066CC',
     borderWidth: 1.5,
-    borderColor: '#c3e6cb',
-    gap: 6,
   },
-  approveIcon: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#155724',
-  },
-  approveText: {
-    color: '#155724',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  rejectButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#f8d7da',
-    borderWidth: 1.5,
-    borderColor: '#f5c6cb',
-    gap: 6,
-  },
-  rejectIcon: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#721c24',
-  },
-  rejectText: {
-    color: '#721c24',
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  controlRow: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  textButton: {
+  documentNumberContainer: {
+    backgroundColor: '#F5F7FA',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  documentNumber: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    letterSpacing: 0.2,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    paddingHorizontal: 4,
+    borderRadius: 6,
+    borderWidth: 1,
   },
-  primaryButtonText: {
-    color: '#007bff',
-    fontWeight: '600',
+  approveButton: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#2E7D32',
+  },
+  rejectButton: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#C62828',
+  },
+  approveButtonText: {
+    color: '#2E7D32',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  rejectButtonText: {
+    color: '#C62828',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  menuButton: {
+    padding: 4,
+    marginLeft: 4,
+  },
+  menuDots: {
+    fontSize: 18,
+    color: '#666666',
+    letterSpacing: 1,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333333',
+    marginBottom: 12,
+  },
+  requesterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  requesterLabel: {
+    fontSize: 13,
+    color: '#666666',
+    width: 70,
+    fontWeight: '400',
+  },
+  requesterValue: {
     fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '500',
+    flex: 1,
   },
-  secondaryButtonText: {
-    color: '#6c757d',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-});
-
-const selectionStyles = StyleSheet.create({
   checkboxContainer: {
     position: 'absolute',
     right: 16,
@@ -616,68 +632,168 @@ const selectionStyles = StyleSheet.create({
     zIndex: 10,
   },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2.5,
-    borderColor: '#cbd5e0',
-    backgroundColor: '#ffffff',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   checkboxSelected: {
-    borderColor: '#28a745',
-    backgroundColor: '#28a745',
-    shadowColor: '#28a745',
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: '#0066CC',
+    backgroundColor: '#0066CC',
   },
   checkmark: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
-
-const menuStyles = StyleSheet.create({
-  menuButton: {
-    padding: 6,
-    zIndex: 10,
-  },
-  menuDots: {
-    fontSize: 18,
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '600',
-    color: '#9ca3af',
-    letterSpacing: 0,
   },
   menuContainer: {
     position: 'absolute',
-    top: 30,
-    right: 0,
+    top: 50,
+    right: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 6,
-    minWidth: 160,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    minWidth: 140,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: '#EDEDED',
+    zIndex: 20,
   },
   menuItem: {
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
   },
-  menuText: {
+  menuItemText: {
     fontSize: 14,
-    color: '#374151',
+    color: '#333333',
+    fontWeight: '400',
+  },
+});
+
+const tabStyles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  scrollContent: {
+    gap: 8,
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F5F7FA',
+    gap: 6,
+  },
+  activeTab: {
+    backgroundColor: '#0066CC',
+  },
+  tabText: {
+    fontSize: 14,
     fontWeight: '500',
+    color: '#666666',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  badge: {
+    backgroundColor: '#E9ECEF',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  activeBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#666666',
+  },
+  activeBadgeText: {
+    color: '#FFFFFF',
+  },
+});
+
+const bulkToolbarStyles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  approveButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#2E7D32',
+  },
+  approveText: {
+    color: '#2E7D32',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  rejectButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#C62828',
+  },
+  rejectText: {
+    color: '#C62828',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  controlRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  textButton: {
+    paddingVertical: 4,
+  },
+  primaryButtonText: {
+    color: '#0066CC',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  secondaryButtonText: {
+    color: '#666666',
+    fontWeight: '500',
+    fontSize: 14,
   },
 });
