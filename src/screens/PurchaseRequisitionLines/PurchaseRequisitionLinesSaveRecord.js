@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
@@ -13,6 +14,7 @@ import {
   Platform,
   BackHandler,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -133,6 +135,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
     PurchPrice: '',
   });
   const [isCombinationSelected, setIsCombinationSelected] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const createInitialFormData = () => ({
     RecId: '',
@@ -238,6 +241,26 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       return () => subscription.remove();
     }, [goBack]),
   );
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   /** ✅ Handle item change */
   const handleItemChange = async item => {
@@ -962,64 +985,205 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}>
       {isLoading ? (
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.LReqSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}>
-            {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
-                    {t('common.processing')}
+            style={styles.LReqSR_ContentWrapper}> */}
+          {isProcessing && (
+            <View style={styles.LReqSR_ProcessingOverlay}>
+              <View style={styles.LReqSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.LReqSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
+              </View>
+            </View>
+          )}
+          <ScrollView
+            contentContainerStyle={styles.LReqSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            {/* ITEM DROPDOWN - Disabled in edit mode */}
+            <View style={styles.LReqSR_FieldWrapper}>
+              <Text style={styles.LReqSR_Label}>Item Number*</Text>
+              {mode === 'edit' ? (
+                <TextInput
+                  style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                  value={selectedItem}
+                  editable={false}
+                  placeholder="Item Number"
+                  placeholderTextColor="#888"
+                />
+              ) : (
+                <Dropdown
+                  style={styles.LReqSR_Input}
+                  data={
+                    itemList.length === 0
+                      ? [
+                          {
+                            label: 'Loading items...',
+                            value: 'loading',
+                            disabled: true,
+                          },
+                        ]
+                      : itemList
+                  }
+                  labelField="label"
+                  valueField="value"
+                  placeholder={
+                    itemList.length === 0 ? 'Loading items...' : 'Select Item'
+                  }
+                  value={selectedItem}
+                  onChange={handleItemChange}
+                  search={itemList.length > 0}
+                  searchPlaceholder={
+                    itemList.length === 0 ? 'Please wait...' : 'Search Item'
+                  }
+                  placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                  itemTextStyle={styles.LReqSR_DropdownItemText}
+                  inputSearchStyle={{color: '#888'}}
+                  activeColor="#E6F0FF"
+                  containerStyle={[
+                    styles.LReqSR_DropdownContainer,
+                    {zIndex: 1000},
+                  ]}
+                  maxHeight={280}
+                  dropdownPosition="auto"
+                  disable={itemList.length === 0} // disables dropdown while loading
+                  renderItem={item => (
+                    <View
+                      style={{
+                        padding: 10,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        opacity: item.value === 'loading' ? 0.7 : 1,
+                      }}>
+                      <Text
+                        style={[
+                          styles.LReqSR_DropdownItemText,
+                          item.value === 'loading' && {
+                            color: '#888',
+                            fontStyle: 'italic',
+                          },
+                        ]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  )}
+                />
+              )}
+            </View>
+
+            {/* DISABLED FIELDS - Always disabled */}
+            <View style={styles.LReqSR_FieldWrapper}>
+              <Text style={styles.LReqSR_Label}>Product Name</Text>
+              <TextInput
+                style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                value={itemDetails.ItemName}
+                editable={false}
+                placeholder="Product Name"
+                placeholderTextColor="#888"
+              />
+            </View>
+
+            <View style={styles.LReqSR_FieldWrapper}>
+              <Text style={styles.LReqSR_Label}>Unit</Text>
+              <TextInput
+                style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                value={itemDetails.PurchUnitofMeasureCode}
+                editable={false}
+                placeholder="Unit of Measure"
+                placeholderTextColor="#888"
+              />
+            </View>
+
+            <View style={styles.LReqSR_FieldWrapper}>
+              <Text style={styles.LReqSR_Label}>Unit Price</Text>
+              <TextInput
+                style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                value={
+                  itemDetails.PurchPrice
+                    ? parseFloat(itemDetails.PurchPrice).toFixed(2)
+                    : ''
+                }
+                editable={false}
+                placeholder="Price"
+                placeholderTextColor="#888"
+              />
+            </View>
+
+            {/* QUANTITY FIELD - Always editable */}
+            <View style={styles.LReqSR_FieldWrapper}>
+              <Text style={styles.LReqSR_Label}>Quantity*</Text>
+              <TextInput
+                style={styles.LReqSR_Input}
+                value={quantity}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor="#888"
+                onChangeText={text => {
+                  // allow only numbers and one decimal point
+                  let cleaned = text.replace(/[^0-9.]/g, '');
+
+                  const parts = cleaned.split('.');
+                  if (parts.length > 2) {
+                    cleaned = parts[0] + '.' + parts[1];
+                  }
+
+                  setQuantity(cleaned);
+                }}
+                onEndEditing={() => {
+                  // if empty or invalid, set to '0'
+                  if (quantity === '' || quantity === '.') {
+                    setQuantity('0');
+                  }
+                }}
+              />
+            </View>
+
+            {/* DIMENSIONS SECTION - Only visible in create mode when item is selected */}
+            {(mode === 'create' || mode === 'edit') && selectedItem && (
+              <>
+                <View
+                  style={{
+                    backgroundColor: '#f5f5f5',
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 6,
+                    marginTop: 20,
+                    marginBottom: 12,
+                    borderLeftWidth: 4,
+                    borderLeftColor: '#0275d8',
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 'bold',
+                      color: '#333',
+                    }}>
+                    Dimensions
                   </Text>
                 </View>
-              </View>
-            )}
-            <ScrollView
-              contentContainerStyle={styles.LReqSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
-              {/* ITEM DROPDOWN - Disabled in edit mode */}
-              <View style={styles.LReqSR_FieldWrapper}>
-                <Text style={styles.LReqSR_Label}>Item Number*</Text>
-                {mode === 'edit' ? (
-                  <TextInput
-                    style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                    value={selectedItem}
-                    editable={false}
-                    placeholder="Item Number"
-                    placeholderTextColor="#888"
-                  />
-                ) : (
+
+                {/* SITE DROPDOWN */}
+                <View style={styles.LReqSR_FieldWrapper}>
+                  <Text style={styles.LReqSR_Label}>Site</Text>
                   <Dropdown
                     style={styles.LReqSR_Input}
-                    data={
-                      itemList.length === 0
-                        ? [
-                            {
-                              label: 'Loading items...',
-                              value: 'loading',
-                              disabled: true,
-                            },
-                          ]
-                        : itemList
-                    }
+                    data={siteList}
                     labelField="label"
                     valueField="value"
-                    placeholder={
-                      itemList.length === 0 ? 'Loading items...' : 'Select Item'
-                    }
-                    value={selectedItem}
-                    onChange={handleItemChange}
-                    search={itemList.length > 0}
-                    searchPlaceholder={
-                      itemList.length === 0 ? 'Please wait...' : 'Search Item'
-                    }
+                    placeholder="Select Site"
+                    value={selectedSite}
+                    onChange={handleSiteChange}
+                    search
+                    searchPlaceholder="Search Site"
                     placeholderStyle={styles.LReqSR_DropdownPlaceholder}
                     selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                     itemTextStyle={styles.LReqSR_DropdownItemText}
@@ -1027,244 +1191,104 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     activeColor="#E6F0FF"
                     containerStyle={[
                       styles.LReqSR_DropdownContainer,
-                      {zIndex: 1000},
+                      {zIndex: 994},
                     ]}
                     maxHeight={280}
                     dropdownPosition="auto"
-                    disable={itemList.length === 0} // disables dropdown while loading
                     renderItem={item => (
-                      <View
-                        style={{
-                          padding: 10,
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          opacity: item.value === 'loading' ? 0.7 : 1,
-                        }}>
-                        <Text
-                          style={[
-                            styles.LReqSR_DropdownItemText,
-                            item.value === 'loading' && {
-                              color: '#888',
-                              fontStyle: 'italic',
-                            },
-                          ]}>
+                      <View style={{padding: 10}}>
+                        <Text style={styles.LReqSR_DropdownItemText}>
                           {item.label}
                         </Text>
                       </View>
                     )}
                   />
-                )}
-              </View>
+                </View>
 
-              {/* DISABLED FIELDS - Always disabled */}
-              <View style={styles.LReqSR_FieldWrapper}>
-                <Text style={styles.LReqSR_Label}>Product Name</Text>
-                <TextInput
-                  style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                  value={itemDetails.ItemName}
-                  editable={false}
-                  placeholder="Product Name"
-                  placeholderTextColor="#888"
-                />
-              </View>
-
-              <View style={styles.LReqSR_FieldWrapper}>
-                <Text style={styles.LReqSR_Label}>Unit</Text>
-                <TextInput
-                  style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                  value={itemDetails.PurchUnitofMeasureCode}
-                  editable={false}
-                  placeholder="Unit of Measure"
-                  placeholderTextColor="#888"
-                />
-              </View>
-
-              <View style={styles.LReqSR_FieldWrapper}>
-                <Text style={styles.LReqSR_Label}>Unit Price</Text>
-                <TextInput
-                  style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                  value={
-                    itemDetails.PurchPrice
-                      ? parseFloat(itemDetails.PurchPrice).toFixed(2)
-                      : ''
-                  }
-                  editable={false}
-                  placeholder="Price"
-                  placeholderTextColor="#888"
-                />
-              </View>
-
-              {/* QUANTITY FIELD - Always editable */}
-              <View style={styles.LReqSR_FieldWrapper}>
-                <Text style={styles.LReqSR_Label}>Quantity*</Text>
-                <TextInput
-                  style={styles.LReqSR_Input}
-                  value={quantity}
-                  keyboardType="numeric"
-                  placeholder="0"
-                  placeholderTextColor="#888"
-                  onChangeText={text => {
-                    // allow only numbers and one decimal point
-                    let cleaned = text.replace(/[^0-9.]/g, '');
-
-                    const parts = cleaned.split('.');
-                    if (parts.length > 2) {
-                      cleaned = parts[0] + '.' + parts[1];
+                {/* LOCATION DROPDOWN */}
+                <View style={styles.LReqSR_FieldWrapper}>
+                  <Text style={styles.LReqSR_Label}>Warehouse</Text>
+                  <Dropdown
+                    style={styles.LReqSR_Input}
+                    data={locationList}
+                    labelField="label"
+                    valueField="value"
+                    placeholder={
+                      selectedSite ? 'Select Warehouse' : 'Select Site First'
                     }
-
-                    setQuantity(cleaned);
-                  }}
-                  onEndEditing={() => {
-                    // if empty or invalid, set to '0'
-                    if (quantity === '' || quantity === '.') {
-                      setQuantity('0');
-                    }
-                  }}
-                />
-              </View>
-
-              {/* DIMENSIONS SECTION - Only visible in create mode when item is selected */}
-              {(mode === 'create' || mode === 'edit') && selectedItem && (
-                <>
-                  <View
-                    style={{
-                      backgroundColor: '#f5f5f5',
-                      paddingVertical: 8,
-                      paddingHorizontal: 12,
-                      borderRadius: 6,
-                      marginTop: 20,
-                      marginBottom: 12,
-                      borderLeftWidth: 4,
-                      borderLeftColor: '#0275d8',
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 'bold',
-                        color: '#333',
-                      }}>
-                      Dimensions
-                    </Text>
-                  </View>
-
-                  {/* SITE DROPDOWN */}
-                  <View style={styles.LReqSR_FieldWrapper}>
-                    <Text style={styles.LReqSR_Label}>Site</Text>
-                    <Dropdown
-                      style={styles.LReqSR_Input}
-                      data={siteList}
-                      labelField="label"
-                      valueField="value"
-                      placeholder="Select Site"
-                      value={selectedSite}
-                      onChange={handleSiteChange}
-                      search
-                      searchPlaceholder="Search Site"
-                      placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                      selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                      itemTextStyle={styles.LReqSR_DropdownItemText}
-                      inputSearchStyle={{color: '#888'}}
-                      activeColor="#E6F0FF"
-                      containerStyle={[
-                        styles.LReqSR_DropdownContainer,
-                        {zIndex: 994},
-                      ]}
-                      maxHeight={280}
-                      dropdownPosition="auto"
-                      renderItem={item => (
-                        <View style={{padding: 10}}>
-                          <Text style={styles.LReqSR_DropdownItemText}>
-                            {item.label}
-                          </Text>
-                        </View>
-                      )}
-                    />
-                  </View>
-
-                  {/* LOCATION DROPDOWN */}
-                  <View style={styles.LReqSR_FieldWrapper}>
-                    <Text style={styles.LReqSR_Label}>Warehouse</Text>
-                    <Dropdown
-                      style={styles.LReqSR_Input}
-                      data={locationList}
-                      labelField="label"
-                      valueField="value"
-                      placeholder={
-                        selectedSite ? 'Select Warehouse' : 'Select Site First'
-                      }
-                      value={selectedLocation}
-                      onChange={item => setSelectedLocation(item.value)}
-                      search
-                      searchPlaceholder="Search Location"
-                      placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                      selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                      itemTextStyle={styles.LReqSR_DropdownItemText}
-                      inputSearchStyle={{color: '#888'}}
-                      activeColor="#E6F0FF"
-                      containerStyle={[
-                        styles.LReqSR_DropdownContainer,
-                        {zIndex: 993},
-                      ]}
-                      maxHeight={280}
-                      dropdownPosition="auto"
-                      renderItem={item => (
-                        <View style={{padding: 10}}>
-                          <Text style={styles.LReqSR_DropdownItemText}>
-                            {item.label}
-                          </Text>
-                        </View>
-                      )}
-                    />
-                  </View>
-
-                  {/* INVENTORY COMBINATIONS DROPDOWN - Show when combinations exist */}
-                  {showCombinationDropdown && inventCombinations.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>
-                        Inventory Combinations
-                        <Text
-                          style={{color: '#888', fontSize: 14, marginLeft: 5}}>
-                          (Combinations will auto-fill dimensions below)
+                    value={selectedLocation}
+                    onChange={item => setSelectedLocation(item.value)}
+                    search
+                    searchPlaceholder="Search Location"
+                    placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                    selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                    itemTextStyle={styles.LReqSR_DropdownItemText}
+                    inputSearchStyle={{color: '#888'}}
+                    activeColor="#E6F0FF"
+                    containerStyle={[
+                      styles.LReqSR_DropdownContainer,
+                      {zIndex: 993},
+                    ]}
+                    maxHeight={280}
+                    dropdownPosition="auto"
+                    renderItem={item => (
+                      <View style={{padding: 10}}>
+                        <Text style={styles.LReqSR_DropdownItemText}>
+                          {item.label}
                         </Text>
-                      </Text>
-                      <Dropdown
-                        style={styles.LReqSR_Input}
-                        data={inventCombinations}
-                        labelField="label"
-                        valueField="value"
-                        placeholder="Select Combinations"
-                        value={selectedCombination}
-                        onChange={handleCombinationChange}
-                        search
-                        searchPlaceholder="Search combinations..."
-                        placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                        selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                        itemTextStyle={styles.LReqSR_DropdownItemText}
-                        inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
-                        containerStyle={[
-                          styles.LReqSR_DropdownContainer,
-                          {zIndex: 1001}, // Higher z-index than other dropdowns
-                        ]}
-                        maxHeight={280}
-                        dropdownPosition="auto"
-                        renderItem={item => (
-                          <View style={{padding: 10}}>
-                            <Text
-                              style={[
-                                styles.LReqSR_DropdownItemText,
-                                {fontSize: 16},
-                              ]}>
-                              {item.label}
-                            </Text>
-                          </View>
-                        )}
-                      />
-                    </View>
-                  )}
+                      </View>
+                    )}
+                  />
+                </View>
 
-                  {/* CONFIGURATION DROPDOWN */}
-                  {/* {configList.length > 0 && (
+                {/* INVENTORY COMBINATIONS DROPDOWN - Show when combinations exist */}
+                {showCombinationDropdown && inventCombinations.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>
+                      Inventory Combinations
+                      <Text
+                        style={{color: '#888', fontSize: 14, marginLeft: 5}}>
+                        (Combinations will auto-fill dimensions below)
+                      </Text>
+                    </Text>
+                    <Dropdown
+                      style={styles.LReqSR_Input}
+                      data={inventCombinations}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Select Combinations"
+                      value={selectedCombination}
+                      onChange={handleCombinationChange}
+                      search
+                      searchPlaceholder="Search combinations..."
+                      placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                      selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                      itemTextStyle={styles.LReqSR_DropdownItemText}
+                      inputSearchStyle={{color: '#888'}}
+                      activeColor="#E6F0FF"
+                      containerStyle={[
+                        styles.LReqSR_DropdownContainer,
+                        {zIndex: 1001}, // Higher z-index than other dropdowns
+                      ]}
+                      maxHeight={280}
+                      dropdownPosition="auto"
+                      renderItem={item => (
+                        <View style={{padding: 10}}>
+                          <Text
+                            style={[
+                              styles.LReqSR_DropdownItemText,
+                              {fontSize: 16},
+                            ]}>
+                            {item.label}
+                          </Text>
+                        </View>
+                      )}
+                    />
+                  </View>
+                )}
+
+                {/* CONFIGURATION DROPDOWN */}
+                {/* {configList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
                       <Text style={styles.LReqSR_Label}>Configuration</Text>
                       <Dropdown
@@ -1300,8 +1324,8 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     </View>
                   )} */}
 
-                  {/* SIZE DROPDOWN */}
-                  {/* {sizeList.length > 0 && (
+                {/* SIZE DROPDOWN */}
+                {/* {sizeList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
                       <Text style={styles.LReqSR_Label}>Size</Text>
                       <Dropdown
@@ -1337,8 +1361,8 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     </View>
                   )} */}
 
-                  {/* COLOR DROPDOWN */}
-                  {/* {colorList.length > 0 && (
+                {/* COLOR DROPDOWN */}
+                {/* {colorList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
                       <Text style={styles.LReqSR_Label}>Color</Text>
                       <Dropdown
@@ -1374,8 +1398,8 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     </View>
                   )} */}
 
-                  {/* STYLE DROPDOWN */}
-                  {/* {styleList.length > 0 && (
+                {/* STYLE DROPDOWN */}
+                {/* {styleList.length > 0 && (
                     <View style={styles.LReqSR_FieldWrapper}>
                       <Text style={styles.LReqSR_Label}>Style</Text>
                       <Dropdown
@@ -1411,140 +1435,140 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     </View>
                   )} */}
 
-                  {/* CONFIGURATION - Read-only TextInput */}
-                  {configList.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Configuration</Text>
-                      <TextInput
-                        style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                        value={selectedConfig || ''}
-                        editable={false}
-                        placeholder=""
-                        placeholderTextColor="#888"
-                      />
-                    </View>
-                  )}
+                {/* CONFIGURATION - Read-only TextInput */}
+                {configList.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>Configuration</Text>
+                    <TextInput
+                      style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                      value={selectedConfig || ''}
+                      editable={false}
+                      placeholder=""
+                      placeholderTextColor="#888"
+                    />
+                  </View>
+                )}
 
-                  {/* SIZE - Read-only TextInput */}
-                  {sizeList.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Size</Text>
-                      <TextInput
-                        style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                        value={selectedSize || ''}
-                        editable={false}
-                        placeholder=""
-                        placeholderTextColor="#888"
-                      />
-                    </View>
-                  )}
+                {/* SIZE - Read-only TextInput */}
+                {sizeList.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>Size</Text>
+                    <TextInput
+                      style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                      value={selectedSize || ''}
+                      editable={false}
+                      placeholder=""
+                      placeholderTextColor="#888"
+                    />
+                  </View>
+                )}
 
-                  {/* COLOR - Read-only TextInput */}
-                  {colorList.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Color</Text>
-                      <TextInput
-                        style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                        value={selectedColor || ''}
-                        editable={false}
-                        placeholder=""
-                        placeholderTextColor="#888"
-                      />
-                    </View>
-                  )}
+                {/* COLOR - Read-only TextInput */}
+                {colorList.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>Color</Text>
+                    <TextInput
+                      style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                      value={selectedColor || ''}
+                      editable={false}
+                      placeholder=""
+                      placeholderTextColor="#888"
+                    />
+                  </View>
+                )}
 
-                  {/* STYLE - Read-only TextInput */}
-                  {styleList.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Style</Text>
-                      <TextInput
-                        style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
-                        value={selectedStyle || ''}
-                        editable={false}
-                        placeholder=""
-                        placeholderTextColor="#888"
-                      />
-                    </View>
-                  )}
+                {/* STYLE - Read-only TextInput */}
+                {styleList.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>Style</Text>
+                    <TextInput
+                      style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}
+                      value={selectedStyle || ''}
+                      editable={false}
+                      placeholder=""
+                      placeholderTextColor="#888"
+                    />
+                  </View>
+                )}
 
-                  {/* BATCH DROPDOWN */}
-                  {batchList.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Batch</Text>
-                      <Dropdown
-                        style={styles.LReqSR_Input}
-                        data={batchList}
-                        labelField="label"
-                        valueField="value"
-                        placeholder="Select Batch"
-                        value={selectedBatch}
-                        onChange={item => setSelectedBatch(item.value)}
-                        search
-                        searchPlaceholder="Search Batch"
-                        placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                        selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                        itemTextStyle={styles.LReqSR_DropdownItemText}
-                        inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
-                        disable={batchList.length === 0}
-                        containerStyle={[
-                          styles.LReqSR_DropdownContainer,
-                          {zIndex: 996},
-                        ]}
-                        maxHeight={280}
-                        dropdownPosition="auto"
-                        renderItem={item => (
-                          <View style={{padding: 10}}>
-                            <Text style={styles.LReqSR_DropdownItemText}>
-                              {item.label}
-                            </Text>
-                          </View>
-                        )}
-                      />
-                    </View>
-                  )}
+                {/* BATCH DROPDOWN */}
+                {batchList.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>Batch</Text>
+                    <Dropdown
+                      style={styles.LReqSR_Input}
+                      data={batchList}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Select Batch"
+                      value={selectedBatch}
+                      onChange={item => setSelectedBatch(item.value)}
+                      search
+                      searchPlaceholder="Search Batch"
+                      placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                      selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                      itemTextStyle={styles.LReqSR_DropdownItemText}
+                      inputSearchStyle={{color: '#888'}}
+                      activeColor="#E6F0FF"
+                      disable={batchList.length === 0}
+                      containerStyle={[
+                        styles.LReqSR_DropdownContainer,
+                        {zIndex: 996},
+                      ]}
+                      maxHeight={280}
+                      dropdownPosition="auto"
+                      renderItem={item => (
+                        <View style={{padding: 10}}>
+                          <Text style={styles.LReqSR_DropdownItemText}>
+                            {item.label}
+                          </Text>
+                        </View>
+                      )}
+                    />
+                  </View>
+                )}
 
-                  {/* SERIAL DROPDOWN */}
-                  {serialList.length > 0 && (
-                    <View style={styles.LReqSR_FieldWrapper}>
-                      <Text style={styles.LReqSR_Label}>Serial</Text>
-                      <Dropdown
-                        style={styles.LReqSR_Input}
-                        data={serialList}
-                        labelField="label"
-                        valueField="value"
-                        placeholder="Select Serial"
-                        value={selectedSerial}
-                        onChange={item => setSelectedSerial(item.value)}
-                        search
-                        searchPlaceholder="Search Serial"
-                        placeholderStyle={styles.LReqSR_DropdownPlaceholder}
-                        selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-                        itemTextStyle={styles.LReqSR_DropdownItemText}
-                        inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
-                        disable={serialList.length === 0}
-                        containerStyle={[
-                          styles.LReqSR_DropdownContainer,
-                          {zIndex: 995},
-                        ]}
-                        maxHeight={280}
-                        dropdownPosition="auto"
-                        renderItem={item => (
-                          <View style={{padding: 10}}>
-                            <Text style={styles.LReqSR_DropdownItemText}>
-                              {item.label}
-                            </Text>
-                          </View>
-                        )}
-                      />
-                    </View>
-                  )}
-                </>
-              )}
-            </ScrollView>
+                {/* SERIAL DROPDOWN */}
+                {serialList.length > 0 && (
+                  <View style={styles.LReqSR_FieldWrapper}>
+                    <Text style={styles.LReqSR_Label}>Serial</Text>
+                    <Dropdown
+                      style={styles.LReqSR_Input}
+                      data={serialList}
+                      labelField="label"
+                      valueField="value"
+                      placeholder="Select Serial"
+                      value={selectedSerial}
+                      onChange={item => setSelectedSerial(item.value)}
+                      search
+                      searchPlaceholder="Search Serial"
+                      placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+                      selectedTextStyle={styles.LReqSR_DropdownSelectedText}
+                      itemTextStyle={styles.LReqSR_DropdownItemText}
+                      inputSearchStyle={{color: '#888'}}
+                      activeColor="#E6F0FF"
+                      disable={serialList.length === 0}
+                      containerStyle={[
+                        styles.LReqSR_DropdownContainer,
+                        {zIndex: 995},
+                      ]}
+                      maxHeight={280}
+                      dropdownPosition="auto"
+                      renderItem={item => (
+                        <View style={{padding: 10}}>
+                          <Text style={styles.LReqSR_DropdownItemText}>
+                            {item.label}
+                          </Text>
+                        </View>
+                      )}
+                    />
+                  </View>
+                )}
+              </>
+            )}
+          </ScrollView>
 
-            {/* ACTION BUTTONS
+          {/* ACTION BUTTONS
             <View
               style={{
                 flexDirection: 'row',
@@ -1580,24 +1604,24 @@ const PurchaseRequisitionLinesSaveRecord = () => {
               </TouchableOpacity>
             </View> */}
 
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleOkPress}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
-            />
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={handleOkPress}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+          />
 
-            <AlertModal
-              visible={alertModal}
-              heading="Alert"
-              text={alertMessage}
-              onPress={() => setAlertModal(false)}
-            />
-          </KeyboardAvoidingView>
+          <AlertModal
+            visible={alertModal}
+            heading="Alert"
+            text={alertMessage}
+            onPress={() => setAlertModal(false)}
+          />
+          {/* </KeyboardAvoidingView> */}
         </SafeAreaView>
       )}
     </ActionPaneContainer>

@@ -1,16 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   View,
   Text,
   TextInput,
-  KeyboardAvoidingView,
+  Keyboard,
   ScrollView,
   SafeAreaView,
   BackHandler,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import {
@@ -67,6 +66,7 @@ const BankAccountSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   // Create initial form data function
   const createInitialFormData = () => ({
@@ -160,6 +160,26 @@ const BankAccountSaveRecord = () => {
       }
     }, []),
   );
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // useFocusEffect(
   //   React.useCallback(() => {
@@ -423,6 +443,7 @@ const BankAccountSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
@@ -430,118 +451,118 @@ const BankAccountSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-            {isProcessing && (
-              <View style={styles.DSR_ProcessingOverlay}>
-                <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.DSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
               </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.DSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled={true}>
-              {/* <Text style={styles.DSR_Label}>Account identification *</Text>
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.DSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}>
+            {/* <Text style={styles.DSR_Label}>Account identification *</Text>
               <TextInput */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.AccountId}
-                onChangeText={text => handleInputChange('AccountId', text)}
-                placeholder="Enter Account ID"
-                placeholderTextColor="#888"
-                maxLength={10}
-              />
-
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.Namelbl || 'Name'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.Name}
-                onChangeText={text => handleInputChange('Name', text)}
-                placeholder="Enter Name"
-                placeholderTextColor="#888"
-              />
-
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.AccountNum}
-                onChangeText={text => handleInputChange('AccountNum', text)}
-                placeholder="Enter Account Number"
-                placeholderTextColor="#888"
-                keyboardType="numeric"
-              />
-
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BankIBANlbl || 'IBAN'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.BankIBAN}
-                onChangeText={text => handleInputChange('BankIBAN', text)}
-                placeholder="Enter IBAN"
-                placeholderTextColor="#888"
-              />
-
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.BranchNumber}
-                onChangeText={text => handleInputChange('BranchNumber', text)}
-                placeholder="Enter Branch Number"
-                placeholderTextColor="#888"
-              />
-
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.BranchName}
-                onChangeText={text => handleInputChange('BranchName', text)}
-                placeholder="Enter Branch Name"
-                placeholderTextColor="#888"
-              />
-
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.AccountHolder}
-                onChangeText={text => handleInputChange('AccountHolder', text)}
-                placeholder="Enter Account Holder"
-                placeholderTextColor="#888"
-              />
-            </ScrollView>
-
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.AccountIdlbl || 'Account Identification'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.AccountId}
+              onChangeText={text => handleInputChange('AccountId', text)}
+              placeholder="Enter Account ID"
+              placeholderTextColor="#888"
+              maxLength={10}
             />
-          </KeyboardAvoidingView>
+
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.Namelbl || 'Name'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.Name}
+              onChangeText={text => handleInputChange('Name', text)}
+              placeholder="Enter Name"
+              placeholderTextColor="#888"
+            />
+
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.AccountNumlbl || 'Bank account number'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.AccountNum}
+              onChangeText={text => handleInputChange('AccountNum', text)}
+              placeholder="Enter Account Number"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+            />
+
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.BankIBANlbl || 'IBAN'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.BankIBAN}
+              onChangeText={text => handleInputChange('BankIBAN', text)}
+              placeholder="Enter IBAN"
+              placeholderTextColor="#888"
+            />
+
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.BranchNumberlbl || 'Branch number'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.BranchNumber}
+              onChangeText={text => handleInputChange('BranchNumber', text)}
+              placeholder="Enter Branch Number"
+              placeholderTextColor="#888"
+            />
+
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.BranchNamelbl || 'Branch name'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.BranchName}
+              onChangeText={text => handleInputChange('BranchName', text)}
+              placeholder="Enter Branch Name"
+              placeholderTextColor="#888"
+            />
+
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {BankAccountLabelData?.AccountHolderlbl || 'Account Holder'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.AccountHolder}
+              onChangeText={text => handleInputChange('AccountHolder', text)}
+              placeholder="Enter Account Holder"
+              placeholderTextColor="#888"
+            />
+          </ScrollView>
+
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={handleSave}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+          />
+          {/* </KeyboardAvoidingView> */}
 
           <AlertModal
             visible={alertModal}

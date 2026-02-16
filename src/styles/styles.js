@@ -2568,14 +2568,16 @@ const styles = StyleSheet.create({
 
   DSR_ContentWrapper: {
     flex: 1,
+    position: 'relative',
     justifyContent: 'space-between',
     paddingHorizontal: conditionalScale(16, 18, 20, 22),
     paddingTop: conditionalVerticalScale(8, 10, 12, 14),
   },
 
   DSR_FormContainer: {
-    padding: conditionalScale(0, 0, 0, 0),
-    paddingBottom: conditionalVerticalScale(20, 24, 28, 32),
+    paddingHorizontal: conditionalScale(12, 14, 16, 18),
+    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
+    paddingBottom: conditionalVerticalScale(80, 85, 90, 100),
   },
 
   DSR_Label: {
@@ -4787,6 +4789,10 @@ const styles = StyleSheet.create({
   // SAVE RECORD BUTTONS - RESPONSIVE STYLES
   // ============================================
   SRBtn_Footer: {
+    position: 'absolute', // ✅ Change from relative to absolute
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: conditionalVerticalScale(8, 10, 12, 14),
@@ -4794,9 +4800,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     backgroundColor: '#FFF',
-    position: 'relative',
     minHeight: conditionalVerticalScale(60, 65, 70, 75),
     gap: conditionalScale(6, 8, 10, 12),
+    zIndex: 10, // ✅ Ensure it's above ScrollView
   },
 
   SRBtn_SingleButtonFooter: {

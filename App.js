@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useEffect, useCallback} from 'react';
 import {Provider, useSelector} from 'react-redux';

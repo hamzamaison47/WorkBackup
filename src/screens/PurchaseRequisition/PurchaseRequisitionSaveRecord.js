@@ -7,12 +7,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   ScrollView,
   SafeAreaView,
   BackHandler,
-  Platform,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -60,6 +59,7 @@ const PurchaseRequisitionSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarField, setCalendarField] = useState('');
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const formatDate = date => {
     if (!date) return '';
@@ -158,6 +158,26 @@ const PurchaseRequisitionSaveRecord = () => {
       setFormData(purchaseRequisitiondata);
   }, [mode, purchaseRequisitiondata]);
 
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   const clearFormData = () => setFormData(createInitialFormData());
 
   const handleInputChange = (field, value) =>
@@ -249,110 +269,111 @@ const PurchaseRequisitionSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={clearFormData}>
       {isLoading ? (
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.LReqSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}>
-            {isProcessing && (
-              <View style={styles.LReqSR_ProcessingOverlay}>
-                <View style={styles.LReqSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.LReqSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
+            style={styles.LReqSR_ContentWrapper}> */}
+          {isProcessing && (
+            <View style={styles.LReqSR_ProcessingOverlay}>
+              <View style={styles.LReqSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.LReqSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
               </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.LReqSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
-              {/* FIELD 1 */}
-              <Text style={styles.LReqSR_Label}>Purchase requisition</Text>
-              <TextInput
-                style={[
-                  styles.LReqSR_Input,
-                  {backgroundColor: '#f5f5f5', color: '#888'},
-                ]}
-                value={formData.PurchReqId}
-                onChangeText={text => handleInputChange('PurchReqId', text)}
-                placeholder="Enter Requisition No"
-                placeholderTextColor="#888"
-                editable={false}
-                selectTextOnFocus={false}
-              />
-
-              {/* FIELD 2 */}
-              <Text style={styles.LReqSR_Label}>Name *</Text>
-              <TextInput
-                style={styles.LReqSR_Input}
-                value={formData.PurchReqName}
-                onChangeText={text => handleInputChange('PurchReqName', text)}
-                placeholder="Enter Name"
-                placeholderTextColor="#888"
-              />
-
-              {/* FIELD 3 */}
-              <Text style={styles.LReqSR_Label}>Requested Date</Text>
-              <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
-                onPress={() => {
-                  setCalendarField('RequiredDate');
-                  setShowCalendar(true);
-                }}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
-                    {formData.RequiredDate
-                      ? formatDate(formData.RequiredDate)
-                      : formatDate(new Date())}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-
-              {/* FIELD 4 */}
-              <Text style={styles.LReqSR_Label}>Accounting Date</Text>
-              <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
-                onPress={() => {
-                  setCalendarField('TransDate');
-                  setShowCalendar(true);
-                }}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
-                    {formData.TransDate
-                      ? formatDate(formData.TransDate)
-                      : formatDate(new Date())}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-            </ScrollView>
-
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleCreate}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.LReqSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            {/* FIELD 1 */}
+            <Text style={styles.LReqSR_Label}>Purchase requisition</Text>
+            <TextInput
+              style={[
+                styles.LReqSR_Input,
+                {backgroundColor: '#f5f5f5', color: '#888'},
+              ]}
+              value={formData.PurchReqId}
+              onChangeText={text => handleInputChange('PurchReqId', text)}
+              placeholder="Enter Requisition No"
+              placeholderTextColor="#888"
+              editable={false}
+              selectTextOnFocus={false}
             />
 
-            <AlertModal
-              visible={alertModal}
-              heading="Alert"
-              text={alertMessage}
-              onPress={() => setAlertModal(false)}
+            {/* FIELD 2 */}
+            <Text style={styles.LReqSR_Label}>Name *</Text>
+            <TextInput
+              style={styles.LReqSR_Input}
+              value={formData.PurchReqName}
+              onChangeText={text => handleInputChange('PurchReqName', text)}
+              placeholder="Enter Name"
+              placeholderTextColor="#888"
             />
-          </KeyboardAvoidingView>
+
+            {/* FIELD 3 */}
+            <Text style={styles.LReqSR_Label}>Requested Date</Text>
+            <TouchableOpacity
+              style={styles.LReqSR_DateSelector}
+              onPress={() => {
+                setCalendarField('RequiredDate');
+                setShowCalendar(true);
+              }}>
+              <View style={{flex: 1}}>
+                <Text style={styles.LReqSR_DateText}>
+                  {formData.RequiredDate
+                    ? formatDate(formData.RequiredDate)
+                    : formatDate(new Date())}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
+
+            {/* FIELD 4 */}
+            <Text style={styles.LReqSR_Label}>Accounting Date</Text>
+            <TouchableOpacity
+              style={styles.LReqSR_DateSelector}
+              onPress={() => {
+                setCalendarField('TransDate');
+                setShowCalendar(true);
+              }}>
+              <View style={{flex: 1}}>
+                <Text style={styles.LReqSR_DateText}>
+                  {formData.TransDate
+                    ? formatDate(formData.TransDate)
+                    : formatDate(new Date())}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
+          </ScrollView>
+
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={handleCreate}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+          />
+
+          <AlertModal
+            visible={alertModal}
+            heading="Alert"
+            text={alertMessage}
+            onPress={() => setAlertModal(false)}
+          />
+          {/* </KeyboardAvoidingView> */}
 
           <CalendarModal
             visible={showCalendar}

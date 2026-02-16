@@ -218,7 +218,8 @@
     "myTeam": "My Team",
     "MyWorkItems": "Work Items",
     "history": "History",
-    "profile": "Profile"
+    "profile": "Profile",
+    "ESSMyRequestStatusListPage": "My Request Status"
   },
   "dynamic": {
     "leaveCategories": {
