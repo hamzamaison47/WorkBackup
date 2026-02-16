@@ -30,7 +30,6 @@ import {
   SummaryItem,
 } from '../../components/Attendance/AttendanceComponents';
 import {useNavigation} from '@react-navigation/native';
-// import NetworkUtils from '../../utils/NetworkUtils'; // You'll need to create this utility
 
 // Screen sizing
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -45,8 +44,6 @@ const GEOF_KEY = 'df_geofences_v1';
 /* =================== Helper to get device IP =================== */
 const getDeviceIPAddress = async () => {
   try {
-    // You can use a service like https://api.ipify.org or implement local network detection
-    // For simplicity, we'll use ipify.org which returns just the IP
     const response = await fetch('https://api.ipify.org?format=json');
     const data = await response.json();
     return data.ip;
@@ -57,21 +54,6 @@ const getDeviceIPAddress = async () => {
 };
 
 /* =================== Helpers =================== */
-// eslint-disable-next-line no-unused-vars
-const raceTimeout = (promise, ms) =>
-  new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error('timeout')), ms);
-    promise
-      .then(v => {
-        clearTimeout(t);
-        resolve(v);
-      })
-      .catch(e => {
-        clearTimeout(t);
-        reject(e);
-      });
-  });
-
 const saveGeofences = async sites => {
   try {
     const payload = {ts: Date.now(), sites: Array.isArray(sites) ? sites : []};
@@ -215,7 +197,7 @@ const CreateAttendanceScreen = () => {
     getGeofencesCached,
     selectedLegalEntity,
     userData?.employeeId,
-  ]); // Add selectedLegalEntity as dependency
+  ]);
 
   // Helpers for UI
   const secondsTo12Hour = seconds => {
@@ -223,7 +205,6 @@ const CreateAttendanceScreen = () => {
     const date = new Date(0);
     date.setSeconds(seconds);
     return moment.utc(date).format('hh:mm A');
-    // note: UTC format to avoid timezone drift in pure seconds-of-day numbers
   };
 
   const formatSeconds = totalSeconds => {
@@ -378,11 +359,10 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId, getSelectedRange]);
 
-  // Geofences (persistent cache) - MODIFIED to allow cache bypass
+  // Geofences (persistent cache)
   const getGeofencesCached = useCallback(async (forceRefresh = false) => {
     const now = Date.now();
 
-    // If force refresh is requested, always fetch fresh data
     if (forceRefresh) {
       const sites = await GetGPSCoordinates().catch(() => []);
       const clean = Array.isArray(sites) ? sites : [];
@@ -391,7 +371,6 @@ const CreateAttendanceScreen = () => {
       return clean;
     }
 
-    // Check memory cache first
     if (
       geofenceCacheRef.current.sites.length &&
       now - geofenceCacheRef.current.ts < GEO_TTL_MS
@@ -399,14 +378,12 @@ const CreateAttendanceScreen = () => {
       return geofenceCacheRef.current.sites;
     }
 
-    // Check persisted cache
     const persisted = await loadGeofences();
     if (persisted.sites.length && now - persisted.ts < GEO_TTL_MS) {
       geofenceCacheRef.current = {sites: persisted.sites, ts: persisted.ts};
       return persisted.sites;
     }
 
-    // Fetch fresh data
     const sites = await GetGPSCoordinates().catch(() => []);
     const clean = Array.isArray(sites) ? sites : [];
     geofenceCacheRef.current = {sites: clean, ts: Date.now()};
@@ -582,7 +559,7 @@ const CreateAttendanceScreen = () => {
     return first;
   }, []);
 
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
     const toRad = d => (d * Math.PI) / 180;
     const R = 6371e3;
     const φ1 = toRad(lat1);
@@ -594,48 +571,131 @@ const CreateAttendanceScreen = () => {
       Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) * Math.sin(dλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
-  };
+  }, []);
 
-  const nearestWithEffective = useCallback(
-    (userLat, userLon, accuracy, points) => {
+  // NEW FUNCTION: Find any geofence that matches both location AND IP
+  const findMatchingGeofence = useCallback(
+    (userLat, userLon, accuracy, deviceIP, points) => {
       if (!points || points.length === 0) return null;
-      let best = null;
+
+      console.log('Checking all geofence records for match...');
+      console.log('Device IP:', deviceIP);
+
+      // Track the best location match for error messaging
+      let bestLocationMatch = null;
+      let ipMatchFound = false;
+      let ipMatchRecord = null;
+
       for (const p of points) {
         const lat1 = Number(p.latitude);
         const lon1 = Number(p.longitude);
-        if (!Number.isFinite(lat1) || !Number.isFinite(lon1)) continue;
-        const dNormal = calculateDistance(userLat, userLon, lat1, lon1);
-        const dSwapped = calculateDistance(userLat, userLon, lon1, lat1);
-        const useSwap = dSwapped < dNormal;
-        const chosenLat = useSwap ? lon1 : lat1;
-        const chosenLon = useSwap ? lat1 : lon1;
-        const d = useSwap ? dSwapped : dNormal;
-        if (!best || d < best.distance) {
-          best = {
-            latitude: chosenLat,
-            longitude: chosenLon,
-            radius: Number(p.radius),
-            machineIPAddress: p.machineIPAddress,
-            distance: d,
+        const radius = Number(p.radius);
+        const geofenceIP = p.machineIPAddress;
+
+        if (
+          !Number.isFinite(lat1) ||
+          !Number.isFinite(lon1) ||
+          !Number.isFinite(radius)
+        )
+          continue;
+
+        // Calculate distance
+        const distance = calculateDistance(userLat, userLon, lat1, lon1);
+        const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
+        const effectiveDistance = Math.max(0, distance - Math.min(acc, radius));
+        const isWithinRange = effectiveDistance <= radius;
+
+        // Check if IP matches (if geofence has an IP)
+        const ipMatches = !geofenceIP || geofenceIP === deviceIP;
+
+        console.log(`Geofence ${p.latitude},${p.longitude}:`, {
+          geofenceIP,
+          ipMatches,
+          isWithinRange,
+          distance: Math.round(distance),
+          effectiveDistance: Math.round(effectiveDistance),
+          radius,
+        });
+
+        // Track if we found an IP match
+        if (geofenceIP === deviceIP) {
+          ipMatchFound = true;
+          ipMatchRecord = p;
+        }
+
+        // If both conditions are met, return this geofence immediately
+        if (isWithinRange && ipMatches) {
+          console.log('✅ Found matching geofence with both location and IP');
+          return {
+            latitude: lat1,
+            longitude: lon1,
+            radius,
+            machineIPAddress: geofenceIP,
+            distance,
+            effectiveDistance,
+            matchedBy: 'both',
+          };
+        }
+
+        // Track the best location match (for error messages)
+        if (!bestLocationMatch || distance < bestLocationMatch.distance) {
+          bestLocationMatch = {
+            latitude: lat1,
+            longitude: lon1,
+            radius,
+            machineIPAddress: geofenceIP,
+            distance,
+            effectiveDistance,
           };
         }
       }
-      if (!best) return null;
-      const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
-      const effectiveDistance = Math.max(
-        0,
-        best.distance - Math.min(acc, best.radius),
-      );
-      return {...best, effectiveDistance};
+
+      // No geofence satisfied both conditions
+      console.log('❌ No geofence matched both location and IP');
+
+      // Determine the failure reason
+      if (ipMatchFound && ipMatchRecord) {
+        // We found an IP match but location is wrong
+        const distance = calculateDistance(
+          userLat,
+          userLon,
+          Number(ipMatchRecord.latitude),
+          Number(ipMatchRecord.longitude),
+        );
+        return {
+          ...bestLocationMatch,
+          failureReason: 'location',
+          ipMatchRecord,
+          distanceToIPMatch: distance,
+          matchedBy: 'ip_only',
+        };
+      } else if (
+        bestLocationMatch &&
+        bestLocationMatch.effectiveDistance <= bestLocationMatch.radius
+      ) {
+        // Location matches but IP is wrong
+        return {
+          ...bestLocationMatch,
+          failureReason: 'ip',
+          matchedBy: 'location_only',
+        };
+      } else {
+        // Neither matches
+        return {
+          ...bestLocationMatch,
+          failureReason: 'both',
+          matchedBy: 'none',
+        };
+      }
     },
-    [],
+    [calculateDistance],
   );
 
   // fire-and-forget helper so UI doesn't wait
   const refreshAfterMark = useCallback(() => {
     try {
-      fetchAttendanceRegister(); // intentionally not awaited
-      fetchOverviewSummary(); // intentionally not awaited
+      fetchAttendanceRegister();
+      fetchOverviewSummary();
     } catch {}
   }, [fetchAttendanceRegister, fetchOverviewSummary]);
 
@@ -655,12 +715,16 @@ const CreateAttendanceScreen = () => {
         );
       }
 
+      console.log('Device IP:', deviceIP);
+
       const forceRefresh = lastGeofenceErrorRef.current !== null;
 
       const [freshSites, coords] = await Promise.all([
         getGeofencesCached(forceRefresh),
         getCurrentLocationFast(),
       ]);
+
+      console.log('All geofence records:', freshSites);
 
       setLoadingGeo(false);
 
@@ -675,34 +739,64 @@ const CreateAttendanceScreen = () => {
       }
 
       const {latitude, longitude, accuracy = 9999} = coords;
-      const nearest = nearestWithEffective(
+
+      // Find matching geofence (checks ALL records for both location AND IP)
+      const matchResult = findMatchingGeofence(
         latitude,
         longitude,
         accuracy,
+        deviceIP,
         freshSites,
       );
-      if (!nearest) {
+
+      if (!matchResult) {
         lastGeofenceErrorRef.current =
-          'Unable to evaluate geofence. Please try again.';
+          'No matching geofence found. Please check your location and network connection.';
         throw new Error(lastGeofenceErrorRef.current);
       }
 
-      // Check if within geofence range
-      if (nearest.effectiveDistance > nearest.radius) {
-        const displayDist = Math.max(0, Math.round(nearest.distance));
-        lastGeofenceErrorRef.current = `You are ~${displayDist}m from office (±${Math.round(
-          accuracy,
-        )}m). Must be within ${Math.round(nearest.radius)}m.`;
+      // Handle different match scenarios
+      if (matchResult.matchedBy === 'both') {
+        // Perfect match found - proceed with attendance
+        console.log(
+          'Found matching geofence with IP:',
+          matchResult.machineIPAddress,
+        );
+
+        // Double-check range (should be true, but just to be safe)
+        if (matchResult.effectiveDistance > matchResult.radius) {
+          const displayDist = Math.max(0, Math.round(matchResult.distance));
+          lastGeofenceErrorRef.current = `You are ~${displayDist}m from office (±${Math.round(
+            accuracy,
+          )}m). Must be within ${Math.round(matchResult.radius)}m.`;
+          throw new Error(lastGeofenceErrorRef.current);
+        }
+      } else if (matchResult.matchedBy === 'ip_only') {
+        // IP matches but location is wrong
+        const distToCorrectLocation = Math.round(
+          matchResult.distanceToIPMatch || matchResult.distance,
+        );
+        // lastGeofenceErrorRef.current = `You are connected to the correct network (IP: ${deviceIP}), but your location is ${distToCorrectLocation}m from the authorized location for this IP. Please move to the correct location.`;
+        lastGeofenceErrorRef.current = `Your location is ${distToCorrectLocation}m from the authorized location for this IP. Please move to the correct location.`;
+
+        throw new Error(lastGeofenceErrorRef.current);
+      } else if (matchResult.matchedBy === 'location_only') {
+        // Location matches but IP is wrong
+        // lastGeofenceErrorRef.current = `Your location is correct, but your device IP (${deviceIP}) does not match the authorized office IP for this location. Please connect to the office network.`;
+        lastGeofenceErrorRef.current =
+          'Please connect to the office network for mark attendance.';
+
+        throw new Error(lastGeofenceErrorRef.current);
+      } else {
+        // Neither matches
+        // lastGeofenceErrorRef.current = `Your location (${displayDist}m from office) and IP (${deviceIP}) do not match any authorized office configuration. Please ensure you are at the office and connected to the office network.`;
+        lastGeofenceErrorRef.current =
+          'Please ensure you are at the office and connected to the office network.';
+
         throw new Error(lastGeofenceErrorRef.current);
       }
 
-      // Check if device IP matches the machine IP from the geofence
-      if (nearest.machineIPAddress && nearest.machineIPAddress !== deviceIP) {
-        lastGeofenceErrorRef.current = `Your device IP (${deviceIP}) does not match the authorized office IP (${nearest.machineIPAddress}). Please connect to the office network.`;
-        throw new Error(lastGeofenceErrorRef.current);
-      }
-
-      // within range now and IP matches
+      // All checks passed - mark attendance
       lastGeofenceErrorRef.current = null;
 
       const payload = {
@@ -711,24 +805,17 @@ const CreateAttendanceScreen = () => {
         location: `${latitude},${longitude} (±${Math.round(
           accuracy,
         )}m) - IP: ${deviceIP}`,
-        machineIPAddress: deviceIP, // Add this if your API expects it
+        machineIPAddress: deviceIP,
       };
 
       const response = await CreateAttendance(payload);
 
       if (response?.isSuccess || response === true) {
-        // ✅ Immediately stop spinner & unlock tap
         setLoadingAttendance(false);
         markInFlightRef.current = false;
-
-        // Show success right away
         setAlertMessage('Attendance recorded successfully');
         setAlertModal(true);
-
-        // Trigger refresh without keeping the button busy
         refreshAfterMark();
-
-        // short early return so finally{} doesn't re-toggle spinner
         return;
       }
 
@@ -737,9 +824,7 @@ const CreateAttendanceScreen = () => {
       setAlertMessage(err?.message || 'Failed to mark attendance.');
       setAlertModal(true);
     } finally {
-      // Make sure geo spinner goes off even on failures
       setLoadingGeo(false);
-      // If we didn't already stop it in the success early-return path
       setLoadingAttendance(false);
       markInFlightRef.current = false;
     }
@@ -747,7 +832,7 @@ const CreateAttendanceScreen = () => {
     getGeofencesCached,
     getCurrentLocationFast,
     userData?.employeeId,
-    nearestWithEffective,
+    findMatchingGeofence,
     refreshAfterMark,
   ]);
 
@@ -758,7 +843,7 @@ const CreateAttendanceScreen = () => {
         await Promise.all([
           fetchAttendanceRegister(),
           fetchOverviewSummary(),
-          getGeofencesCached(true), // Force refresh on pull-to-refresh
+          getGeofencesCached(true),
         ]);
       } else {
         await fetchMonthlySummary();
