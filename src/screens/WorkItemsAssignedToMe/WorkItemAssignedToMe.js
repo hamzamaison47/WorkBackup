@@ -42,6 +42,7 @@ const WorkItemsAssignedToMePage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [processingAction, setProcessingAction] = useState('');
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRecIds, setSelectedRecIds] = useState([]);
@@ -181,11 +182,36 @@ const WorkItemsAssignedToMePage = () => {
      Single Item Actions
   ============================== */
 
+  // const handleSingleAction = async (recId, actionType) => {
+  //   if (isActionLoading) return;
+
+  //   try {
+  //     setIsActionLoading(true);
+
+  //     const response = await WorkflowItemAction({
+  //       recId: [recId],
+  //       action: actionType,
+  //     });
+
+  //     if (response?.IsSuccess) {
+  //       fetchWorkItems();
+  //     } else {
+  //       setAlertMessage(`Failed to ${actionType}`);
+  //     }
+  //   } catch {
+  //     setAlertMessage(`Error during ${actionType}`);
+  //   } finally {
+  //     setIsActionLoading(false);
+  //     setAlertModal(true);
+  //   }
+  // };
+
   const handleSingleAction = async (recId, actionType) => {
     if (isActionLoading) return;
 
     try {
       setIsActionLoading(true);
+      setProcessingAction(actionType.toLowerCase()); // 'approve' or 'reject'
 
       const response = await WorkflowItemAction({
         recId: [recId],
@@ -197,12 +223,14 @@ const WorkItemsAssignedToMePage = () => {
         fetchWorkItems();
       } else {
         setAlertMessage(`Failed to ${actionType}`);
+        setAlertModal(true);
       }
     } catch {
       setAlertMessage(`Error during ${actionType}`);
+      setAlertModal(true);
     } finally {
       setIsActionLoading(false);
-      setAlertModal(true);
+      setProcessingAction('');
     }
   };
 
@@ -219,11 +247,40 @@ const WorkItemsAssignedToMePage = () => {
     });
   };
 
+  // const handleBulkAction = async actionType => {
+  //   if (selectedRecIds.length === 0 || isActionLoading) return;
+
+  //   try {
+  //     setIsActionLoading(true);
+
+  //     const response = await WorkflowItemAction({
+  //       recId: selectedRecIds,
+  //       action: actionType,
+  //     });
+
+  //     if (response?.IsSuccess) {
+  //       setAlertMessage(
+  //         `${actionType} successful for ${selectedRecIds.length} item(s)`,
+  //       );
+  //       exitSelectionMode();
+  //       fetchWorkItems();
+  //     } else {
+  //       setAlertMessage(`Failed to ${actionType}`);
+  //     }
+  //   } catch {
+  //     setAlertMessage(`Error during ${actionType}`);
+  //   } finally {
+  //     setIsActionLoading(false);
+  //     setAlertModal(true);
+  //   }
+  // };
+
   const handleBulkAction = async actionType => {
     if (selectedRecIds.length === 0 || isActionLoading) return;
 
     try {
       setIsActionLoading(true);
+      setProcessingAction('bulk');
 
       const response = await WorkflowItemAction({
         recId: selectedRecIds,
@@ -238,12 +295,14 @@ const WorkItemsAssignedToMePage = () => {
         fetchWorkItems();
       } else {
         setAlertMessage(`Failed to ${actionType}`);
+        setAlertModal(true);
       }
     } catch {
       setAlertMessage(`Error during ${actionType}`);
+      setAlertModal(true);
     } finally {
       setIsActionLoading(false);
-      setAlertModal(true);
+      setProcessingAction('');
     }
   };
 
@@ -421,6 +480,15 @@ const WorkItemsAssignedToMePage = () => {
       onRefresh={fetchWorkItems}>
       {/* Tabs */}
       {renderTabs()}
+
+      {isActionLoading && (
+        <View style={styles.DSR_ProcessingOverlay}>
+          <View style={styles.DSR_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DSR_ProcessingText}>Processing...</Text>
+          </View>
+        </View>
+      )}
 
       {/* Bulk Toolbar */}
       {selectionMode && (

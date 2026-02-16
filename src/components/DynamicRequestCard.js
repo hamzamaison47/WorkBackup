@@ -1,3 +1,480 @@
+// /* eslint-disable react-native/no-inline-styles */
+// /* eslint-disable curly */
+// import React, {useState, useEffect, useRef} from 'react';
+// import {View, Text, TouchableOpacity, Animated} from 'react-native';
+// import FontAwesome from 'react-native-vector-icons/FontAwesome';
+// import LinearGradient from 'react-native-linear-gradient';
+// import styles from '../styles/styles';
+
+// // Button type constants for header buttons
+// const BUTTON_TYPES = {
+//   EDIT: 'edit',
+//   DELETE: 'delete',
+//   ATTACHMENT: 'attachment',
+//   SUBMIT: 'submit',
+//   VIEW: 'view',
+// };
+
+// const DynamicRequestCard = ({
+//   data = {},
+//   fields = [],
+//   headerConfig = {},
+//   buttons = {}, // Now the ONLY source of button config
+//   gradientColors = ['#6ee0ff', '#bddeff', '#cce6ff'],
+//   highlightGradientColors = ['#E8F5E8', '#F0FFF0'],
+//   isHighlighted = false,
+//   expandableFields = [],
+//   isExpandable = false, // Changed default to false
+//   onButtonPress = () => {},
+//   processingButtons = [],
+//   showNavigationArrow = false,
+//   isRTL = false,
+// }) => {
+//   const [expanded, setExpanded] = useState(false);
+//   const arrowAnim = useRef(new Animated.Value(0)).current;
+//   const animationIntervalRef = useRef(null);
+
+//   useEffect(() => {
+//     if (isHighlighted) {
+//       console.log('Card highlighted');
+//     }
+//   }, [isHighlighted]);
+
+//   // Continuous arrow animation every 3 seconds
+//   useEffect(() => {
+//     if (showNavigationArrow) {
+//       const startAnimation = () => {
+//         Animated.sequence([
+//           Animated.timing(arrowAnim, {
+//             toValue: 1,
+//             duration: 300,
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(arrowAnim, {
+//             toValue: 0.8,
+//             duration: 200,
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(arrowAnim, {
+//             toValue: 1,
+//             duration: 200,
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(arrowAnim, {
+//             toValue: 0.8,
+//             duration: 300,
+//             useNativeDriver: true,
+//           }),
+//         ]).start();
+//       };
+
+//       startAnimation();
+//       animationIntervalRef.current = setInterval(() => {
+//         startAnimation();
+//       }, 3000);
+
+//       return () => {
+//         if (animationIntervalRef.current) {
+//           clearInterval(animationIntervalRef.current);
+//         }
+//       };
+//     } else {
+//       arrowAnim.setValue(0);
+//       if (animationIntervalRef.current) {
+//         clearInterval(animationIntervalRef.current);
+//       }
+//     }
+//   }, [showNavigationArrow, arrowAnim]);
+
+//   // Helper function to get gradient colors
+//   const getGradientColors = () => {
+//     return isHighlighted ? highlightGradientColors : gradientColors;
+//   };
+
+//   const formatValue = (value, fieldType) => {
+//     switch (fieldType) {
+//       case 'date': {
+//         const d = new Date(value);
+//         const month = String(d.getMonth() + 1).padStart(2, '0');
+//         const day = String(d.getDate()).padStart(2, '0');
+//         const year = d.getFullYear();
+//         return `${month}/${day}/${year}`;
+//       }
+//       case 'currency':
+//         return `${value}`;
+//       case 'status':
+//         return value;
+//       case 'boolean':
+//         return value;
+//       default:
+//         return value || '';
+//     }
+//   };
+
+//   // Default button configurations (all hidden by default)
+//   const defaultButtonConfigs = {
+//     [BUTTON_TYPES.EDIT]: {
+//       show: false,
+//       text: 'Edit',
+//       icon: 'pencil',
+//       iconSize: 14,
+//       iconColor: '#fff',
+//       position: 'header',
+//       style: 'icon',
+//       backgroundColor: '#0A66C2',
+//       customStyle: {},
+//     },
+//     [BUTTON_TYPES.DELETE]: {
+//       show: false,
+//       text: 'Delete',
+//       icon: 'trash',
+//       iconSize: 14,
+//       iconColor: '#fff',
+//       position: 'header',
+//       style: 'icon',
+//       backgroundColor: '#ff4444',
+//       customStyle: {},
+//     },
+//     [BUTTON_TYPES.ATTACHMENT]: {
+//       show: false,
+//       text: 'Attachments',
+//       icon: 'paperclip',
+//       iconSize: 14,
+//       iconColor: '#fff',
+//       position: 'header',
+//       style: 'icon',
+//       backgroundColor: '#666',
+//       customStyle: {},
+//     },
+//     [BUTTON_TYPES.SUBMIT]: {
+//       show: false,
+//       text: 'Submit',
+//       icon: 'check',
+//       iconSize: 14,
+//       iconColor: '#fff',
+//       position: 'header',
+//       style: 'icon',
+//       backgroundColor: '#28a745',
+//       customStyle: {},
+//     },
+//     [BUTTON_TYPES.VIEW]: {
+//       show: false,
+//       text: 'View',
+//       icon: 'eye',
+//       iconSize: 14,
+//       iconColor: '#fff',
+//       position: 'header',
+//       style: 'icon',
+//       backgroundColor: '#17a2b8',
+//       customStyle: {},
+//     },
+//   };
+
+//   // Merge user-provided button configs with defaults
+//   const getMergedButtonConfig = buttonType => {
+//     const defaultConfig = defaultButtonConfigs[buttonType] || {};
+//     const userConfig = buttons[buttonType] || {};
+
+//     return {
+//       ...defaultConfig,
+//       ...userConfig,
+//       show: userConfig.show === true, // Explicit true required
+//     };
+//   };
+
+//   // Get all button types that are enabled
+//   const getEnabledButtons = () => {
+//     return Object.keys(buttons).filter(buttonType => {
+//       const config = getMergedButtonConfig(buttonType);
+//       return config.show === true;
+//     });
+//   };
+
+//   // Separate buttons by position
+//   const getButtonsByPosition = position => {
+//     return getEnabledButtons().filter(buttonType => {
+//       const config = getMergedButtonConfig(buttonType);
+//       return config.position === position;
+//     });
+//   };
+
+//   // Render field row
+//   const renderField = (field, index) => {
+//     const value = data[field.key];
+//     const formattedValue = formatValue(value, field.type);
+
+//     if (field.type === 'status') {
+//       return (
+//         <View key={index} style={styles.DRC_InfoBlock}>
+//           <Text style={styles.DRC_StatusText}>{formattedValue}</Text>
+//         </View>
+//       );
+//     }
+
+//     if (field.type === 'boolean') {
+//       return (
+//         <View key={index} style={styles.DRC_InfoBlock}>
+//           <Text style={styles.DRC_Label}>{field.label}:</Text>
+//           <View
+//             style={{flex: 1, alignItems: 'flex-end', justifyContent: 'center'}}>
+//             {formattedValue === true ||
+//             formattedValue === 'true' ||
+//             formattedValue === 1 ||
+//             formattedValue === '1' ? (
+//               <FontAwesome name="check" size={16} color="#000000ff" />
+//             ) : null}
+//           </View>
+//         </View>
+//       );
+//     }
+
+//     return (
+//       <View key={index} style={styles.DRC_InfoBlock}>
+//         <Text style={styles.DRC_Label}>{field.label}:</Text>
+//         <Text
+//           style={[
+//             styles.DRC_Value,
+//             showNavigationArrow && styles.DRC_ValueWithArrow,
+//           ]}>
+//           {formattedValue}
+//         </Text>
+//       </View>
+//     );
+//   };
+
+//   // Render button
+//   const renderButton = buttonType => {
+//     const buttonConfig = getMergedButtonConfig(buttonType);
+
+//     if (!buttonConfig.show) return null;
+
+//     const isProcessing = processingButtons.includes(buttonType);
+//     const isDisabled =
+//       buttonConfig.disabled || isProcessing || processingButtons.length > 0;
+
+//     // For icon buttons
+//     if (buttonConfig.style === 'icon') {
+//       return (
+//         <TouchableOpacity
+//           key={buttonType}
+//           onPress={() => onButtonPress(buttonType, data)}
+//           disabled={isDisabled}
+//           style={[
+//             styles.DRC_IconButton,
+//             {backgroundColor: buttonConfig.backgroundColor || '#0A66C2'},
+//             isDisabled && styles.DRC_Disabled,
+//             buttonConfig.customStyle,
+//           ]}>
+//           {isProcessing ? (
+//             <FontAwesome
+//               name="spinner"
+//               size={buttonConfig.iconSize || 16}
+//               color={buttonConfig.iconColor || '#fff'}
+//             />
+//           ) : (
+//             buttonConfig.icon && (
+//               <FontAwesome
+//                 name={buttonConfig.icon}
+//                 size={buttonConfig.iconSize || 16}
+//                 color={isDisabled ? '#999' : buttonConfig.iconColor || '#fff'}
+//               />
+//             )
+//           )}
+//         </TouchableOpacity>
+//       );
+//     }
+
+//     // For text buttons
+//     return (
+//       <TouchableOpacity
+//         key={buttonType}
+//         onPress={() => onButtonPress(buttonType, data)}
+//         disabled={isDisabled}
+//         style={[
+//           styles.DRC_TextButton,
+//           isDisabled && styles.DRC_Disabled,
+//           buttonConfig.customStyle,
+//         ]}>
+//         {buttonConfig.icon && !isProcessing && (
+//           <FontAwesome
+//             name={buttonConfig.icon}
+//             size={buttonConfig.iconSize || 16}
+//             color={isDisabled ? '#999' : buttonConfig.iconColor || '#0A66C2'}
+//           />
+//         )}
+//         {isProcessing && (
+//           <FontAwesome
+//             name="spinner"
+//             size={buttonConfig.iconSize || 16}
+//             color="#999"
+//           />
+//         )}
+//         <Text
+//           style={[
+//             styles.DRC_TextButtonText,
+//             isDisabled && styles.DRC_DisabledText,
+//             {
+//               color: isDisabled ? '#999' : buttonConfig.textColor || '#0A66C2',
+//             },
+//           ]}>
+//           {isProcessing ? 'Processing...' : buttonConfig.text}
+//         </Text>
+//       </TouchableOpacity>
+//     );
+//   };
+
+//   // Render navigation arrow with continuous animation
+//   const renderNavigationArrow = () => {
+//     if (!showNavigationArrow) return null;
+
+//     const arrowStyle = {
+//       transform: [
+//         {
+//           translateX: arrowAnim.interpolate({
+//             inputRange: [0, 1],
+//             outputRange: [0, 8],
+//           }),
+//         },
+//         {
+//           scale: arrowAnim.interpolate({
+//             inputRange: [0, 1],
+//             outputRange: [1, 1.2],
+//           }),
+//         },
+//       ],
+//       opacity: arrowAnim.interpolate({
+//         inputRange: [0, 1],
+//         outputRange: [1, 0.9],
+//       }),
+//     };
+
+//     return (
+//       <Animated.View style={[styles.DRC_NavigationArrow, arrowStyle]}>
+//         <FontAwesome name="chevron-right" size={14} color="#0A66C2" />
+//       </Animated.View>
+//     );
+//   };
+
+//   const headerButtons = getButtonsByPosition('header');
+//   const bottomButtons = getButtonsByPosition('bottom');
+//   const hasHeaderButtons = headerButtons.length > 0;
+//   const hasBottomButtons = bottomButtons.length > 0;
+//   const shouldShowExpandToggle = isExpandable && expandableFields.length > 0;
+
+//   return (
+//     <View
+//       style={[
+//         styles.DRC_CardContainer,
+//         isHighlighted && styles.DRC_HighlightedContainer,
+//         showNavigationArrow && styles.DRC_ClickableContainer,
+//       ]}>
+//       <LinearGradient
+//         colors={getGradientColors()}
+//         start={{x: 0, y: 0}}
+//         end={{x: 1, y: 1}}
+//         style={styles.DRC_Card}>
+//         {renderNavigationArrow()}
+
+//         {/* Header */}
+//         <View
+//           style={[
+//             styles.DRC_CardHeader,
+//             isRTL && {flexDirection: 'row-reverse'},
+//           ]}>
+//           <View
+//             style={[
+//               showNavigationArrow
+//                 ? styles.DRC_HeaderContentWithArrow
+//                 : {flex: 1},
+//               isRTL && {alignItems: 'flex-end'},
+//             ]}>
+//             {headerConfig.title && (
+//               <Text
+//                 style={[
+//                   styles.DRC_CardHeaderText,
+//                   isRTL && {textAlign: 'right'},
+//                 ]}>
+//                 {data[headerConfig.title.key] ||
+//                   headerConfig.title.defaultValue}
+//               </Text>
+//             )}
+
+//             {headerConfig.subtitle && (
+//               <Text
+//                 style={[
+//                   styles.DRC_CardSubHeaderText,
+//                   isRTL && {textAlign: 'right'},
+//                 ]}>
+//                 {data[headerConfig.subtitle.key] ||
+//                   headerConfig.subtitle.defaultValue}
+//               </Text>
+//             )}
+//           </View>
+
+//           {hasHeaderButtons && (
+//             <View
+//               style={[
+//                 styles.DRC_ButtonsContainer,
+//                 showNavigationArrow && styles.DRC_ButtonsContainerWithArrow,
+//                 isRTL && {flexDirection: 'row-reverse'},
+//               ]}>
+//               {headerButtons.map(buttonType => renderButton(buttonType))}
+//             </View>
+//           )}
+//         </View>
+
+//         {/* Main fields */}
+//         {fields.map((field, index) => renderField(field, index))}
+
+//         {/* Expandable fields */}
+//         {expanded && expandableFields.length > 0 && (
+//           <>
+//             <View style={styles.DRC_SectionDivider} />
+//             {expandableFields.map((field, index) => renderField(field, index))}
+//           </>
+//         )}
+
+//         {/* Bottom section */}
+//         {(shouldShowExpandToggle || hasBottomButtons) && (
+//           <View
+//             style={[
+//               styles.DRC_BottomContainer,
+//               !shouldShowExpandToggle &&
+//                 hasBottomButtons &&
+//                 styles.DRC_BottomContainerCollapsed,
+//             ]}>
+//             {shouldShowExpandToggle && (
+//               <TouchableOpacity
+//                 onPress={() => setExpanded(!expanded)}
+//                 style={styles.DRC_ExpandToggle}>
+//                 <FontAwesome
+//                   name={expanded ? 'chevron-up' : 'chevron-down'}
+//                   size={14}
+//                   color="#fff"
+//                 />
+//               </TouchableOpacity>
+//             )}
+
+//             {hasBottomButtons && (
+//               <View
+//                 style={[
+//                   styles.DRC_BottomButtonsContainer,
+//                   !shouldShowExpandToggle &&
+//                     styles.DRC_BottomButtonsContainerCollapsed,
+//                 ]}>
+//                 {bottomButtons.map(buttonType => renderButton(buttonType))}
+//               </View>
+//             )}
+//           </View>
+//         )}
+//       </LinearGradient>
+//     </View>
+//   );
+// };
+
+// export default DynamicRequestCard;
+// export {BUTTON_TYPES};
+
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 import React, {useState, useEffect, useRef} from 'react';
@@ -6,11 +483,11 @@ import {
   Text,
   TouchableOpacity,
   Animated,
-  StyleSheet,
   Dimensions,
   Platform,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import styles from '../styles/styles';
 
 const {width} = Dimensions.get('window');
 
@@ -92,7 +569,7 @@ const DynamicRequestCard = ({
         useNativeDriver: true,
       }).start();
     }
-  }, [menuVisible, menuFadeAnim]); // Added menuFadeAnim to dependencies
+  }, [menuVisible, menuFadeAnim]);
 
   // Press animations
   const handlePressIn = () => {
@@ -119,7 +596,6 @@ const DynamicRequestCard = ({
   useEffect(() => {
     let animation;
     if (isHighlighted) {
-      // Subtle pulse animation when highlighted
       animation = Animated.loop(
         Animated.sequence([
           Animated.timing(scaleAnim, {
@@ -144,7 +620,7 @@ const DynamicRequestCard = ({
         animation.stop();
       }
     };
-  }, [isHighlighted, scaleAnim]); // Added scaleAnim to dependencies
+  }, [isHighlighted, scaleAnim]);
 
   // Continuous arrow animation
   useEffect(() => {
@@ -178,7 +654,7 @@ const DynamicRequestCard = ({
         clearInterval(animationIntervalRef.current);
       }
     }
-  }, [showNavigationArrow, arrowAnim]); // Added arrowAnim to dependencies
+  }, [showNavigationArrow, arrowAnim]);
 
   const formatValue = (value, fieldType) => {
     if (value === null || value === undefined) return '—';
@@ -301,7 +777,7 @@ const DynamicRequestCard = ({
       icon: 'check',
       iconSize: 14,
       iconColor: '#fff',
-      position: 'header',
+      position: 'bottom',
       style: 'icon',
       backgroundColor: COLOR_PALETTE.success,
       customStyle: {},
@@ -343,72 +819,6 @@ const DynamicRequestCard = ({
     });
   };
 
-  // const renderField = (field, index) => {
-  //   const value = data[field.key];
-  //   const formattedValue = formatValue(value, field.type);
-
-  //   if (field.type === 'status') return null;
-
-  //   if (field.type === 'boolean') {
-  //     const isTrue =
-  //       formattedValue === true ||
-  //       formattedValue === 'true' ||
-  //       formattedValue === 1 ||
-  //       formattedValue === '1';
-  //     return (
-  //       <View key={index} style={styles.fieldRow}>
-  //         <Text style={styles.fieldLabel}>{field.label}</Text>
-  //         <View
-  //           style={[
-  //             styles.booleanBadge,
-  //             isTrue ? styles.booleanTrue : styles.booleanFalse,
-  //           ]}>
-  //           <FontAwesome
-  //             name={isTrue ? 'check' : 'times'}
-  //             size={12}
-  //             color={isTrue ? '#065f46' : COLOR_PALETTE.gray[400]}
-  //           />
-  //           <Text
-  //             style={[
-  //               styles.booleanText,
-  //               isTrue ? styles.booleanTextTrue : styles.booleanTextFalse,
-  //             ]}>
-  //             {isTrue ? 'Yes' : 'No'}
-  //           </Text>
-  //         </View>
-  //       </View>
-  //     );
-  //   }
-
-  //   return (
-  //     <View key={index} style={styles.fieldRow}>
-  //       <Text style={styles.fieldLabel}>{field.label}</Text>
-  //       <View style={styles.fieldValueWrapper}>
-  //         <Text
-  //           style={[
-  //             styles.fieldValue,
-  //             showNavigationArrow && styles.fieldValueWithArrow,
-  //           ]}>
-  //           {formattedValue}
-  //         </Text>
-  //         {field.trend && (
-  //           <View style={styles.trendIndicator}>
-  //             <FontAwesome
-  //               name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
-  //               size={10}
-  //               color={
-  //                 field.trend === 'up'
-  //                   ? COLOR_PALETTE.success
-  //                   : COLOR_PALETTE.danger
-  //               }
-  //             />
-  //           </View>
-  //         )}
-  //       </View>
-  //     </View>
-  //   );
-  // };
-
   const renderField = (field, index) => {
     const value = data[field.key];
     const formattedValue = formatValue(value, field.type);
@@ -424,19 +834,19 @@ const DynamicRequestCard = ({
     // ────────────────────────────────────────────────
     if (!hasLabel) {
       return (
-        <View key={index} style={styles.fieldRowNoLabel}>
-          <View style={styles.fieldValueFull}>
+        <View key={index} style={styles.DRC_fieldRowNoLabel}>
+          <View style={styles.DRC_fieldValueFull}>
             <Text
               style={[
-                styles.fieldValueNoLabel,
-                showNavigationArrow && styles.fieldValueNoLabelWithArrow,
-                field.trend && styles.fieldValueWithTrend,
+                styles.DRC_fieldValueNoLabel,
+                showNavigationArrow && styles.DRC_fieldValueNoLabelWithArrow,
+                field.trend && styles.DRC_fieldValueWithTrend,
               ]}>
               {formattedValue}
             </Text>
 
             {field.trend && (
-              <View style={styles.trendIndicator}>
+              <View style={styles.DRC_trendIndicator}>
                 <FontAwesome
                   name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
                   size={11}
@@ -466,12 +876,12 @@ const DynamicRequestCard = ({
         formattedValue === '1';
 
       return (
-        <View key={index} style={styles.fieldRow}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
+        <View key={index} style={styles.DRC_fieldRow}>
+          <Text style={styles.DRC_fieldLabel}>{field.label}</Text>
           <View
             style={[
-              styles.booleanBadge,
-              isTrue ? styles.booleanTrue : styles.booleanFalse,
+              styles.DRC_booleanBadge,
+              isTrue ? styles.DRC_booleanTrue : styles.DRC_booleanFalse,
             ]}>
             <FontAwesome
               name={isTrue ? 'check' : 'times'}
@@ -480,8 +890,10 @@ const DynamicRequestCard = ({
             />
             <Text
               style={[
-                styles.booleanText,
-                isTrue ? styles.booleanTextTrue : styles.booleanTextFalse,
+                styles.DRC_booleanText,
+                isTrue
+                  ? styles.DRC_booleanTextTrue
+                  : styles.DRC_booleanTextFalse,
               ]}>
               {isTrue ? 'Yes' : 'No'}
             </Text>
@@ -492,20 +904,20 @@ const DynamicRequestCard = ({
 
     // Default case: regular field with label + value on right
     return (
-      <View key={index} style={styles.fieldRow}>
-        <Text style={styles.fieldLabel}>{field.label}</Text>
+      <View key={index} style={styles.DRC_fieldRow}>
+        <Text style={styles.DRC_fieldLabel}>{field.label}</Text>
 
-        <View style={styles.fieldValueWrapper}>
+        <View style={styles.DRC_fieldValueWrapper}>
           <Text
             style={[
-              styles.fieldValue,
-              showNavigationArrow && styles.fieldValueWithArrow,
+              styles.DRC_fieldValue,
+              showNavigationArrow && styles.DRC_fieldValueWithArrow,
             ]}>
             {formattedValue}
           </Text>
 
           {field.trend && (
-            <View style={styles.trendIndicator}>
+            <View style={styles.DRC_trendIndicator}>
               <FontAwesome
                 name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
                 size={10}
@@ -538,14 +950,17 @@ const DynamicRequestCard = ({
           onButtonPress(buttonType, data);
         }}
         disabled={isDisabled}
-        style={[styles.menuItem, isDisabled && styles.menuItemDisabled]}>
-        <View style={styles.menuItemContent}>
+        style={[
+          styles.DRC_menuItem,
+          isDisabled && styles.DRC_menuItemDisabled,
+        ]}>
+        <View style={styles.DRC_menuItemContent}>
           {isProcessing ? (
             <FontAwesome
               name="spinner"
               size={16}
               color={COLOR_PALETTE.gray[400]}
-              style={[styles.menuIcon, styles.spinning]}
+              style={[styles.DRC_menuIcon, styles.DRC_spinning]}
             />
           ) : (
             buttonConfig.icon && (
@@ -555,14 +970,14 @@ const DynamicRequestCard = ({
                 color={
                   isDisabled ? COLOR_PALETTE.gray[300] : COLOR_PALETTE.gray[600]
                 }
-                style={styles.menuIcon}
+                style={styles.DRC_menuIcon}
               />
             )
           )}
           <Text
             style={[
-              styles.menuItemText,
-              isDisabled && styles.menuItemTextDisabled,
+              styles.DRC_menuItemText,
+              isDisabled && styles.DRC_menuItemTextDisabled,
             ]}>
             {isProcessing ? 'Processing...' : buttonConfig.text}
           </Text>
@@ -586,12 +1001,12 @@ const DynamicRequestCard = ({
           onPress={() => onButtonPress(buttonType, data)}
           disabled={isDisabled}
           style={[
-            styles.iconButton,
+            styles.DRC_iconButton,
             {
               backgroundColor:
                 buttonConfig.backgroundColor || COLOR_PALETTE.primary,
             },
-            isDisabled && styles.disabledButton,
+            isDisabled && styles.DRC_disabledButton,
             buttonConfig.customStyle,
           ]}>
           {isProcessing ? (
@@ -599,7 +1014,7 @@ const DynamicRequestCard = ({
               name="spinner"
               size={buttonConfig.iconSize || 14}
               color={buttonConfig.iconColor || '#fff'}
-              style={styles.spinning}
+              style={styles.DRC_spinning}
             />
           ) : (
             buttonConfig.icon && (
@@ -624,8 +1039,8 @@ const DynamicRequestCard = ({
         onPress={() => onButtonPress(buttonType, data)}
         disabled={isDisabled}
         style={[
-          styles.textButton,
-          isDisabled && styles.disabledButton,
+          styles.DRC_textButton,
+          isDisabled && styles.DRC_disabledButton,
           buttonConfig.customStyle,
         ]}>
         {buttonConfig.icon && !isProcessing && (
@@ -644,13 +1059,13 @@ const DynamicRequestCard = ({
             name="spinner"
             size={buttonConfig.iconSize || 14}
             color={COLOR_PALETTE.gray[400]}
-            style={styles.spinning}
+            style={styles.DRC_spinning}
           />
         )}
         <Text
           style={[
-            styles.textButtonText,
-            isDisabled && styles.disabledText,
+            styles.DRC_textButtonText,
+            isDisabled && styles.DRC_disabledText,
             {
               color: isDisabled
                 ? COLOR_PALETTE.gray[400]
@@ -679,13 +1094,13 @@ const DynamicRequestCard = ({
     return (
       <Animated.View
         style={[
-          styles.navigationArrow,
+          styles.DRC_navigationArrow,
           {
             transform: [{translateX}],
             opacity,
           },
         ]}>
-        <View style={styles.navigationArrowInner}>
+        <View style={styles.DRC_navigationArrowInner}>
           <FontAwesome
             name="chevron-right"
             size={14}
@@ -709,11 +1124,11 @@ const DynamicRequestCard = ({
   const statusColors = statusValue ? getStatusColor(statusValue) : null;
 
   return (
-    <View style={styles.cardContainer}>
+    <View style={styles.DRC_cardContainer}>
       <Animated.View
         style={[
-          styles.card,
-          isHighlighted && styles.cardHighlighted,
+          styles.DRC_card,
+          isHighlighted && styles.DRC_cardHighlighted,
           {
             transform: [{scale: scaleAnim}],
           },
@@ -722,45 +1137,46 @@ const DynamicRequestCard = ({
           activeOpacity={1}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          style={styles.cardInner}>
+          style={styles.DRC_cardInner}>
           {renderNavigationArrow()}
 
           {/* Header */}
-          <View style={[styles.header, isRTL && styles.headerRTL]}>
+          <View style={[styles.DRC_header, isRTL && styles.DRC_headerRTL]}>
             <View
               style={[
-                styles.headerContent,
-                showNavigationArrow && styles.headerContentWithArrow,
+                styles.DRC_headerContent,
+                showNavigationArrow && styles.DRC_headerContentWithArrow,
               ]}>
               {headerConfig.title && (
-                <Text style={styles.headerTitle} numberOfLines={1}>
+                <Text style={styles.DRC_headerTitle} numberOfLines={1}>
                   {data[headerConfig.title.key] ||
                     headerConfig.title.defaultValue}
                 </Text>
               )}
               {headerConfig.subtitle && (
-                <Text style={styles.headerSubtitle} numberOfLines={1}>
+                <Text style={styles.DRC_headerSubtitle} numberOfLines={1}>
                   {data[headerConfig.subtitle.key] ||
                     headerConfig.subtitle.defaultValue}
                 </Text>
               )}
             </View>
 
-            <View style={styles.headerRightSection}>
+            <View style={styles.DRC_headerRightSection}>
               {/* Status Badge */}
               {statusValue && statusColors && (
                 <View
                   style={[
-                    styles.statusBadge,
+                    styles.DRC_statusBadge,
                     {backgroundColor: statusColors.bg},
                   ]}>
                   <View
                     style={[
-                      styles.statusDot,
+                      styles.DRC_statusDot,
                       {backgroundColor: statusColors.dot},
                     ]}
                   />
-                  <Text style={[styles.statusText, {color: statusColors.text}]}>
+                  <Text
+                    style={[styles.DRC_statusText, {color: statusColors.text}]}>
                     {statusValue}
                   </Text>
                 </View>
@@ -768,9 +1184,9 @@ const DynamicRequestCard = ({
 
               {/* 3-Dot Menu */}
               {hasHeaderButtons && (
-                <View style={styles.menuContainer}>
+                <View style={styles.DRC_menuContainer}>
                   <TouchableOpacity
-                    style={styles.menuButton}
+                    style={styles.DRC_menuButton}
                     onPress={() => setMenuVisible(!menuVisible)}>
                     <FontAwesome
                       name="ellipsis-v"
@@ -784,7 +1200,7 @@ const DynamicRequestCard = ({
                     <>
                       <Animated.View
                         style={[
-                          styles.dropdownMenu,
+                          styles.DRC_dropdownMenu,
                           {
                             opacity: menuFadeAnim,
                             transform: [
@@ -797,13 +1213,13 @@ const DynamicRequestCard = ({
                             ],
                           },
                         ]}>
-                        <View style={styles.dropdownArrow} />
+                        <View style={styles.DRC_dropdownArrow} />
                         {headerButtons.map(buttonType =>
                           renderMenuButton(buttonType),
                         )}
                       </Animated.View>
                       <TouchableOpacity
-                        style={styles.dropdownOverlay}
+                        style={styles.DRC_dropdownOverlay}
                         activeOpacity={1}
                         onPress={() => setMenuVisible(false)}
                       />
@@ -815,7 +1231,7 @@ const DynamicRequestCard = ({
           </View>
 
           {/* Fields */}
-          <View style={styles.fieldsContainer}>
+          <View style={styles.DRC_fieldsContainer}>
             {fields
               .filter(f => f.type !== 'status')
               .map((field, index) => renderField(field, index))}
@@ -823,7 +1239,7 @@ const DynamicRequestCard = ({
 
           {/* Expandable fields */}
           {expanded && expandableFields.length > 0 && (
-            <Animated.View style={styles.expandedFieldsContainer}>
+            <Animated.View style={styles.DRC_expandedFieldsContainer}>
               {expandableFields.map((field, index) =>
                 renderField(field, index),
               )}
@@ -832,12 +1248,12 @@ const DynamicRequestCard = ({
 
           {/* Footer */}
           {(shouldShowExpandToggle || hasBottomButtons) && (
-            <View style={styles.footer}>
+            <View style={styles.DRC_footer}>
               {shouldShowExpandToggle && (
                 <TouchableOpacity
                   onPress={() => setExpanded(!expanded)}
-                  style={styles.expandButton}>
-                  <Text style={styles.expandButtonText}>
+                  style={styles.DRC_expandButton}>
+                  <Text style={styles.DRC_expandButtonText}>
                     {expanded ? 'Show less' : 'Show more'}
                   </Text>
                   <FontAwesome
@@ -849,7 +1265,7 @@ const DynamicRequestCard = ({
               )}
 
               {hasBottomButtons && (
-                <View style={styles.bottomButtons}>
+                <View style={styles.DRC_bottomButtons}>
                   {bottomButtons.map(buttonType => renderButton(buttonType))}
                 </View>
               )}
@@ -860,388 +1276,6 @@ const DynamicRequestCard = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  cardContainer: {
-    marginHorizontal: 12,
-    marginVertical: 6,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: COLOR_PALETTE.gray[900],
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-    borderWidth: 1,
-    borderColor: COLOR_PALETTE.gray[100],
-    overflow: 'hidden',
-  },
-  cardInner: {
-    padding: 16,
-  },
-  cardHighlighted: {
-    borderColor: COLOR_PALETTE.primary,
-    borderWidth: 1.5,
-    ...Platform.select({
-      ios: {
-        shadowColor: COLOR_PALETTE.primary,
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-
-  // Navigation Arrow
-  navigationArrow: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    marginTop: -7,
-    zIndex: 1,
-  },
-  navigationArrowInner: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLOR_PALETTE.primarySoft,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  headerRTL: {
-    flexDirection: 'row-reverse',
-  },
-  headerContent: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  headerContentWithArrow: {
-    paddingRight: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLOR_PALETTE.gray[900],
-    marginBottom: 4,
-    letterSpacing: -0.3,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: COLOR_PALETTE.gray[500],
-    fontWeight: '500',
-    letterSpacing: -0.2,
-  },
-
-  // Header Right Section
-  headerRightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  // Status Badge
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    gap: 5,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-
-  // Menu
-  menuContainer: {
-    position: 'relative',
-  },
-  menuButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLOR_PALETTE.gray[50],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Dropdown Menu
-  dropdownOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    zIndex: 999,
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 40,
-    right: 0,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    minWidth: 180,
-    ...Platform.select({
-      ios: {
-        shadowColor: COLOR_PALETTE.gray[900],
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-    borderWidth: 1,
-    borderColor: COLOR_PALETTE.gray[100],
-    zIndex: 1000,
-  },
-  dropdownArrow: {
-    position: 'absolute',
-    top: -6,
-    right: 12,
-    width: 12,
-    height: 12,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderLeftWidth: 1,
-    borderColor: COLOR_PALETTE.gray[100],
-    transform: [{rotate: '45deg'}],
-  },
-  menuItem: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  menuItemDisabled: {
-    opacity: 0.5,
-  },
-  menuItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  menuIcon: {
-    marginRight: 12,
-    width: 18,
-    textAlign: 'center',
-  },
-  menuItemText: {
-    fontSize: 14,
-    color: COLOR_PALETTE.gray[700],
-    fontWeight: '500',
-  },
-  menuItemTextDisabled: {
-    color: COLOR_PALETTE.gray[300],
-  },
-
-  // Fields
-  fieldsContainer: {
-    gap: 12,
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  fieldLabel: {
-    fontSize: 13,
-    color: COLOR_PALETTE.gray[500],
-    fontWeight: '500',
-    flex: 1,
-    letterSpacing: -0.2,
-  },
-  fieldValueWrapper: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 4,
-  },
-  fieldValue: {
-    fontSize: 13,
-    color: COLOR_PALETTE.gray[800],
-    fontWeight: '600',
-    textAlign: 'right',
-    letterSpacing: -0.2,
-  },
-  fieldValueWithArrow: {
-    marginRight: 30,
-  },
-  trendIndicator: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: COLOR_PALETTE.gray[50],
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Boolean Badge
-  booleanBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  booleanTrue: {
-    backgroundColor: COLOR_PALETTE.successLight,
-  },
-  booleanFalse: {
-    backgroundColor: COLOR_PALETTE.gray[100],
-  },
-  booleanText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  booleanTextTrue: {
-    color: '#065f46',
-  },
-  booleanTextFalse: {
-    color: COLOR_PALETTE.gray[500],
-  },
-
-  // Expanded Fields
-  expandedFieldsContainer: {
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: COLOR_PALETTE.gray[100],
-    gap: 12,
-  },
-
-  // Footer
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: COLOR_PALETTE.gray[100],
-  },
-  expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: COLOR_PALETTE.gray[50],
-  },
-  expandButtonText: {
-    fontSize: 12,
-    color: COLOR_PALETTE.gray[600],
-    fontWeight: '600',
-  },
-  bottomButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-
-  // Buttons
-  iconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: COLOR_PALETTE.gray[900],
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  textButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: COLOR_PALETTE.gray[50],
-    gap: 8,
-    borderWidth: 1,
-    borderColor: COLOR_PALETTE.gray[200],
-  },
-  textButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: -0.2,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  disabledText: {
-    color: COLOR_PALETTE.gray[400],
-  },
-
-  // Animations
-  spinning: {
-    transform: [{rotate: '45deg'}],
-  },
-  fieldRowNoLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 22, // consistent with other rows
-  },
-
-  fieldValueFull: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start', // ← left aligned
-    gap: 6,
-  },
-
-  fieldValueNoLabel: {
-    fontSize: 15, // usually a bit larger when no label
-    fontWeight: '600',
-    color: COLOR_PALETTE.gray[900],
-    letterSpacing: -0.1,
-    flexShrink: 1,
-  },
-
-  fieldValueNoLabelWithArrow: {
-    paddingRight: 36, // space for chevron-right arrow
-  },
-
-  fieldValueWithTrend: {
-    flexShrink: 1,
-  },
-});
 
 export default DynamicRequestCard;
 export {BUTTON_TYPES};
