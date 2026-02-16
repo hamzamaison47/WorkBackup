@@ -38,7 +38,11 @@ import {
   fetchEmployeeMenuItems,
   handleLogin,
 } from '../Controller/authUtils';
-import {getActiveConfigData, getActiveConfig} from '../Controller/secureConfig';
+import {
+  getActiveConfigData,
+  getActiveConfig,
+  saveConfig,
+} from '../Controller/secureConfig';
 import styles from '../styles/styles';
 import {iconSize} from '../store/utils/scaling';
 
@@ -64,6 +68,16 @@ const LoginScreen = () => {
 
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) return;
+
+      // ✅ CRITICAL FIX: Load the config data before proceeding
+      const activeConfig = await getActiveConfigData();
+      if (!activeConfig) {
+        console.error('Active config ID exists but data not found');
+        return;
+      }
+
+      // ✅ Ensure it's saved to main location for API calls
+      await saveConfig(activeConfig);
 
       const biometricSuccess = await authenticateWithBiometrics();
       if (!biometricSuccess) return;
@@ -136,18 +150,81 @@ const LoginScreen = () => {
     }
   };
 
+  // const handleBiometricLogin = async () => {
+  //   try {
+  //     // Check if biometric credentials exist
+  //     const hasCredentials = await hasPersistentBiometricCredentials();
+
+  //     if (!hasCredentials) {
+  //       setAlertMessage(t('login.biometricNotConfigured'));
+  //       setAlertModal(true);
+  //       return;
+  //     }
+
+  //     // Check if there's an active configuration
+  //     const activeConfigId = await getActiveConfig();
+  //     if (!activeConfigId) {
+  //       setAlertMessage(t('login.noActiveConfig'));
+  //       setAlertModal(true);
+  //       global.onDialogOk = () => {
+  //         setAlertModal(false);
+  //         navigation.navigate('ConfigSelectionScreen');
+  //       };
+  //       return;
+  //     }
+
+  //     // Get the stored credentials (only email and provider)
+  //     const credentials = await getBiometricCredentials();
+  //     if (
+  //       !credentials ||
+  //       !credentials.email ||
+  //       !credentials.isBiometricEnabled
+  //     ) {
+  //       setAlertMessage(t('login.biometricConfigInvalid'));
+  //       setAlertModal(true);
+  //       return;
+  //     }
+
+  //     // Authenticate with biometrics
+  //     const biometricSuccess = await authenticateWithBiometrics();
+  //     if (!biometricSuccess) {
+  //       setAlertMessage(t('login.authCancelled'));
+  //       setAlertModal(true);
+  //       return;
+  //     }
+
+  //     setLoading(true);
+
+  //     // Get active configuration (fetched fresh at login time)
+  //     const activeConfig = await getActiveConfigData();
+  //     if (!activeConfig) {
+  //       setAlertMessage(t('login.configLoadFailed'));
+  //       setAlertModal(true);
+  //       setLoading(false);
+  //       return;
+  //     }
+
+  //     // Fetch user data fresh using the email
+  //     await loadUserDataFromBiometric(credentials.email, credentials.provider);
+
+  //     navigation.navigate('DrawerNavigator');
+  //     setLoading(false);
+  //   } catch (error) {
+  //     console.error('Biometric login error:', error);
+  //     setAlertMessage(t('login.biometricLoginFailed'));
+  //     setAlertModal(true);
+  //     setLoading(false);
+  //   }
+  // };
   const handleBiometricLogin = async () => {
     try {
-      // Check if biometric credentials exist
       const hasCredentials = await hasPersistentBiometricCredentials();
-
       if (!hasCredentials) {
         setAlertMessage(t('login.biometricNotConfigured'));
         setAlertModal(true);
         return;
       }
 
-      // Check if there's an active configuration
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) {
         setAlertMessage(t('login.noActiveConfig'));
@@ -159,19 +236,13 @@ const LoginScreen = () => {
         return;
       }
 
-      // Get the stored credentials (only email and provider)
       const credentials = await getBiometricCredentials();
-      if (
-        !credentials ||
-        !credentials.email ||
-        !credentials.isBiometricEnabled
-      ) {
+      if (!credentials?.email || !credentials?.isBiometricEnabled) {
         setAlertMessage(t('login.biometricConfigInvalid'));
         setAlertModal(true);
         return;
       }
 
-      // Authenticate with biometrics
       const biometricSuccess = await authenticateWithBiometrics();
       if (!biometricSuccess) {
         setAlertMessage(t('login.authCancelled'));
@@ -181,7 +252,7 @@ const LoginScreen = () => {
 
       setLoading(true);
 
-      // Get active configuration (fetched fresh at login time)
+      // ✅ Load config data
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
         setAlertMessage(t('login.configLoadFailed'));
@@ -190,7 +261,9 @@ const LoginScreen = () => {
         return;
       }
 
-      // Fetch user data fresh using the email
+      // ✅ CRITICAL FIX: Save to main location for API calls
+      await saveConfig(activeConfig);
+
       await loadUserDataFromBiometric(credentials.email, credentials.provider);
 
       navigation.navigate('DrawerNavigator');
