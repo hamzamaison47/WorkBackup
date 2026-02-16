@@ -488,24 +488,24 @@ const IdentificationNumberSaveRecord = () => {
           )}
           <ScrollView
             ref={scrollViewRef}
-            contentContainerStyle={styles.LReqSR_FormContainer}
+            contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}>
-            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.employeeNamelbl || 'Employee Name'}
             </Text>
-            <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
               {formData.employeeName}
             </Text>
 
-            {/*<Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            {/*<Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {PersonalContactsLabelData?.IdentificationTypelbl ||
                   'Request Date'}
               </Text>
-              <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
+              <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
                 {formatDate(today)}
               </Text>*/}
 
-            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.IdentificationTypelbl ||
                 'Identification Type *'}
             </Text>
@@ -524,13 +524,13 @@ const IdentificationNumberSaveRecord = () => {
                   IdentificationTypeDescription: item.label,
                 }))
               }
-              placeholderStyle={styles.LReqSR_DropdownPlaceholder}
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
               placeholderTextColor="#888"
-              selectedTextStyle={styles.LReqSR_DropdownSelectedText}
-              itemTextStyle={styles.LReqSR_DropdownItemText}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
             />
 
-            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.IdentificationNumberlbl ||
                 'Account Identification'}
             </Text>
@@ -542,7 +542,7 @@ const IdentificationNumberSaveRecord = () => {
               placeholderTextColor="#888"
             />
 
-            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.Descriptionlbl || 'Description'}
             </Text>
             <TextInput
@@ -554,20 +554,20 @@ const IdentificationNumberSaveRecord = () => {
               multiline
             />
 
-            {/* <Text style={styles.LReqSR_Label}>Issuing Agency</Text>
+            {/* <Text style={styles.DSR_Label}>Issuing Agency</Text>
               <TextInput
-                style={styles.LReqSR_Input}
+                style={styles.DSR_Input}
                 value={formData.IssuingAgency}
                 onChangeText={v => handleInputChange('IssuingAgency', v)}
                 placeholder="Enter Issuing Agency"
               /> */}
 
-            {/* <Text style={styles.LReqSR_Label}>Issue Date</Text>
+            {/* <Text style={styles.DSR_Label}>Issue Date</Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={styles.DSR_DateSelector}
                 onPress={() => setShowIssuePicker(true)}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text style={styles.DSR_DateText}>
                     {formData.IssueDate
                       ? formatDate(formData.IssueDate)
                       : 'Select Issue Date'}
@@ -589,7 +589,7 @@ const IdentificationNumberSaveRecord = () => {
                 />
               )} */}
 
-            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date *'}
             </Text>
             <TouchableOpacity
@@ -608,12 +608,12 @@ const IdentificationNumberSaveRecord = () => {
               <Icon name="calendar" size={20} color="#0A66C2" />
             </TouchableOpacity>
 
-            {/* <Text style={styles.LReqSR_Label}>Expiration Date</Text>
+            {/* <Text style={styles.DSR_Label}>Expiration Date</Text>
               <TouchableOpacity
-                style={styles.LReqSR_DateSelector}
+                style={styles.DSR_DateSelector}
                 onPress={() => setShowExpirationPicker(true)}>
                 <View style={{flex: 1}}>
-                  <Text style={styles.LReqSR_DateText}>
+                  <Text style={styles.DSR_DateText}>
                     {formData.ExpirationDate
                       ? formatDate(formData.ExpirationDate)
                       : 'Select Expiration Date'}
@@ -635,7 +635,7 @@ const IdentificationNumberSaveRecord = () => {
                 />
               )} */}
 
-            <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.ExpirationDatelbl ||
                 'Expiration Date *'}
             </Text>

@@ -411,9 +411,6 @@ const IdentificationNumberListPage = () => {
         text: 'Submit',
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
-        customStyle: {
-          transform: [{translateY: -30}],
-        },
       },
     };
   };
