@@ -30,6 +30,7 @@ import {
   SummaryItem,
 } from '../../components/Attendance/AttendanceComponents';
 import {useNavigation} from '@react-navigation/native';
+// import NetworkUtils from '../../utils/NetworkUtils'; // You'll need to create this utility
 
 // Screen sizing
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -40,6 +41,20 @@ const GEO_TTL_MS = 30 * 60 * 1000; // 30m for less frequent network calls
 const FRESH_FIX_MS = 30 * 1000; // 30s to allow more cache hits
 const MAX_ALLOWED_ACCURACY = 150; // Relaxed to 150m for faster fixes
 const GEOF_KEY = 'df_geofences_v1';
+
+/* =================== Helper to get device IP =================== */
+const getDeviceIPAddress = async () => {
+  try {
+    // You can use a service like https://api.ipify.org or implement local network detection
+    // For simplicity, we'll use ipify.org which returns just the IP
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch (error) {
+    console.log('Error getting device IP:', error);
+    return null;
+  }
+};
 
 /* =================== Helpers =================== */
 // eslint-disable-next-line no-unused-vars
@@ -600,6 +615,7 @@ const CreateAttendanceScreen = () => {
             latitude: chosenLat,
             longitude: chosenLon,
             radius: Number(p.radius),
+            machineIPAddress: p.machineIPAddress,
             distance: d,
           };
         }
@@ -630,6 +646,14 @@ const CreateAttendanceScreen = () => {
     try {
       setLoadingAttendance(true);
       setLoadingGeo(true);
+
+      // Get device IP address first
+      const deviceIP = await getDeviceIPAddress();
+      if (!deviceIP) {
+        throw new Error(
+          'Unable to get device IP address. Please check your network connection.',
+        );
+      }
 
       const forceRefresh = lastGeofenceErrorRef.current !== null;
 
@@ -663,6 +687,7 @@ const CreateAttendanceScreen = () => {
         throw new Error(lastGeofenceErrorRef.current);
       }
 
+      // Check if within geofence range
       if (nearest.effectiveDistance > nearest.radius) {
         const displayDist = Math.max(0, Math.round(nearest.distance));
         lastGeofenceErrorRef.current = `You are ~${displayDist}m from office (±${Math.round(
@@ -671,13 +696,22 @@ const CreateAttendanceScreen = () => {
         throw new Error(lastGeofenceErrorRef.current);
       }
 
-      // within range now
+      // Check if device IP matches the machine IP from the geofence
+      if (nearest.machineIPAddress && nearest.machineIPAddress !== deviceIP) {
+        lastGeofenceErrorRef.current = `Your device IP (${deviceIP}) does not match the authorized office IP (${nearest.machineIPAddress}). Please connect to the office network.`;
+        throw new Error(lastGeofenceErrorRef.current);
+      }
+
+      // within range now and IP matches
       lastGeofenceErrorRef.current = null;
 
       const payload = {
         employeeId: userData?.employeeId,
         punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
-        location: `${latitude},${longitude} (±${Math.round(accuracy)}m)`,
+        location: `${latitude},${longitude} (±${Math.round(
+          accuracy,
+        )}m) - IP: ${deviceIP}`,
+        machineIPAddress: deviceIP, // Add this if your API expects it
       };
 
       const response = await CreateAttendance(payload);
@@ -688,7 +722,7 @@ const CreateAttendanceScreen = () => {
         markInFlightRef.current = false;
 
         // Show success right away
-        setAlertMessage('Attendance recorded');
+        setAlertMessage('Attendance recorded successfully');
         setAlertModal(true);
 
         // Trigger refresh without keeping the button busy
@@ -779,7 +813,7 @@ const CreateAttendanceScreen = () => {
         />
         {loadingGeo ? (
           <Text style={{marginTop: 8, color: '#757575', fontSize: 12}}>
-            Getting location…
+            Getting location and verifying IP…
           </Text>
         ) : null}
       </View>
