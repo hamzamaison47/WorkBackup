@@ -328,7 +328,7 @@ const AttendanceCalendarScreen = () => {
       console.error('Attendance fetch error:', err?.message || err);
       setAlert({
         visible: true,
-        text: 'Failed to fetch attendance data. Please try again.',
+        text: 'Failed to fetch data.',
       });
     } finally {
       setLoading(false);

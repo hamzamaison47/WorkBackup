@@ -10,7 +10,7 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
-  StyleSheet,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import {
   useNavigation,
@@ -25,8 +25,8 @@ import DynamicRequestCard from '../../components/DynamicRequestCard';
 
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
-
 import styles from '../../styles/styles';
+import {StyleSheet} from 'react-native';
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
@@ -45,6 +45,12 @@ const WorkItemsAssignedToMePage = () => {
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRecIds, setSelectedRecIds] = useState([]);
+
+  // New state for tabs
+  const [activeTab, setActiveTab] = useState('All');
+
+  // State for managing menu visibility
+  const [menuVisible, setMenuVisible] = useState(null); // stores the recId of the card with open menu
 
   /* ==============================
      Fetch Data
@@ -128,16 +134,44 @@ const WorkItemsAssignedToMePage = () => {
   };
 
   const selectAll = () => {
-    if (selectedRecIds.length === tableData.length) {
+    const currentData = getFilteredData();
+    if (selectedRecIds.length === currentData.length) {
       setSelectedRecIds([]);
     } else {
-      setSelectedRecIds(tableData.map(item => item.recId));
+      setSelectedRecIds(currentData.map(item => item.recId));
+    }
+  };
+
+  /* ==============================
+     Tab Filter Logic
+  ============================== */
+
+  const getFilteredData = () => {
+    // For now, all data is shown in "All" tab
+    // Approved and Rejected tabs will be empty until you implement status tracking
+    switch (activeTab) {
+      case 'All':
+        return tableData;
+      case 'Approved':
+        return []; // Will be implemented later
+      case 'Rejected':
+        return []; // Will be implemented later
+      default:
+        return tableData;
     }
   };
 
   /* ==============================
      Bulk Action
   ============================== */
+
+  const handleViewHistory = (contextRecId, contextTableId) => {
+    setMenuVisible(null); // Close menu
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: contextRecId,
+      tableId: contextTableId,
+    });
+  };
 
   const handleBulkAction = async actionType => {
     if (selectedRecIds.length === 0 || isActionLoading) return;
@@ -173,6 +207,7 @@ const WorkItemsAssignedToMePage = () => {
 
   const renderWorkItemCard = ({item}) => {
     const isSelected = selectedRecIds.includes(item.recId);
+    const isMenuOpen = menuVisible === item.recId;
 
     const cardData = {
       ...item,
@@ -186,24 +221,41 @@ const WorkItemsAssignedToMePage = () => {
         onLongPress={() => enterSelectionMode(item.recId)}
         onPress={() => (selectionMode ? toggleSelection(item.recId) : null)}>
         <View style={{marginVertical: 6}}>
+          {/* Selection Checkbox */}
           {selectionMode && (
+            <View style={selectionStyles.checkboxContainer}>
+              <View
+                style={[
+                  selectionStyles.checkbox,
+                  isSelected && selectionStyles.checkboxSelected,
+                ]}>
+                {isSelected && <Text style={selectionStyles.checkmark}>✓</Text>}
+              </View>
+            </View>
+          )}
+
+          {/* Three Dots Menu Button */}
+          {!selectionMode && (
             <View
-              style={{
-                position: 'absolute',
-                right: 18,
-                top: 18,
-                zIndex: 10,
-                width: 24,
-                height: 24,
-                borderRadius: 12,
-                borderWidth: 2,
-                borderColor: isSelected ? '#4CAF50' : '#ccc',
-                backgroundColor: isSelected ? '#4CAF50' : '#fff',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-              {isSelected && (
-                <Text style={{color: '#fff', fontWeight: 'bold'}}>✓</Text>
+              style={{position: 'absolute', top: 16, right: 16, zIndex: 10}}>
+              <TouchableOpacity
+                style={menuStyles.menuButton}
+                onPress={() => setMenuVisible(isMenuOpen ? null : item.recId)}
+                activeOpacity={0.7}>
+                <Text style={menuStyles.menuDots}>⋮</Text>
+              </TouchableOpacity>
+
+              {/* Dropdown Menu */}
+              {isMenuOpen && (
+                <View style={menuStyles.menuContainer}>
+                  <TouchableOpacity
+                    style={menuStyles.menuItem}
+                    onPress={() =>
+                      handleViewHistory(item.ContextRecId, item.ContextTableId)
+                    }>
+                    <Text style={menuStyles.menuText}>📜 View History</Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
           )}
@@ -233,8 +285,67 @@ const WorkItemsAssignedToMePage = () => {
   };
 
   /* ==============================
+     Render Tabs
+  ============================== */
+
+  const renderTabs = () => {
+    const tabs = [
+      {key: 'All', label: 'All', count: tableData.length},
+      {key: 'Approved', label: 'Approved', count: 0}, // Will be updated when filtering is implemented
+      {key: 'Rejected', label: 'Rejected', count: 0}, // Will be updated when filtering is implemented
+    ];
+
+    return (
+      <View style={tabStyles.tabContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={tabStyles.tabScrollContent}>
+          {tabs.map(tab => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                tabStyles.tab,
+                activeTab === tab.key && tabStyles.activeTab,
+              ]}
+              onPress={() => {
+                setActiveTab(tab.key);
+                exitSelectionMode(); // Exit selection mode when switching tabs
+              }}>
+              <Text
+                style={[
+                  tabStyles.tabText,
+                  activeTab === tab.key && tabStyles.activeTabText,
+                ]}>
+                {tab.label}
+              </Text>
+              {tab.count > 0 && (
+                <View
+                  style={[
+                    tabStyles.badge,
+                    activeTab === tab.key && tabStyles.activeBadge,
+                  ]}>
+                  <Text
+                    style={[
+                      tabStyles.badgeText,
+                      activeTab === tab.key && tabStyles.activeBadgeText,
+                    ]}>
+                    {tab.count}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  /* ==============================
      UI
   ============================== */
+
+  const filteredData = getFilteredData();
 
   return (
     <ActionPaneContainer
@@ -249,68 +360,57 @@ const WorkItemsAssignedToMePage = () => {
       isHeaderActive={true}
       showTabNavigator={false}
       onRefresh={fetchWorkItems}>
-      {/* 🔥 Enhanced Bulk Toolbar */}
+      {/* Tabs */}
+      {renderTabs()}
+
+      {/* Bulk Toolbar */}
       {selectionMode && (
-        <View
-          style={{
-            backgroundColor: '#ffffff',
-            paddingVertical: 14,
-            paddingHorizontal: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: '#e5e5e5',
-            elevation: 4,
-          }}>
-          <View style={{flexDirection: 'row', marginBottom: 12}}>
+        <View style={bulkToolbarStyles.container}>
+          <View style={bulkToolbarStyles.actionRow}>
             <TouchableOpacity
               disabled={isActionLoading}
               onPress={() => handleBulkAction('Approve')}
-              style={{
-                flex: 1,
-                marginRight: 8,
-                paddingVertical: 10,
-                borderRadius: 25,
-                backgroundColor: '#E8F5E8',
-                alignItems: 'center',
-              }}>
+              style={bulkToolbarStyles.approveButton}>
               {isActionLoading ? (
-                <ActivityIndicator />
+                <ActivityIndicator color="#2e7d32" size="small" />
               ) : (
-                <Text style={{color: '#2e7d32', fontWeight: '600'}}>
-                  Approve
-                </Text>
+                <>
+                  <Text style={bulkToolbarStyles.approveIcon}>✓</Text>
+                  <Text style={bulkToolbarStyles.approveText}>Approve</Text>
+                </>
               )}
             </TouchableOpacity>
 
             <TouchableOpacity
               disabled={isActionLoading}
               onPress={() => handleBulkAction('Reject')}
-              style={{
-                flex: 1,
-                marginLeft: 8,
-                paddingVertical: 10,
-                borderRadius: 25,
-                backgroundColor: '#fdecea',
-                alignItems: 'center',
-              }}>
-              <Text style={{color: '#c62828', fontWeight: '600'}}>Reject</Text>
+              style={bulkToolbarStyles.rejectButton}>
+              {isActionLoading ? (
+                <ActivityIndicator color="#c62828" size="small" />
+              ) : (
+                <>
+                  <Text style={bulkToolbarStyles.rejectIcon}>✕</Text>
+                  <Text style={bulkToolbarStyles.rejectText}>Reject</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-            }}>
-            <TouchableOpacity onPress={selectAll}>
-              <Text style={{color: '#007bff', fontWeight: '500'}}>
-                {selectedRecIds.length === tableData.length
-                  ? 'Unselect All'
-                  : 'Select All'}
+          <View style={bulkToolbarStyles.controlRow}>
+            <TouchableOpacity
+              onPress={selectAll}
+              style={bulkToolbarStyles.textButton}>
+              <Text style={bulkToolbarStyles.primaryButtonText}>
+                {selectedRecIds.length === filteredData.length
+                  ? '☐ Unselect All'
+                  : '☑ Select All'}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={exitSelectionMode}>
-              <Text style={{color: '#666', fontWeight: '500'}}>Cancel</Text>
+            <TouchableOpacity
+              onPress={exitSelectionMode}
+              style={bulkToolbarStyles.textButton}>
+              <Text style={bulkToolbarStyles.secondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -318,24 +418,32 @@ const WorkItemsAssignedToMePage = () => {
 
       {isLoading ? (
         <CustomIndicator />
-      ) : tableData.length > 0 ? (
-        <FlatList
-          data={tableData}
-          renderItem={renderWorkItemCard}
-          keyExtractor={item => item.recId?.toString()}
-          contentContainerStyle={styles.LReqLP_ListContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={fetchWorkItems}
+      ) : filteredData.length > 0 ? (
+        <TouchableWithoutFeedback onPress={() => setMenuVisible(null)}>
+          <View style={{flex: 1}}>
+            <FlatList
+              data={filteredData}
+              renderItem={renderWorkItemCard}
+              keyExtractor={item => item.recId?.toString()}
+              contentContainerStyle={styles.LReqLP_ListContainer}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={fetchWorkItems}
+                />
+              }
             />
-          }
-        />
+          </View>
+        </TouchableWithoutFeedback>
       ) : (
         <ScrollView
           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
-          <Text style={styles.LReqLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.LReqLP_NoDataText}>
+            {activeTab === 'All'
+              ? 'No Data Found'
+              : `No ${activeTab} items found`}
+          </Text>
         </ScrollView>
       )}
 
@@ -351,44 +459,225 @@ const WorkItemsAssignedToMePage = () => {
 
 export default WorkItemsAssignedToMePage;
 
-const cardStyles = StyleSheet.create({
-  menuButton: {
+const tabStyles = StyleSheet.create({
+  tabContainer: {
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  tabScrollContent: {
+    gap: 10,
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#dee2e6',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  activeTab: {
+    backgroundColor: '#007bff',
+    borderColor: '#007bff',
+    shadowColor: '#007bff',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6c757d',
+  },
+  activeTabText: {
+    color: '#ffffff',
+  },
+  badge: {
+    backgroundColor: '#e9ecef',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#495057',
+  },
+  activeBadgeText: {
+    color: '#ffffff',
+  },
+});
+
+const bulkToolbarStyles = StyleSheet.create({
+  container: {
+    backgroundColor: '#ffffff',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 14,
+  },
+  approveButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#d4edda',
+    borderWidth: 1.5,
+    borderColor: '#c3e6cb',
+    gap: 6,
+  },
+  approveIcon: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#155724',
+  },
+  approveText: {
+    color: '#155724',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  rejectButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#f8d7da',
+    borderWidth: 1.5,
+    borderColor: '#f5c6cb',
+    gap: 6,
+  },
+  rejectIcon: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#721c24',
+  },
+  rejectText: {
+    color: '#721c24',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  controlRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  textButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  primaryButtonText: {
+    color: '#007bff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  secondaryButtonText: {
+    color: '#6c757d',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+});
+
+const selectionStyles = StyleSheet.create({
+  checkboxContainer: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    padding: 8,
+    right: 16,
+    top: 16,
+    zIndex: 10,
+  },
+  checkbox: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2.5,
+    borderColor: '#cbd5e0',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  checkboxSelected: {
+    borderColor: '#28a745',
+    backgroundColor: '#28a745',
+    shadowColor: '#28a745',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  checkmark: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+const menuStyles = StyleSheet.create({
+  menuButton: {
+    padding: 6,
     zIndex: 10,
   },
   menuDots: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#9ca3af',
+    letterSpacing: 0,
   },
   menuContainer: {
+    position: 'absolute',
+    top: 30,
+    right: 0,
     backgroundColor: '#FFFFFF',
-    marginTop: 60,
-    marginRight: 20,
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    minWidth: 180,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+    minWidth: 160,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   menuItem: {
-    padding: 16,
-    borderBottomWidth: 0,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   menuText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 14,
+    color: '#374151',
     fontWeight: '500',
   },
 });

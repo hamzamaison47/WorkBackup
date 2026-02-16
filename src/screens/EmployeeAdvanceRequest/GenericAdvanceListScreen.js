@@ -104,7 +104,9 @@ const GenericAdvanceListScreen = () => {
       setAllAdvanceData(sortedResults);
     } catch (error) {
       console.error('Error fetching advance data:', error);
-      setAlertMessage('Failed to fetch data.');
+      setAlertMessage(
+        'Unable to load data. Please check your connection and try again.',
+      );
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -485,23 +487,16 @@ const GenericAdvanceListScreen = () => {
       );
 
       if (recordResult && recordResult.IsSuccess === 'true') {
-        setAlertMessage(
-          `${itemToDelete.AdvanceTypeCode} Request Deleted Successfully.`,
-        );
+        setAlertMessage('Record deleted successfully');
         setAllAdvanceData(prev =>
           prev.filter(adv => adv.RecId !== itemToDelete.RecId),
         );
       } else {
-        setAlertMessage(
-          recordResult?.Message ||
-            `Unable to Delete ${itemToDelete.AdvanceTypeCode} Request.`,
-        );
+        setAlertMessage('Unable to delete record. Please try again.');
       }
     } catch (error) {
       console.log('Delete Advance Request error:', error);
-      setAlertMessage(
-        `Failed to Delete ${itemToDelete.AdvanceTypeCode} Request.`,
-      );
+      setAlertMessage('Failed to delete record');
     } finally {
       setButtonProcessing(itemToDelete.RecId, 'delete', false);
       setDeleteModal(false);
@@ -523,9 +518,7 @@ const GenericAdvanceListScreen = () => {
       const resObj = Array.isArray(response) ? response[0] : response;
 
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
-        setAlertMessage(
-          `${itemData.AdvanceTypeCode} Request Submitted Successfully.`,
-        );
+        setAlertMessage('Request submitted successfully');
         setAlertModal(true);
 
         // FIXED: Set highlighting for submitted record
@@ -543,13 +536,13 @@ const GenericAdvanceListScreen = () => {
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : `Failed to Submit ${itemData.AdvanceTypeCode} Request`;
+            : 'Failed to submit request';
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage(`Failed to Submit ${itemData.AdvanceTypeCode} Request`);
+      setAlertMessage('Failed to submit request');
       setAlertModal(true);
     } finally {
       setButtonProcessing(itemData.RecId, 'submit', false);
@@ -633,9 +626,9 @@ const GenericAdvanceListScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to create your first loan request
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}
@@ -652,9 +645,7 @@ const GenericAdvanceListScreen = () => {
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
-        text={`Are you sure you want to delete this ${
-          itemToDelete?.AdvanceTypeCode || ''
-        } request?`}
+        text={'Are you sure you want to delete this record?'}
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

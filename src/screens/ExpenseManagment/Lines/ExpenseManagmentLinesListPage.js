@@ -174,8 +174,7 @@ const ExpenseManagmentLinesListPage = () => {
 
   const fetchExpenseLinesData = useCallback(async () => {
     if (!effectiveEmployeeId || !expenseReportNumber) {
-      const errorMsg = 'Missing required parameters to fetch expense lines';
-      setAlertMessage(errorMsg);
+      setAlertMessage('Missing required parameters');
       setAlertModal(true);
       setIsLoading(false);
       return;
@@ -226,8 +225,7 @@ const ExpenseManagmentLinesListPage = () => {
       }
     } catch (error) {
       console.error('Failed to fetch Expense Lines data:', error);
-      const errorMsg = `Failed to fetch expense lines: ${error.message}`;
-      setAlertMessage(errorMsg);
+      setAlertMessage('Failed to fetch data');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -427,9 +425,7 @@ const ExpenseManagmentLinesListPage = () => {
       });
 
       if (result.success) {
-        setAlertMessage(
-          `Expense line ${itemToDelete.ExpenseTransactionNumber} deleted successfully`,
-        );
+        setAlertMessage('Record deleted successfully');
         setExpenseLinesData(prev =>
           prev.filter(
             line =>
@@ -438,11 +434,11 @@ const ExpenseManagmentLinesListPage = () => {
           ),
         );
       } else {
-        setAlertMessage('Unable to delete expense line. Please try again.');
+        setAlertMessage('Unable to delete record. Please try again.');
       }
     } catch (error) {
       console.error('Delete expense line error:', error);
-      setAlertMessage(`Failed to delete expense line: ${error.message}`);
+      setAlertMessage(`Failed to delete record: ${error.message}`);
     } finally {
       setButtonProcessing(itemId, 'delete', false);
       setDeleteModal(false);
@@ -596,9 +592,9 @@ const ExpenseManagmentLinesListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              <Text style={styles.DLP_NoDataText}>No Expense Lines</Text>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
-                Tap the + button to add your first expense line
+                Tap + to add a new record
               </Text>
             </ScrollView>
           )}
@@ -624,9 +620,7 @@ const ExpenseManagmentLinesListPage = () => {
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
-        text={`Are you sure you want to delete expense line ${
-          itemToDelete?.ExpenseTransactionNumber || ''
-        }?`}
+        text="Are you sure you want to delete this record?"
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

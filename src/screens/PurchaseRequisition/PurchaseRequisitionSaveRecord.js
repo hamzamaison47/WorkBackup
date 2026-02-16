@@ -215,8 +215,8 @@ const PurchaseRequisitionSaveRecord = () => {
       if (response.IsSuccess) {
         setAlertMessage(
           mode === 'create'
-            ? 'Purchase Requisition Created Successfully'
-            : 'Purchase Requisition Updated Successfully',
+            ? 'Record saved successfully.'
+            : 'Record updated successfully.',
         );
         setAlertModal(true);
 
@@ -230,11 +230,11 @@ const PurchaseRequisitionSaveRecord = () => {
           });
         }, 1500);
       } else {
-        setAlertMessage(response.Message || 'Operation failed');
+        setAlertMessage(response.Message || 'Failed to save record.');
         setAlertModal(true);
       }
     } catch (err) {
-      setAlertMessage('Error processing requisition');
+      setAlertMessage('An error occurred while processing the request.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');

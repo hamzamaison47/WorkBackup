@@ -16,6 +16,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 
+import styles from '../../styles/styles';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import PRLinesList from '../../components/PurchaseRequisition/PRLinesList';
@@ -331,7 +332,10 @@ const PurchaseRequisitionLinesListPage = () => {
           }
           ListEmptyComponent={
             <View style={{paddingTop: 350, alignItems: 'center'}}>
-              <Text style={{fontSize: 16, color: '#999'}}>No Data Found</Text>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
             </View>
           }
         />
@@ -367,18 +371,11 @@ const PurchaseRequisitionLinesListPage = () => {
               prev.filter(item => item.RecId !== itemToDelete.RecId),
             );
 
-            setAlertMessage(
-              `Purchase requisition "${
-                itemToDelete.ItemId || 'Unknown'
-              }" deleted successfully`,
-            );
+            setAlertMessage('Record deleted successfully.');
             setAlertModal(true);
           } catch (error) {
             console.error('Delete error:', error);
-            setAlertMessage(
-              error.response?.data ||
-                'Failed to delete record. Please try again.',
-            );
+            setAlertMessage(error.response?.data || 'Failed to delete record.');
             setAlertModal(true);
           } finally {
             setIsLoading(false); // ✅ Hide processing overlay

@@ -955,7 +955,7 @@ const GenericAdvanceSaveScreen = () => {
       }
     } catch (error) {
       console.error('Error saving advance request:', error);
-      setAlertMessage('Failed to save advance request. Please try again.');
+      setAlertMessage('Failed to save request. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');

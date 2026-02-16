@@ -617,8 +617,9 @@ const LeaveRequestListPage = () => {
           <Text style={styles.DLP_NoDataText}>
             {t('leaveRequest.noDataFound')}
           </Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to create your first leave request
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}
