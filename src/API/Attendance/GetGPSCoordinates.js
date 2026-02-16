@@ -33,59 +33,129 @@ const GetGPSCoordinates = async () => {
       responseType: 'text',
     });
 
+    console.log('Raw XML response:', xml); // Add this for debugging
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
       attributeNamePrefix: '',
-      isArray: () => false,
+      isArray: (name, jpath, isLeafNode, isAttribute) => {
+        // Force arrays for specific paths
+        if (
+          jpath ===
+            's:Envelope.s:Body.getGPSCoordinatesResponse.return.DFgpsCoordinatesSvcContract' ||
+          jpath ===
+            's:Envelope.s:Body.getGPSCoordinatesResponse.result.DFgpsCoordinatesSvcContract'
+        ) {
+          return true;
+        }
+        return false;
+      },
       parseTagValue: true,
+      trimValues: true,
     });
 
     const parsed = parser.parse(xml);
+    console.log('Parsed XML:', JSON.stringify(parsed, null, 2)); // Add this for debugging
 
-    // Try both common AX patterns: ...Response > return  OR  ...Response > result
-    const container =
-      parsed?.['s:Envelope']?.['s:Body']?.['getGPSCoordinatesResponse'];
-    const rawListNode =
-      container?.['return']?.['a:DFgpsCoordinatesSvcContract'] ??
-      container?.['result']?.['a:DFgpsCoordinatesSvcContract'];
-    console.log('rawListNode', rawListNode);
+    // Navigate through the response structure
+    const envelope = parsed?.['s:Envelope'];
+    const body = envelope?.['s:Body'];
+    const response = body?.['getGPSCoordinatesResponse'];
 
-    if (!rawListNode) {
+    if (!response) {
+      console.log('No response found in XML');
       return [];
     }
 
-    const stripA = obj =>
-      Object.fromEntries(
-        Object.entries(obj).map(([k, v]) => [k.replace(/^a:/, ''), v]),
-      );
+    // Get the return value (could be 'return' or 'result')
+    const returnData = response['return'] || response['result'];
 
-    const rows = Array.isArray(rawListNode)
-      ? rawListNode.map(stripA)
-      : [stripA(rawListNode)];
+    if (!returnData) {
+      console.log('No return/result found in response');
+      return [];
+    }
 
-    // Use values EXACTLY as provided by D365 (no swapping/fixing)
-    const list = rows
-      .map(r => ({
-        latitude: Number(r.Latitude),
-        longitude: Number(r.Longitude),
-        radius: Number(r.Radius),
-        machineIPAddress: r.MachineIPAddress || r.IPAddress || '', // Handle both possible field names
-      }))
-      .filter(
-        p =>
-          Number.isFinite(p.latitude) &&
-          Number.isFinite(p.longitude) &&
-          Number.isFinite(p.radius),
-      );
+    // Check if we have the contract data
+    let contractData = returnData['a:DFgpsCoordinatesSvcContract'];
 
+    if (!contractData) {
+      console.log('No DFgpsCoordinatesSvcContract found');
+      return [];
+    }
+
+    // Always treat as array, even for single record
+    const records = Array.isArray(contractData) ? contractData : [contractData];
+    console.log('Records found:', records.length); // Debug log
+
+    const stripA = obj => {
+      // eslint-disable-next-line curly
+      if (!obj || typeof obj !== 'object') return obj;
+
+      const cleaned = {};
+      Object.entries(obj).forEach(([key, value]) => {
+        // Remove namespace prefixes
+        const cleanKey = key.replace(/^a:/, '').replace(/^@_/, '');
+
+        // Handle if value is an object with #text property (common in XML parsing)
+        if (
+          value &&
+          typeof value === 'object' &&
+          value['#text'] !== undefined
+        ) {
+          cleaned[cleanKey] = value['#text'];
+        } else {
+          cleaned[cleanKey] = value;
+        }
+      });
+      return cleaned;
+    };
+
+    // Process all records
+    const list = records
+      .map(record => {
+        const cleaned = stripA(record);
+        console.log('Cleaned record:', cleaned); // Debug log
+
+        // Try different possible field names
+        const latitude = Number(cleaned.Latitude ?? cleaned.latitude ?? 0);
+        const longitude = Number(cleaned.Longitude ?? cleaned.longitude ?? 0);
+        const radius = Number(cleaned.Radius ?? cleaned.radius ?? 0);
+        const machineIPAddress =
+          cleaned.MachineIPAddress ??
+          cleaned.machineIPAddress ??
+          cleaned.IPAddress ??
+          cleaned.ipAddress ??
+          '';
+
+        // Only include if we have valid coordinates
+        if (
+          Number.isFinite(latitude) &&
+          Number.isFinite(longitude) &&
+          Number.isFinite(radius) &&
+          latitude !== 0 &&
+          longitude !== 0
+        ) {
+          return {
+            latitude,
+            longitude,
+            radius,
+            machineIPAddress: String(machineIPAddress),
+          };
+        }
+        return null;
+      })
+      .filter(item => item !== null);
+
+    console.log('Final geofence list:', list); // Debug log
     return list;
   } catch (err) {
     console.error(
       '❌ GetGPSCoordinates SOAP error:',
-      err?.response?.data || err,
+      err?.response?.data || err.message || err,
     );
-    throw err;
+    // Return empty array instead of throwing to prevent app crash
+    return [];
   }
 };
 
