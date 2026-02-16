@@ -206,7 +206,7 @@ const DynamicRequestCard = ({
       case 'currency': {
         const num = Number(value);
         if (isNaN(num)) return value;
-        return `$${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       }
       case 'number': {
         const n = Number(value);
