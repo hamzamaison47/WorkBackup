@@ -7,7 +7,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Keyboard,
   ScrollView,
   SafeAreaView,
   BackHandler,
@@ -85,6 +85,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [showCreateNewConfirm, setShowCreateNewConfirm] = useState(false);
   const [lastCreatedData, setLastCreatedData] = useState(null);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const createInitialFormData = () => ({
     recId: expenseData.recId || expenseData.RecId || '',
@@ -165,6 +166,26 @@ const ExpenseManagmentLinesSaveRecord = () => {
     expenseData.RecId,
     effectiveLegalEntity,
   ]);
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const clearAllStates = useCallback(() => {
     setCategoryOptions([]);
@@ -349,7 +370,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       setCategoryOptions(formatted);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      setAlertMessage('Failed to fetch expense category options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -370,7 +391,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       setCurrencyOptions(formatted);
     } catch (error) {
       console.error('Error fetching currencies:', error);
-      setAlertMessage('Failed to fetch currency options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -497,9 +518,9 @@ const ExpenseManagmentLinesSaveRecord = () => {
         response?.IsSuccess === true || response?.AlertType === 'Success';
 
       if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const successAction = modalMode === 'create' ? 'created' : 'updated';
         const message =
-          response?.Message || `Expense Line ${actionText} Successfully`;
+          response?.Message || `Record ${successAction} successfully`;
 
         setAlertMessage(message);
         setAlertModal(true);
@@ -515,8 +536,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
         };
       } else {
         const actionText = modalMode === 'create' ? 'Creating' : 'Updating';
-        const errorMessage =
-          response?.Message || `Error ${actionText} Expense Line`;
+        const errorMessage = response?.Message || `Error ${actionText} request`;
 
         setAlertMessage(errorMessage);
         setAlertModal(true);
@@ -535,7 +555,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
 
     if (mode === 'edit' && !formData.expenseTransactionNumber) {
       setAlertMessage(
-        'Error: Cannot update expense line. Missing transaction number.',
+        'Error: Cannot update record. Missing transaction number.',
       );
       setAlertModal(true);
       return;
@@ -639,7 +659,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving expense:', error);
-      setAlertMessage('Failed to save expense. Please try again.');
+      setAlertMessage('Failed to save record. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -656,6 +676,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}>
       {isLoading ? (
@@ -663,128 +684,128 @@ const ExpenseManagmentLinesSaveRecord = () => {
       ) : (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
           <SafeAreaView style={styles.DSR_SafeArea}>
-            <KeyboardAvoidingView
+            {/* <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.DSR_ContentWrapper}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-              {isProcessing && (
-                <View style={styles.DSR_ProcessingOverlay}>
-                  <View style={styles.DSR_ProcessingContainer}>
-                    <ActivityIndicator size="large" color="#0A66C2" />
-                    <Text style={styles.DSR_ProcessingText}>
-                      {t('common.processing')}
-                    </Text>
-                  </View>
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+            {isProcessing && (
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.DSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
                 </View>
-              )}
-              <ScrollView
-                ref={scrollViewRef}
-                contentContainerStyle={styles.DSR_FormContainer}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled={true}>
-                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                  Transaction Date *
-                </Text>
-                <TouchableOpacity
-                  style={styles.DSR_DateSelector}
-                  onPress={() => setShowCalendar(true)}>
-                  <View style={{flex: 1}}>
-                    <Text style={styles.DSR_DateText}>
-                      {formData.transactionDate
-                        ? formatDate(formData.transactionDate)
-                        : 'Select Transaction Date'}
-                    </Text>
-                  </View>
-                  <Icon name="calendar" size={20} color="#0A66C2" />
-                </TouchableOpacity>
+              </View>
+            )}
+            <ScrollView
+              ref={scrollViewRef}
+              contentContainerStyle={styles.DSR_FormContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}>
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                Transaction Date *
+              </Text>
+              <TouchableOpacity
+                style={styles.DSR_DateSelector}
+                onPress={() => setShowCalendar(true)}>
+                <View style={{flex: 1}}>
+                  <Text style={styles.DSR_DateText}>
+                    {formData.transactionDate
+                      ? formatDate(formData.transactionDate)
+                      : 'Select Transaction Date'}
+                  </Text>
+                </View>
+                <Icon name="calendar" size={20} color="#0A66C2" />
+              </TouchableOpacity>
 
-                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                  Expense Category *
-                </Text>
-                <Dropdown
-                  style={styles.DSR_Input}
-                  data={categoryOptions}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select Expense Category"
-                  value={formData.expenseCategory}
-                  onFocus={handleCategoryDropdownFocus}
-                  onChange={handleCategoryChange}
-                  placeholderStyle={styles.DSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.DSR_DropdownSelectedText}
-                  itemTextStyle={styles.DSR_DropdownItemText}
-                  activeColor="#E6F0FF"
-                  containerStyle={[
-                    styles.DSR_DropdownContainer,
-                    {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
-                  ]}
-                  itemContainerStyle={styles.DSR_DropdownItemContainer}
-                  maxHeight={280}
-                  dropdownPosition="auto"
-                  search
-                  searchPlaceholder="Search Expense Category"
-                  inputSearchStyle={styles.DSR_DropdownSearchInput}
-                  iconStyle={styles.DSR_DropdownIcon}
-                  keyboardAvoiding={true}
-                />
-
-                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                  Transaction Amount *
-                </Text>
-                <TextInput
-                  style={styles.DSR_Input}
-                  value={formData.transactionAmount}
-                  onChangeText={value =>
-                    handleInputChange('transactionAmount', value)
-                  }
-                  keyboardType="numeric"
-                  placeholder="Enter transaction amount"
-                  placeholderTextColor="#888"
-                />
-
-                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                  Currency *
-                </Text>
-                <Dropdown
-                  style={styles.DSR_Input}
-                  data={currencyOptions}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select Currency"
-                  value={formData.currency}
-                  onFocus={handleCurrencyDropdownFocus}
-                  onChange={handleCurrencyChange}
-                  placeholderStyle={styles.DSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.DSR_DropdownSelectedText}
-                  itemTextStyle={styles.DSR_DropdownItemText}
-                  activeColor="#E6F0FF"
-                  containerStyle={[
-                    styles.DSR_DropdownContainer,
-                    {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
-                  ]}
-                  itemContainerStyle={styles.DSR_DropdownItemContainer}
-                  maxHeight={280}
-                  dropdownPosition="auto"
-                  search
-                  searchPlaceholder="Search Currency"
-                  inputSearchStyle={styles.DSR_DropdownSearchInput}
-                  iconStyle={styles.DSR_DropdownIcon}
-                  keyboardAvoiding={true}
-                />
-              </ScrollView>
-
-              <SaveRecordButtons
-                mode={mode}
-                processingButton={processingButton}
-                onSave={handleSave}
-                onCancel={goBack}
-                isDisabled={
-                  processingButton === 'create' || processingButton === 'submit'
-                }
-                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                Expense Category *
+              </Text>
+              <Dropdown
+                style={styles.DSR_Input}
+                data={categoryOptions}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Expense Category"
+                value={formData.expenseCategory}
+                onFocus={handleCategoryDropdownFocus}
+                onChange={handleCategoryChange}
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={[
+                  styles.DSR_DropdownContainer,
+                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
+                ]}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
+                maxHeight={280}
+                dropdownPosition="auto"
+                search
+                searchPlaceholder="Search Expense Category"
+                inputSearchStyle={styles.DSR_DropdownSearchInput}
+                iconStyle={styles.DSR_DropdownIcon}
+                keyboardAvoiding={true}
               />
-            </KeyboardAvoidingView>
+
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                Transaction Amount *
+              </Text>
+              <TextInput
+                style={styles.DSR_Input}
+                value={formData.transactionAmount}
+                onChangeText={value =>
+                  handleInputChange('transactionAmount', value)
+                }
+                keyboardType="numeric"
+                placeholder="Enter transaction amount"
+                placeholderTextColor="#888"
+              />
+
+              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                Currency *
+              </Text>
+              <Dropdown
+                style={styles.DSR_Input}
+                data={currencyOptions}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Currency"
+                value={formData.currency}
+                onFocus={handleCurrencyDropdownFocus}
+                onChange={handleCurrencyChange}
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={[
+                  styles.DSR_DropdownContainer,
+                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
+                ]}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
+                maxHeight={280}
+                dropdownPosition="auto"
+                search
+                searchPlaceholder="Search Currency"
+                inputSearchStyle={styles.DSR_DropdownSearchInput}
+                iconStyle={styles.DSR_DropdownIcon}
+                keyboardAvoiding={true}
+              />
+            </ScrollView>
+
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            />
+            {/* </KeyboardAvoidingView> */}
 
             <CalendarModal
               visible={showCalendar}

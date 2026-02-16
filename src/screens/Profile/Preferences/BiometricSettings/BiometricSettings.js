@@ -480,9 +480,11 @@ const BiometricSettings = () => {
           biometricEnabled
             ? `${t('biometricSettings.replaceCurrentConfig')}\n\n`
             : ''
-        }${t('biometricSettings.enableAuthFor')}\n${
-          selectedAccount?.email
-        }?\n\n${t('biometricSettings.noteActiveConfig')}`}
+        }${t('biometricSettings.enableAuthFor', {
+          biometricType: getBiometricDisplayName(),
+        })}\n${selectedAccount?.email}?\n\n${t(
+          'biometricSettings.noteActiveConfig',
+        )}`}
         primaryButtonText={t('biometricSettings.enable')}
         secondaryButtonText={t('common.cancel')}
         onPrimaryPress={handleEnableBiometric}

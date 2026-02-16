@@ -121,10 +121,7 @@ const PRSalarySlip = () => {
 
       // Show more detailed error message if available
       const errorMessage = error?.message || error?.response?.data?.message;
-      showMessage(
-        'Error',
-        `There was an error sending the salary slip.\n${errorMessage}`,
-      );
+      showMessage('Error', `Failed to send email.\n${errorMessage}`);
     } finally {
       setSendingEmail(false);
     }

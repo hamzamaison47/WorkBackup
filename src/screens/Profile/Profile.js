@@ -217,17 +217,17 @@ const Profile = ({navigation}) => {
               </View>
 
               {/* SignOut Button */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.Profile_signOutButton}
                 onPress={handleLogout}>
                 <TranslatableText
                   translationKey="profile.logout"
                   style={styles.Profile_signOutText}
                 />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {/* Version Info */}
-              <View style={styles.Profile_versionContainer}>
+              {/* <View style={styles.Profile_versionContainer}>
                 <TranslatableText
                   translationKey="profile.version"
                   style={styles.Profile_versionText}
@@ -235,7 +235,7 @@ const Profile = ({navigation}) => {
                 <Text style={styles.Profile_versionText}>
                   {getPoweredByText()}
                 </Text>
-              </View>
+              </View> */}
             </KeyboardAvoidingView>
           </ScrollView>
         </View>

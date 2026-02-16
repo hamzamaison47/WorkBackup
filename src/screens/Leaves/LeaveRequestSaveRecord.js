@@ -15,6 +15,7 @@ import {
   Platform,
   I18nManager,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -81,6 +82,9 @@ const LeaveRequestSaveRecord = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [leaveLabelsData, setLeaveLabelsData] = useState({});
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  const [startCalendarKey, setStartCalendarKey] = useState(Date.now());
+  const [endCalendarKey, setEndCalendarKey] = useState(Date.now());
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const createInitialFormData = () => ({
     recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
@@ -137,6 +141,26 @@ const LeaveRequestSaveRecord = () => {
       return false;
     }
   };
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -292,6 +316,7 @@ const LeaveRequestSaveRecord = () => {
               leaveData.leaveCategory,
             );
 
+            // First set the form data with values from leaveData
             const editFormData = {
               ...createInitialFormData(),
               ...leaveData,
@@ -308,14 +333,22 @@ const LeaveRequestSaveRecord = () => {
 
             setFormData(editFormData);
 
-            // Fetch balance, quota, and eligibility for edit mode
+            // Then fetch fresh balance/quota/eligibility data using the parameters directly
             if (leaveData.leaveCode && leaveData.leaveStartDate) {
+              // No setTimeout needed now
               await fetchBalanceQuotaEligibility(
                 leaveData.leaveCode,
                 leaveData.leaveStartDate,
               );
+            } else if (leaveData.leaveCode) {
+              await fetchBalanceQuotaEligibility(
+                leaveData.leaveCode,
+                formatToISOWithTime(new Date()),
+              );
             }
           }
+        } catch (error) {
+          console.error('Error initializing form:', error);
         } finally {
           setIsLoading(false);
         }
@@ -369,23 +402,30 @@ const LeaveRequestSaveRecord = () => {
   const fetchBalanceQuotaEligibility = async (leaveCode, startDate) => {
     try {
       const effectiveStartDate = startDate || formatToISOWithTime(new Date());
-      const leaveRequestId =
-        mode === 'edit' && formData.leaveRequestId
-          ? formData.leaveRequestId
-          : leaveData?.leaveReqId || '';
+
+      // Use the parameters directly instead of formData
+      const empId = employeeId; // Use the employeeId from props
+      const leaveRecId =
+        mode === 'edit' && leaveData?.recId ? leaveData.recId : '0';
+      const leaveReqId = leaveData?.leaveReqId || '';
+
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
 
       const balanceResult = await GetLeaveBalance({
-        employeeId: formData.employeeId || employeeId,
+        employeeId: empId,
         leaveCode: leaveCode,
         leaveStartDate: effectiveStartDate,
-        leaveRequestId: leaveRequestId,
+        leaveRequestId: leaveReqId,
+        _t: timestamp,
       });
 
       const quotaResult = await GetEmployeeQuota({
-        employeeId: formData.employeeId || employeeId,
+        employeeId: empId,
         leaveCode: leaveCode,
         leaveStartDate: effectiveStartDate,
-        leaveRecId: mode === 'edit' && formData.recId ? formData.recId : '0',
+        leaveRecId: leaveRecId,
+        _t: timestamp,
       });
 
       const balance =
@@ -444,22 +484,25 @@ const LeaveRequestSaveRecord = () => {
     const formatted = formatToISOWithTime(date);
     const startDate = new Date(formatted);
 
+    // Close modal FIRST
+    setShowStartCalendar(false);
+
     if (formData.leaveEndDate) {
       const endDate = new Date(formData.leaveEndDate);
       if (startDate > endDate) {
         setAlertMessage(t('leaveSaveRecord.startDateAfterEnd'));
         setAlertModal(true);
-        setShowStartCalendar(false);
         return;
       }
     }
 
+    // Then update form data
     setFormData(prev => ({
       ...prev,
       leaveStartDate: formatted,
     }));
 
-    // Add these lines:
+    // Fetch data after state update
     if (formData.leaveCode) {
       await fetchBalanceQuotaEligibility(formData.leaveCode, formatted);
 
@@ -467,12 +510,13 @@ const LeaveRequestSaveRecord = () => {
         await fetchLeaveDaysFromAPI(formatted, formData.leaveEndDate);
       }
     }
-
-    setShowStartCalendar(false);
   };
 
   const handleEndDateChange = async date => {
     const formatted = formatToISOWithTime(date);
+
+    // Close modal FIRST
+    setShowEndCalendar(false);
 
     if (formData.leaveStartDate) {
       const startDate = new Date(formData.leaveStartDate);
@@ -488,17 +532,17 @@ const LeaveRequestSaveRecord = () => {
           leaveDays: '',
         }));
 
-        setShowEndCalendar(false);
         return;
       }
     }
 
+    // Then update form data
     setFormData(prev => ({
       ...prev,
       leaveEndDate: formatted,
     }));
 
-    // Add these lines:
+    // Fetch data after state update
     if (formData.leaveStartDate && formData.leaveCode) {
       await fetchLeaveDaysFromAPI(formData.leaveStartDate, formatted);
       await fetchBalanceQuotaEligibility(
@@ -506,8 +550,6 @@ const LeaveRequestSaveRecord = () => {
         formData.leaveStartDate,
       );
     }
-
-    setShowEndCalendar(false); // Add this line
   };
 
   const handleDatePickerOpen = dateType => {
@@ -606,8 +648,10 @@ const LeaveRequestSaveRecord = () => {
         EmployeeId: data.employeeId,
         EmployeeName: data.employeeName,
         RecId: data.recId === '' ? '0' : data.recId,
-        LeaveRequestId: modalMode === 'create' ? '' : data.leaveRequestId || '',
+        LeaveReqId: modalMode === 'create' ? '' : data.leaveRequestId || '',
       };
+
+      console.log({leaveData});
 
       if (
         !leavesData.LeaveCode ||
@@ -633,7 +677,7 @@ const LeaveRequestSaveRecord = () => {
         }
       }
 
-      if (response?.IsSuccess) {
+      if (response.IsSuccess === 'true') {
         const actionText =
           modalMode === 'create' ? t('common.create') : t('common.update');
         const submitText =
@@ -737,6 +781,7 @@ const LeaveRequestSaveRecord = () => {
       pageTitle={getPageLabel()}
       isBackButton={true}
       showFooter={false}
+      showTabNavigator={!isKeyboardVisible}
       showFloatingButton={false}
       isHeaderActive={true}
       onBackPress={goBack}
@@ -746,54 +791,54 @@ const LeaveRequestSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-            {isProcessing && (
-              <View style={styles.DSR_ProcessingOverlay}>
-                <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.DSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
               </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.DSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled={true}>
-              {/* Employee Name */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.EmployeeNameLabel || 'Employee Name'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formData.employeeName}
-              </Text>
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.DSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled={true}>
+            {/* Employee Name */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.EmployeeNameLabel || 'Employee Name'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formData.employeeName}
+            </Text>
 
-              {/* Request Date */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.LeaveReqDateLabel || 'Request Date'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formatDate(today)}
-              </Text>
+            {/* Request Date */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.LeaveReqDateLabel || 'Request Date'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formatDate(today)}
+            </Text>
 
-              {/* Leave Category Label */}
-              {/* <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
+            {/* Leave Category Label */}
+            {/* <Text style={[styles.LReqSR_Label, isRTL && {textAlign: 'left'}]}>
                 {leaveLabelsData?.LeaveCategoryLabel || 'Leave Category'}
               </Text>
               <Dropdown
@@ -855,248 +900,249 @@ const LeaveRequestSaveRecord = () => {
                 inverted={isRTL}
               /> */}
 
-              {/* Leave Code */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.LeaveCodeLabel || 'Leave Code *'}
-              </Text>
-              <Dropdown
-                style={[styles.DSR_Input, isRTL && {textAlign: 'left'}]}
-                data={LeaveCodesForEmployee}
-                labelField="label"
-                valueField="value"
-                placeholder={t('leaveSaveRecord.selectLeaveCode')}
-                value={formData.leaveCode}
-                onFocus={fetchLeaveCodesForEmployee}
-                onChange={handleLeaveCodeChange}
-                placeholderStyle={[
-                  styles.DSR_DropdownPlaceholder,
-                  isRTL && {textAlign: 'left'},
-                ]}
-                selectedTextStyle={[
-                  styles.DSR_DropdownSelectedText,
-                  isRTL && {textAlign: 'left'},
-                ]}
-                itemTextStyle={[
-                  styles.DSR_DropdownItemText,
-                  isRTL && {textAlign: 'left'},
-                ]}
-                activeColor="#E6F0FF"
-                containerStyle={[
-                  styles.DSR_DropdownContainer,
-                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
-                ]}
-                itemContainerStyle={styles.DSR_DropdownItemContainer}
-                maxHeight={280}
-                dropdownPosition="auto"
-                search
-                searchPlaceholder={t('leaveSaveRecord.searchLeaveCode')}
-                inputSearchStyle={[
-                  styles.DSR_DropdownSearchInput,
-                  isRTL && {textAlign: 'right'},
-                ]}
-                renderLeftIcon={
-                  isRTL
-                    ? () => (
-                        <Icon
-                          name="chevron-down"
-                          size={10}
-                          color="#8b8b8bff"
-                          style={{marginHorizontal: 8}}
-                        />
-                      )
-                    : null
+            {/* Leave Code */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.LeaveCodeLabel || 'Leave Code *'}
+            </Text>
+            <Dropdown
+              style={[styles.DSR_Input, isRTL && {textAlign: 'left'}]}
+              data={LeaveCodesForEmployee}
+              labelField="label"
+              valueField="value"
+              placeholder={t('leaveSaveRecord.selectLeaveCode')}
+              value={formData.leaveCode}
+              onFocus={fetchLeaveCodesForEmployee}
+              onChange={handleLeaveCodeChange}
+              placeholderStyle={[
+                styles.DSR_DropdownPlaceholder,
+                isRTL && {textAlign: 'left'},
+              ]}
+              selectedTextStyle={[
+                styles.DSR_DropdownSelectedText,
+                isRTL && {textAlign: 'left'},
+              ]}
+              itemTextStyle={[
+                styles.DSR_DropdownItemText,
+                isRTL && {textAlign: 'left'},
+              ]}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              dropdownPosition="auto"
+              search
+              searchPlaceholder={t('leaveSaveRecord.searchLeaveCode')}
+              inputSearchStyle={[
+                styles.DSR_DropdownSearchInput,
+                isRTL && {textAlign: 'right'},
+              ]}
+              renderLeftIcon={
+                isRTL
+                  ? () => (
+                      <Icon
+                        name="chevron-down"
+                        size={10}
+                        color="#8b8b8bff"
+                        style={{marginHorizontal: 8}}
+                      />
+                    )
+                  : null
+              }
+              renderRightIcon={
+                !isRTL
+                  ? () => (
+                      <Icon
+                        name="chevron-down"
+                        size={10}
+                        color="#8b8b8bff"
+                        style={{marginHorizontal: 8}}
+                      />
+                    )
+                  : null
+              }
+              iconStyle={{width: 0, height: 0}}
+              keyboardAvoiding
+              inverted={isRTL}
+            />
+
+            {/* Leave Start Date */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.LeaveStartDateLabel || 'Leave Start Date *'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.DSR_DateSelector, isRTL && {flexDirection: 'row'}]}
+              onPress={() => {
+                if (handleDatePickerOpen('start')) {
+                  setStartCalendarKey(Date.now());
+                  setShowStartCalendar(true);
                 }
-                renderRightIcon={
-                  !isRTL
-                    ? () => (
-                        <Icon
-                          name="chevron-down"
-                          size={10}
-                          color="#8b8b8bff"
-                          style={{marginHorizontal: 8}}
-                        />
-                      )
-                    : null
+              }}>
+              <View style={{flex: 1}}>
+                <Text
+                  style={[
+                    styles.DSR_DateText,
+                    isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                  ]}>
+                  {formData.leaveStartDate
+                    ? formatDate(formData.leaveStartDate)
+                    : t('leaveSaveRecord.selectStartDate')}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
+
+            {/* Leave End Date */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.LeaveEndDateLabel || 'Leave End Date *'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.DSR_DateSelector, isRTL && {flexDirection: 'row'}]}
+              onPress={() => {
+                if (handleDatePickerOpen('end')) {
+                  setEndCalendarKey(Date.now());
+                  setShowEndCalendar(true);
                 }
-                iconStyle={{width: 0, height: 0}}
-                keyboardAvoiding
-                inverted={isRTL}
-              />
+              }}>
+              <View style={{flex: 1}}>
+                <Text
+                  style={[
+                    styles.DSR_DateText,
+                    isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+                  ]}>
+                  {formData.leaveEndDate
+                    ? formatDate(formData.leaveEndDate)
+                    : t('leaveSaveRecord.selectEndDate')}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
 
-              {/* Leave Start Date */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.LeaveStartDateLabel || 'Leave Start Date *'}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.DSR_DateSelector,
-                  isRTL && {flexDirection: 'row'},
-                ]}
-                onPress={() => {
-                  if (handleDatePickerOpen('start')) {
-                    setShowStartCalendar(true);
-                  }
-                }}>
-                <View style={{flex: 1}}>
-                  <Text
-                    style={[
-                      styles.DSR_DateText,
-                      isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                    ]}>
-                    {formData.leaveStartDate
-                      ? formatDate(formData.leaveStartDate)
-                      : t('leaveSaveRecord.selectStartDate')}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
+            {/* Leave Days */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.LeaveDaysLabel || 'Leave Days'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formData.leaveDays || '0'}
+            </Text>
 
-              {/* Leave End Date */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.LeaveEndDateLabel || 'Leave End Date *'}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.DSR_DateSelector,
-                  isRTL && {flexDirection: 'row'},
-                ]}
-                onPress={() => {
-                  if (handleDatePickerOpen('end')) {
-                    setShowEndCalendar(true);
-                  }
-                }}>
-                <View style={{flex: 1}}>
-                  <Text
-                    style={[
-                      styles.DSR_DateText,
-                      isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                    ]}>
-                    {formData.leaveEndDate
-                      ? formatDate(formData.leaveEndDate)
-                      : t('leaveSaveRecord.selectEndDate')}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
+            {/* Balance */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.BalanceLabel || 'Balance'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formData.balance}
+            </Text>
 
-              {/* Leave Days */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.LeaveDaysLabel || 'Leave Days'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formData.leaveDays || '0'}
-              </Text>
+            {/* Quota */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.QuotaLabel || 'Quota'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formData.quota}
+            </Text>
 
-              {/* Balance */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.BalanceLabel || 'Balance'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formData.balance}
-              </Text>
+            {/* Eligibility */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.EligibilityLabel || 'Eligibility'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formData.eligibility}
+            </Text>
 
-              {/* Quota */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.QuotaLabel || 'Quota'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formData.quota}
-              </Text>
+            {/* Reason */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {leaveLabelsData?.ReasonLabel || 'Reason'}
+            </Text>
+            <TextInput
+              style={[
+                styles.DSR_Input,
+                styles.DSR_TextArea,
+                isRTL && {textAlign: 'right', writingDirection: 'rtl'},
+              ]}
+              value={formData.reason}
+              onChangeText={value => handleInputChange('reason', value)}
+              placeholder={t('leaveSaveRecord.enterReason')}
+              multiline
+              numberOfLines={6}
+            />
+          </ScrollView>
 
-              {/* Eligibility */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.EligibilityLabel || 'Eligibility'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formData.eligibility}
-              </Text>
-
-              {/* Reason */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {leaveLabelsData?.ReasonLabel || 'Reason'}
-              </Text>
-              <TextInput
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_TextArea,
-                  isRTL && {textAlign: 'right', writingDirection: 'rtl'},
-                ]}
-                value={formData.reason}
-                onChangeText={value => handleInputChange('reason', value)}
-                placeholder={t('leaveSaveRecord.enterReason')}
-                multiline
-                numberOfLines={6}
-              />
-            </ScrollView>
-
-            {isWorkflowConfigured ? (
-              <SaveRecordButtons
-                mode={mode}
-                processingButton={processingButton}
-                onSave={handleSave}
-                onCancel={goBack}
-                isDisabled={
-                  processingButton === 'create' || processingButton === 'submit'
-                }
-              />
-            ) : (
-              <SaveRecordButtons
-                mode={mode}
-                processingButton={processingButton}
-                onSave={handleSave}
-                onCancel={goBack}
-                isDisabled={
-                  processingButton === 'create' || processingButton === 'submit'
-                }
-                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
-              />
-            )}
-          </KeyboardAvoidingView>
-
-          <CalendarModal
-            visible={showStartCalendar}
-            current={formData.leaveStartDate}
-            onDateSelected={handleStartDateChange}
-            onClose={() => setShowStartCalendar(false)}
-          />
-
-          <CalendarModal
-            visible={showEndCalendar}
-            current={formData.leaveEndDate}
-            onDateSelected={handleEndDateChange}
-            onClose={() => setShowEndCalendar(false)}
-          />
-
-          <AlertModal
-            visible={alertModal}
-            heading={t('common.alert')}
-            text={alertMessage}
-            onPress={() => {
-              setAlertModal(false);
-            }}
-          />
+          {isWorkflowConfigured ? (
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+            />
+          ) : (
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            />
+          )}
+          {/* </KeyboardAvoidingView> */}
         </SafeAreaView>
       )}
+      {showStartCalendar && (
+        <CalendarModal
+          key={`start-${startCalendarKey}`}
+          visible={showStartCalendar}
+          initialDate={formData.leaveStartDate}
+          onDateSelected={handleStartDateChange}
+          onClose={() => setShowStartCalendar(false)}
+        />
+      )}
+
+      {showEndCalendar && (
+        <CalendarModal
+          key={`end-${endCalendarKey}`}
+          visible={showEndCalendar}
+          initialDate={formData.leaveEndDate}
+          onDateSelected={handleEndDateChange}
+          onClose={() => setShowEndCalendar(false)}
+        />
+      )}
+
+      <AlertModal
+        visible={alertModal}
+        heading={t('common.alert')}
+        text={alertMessage}
+        onPress={() => {
+          setAlertModal(false);
+        }}
+      />
     </ActionPaneContainer>
   );
 };

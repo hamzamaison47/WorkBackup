@@ -354,15 +354,15 @@ const BankAccountListPage = () => {
       });
 
       if (response[0].IsSuccess) {
-        setAlertMessage('Bank Account Record Deleted Successfully.');
+        setAlertMessage('Record deleted successfully');
         setbankaccountdata(prev =>
           prev.filter(bank => bank.recId !== itemToDelete.recId),
         );
       } else {
-        setAlertMessage('Unable to Delete Bank Account Record.');
+        setAlertMessage('Unable to delete record. Please try again.');
       }
     } catch (error) {
-      setAlertMessage('Failed to Delete Bank Account Record');
+      setAlertMessage('Failed to delete record');
       console.log('Delete Bank Account response', error);
     } finally {
       setButtonProcessing(itemToDelete.recId, 'delete', false);
@@ -393,7 +393,7 @@ const BankAccountListPage = () => {
           (Array.isArray(response) ? response[0] : response).IsSuccess,
         ).toLowerCase() === 'true'
       ) {
-        setAlertMessage(`${itemData.AccountId} is Submitted Successfully.`);
+        setAlertMessage('Request submitted successfully');
         setAlertModal(true);
         setHighlightedRecId(itemData.recId);
 
@@ -409,13 +409,13 @@ const BankAccountListPage = () => {
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : 'Failed to Submit Bank Account Record';
+            : 'Failed to submit request';
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to Submit Bank Account Record');
+      setAlertMessage('Failed to submit request');
       setAlertModal(true);
     } finally {
       setButtonProcessing(itemData.recId, 'submit', false);
@@ -483,9 +483,9 @@ const BankAccountListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to create your first bank account
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}
@@ -500,7 +500,7 @@ const BankAccountListPage = () => {
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
-        text="Are you sure you want to delete this bank account record?"
+        text="Are you sure you want to delete this record?"
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

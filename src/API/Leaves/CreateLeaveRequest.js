@@ -39,7 +39,6 @@ const createLeaveRequest = async ({leaveData}) => {
         responseType: 'text',
       },
     );
-
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -77,7 +76,7 @@ const createLeaveRequest = async ({leaveData}) => {
 
     const cleanedResult = cleanObject(result);
 
-    // console.log('Leave Request Created:', cleanedResult);
+    console.log('Leave Request Created:', cleanedResult);
 
     return cleanedResult;
   } catch (error) {

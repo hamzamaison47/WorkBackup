@@ -2,7 +2,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
+import {
+  Text,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -57,6 +64,7 @@ const PurchaseRequisitionListPage = () => {
   const [submitModal, setSubmitModal] = useState(false);
   const [itemToSubmit, setItemToSubmit] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchPurchaseRequisitionData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -181,10 +189,12 @@ const PurchaseRequisitionListPage = () => {
       return;
     }
 
-    // Start processing on the submit button for this record
-    setButtonProcessing(itemToSubmit.RecId, 'submit', true);
+    setSubmitModal(false); // ✅ Close modal first
+    setIsProcessing(true); // ✅ Show processing overlay
 
     try {
+      // Start processing on the submit button for this record
+      setButtonProcessing(itemToSubmit.RecId, 'submit', true);
       const response = await submitPurchaseRequisition({
         _requestList: [itemToSubmit.PurchReqId], // string[]
       });
@@ -197,9 +207,7 @@ const PurchaseRequisitionListPage = () => {
 
       // ✔ Success Condition (like your BankAccount code)
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
-        setAlertMessage(
-          `Purchase requisition "${itemToSubmit.PurchReqId}" submitted successfully.`,
-        );
+        setAlertMessage('Request submitted successfully.');
         setAlertModal(true);
 
         // highlight the row (UI feedback)
@@ -215,19 +223,18 @@ const PurchaseRequisitionListPage = () => {
         }, 1000);
       } else {
         // Failed — show server message if exists
-        const errorMessage =
-          resObj?.Message || 'Failed to submit purchase requisition';
+        const errorMessage = resObj?.Message || 'Failed to submit request.';
 
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to submit purchase requisition');
+      setAlertMessage('Failed to submit request.');
       setAlertModal(true);
     } finally {
       setButtonProcessing(itemToSubmit.RecId, 'submit', false); // stop button spinner
-      setSubmitModal(false);
+      setIsProcessing(false); // ✅ Hide processing overlay
       setItemToSubmit(null);
     }
   };
@@ -343,6 +350,45 @@ const PurchaseRequisitionListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handlePurchaseRequisitionHeaderRecordCreation}>
+      {/* ✅ ADD PROCESSING OVERLAY HERE */}
+      {isProcessing && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+          }}>
+          <View
+            style={{
+              backgroundColor: '#fff',
+              padding: 30,
+              borderRadius: 10,
+              alignItems: 'center',
+              elevation: 5,
+              shadowColor: '#000',
+              shadowOffset: {width: 0, height: 2},
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+            }}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text
+              style={{
+                marginTop: 15,
+                fontSize: 16,
+                color: '#333',
+                fontWeight: '600',
+              }}>
+              Processing...
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <CustomIndicator />
       ) : (
@@ -355,7 +401,10 @@ const PurchaseRequisitionListPage = () => {
           }
           ListEmptyComponent={
             <View style={{paddingTop: 350, alignItems: 'center'}}>
-              <Text style={{fontSize: 16, color: '#999'}}>No Data Found</Text>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
             </View>
           }
         />
@@ -379,6 +428,9 @@ const PurchaseRequisitionListPage = () => {
             return;
           }
 
+          setDeleteModal(false); // ✅ Close modal first
+          setIsProcessing(true); // ✅ Show processing overlay
+
           try {
             setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
@@ -390,16 +442,14 @@ const PurchaseRequisitionListPage = () => {
               prevData.filter(item => item.RecId !== itemToDelete.RecId),
             );
 
-            setAlertMessage(
-              `Purchase requisition "${itemToDelete.PurchReqId}" deleted successfully`,
-            );
+            setAlertMessage('Record deleted successfully.');
             setAlertModal(true);
           } catch (error) {
-            setAlertMessage('Failed to delete record');
+            setAlertMessage('Failed to delete record.');
             setAlertModal(true);
           } finally {
             setButtonProcessing(itemToDelete.RecId, 'delete', false);
-            setDeleteModal(false);
+            setIsProcessing(false); // ✅ ADD THIS - Hide processing overlay
             setItemToDelete(null);
           }
         }}
@@ -415,6 +465,7 @@ const PurchaseRequisitionListPage = () => {
         onPress={handleConfirmSubmit}
         onCancel={() => {
           setSubmitModal(false);
+          setIsProcessing(false); // ✅ Hide processing overlay
           setItemToSubmit(null);
         }}
       />

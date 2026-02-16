@@ -14,6 +14,7 @@ import {
   Pressable,
   BackHandler,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -87,8 +88,7 @@ const GenericAdvanceSaveScreen = () => {
   const [EmployeeAdvanceLabelsData, setEmployeeAdvanceLabelsData] = useState(
     {},
   );
-
-  // Enhanced validation error states
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   const fetchEmployeeAdvanceLabels = async () => {
@@ -163,6 +163,26 @@ const GenericAdvanceSaveScreen = () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation]),
   );
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   // Enhanced back navigation with comprehensive parameter handling
   const goBack = useCallback(() => {
@@ -780,52 +800,56 @@ const GenericAdvanceSaveScreen = () => {
         throw new Error('Advance Type Code and Payment Date are required.');
       }
 
-      let response,submitResult;
+      let response, submitResult;
 
-       if (modalMode === 'create') {
-
-    response = await CreateAdvanceRequest({ advanceData: advanceRequestData });
-       if (actionType === 'submit' && response?.RecId) {
-      submitResult = await SubmitAdvanceRequest({ recId: response.RecId });
-    }
-  }else if (modalMode === 'update') {
-    
-    response = await UpdateAdvanceRequest({ advanceData: advanceRequestData });
+      if (modalMode === 'create') {
+        response = await CreateAdvanceRequest({
+          advanceData: advanceRequestData,
+        });
+        if (actionType === 'submit' && response?.RecId) {
+          submitResult = await SubmitAdvanceRequest({recId: response.RecId});
+        }
+      } else if (modalMode === 'update') {
+        response = await UpdateAdvanceRequest({
+          advanceData: advanceRequestData,
+        });
         if (actionType === 'submit' && response?.IsSuccess) {
-      submitResult = await SubmitAdvanceRequest({ recId: advanceRequestData.RecId });
+          submitResult = await SubmitAdvanceRequest({
+            recId: advanceRequestData.RecId,
+          });
+        }
+      }
+
+      if (response.IsSuccess === 'true') {
+        const actionText = modalMode === 'create' ? 'Created' : 'update';
+        let submitText = '';
+
+        if (submitResult?.IsSuccess === 'true') {
+          submitText = actionType === 'submit' ? ' and Submitted' : '';
+        } else if (submitResult?.IsSuccess === 'false') {
+          submitText = actionType === 'submit' ? ' but not Submitted' : '';
+        }
+
+        setAlertMessage(
+          `${advanceRequestData.AdvanceTypeCode} is ${actionText}${submitText} Successfully`,
+        );
+        setAlertModal(true);
+
+        return {success: true, recId: response?.RecId};
+      } else {
+        const errorMessage = response?.Message || 'Operation Failed';
+        setAlertMessage(errorMessage);
+        setAlertModal(true);
+        return {success: false, message: errorMessage};
+      }
+    } catch (error) {
+      console.error('Error in handleAction:', error);
+      const errorMessage =
+        error.message || 'An error occurred while processing the request.';
+      setAlertMessage(errorMessage);
+      setAlertModal(true);
+      return {success: false, message: errorMessage};
     }
-  }
-
-     if (response) {
-    const actionText = modalMode === 'create' ? 'Created' : 'update';
-    let submitText = '';
-
-    if (submitResult?.IsSuccess === 'true') {
-      submitText = actionType === 'submit' ? ' and Submitted' : '';
-    } else if (submitResult?.IsSuccess === 'false') {
-      submitText = actionType === 'submit' ? ' but not Submitted' : '';
-    }
-
-    setAlertMessage(
-      `${advanceRequestData.AdvanceTypeCode} is ${actionText}${submitText} Successfully`
-    );
-    setAlertModal(true);
-
-    return { success: true, recId: response?.RecId };
-  } else {
-    const errorMessage = response?.Message || 'Operation Failed';
-    setAlertMessage(errorMessage);
-    setAlertModal(true);
-    return { success: false, message: errorMessage };
-  }
-} catch (error) {
-  console.error('Error in handleAction:', error);
-  const errorMessage =
-    error.message || 'An error occurred while processing the request.';
-  setAlertMessage(errorMessage);
-  setAlertModal(true);
-  return { success: false, message: errorMessage };
-}
   };
 
   // Enhanced field validation with comprehensive checks
@@ -951,7 +975,7 @@ const GenericAdvanceSaveScreen = () => {
       }
     } catch (error) {
       console.error('Error saving advance request:', error);
-      setAlertMessage('Failed to save advance request. Please try again.');
+      setAlertMessage('Failed to save request. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -986,6 +1010,7 @@ const GenericAdvanceSaveScreen = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
@@ -993,275 +1018,275 @@ const GenericAdvanceSaveScreen = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior="padding"
-            style={styles.DSR_ContentWrapper}>
-            {isProcessing && (
-              <View style={styles.DSR_ProcessingOverlay}>
-                <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.DSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
+            style={styles.DSR_ContentWrapper}> */}
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
               </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.DSR_FormContainer}>
-              {/* Employee Name */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {EmployeeAdvanceLabelsData?.EmployeeNamelbl || 'Employee Name'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formData.employeeName}
-              </Text>
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.DSR_FormContainer}>
+            {/* Employee Name */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {EmployeeAdvanceLabelsData?.EmployeeNamelbl || 'Employee Name'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formData.employeeName}
+            </Text>
 
-              {/* Request Date */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {EmployeeAdvanceLabelsData?.RequestDatelbl || 'Request Date'}
-              </Text>
-              <Text
-                style={[
-                  styles.DSR_Input,
-                  styles.DSR_Disabled,
-                  isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-                ]}>
-                {formatDate(today)}
-              </Text>
+            {/* Request Date */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {EmployeeAdvanceLabelsData?.RequestDatelbl || 'Request Date'}
+            </Text>
+            <Text
+              style={[
+                styles.DSR_Input,
+                styles.DSR_Disabled,
+                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
+              ]}>
+              {formatDate(today)}
+            </Text>
 
-              {/* Advance Type Code */}
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {EmployeeAdvanceLabelsData?.AdvanceTypeCodelbl ||
-                  'Advance Type Code *'}
-              </Text>
-              <Dropdown
-                style={[
-                  styles.DSR_Input,
-                  requestType === 'Advance' && styles.DSR_Disabled,
-                ]}
-                data={advanceCodeDropDown}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Advance Type Code"
-                value={formData.AdvanceTypeCode}
-                onChange={handleAdvanceTypeCodeChange}
-                placeholderStyle={styles.DSR_DropdownPlaceholder}
-                selectedTextStyle={styles.DSR_DropdownSelectedText}
-                itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
-                containerStyle={styles.DSR_DropdownContainer}
-                itemContainerStyle={styles.DSR_DropdownItemContainer}
-                maxHeight={280}
-                search
-                searchPlaceholder="Search Advance Type Code"
-                inputSearchStyle={styles.DSR_DropdownSearchInput}
-                iconStyle={styles.DSR_DropdownIcon}
-                disable={requestType === 'Advance'}
-              />
-
-              {/* Advance Amount */}
-              <Text style={styles.DSR_Label}>
-                {EmployeeAdvanceLabelsData?.AdvanceAmountlbl ||
-                  'Advance Amount *'}
-              </Text>
-              <TextInput
-                style={[
-                  styles.DSR_Input,
-                  !formData.AdvanceTypeCode && styles.DSR_Disabled,
-                ]}
-                value={formData.AdvanceAmount}
-                onChangeText={handleAdvanceAmountChange}
-                keyboardType="numeric"
-                placeholder="0"
-                placeholderTextColor="#888"
-                editable={!!formData.AdvanceTypeCode}
-              />
-
-              {/* Payment Date */}
-              <Text style={styles.DSR_Label}>
-                {EmployeeAdvanceLabelsData?.RequestedPaymentDatelbl ||
-                  'Payment Date *'}
-              </Text>
-              <TouchableOpacity
-                style={styles.DSR_DateSelector}
-                onPress={() => {
-                  setCurrentDateField('RequestedPaymentDate');
-                  setShowCalendar(true);
-                }}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.DSR_DateText}>
-                    {formData.RequestedPaymentDate
-                      ? formatDate(formData.RequestedPaymentDate)
-                      : 'Select Payment Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-
-              {/* Recovery fields - only for Loan */}
-              {showRecoveryFields && (
-                <>
-                  <Text style={styles.DSR_Label}>
-                    {EmployeeAdvanceLabelsData?.RecoveryStartDatelbl ||
-                      'Recovery Start Date'}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.DSR_DateSelector}
-                    onPress={() => {
-                      setCurrentDateField('RecoveryStartDate');
-                      setShowCalendar(true);
-                    }}>
-                    <View style={{flex: 1}}>
-                      <Text style={styles.DSR_DateText}>
-                        {formData.RecoveryStartDate
-                          ? formatDate(formData.RecoveryStartDate)
-                          : 'Select Recovery Start Date'}
-                      </Text>
-                    </View>
-                    <Icon name="calendar" size={20} color="#0A66C2" />
-                  </TouchableOpacity>
-
-                  {/* Guarantor 1 */}
-                  <Text style={styles.DSR_Label}>
-                    {EmployeeAdvanceLabelsData?.Guarantor1lbl || 'Guarantor 1'}
-                  </Text>
-                  <Dropdown
-                    style={styles.DSR_Input}
-                    data={[
-                      {EmployeeId: null, EmployeeName: 'Select Guarantor 1'},
-                      ...guarantorsData.filter(
-                        emp => emp.EmployeeId !== formData.Guarantor2,
-                      ),
-                    ]}
-                    labelField="EmployeeName"
-                    valueField="EmployeeId"
-                    placeholder="Select Guarantor 1"
-                    value={formData.Guarantor1}
-                    onChange={item => {
-                      handleInputChange('Guarantor1', item.EmployeeId);
-                    }}
-                    placeholderStyle={styles.DSR_DropdownPlaceholder}
-                    selectedTextStyle={styles.DSR_DropdownSelectedText}
-                    itemTextStyle={styles.DSR_DropdownItemText}
-                    activeColor="#E6F0FF"
-                    containerStyle={styles.DSR_DropdownContainer}
-                    itemContainerStyle={styles.DSR_DropdownItemContainer}
-                    maxHeight={280}
-                    search
-                    searchPlaceholder="Search by ID or Name"
-                    inputSearchStyle={styles.DSR_DropdownSearchInput}
-                    iconStyle={styles.DSR_DropdownIcon}
-                    renderItem={renderGuarantorItem}
-                    searchField="combinedLabel"
-                  />
-
-                  {/* Guarantor 2 */}
-                  <Text style={styles.DSR_Label}>
-                    {EmployeeAdvanceLabelsData?.Guarantor2lbl || 'Guarantor 2'}
-                  </Text>
-                  <Dropdown
-                    style={styles.DSR_Input}
-                    data={[
-                      {EmployeeId: null, EmployeeName: 'Select Guarantor 2'},
-                      ...guarantorsData.filter(
-                        emp => emp.EmployeeId !== formData.Guarantor1,
-                      ),
-                    ]}
-                    labelField="EmployeeName"
-                    valueField="EmployeeId"
-                    placeholder="Select Guarantor 2"
-                    value={formData.Guarantor2}
-                    onChange={item => {
-                      handleInputChange('Guarantor2', item.EmployeeId);
-                    }}
-                    placeholderStyle={styles.DSR_DropdownPlaceholder}
-                    selectedTextStyle={styles.DSR_DropdownSelectedText}
-                    itemTextStyle={styles.DSR_DropdownItemText}
-                    activeColor="#E6F0FF"
-                    containerStyle={styles.DSR_DropdownContainer}
-                    itemContainerStyle={styles.DSR_DropdownItemContainer}
-                    maxHeight={280}
-                    search
-                    searchPlaceholder="Search by ID or Name"
-                    inputSearchStyle={styles.DSR_DropdownSearchInput}
-                    iconStyle={styles.DSR_DropdownIcon}
-                    renderItem={renderGuarantorItem}
-                    searchField="combinedLabel"
-                  />
-
-                  <Text style={styles.DSR_Label}>
-                    {EmployeeAdvanceLabelsData?.RequestedInstallmentAmountlbl ||
-                      'Recovery Amount *'}
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.DSR_Input,
-                      isRecoveryAmountDisabled && styles.DSR_Disabled,
-                    ]}
-                    value={formData.RequestedInstallmentAmount}
-                    onChangeText={handleRecoveryAmountChange}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor="#888"
-                    editable={!isRecoveryAmountDisabled}
-                  />
-
-                  <Text style={styles.DSR_Label}>
-                    {EmployeeAdvanceLabelsData?.recoverieslbl || 'Recoveries *'}
-                  </Text>
-                  <TextInput
-                    style={[
-                      styles.DSR_Input,
-                      isRecoveriesDisabled && styles.DSR_Disabled,
-                    ]}
-                    value={formData.RequestedInstallments}
-                    onChangeText={handleRecoveriesChange}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor="#888"
-                    editable={!isRecoveriesDisabled}
-                  />
-                </>
-              )}
-
-              {/* Description */}
-              <Text style={styles.DSR_Label}>
-                {EmployeeAdvanceLabelsData?.AdvanceDescriptionlbl ||
-                  'AdvanceDescription'}
-              </Text>
-              <TextInput
-                style={[styles.DSR_Input, styles.DSR_TextArea]}
-                value={formData.AdvanceDescription}
-                onChangeText={value =>
-                  handleInputChange('AdvanceDescription', value)
-                }
-                placeholder={`Enter ${requestType.toLowerCase()} description`}
-                placeholderTextColor="#888"
-                multiline
-                numberOfLines={4}
-                maxLength={60}
-              />
-              <Text style={styles.DSR_CharCount}>
-                {formData.AdvanceDescription?.length || 0}/60
-              </Text>
-            </ScrollView>
-
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
+            {/* Advance Type Code */}
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {EmployeeAdvanceLabelsData?.AdvanceTypeCodelbl ||
+                'Advance Type Code *'}
+            </Text>
+            <Dropdown
+              style={[
+                styles.DSR_Input,
+                requestType === 'Advance' && styles.DSR_Disabled,
+              ]}
+              data={advanceCodeDropDown}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Advance Type Code"
+              value={formData.AdvanceTypeCode}
+              onChange={handleAdvanceTypeCodeChange}
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={styles.DSR_DropdownContainer}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              search
+              searchPlaceholder="Search Advance Type Code"
+              inputSearchStyle={styles.DSR_DropdownSearchInput}
+              iconStyle={styles.DSR_DropdownIcon}
+              disable={requestType === 'Advance'}
             />
-          </KeyboardAvoidingView>
+
+            {/* Advance Amount */}
+            <Text style={styles.DSR_Label}>
+              {EmployeeAdvanceLabelsData?.AdvanceAmountlbl ||
+                'Advance Amount *'}
+            </Text>
+            <TextInput
+              style={[
+                styles.DSR_Input,
+                !formData.AdvanceTypeCode && styles.DSR_Disabled,
+              ]}
+              value={formData.AdvanceAmount}
+              onChangeText={handleAdvanceAmountChange}
+              keyboardType="numeric"
+              placeholder="0"
+              placeholderTextColor="#888"
+              editable={!!formData.AdvanceTypeCode}
+            />
+
+            {/* Payment Date */}
+            <Text style={styles.DSR_Label}>
+              {EmployeeAdvanceLabelsData?.RequestedPaymentDatelbl ||
+                'Payment Date *'}
+            </Text>
+            <TouchableOpacity
+              style={styles.DSR_DateSelector}
+              onPress={() => {
+                setCurrentDateField('RequestedPaymentDate');
+                setShowCalendar(true);
+              }}>
+              <View style={{flex: 1}}>
+                <Text style={styles.DSR_DateText}>
+                  {formData.RequestedPaymentDate
+                    ? formatDate(formData.RequestedPaymentDate)
+                    : 'Select Payment Date'}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
+
+            {/* Recovery fields - only for Loan */}
+            {showRecoveryFields && (
+              <>
+                <Text style={styles.DSR_Label}>
+                  {EmployeeAdvanceLabelsData?.RecoveryStartDatelbl ||
+                    'Recovery Start Date'}
+                </Text>
+                <TouchableOpacity
+                  style={styles.DSR_DateSelector}
+                  onPress={() => {
+                    setCurrentDateField('RecoveryStartDate');
+                    setShowCalendar(true);
+                  }}>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.DSR_DateText}>
+                      {formData.RecoveryStartDate
+                        ? formatDate(formData.RecoveryStartDate)
+                        : 'Select Recovery Start Date'}
+                    </Text>
+                  </View>
+                  <Icon name="calendar" size={20} color="#0A66C2" />
+                </TouchableOpacity>
+
+                {/* Guarantor 1 */}
+                <Text style={styles.DSR_Label}>
+                  {EmployeeAdvanceLabelsData?.Guarantor1lbl || 'Guarantor 1'}
+                </Text>
+                <Dropdown
+                  style={styles.DSR_Input}
+                  data={[
+                    {EmployeeId: null, EmployeeName: 'Select Guarantor 1'},
+                    ...guarantorsData.filter(
+                      emp => emp.EmployeeId !== formData.Guarantor2,
+                    ),
+                  ]}
+                  labelField="EmployeeName"
+                  valueField="EmployeeId"
+                  placeholder="Select Guarantor 1"
+                  value={formData.Guarantor1}
+                  onChange={item => {
+                    handleInputChange('Guarantor1', item.EmployeeId);
+                  }}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
+                  activeColor="#E6F0FF"
+                  containerStyle={styles.DSR_DropdownContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
+                  maxHeight={280}
+                  search
+                  searchPlaceholder="Search by ID or Name"
+                  inputSearchStyle={styles.DSR_DropdownSearchInput}
+                  iconStyle={styles.DSR_DropdownIcon}
+                  renderItem={renderGuarantorItem}
+                  searchField="combinedLabel"
+                />
+
+                {/* Guarantor 2 */}
+                <Text style={styles.DSR_Label}>
+                  {EmployeeAdvanceLabelsData?.Guarantor2lbl || 'Guarantor 2'}
+                </Text>
+                <Dropdown
+                  style={styles.DSR_Input}
+                  data={[
+                    {EmployeeId: null, EmployeeName: 'Select Guarantor 2'},
+                    ...guarantorsData.filter(
+                      emp => emp.EmployeeId !== formData.Guarantor1,
+                    ),
+                  ]}
+                  labelField="EmployeeName"
+                  valueField="EmployeeId"
+                  placeholder="Select Guarantor 2"
+                  value={formData.Guarantor2}
+                  onChange={item => {
+                    handleInputChange('Guarantor2', item.EmployeeId);
+                  }}
+                  placeholderStyle={styles.DSR_DropdownPlaceholder}
+                  selectedTextStyle={styles.DSR_DropdownSelectedText}
+                  itemTextStyle={styles.DSR_DropdownItemText}
+                  activeColor="#E6F0FF"
+                  containerStyle={styles.DSR_DropdownContainer}
+                  itemContainerStyle={styles.DSR_DropdownItemContainer}
+                  maxHeight={280}
+                  search
+                  searchPlaceholder="Search by ID or Name"
+                  inputSearchStyle={styles.DSR_DropdownSearchInput}
+                  iconStyle={styles.DSR_DropdownIcon}
+                  renderItem={renderGuarantorItem}
+                  searchField="combinedLabel"
+                />
+
+                <Text style={styles.DSR_Label}>
+                  {EmployeeAdvanceLabelsData?.RequestedInstallmentAmountlbl ||
+                    'Recovery Amount *'}
+                </Text>
+                <TextInput
+                  style={[
+                    styles.DSR_Input,
+                    isRecoveryAmountDisabled && styles.DSR_Disabled,
+                  ]}
+                  value={formData.RequestedInstallmentAmount}
+                  onChangeText={handleRecoveryAmountChange}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor="#888"
+                  editable={!isRecoveryAmountDisabled}
+                />
+
+                <Text style={styles.DSR_Label}>
+                  {EmployeeAdvanceLabelsData?.recoverieslbl || 'Recoveries *'}
+                </Text>
+                <TextInput
+                  style={[
+                    styles.DSR_Input,
+                    isRecoveriesDisabled && styles.DSR_Disabled,
+                  ]}
+                  value={formData.RequestedInstallments}
+                  onChangeText={handleRecoveriesChange}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor="#888"
+                  editable={!isRecoveriesDisabled}
+                />
+              </>
+            )}
+
+            {/* Description */}
+            <Text style={styles.DSR_Label}>
+              {EmployeeAdvanceLabelsData?.AdvanceDescriptionlbl ||
+                'AdvanceDescription'}
+            </Text>
+            <TextInput
+              style={[styles.DSR_Input, styles.DSR_TextArea]}
+              value={formData.AdvanceDescription}
+              onChangeText={value =>
+                handleInputChange('AdvanceDescription', value)
+              }
+              placeholder={`Enter ${requestType.toLowerCase()} description`}
+              placeholderTextColor="#888"
+              multiline
+              numberOfLines={4}
+              maxLength={60}
+            />
+            <Text style={styles.DSR_CharCount}>
+              {formData.AdvanceDescription?.length || 0}/60
+            </Text>
+          </ScrollView>
+
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={handleSave}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+          />
+          {/* </KeyboardAvoidingView> */}
 
           <CalendarModal
             visible={showCalendar}

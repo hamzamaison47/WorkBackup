@@ -284,7 +284,7 @@ const ConfigSelectionScreen = () => {
         </View>
 
         {/* Card Details */}
-        <View style={styles.ConfigSelection_CardDetails}>
+        {/* <View style={styles.ConfigSelection_CardDetails}>
           <View style={styles.ConfigSelection_DetailRow}>
             <Icon
               name="globe"
@@ -325,7 +325,7 @@ const ConfigSelectionScreen = () => {
               {item.formattedData.resourceUrl}
             </Text>
           </View>
-        </View>
+        </View> */}
       </TouchableOpacity>
     );
   };

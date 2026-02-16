@@ -208,16 +208,43 @@ export async function getActiveConfigData() {
     const activeConfigId = await getActiveConfig();
     if (activeConfigId) {
       const configData = await getConfigById(activeConfigId);
-      return configData ? configData.data : null;
+      if (configData?.data) {
+        return configData.data;
+      }
+      console.warn(
+        `Active config ID ${activeConfigId} exists but data is missing`,
+      );
     }
 
-    // Fallback to main config if no active config is set
-    return await getConfig();
+    // Fallback to main config
+    const mainConfig = await getConfig();
+    if (mainConfig) {
+      console.log('Using fallback main config');
+      return mainConfig;
+    }
+
+    console.error('No active config and no fallback config available');
+    return null;
   } catch (error) {
     console.error('Error getting active config data:', error);
     return null;
   }
 }
+// export async function getActiveConfigData() {
+//   try {
+//     const activeConfigId = await getActiveConfig();
+//     if (activeConfigId) {
+//       const configData = await getConfigById(activeConfigId);
+//       return configData ? configData.data : null;
+//     }
+
+//     // Fallback to main config if no active config is set
+//     return await getConfig();
+//   } catch (error) {
+//     console.error('Error getting active config data:', error);
+//     return null;
+//   }
+// }
 
 // Helper functions for managing configs list
 async function getConfigsList() {

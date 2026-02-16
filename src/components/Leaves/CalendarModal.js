@@ -1,118 +1,145 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-// import React, {useState, useEffect} from 'react';
-// import {
-//   Modal,
-//   View,
-//   TouchableOpacity,
-//   Text,
-//   StyleSheet,
-//   Platform,
-// } from 'react-native';
+// /* eslint-disable curly */
+// /* eslint-disable react-hooks/exhaustive-deps */
+// import React, {useState, useEffect, useRef} from 'react';
+// import {Modal, View, TouchableOpacity, Text, Platform} from 'react-native';
 // import DateTimePicker from '@react-native-community/datetimepicker';
+
+// import styles from '../../styles/styles';
 
 // const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
 //   const [date, setDate] = useState(new Date());
 //   const [showPicker, setShowPicker] = useState(false);
+//   const hasInitialized = useRef(false);
+//   const isClosing = useRef(false);
 
-//   // Initialize date when modal opens or current changes
 //   useEffect(() => {
-//     if (visible && current) {
-//       const dateStr = current.includes('T') ? current.split('T')[0] : current;
-//       setDate(new Date(dateStr));
-//     } else if (visible && !current) {
-//       setDate(new Date());
-//     }
-//   }, [visible, current]);
+//     if (visible && !hasInitialized.current) {
+//       // Initialize date only once when modal opens
+//       const newDate = current ? new Date(current.split('T')[0]) : new Date();
+//       setDate(newDate);
+//       hasInitialized.current = true;
+//       isClosing.current = false;
 
-//   // Auto-show picker when modal opens
-//   useEffect(() => {
-//     if (visible) {
-//       setShowPicker(true);
-//     } else {
+//       // Show picker after brief delay
+//       setTimeout(() => setShowPicker(true), 100);
+//     } else if (!visible && hasInitialized.current) {
+//       // Reset when modal closes
 //       setShowPicker(false);
+//       hasInitialized.current = false;
+//       isClosing.current = false;
 //     }
 //   }, [visible]);
 
-//   const onChange = (event, selectedDate) => {
+//   const handleChange = (event, selectedDate) => {
 //     if (Platform.OS === 'android') {
-//       setShowPicker(false);
+//       // Prevent any updates while closing
+//       if (isClosing.current) return;
 
-//       if (event.type === 'set' && selectedDate) {
-//         // User clicked OK
+//       if (event?.type === 'set' && selectedDate) {
+//         isClosing.current = true;
+//         // Update the date state immediately
 //         setDate(selectedDate);
-//         const formatted = selectedDate.toISOString().split('T')[0];
-//         onDateSelected(formatted);
-//         onClose();
-//       } else if (event.type === 'dismissed') {
-//         // User clicked Cancel
+
+//         // Small delay to let the picker update visually before closing
+//         setTimeout(() => {
+//           setShowPicker(false);
+//           onDateSelected(selectedDate.toISOString().split('T')[0]);
+//           onClose();
+//         }, 50);
+//       } else if (event?.type === 'dismissed') {
+//         isClosing.current = true;
+//         setShowPicker(false);
 //         onClose();
 //       }
-//     } else {
-//       // iOS
-//       if (selectedDate) {
-//         setDate(selectedDate);
-//       }
+//       return;
+//     }
+
+//     // iOS: update date as user scrolls
+//     if (selectedDate) {
+//       setDate(selectedDate);
 //     }
 //   };
 
 //   const handleIOSConfirm = () => {
-//     const formatted = date.toISOString().split('T')[0];
-//     onDateSelected(formatted);
-//     setShowPicker(false);
+//     onDateSelected(date.toISOString().split('T')[0]);
 //     onClose();
 //   };
 
 //   const handleIOSCancel = () => {
-//     setShowPicker(false);
 //     onClose();
 //   };
 
-//   // For Android, the picker handles its own modal
+//   // Android: wrap picker in modal
 //   if (Platform.OS === 'android') {
 //     return (
-//       <>
-//         {visible && showPicker && (
-//           <DateTimePicker
-//             value={date}
-//             mode="date"
-//             display="calendar"
-//             onChange={onChange}
-//             accentColor="#0A66C2"
-//           />
-//         )}
-//       </>
+//       <Modal
+//         visible={visible}
+//         transparent
+//         animationType="fade"
+//         onRequestClose={() => {
+//           if (!isClosing.current) {
+//             isClosing.current = true;
+//             setShowPicker(false);
+//             onClose();
+//           }
+//         }}>
+//         <TouchableOpacity
+//           style={styles.CalModal_modalContainer}
+//           activeOpacity={1}
+//           onPress={() => {
+//             if (!isClosing.current) {
+//               isClosing.current = true;
+//               setShowPicker(false);
+//               onClose();
+//             }
+//           }}>
+//           <View
+//             style={styles.CalModal_androidPickerContainer}
+//             onStartShouldSetResponder={() => true}>
+//             {showPicker && (
+//               <DateTimePicker
+//                 value={date}
+//                 mode="date"
+//                 display="calendar"
+//                 onChange={handleChange}
+//                 accentColor="#0A66C2"
+//               />
+//             )}
+//           </View>
+//         </TouchableOpacity>
+//       </Modal>
 //     );
 //   }
 
-//   // For iOS, wrap in custom modal
+//   // iOS
 //   return (
-//     <Modal visible={visible} transparent={true} animationType="slide">
+//     <Modal
+//       visible={visible}
+//       transparent
+//       animationType="slide"
+//       onRequestClose={handleIOSCancel}>
 //       <View style={styles.CalModal_modalContainer}>
 //         <View style={styles.CalModal_modalContent}>
-//           {/* Header */}
 //           <View style={styles.CalModal_header}>
 //             <Text style={styles.CalModal_headerTitle}>Select Date</Text>
 //           </View>
 
-//           {/* iOS Date Picker */}
-//           {showPicker && (
-//             <DateTimePicker
-//               value={date}
-//               mode="date"
-//               display="inline"
-//               onChange={onChange}
-//               accentColor="#0A66C2"
-//               style={styles.CalModal_datePicker}
-//             />
-//           )}
+//           <DateTimePicker
+//             value={date}
+//             mode="date"
+//             display="inline"
+//             onChange={handleChange}
+//             accentColor="#0A66C2"
+//             style={styles.CalModal_datePicker}
+//           />
 
-//           {/* Footer buttons for iOS */}
 //           <View style={styles.CalModal_footer}>
 //             <TouchableOpacity
 //               style={styles.CalModal_cancelButton}
 //               onPress={handleIOSCancel}>
 //               <Text style={styles.CalModal_cancelButtonText}>CANCEL</Text>
 //             </TouchableOpacity>
+
 //             <TouchableOpacity
 //               style={styles.CalModal_okButton}
 //               onPress={handleIOSConfirm}>
@@ -125,53 +152,45 @@
 //   );
 // };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// export default CalendarModal;
 
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useEffect} from 'react';
 import {Modal, View, TouchableOpacity, Text, Platform} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import styles from '../../styles/styles';
 
-const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
+const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
   const [date, setDate] = useState(new Date());
   const [showPicker, setShowPicker] = useState(false);
 
+  // Only run once when component mounts
   useEffect(() => {
-    if (!visible) {
-      setShowPicker(false);
-      return;
+    const parsedDate = initialDate
+      ? new Date(initialDate.split('T')[0])
+      : new Date();
+    setDate(parsedDate);
+
+    if (Platform.OS === 'android') {
+      setTimeout(() => setShowPicker(true), 100);
     }
-
-    if (current) {
-      const normalized =
-        typeof current === 'string' && current.includes('T')
-          ? current.split('T')[0]
-          : current;
-
-      setDate(new Date(normalized));
-    } else {
-      setDate(new Date());
-    }
-
-    setShowPicker(true);
-  }, [visible]);
+  }, []); // Empty dependency array - only run on mount
 
   const handleChange = (event, selectedDate) => {
     if (Platform.OS === 'android') {
-      setShowPicker(false);
-
       if (event?.type === 'set' && selectedDate) {
         onDateSelected(selectedDate.toISOString().split('T')[0]);
+        setShowPicker(false);
+        onClose();
+      } else if (event?.type === 'dismissed') {
+        setShowPicker(false);
+        onClose();
       }
-
-      onClose();
       return;
     }
 
+    // iOS: update date as user scrolls
     if (selectedDate) {
       setDate(selectedDate);
     }
@@ -179,31 +198,31 @@ const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
 
   const handleIOSConfirm = () => {
     onDateSelected(date.toISOString().split('T')[0]);
-    setShowPicker(false);
     onClose();
   };
 
   const handleIOSCancel = () => {
-    setShowPicker(false);
     onClose();
   };
 
+  // Android
   if (Platform.OS === 'android') {
+    if (!visible || !showPicker) {
+      return null;
+    }
+
     return (
-      <>
-        {visible && showPicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="calendar"
-            onChange={handleChange}
-            accentColor="#0A66C2"
-          />
-        )}
-      </>
+      <DateTimePicker
+        value={date}
+        mode="date"
+        display="calendar"
+        onChange={handleChange}
+        accentColor="#0A66C2"
+      />
     );
   }
 
+  // iOS
   return (
     <Modal
       visible={visible}
@@ -216,16 +235,14 @@ const CalendarModal = ({visible, current, onDateSelected, onClose}) => {
             <Text style={styles.CalModal_headerTitle}>Select Date</Text>
           </View>
 
-          {showPicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display="inline"
-              onChange={handleChange}
-              accentColor="#0A66C2"
-              style={styles.CalModal_datePicker}
-            />
-          )}
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="inline"
+            onChange={handleChange}
+            accentColor="#0A66C2"
+            style={styles.CalModal_datePicker}
+          />
 
           <View style={styles.CalModal_footer}>
             <TouchableOpacity

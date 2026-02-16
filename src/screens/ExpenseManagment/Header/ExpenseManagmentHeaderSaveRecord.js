@@ -12,6 +12,7 @@ import {
   Platform,
   Animated,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -77,6 +78,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [dataFetched, setDataFetched] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const createInitialFormData = () => ({
     recId: expenseData.recId || expenseData.RecId || '',
@@ -247,6 +249,26 @@ const ExpenseManagementHeaderSaveRecord = () => {
     }, [mode, dataFetched, expenseData]),
   );
 
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
@@ -283,7 +305,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       setLocationOptions(formatted);
     } catch (error) {
       console.error('Error fetching locations:', error);
-      setAlertMessage('Failed to fetch location options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -306,7 +328,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       setPurposeOptions(formatted);
     } catch (error) {
       console.error('Error fetching purposes:', error);
-      setAlertMessage('Failed to fetch purpose options.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     }
   };
@@ -369,9 +391,9 @@ const ExpenseManagementHeaderSaveRecord = () => {
         response?.AlertType === 'Success';
 
       if (isSuccess) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const successAction = modalMode === 'create' ? 'created' : 'updated';
         setAlertMessage(
-          response?.Message || `Expense Report ${actionText} Successfully`,
+          response?.Message || `Record ${successAction} successfully`,
         );
         setAlertModal(true);
 
@@ -480,7 +502,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving expense:', error);
-      setAlertMessage('Failed to save expense. Please try again.');
+      setAlertMessage('Failed to save record. Please try again.');
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -497,6 +519,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}>
       {isLoading ? (
@@ -504,100 +527,100 @@ const ExpenseManagementHeaderSaveRecord = () => {
       ) : (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
           <SafeAreaView style={styles.DSR_SafeArea}>
-            <KeyboardAvoidingView
+            {/* <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.DSR_ContentWrapper}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-              {isProcessing && (
-                <View style={styles.DSR_ProcessingOverlay}>
-                  <View style={styles.DSR_ProcessingContainer}>
-                    <ActivityIndicator size="large" color="#0A66C2" />
-                    <Text style={styles.DSR_ProcessingText}>
-                      {t('common.processing')}
-                    </Text>
-                  </View>
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+            {isProcessing && (
+              <View style={styles.DSR_ProcessingOverlay}>
+                <View style={styles.DSR_ProcessingContainer}>
+                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <Text style={styles.DSR_ProcessingText}>
+                    {t('common.processing')}
+                  </Text>
                 </View>
-              )}
-              <ScrollView
-                ref={scrollViewRef}
-                contentContainerStyle={styles.DSR_FormContainer}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled={true}>
-                <Text style={styles.DSR_Label}>Location</Text>
-                <Dropdown
-                  style={styles.DSR_Input}
-                  data={locationOptions}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select Location"
-                  value={formData.location}
-                  onFocus={handleLocationDropdownFocus}
-                  onChange={handleLocationChange}
-                  placeholderStyle={styles.DSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.DSR_DropdownSelectedText}
-                  itemTextStyle={styles.DSR_DropdownItemText}
-                  activeColor="#E6F0FF"
-                  containerStyle={[
-                    styles.DSR_DropdownContainer,
-                    {
-                      marginTop: Platform.OS === 'ios' ? 5 : 2,
-                      zIndex: 1000,
-                    },
-                  ]}
-                  itemContainerStyle={styles.DSR_DropdownItemContainer}
-                  maxHeight={280}
-                  dropdownPosition="auto"
-                  search
-                  searchPlaceholder="Search Location"
-                  inputSearchStyle={styles.DSR_DropdownSearchInput}
-                  iconStyle={styles.DSR_DropdownIcon}
-                  keyboardAvoiding={true}
-                />
-
-                <Text style={styles.DSR_Label}>Purpose</Text>
-                <Dropdown
-                  style={styles.DSR_Input}
-                  data={purposeOptions}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select Purpose"
-                  value={formData.purpose}
-                  onFocus={handlePurposeDropdownFocus}
-                  onChange={handlePurposeChange}
-                  placeholderStyle={styles.DSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.DSR_DropdownSelectedText}
-                  itemTextStyle={styles.DSR_DropdownItemText}
-                  activeColor="#E6F0FF"
-                  containerStyle={[
-                    styles.DSR_DropdownContainer,
-                    {
-                      marginTop: Platform.OS === 'ios' ? 5 : 2,
-                      zIndex: 999,
-                    },
-                  ]}
-                  itemContainerStyle={styles.DSR_DropdownItemContainer}
-                  maxHeight={280}
-                  dropdownPosition="auto"
-                  search
-                  searchPlaceholder="Search Purpose"
-                  inputSearchStyle={styles.DSR_DropdownSearchInput}
-                  iconStyle={styles.DSR_DropdownIcon}
-                  keyboardAvoiding={true}
-                />
-              </ScrollView>
-
-              <SaveRecordButtons
-                mode={mode}
-                processingButton={processingButton}
-                onSave={handleSave}
-                onCancel={goBack}
-                isDisabled={
-                  processingButton === 'create' || processingButton === 'submit'
-                }
-                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              </View>
+            )}
+            <ScrollView
+              ref={scrollViewRef}
+              contentContainerStyle={styles.DSR_FormContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled={true}>
+              <Text style={styles.DSR_Label}>Location</Text>
+              <Dropdown
+                style={styles.DSR_Input}
+                data={locationOptions}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Location"
+                value={formData.location}
+                onFocus={handleLocationDropdownFocus}
+                onChange={handleLocationChange}
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={[
+                  styles.DSR_DropdownContainer,
+                  {
+                    marginTop: Platform.OS === 'ios' ? 5 : 2,
+                    zIndex: 1000,
+                  },
+                ]}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
+                maxHeight={280}
+                dropdownPosition="auto"
+                search
+                searchPlaceholder="Search Location"
+                inputSearchStyle={styles.DSR_DropdownSearchInput}
+                iconStyle={styles.DSR_DropdownIcon}
+                keyboardAvoiding={true}
               />
-            </KeyboardAvoidingView>
+
+              <Text style={styles.DSR_Label}>Purpose</Text>
+              <Dropdown
+                style={styles.DSR_Input}
+                data={purposeOptions}
+                labelField="label"
+                valueField="value"
+                placeholder="Select Purpose"
+                value={formData.purpose}
+                onFocus={handlePurposeDropdownFocus}
+                onChange={handlePurposeChange}
+                placeholderStyle={styles.DSR_DropdownPlaceholder}
+                selectedTextStyle={styles.DSR_DropdownSelectedText}
+                itemTextStyle={styles.DSR_DropdownItemText}
+                activeColor="#E6F0FF"
+                containerStyle={[
+                  styles.DSR_DropdownContainer,
+                  {
+                    marginTop: Platform.OS === 'ios' ? 5 : 2,
+                    zIndex: 999,
+                  },
+                ]}
+                itemContainerStyle={styles.DSR_DropdownItemContainer}
+                maxHeight={280}
+                dropdownPosition="auto"
+                search
+                searchPlaceholder="Search Purpose"
+                inputSearchStyle={styles.DSR_DropdownSearchInput}
+                iconStyle={styles.DSR_DropdownIcon}
+                keyboardAvoiding={true}
+              />
+            </ScrollView>
+
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            />
+            {/* </KeyboardAvoidingView> */}
 
             <AlertModal
               visible={alertModal}

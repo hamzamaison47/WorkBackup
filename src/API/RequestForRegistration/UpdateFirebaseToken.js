@@ -13,6 +13,13 @@ const UpdateFirebaseToken = async ({updateData}) => {
     // console.log({accessToken});
     // console.log({config});
     // console.log({updateData});
+    // console.log('📤 Sending Firebase token update:', {
+    //   Email: updateData.Email,
+    //   EmployeeID: updateData.EmployeeID,
+    //   FirebaseToken: updateData.FirebaseToken?.substring(0, 30) + '...',
+    //   Company: updateData.Company,
+    //   tokenLength: updateData.FirebaseToken?.length,
+    // });
 
     const response = await fetch(
       `${config.resource}/api/services/DynafaceTableSvcGroup/DynafaceTableSvc/updateFirebaseToken`,

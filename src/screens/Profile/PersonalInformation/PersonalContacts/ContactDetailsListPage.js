@@ -140,7 +140,7 @@ const ContactDetailsListPage = () => {
       });
 
       if (response[0].IsSuccess) {
-        setAlertMessage('Contact deleted successfully.');
+        setAlertMessage('Record deleted successfully');
         setContactsData(prev =>
           prev.filter(contact => contact.RecId !== itemToDelete.RecId),
         );
@@ -173,14 +173,13 @@ const ContactDetailsListPage = () => {
     },
     fields: [
       // {key: 'Type', label: 'Type', type: 'text'},
-      {
-        key: 'IsPrimary',
-        label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
-        type: 'text',
-      },
+      // {
+      //   key: 'IsPrimary',
+      //   label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
+      //   type: 'text',
+      // },
       {
         key: 'Locator',
-        label: contactsData[0]?.Locatorlbl || 'Address',
         type: 'text',
       },
     ],
@@ -303,9 +302,9 @@ const ContactDetailsListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            No contact details available
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}

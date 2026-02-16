@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
@@ -10,6 +11,7 @@ import {
   ScrollView,
   I18nManager,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -70,6 +72,7 @@ const LeaveRequestListPage = () => {
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -235,7 +238,19 @@ const LeaveRequestListPage = () => {
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
-      setSelectedLeaveItem(itemData);
+      const formatDateOnly = date => {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toISOString().split('T')[0]; // YYYY-MM-DD
+      };
+
+      const cleanedItem = {
+        ...itemData,
+        LeaveStartDate: formatDateOnly(itemData.LeaveStartDate),
+        LeaveEndDate: formatDateOnly(itemData.LeaveEndDate),
+      };
+
+      setSelectedLeaveItem(cleanedItem);
       setAttachmentModalVisible(true);
     } catch (error) {
       setAlertMessage(t('leaveRequest.attachmentFailed'));
@@ -278,11 +293,11 @@ const LeaveRequestListPage = () => {
         label: leavesData[0]?.LeaveReqIdLabel || 'Leave Request ID',
         type: 'text',
       },
-      {
-        key: 'LeaveCategory',
-        label: leavesData[0]?.LeaveCategoryLabel || 'Leave Category',
-        type: 'text',
-      },
+      // {
+      //   key: 'LeaveCategory',
+      //   label: leavesData[0]?.LeaveCategoryLabel || 'Leave Category',
+      //   type: 'text',
+      // },
       {
         key: 'LeaveReqDate',
         label: leavesData[0]?.LeaveReqDateLabel || 'Leave Request Date',
@@ -446,37 +461,45 @@ const LeaveRequestListPage = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    setButtonProcessing(itemToDelete.RecId, 'delete', true);
+    // First close the delete modal
+    setDeleteModal(false);
 
-    try {
-      const response = await DeleteLeaveRequest({
-        recordsRecId: [itemToDelete.RecId],
-      });
+    // Small delay to ensure modal is closed
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
-      if (response[0].IsSuccess) {
-        setAlertMessage(t('leaveRequest.deleteSuccess'));
-        setLeavesData(prev =>
-          prev.filter(leave => leave.RecId !== itemToDelete.RecId),
-        );
-      } else {
+      try {
+        const response = await DeleteLeaveRequest({
+          recordsRecId: [itemToDelete.RecId],
+        });
+
+        if (response[0].IsSuccess) {
+          setAlertMessage(t('leaveRequest.deleteSuccess'));
+          setLeavesData(prev =>
+            prev.filter(leave => leave.RecId !== itemToDelete.RecId),
+          );
+        } else {
+          setAlertMessage(t('leaveRequest.deleteFailed'));
+        }
+      } catch (error) {
         setAlertMessage(t('leaveRequest.deleteFailed'));
+        console.log('Delete Leave Request response', error);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
+        setItemToDelete(null);
+        setAlertModal(true);
+        setTimeout(() => {
+          fetchLeavesData();
+        }, 1000);
       }
-    } catch (error) {
-      setAlertMessage(t('leaveRequest.deleteFailed'));
-      console.log('Delete Leave Request response', error);
-    } finally {
-      setButtonProcessing(itemToDelete.RecId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => {
-        fetchLeavesData();
-      }, 1000);
-    }
+    }, 100); // Small delay to ensure modal closes first
   };
 
   /** Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
+    setIsProcessing(true);
     setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
@@ -513,6 +536,7 @@ const LeaveRequestListPage = () => {
       setAlertMessage(`Failed to Submit ${itemData.LeaveCode} Request`);
       setAlertModal(true);
     } finally {
+      setIsProcessing(false);
       setButtonProcessing(itemData.RecId, 'submit', false);
     }
   };
@@ -557,6 +581,16 @@ const LeaveRequestListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
@@ -583,8 +617,9 @@ const LeaveRequestListPage = () => {
           <Text style={styles.DLP_NoDataText}>
             {t('leaveRequest.noDataFound')}
           </Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to create your first leave request
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}

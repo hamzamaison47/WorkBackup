@@ -71,7 +71,7 @@ const PersonalEducation = () => {
       setEducationData(data);
     } catch (error) {
       console.log('Failed to fetch education details:', error);
-      setAlertMessage('Failed to load education records.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -285,16 +285,16 @@ const PersonalEducation = () => {
         recordsRecId: [itemToDelete.RecId],
       });
       if (response[0]?.IsSuccess) {
-        setAlertMessage('Education record deleted successfully.');
+        setAlertMessage('Record deleted successfully.');
         setEducationData(prev =>
           prev.filter(ed => ed.RecId !== itemToDelete.RecId),
         );
       } else {
-        setAlertMessage('Unable to delete education record.');
+        setAlertMessage('Failed to delete record.');
       }
     } catch (error) {
       console.error('DeleteEducationDetails error:', error);
-      setAlertMessage('Failed to delete education record.');
+      setAlertMessage('Failed to delete record');
     } finally {
       setButtonProcessing(itemToDelete.RecId, 'delete', false);
       setDeleteModal(false);
@@ -311,18 +311,16 @@ const PersonalEducation = () => {
       const response = await SubmitEducationRequest({recId: itemData.RecId});
       const res = Array.isArray(response) ? response[0] : response;
       if (String(res?.IsSuccess).toLowerCase() === 'true') {
-        setAlertMessage(
-          `${itemData.EducationDisciplineId} is Submitted Successfully.`,
-        );
+        setAlertMessage('Request submitted successfully.');
         setHighlightedRecId(itemData.RecId);
         setTimeout(() => setHighlightedRecId(null), 3000);
         setTimeout(() => fetchEducationData(), 1000);
       } else {
-        setAlertMessage(res?.Message || 'Failed to Submit Education Request');
+        setAlertMessage(res?.Message || 'Failed to submit request.');
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to Submit Education Request');
+      setAlertMessage('Failed to submit request.');
     } finally {
       setButtonProcessing(itemData.RecId, 'submit', false);
       setAlertModal(true);
@@ -331,9 +329,9 @@ const PersonalEducation = () => {
 
   /* ---------- card ---------- */
   const cardConfig = {
-    headerConfig: {title: {key: 'EducationTitle', label: 'Education'}},
+    headerConfig: {title: {key: 'EducationDisciplineId', label: 'Education'}},
     fields: [
-      {key: 'EducationDisciplineId', label: 'Education', type: 'text'},
+      // {key: 'EducationDisciplineId', label: 'Education', type: 'text'},
       {key: 'Description', label: 'Description', type: 'text'},
       {key: 'DurationUnit', label: 'Duration Unit', type: 'text'},
       {key: 'Duration', label: 'Duration', type: 'number'},
@@ -400,9 +398,9 @@ const PersonalEducation = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to add your first education record
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}
@@ -417,7 +415,7 @@ const PersonalEducation = () => {
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
-        text="Are you sure you want to delete this education record?"
+        text="Are you sure you want to delete this record?"
         onPress={handleDeleteConfirm}
         onCancel={() => {
           setDeleteModal(false);

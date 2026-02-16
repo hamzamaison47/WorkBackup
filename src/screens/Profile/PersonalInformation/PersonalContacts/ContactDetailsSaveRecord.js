@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   Platform,
   Switch,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -93,6 +94,7 @@ const ContactDetailsSaveRecord = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [contactDetailsLabels, setContactDetailsLabels] = useState({});
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   /* -------  STATIC DROPDOWN DATA  ------- */
   const contactTypeOptions = [
@@ -146,6 +148,26 @@ const ContactDetailsSaveRecord = () => {
       };
     }, []),
   );
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   /* -------  NAVIGATION  ------- */
   const goBack = useCallback(() => {
@@ -329,6 +351,7 @@ const ContactDetailsSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={{}}>
@@ -336,129 +359,122 @@ const ContactDetailsSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-            {isProcessing && (
-              <View style={styles.DSR_ProcessingOverlay}>
-                <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.DSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
               </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.DSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
-              <Text style={styles.DSR_Label}>Type *</Text>
-              <Dropdown
-                style={[
-                  styles.DSR_Input,
-                  mode === 'edit' && styles.DSR_Disabled,
-                ]}
-                data={contactTypeOptions}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Type"
-                value={formData.Type}
-                onChange={item => {
-                  if (mode !== 'edit') handleInputChange('Type', item.value);
-                }}
-                maxHeight={280}
-                search
-                searchPlaceholder="Search Type"
-                placeholderStyle={styles.DSR_DropdownPlaceholder}
-                selectedTextStyle={styles.DSR_DropdownSelectedText}
-                itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
-                containerStyle={[
-                  styles.DSR_DropdownContainer,
-                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
-                ]}
-                itemContainerStyle={styles.DSR_DropdownItemContainer}
-                disable={mode === 'edit'}
-              />
-
-              <Text style={styles.DSR_Label}>
-                Locator (Email or Phone No.) *
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.Locator}
-                onChangeText={text => handleInputChange('Locator', text)}
-                placeholder="e.g., john.doe@email.com"
-                placeholderTextColor="#888"
-                autoCapitalize="none"
-              />
-
-              <Text style={styles.DSR_Label}>Extension</Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.LocatorExtension}
-                onChangeText={text =>
-                  handleInputChange('LocatorExtension', text)
-                }
-                placeholder="e.g., +92"
-                placeholderTextColor="#888"
-              />
-
-              <Text style={styles.DSR_Label}>Description</Text>
-              <TextInput
-                style={[styles.DSR_Input, styles.DSR_TextArea]}
-                value={formData.Description}
-                onChangeText={text => handleInputChange('Description', text)}
-                placeholder="Enter description"
-                placeholderTextColor="#888"
-                multiline
-                numberOfLines={4}
-              />
-
-              <View style={styles.DSR_SwitchRow}>
-                <Text style={styles.DSR_SwitchLabel}>Is Primary</Text>
-                <Switch
-                  value={!!formData.IsPrimary}
-                  onValueChange={val => handleInputChange('IsPrimary', val)}
-                  trackColor={{false: '#767577', true: '#81b0ff'}}
-                  thumbColor={formData.IsPrimary ? '#2196F3' : '#f4f3f4'}
-                />
-              </View>
-
-              <View style={styles.DSR_SwitchRow}>
-                <Text style={styles.DSR_SwitchLabel}>Is Private</Text>
-                <Switch
-                  value={!!formData.IsPrivate}
-                  onValueChange={val => handleInputChange('IsPrivate', val)}
-                  trackColor={{false: '#767577', true: '#81b0ff'}}
-                  thumbColor={formData.IsPrivate ? '#2196F3' : '#f4f3f4'}
-                />
-              </View>
-
-              <View style={styles.DSR_SwitchRow}>
-                <Text style={styles.DSR_SwitchLabel}>Is Mobile Phone</Text>
-                <Switch
-                  value={!!formData.IsMobilePhone}
-                  onValueChange={val => handleInputChange('IsMobilePhone', val)}
-                  trackColor={{false: '#767577', true: '#81b0ff'}}
-                  thumbColor={formData.IsMobilePhone ? '#2196F3' : '#f4f3f4'}
-                />
-              </View>
-            </ScrollView>
-
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={() => handleAction('save')}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.DSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            <Text style={styles.DSR_Label}>Type *</Text>
+            <Dropdown
+              style={[styles.DSR_Input, mode === 'edit' && styles.DSR_Disabled]}
+              data={contactTypeOptions}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Type"
+              value={formData.Type}
+              onChange={item => {
+                if (mode !== 'edit') handleInputChange('Type', item.value);
+              }}
+              maxHeight={280}
+              search
+              searchPlaceholder="Search Type"
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              disable={mode === 'edit'}
             />
-          </KeyboardAvoidingView>
+
+            <Text style={styles.DSR_Label}>Locator (Email or Phone No.) *</Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.Locator}
+              onChangeText={text => handleInputChange('Locator', text)}
+              placeholder="e.g., john.doe@email.com"
+              placeholderTextColor="#888"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.DSR_Label}>Extension</Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.LocatorExtension}
+              onChangeText={text => handleInputChange('LocatorExtension', text)}
+              placeholder="e.g., +92"
+              placeholderTextColor="#888"
+            />
+
+            <Text style={styles.DSR_Label}>Description</Text>
+            <TextInput
+              style={[styles.DSR_Input, styles.DSR_TextArea]}
+              value={formData.Description}
+              onChangeText={text => handleInputChange('Description', text)}
+              placeholder="Enter description"
+              placeholderTextColor="#888"
+              multiline
+              numberOfLines={4}
+            />
+
+            <View style={styles.DSR_SwitchRow}>
+              <Text style={styles.DSR_SwitchLabel}>Is Primary</Text>
+              <Switch
+                value={!!formData.IsPrimary}
+                onValueChange={val => handleInputChange('IsPrimary', val)}
+                trackColor={{false: '#767577', true: '#81b0ff'}}
+                thumbColor={formData.IsPrimary ? '#2196F3' : '#f4f3f4'}
+              />
+            </View>
+
+            <View style={styles.DSR_SwitchRow}>
+              <Text style={styles.DSR_SwitchLabel}>Is Private</Text>
+              <Switch
+                value={!!formData.IsPrivate}
+                onValueChange={val => handleInputChange('IsPrivate', val)}
+                trackColor={{false: '#767577', true: '#81b0ff'}}
+                thumbColor={formData.IsPrivate ? '#2196F3' : '#f4f3f4'}
+              />
+            </View>
+
+            <View style={styles.DSR_SwitchRow}>
+              <Text style={styles.DSR_SwitchLabel}>Is Mobile Phone</Text>
+              <Switch
+                value={!!formData.IsMobilePhone}
+                onValueChange={val => handleInputChange('IsMobilePhone', val)}
+                trackColor={{false: '#767577', true: '#81b0ff'}}
+                thumbColor={formData.IsMobilePhone ? '#2196F3' : '#f4f3f4'}
+              />
+            </View>
+          </ScrollView>
+
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={() => handleAction('save')}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+          />
+          {/* </KeyboardAvoidingView> */}
 
           <AlertModal
             visible={alertModal}

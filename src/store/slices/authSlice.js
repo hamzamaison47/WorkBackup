@@ -1,3 +1,4 @@
+/* eslint-disable curly */
 import {createSlice} from '@reduxjs/toolkit';
 
 const initialState = {

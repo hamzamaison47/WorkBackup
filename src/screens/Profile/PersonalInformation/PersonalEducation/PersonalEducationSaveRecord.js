@@ -1,18 +1,18 @@
-/* eslint-disable no-shadow */
 /* eslint-disable curly */
+/* eslint-disable no-shadow */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   ScrollView,
   SafeAreaView,
   BackHandler,
   Platform,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -107,9 +107,12 @@ const PersonalEducationSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [educationDisciplines, setEducationDisciplines] = useState([]);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarField, setCalendarField] = useState('');
+  const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
+  const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
+  const [startDateCalendarField, setstartDateCalendarField] = useState('');
+  const [endDateCalendarField, setendDateCalendarField] = useState('');
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   /* ---------- helpers ---------- */
   const formatDate = date => {
@@ -159,7 +162,7 @@ const PersonalEducationSaveRecord = () => {
     Person: Number(data.Person),
     PersonEducationRecVersion: data.PersonEducationRecVersion || 1,
     ApprovalStatus: data.ApprovalStatus || 'Draft',
-    WorkflowOperation: data.ApprovalStatus ? 'Update' : '',
+    WorkflowOperation: data.ApprovalStatus ? 'Update' : 'Insert',
   });
 
   /* ---------- back ---------- */
@@ -212,6 +215,26 @@ const PersonalEducationSaveRecord = () => {
     ),
   );
 
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   // const [disciplineMap, setDisciplineMap] = useState({}); // <-- add
 
   const fetchDisciplines = useCallback(async () => {
@@ -238,7 +261,7 @@ const PersonalEducationSaveRecord = () => {
         setOriginalDisciplineId(map[originalLabel] || '');
       }
     } catch {
-      setAlertMessage('Failed to fetch disciplines.');
+      setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
     } finally {
       setIsLoading(false);
@@ -256,11 +279,21 @@ const PersonalEducationSaveRecord = () => {
   const handleInputChange = (field, value) =>
     setFormData(prev => ({...prev, [field]: value}));
 
-  const handleDateChange = date => {
-    setFormData(prev => ({...prev, [calendarField]: convertDateFormat(date)}));
-    setShowCalendar(false);
+  const handleStartDateChange = date => {
+    setFormData(prev => ({
+      ...prev,
+      [startDateCalendarField]: convertDateFormat(date),
+    }));
+    setShowStartDateCalendar(false);
   };
 
+  const handleEndDateChange = date => {
+    setFormData(prev => ({
+      ...prev,
+      [endDateCalendarField]: convertDateFormat(date),
+    }));
+    setShowEndDateCalendar(false);
+  };
   /* ---------- validation ---------- */
   const validate = () => {
     const missing = [];
@@ -288,6 +321,7 @@ const PersonalEducationSaveRecord = () => {
     setProcessingButton(actionType);
     setIsProcessing(true);
     try {
+      console.log('Form Data :', formData);
       const payload = buildPayload(formData);
       let response;
       if (mode === 'edit') {
@@ -298,7 +332,8 @@ const PersonalEducationSaveRecord = () => {
 
       const isSuccess =
         response?.IsSuccess === true || response?.IsSuccess === 'true';
-      if (!isSuccess) throw new Error(response?.Message || 'Operation failed');
+      if (!isSuccess)
+        throw new Error(response?.Message || 'Failed to save record.');
 
       const recId = response?.RecId || payload.RecId;
 
@@ -308,10 +343,11 @@ const PersonalEducationSaveRecord = () => {
           const submitRes = await SubmitEducationRequest({recId});
           const submitOk =
             submitRes?.IsSuccess === true || submitRes?.IsSuccess === 'true';
-          if (!submitOk) throw new Error(submitRes?.Message || 'Submit failed');
+          if (!submitOk)
+            throw new Error(submitRes?.Message || 'Failed to submit request.');
         } catch (submitErr) {
           // make sure the user sees the submit error
-          setAlertMessage(submitErr.message || 'Submit failed');
+          setAlertMessage(submitErr.message || 'Failed to submit request.');
           setAlertModal(true);
           return; // stop the success flow
         }
@@ -319,9 +355,9 @@ const PersonalEducationSaveRecord = () => {
 
       /* ---- success flow ---- */
       setAlertMessage(
-        `Education Record ${
-          actionType === 'submit' ? 'Submitted' : 'Saved'
-        } Successfully`,
+        actionType === 'submit'
+          ? 'Request submitted successfully.'
+          : 'Record saved successfully.',
       );
       setAlertModal(true);
       setTimeout(() => {
@@ -351,7 +387,9 @@ const PersonalEducationSaveRecord = () => {
         }
       }, 1200);
     } catch (err) {
-      setAlertMessage(err.message || 'Network / server error');
+      setAlertMessage(
+        err.message || 'An error occurred while processing the request.',
+      );
       setAlertModal(true);
     } finally {
       setProcessingButton('');
@@ -377,179 +415,180 @@ const PersonalEducationSaveRecord = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={fetchDisciplines}>
       {isLoading && <CustomIndicator />}
       {!isLoading && (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-            {isProcessing && (
-              <View style={styles.DSR_ProcessingOverlay}>
-                <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.DSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
-              </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.DSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
-              <Text style={styles.DSR_Label}>Education *</Text>
-              {mode === 'edit' ? (
-                <Text
-                  style={[
-                    styles.DSR_Input,
-                    styles.DSR_Disabled,
-                    {paddingVertical: conditionalVerticalScale(12, 14, 16, 18)},
-                  ]}>
-                  {readableEducation}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>
+                  {t('common.processing')}
                 </Text>
-              ) : (
-                <Dropdown
-                  style={styles.DSR_Input}
-                  data={educationDisciplines}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select Education"
-                  value={formData.EducationDisciplineId}
-                  onChange={item =>
-                    handleInputChange('EducationDisciplineId', item.value)
-                  }
-                  search
-                  searchPlaceholder="Search Education"
-                  placeholderStyle={styles.DSR_DropdownPlaceholder}
-                  selectedTextStyle={styles.DSR_DropdownSelectedText}
-                  itemTextStyle={styles.DSR_DropdownItemText}
-                  activeColor="#E6F0FF"
-                  containerStyle={[
-                    styles.DSR_DropdownContainer,
-                    {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
-                  ]}
-                  itemContainerStyle={styles.DSR_DropdownItemContainer}
-                  maxHeight={280}
-                  dropdownPosition="auto"
-                />
-              )}
-
-              <Text style={styles.DSR_Label}>Description *</Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.Description}
-                onChangeText={t => handleInputChange('Description', t)}
-                placeholder="Enter Description"
-                placeholderTextColor="#888"
-              />
-
-              <Text style={styles.DSR_Label}>Duration Unit *</Text>
+              </View>
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.DSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            <Text style={styles.DSR_Label}>Education *</Text>
+            {mode === 'edit' ? (
+              <Text
+                style={[
+                  styles.DSR_Input,
+                  styles.DSR_Disabled,
+                  {paddingVertical: conditionalVerticalScale(12, 14, 16, 18)},
+                ]}>
+                {readableEducation}
+              </Text>
+            ) : (
               <Dropdown
                 style={styles.DSR_Input}
-                data={durationOptions}
+                data={educationDisciplines}
                 labelField="label"
                 valueField="value"
-                placeholder="Select Duration Unit"
-                value={formData.DurationUnit}
-                onChange={item => handleInputChange('DurationUnit', item.value)}
-                maxHeight={250}
-                dropdownPosition="auto"
+                placeholder="Select Education"
+                value={formData.EducationDisciplineId}
+                onChange={item =>
+                  handleInputChange('EducationDisciplineId', item.value)
+                }
+                search
+                searchPlaceholder="Search Education"
                 placeholderStyle={styles.DSR_DropdownPlaceholder}
                 selectedTextStyle={styles.DSR_DropdownSelectedText}
                 itemTextStyle={styles.DSR_DropdownItemText}
                 activeColor="#E6F0FF"
                 containerStyle={[
                   styles.DSR_DropdownContainer,
-                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
+                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
                 ]}
                 itemContainerStyle={styles.DSR_DropdownItemContainer}
-              />
-
-              <Text style={styles.DSR_Label}>Duration *</Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.Duration}
-                onChangeText={t =>
-                  handleInputChange('Duration', t.replace(/[^0-9]/g, ''))
-                }
-                placeholder="Enter Duration"
-                placeholderTextColor="#888"
-                keyboardType="numeric"
-              />
-
-              <Text style={styles.DSR_Label}>Start Date *</Text>
-              <TouchableOpacity
-                style={styles.DSR_DateSelector}
-                onPress={() => {
-                  setCalendarField('StartDate');
-                  setShowCalendar(true);
-                }}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.DSR_DateText}>
-                    {formData.StartDate
-                      ? formatDate(formData.StartDate)
-                      : 'Select Start Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-
-              <Text style={styles.DSR_Label}>End Date *</Text>
-              <TouchableOpacity
-                style={styles.DSR_DateSelector}
-                onPress={() => {
-                  setCalendarField('EndDate');
-                  setShowCalendar(true);
-                }}>
-                <View style={{flex: 1}}>
-                  <Text style={styles.DSR_DateText}>
-                    {formData.EndDate
-                      ? formatDate(formData.EndDate)
-                      : 'Select End Date'}
-                  </Text>
-                </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
-              </TouchableOpacity>
-
-              <Text style={styles.DSR_Label}>Notes</Text>
-              <TextInput
-                style={[styles.DSR_Input, styles.DSR_TextArea]}
-                value={formData.Notes}
-                onChangeText={t => handleInputChange('Notes', t)}
-                placeholder="Enter Notes"
-                placeholderTextColor="#888"
-                multiline
-                numberOfLines={6}
-              />
-            </ScrollView>
-
-            {isWorkflowConfigured ? (
-              <SaveRecordButtons
-                mode={mode}
-                processingButton={processingButton}
-                onSave={handleSave}
-                onCancel={goBack}
-                isDisabled={
-                  processingButton === 'create' || processingButton === 'submit'
-                }
-              />
-            ) : (
-              <SaveRecordButtons
-                mode={mode}
-                processingButton={processingButton}
-                onSave={handleSave}
-                onCancel={goBack}
-                isDisabled={
-                  processingButton === 'create' || processingButton === 'submit'
-                }
-                showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+                maxHeight={280}
+                dropdownPosition="auto"
               />
             )}
-          </KeyboardAvoidingView>
+
+            <Text style={styles.DSR_Label}>Description *</Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.Description}
+              onChangeText={t => handleInputChange('Description', t)}
+              placeholder="Enter Description"
+              placeholderTextColor="#888"
+            />
+
+            <Text style={styles.DSR_Label}>Duration Unit *</Text>
+            <Dropdown
+              style={styles.DSR_Input}
+              data={durationOptions}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Duration Unit"
+              value={formData.DurationUnit}
+              onChange={item => handleInputChange('DurationUnit', item.value)}
+              maxHeight={250}
+              dropdownPosition="auto"
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+            />
+
+            <Text style={styles.DSR_Label}>Duration *</Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.Duration}
+              onChangeText={t =>
+                handleInputChange('Duration', t.replace(/[^0-9]/g, ''))
+              }
+              placeholder="Enter Duration"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.DSR_Label}>Start Date *</Text>
+            <TouchableOpacity
+              style={styles.DSR_DateSelector}
+              onPress={() => {
+                setstartDateCalendarField('StartDate');
+                setShowStartDateCalendar(true);
+              }}>
+              <View style={{flex: 1}}>
+                <Text style={styles.DSR_DateText}>
+                  {formData.StartDate
+                    ? formatDate(formData.StartDate)
+                    : 'Select Start Date'}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
+
+            <Text style={styles.DSR_Label}>End Date *</Text>
+            <TouchableOpacity
+              style={styles.DSR_DateSelector}
+              onPress={() => {
+                setendDateCalendarField('EndDate');
+                setShowEndDateCalendar(true);
+              }}>
+              <View style={{flex: 1}}>
+                <Text style={styles.DSR_DateText}>
+                  {formData.EndDate
+                    ? formatDate(formData.EndDate)
+                    : 'Select End Date'}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity>
+
+            <Text style={styles.DSR_Label}>Notes</Text>
+            <TextInput
+              style={[styles.DSR_Input, styles.DSR_TextArea]}
+              value={formData.Notes}
+              onChangeText={t => handleInputChange('Notes', t)}
+              placeholder="Enter Notes"
+              placeholderTextColor="#888"
+              multiline
+              numberOfLines={6}
+            />
+          </ScrollView>
+
+          {isWorkflowConfigured ? (
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+            />
+          ) : (
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            />
+          )}
+          {/* </KeyboardAvoidingView> */}
 
           <AlertModal
             visible={alertModal}
@@ -559,10 +598,23 @@ const PersonalEducationSaveRecord = () => {
           />
 
           <CalendarModal
-            visible={showCalendar}
-            current={formData[calendarField]}
-            onDateSelected={handleDateChange}
-            onClose={() => setShowCalendar(false)}
+            visible={showStartDateCalendar}
+            initialDate={formData[endDateCalendarField]}
+            current={
+              formData[startDateCalendarField]
+                ? new Date(formData[startDateCalendarField])
+                : null
+            }
+            onDateSelected={handleStartDateChange}
+            onClose={() => setShowStartDateCalendar(false)}
+          />
+
+          <CalendarModal
+            visible={showEndDateCalendar}
+            initialDate={formData[endDateCalendarField]}
+            current={formData[endDateCalendarField]}
+            onDateSelected={handleEndDateChange}
+            onClose={() => setShowEndDateCalendar(false)}
           />
         </SafeAreaView>
       )}

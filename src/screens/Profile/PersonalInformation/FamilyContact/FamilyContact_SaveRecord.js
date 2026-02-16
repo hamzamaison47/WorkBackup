@@ -2,7 +2,7 @@
 /* eslint-disable no-shadow */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef, useMemo} from 'react';
+import React, {useState, useCallback, useRef, useMemo, useEffect} from 'react';
 import {
   Text,
   TextInput,
@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   BackHandler,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import {
   useNavigation,
@@ -74,7 +75,12 @@ const FamilyContact_SaveRecord = () => {
 
   const today = new Date().toISOString().split('T')[0];
   const D365_MAX_DATE = '2154-12-31T23:59:59Z';
-  const D365_MIN_DATE = '1900-01-01';
+  const D365_MIN_DATE = '1900-01-01T00:00:00Z';
+  const D365_MIN_DATETIME = '1900-01-01T12:00:00';
+  const D365_MAX_DATE_ONLY = '2154-12-31';
+  const D365_MAX_DATETIME = '2154-12-31T23:59:59.000Z';
+
+  const getTodayISO = () => new Date().toISOString().split('T')[0];
 
   const createInitialFormData = useCallback(
     () => ({
@@ -92,16 +98,16 @@ const FamilyContact_SaveRecord = () => {
       isBeneficiary: false,
       isDependent: false,
       Gender: '',
-      BirthDate: today,
+      BirthDate: '',
       IsFullTimeStudent: false,
       IsPersonWithDisabilities: false,
       WorkflowOperation: '',
-      beneficiaryValidFrom: today,
-      dependentValidFrom: today,
+      beneficiaryValidFrom: '',
+      dependentValidFrom: '',
       beneficiaryValidTo: '',
       dependentValidTo: '',
     }),
-    [employeeId, employeeName, WorkerRecId, familyContactDataSet?.RecId, today],
+    [employeeId, employeeName, WorkerRecId, familyContactDataSet?.RecId],
   );
 
   const [relationshipTypes, setRelationshipTypes] = useState([]);
@@ -118,6 +124,7 @@ const FamilyContact_SaveRecord = () => {
     maxDate: null,
   });
   const [formData, setFormData] = useState(createInitialFormData());
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const fetchPersonalContactsLabels = useCallback(async () => {
     try {
@@ -132,15 +139,18 @@ const FamilyContact_SaveRecord = () => {
   const normalizeD365Date = useCallback(
     dateString => {
       if (!dateString) return '';
-      if (
-        dateString.startsWith(D365_MAX_DATE) ||
-        dateString.startsWith(D365_MIN_DATE)
-      ) {
+
+      if (dateString.startsWith(D365_MIN_DATE)) {
         return '';
       }
+
+      if (dateString.startsWith(D365_MAX_DATE)) {
+        return 'MAX_DATE';
+      }
+
       return dateString;
     },
-    [D365_MAX_DATE, D365_MIN_DATE],
+    [D365_MIN_DATE, D365_MAX_DATE],
   );
 
   const goBack = useCallback(() => {
@@ -211,19 +221,28 @@ const FamilyContact_SaveRecord = () => {
               isBeneficiary: toBoolean(familyContactDataSet.isBeneficiary),
               isDependent: toBoolean(familyContactDataSet.isDependent),
               Gender: familyContactDataSet.Gender || '',
-              BirthDate: familyContactDataSet.BirthDate || today,
-              beneficiaryValidFrom:
-                normalizeD365Date(familyContactDataSet.BeneficiaryFromDate) ||
-                today,
+              BirthDate: familyContactDataSet.BirthDate.startsWith(
+                D365_MIN_DATETIME,
+              )
+                ? ''
+                : familyContactDataSet.BirthDate,
+
+              beneficiaryValidFrom: normalizeD365Date(
+                familyContactDataSet.BeneficiaryFromDate,
+              ),
+
               beneficiaryValidTo: normalizeD365Date(
                 familyContactDataSet.BeneficiaryToDate,
               ),
-              dependentValidFrom:
-                normalizeD365Date(familyContactDataSet.DependentValidFrom) ||
-                today,
+
+              dependentValidFrom: normalizeD365Date(
+                familyContactDataSet.DependentValidFrom,
+              ),
+
               dependentValidTo: normalizeD365Date(
                 familyContactDataSet.DependentValidTo,
               ),
+
               IsFullTimeStudent: toBoolean(
                 familyContactDataSet.IsFullTimeStudent,
               ),
@@ -237,7 +256,7 @@ const FamilyContact_SaveRecord = () => {
           }
         } catch (error) {
           console.error('Error initializing Family Contact form:', error);
-          setAlertMessage('Failed to load Family Contact screen');
+          setAlertMessage('Failed to load screen');
           setAlertModal(true);
         } finally {
           if (isActive) setIsLoading(false);
@@ -259,7 +278,6 @@ const FamilyContact_SaveRecord = () => {
       createInitialFormData,
       toBoolean,
       normalizeD365Date,
-      today,
     ]),
   );
 
@@ -283,6 +301,26 @@ const FamilyContact_SaveRecord = () => {
       [],
     ),
   );
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => {
+        setKeyboardVisible(true);
+      },
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardVisible(false);
+      },
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -365,18 +403,24 @@ const FamilyContact_SaveRecord = () => {
         EmergencyContact: data.EmergencyContact ? 1 : 0,
         isDependent: data.isDependent ? 1 : 0,
         isBeneficiary: data.isBeneficiary ? 1 : 0,
-        BeneficiaryFromDate:
-          data.beneficiaryValidFrom || '1900-01-01T00:00:00.000Z',
+        BeneficiaryFromDate: data.beneficiaryValidFrom
+          ? `${data.beneficiaryValidFrom}T00:00:00.000Z`
+          : '1900-01-01T00:00:00.000Z',
+
         BeneficiaryToDate: data.beneficiaryValidTo
-          ? data.beneficiaryValidTo
-          : '2154-12-31T23:59:59.000Z',
+          ? `${data.beneficiaryValidTo}T23:59:59.000Z`
+          : D365_MAX_DATETIME,
+
         Gender: data.Gender || '',
         BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
-        DependentValidFrom:
-          data.dependentValidFrom || '1900-01-01T00:00:00.000Z',
+        DependentValidFrom: data.dependentValidFrom
+          ? `${data.dependentValidFrom}T00:00:00.000Z`
+          : '1900-01-01T00:00:00.000Z',
+
         DependentValidTo: data.dependentValidTo
-          ? data.dependentValidTo
-          : '2154-12-31T23:59:59.000Z',
+          ? `${data.dependentValidTo}T23:59:59.000Z`
+          : D365_MAX_DATETIME,
+
         IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
         IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
         Worker: Number(data.WorkerRecId) || 0,
@@ -400,7 +444,7 @@ const FamilyContact_SaveRecord = () => {
       }
 
       const actionText = mode === 'edit' ? 'Updated' : 'Created';
-      setAlertMessage(`Personal Contact is ${actionText} Successfully`);
+      setAlertMessage(`Record ${actionText} successfully`);
       setAlertModal(true);
 
       return {
@@ -465,10 +509,37 @@ const FamilyContact_SaveRecord = () => {
   );
 
   const toggleSwitch = useCallback(field => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+    setFormData(prev => {
+      const newValue = !prev[field];
+      const today = getTodayISO();
+
+      if (field === 'isBeneficiary') {
+        return {
+          ...prev,
+          isBeneficiary: newValue,
+          beneficiaryValidFrom: newValue
+            ? prev.beneficiaryValidFrom || today
+            : '',
+          beneficiaryValidTo: newValue
+            ? prev.beneficiaryValidTo || 'MAX_DATE'
+            : '',
+        };
+      }
+
+      if (field === 'isDependent') {
+        return {
+          ...prev,
+          isDependent: newValue,
+          dependentValidFrom: newValue ? prev.dependentValidFrom || today : '',
+          dependentValidTo: newValue ? prev.dependentValidTo || 'MAX_DATE' : '',
+        };
+      }
+
+      return {
+        ...prev,
+        [field]: newValue,
+      };
+    });
   }, []);
 
   return (
@@ -479,443 +550,442 @@ const FamilyContact_SaveRecord = () => {
       isBackButton={true}
       showFooter={false}
       isHeaderActive={true}
+      showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}>
       {isLoading && <CustomIndicator />}
 
       {!isLoading && (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          <KeyboardAvoidingView
+          {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-            {isProcessing && (
-              <View style={styles.DSR_ProcessingOverlay}>
-                <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
-                  <Text style={styles.DSR_ProcessingText}>
-                    {t('common.processing')}
-                  </Text>
-                </View>
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>
+                  {t('common.processing')}
+                </Text>
               </View>
-            )}
-            <ScrollView
-              ref={scrollViewRef}
-              contentContainerStyle={styles.DSR_FormContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {PersonalContactsLabelData?.firstNamelbl || 'First Name *'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.firstName}
-                onChangeText={t => handleInputChange('firstName', t)}
-                placeholder="Enter First Name"
-                placeholderTextColor="#888"
-              />
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {PersonalContactsLabelData?.middleNamelbl || 'Middle Name'}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.middleName}
-                onChangeText={t => handleInputChange('middleName', t)}
-                placeholder="Enter Middle Name"
-                placeholderTextColor="#888"
-              />
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {PersonalContactsLabelData?.lastNamelbl || 'Last Name '}
-              </Text>
-              <TextInput
-                style={styles.DSR_Input}
-                value={formData.lastName}
-                onChangeText={t => handleInputChange('lastName', t)}
-                placeholder="Enter Last Name"
-                placeholderTextColor="#888"
-              />
+            </View>
+          )}
+          <ScrollView
+            ref={scrollViewRef}
+            contentContainerStyle={styles.DSR_FormContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {PersonalContactsLabelData?.firstNamelbl || 'First Name *'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.firstName}
+              onChangeText={t => handleInputChange('firstName', t)}
+              placeholder="Enter First Name"
+              placeholderTextColor="#888"
+            />
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {PersonalContactsLabelData?.middleNamelbl || 'Middle Name'}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.middleName}
+              onChangeText={t => handleInputChange('middleName', t)}
+              placeholder="Enter Middle Name"
+              placeholderTextColor="#888"
+            />
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {PersonalContactsLabelData?.lastNamelbl || 'Last Name '}
+            </Text>
+            <TextInput
+              style={styles.DSR_Input}
+              value={formData.lastName}
+              onChangeText={t => handleInputChange('lastName', t)}
+              placeholder="Enter Last Name"
+              placeholderTextColor="#888"
+            />
 
-              <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                {PersonalContactsLabelData?.RelationShipTypeIdlbl ||
-                  'Relationship *'}
-              </Text>
-              <Dropdown
-                style={styles.DSR_Input}
-                data={relationshipTypes}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Relationship"
-                value={formData.relationship}
-                onChange={item => handleInputChange('relationship', item.value)}
-                search
-                searchPlaceholder="Search Relationship"
-                placeholderStyle={styles.DSR_DropdownPlaceholder}
-                selectedTextStyle={styles.DSR_DropdownSelectedText}
-                itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
-                containerStyle={[
-                  styles.DSR_DropdownContainer,
-                  {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
-                ]}
-                itemContainerStyle={styles.DSR_DropdownItemContainer}
-                maxHeight={280}
-                dropdownPosition="auto"
-              />
+            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+              {PersonalContactsLabelData?.RelationShipTypeIdlbl ||
+                'Relationship *'}
+            </Text>
+            <Dropdown
+              style={styles.DSR_Input}
+              data={relationshipTypes}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Relationship"
+              value={formData.relationship}
+              onChange={item => handleInputChange('relationship', item.value)}
+              search
+              searchPlaceholder="Search Relationship"
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              dropdownPosition="auto"
+            />
 
-              <View style={{marginTop: spacing.lg}}>
-                {/* Emergency Contact */}
-                <View style={styles.DSR_SwitchRow}>
+            <View style={{marginTop: spacing.lg}}>
+              {/* Emergency Contact */}
+              <View style={styles.DSR_SwitchRow}>
+                <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                  {PersonalContactsLabelData?.EmergencyContactlbl ||
+                    'Emergency Contact'}
+                </Text>
+                <Switch
+                  value={formData.EmergencyContact}
+                  onValueChange={() => toggleSwitch('EmergencyContact')}
+                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  thumbColor={formData.EmergencyContact ? '#2196F3' : '#f4f3f4'}
+                />
+              </View>
+
+              {/* Beneficiary */}
+              <View
+                style={[
+                  styles.DSR_SwitchRow,
+                  !formData.isBeneficiary && {
+                    borderBottomLeftRadius: borderRadius.md,
+                    borderBottomRightRadius: borderRadius.md,
+                  },
+                ]}>
+                <Text style={styles.DSR_SwitchLabel}>
+                  {PersonalContactsLabelData?.isBeneficiarylbl || 'Beneficiary'}
+                </Text>
+                <Switch
+                  value={formData.isBeneficiary}
+                  onValueChange={() => toggleSwitch('isBeneficiary')}
+                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  thumbColor={formData.isBeneficiary ? '#2196F3' : '#f4f3f4'}
+                />
+              </View>
+
+              {formData.isBeneficiary && (
+                <View style={styles.DSR_ExpandableContent}>
+                  {/* Valid From */}
                   <Text
                     style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                    {PersonalContactsLabelData?.EmergencyContactlbl ||
-                      'Emergency Contact'}
+                    {PersonalContactsLabelData?.BeneficiaryFromDatelbl ||
+                      'Valid From'}
                   </Text>
-                  <Switch
-                    value={formData.EmergencyContact}
-                    onValueChange={() => toggleSwitch('EmergencyContact')}
-                    trackColor={{false: '#767577', true: '#81b0ff'}}
-                    thumbColor={
-                      formData.EmergencyContact ? '#2196F3' : '#f4f3f4'
-                    }
-                  />
-                </View>
+                  <TouchableOpacity
+                    style={styles.DSR_DateSelector}
+                    onPress={() =>
+                      showDatePicker(
+                        'beneficiaryValidFrom',
+                        formData.beneficiaryValidFrom,
+                      )
+                    }>
+                    <Text style={styles.DSR_DateText}>
+                      {formData.beneficiaryValidFrom
+                        ? formatDisplayDate(formData.beneficiaryValidFrom)
+                        : 'Select Date'}
+                    </Text>
+                    <Icon name="calendar" size={20} color="#04739cff" />
+                  </TouchableOpacity>
 
-                {/* Beneficiary */}
-                <View
-                  style={[
-                    styles.DSR_SwitchRow,
-                    !formData.isBeneficiary && {
-                      borderBottomLeftRadius: borderRadius.md,
-                      borderBottomRightRadius: borderRadius.md,
-                    },
-                  ]}>
-                  <Text style={styles.DSR_SwitchLabel}>
-                    {PersonalContactsLabelData?.isBeneficiarylbl ||
-                      'Beneficiary'}
+                  {/* Valid To */}
+                  <Text
+                    style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+                    {PersonalContactsLabelData?.BeneficiaryToDatelbl ||
+                      'Valid To'}
                   </Text>
-                  <Switch
-                    value={formData.isBeneficiary}
-                    onValueChange={() => toggleSwitch('isBeneficiary')}
-                    trackColor={{false: '#767577', true: '#81b0ff'}}
-                    thumbColor={formData.isBeneficiary ? '#2196F3' : '#f4f3f4'}
-                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.DSR_Input,
+                      {
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingHorizontal: 12,
+                      },
+                    ]}
+                    onPress={() =>
+                      showDatePicker(
+                        'beneficiaryValidTo',
+                        formData.beneficiaryValidTo,
+                        formData.beneficiaryValidFrom,
+                      )
+                    }>
+                    <Text
+                      style={{
+                        color: formData.beneficiaryValidTo ? '#000' : '#888',
+                        fontSize: 16,
+                      }}>
+                      {formData.beneficiaryValidTo === 'MAX_DATE'
+                        ? 'Never'
+                        : formData.beneficiaryValidTo
+                        ? formatDisplayDate(formData.beneficiaryValidTo)
+                        : 'Select Date'}
+                    </Text>
+                    <Icon name="calendar" size={20} color="#04739cff" />
+                  </TouchableOpacity>
                 </View>
+              )}
 
-                {formData.isBeneficiary && (
-                  <View style={styles.DSR_ExpandableContent}>
-                    {/* Valid From */}
-                    <Text
-                      style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                      {PersonalContactsLabelData?.BeneficiaryFromDatelbl ||
-                        'Valid From'}
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.DSR_DateSelector}
-                      onPress={() =>
-                        showDatePicker(
-                          'beneficiaryValidFrom',
-                          formData.beneficiaryValidFrom,
-                        )
-                      }>
-                      <Text style={styles.DSR_DateText}>
-                        {formData.beneficiaryValidFrom
-                          ? formatDisplayDate(formData.beneficiaryValidFrom)
-                          : formatDisplayDate(new Date().toISOString())}
-                      </Text>
-                      <Icon name="calendar" size={20} color="#04739cff" />
-                    </TouchableOpacity>
-
-                    {/* Valid To */}
-                    <Text
-                      style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                      {PersonalContactsLabelData?.BeneficiaryToDatelbl ||
-                        'Valid To'}
-                    </Text>
-                    <TouchableOpacity
+              {formData.relationship !== 'FamilyContact' &&
+                formData.relationship !== 'OtherContact' && (
+                  <View>
+                    <View
                       style={[
-                        styles.DSR_Input,
-                        {
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          paddingHorizontal: 12,
+                        styles.DSR_SwitchRow,
+                        !formData.isDependent && {
+                          borderBottomLeftRadius: borderRadius.md,
+                          borderBottomRightRadius: borderRadius.md,
                         },
-                      ]}
-                      onPress={() =>
-                        showDatePicker(
-                          'beneficiaryValidTo',
-                          formData.beneficiaryValidTo,
-                          formData.beneficiaryValidFrom,
-                        )
-                      }>
-                      <Text
-                        style={{
-                          color: formData.beneficiaryValidTo ? '#000' : '#888',
-                          fontSize: 16,
-                        }}>
-                        {formData.beneficiaryValidTo
-                          ? formatDisplayDate(formData.beneficiaryValidTo)
-                          : 'Never'}
+                      ]}>
+                      <Text style={styles.DSR_SwitchLabel}>
+                        {PersonalContactsLabelData?.isDependentlbl ||
+                          'Dependent'}
                       </Text>
-                      <Icon name="calendar" size={20} color="#04739cff" />
-                    </TouchableOpacity>
-                  </View>
-                )}
+                      <Switch
+                        value={formData.isDependent}
+                        onValueChange={() => toggleSwitch('isDependent')}
+                        trackColor={{false: '#767577', true: '#81b0ff'}}
+                        thumbColor={
+                          formData.isDependent ? '#2196F3' : '#f4f3f4'
+                        }
+                      />
+                    </View>
 
-                {formData.relationship !== 'FamilyContact' &&
-                  formData.relationship !== 'OtherContact' && (
-                    <View>
+                    {formData.isDependent && (
                       <View
-                        style={[
-                          styles.DSR_SwitchRow,
-                          !formData.isDependent && {
-                            borderBottomLeftRadius: borderRadius.md,
-                            borderBottomRightRadius: borderRadius.md,
-                          },
-                        ]}>
-                        <Text style={styles.DSR_SwitchLabel}>
-                          {PersonalContactsLabelData?.isDependentlbl ||
-                            'Dependent'}
+                        style={{
+                          backgroundColor: '#f9f9f9',
+                          paddingHorizontal: 16,
+                          paddingTop: 8,
+                          paddingBottom: 14,
+                          borderBottomLeftRadius: 12,
+                          borderBottomRightRadius: 12,
+                          marginBottom: 12,
+                          borderTopWidth: 1,
+                          borderTopColor: '#e0e0e0',
+                        }}>
+                        {/* Valid From */}
+                        <Text
+                          style={[
+                            styles.DSR_Label,
+                            isRTL && {textAlign: 'left'},
+                          ]}>
+                          {PersonalContactsLabelData?.dependentValidFromlbl ||
+                            'Valid From'}
                         </Text>
-                        <Switch
-                          value={formData.isDependent}
-                          onValueChange={() => toggleSwitch('isDependent')}
-                          trackColor={{false: '#767577', true: '#81b0ff'}}
-                          thumbColor={
-                            formData.isDependent ? '#2196F3' : '#f4f3f4'
+                        <TouchableOpacity
+                          style={[
+                            styles.DSR_Input,
+                            {
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              paddingHorizontal: 12,
+                            },
+                          ]}
+                          onPress={() =>
+                            showDatePicker(
+                              'dependentValidFrom',
+                              formData.dependentValidFrom,
+                            )
+                          }>
+                          <Text
+                            style={{
+                              color: formData.dependentValidFrom
+                                ? '#000'
+                                : '#888',
+                              fontSize: 16,
+                            }}>
+                            {formData.dependentValidFrom
+                              ? formatDisplayDate(formData.dependentValidFrom)
+                              : 'Select Date'}
+                          </Text>
+                          <Icon name="calendar" size={20} color="#04739cff" />
+                        </TouchableOpacity>
+
+                        {/* Valid To */}
+                        <Text
+                          style={[
+                            styles.DSR_Label,
+                            isRTL && {textAlign: 'left'},
+                          ]}>
+                          {PersonalContactsLabelData?.depndentValidTolbl ||
+                            'Valid To'}
+                        </Text>
+                        <TouchableOpacity
+                          style={[
+                            styles.DSR_Input,
+                            {
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              paddingHorizontal: 12,
+                            },
+                          ]}
+                          onPress={() =>
+                            showDatePicker(
+                              'dependentValidTo',
+                              formData.dependentValidTo,
+                              formData.dependentValidFrom,
+                            )
+                          }>
+                          <Text
+                            style={{
+                              color: formData.dependentValidTo
+                                ? '#000'
+                                : '#888',
+                              fontSize: 16,
+                            }}>
+                            {formData.dependentValidTo === 'MAX_DATE'
+                              ? 'Never'
+                              : formData.dependentValidTo
+                              ? formatDisplayDate(formData.dependentValidTo)
+                              : 'Select Date'}
+                          </Text>
+                          <Icon name="calendar" size={20} color="#04739cff" />
+                        </TouchableOpacity>
+
+                        {/* Gender Dropdown */}
+                        <Text
+                          style={[
+                            styles.DSR_Label,
+                            isRTL && {textAlign: 'left'},
+                          ]}>
+                          {PersonalContactsLabelData?.genderlbl || 'Gender'}
+                        </Text>
+                        <Dropdown
+                          style={styles.DSR_Input}
+                          data={[
+                            {label: 'Male', value: 'Male'},
+                            {label: 'Female', value: 'Female'},
+                            {label: 'Non-specific', value: 'Non-specific'},
+                          ]}
+                          labelField="label"
+                          valueField="value"
+                          placeholder="Select Gender"
+                          value={formData.Gender}
+                          onChange={item =>
+                            handleInputChange('Gender', item.value)
                           }
+                          search
+                          searchPlaceholder="Search Gender"
+                          placeholderStyle={styles.DSR_DropdownPlaceholder}
+                          selectedTextStyle={styles.DSR_DropdownSelectedText}
+                          itemTextStyle={styles.DSR_DropdownItemText}
+                          activeColor="#E6F0FF"
+                          containerStyle={[
+                            styles.DSR_DropdownContainer,
+                            {marginTop: 4, zIndex: 1000},
+                          ]}
+                          itemContainerStyle={styles.DSR_DropdownItemContainer}
+                          maxHeight={180}
+                          dropdownPosition="auto"
                         />
-                      </View>
 
-                      {formData.isDependent && (
-                        <View
-                          style={{
-                            backgroundColor: '#f9f9f9',
-                            paddingHorizontal: 16,
-                            paddingTop: 8,
-                            paddingBottom: 14,
-                            borderBottomLeftRadius: 12,
-                            borderBottomRightRadius: 12,
-                            marginBottom: 12,
-                            borderTopWidth: 1,
-                            borderTopColor: '#e0e0e0',
-                          }}>
-                          {/* Valid From */}
+                        {/* Birth Date */}
+                        <Text
+                          style={[
+                            styles.DSR_Label,
+                            isRTL && {textAlign: 'left'},
+                          ]}>
+                          {PersonalContactsLabelData?.birthDatelbl ||
+                            'Birth Date'}
+                        </Text>
+                        <TouchableOpacity
+                          style={[
+                            styles.DSR_Input,
+                            {
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              paddingHorizontal: 12,
+                            },
+                          ]}
+                          onPress={() =>
+                            showDatePicker(
+                              'BirthDate',
+                              formData.BirthDate,
+                              null,
+                              new Date(),
+                            )
+                          }>
                           <Text
-                            style={[
-                              styles.DSR_Label,
-                              isRTL && {textAlign: 'left'},
-                            ]}>
-                            {PersonalContactsLabelData?.dependentValidFromlbl ||
-                              'Valid From'}
+                            style={{
+                              color: formData.BirthDate ? '#000' : '#888',
+                              fontSize: 16,
+                            }}>
+                            {formData.BirthDate
+                              ? formatDisplayDate(formData.BirthDate)
+                              : 'Select Date'}
                           </Text>
-                          <TouchableOpacity
-                            style={[
-                              styles.DSR_Input,
-                              {
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                paddingHorizontal: 12,
-                              },
-                            ]}
-                            onPress={() =>
-                              showDatePicker(
-                                'dependentValidFrom',
-                                formData.dependentValidFrom,
-                              )
-                            }>
-                            <Text
-                              style={{
-                                color: formData.dependentValidFrom
-                                  ? '#000'
-                                  : '#888',
-                                fontSize: 16,
-                              }}>
-                              {formData.dependentValidFrom
-                                ? formatDisplayDate(formData.dependentValidFrom)
-                                : formatDisplayDate(new Date().toISOString())}
-                            </Text>
-                            <Icon name="calendar" size={20} color="#04739cff" />
-                          </TouchableOpacity>
+                          <Icon name="calendar" size={20} color="#04739cff" />
+                        </TouchableOpacity>
 
-                          {/* Valid To */}
-                          <Text
-                            style={[
-                              styles.DSR_Label,
-                              isRTL && {textAlign: 'left'},
-                            ]}>
-                            {PersonalContactsLabelData?.depndentValidTolbl ||
-                              'Valid To'}
+                        <View style={{marginTop: spacing.md}}>
+                          <Text style={styles.DSR_Label}>
+                            {PersonalContactsLabelData?.isFullTimeStudentlbl ||
+                              'Full-time Student'}
                           </Text>
-                          <TouchableOpacity
-                            style={[
-                              styles.DSR_Input,
-                              {
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                paddingHorizontal: 12,
-                              },
-                            ]}
-                            onPress={() =>
-                              showDatePicker(
-                                'dependentValidTo',
-                                formData.dependentValidTo,
-                                formData.dependentValidFrom,
-                              )
-                            }>
-                            <Text
-                              style={{
-                                color: formData.dependentValidTo
-                                  ? '#000'
-                                  : '#888',
-                                fontSize: 16,
-                              }}>
-                              {formData.dependentValidTo
-                                ? formatDisplayDate(formData.dependentValidTo)
-                                : 'Never'}
-                            </Text>
-                            <Icon name="calendar" size={20} color="#04739cff" />
-                          </TouchableOpacity>
-
-                          {/* Gender Dropdown */}
-                          <Text
-                            style={[
-                              styles.DSR_Label,
-                              isRTL && {textAlign: 'left'},
-                            ]}>
-                            {PersonalContactsLabelData?.genderlbl || 'Gender'}
-                          </Text>
-                          <Dropdown
-                            style={styles.DSR_Input}
-                            data={[
-                              {label: 'Male', value: 'Male'},
-                              {label: 'Female', value: 'Female'},
-                              {label: 'Non-specific', value: 'Non-specific'},
-                            ]}
-                            labelField="label"
-                            valueField="value"
-                            placeholder="Select Gender"
-                            value={formData.Gender}
-                            onChange={item =>
-                              handleInputChange('Gender', item.value)
-                            }
-                            search
-                            searchPlaceholder="Search Gender"
-                            placeholderStyle={styles.DSR_DropdownPlaceholder}
-                            selectedTextStyle={styles.DSR_DropdownSelectedText}
-                            itemTextStyle={styles.DSR_DropdownItemText}
-                            activeColor="#E6F0FF"
-                            containerStyle={[
-                              styles.DSR_DropdownContainer,
-                              {marginTop: 4, zIndex: 1000},
-                            ]}
-                            itemContainerStyle={
-                              styles.DSR_DropdownItemContainer
-                            }
-                            maxHeight={180}
-                            dropdownPosition="auto"
-                          />
-
-                          {/* Birth Date */}
-                          <Text
-                            style={[
-                              styles.DSR_Label,
-                              isRTL && {textAlign: 'left'},
-                            ]}>
-                            {PersonalContactsLabelData?.birthDatelbl ||
-                              'Birth Date'}
-                          </Text>
-                          <TouchableOpacity
-                            style={[
-                              styles.DSR_Input,
-                              {
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                paddingHorizontal: 12,
-                              },
-                            ]}
-                            onPress={() =>
-                              showDatePicker(
-                                'BirthDate',
-                                formData.BirthDate,
-                                null,
-                                new Date(),
-                              )
-                            }>
-                            <Text
-                              style={{
-                                color: formData.BirthDate ? '#000' : '#888',
-                                fontSize: 16,
-                              }}>
-                              {formData.BirthDate
-                                ? formatDisplayDate(formData.BirthDate)
-                                : formatDisplayDate(new Date().toISOString())}
-                            </Text>
-                            <Icon name="calendar" size={20} color="#04739cff" />
-                          </TouchableOpacity>
-
-                          <View style={{marginTop: spacing.md}}>
-                            <Text style={styles.DSR_Label}>
-                              {PersonalContactsLabelData?.isFullTimeStudentlbl ||
-                                'Full-time Student'}
-                            </Text>
-                            <View style={{alignSelf: 'flex-start'}}>
-                              <Switch
-                                value={formData.IsFullTimeStudent}
-                                onValueChange={() =>
-                                  toggleSwitch('IsFullTimeStudent')
-                                }
-                                trackColor={{false: '#767577', true: '#81b0ff'}}
-                                thumbColor={
-                                  formData.IsFullTimeStudent
-                                    ? '#2196F3'
-                                    : '#f4f3f4'
-                                }
-                              />
-                            </View>
-                          </View>
-
-                          <View style={{marginTop: spacing.md}}>
-                            <Text style={styles.DSR_Label}>
-                              {PersonalContactsLabelData?.isPersonWithDisabilitieslbl ||
-                                'Person with Disabilities'}
-                            </Text>
-                            <View style={{alignSelf: 'flex-start'}}>
-                              <Switch
-                                value={formData.IsPersonWithDisabilities}
-                                onValueChange={() =>
-                                  toggleSwitch('IsPersonWithDisabilities')
-                                }
-                                trackColor={{false: '#767577', true: '#81b0ff'}}
-                                thumbColor={
-                                  formData.IsPersonWithDisabilities
-                                    ? '#2196F3'
-                                    : '#f4f3f4'
-                                }
-                              />
-                            </View>
+                          <View style={{alignSelf: 'flex-start'}}>
+                            <Switch
+                              value={formData.IsFullTimeStudent}
+                              onValueChange={() =>
+                                toggleSwitch('IsFullTimeStudent')
+                              }
+                              trackColor={{false: '#767577', true: '#81b0ff'}}
+                              thumbColor={
+                                formData.IsFullTimeStudent
+                                  ? '#2196F3'
+                                  : '#f4f3f4'
+                              }
+                            />
                           </View>
                         </View>
-                      )}
-                    </View>
-                  )}
-              </View>
-            </ScrollView>
 
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
-            />
-          </KeyboardAvoidingView>
+                        <View style={{marginTop: spacing.md}}>
+                          <Text style={styles.DSR_Label}>
+                            {PersonalContactsLabelData?.isPersonWithDisabilitieslbl ||
+                              'Person with Disabilities'}
+                          </Text>
+                          <View style={{alignSelf: 'flex-start'}}>
+                            <Switch
+                              value={formData.IsPersonWithDisabilities}
+                              onValueChange={() =>
+                                toggleSwitch('IsPersonWithDisabilities')
+                              }
+                              trackColor={{false: '#767577', true: '#81b0ff'}}
+                              thumbColor={
+                                formData.IsPersonWithDisabilities
+                                  ? '#2196F3'
+                                  : '#f4f3f4'
+                              }
+                            />
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                )}
+            </View>
+          </ScrollView>
+
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={handleSave}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+          />
+          {/* </KeyboardAvoidingView> */}
 
           {/* Unified Date Picker */}
           {datePickerConfig.visible && (

@@ -111,7 +111,7 @@ const FamilyContacts_ListPageScreen = () => {
     fields: [
       {
         key: 'Name',
-        label: familycontactsdata[0]?.firstNamelbl || 'First Name',
+        label: familycontactsdata[0]?.firstNamelbl || 'Name',
         type: 'text',
       },
       {
@@ -243,16 +243,16 @@ const FamilyContacts_ListPageScreen = () => {
       });
 
       if (response?.[0]?.IsSuccess) {
-        setAlertMessage('Personal contact deleted successfully.');
+        setAlertMessage('Record deleted successfully');
         setfamilycontactsdata(prev =>
           prev.filter(c => c.RecId !== itemToDelete.RecId),
         );
       } else {
-        setAlertMessage('Unable to delete Personal contact.');
+        setAlertMessage('Unable to delete record. Please try again.');
       }
     } catch (error) {
       console.log('Delete error:', error);
-      setAlertMessage('Failed to delete Personal contact');
+      setAlertMessage('Failed to delete record');
     } finally {
       setButtonProcessing(itemToDelete.RecId, 'delete', false);
       setDeleteModal(false);
@@ -386,9 +386,9 @@ const FamilyContacts_ListPageScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to add your first personal contact
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}
