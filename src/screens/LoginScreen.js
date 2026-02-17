@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -59,40 +60,96 @@ const LoginScreen = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [backPressedOnce, setBackPressedOnce] = useState(false);
 
+  // FIX #1: Replace global.onDialogOk with a proper React state callback.
+  // The global was a shared mutable variable — concurrent flows (auto-biometric
+  // + manual login) could overwrite each other's callback.
+  const [onAlertConfirm, setOnAlertConfirm] = useState(null);
+  const [onDialogConfirm, setOnDialogConfirm] = useState(null);
+
+  // FIX #2: Cancelled flag prevents state updates and navigation on an
+  // unmounted component, and stops the auto-biometric flow from racing
+  // with a manual login the user initiated while biometrics were in progress.
   useEffect(() => {
+    let cancelled = false;
+
     const tryAutoBiometricLogin = async () => {
       if (!navigation.isFocused()) return;
 
-      const hasCredentials = await hasPersistentBiometricCredentials();
-      if (!hasCredentials) return;
+      try {
+        const hasCredentials = await hasPersistentBiometricCredentials();
+        if (cancelled || !hasCredentials) return;
 
-      const activeConfigId = await getActiveConfig();
-      if (!activeConfigId) return;
+        const activeConfigId = await getActiveConfig();
+        if (cancelled || !activeConfigId) {
+          console.log('Auto-login: No active config found');
+          return;
+        }
 
-      // ✅ CRITICAL FIX: Load the config data before proceeding
-      const activeConfig = await getActiveConfigData();
-      if (!activeConfig) {
-        console.error('Active config ID exists but data not found');
-        return;
+        const activeConfig = await getActiveConfigData();
+        if (cancelled || !activeConfig) {
+          console.error(
+            'Auto-login: Active config ID exists but data not found',
+          );
+          if (!cancelled) {
+            setAlertMessage(
+              'Configuration Error\nYour saved configuration could not be loaded. Please select a valid configuration from the QR code screen.',
+            );
+            setAlertModal(true);
+          }
+          return;
+        }
+
+        await saveConfig(activeConfig);
+        if (cancelled) return;
+
+        const biometricSuccess = await authenticateWithBiometrics();
+        if (cancelled || !biometricSuccess) {
+          console.log(
+            'Auto-login: Biometric authentication failed or cancelled',
+          );
+          return;
+        }
+
+        if (!cancelled) setLoading(true);
+
+        const credentials = await getBiometricCredentials();
+        if (cancelled) return;
+
+        await loadUserDataFromBiometric(
+          credentials.email,
+          credentials.provider,
+        );
+
+        // FIX #2 cont: Re-check cancelled after every async call before
+        // touching state or navigation
+        if (cancelled) return;
+
+        navigation.navigate('DrawerNavigator');
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Auto-login error:', error);
+        setAlertMessage(
+          `Auto-Login Failed\n${
+            error.message ||
+            'An unexpected error occurred during automatic login.'
+          }\nPlease login manually.`,
+        );
+        setAlertModal(true);
+      } finally {
+        // FIX #3: Only call setLoading if still mounted/not cancelled to
+        // avoid "state update on unmounted component" warning
+        if (!cancelled) setLoading(false);
       }
-
-      // ✅ Ensure it's saved to main location for API calls
-      await saveConfig(activeConfig);
-
-      const biometricSuccess = await authenticateWithBiometrics();
-      if (!biometricSuccess) return;
-
-      setLoading(true);
-
-      const credentials = await getBiometricCredentials();
-      await loadUserDataFromBiometric(credentials.email, credentials.provider);
-
-      navigation.navigate('DrawerNavigator');
-      setLoading(false);
     };
 
     tryAutoBiometricLogin();
-  }, [navigation, loadUserDataFromBiometric]);
+
+    // Cleanup: mark as cancelled when the component unmounts or the effect
+    // re-runs, so no in-flight async work can affect state afterwards
+    return () => {
+      cancelled = true;
+    };
+  }, [navigation]);
 
   useEffect(() => {
     const backAction = () => {
@@ -130,6 +187,19 @@ const LoginScreen = () => {
 
   const handleProviderLogin = async provider => {
     try {
+      const activeConfig = await getActiveConfigData();
+      if (!activeConfig) {
+        setAlertMessage(
+          'Configuration Required\nNo configuration found. Please scan a QR code first to set up your environment.',
+        );
+        // FIX #1: Store the confirm action in state instead of global
+        setOnAlertConfirm(
+          () => () => navigation.navigate('ConfigSelectionScreen'),
+        );
+        setAlertModal(true);
+        return;
+      }
+
       handleLogin(
         setLoading,
         data => dispatch(setUserData(data)),
@@ -137,163 +207,171 @@ const LoginScreen = () => {
         setDialogVisible,
         setDialogMessage,
         setAlertModal,
-        setAlertMessage,
+        message => {
+          let errorMessage = message;
+
+          if (message.includes('Network') || message.includes('network')) {
+            errorMessage = `Network Error\n${message}\nPossible causes:\n• No internet connection\n• Server is unreachable\n• Firewall blocking access`;
+          } else if (
+            message.includes('401') ||
+            message.includes('Unauthorized')
+          ) {
+            errorMessage = `Authentication Failed\n${message}\nPossible causes:\n• Invalid credentials\n• Session expired\n• Account not authorized`;
+          } else if (message.includes('404') || message.includes('Not Found')) {
+            errorMessage = `Server Error\n${message}\nPossible causes:\n• Dynamics VM is down\n• API endpoint not found\n• Configuration is incorrect`;
+          } else if (
+            message.includes('500') ||
+            message.includes('Internal Server')
+          ) {
+            errorMessage = `Dynamics Server Error\n${message}\nPossible causes:\n• Dynamics VM is down or restarting\n• Database connection issue\n• Server maintenance in progress`;
+          } else if (
+            message.includes('timeout') ||
+            message.includes('Timeout')
+          ) {
+            errorMessage = `Connection Timeout\n${message}\nPossible causes:\n• Slow internet connection\n• Dynamics server not responding\n• Request taking too long`;
+          } else if (
+            !message.includes('Error') &&
+            !message.includes('Failed')
+          ) {
+            errorMessage = `${message}`;
+          }
+
+          setAlertMessage(errorMessage);
+        },
         legalEntity => dispatch(initializeLegalEntity(legalEntity)),
         list => dispatch(setLegalEntities(list)),
         menus => dispatch(setMenuItems(menus)),
         provider,
+        // FIX #1: Pass a callback setter so authUtils can set a confirm action
+        // without touching a global variable
+        setOnAlertConfirm,
+        setOnDialogConfirm,
       );
     } catch (error) {
       console.error('Error in handleProviderLogin:', error);
-      setAlertMessage(t('login.loginError'));
+
+      let errorMessage = 'Login Error\n';
+      if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'An unexpected error occurred during login.';
+      }
+      errorMessage += '\nPlease check:\n';
+      errorMessage += '• Your internet connection\n';
+      errorMessage += '• Dynamics VM status\n';
+      errorMessage += '• Configuration settings';
+
+      setAlertMessage(errorMessage);
       setAlertModal(true);
     }
   };
 
-  // const handleBiometricLogin = async () => {
-  //   try {
-  //     // Check if biometric credentials exist
-  //     const hasCredentials = await hasPersistentBiometricCredentials();
-
-  //     if (!hasCredentials) {
-  //       setAlertMessage(t('login.biometricNotConfigured'));
-  //       setAlertModal(true);
-  //       return;
-  //     }
-
-  //     // Check if there's an active configuration
-  //     const activeConfigId = await getActiveConfig();
-  //     if (!activeConfigId) {
-  //       setAlertMessage(t('login.noActiveConfig'));
-  //       setAlertModal(true);
-  //       global.onDialogOk = () => {
-  //         setAlertModal(false);
-  //         navigation.navigate('ConfigSelectionScreen');
-  //       };
-  //       return;
-  //     }
-
-  //     // Get the stored credentials (only email and provider)
-  //     const credentials = await getBiometricCredentials();
-  //     if (
-  //       !credentials ||
-  //       !credentials.email ||
-  //       !credentials.isBiometricEnabled
-  //     ) {
-  //       setAlertMessage(t('login.biometricConfigInvalid'));
-  //       setAlertModal(true);
-  //       return;
-  //     }
-
-  //     // Authenticate with biometrics
-  //     const biometricSuccess = await authenticateWithBiometrics();
-  //     if (!biometricSuccess) {
-  //       setAlertMessage(t('login.authCancelled'));
-  //       setAlertModal(true);
-  //       return;
-  //     }
-
-  //     setLoading(true);
-
-  //     // Get active configuration (fetched fresh at login time)
-  //     const activeConfig = await getActiveConfigData();
-  //     if (!activeConfig) {
-  //       setAlertMessage(t('login.configLoadFailed'));
-  //       setAlertModal(true);
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     // Fetch user data fresh using the email
-  //     await loadUserDataFromBiometric(credentials.email, credentials.provider);
-
-  //     navigation.navigate('DrawerNavigator');
-  //     setLoading(false);
-  //   } catch (error) {
-  //     console.error('Biometric login error:', error);
-  //     setAlertMessage(t('login.biometricLoginFailed'));
-  //     setAlertModal(true);
-  //     setLoading(false);
-  //   }
-  // };
   const handleBiometricLogin = async () => {
     try {
       const hasCredentials = await hasPersistentBiometricCredentials();
       if (!hasCredentials) {
-        setAlertMessage(t('login.biometricNotConfigured'));
+        setAlertMessage(
+          'Biometric login is not set up for any account.\nPlease:\n1. Login with Microsoft or Google\n2. Go to Profile > Biometric Settings\n3. Enable biometric authentication',
+        );
         setAlertModal(true);
         return;
       }
 
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) {
-        setAlertMessage(t('login.noActiveConfig'));
+        setAlertMessage(
+          'Configuration Required\nNo active configuration found.\nPlease select a configuration from the QR code screen before using biometric login.',
+        );
+        // FIX #1: Use state callback instead of global
+        setOnAlertConfirm(
+          () => () => navigation.navigate('ConfigSelectionScreen'),
+        );
         setAlertModal(true);
-        global.onDialogOk = () => {
-          setAlertModal(false);
-          navigation.navigate('ConfigSelectionScreen');
-        };
         return;
       }
 
       const credentials = await getBiometricCredentials();
       if (!credentials?.email || !credentials?.isBiometricEnabled) {
-        setAlertMessage(t('login.biometricConfigInvalid'));
+        setAlertMessage(
+          'Invalid Biometric Configuration\nYour biometric settings are corrupted or incomplete.\nPlease:\n1. Login manually with Microsoft or Google\n2. Re-enable biometric authentication in settings',
+        );
         setAlertModal(true);
         return;
       }
 
       const biometricSuccess = await authenticateWithBiometrics();
       if (!biometricSuccess) {
-        setAlertMessage(t('login.authCancelled'));
+        setAlertMessage(
+          'Authentication Failed\nBiometric authentication was cancelled or failed.\nPlease try again or use password login.',
+        );
         setAlertModal(true);
         return;
       }
 
       setLoading(true);
 
-      // ✅ Load config data
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
-        setAlertMessage(t('login.configLoadFailed'));
+        setAlertMessage(
+          'Configuration Load Failed\nCould not load the active configuration.\nPossible causes:\n• Configuration was deleted\n• Keychain access denied\n• Corrupted configuration data\nPlease select a valid configuration.',
+        );
         setAlertModal(true);
         setLoading(false);
         return;
       }
 
-      // ✅ CRITICAL FIX: Save to main location for API calls
       await saveConfig(activeConfig);
-
       await loadUserDataFromBiometric(credentials.email, credentials.provider);
-
       navigation.navigate('DrawerNavigator');
-      setLoading(false);
     } catch (error) {
       console.error('Biometric login error:', error);
-      setAlertMessage(t('login.biometricLoginFailed'));
+
+      let errorMessage = 'Biometric Login Failed\n';
+      if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'An unexpected error occurred.';
+      }
+      errorMessage += '\nPossible solutions:\n';
+      errorMessage += '• Try logging in manually\n';
+      errorMessage += '• Check your internet connection\n';
+      errorMessage += '• Verify Dynamics VM is running\n';
+      errorMessage += '• Re-configure biometric authentication';
+
+      setAlertMessage(errorMessage);
       setAlertModal(true);
+    } finally {
       setLoading(false);
     }
   };
 
-  const loadUserDataFromBiometric = React.useCallback(
+  const loadUserDataFromBiometric = useCallback(
     async (email, provider) => {
       try {
-        // Fetch fresh user data from API using email
+        console.log(`Loading user data for: ${email} (${provider})`);
+
         const userInfo = await fetchUserInfo(email);
 
-        if (
-          !userInfo.length ||
-          !userInfo[0].EmployeeName ||
-          !userInfo[0].EmployeeId ||
-          userInfo[0].WorkerRecId === 0
-        ) {
-          throw new Error('User data not found or invalid');
+        if (!userInfo || !Array.isArray(userInfo) || userInfo.length === 0) {
+          throw new Error(
+            `User Not Found\nNo user account found for email: ${email}\nPossible causes:\n• User not configured in Dynamics\n• Email address mismatch\n• Dynamics VM is down\n• Database connection issue\nPlease contact your administrator.`,
+          );
         }
 
         const user = userInfo[0];
 
-        // Prepare complete user data object
+        if (!user.EmployeeName || !user.EmployeeId || user.WorkerRecId === 0) {
+          throw new Error(
+            `Invalid User Data\nUser account exists but is incomplete:\n• Employee Name: ${
+              user.EmployeeName || 'Missing'
+            }\n• Employee ID: ${
+              user.EmployeeId || 'Missing'
+            }\n• Worker Record ID: ${
+              user.WorkerRecId || '0 (Invalid)'
+            }\nPossible causes:\n• Incomplete user setup in Dynamics\n• User account not properly configured\n• Data synchronization issue\nPlease contact your administrator.`,
+          );
+        }
+
         const completeUserData = {
           userName: user.EmployeeName,
           employeeName: user.EmployeeName,
@@ -320,14 +398,14 @@ const LoginScreen = () => {
           employeeFullInfo: user,
         };
 
-        // Set user data in Redux
         dispatch(setUserData(completeUserData));
 
-        // Initialize legal entity
         await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
 
-        // Fetch legal entities and menu items
+        console.log(`Fetching legal entities for employee: ${user.EmployeeId}`);
         const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+
+        console.log(`Fetching menu items for employee: ${user.EmployeeId}`);
         const menus = await fetchEmployeeMenuItems(user.EmployeeId);
 
         dispatch(setLegalEntities(legalEntities));
@@ -337,11 +415,47 @@ const LoginScreen = () => {
         return true;
       } catch (error) {
         console.error('Error loading user data from biometric:', error);
-        throw error;
+
+        if (error.message && error.message.includes('\n')) {
+          throw error;
+        }
+
+        let errorMessage = 'User Data Load Failed\n';
+        if (error.message) {
+          errorMessage += error.message;
+        } else {
+          errorMessage += 'Could not load user information from Dynamics.';
+        }
+        errorMessage += '\nPossible causes:\n';
+        errorMessage += '• Dynamics VM is down or unreachable\n';
+        errorMessage += '• Network connection issue\n';
+        errorMessage += '• User account not found in system\n';
+        errorMessage += '• Database query timeout\n';
+        errorMessage += 'Please try again or contact your administrator.';
+
+        throw new Error(errorMessage);
       }
     },
     [dispatch],
   );
+
+  // FIX #1: Unified alert dismiss handler — runs the stored confirm callback
+  // (if any) then clears it, so it can never fire twice or be overwritten mid-flow
+  const handleAlertConfirm = useCallback(() => {
+    setAlertModal(false);
+    if (onAlertConfirm) {
+      onAlertConfirm();
+      setOnAlertConfirm(null);
+    }
+  }, [onAlertConfirm]);
+
+  const handleDialogConfirm = useCallback(() => {
+    setDialogVisible(false);
+    if (onDialogConfirm) {
+      onDialogConfirm();
+      setOnDialogConfirm(null);
+    }
+  }, [onDialogConfirm]);
 
   return (
     <LinearGradient
@@ -442,37 +556,30 @@ const LoginScreen = () => {
         <View style={styles.Login_DialogButtonsRow}>
           <TouchableOpacity
             style={[styles.Login_DialogButton, {backgroundColor: '#999'}]}
-            onPress={() => setDialogVisible(false)}>
+            onPress={() => {
+              setDialogVisible(false);
+              setOnDialogConfirm(null);
+            }}>
             <Text style={styles.Login_DialogButtonText}>
               {t('common.cancel')}
             </Text>
           </TouchableOpacity>
 
+          {/* FIX #1: Use handleDialogConfirm instead of global.onDialogOk */}
           <TouchableOpacity
             style={[styles.Login_DialogButton, {backgroundColor: '#0A66C2'}]}
-            onPress={() => {
-              setDialogVisible(false);
-              if (global.onDialogOk) {
-                global.onDialogOk();
-                global.onDialogOk = null;
-              }
-            }}>
+            onPress={handleDialogConfirm}>
             <Text style={styles.Login_DialogButtonText}>{t('common.ok')}</Text>
           </TouchableOpacity>
         </View>
       </PopupDialog>
 
+      {/* FIX #1: Use handleAlertConfirm instead of global.onDialogOk */}
       <AlertModal
         visible={alertModal}
-        heading={t('common.alert')}
+        heading={t('common.dynaface')}
         text={alertMessage}
-        onPress={() => {
-          setAlertModal(false);
-          if (global.onDialogOk) {
-            global.onDialogOk();
-            global.onDialogOk = null;
-          }
-        }}
+        onPress={handleAlertConfirm}
       />
     </LinearGradient>
   );

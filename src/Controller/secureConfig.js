@@ -29,10 +29,16 @@ export async function clearConfig() {
   await Keychain.resetGenericPassword({service: CONFIG_SERVICE});
 }
 
-// Update existing config instead of creating new one
+// FIX (Issue #1 from analysis — customTitle revert bug + Issue #6 — clean shape):
+// Previously this function spread the UI-enhanced editingConfig object
+// (which had displayTitle, formattedData, etc.) into the saved Keychain entry,
+// making the stored shape unpredictable. On reload, customTitle was often lost,
+// causing the name to revert to the auto-extracted URL title.
+//
+// Now we save a strict, explicit object with only the fields we actually need,
+// and always persist customTitle so loadConfigurations() can reliably read it.
 export async function updateConfigById(configId, updatedConfig) {
   try {
-    // Get current list
     const configsList = await getConfigsList();
     const index = configsList.findIndex(c => c.id === configId);
 
@@ -40,19 +46,25 @@ export async function updateConfigById(configId, updatedConfig) {
       throw new Error(`Config with ID ${configId} not found`);
     }
 
-    // Update the list entry (shown in ConfigSelectionScreen)
-    configsList[index].name =
+    // Determine the new name — prefer explicit name/customTitle over existing
+    const newName =
       updatedConfig.name ||
       updatedConfig.customTitle ||
       configsList[index].name;
 
+    // Update the list entry (shown in ConfigSelectionScreen header count etc.)
+    configsList[index].name = newName;
     await saveConfigsList(configsList);
 
-    // Save full updated config object
+    // FIX: Save a clean, explicit object — do NOT spread unknown/UI-enhanced
+    // shapes. Every field is intentional so the stored entry is predictable
+    // across app restarts.
     const finalConfig = {
-      ...updatedConfig,
       id: configId,
-      createdAt: configsList[index].createdAt, // preserve createdAt
+      name: newName,
+      customTitle: newName, // always explicit so loadConfigurations() finds it
+      data: updatedConfig.data,
+      createdAt: updatedConfig.createdAt || configsList[index].createdAt,
     };
 
     await Keychain.setGenericPassword(
@@ -80,6 +92,7 @@ export async function saveConfigWithId(config, customName = null) {
     const configData = {
       id: configId,
       name: configName,
+      customTitle: configName, // always store customTitle alongside name
       data: config,
       createdAt: new Date().toISOString(),
     };
@@ -129,8 +142,15 @@ export async function getAllConfigs() {
         }
       } catch (error) {
         console.error(`Error loading config ${configInfo.id}:`, error);
-        // Remove invalid config from list
-        await removeConfigFromList(configInfo.id);
+
+        // FIX (Issue #4): Previously this called removeConfigFromList() here,
+        // which permanently deleted the user's config on any transient Keychain
+        // read failure (e.g. device restart, biometric lock, brief I/O error).
+        // Users would lose their saved environments and have to re-scan QR codes.
+        //
+        // Now we simply skip the problematic entry for this load cycle.
+        // The config stays in the list and will be retried on the next load.
+        // Only explicit user action (delete button) should remove a config.
       }
     }
 
@@ -230,21 +250,6 @@ export async function getActiveConfigData() {
     return null;
   }
 }
-// export async function getActiveConfigData() {
-//   try {
-//     const activeConfigId = await getActiveConfig();
-//     if (activeConfigId) {
-//       const configData = await getConfigById(activeConfigId);
-//       return configData ? configData.data : null;
-//     }
-
-//     // Fallback to main config if no active config is set
-//     return await getConfig();
-//   } catch (error) {
-//     console.error('Error getting active config data:', error);
-//     return null;
-//   }
-// }
 
 // Helper functions for managing configs list
 async function getConfigsList() {

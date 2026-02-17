@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_CardActions: {
-    marginTop: conditionalVerticalScale(20, 24, 26, 30),
+    marginTop: conditionalVerticalScale(28, 32, 36, 40),
     flexDirection: 'row',
     gap: spacing.sm,
   },

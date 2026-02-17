@@ -31,7 +31,7 @@ const GetLeaveBalance = async ({
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log('Leave Balance Soap Envelop', {soapEnvelope});
+    // console.log('Leave Balance Soap Envelop', {soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/PREmploymentInformationSvcGroup`,

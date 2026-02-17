@@ -206,6 +206,7 @@
   "common": {
     "ok": "OK",
     "cancel": "Cancel",
+    "dynaface": "Dynaface",
     "alert": "Alert",
     "processing": "Processing...",
     "create": "Create",
