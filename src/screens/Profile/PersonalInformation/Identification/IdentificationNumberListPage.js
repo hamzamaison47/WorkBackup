@@ -432,7 +432,6 @@ const IdentificationNumberListPage = () => {
   };
 
   const getButtonConfig = item => {
-    console.log('Item Data: ', item);
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
     // const apiEditEnabled = canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);

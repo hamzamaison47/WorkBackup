@@ -386,16 +386,15 @@ const IdentificationNumberSaveRecord = () => {
           });
         }
       }
-
-      if (response) {
+      if (response?.IsSuccess === 'true') {
         const textAction = modalMode === 'create' ? 'Created' : 'Updated';
         let textSubmit;
-        if (submitResult.IsSuccess === 'true') {
+        if (submitResult?.IsSuccess === 'true') {
           textSubmit = actionType === 'submit' ? ' and Submitted' : '';
           setAlertMessage(
             `${contract.IdentificationTypeId} is ${textAction}${textSubmit} Successfully`,
           );
-        } else if (submitResult.IsSuccess === 'false') {
+        } else if (submitResult?.IsSuccess === 'false') {
           textSubmit = actionType === 'submit' ? ' but not Submitted' : '';
           setAlertMessage(
             `${contract.IdentificationTypeId} is ${textAction}${textSubmit}`,
@@ -403,7 +402,13 @@ const IdentificationNumberSaveRecord = () => {
         }
 
         setAlertModal(true);
+        setAlertMessage(
+          `${contract.IdentificationTypeId} is ${textAction} Successfully`,
+        );
         return {success: true, recId: response.RecId || contract.RecId};
+      } else if (response?.IsSuccess === 'false') {
+        const textAction = modalMode === 'create' ? 'Creating' : 'Updating';
+        setAlertMessage(`Error in ${textAction} Record`);
       } else {
         throw new Error('No response from server');
       }
