@@ -9,6 +9,7 @@ import {
   ScrollView,
   I18nManager,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -40,6 +41,7 @@ const GenericAdvanceListScreen = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   // const [typeSelectionModal, setTypeSelectionModal] = useState(false);
 
   const navigation = useNavigation();
@@ -474,79 +476,94 @@ const GenericAdvanceListScreen = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    setButtonProcessing(itemToDelete.RecId, 'delete', true);
+    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
-    try {
-      // console.log('Delete Advance Request response', itemToDelete.RecId);
-      const response = await DeleteAdvanceRequest({
-        recordsRecId: [itemToDelete.RecId],
-      });
+    // First close the delete modal
+    setDeleteModal(false);
 
-      const recordResult = response.find(
-        r => String(r.RecId) === String(itemToDelete.RecId),
-      );
+    // Small delay to ensure modal is closed before showing processing overlay
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.recId, 'delete', true);
 
-      if (recordResult && recordResult.IsSuccess === 'true') {
-        setAlertMessage('Record deleted successfully');
-        setAllAdvanceData(prev =>
-          prev.filter(adv => adv.RecId !== itemToDelete.RecId),
+      try {
+        // console.log('Delete Advance Request response', itemToDelete.RecId);
+        const response = await DeleteAdvanceRequest({
+          recordsRecId: [itemToDelete.RecId],
+        });
+
+        const recordResult = response.find(
+          r => String(r.RecId) === String(itemToDelete.RecId),
         );
-      } else {
-        setAlertMessage('Unable to delete record. Please try again.');
+
+        if (recordResult && recordResult.IsSuccess === 'true') {
+          setAlertMessage('Record deleted successfully');
+          setAllAdvanceData(prev =>
+            prev.filter(adv => adv.RecId !== itemToDelete.RecId),
+          );
+        } else {
+          setAlertMessage('Unable to delete record. Please try again.');
+        }
+      } catch (error) {
+        console.log('Delete Advance Request error:', error);
+        setAlertMessage('Failed to delete record');
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setItemToDelete(null);
+        setAlertModal(true);
+
+        setTimeout(() => {
+          fetchAllAdvanceData();
+        }, 800);
       }
-    } catch (error) {
-      console.log('Delete Advance Request error:', error);
-      setAlertMessage('Failed to delete record');
-    } finally {
-      setButtonProcessing(itemToDelete.RecId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => {
-        fetchAllAdvanceData();
-      }, 1000);
-    }
+    }, 100); // Small delay to ensure modal closes first
   };
 
   /** FIXED: Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
-    setButtonProcessing(itemData.RecId, 'submit', true);
+    // setButtonProcessing(itemData.RecId, 'submit', true);
 
-    try {
-      // console.log('Submit Advance Request:', itemData.RecId);
-      const response = await SubmitAdvanceRequest({recId: itemData.RecId});
-      const resObj = Array.isArray(response) ? response[0] : response;
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemData.RecId, 'submit', true);
+      try {
+        // console.log('Submit Advance Request:', itemData.RecId);
+        const response = await SubmitAdvanceRequest({recId: itemData.RecId});
+        const resObj = Array.isArray(response) ? response[0] : response;
 
-      if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
-        setAlertMessage('Request submitted successfully');
+        if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+          setAlertMessage('Request submitted successfully');
+          setAlertModal(true);
+
+          // FIXED: Set highlighting for submitted record
+          setHighlightedRecId(itemData.RecId);
+
+          // Set a timer to remove highlighting after 3 seconds
+          setTimeout(() => {
+            setHighlightedRecId(null);
+          }, 3000);
+
+          setTimeout(() => {
+            fetchAllAdvanceData();
+          }, 1000);
+        } else {
+          const errorMessage =
+            resObj && resObj.Message
+              ? resObj.Message
+              : 'Failed to submit request';
+          setAlertMessage(errorMessage);
+          setAlertModal(true);
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        setAlertMessage('Failed to submit request');
         setAlertModal(true);
-
-        // FIXED: Set highlighting for submitted record
-        setHighlightedRecId(itemData.RecId);
-
-        // Set a timer to remove highlighting after 3 seconds
-        setTimeout(() => {
-          setHighlightedRecId(null);
-        }, 3000);
-
-        setTimeout(() => {
-          fetchAllAdvanceData();
-        }, 1000);
-      } else {
-        const errorMessage =
-          resObj && resObj.Message
-            ? resObj.Message
-            : 'Failed to submit request';
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemData.recId, 'submit', false);
       }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setAlertMessage('Failed to submit request');
-      setAlertModal(true);
-    } finally {
-      setButtonProcessing(itemData.RecId, 'submit', false);
-    }
+    }, 100); // Same delay pattern
   };
 
   /** Enhanced render card with better data validation and comma formatting */
@@ -603,6 +620,16 @@ const GenericAdvanceListScreen = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />

@@ -479,8 +479,13 @@ const WorkflowHistoryScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const {recId} = route.params || {};
-  console.log('Here is the data', recId);
+  const {recId, tableId} = route.params ?? {};
+  console.log(
+    'WorkflowHistoryScreen received => recId:',
+    recId,
+    'tableId:',
+    tableId,
+  );
 
   // 🔹 Modals & Alerts
   const [alertModal, setAlertModal] = useState(false);
@@ -490,9 +495,6 @@ const WorkflowHistoryScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [workflowData, setWorkflowData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
-
-  // Fixed table name for Leave Encashment
-  const TABLE_NAME = 'PREmployeeLeaveEncashment';
 
   // 🔹 Fetch Workflow History from API
   const fetchWorkflowHistory = useCallback(async () => {
@@ -507,7 +509,7 @@ const WorkflowHistoryScreen = () => {
     try {
       const data = await retrieveWorkflowHistory({
         _recId: recId,
-        _tableName: TABLE_NAME,
+        _tableId: tableId,
       });
 
       // Store total count

@@ -92,7 +92,6 @@ const WorkItemsAssignedToMePage = () => {
           documentNumber: documentNumber,
           documentType: documentType,
           requester: requester,
-          ContextRecId: item.ContextRecId,
           ContextTableId: item.ContextTableId,
         };
       });
@@ -240,11 +239,12 @@ const WorkItemsAssignedToMePage = () => {
      Bulk Action
   ============================== */
 
-  const handleViewHistory = (contextRecId, contextTableId) => {
+  const handleViewHistory = (workflowWorkItemRecId, contextTableId) => {
     setMenuVisible(null);
-    // Navigate with the correct parameter names
-    navigation.getParent()?.navigate('WorkflowHistoryScreen', {
-      recId: contextRecId,
+    console.log('recId:', workflowWorkItemRecId, 'tableId:', contextTableId);
+    // Should now log: recId: 68719507682  tableId: 66621
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: workflowWorkItemRecId,
       tableId: contextTableId,
     });
   };
@@ -402,7 +402,7 @@ const WorkItemsAssignedToMePage = () => {
               <TouchableOpacity
                 style={cardStyles.menuItem}
                 onPress={() =>
-                  handleViewHistory(item.ContextRecId, item.ContextTableId)
+                  handleViewHistory(item.recId, item.ContextTableId)
                 }>
                 <Text style={cardStyles.menuItemText}>View History</Text>
               </TouchableOpacity>

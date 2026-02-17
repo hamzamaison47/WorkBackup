@@ -990,22 +990,22 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           {/* <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.LReqSR_ContentWrapper}> */}
           {isProcessing && (
-            <View style={styles.LReqSR_ProcessingOverlay}>
-              <View style={styles.LReqSR_ProcessingContainer}>
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
                 <ActivityIndicator size="large" color="#0A66C2" />
-                <Text style={styles.LReqSR_ProcessingText}>
+                <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
               </View>
             </View>
           )}
           <ScrollView
-            contentContainerStyle={styles.LReqSR_FormContainer}
+            contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
             {/* ITEM DROPDOWN - Disabled in edit mode */}

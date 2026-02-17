@@ -10,6 +10,7 @@ import {
   BackHandler,
   Animated,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {
@@ -21,7 +22,7 @@ import {
 import {GetAllExpenseReports} from '../../../API/ExpenseManagment/Headers/GetAllExpenseReports';
 import {DeleteExpenseReports} from '../../../API/ExpenseManagment/Headers/DeleteExpenseReports';
 import SubmitExpenseReportsToWorkflow from '../../../API/ExpenseManagment/Headers/SubmitExpenseReportsToWorkflow';
-import {translate as t} from '../../store/utils/translate';
+import {translate as t} from '../../../store/utils/translate';
 
 import AlertModal from '../../../components/Alert/AlertModal';
 import DynamicRequestCard from '../../../components/DynamicRequestCard';
@@ -60,6 +61,7 @@ const ExpenseManagmentListPage = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Card config
   const CARD_CONFIG = {
@@ -319,56 +321,72 @@ const ExpenseManagmentListPage = () => {
 
   const handleSubmitPress = async itemData => {
     const itemRecId = normalizeRecId(itemData);
-    setButtonProcessing(itemRecId, 'submit', true);
+    // setButtonProcessing(itemRecId, 'submit', true);
 
-    try {
-      const result = await SubmitExpenseReportsToWorkflow({
-        expenseReportNumberList: [itemData.ExpenseReportNumber],
-        legalEntity: selectedLegalEntity,
-      });
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemData.RecId, 'submit', true);
 
-      if (result.success) {
-        setAlertMessage('Request submitted successfully.');
-        setTimeout(() => fetchExpenseData(), 1000);
-      } else {
-        setAlertMessage(result.message || 'Failed to submit request');
+      try {
+        const result = await SubmitExpenseReportsToWorkflow({
+          expenseReportNumberList: [itemData.ExpenseReportNumber],
+          legalEntity: selectedLegalEntity,
+        });
+
+        if (result.success) {
+          setAlertMessage('Request submitted successfully.');
+          setTimeout(() => fetchExpenseData(), 1000);
+        } else {
+          setAlertMessage(result.message || 'Failed to submit request');
+        }
+      } catch (error) {
+        setAlertMessage(`Failed to submit request: ${error.message}`);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemData.recId, 'submit', false);
       }
-    } catch (error) {
-      setAlertMessage(`Failed to submit request: ${error.message}`);
-    } finally {
-      setButtonProcessing(itemRecId, 'submit', false);
-      setAlertModal(true);
-    }
+    }, 100); // Same delay pattern
   };
 
   const handleDeleteConfirm = async () => {
     const itemRecId = normalizeRecId(itemToDelete);
-    setButtonProcessing(itemRecId, 'delete', true);
+    // setButtonProcessing(itemRecId, 'delete', true);
 
-    try {
-      const result = await DeleteExpenseReports({
-        employeeId: effectiveEmployeeId,
-        expenseReportNumbers: [itemToDelete.ExpenseReportNumber],
-        legalEntity: selectedLegalEntity,
-      });
+    setDeleteModal(false);
 
-      if (result.success) {
-        setAlertMessage('Record deleted successfully');
-        setExpenseData(prev =>
-          prev.filter(exp => normalizeRecId(exp) !== itemRecId),
-        );
-      } else {
-        setAlertMessage('Unable to delete record. Please try again.');
+    // Small delay to ensure modal is closed before showing processing overlay
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.recId, 'delete', true);
+
+      try {
+        const result = await DeleteExpenseReports({
+          employeeId: effectiveEmployeeId,
+          expenseReportNumbers: [itemToDelete.ExpenseReportNumber],
+          legalEntity: selectedLegalEntity,
+        });
+
+        if (result.success) {
+          setAlertMessage('Record deleted successfully');
+          setExpenseData(prev =>
+            prev.filter(exp => normalizeRecId(exp) !== itemRecId),
+          );
+        } else {
+          setAlertMessage('Unable to delete record. Please try again.');
+        }
+      } catch (error) {
+        setAlertMessage('Failed to delete record. Please try again.');
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setItemToDelete(null);
+        setAlertModal(true);
+
+        setTimeout(() => {
+          fetchExpenseData();
+        }, 800);
       }
-    } catch (error) {
-      setAlertMessage('Failed to delete record. Please try again.');
-    } finally {
-      setButtonProcessing(itemRecId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => fetchExpenseData(), 1000);
-    }
+    }, 100); // Small delay to ensure modal closes first
   };
 
   const handleRefresh = () => {
@@ -435,6 +453,16 @@ const ExpenseManagmentListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateExpense}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />

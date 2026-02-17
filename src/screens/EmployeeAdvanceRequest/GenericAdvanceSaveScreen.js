@@ -832,9 +832,7 @@ const GenericAdvanceSaveScreen = () => {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
 
-        setAlertMessage(
-          `${advanceRequestData.AdvanceTypeCode} is ${actionText}${submitText} Successfully`,
-        );
+        setAlertMessage(`Record ${actionText}${submitText} successfully`);
         setAlertModal(true);
 
         return {success: true, recId: response?.RecId};
