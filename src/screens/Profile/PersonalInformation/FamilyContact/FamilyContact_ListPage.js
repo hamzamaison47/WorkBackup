@@ -1,7 +1,15 @@
+/* eslint-disable no-shadow */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
+import {
+  Text,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -14,6 +22,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import styles from '../../../../styles/styles';
+import {translate as t} from '../../../../store/utils/translate';
 
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
@@ -48,6 +57,7 @@ const FamilyContacts_ListPageScreen = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchFamilyContactsData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -234,36 +244,43 @@ const FamilyContacts_ListPageScreen = () => {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
-    try {
-      // Send the whole original record — backend usually knows what it needs
-      const response = await deleteFamilyContactRecord({
-        records: [itemToDelete], // ← this is usually enough
-      });
+    // First close the delete modal
+    setDeleteModal(false);
 
-      if (response?.[0]?.IsSuccess) {
-        setAlertMessage('Record deleted successfully');
-        setfamilycontactsdata(prev =>
-          prev.filter(c => c.RecId !== itemToDelete.RecId),
-        );
-      } else {
-        setAlertMessage('Unable to delete record. Please try again.');
+    // Small delay to ensure modal is closed before showing processing overlay
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
+
+      try {
+        const response = await deleteFamilyContactRecord({
+          records: [itemToDelete],
+        });
+
+        if (response?.[0]?.IsSuccess) {
+          setAlertMessage('Record deleted successfully');
+          setfamilycontactsdata(prev =>
+            prev.filter(c => c.RecId !== itemToDelete.RecId),
+          );
+        } else {
+          setAlertMessage('Unable to delete record. Please try again.');
+        }
+      } catch (error) {
+        console.log('Delete error:', error);
+        setAlertMessage('Failed to delete record');
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
+        setItemToDelete(null);
+        setAlertModal(true);
+
+        // Optional: refresh after short delay so user sees success message first
+        setTimeout(() => {
+          fetchFamilyContactsData();
+        }, 800);
       }
-    } catch (error) {
-      console.log('Delete error:', error);
-      setAlertMessage('Failed to delete record');
-    } finally {
-      setButtonProcessing(itemToDelete.RecId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-
-      // Optional: refresh after short delay so user sees success message first
-      setTimeout(() => {
-        fetchFamilyContactsData();
-      }, 800);
-    }
+    }, 100); // Small delay to ensure modal closes first
   };
 
   const getStatusLabel = status => {
@@ -284,12 +301,12 @@ const FamilyContacts_ListPageScreen = () => {
     return statusMap[status] || 'Draft';
   };
 
-  const setButtonProcessing = (RecId, buttonType, isProcessing) => {
+  const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
       ...prev,
-      [RecId]: isProcessing
-        ? [...(prev[RecId] || []), buttonType]
-        : (prev[RecId] || []).filter(btn => btn !== buttonType),
+      [recId]: isProcessing
+        ? [...(prev[recId] || []), buttonType]
+        : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
   };
 
@@ -363,6 +380,16 @@ const FamilyContacts_ListPageScreen = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleFamilyContactRecordCreate}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />

@@ -456,7 +456,9 @@ const GenericAdvanceSaveScreen = () => {
     try {
       setIsLoading(true);
 
-      const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest(employeeId);
+      const allAdvanceCodes = await RetrieveAllAdvanceTypeRequest({
+        employeeId: employeeId,
+      });
       const getEmployeeLookup = await GetEmployeeLookup();
 
       // console.log({allAdvanceCodes});
