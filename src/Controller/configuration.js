@@ -14,7 +14,9 @@ export const getAzureConfigurationV2 = async () => {
     const config = await getActiveConfigData();
 
     if (!config) {
-      throw new Error('No configuration found. Please scan QR code first.');
+      throw new Error(
+        'Configuration Not Found\n\nNo configuration found. Please scan a QR code first to set up your environment.',
+      );
     }
 
     const {tokenUrl, client_id, client_secret, grant_type, resource} = config;
@@ -22,14 +24,22 @@ export const getAzureConfigurationV2 = async () => {
     // Validate required configuration fields
     if (!tokenUrl || !client_id || !client_secret || !grant_type || !resource) {
       throw new Error(
-        'Invalid configuration. Missing required fields for authentication.',
+        `Invalid Configuration\n\nMissing required fields:\n${
+          !tokenUrl ? '• Token URL\n' : ''
+        }${!client_id ? '• Client ID\n' : ''}${
+          !client_secret ? '• Client Secret\n' : ''
+        }${!grant_type ? '• Grant Type\n' : ''}${
+          !resource ? '• Resource\n' : ''
+        }\nPlease scan a valid QR code with all required configuration parameters.`,
       );
     }
 
     const tenantIdMatch = tokenUrl.match(/\/([0-9a-fA-F-]{36})\//);
     const tenantId = tenantIdMatch ? tenantIdMatch[1] : null;
     if (!tenantId) {
-      throw new Error('Failed to extract tenant ID from token URL.');
+      throw new Error(
+        `Configuration Error\n\nFailed to extract tenant ID from token URL.\n\nToken URL: ${tokenUrl}\n\nPlease ensure your QR code contains a valid Microsoft tenant configuration.`,
+      );
     }
 
     const MicrosoftconfigV2 = {
@@ -48,7 +58,7 @@ export const getAzureConfigurationV2 = async () => {
 
     return MicrosoftconfigV2;
   } catch (error) {
-    console.error('Failed to fetch token:', error);
+    console.error('Failed to get Azure configuration:', error);
     throw error;
   }
 };
@@ -58,7 +68,9 @@ export const getAzureConfiguration = async () => {
     const config = await getActiveConfigData();
 
     if (!config) {
-      throw new Error('No configuration found. Please scan QR code first.');
+      throw new Error(
+        'Configuration Not Found\n\nNo configuration found. Please scan a QR code first to set up your environment.',
+      );
     }
 
     const {tokenUrl, client_id, client_secret, grant_type, resource} = config;
@@ -66,7 +78,13 @@ export const getAzureConfiguration = async () => {
     // Validate required configuration fields
     if (!tokenUrl || !client_id || !client_secret || !grant_type || !resource) {
       throw new Error(
-        'Invalid configuration. Missing required fields for authentication.',
+        `Invalid Configuration\n\nMissing required fields:\n${
+          !tokenUrl ? '• Token URL\n' : ''
+        }${!client_id ? '• Client ID\n' : ''}${
+          !client_secret ? '• Client Secret\n' : ''
+        }${!grant_type ? '• Grant Type\n' : ''}${
+          !resource ? '• Resource\n' : ''
+        }\nPlease scan a valid QR code with all required configuration parameters.`,
       );
     }
 
@@ -76,7 +94,9 @@ export const getAzureConfiguration = async () => {
     const tenantId = tenantIdMatch ? tenantIdMatch[1] : null;
 
     if (!tenantId) {
-      throw new Error('Failed to extract tenant ID from token URL.');
+      throw new Error(
+        `Configuration Error\n\nFailed to extract tenant ID from token URL.\n\nToken URL: ${tokenUrl}\n\nPlease ensure your QR code contains a valid Microsoft tenant configuration.`,
+      );
     }
 
     // Build Microsoft authentication configuration dynamically
@@ -100,7 +120,7 @@ export const getAzureConfiguration = async () => {
 
     return Microsoftconfig;
   } catch (error) {
-    console.error('Failed to fetch token:', error);
+    console.error('Failed to get Azure configuration:', error);
     throw error;
   }
 };

@@ -9,6 +9,7 @@ import {
   BackHandler,
   ScrollView,
   View,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -23,6 +24,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
+import {translate as t} from '../../../../store/utils/translate';
 
 // API
 import {EmployeePersonalEducation} from '../../../../API/PersonalInformation/Education/PersonalEducation';
@@ -54,6 +56,7 @@ const PersonalEducation = () => {
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   // const [refreshing, setRefreshing] = useState(false);
 
   /* ---------- fetch ---------- */
@@ -279,51 +282,102 @@ const PersonalEducation = () => {
   /* ---------- delete ---------- */
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    setButtonProcessing(itemToDelete.RecId, 'delete', true);
-    try {
-      const response = await DeleteEducationDetails({
-        recordsRecId: [itemToDelete.RecId],
-      });
-      if (response[0]?.IsSuccess) {
-        setAlertMessage('Record deleted successfully.');
-        setEducationData(prev =>
-          prev.filter(ed => ed.RecId !== itemToDelete.RecId),
-        );
-      } else {
-        setAlertMessage('Failed to delete record.');
+    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
+
+    setDeleteModal(false);
+
+    // Small delay to ensure modal is closed before showing processing overlay
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
+
+      try {
+        const response = await DeleteEducationDetails({
+          recordsRecId: [itemToDelete.RecId],
+        });
+        if (response[0]?.IsSuccess) {
+          setAlertMessage('Record deleted successfully.');
+          setEducationData(prev =>
+            prev.filter(ed => ed.RecId !== itemToDelete.RecId),
+          );
+        } else {
+          setAlertMessage('Failed to delete record.');
+        }
+      } catch (error) {
+        console.error('DeleteEducationDetails error:', error);
+        setAlertMessage('Failed to delete record');
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
+        setItemToDelete(null);
+        setAlertModal(true);
+
+        // Optional: refresh after short delay so user sees success message first
+        setTimeout(() => {
+          fetchEducationData();
+        }, 800);
       }
-    } catch (error) {
-      console.error('DeleteEducationDetails error:', error);
-      setAlertMessage('Failed to delete record');
-    } finally {
-      setButtonProcessing(itemToDelete.RecId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => fetchEducationData(), 1000);
-    }
+    }, 100); // Small delay to ensure modal closes first
   };
 
   /* ---------- submit ---------- */
+  // const handleSubmitPress = async itemData => {
+  //   // setButtonProcessing(itemData.RecId, 'submit', true);
+
+  //   setTimeout(async () => {
+  //     setIsProcessing(true); // Show processing overlay
+  //     setButtonProcessing(itemData.RecId, 'submit', true);
+  //     try {
+  //       const response = await SubmitEducationRequest({recId: itemData.RecId});
+  //       const res = Array.isArray(response) ? response[0] : response;
+  //       if (String(res?.IsSuccess).toLowerCase() === 'true') {
+  //         setAlertMessage('Request submitted successfully.');
+  //         setHighlightedRecId(itemData.RecId);
+  //         setTimeout(() => setHighlightedRecId(null), 3000);
+  //         setTimeout(() => fetchEducationData(), 1000);
+  //       } else {
+  //         setAlertMessage(res?.Message || 'Failed to submit request.');
+  //       }
+  //     } catch (error) {
+  //       console.error('Submit error:', error);
+  //       setAlertMessage('Failed to submit request.');
+  //     } finally {
+  //       setIsProcessing(false); // Hide processing overlay
+  //       setButtonProcessing(itemData.recId, 'submit', false);
+  //     }
+  //   }, 100); // Same delay pattern
+  // };
+
   const handleSubmitPress = async itemData => {
+    setIsProcessing(true); // Show processing overlay
     setButtonProcessing(itemData.RecId, 'submit', true);
+
     try {
-      const response = await SubmitEducationRequest({recId: itemData.RecId});
+      const response = await SubmitEducationRequest({
+        recId: itemData.RecId,
+      });
+
       const res = Array.isArray(response) ? response[0] : response;
+
       if (String(res?.IsSuccess).toLowerCase() === 'true') {
         setAlertMessage('Request submitted successfully.');
+        setAlertModal(true);
+
         setHighlightedRecId(itemData.RecId);
+
         setTimeout(() => setHighlightedRecId(null), 3000);
         setTimeout(() => fetchEducationData(), 1000);
       } else {
         setAlertMessage(res?.Message || 'Failed to submit request.');
+        setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
       setAlertMessage('Failed to submit request.');
-    } finally {
-      setButtonProcessing(itemData.RecId, 'submit', false);
       setAlertModal(true);
+    } finally {
+      setIsProcessing(false); // Hide processing overlay
+      setButtonProcessing(itemData.RecId, 'submit', false);
     }
   };
 
@@ -375,6 +429,16 @@ const PersonalEducation = () => {
       onFloatingButtonPress={handleCreateEducation}
       onBackPress={handleGoBack}
       onRefresh={fetchEducationData}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />

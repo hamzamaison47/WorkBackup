@@ -2,7 +2,14 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
+import {
+  Text,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -15,6 +22,7 @@ import {isWorkflowConfigured} from '../../../../API/PersonalInformation/Identifi
 import {IdentificationFindRequest} from '../../../../API/PersonalInformation/Identification/IdentificationFindRequest';
 import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identification/DeleteIdentityRequest';
 import {canEnableEditButton} from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
+import {translate as t} from '../../../../store/utils/translate';
 
 import IdentificationRequestCard from '../../../../components/IdentificationRequestCard';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -53,6 +61,7 @@ const IdentificationNumberListPage = () => {
   const [workflowEnabled, setWorkflowEnabled] = useState(false);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -276,80 +285,140 @@ const IdentificationNumberListPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    setButtonProcessing(itemToDelete.RecId, 'delete', true);
+    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
-    try {
-      const response = await DeleteIdentityRequest({
-        recordsRecId: [itemToDelete.RecId],
-      });
+    // First close the delete modal
+    setDeleteModal(false);
 
-      if (response[0].IsSuccess) {
-        setAlertMessage('Record deleted successfully');
-        setIdentificationsData(prev =>
-          prev.filter(
-            identification => identification.recId !== itemToDelete.recId,
-          ),
-        );
-      } else {
-        setAlertMessage('Unable to delete record. Please try again.');
-      }
-    } catch (error) {
-      setAlertMessage('Failed to delete record');
-      console.log('Delete Identification Request response', error);
-    } finally {
-      setButtonProcessing(itemToDelete.recId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => {
-        fetchIdentifications();
-      }, 1000);
-    }
-  };
+    // Small delay to ensure modal is closed before showing processing overlay
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.recId, 'delete', true);
 
-  const handleSubmitPress = async itemData => {
-    setButtonProcessing(itemData.RecId, 'submit', true);
+      try {
+        const response = await DeleteIdentityRequest({
+          recordsRecId: [itemToDelete.RecId],
+        });
 
-    try {
-      // Call the Submit API
-      const response = await SubmitIdentificationRequest({
-        recId: itemData.RecId,
-      });
-
-      if (
-        response &&
-        (Array.isArray(response) ? response[0] : response) &&
-        String(
-          (Array.isArray(response) ? response[0] : response).IsSuccess,
-        ).toLowerCase() === 'true'
-      ) {
-        setAlertMessage('Request submitted successfully');
+        if (response[0].IsSuccess) {
+          setAlertMessage('Record deleted successfully');
+          setIdentificationsData(prev =>
+            prev.filter(
+              identification => identification.recId !== itemToDelete.recId,
+            ),
+          );
+        } else {
+          setAlertMessage('Unable to delete record. Please try again.');
+        }
+      } catch (error) {
+        setAlertMessage('Failed to delete record');
+        console.log('Delete Identification Request response', error);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setItemToDelete(null);
         setAlertModal(true);
-        setHighlightedRecId(itemData.recId);
-
-        setTimeout(() => {
-          setHighlightedRecId(null);
-        }, 3000);
 
         setTimeout(() => {
           fetchIdentifications();
-        }, 1000);
-      } else {
-        const resObj = Array.isArray(response) ? response[0] : response;
-        const errorMessage =
-          resObj && resObj.Message
-            ? resObj.Message
-            : 'Failed to submit request';
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
+        }, 800);
       }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setAlertMessage('Failed to submit request');
-      setAlertModal(true);
-    } finally {
-      setButtonProcessing(itemData.recId, 'submit', false);
-    }
+    }, 100); // Small delay to ensure modal closes first
+  };
+
+  // const handleSubmitPress = async itemData => {
+  //   setButtonProcessing(itemData.RecId, 'submit', true);
+
+  //   try {
+  //     // Call the Submit API
+  //     const response = await SubmitIdentificationRequest({
+  //       recId: itemData.RecId,
+  //     });
+
+  //     if (
+  //       response &&
+  //       (Array.isArray(response) ? response[0] : response) &&
+  //       String(
+  //         (Array.isArray(response) ? response[0] : response).IsSuccess,
+  //       ).toLowerCase() === 'true'
+  //     ) {
+  //       setAlertMessage('Request submitted successfully');
+  //       setAlertModal(true);
+  //       setHighlightedRecId(itemData.recId);
+
+  //       setTimeout(() => {
+  //         setHighlightedRecId(null);
+  //       }, 3000);
+
+  //       setTimeout(() => {
+  //         fetchIdentifications();
+  //       }, 1000);
+  //     } else {
+  //       const resObj = Array.isArray(response) ? response[0] : response;
+  //       const errorMessage =
+  //         resObj && resObj.Message
+  //           ? resObj.Message
+  //           : 'Failed to submit request';
+  //       setAlertMessage(errorMessage);
+  //       setAlertModal(true);
+  //     }
+  //   } catch (error) {
+  //     console.error('Submit error:', error);
+  //     setAlertMessage('Failed to submit request');
+  //     setAlertModal(true);
+  //   } finally {
+  //     setButtonProcessing(itemData.recId, 'submit', false);
+  //   }
+  // };
+
+  const handleSubmitPress = async itemData => {
+    // Small delay pattern like delete logic
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemData.RecId, 'submit', true);
+
+      try {
+        // Call the Submit API
+        const response = await SubmitIdentificationRequest({
+          recId: itemData.RecId,
+        });
+
+        if (
+          response &&
+          (Array.isArray(response) ? response[0] : response) &&
+          String(
+            (Array.isArray(response) ? response[0] : response).IsSuccess,
+          ).toLowerCase() === 'true'
+        ) {
+          setAlertMessage('Request submitted successfully');
+          setAlertModal(true);
+          setHighlightedRecId(itemData.recId);
+
+          setTimeout(() => {
+            setHighlightedRecId(null);
+          }, 3000);
+
+          setTimeout(() => {
+            fetchIdentifications();
+          }, 1000);
+        } else {
+          const resObj = Array.isArray(response) ? response[0] : response;
+          const errorMessage =
+            resObj && resObj.Message
+              ? resObj.Message
+              : 'Failed to submit request';
+          setAlertMessage(errorMessage);
+          setAlertModal(true);
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        setAlertMessage('Failed to submit request');
+        setAlertModal(true);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemData.recId, 'submit', false);
+      }
+    }, 100); // Same delay pattern
   };
 
   // Helper function to set button processing state
@@ -482,6 +551,16 @@ const IdentificationNumberListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={fetchIdentifications}
       onFloatingButtonPress={handleCreateRequest}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
