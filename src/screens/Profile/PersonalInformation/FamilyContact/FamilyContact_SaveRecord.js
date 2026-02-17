@@ -145,7 +145,7 @@ const FamilyContact_SaveRecord = () => {
       }
 
       if (dateString.startsWith(D365_MAX_DATE)) {
-        return 'MAX_DATE';
+        return D365_MAX_DATE;
       }
 
       return dateString;
@@ -449,14 +449,23 @@ const FamilyContact_SaveRecord = () => {
         throw new Error('No response from server');
       }
 
-      const actionText = mode === 'edit' ? 'Updated' : 'Created';
-      setAlertMessage(`Record ${actionText} successfully`);
-      setAlertModal(true);
-
-      return {
-        success: true,
-        recId: response.RecId || contract.RecId,
-      };
+      if (response.IsSuccess === 'true') {
+        const actionText = mode === 'edit' ? 'Updated' : 'Created';
+        setAlertMessage(`Record ${actionText} successfully`);
+        setAlertModal(true);
+        return {
+          success: true,
+          recId: response.RecId || contract.RecId,
+        };
+      } else if (response.IsSuccess === 'false') {
+        const actionText = mode === 'edit' ? 'Updated' : 'Created';
+        setAlertMessage(response.Message);
+        setAlertModal(true);
+        return {
+          success: false,
+          recId: 0,
+        };
+      }
     } catch (error) {
       console.error('Error in handleAction:', error);
       setAlertMessage('Failed to process request.');
