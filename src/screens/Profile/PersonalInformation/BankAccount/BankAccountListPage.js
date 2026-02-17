@@ -1,7 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
-import {Text, FlatList, BackHandler, RefreshControl, View} from 'react-native';
+import {
+  Text,
+  FlatList,
+  BackHandler,
+  RefreshControl,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import {
   useNavigation,
   useRoute,
@@ -14,6 +21,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import styles from '../../../../styles/styles';
+import {translate as t} from '../../../../store/utils/translate';
 
 import {retrieveAllBankAccounts} from '../../../../API/PersonalInformation/BankAccounts/BankAccountfindbyEmployee';
 import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts/BankAccountDelete';
@@ -49,6 +57,7 @@ const BankAccountListPage = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -346,80 +355,96 @@ const BankAccountListPage = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    setButtonProcessing(itemToDelete.recId, 'delete', true);
+    // setButtonProcessing(itemToDelete.recId, 'delete', true);
 
-    try {
-      const response = await DeletBankAccount({
-        recordsRecId: [itemToDelete.recId],
-      });
+    // First close the delete modal
+    setDeleteModal(false);
 
-      if (response[0].IsSuccess) {
-        setAlertMessage('Record deleted successfully');
-        setbankaccountdata(prev =>
-          prev.filter(bank => bank.recId !== itemToDelete.recId),
-        );
-      } else {
-        setAlertMessage('Unable to delete record. Please try again.');
-      }
-    } catch (error) {
-      setAlertMessage('Failed to delete record');
-      console.log('Delete Bank Account response', error);
-    } finally {
-      setButtonProcessing(itemToDelete.recId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => {
-        fetchBankAccountData();
-      }, 1000);
-    }
-  };
+    // Small delay to ensure modal is closed before showing processing overlay
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemToDelete.recId, 'delete', true);
 
-  const handleSubmitPress = async itemData => {
-    setButtonProcessing(itemData.recId, 'submit', true);
+      try {
+        const response = await DeletBankAccount({
+          recordsRecId: [itemToDelete.recId],
+        });
 
-    try {
-      const response = await SubmitBankAccountRecord({
-        recId: itemData.recId,
-      });
-
-      // console.log('itemData-0-0-0--0-0-0-0-0-0--', itemData);
-      // console.log({response});
-
-      if (
-        response &&
-        (Array.isArray(response) ? response[0] : response) &&
-        String(
-          (Array.isArray(response) ? response[0] : response).IsSuccess,
-        ).toLowerCase() === 'true'
-      ) {
-        setAlertMessage('Request submitted successfully');
+        if (response[0].IsSuccess) {
+          setAlertMessage('Record deleted successfully');
+          setbankaccountdata(prev =>
+            prev.filter(bank => bank.recId !== itemToDelete.recId),
+          );
+        } else {
+          setAlertMessage('Unable to delete record. Please try again.');
+        }
+      } catch (error) {
+        setAlertMessage('Failed to delete record');
+        console.log('Delete Bank Account response', error);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setItemToDelete(null);
         setAlertModal(true);
-        setHighlightedRecId(itemData.recId);
-
-        setTimeout(() => {
-          setHighlightedRecId(null);
-        }, 3000);
 
         setTimeout(() => {
           fetchBankAccountData();
-        }, 1000);
-      } else {
-        const resObj = Array.isArray(response) ? response[0] : response;
-        const errorMessage =
-          resObj && resObj.Message
-            ? resObj.Message
-            : 'Failed to submit request';
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
+        }, 800);
       }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setAlertMessage('Failed to submit request');
-      setAlertModal(true);
-    } finally {
-      setButtonProcessing(itemData.recId, 'submit', false);
-    }
+    }, 100); // Small delay to ensure modal closes first
+  };
+
+  const handleSubmitPress = async itemData => {
+    // setButtonProcessing(itemData.recId, 'submit', true);
+
+    setTimeout(async () => {
+      setIsProcessing(true); // Show processing overlay
+      setButtonProcessing(itemData.RecId, 'submit', true);
+
+      try {
+        const response = await SubmitBankAccountRecord({
+          recId: itemData.recId,
+        });
+
+        // console.log('itemData-0-0-0--0-0-0-0-0-0--', itemData);
+        // console.log({response});
+
+        if (
+          response &&
+          (Array.isArray(response) ? response[0] : response) &&
+          String(
+            (Array.isArray(response) ? response[0] : response).IsSuccess,
+          ).toLowerCase() === 'true'
+        ) {
+          setAlertMessage('Request submitted successfully');
+          setAlertModal(true);
+          setHighlightedRecId(itemData.recId);
+
+          setTimeout(() => {
+            setHighlightedRecId(null);
+          }, 3000);
+
+          setTimeout(() => {
+            fetchBankAccountData();
+          }, 1000);
+        } else {
+          const resObj = Array.isArray(response) ? response[0] : response;
+          const errorMessage =
+            resObj && resObj.Message
+              ? resObj.Message
+              : 'Failed to submit request';
+          setAlertMessage(errorMessage);
+          setAlertModal(true);
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        setAlertMessage('Failed to submit request');
+        setAlertModal(true);
+      } finally {
+        setIsProcessing(false); // Hide processing overlay
+        setButtonProcessing(itemData.recId, 'submit', false);
+      }
+    }, 100); // Same delay pattern
   };
 
   const renderBankAccountCard = ({item}) => {
@@ -460,6 +485,16 @@ const BankAccountListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleBankAccountRecordCreation}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />

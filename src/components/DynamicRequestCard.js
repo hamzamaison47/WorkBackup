@@ -712,7 +712,14 @@ const DynamicRequestCard = ({
       };
     }
     if (
-      ['pending', 'waiting', 'processing', 'in progress'].includes(statusStr)
+      [
+        'pending',
+        'pending approval',
+        'in review',
+        'waiting',
+        'processing',
+        'in progress',
+      ].includes(statusStr)
     ) {
       return {
         bg: COLOR_PALETTE.warningLight,
