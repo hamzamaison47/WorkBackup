@@ -39,7 +39,7 @@ const UpdateLeaveRequest = async ({leaveData}) => {
       },
     );
 
-    console.log('soap envelope data', soapEnvelope);
+    // console.log('soap envelope data', soapEnvelope);
     // console.log('soap body data', soapBody);
 
     const parser = new XMLParser({

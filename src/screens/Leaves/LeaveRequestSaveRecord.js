@@ -134,7 +134,7 @@ const LeaveRequestSaveRecord = () => {
   const checkIsWorkflowConfigured = async () => {
     try {
       const result = await isLeaveWorkflowConfigured();
-      console.log('Here is the data', result);
+      // console.log('Here is the data', result);
       return result === true || result === 'true' || result === 1;
     } catch (error) {
       console.error('Workflow config check failed:', error);
@@ -391,12 +391,21 @@ const LeaveRequestSaveRecord = () => {
     },
   ];
 
-  const formatToISOWithTime = date => {
-    const baseDate = new Date(date);
-    const year = baseDate.getFullYear();
-    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-    const day = String(baseDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T12:00:00`;
+  const formatToISOWithTime = dateInput => {
+    // Handle both "2025-03-15" and Date objects safely
+    let year, month, day;
+    if (typeof dateInput === 'string') {
+      const datePart = dateInput.split('T')[0];
+      [year, month, day] = datePart.split('-').map(Number);
+    } else {
+      year = dateInput.getFullYear();
+      month = dateInput.getMonth() + 1;
+      day = dateInput.getDate();
+    }
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(
+      2,
+      '0',
+    )}T12:00:00`;
   };
 
   const fetchBalanceQuotaEligibility = async (leaveCode, startDate) => {
@@ -651,7 +660,7 @@ const LeaveRequestSaveRecord = () => {
         LeaveReqId: modalMode === 'create' ? '' : data.leaveRequestId || '',
       };
 
-      console.log({leaveData});
+      // console.log({leaveData});
 
       if (
         !leavesData.LeaveCode ||
@@ -976,7 +985,7 @@ const LeaveRequestSaveRecord = () => {
               style={[styles.DSR_DateSelector, isRTL && {flexDirection: 'row'}]}
               onPress={() => {
                 if (handleDatePickerOpen('start')) {
-                  setStartCalendarKey(Date.now());
+                  // setStartCalendarKey(Date.now());
                   setShowStartCalendar(true);
                 }
               }}>
@@ -1002,7 +1011,7 @@ const LeaveRequestSaveRecord = () => {
               style={[styles.DSR_DateSelector, isRTL && {flexDirection: 'row'}]}
               onPress={() => {
                 if (handleDatePickerOpen('end')) {
-                  setEndCalendarKey(Date.now());
+                  // setEndCalendarKey(Date.now());
                   setShowEndCalendar(true);
                 }
               }}>
@@ -1117,7 +1126,7 @@ const LeaveRequestSaveRecord = () => {
       )}
       {showStartCalendar && (
         <CalendarModal
-          key={`start-${startCalendarKey}`}
+          // key={`start-${startCalendarKey}`}
           visible={showStartCalendar}
           initialDate={formData.leaveStartDate}
           onDateSelected={handleStartDateChange}
@@ -1127,7 +1136,7 @@ const LeaveRequestSaveRecord = () => {
 
       {showEndCalendar && (
         <CalendarModal
-          key={`end-${endCalendarKey}`}
+          // key={`end-${endCalendarKey}`}
           visible={showEndCalendar}
           initialDate={formData.leaveEndDate}
           onDateSelected={handleEndDateChange}

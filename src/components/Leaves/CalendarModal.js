@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable curly */
 // /* eslint-disable curly */
 // /* eslint-disable react-hooks/exhaustive-deps */
 // import React, {useState, useEffect, useRef} from 'react';
@@ -159,50 +161,101 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {Modal, View, TouchableOpacity, Text, Platform} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-
 import styles from '../../styles/styles';
 
+const parseLocalDate = dateString => {
+  if (!dateString) return new Date();
+  const datePart = dateString.split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const formatLocalDate = date => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+// ✅ THE KEY: This picker NEVER re-renders after mount
+// Custom comparison always returns true = React.memo never re-renders it
+const FrozenDatePicker = React.memo(
+  ({value, onChange, display}) => {
+    return (
+      <DateTimePicker
+        value={value}
+        mode="date"
+        display={display}
+        onChange={onChange}
+        accentColor="#0A66C2"
+      />
+    );
+  },
+  () => true, // Always return true = never re-render
+);
+
+const FrozenIOSPicker = React.memo(
+  ({value, onChange, style}) => {
+    return (
+      <DateTimePicker
+        value={value}
+        mode="date"
+        display="inline"
+        onChange={onChange}
+        accentColor="#0A66C2"
+        style={style}
+      />
+    );
+  },
+  () => true, // Always return true = never re-render
+);
+
 const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
-  const [date, setDate] = useState(new Date());
+  // Use a ref for the date so updates don't trigger re-renders of FrozenDatePicker
+  const dateRef = useRef(parseLocalDate(initialDate));
   const [showPicker, setShowPicker] = useState(false);
+  // Separate state just for iOS confirm (needs current date value)
+  const [iosDate, setIosDate] = useState(parseLocalDate(initialDate));
 
-  // Only run once when component mounts
   useEffect(() => {
-    const parsedDate = initialDate
-      ? new Date(initialDate.split('T')[0])
-      : new Date();
-    setDate(parsedDate);
-
-    if (Platform.OS === 'android') {
-      setTimeout(() => setShowPicker(true), 100);
-    }
-  }, []); // Empty dependency array - only run on mount
-
-  const handleChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') {
-      if (event?.type === 'set' && selectedDate) {
-        onDateSelected(selectedDate.toISOString().split('T')[0]);
-        setShowPicker(false);
-        onClose();
-      } else if (event?.type === 'dismissed') {
-        setShowPicker(false);
-        onClose();
-      }
+    if (!visible) {
+      setShowPicker(false);
       return;
     }
 
-    // iOS: update date as user scrolls
-    if (selectedDate) {
-      setDate(selectedDate);
+    // Re-initialize date when modal opens
+    const parsed = parseLocalDate(initialDate);
+    dateRef.current = parsed;
+    setIosDate(parsed);
+
+    if (Platform.OS === 'android') {
+      const timer = setTimeout(() => setShowPicker(true), 50);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [visible]); // intentionally omit initialDate
+
+  // useCallback so the function reference never changes
+  // This prevents FrozenDatePicker from even being offered a re-render
+  const handleAndroidChange = useCallback((event, selectedDate) => {
+    setShowPicker(false);
+    if (event?.type === 'set' && selectedDate) {
+      onDateSelected(formatLocalDate(selectedDate));
+    }
+    onClose();
+  }, []); // empty deps — stable reference forever
+
+  const handleIOSChange = useCallback((event, selectedDate) => {
+    if (selectedDate) {
+      dateRef.current = selectedDate;
+      setIosDate(selectedDate); // only iOS needs this for confirm
+    }
+  }, []);
 
   const handleIOSConfirm = () => {
-    onDateSelected(date.toISOString().split('T')[0]);
+    onDateSelected(formatLocalDate(dateRef.current));
     onClose();
   };
 
@@ -212,17 +265,13 @@ const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
 
   // Android
   if (Platform.OS === 'android') {
-    if (!visible || !showPicker) {
-      return null;
-    }
+    if (!visible || !showPicker) return null;
 
     return (
-      <DateTimePicker
-        value={date}
-        mode="date"
+      <FrozenDatePicker
+        value={dateRef.current}
+        onChange={handleAndroidChange}
         display="calendar"
-        onChange={handleChange}
-        accentColor="#0A66C2"
       />
     );
   }
@@ -240,12 +289,9 @@ const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
             <Text style={styles.CalModal_headerTitle}>Select Date</Text>
           </View>
 
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="inline"
-            onChange={handleChange}
-            accentColor="#0A66C2"
+          <FrozenIOSPicker
+            value={iosDate}
+            onChange={handleIOSChange}
             style={styles.CalModal_datePicker}
           />
 
@@ -255,7 +301,6 @@ const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
               onPress={handleIOSCancel}>
               <Text style={styles.CalModal_cancelButtonText}>CANCEL</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.CalModal_okButton}
               onPress={handleIOSConfirm}>
