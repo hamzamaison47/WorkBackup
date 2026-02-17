@@ -1144,6 +1144,12 @@ const DynamicRequestCard = ({
           activeOpacity={1}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
+          onPress={() => {
+            // Close menu when pressing anywhere on the card
+            if (menuVisible) {
+              setMenuVisible(false);
+            }
+          }}
           style={styles.DRC_cardInner}>
           {renderNavigationArrow()}
 
