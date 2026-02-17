@@ -45,6 +45,7 @@ const WorkItemsAssignedToMePage = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingAction, setProcessingAction] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRecIds, setSelectedRecIds] = useState([]);
@@ -68,33 +69,53 @@ const WorkItemsAssignedToMePage = () => {
         email: effectiveUserData.email,
       });
 
+      // const formattedData = (data || []).map((item, index) => {
+      //   // Parse Document string: "Purchase requisition: 007488, NewTest"
+      //   const documentStr = item.Document || '';
+
+      //   // Extract document number (007488)
+      //   const numberMatch = documentStr.match(/:?\s*(\d+)/);
+      //   const documentNumber = numberMatch ? numberMatch[1] : '';
+
+      //   // Extract document type (Purchase requisition)
+      //   const typeMatch = documentStr.match(/^([^:]+)/);
+      //   let documentType = typeMatch ? typeMatch[1].trim() : '';
+      //   // Capitalize first letter of each word
+      //   documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+      //   // Extract requester (NewTest)
+      //   const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+      //   const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
       const formattedData = (data || []).map((item, index) => {
-        // Parse Document string: "Purchase requisition: 007488, NewTest"
         const documentStr = item.Document || '';
 
-        // Extract document number (007488)
-        const numberMatch = documentStr.match(/:?\s*(\d+)/);
-        const documentNumber = numberMatch ? numberMatch[1] : '';
+        // Extract the document ID (everything after ':' and before ',')
+        const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
+        const documentId = documentIdMatch
+          ? documentIdMatch[1].trim()
+          : documentStr;
 
-        // Extract document type (Purchase requisition)
-        const typeMatch = documentStr.match(/^([^:]+)/);
-        let documentType = typeMatch ? typeMatch[1].trim() : '';
-        // Capitalize first letter of each word
-        documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
-
-        // Extract requester (NewTest)
+        // Extract requester (after last comma)
         const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
         const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
+        // Get document type from API if exists
+        let documentType = item.DocumentType || '';
+        documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
 
         return {
           id: item.workflowWorkItemRecId ?? index,
           recId: item.workflowWorkItemRecId,
-          documentNumber: documentNumber,
-          documentType: documentType,
+          documentId: documentId, // USMF-00060
+          documentType: documentType, // Employee Leave Requests
           requester: requester,
           ContextTableId: item.ContextTableId,
+          ContextRecId: item.ContextRecId,
         };
       });
+
+      console.log('here is log', data);
 
       setTableData(formattedData);
     } catch (error) {
@@ -105,6 +126,10 @@ const WorkItemsAssignedToMePage = () => {
       setRefreshing(false);
     }
   }, [effectiveUserData?.email]);
+
+  const handleRefresh = () => {
+    fetchWorkItems();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -207,27 +232,54 @@ const WorkItemsAssignedToMePage = () => {
   //   }
   // };
 
+  // const handleSingleAction = async (recId, actionType) => {
+  //   if (isActionLoading) return;
+
+  //   try {
+  //     setIsActionLoading(true);
+  //     setProcessingAction(actionType.toLowerCase()); // 'approve' or 'reject'
+
+  //     const response = await WorkflowItemAction({
+  //       recId: [recId],
+  //       action: actionType,
+  //     });
+
+  //     if (response?.IsSuccess) {
+  //       setAlertMessage(`${actionType} successful`);
+  //       await fetchWorkItems(); // ✅ IMPORTANT
+  //     } else {
+  //       setAlertMessage(`Failed to ${actionType}`);
+  //       setAlertModal(true);
+  //     }
+  //   } catch {
+  //     setAlertMessage(`Error during ${actionType}`);
+  //     setAlertModal(true);
+  //   } finally {
+  //     setIsActionLoading(false);
+  //     setProcessingAction('');
+  //   }
+  // };
+
   const handleSingleAction = async (recId, actionType) => {
     if (isActionLoading) return;
 
     try {
       setIsActionLoading(true);
-      setProcessingAction(actionType.toLowerCase()); // 'approve' or 'reject'
+      setProcessingAction(actionType.toLowerCase());
 
       const response = await WorkflowItemAction({
         recId: [recId],
         action: actionType,
       });
 
-      if (response?.IsSuccess) {
-        setAlertMessage(`${actionType} successful`);
-        fetchWorkItems();
-      } else {
-        setAlertMessage(`Failed to ${actionType}`);
-        setAlertModal(true);
+      if (!response?.IsSuccess) {
+        throw new Error(`Failed to ${actionType}`);
       }
-    } catch {
-      setAlertMessage(`Error during ${actionType}`);
+
+      setAlertMessage(`${actionType} successful`);
+      await fetchWorkItems(); // wait for refresh
+    } catch (error) {
+      setAlertMessage(error.message || `Error during ${actionType}`);
       setAlertModal(true);
     } finally {
       setIsActionLoading(false);
@@ -239,12 +291,12 @@ const WorkItemsAssignedToMePage = () => {
      Bulk Action
   ============================== */
 
-  const handleViewHistory = (workflowWorkItemRecId, contextTableId) => {
+  const handleViewHistory = (ContextRecId, contextTableId) => {
     setMenuVisible(null);
-    console.log('recId:', workflowWorkItemRecId, 'tableId:', contextTableId);
+    console.log('recId:', ContextRecId, 'tableId:', contextTableId);
     // Should now log: recId: 68719507682  tableId: 66621
     navigation.navigate('WorkflowHistoryScreen', {
-      recId: workflowWorkItemRecId,
+      recId: ContextRecId,
       tableId: contextTableId,
     });
   };
@@ -289,18 +341,19 @@ const WorkItemsAssignedToMePage = () => {
         action: actionType,
       });
 
-      if (response?.IsSuccess) {
-        setAlertMessage(
-          `${actionType} successful for ${selectedRecIds.length} item(s)`,
-        );
-        exitSelectionMode();
-        fetchWorkItems();
-      } else {
-        setAlertMessage(`Failed to ${actionType}`);
-        setAlertModal(true);
+      if (!response?.IsSuccess) {
+        throw new Error(`Failed to ${actionType}`);
       }
-    } catch {
-      setAlertMessage(`Error during ${actionType}`);
+
+      setAlertMessage(
+        `${actionType} successful for ${selectedRecIds.length} item(s)`,
+      );
+
+      exitSelectionMode();
+
+      await fetchWorkItems(); // ✅ IMPORTANT — wait for refresh
+    } catch (error) {
+      setAlertMessage(error.message || `Error during ${actionType}`);
       setAlertModal(true);
     } finally {
       setIsActionLoading(false);
@@ -343,9 +396,7 @@ const WorkItemsAssignedToMePage = () => {
             {/* Top Row - Document Number and Action Buttons */}
             <View style={cardStyles.topRow}>
               <View style={cardStyles.documentNumberContainer}>
-                <Text style={cardStyles.documentNumber}>
-                  {item.documentNumber}
-                </Text>
+                <Text style={cardStyles.documentNumber}>{item.documentId}</Text>
               </View>
 
               {/* Action Buttons - Only show when not in selection mode */}
@@ -402,7 +453,7 @@ const WorkItemsAssignedToMePage = () => {
               <TouchableOpacity
                 style={cardStyles.menuItem}
                 onPress={() =>
-                  handleViewHistory(item.recId, item.ContextTableId)
+                  handleViewHistory(item.ContextRecId, item.ContextTableId)
                 }>
                 <Text style={cardStyles.menuItemText}>View History</Text>
               </TouchableOpacity>
@@ -486,7 +537,7 @@ const WorkItemsAssignedToMePage = () => {
       showFloatingButton={false}
       isHeaderActive={true}
       showTabNavigator={false}
-      onRefresh={fetchWorkItems}>
+      onRefresh={handleRefresh}>
       {/* Tabs */}
       {renderTabs()}
 

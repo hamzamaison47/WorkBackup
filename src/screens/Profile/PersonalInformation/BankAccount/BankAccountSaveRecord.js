@@ -352,9 +352,7 @@ const BankAccountSaveRecord = () => {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
 
-        setAlertMessage(
-          `${bankaccountsdata.AccountId} is ${actionText}${submitText} Successfully`,
-        );
+        setAlertMessage(`Record ${actionText}${submitText} successfully`);
         setAlertModal(true);
 
         return {success: true, recId: response?.RecId};
