@@ -24,7 +24,6 @@ import {
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {translate as t} from '../../../../store/utils/translate';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
@@ -116,6 +115,14 @@ const FamilyContact_SaveRecord = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showBeneficiaryFromCalendar, setShowBeneficiaryFromCalendar] =
+    useState(false);
+  const [showBeneficiaryToCalendar, setShowBeneficiaryToCalendar] =
+    useState(false);
+  const [showDependentFromCalendar, setShowDependentFromCalendar] =
+    useState(false);
+  const [showDependentToCalendar, setShowDependentToCalendar] = useState(false);
+  const [showBirthDateCalendar, setShowBirthDateCalendar] = useState(false);
   const [datePickerConfig, setDatePickerConfig] = useState({
     visible: false,
     field: '',
@@ -334,6 +341,46 @@ const FamilyContact_SaveRecord = () => {
   const handleInputChange = useCallback((field, value) => {
     setFormData(prev => ({...prev, [field]: value}));
   }, []);
+
+  const handleBeneficiaryFromChange = useCallback(
+    date => {
+      handleInputChange('beneficiaryValidFrom', date);
+      setShowBeneficiaryFromCalendar(false);
+    },
+    [handleInputChange],
+  );
+
+  const handleBeneficiaryToChange = useCallback(
+    date => {
+      handleInputChange('beneficiaryValidTo', date);
+      setShowBeneficiaryToCalendar(false);
+    },
+    [handleInputChange],
+  );
+
+  const handleDependentFromChange = useCallback(
+    date => {
+      handleInputChange('dependentValidFrom', date);
+      setShowDependentFromCalendar(false);
+    },
+    [handleInputChange],
+  );
+
+  const handleDependentToChange = useCallback(
+    date => {
+      handleInputChange('dependentValidTo', date);
+      setShowDependentToCalendar(false);
+    },
+    [handleInputChange],
+  );
+
+  const handleBirthDateChange = useCallback(
+    date => {
+      handleInputChange('BirthDate', date);
+      setShowBirthDateCalendar(false);
+    },
+    [handleInputChange],
+  );
 
   const convertDateFormat = useCallback(
     date => (date ? new Date(date).toISOString().split('T')[0] : null),
@@ -565,10 +612,6 @@ const FamilyContact_SaveRecord = () => {
 
       {!isLoading && (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          {/* <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
@@ -687,12 +730,7 @@ const FamilyContact_SaveRecord = () => {
                   </Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
-                    onPress={() =>
-                      showDatePicker(
-                        'beneficiaryValidFrom',
-                        formData.beneficiaryValidFrom,
-                      )
-                    }>
+                    onPress={() => setShowBeneficiaryFromCalendar(true)}>
                     <Text style={styles.DSR_DateText}>
                       {formData.beneficiaryValidFrom
                         ? formatDisplayDate(formData.beneficiaryValidFrom)
@@ -717,13 +755,7 @@ const FamilyContact_SaveRecord = () => {
                         paddingHorizontal: 12,
                       },
                     ]}
-                    onPress={() =>
-                      showDatePicker(
-                        'beneficiaryValidTo',
-                        formData.beneficiaryValidTo,
-                        formData.beneficiaryValidFrom,
-                      )
-                    }>
+                    onPress={() => setShowBeneficiaryToCalendar(true)}>
                     <Text
                       style={{
                         color: formData.beneficiaryValidTo ? '#000' : '#888',
@@ -797,12 +829,7 @@ const FamilyContact_SaveRecord = () => {
                               paddingHorizontal: 12,
                             },
                           ]}
-                          onPress={() =>
-                            showDatePicker(
-                              'dependentValidFrom',
-                              formData.dependentValidFrom,
-                            )
-                          }>
+                          onPress={() => setShowDependentFromCalendar(true)}>
                           <Text
                             style={{
                               color: formData.dependentValidFrom
@@ -836,13 +863,7 @@ const FamilyContact_SaveRecord = () => {
                               paddingHorizontal: 12,
                             },
                           ]}
-                          onPress={() =>
-                            showDatePicker(
-                              'dependentValidTo',
-                              formData.dependentValidTo,
-                              formData.dependentValidFrom,
-                            )
-                          }>
+                          onPress={() => setShowDependentToCalendar(true)}>
                           <Text
                             style={{
                               color: formData.dependentValidTo
@@ -915,14 +936,7 @@ const FamilyContact_SaveRecord = () => {
                               paddingHorizontal: 12,
                             },
                           ]}
-                          onPress={() =>
-                            showDatePicker(
-                              'BirthDate',
-                              formData.BirthDate,
-                              null,
-                              new Date(),
-                            )
-                          }>
+                          onPress={() => setShowBirthDateCalendar(true)}>
                           <Text
                             style={{
                               color: formData.BirthDate ? '#000' : '#888',
@@ -993,28 +1007,52 @@ const FamilyContact_SaveRecord = () => {
             }
             showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
           />
-          {/* </KeyboardAvoidingView> */}
-
-          {/* Unified Date Picker */}
-          {datePickerConfig.visible && (
-            <DateTimePicker
-              value={datePickerConfig.value}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              minimumDate={datePickerConfig.minDate}
-              maximumDate={datePickerConfig.maxDate}
-            />
-          )}
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => setAlertModal(false)}
-          />
         </SafeAreaView>
       )}
+
+      {/* ✅ One CalendarModal per date field, outside the loading block */}
+      <CalendarModal
+        visible={showBeneficiaryFromCalendar}
+        initialDate={formData.beneficiaryValidFrom}
+        onDateSelected={handleBeneficiaryFromChange}
+        onClose={() => setShowBeneficiaryFromCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showBeneficiaryToCalendar}
+        initialDate={formData.beneficiaryValidTo}
+        onDateSelected={handleBeneficiaryToChange}
+        onClose={() => setShowBeneficiaryToCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showDependentFromCalendar}
+        initialDate={formData.dependentValidFrom}
+        onDateSelected={handleDependentFromChange}
+        onClose={() => setShowDependentFromCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showDependentToCalendar}
+        initialDate={formData.dependentValidTo}
+        onDateSelected={handleDependentToChange}
+        onClose={() => setShowDependentToCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showBirthDateCalendar}
+        initialDate={formData.BirthDate}
+        onDateSelected={handleBirthDateChange}
+        onClose={() => setShowBirthDateCalendar(false)}
+      />
+
+      {/* ✅ AlertModal outside the loading block */}
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };

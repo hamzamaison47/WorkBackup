@@ -93,7 +93,7 @@ const ActionPaneContainer = ({
     }, [navigation]),
   );
 
-  // ✅ Fetch notifications using RetriveEmployeeNotification
+  // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     try {
       if (!userData?.employeeId) return;
@@ -101,8 +101,6 @@ const ActionPaneContainer = ({
       const data = await RetrieveEmployeeNotification({
         employeeId: userData.employeeId,
       });
-
-      // console.log({data});
 
       if (Array.isArray(data)) {
         setNotifications(data);
@@ -154,8 +152,9 @@ const ActionPaneContainer = ({
     try {
       dispatch(setSelectedLegalEntity(newLegalEntity));
 
+      // ✅ Use userData.Person instead of userData.employeeId
       const newMenuItems = await fetchEmployeeMenuItemsByCompany(
-        userData?.employeeId,
+        userData?.Person,
         newLegalEntity,
       );
 
@@ -243,7 +242,7 @@ const ActionPaneContainer = ({
         onCancel={() => setModalVisible(false)}
       />
 
-      {/* ✅ Updated Notification Panel */}
+      {/* Notification Panel */}
       <NotificationPanel
         visible={notificationVisible}
         notifications={notifications}

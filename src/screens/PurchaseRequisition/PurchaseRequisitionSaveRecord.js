@@ -57,9 +57,10 @@ const PurchaseRequisitionSaveRecord = () => {
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarField, setCalendarField] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [showRequiredDateCalendar, setShowRequiredDateCalendar] =
+    useState(false);
+  const [showTransDateCalendar, setShowTransDateCalendar] = useState(false);
 
   const formatDate = date => {
     if (!date) return '';
@@ -183,11 +184,15 @@ const PurchaseRequisitionSaveRecord = () => {
   const handleInputChange = (field, value) =>
     setFormData(prev => ({...prev, [field]: value}));
 
-  const handleDateChange = date => {
-    setFormData(prev => ({...prev, [calendarField]: convertDateFormat(date)}));
-    setShowCalendar(false);
+  const handleRequiredDateChange = date => {
+    setFormData(prev => ({...prev, RequiredDate: convertDateFormat(date)}));
+    setShowRequiredDateCalendar(false);
   };
 
+  const handleTransDateChange = date => {
+    setFormData(prev => ({...prev, TransDate: convertDateFormat(date)}));
+    setShowTransDateCalendar(false);
+  };
   const validate = () => {
     const missing = [];
     if (!formData.PurchReqId) missing.push('Purchase Requisition');
@@ -276,9 +281,6 @@ const PurchaseRequisitionSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.LReqSR_SafeArea}>
-          {/* <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.LReqSR_ContentWrapper}> */}
           {isProcessing && (
             <View style={styles.LReqSR_ProcessingOverlay}>
               <View style={styles.LReqSR_ProcessingContainer}>
@@ -323,10 +325,7 @@ const PurchaseRequisitionSaveRecord = () => {
             <Text style={styles.LReqSR_Label}>Requested Date</Text>
             <TouchableOpacity
               style={styles.LReqSR_DateSelector}
-              onPress={() => {
-                setCalendarField('RequiredDate');
-                setShowCalendar(true);
-              }}>
+              onPress={() => setShowRequiredDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.LReqSR_DateText}>
                   {formData.RequiredDate
@@ -341,10 +340,7 @@ const PurchaseRequisitionSaveRecord = () => {
             <Text style={styles.LReqSR_Label}>Accounting Date</Text>
             <TouchableOpacity
               style={styles.LReqSR_DateSelector}
-              onPress={() => {
-                setCalendarField('TransDate');
-                setShowCalendar(true);
-              }}>
+              onPress={() => setShowTransDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.LReqSR_DateText}>
                   {formData.TransDate
@@ -366,23 +362,30 @@ const PurchaseRequisitionSaveRecord = () => {
             }
             showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
           />
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => setAlertModal(false)}
-          />
-          {/* </KeyboardAvoidingView> */}
-
-          <CalendarModal
-            visible={showCalendar}
-            current={formData[calendarField]}
-            onDateSelected={handleDateChange}
-            onClose={() => setShowCalendar(false)}
-          />
         </SafeAreaView>
       )}
+
+      {/* ✅ One CalendarModal per date field, outside the loading block */}
+      <CalendarModal
+        visible={showRequiredDateCalendar}
+        initialDate={formData.RequiredDate}
+        onDateSelected={handleRequiredDateChange}
+        onClose={() => setShowRequiredDateCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showTransDateCalendar}
+        initialDate={formData.TransDate}
+        onDateSelected={handleTransDateChange}
+        onClose={() => setShowTransDateCalendar(false)}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };

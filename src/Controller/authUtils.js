@@ -25,7 +25,6 @@ import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
-// import {chatbotClearChat} from '../store/slices/chatbotSlice'; // Adjust the path if your slice is in a different location
 import {chatbotClearMessages} from '../store/slices/chatbotSlice';
 
 // Polyfill at the top of your authUtils file
@@ -205,7 +204,7 @@ export const handleSuccessfulLogin = async (
   setLegalEntities,
   setMenuItems,
   provider,
-  setOnDialogConfirm, // NEW — replaces global.onDialogOk for the registration dialog
+  setOnDialogConfirm,
 ) => {
   try {
     const decodedAccessToken = jwtDecode(accessToken);
@@ -241,8 +240,7 @@ export const handleSuccessfulLogin = async (
     await initializeLegalEntity(user.DefaultLegalEntity);
 
     const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
-    const menus = await fetchEmployeeMenuItems(user.EmployeeId);
-
+    const menus = await fetchEmployeeMenuItems(user.Person);
     setLegalEntities(legalEntities);
     setMenuItems(menus);
 
@@ -394,14 +392,14 @@ export const fetchEmployeeLegalEntities = async employeeId => {
   }
 };
 
-export const fetchEmployeeMenuItems = async employeeId => {
+export const fetchEmployeeMenuItems = async person => {
   try {
-    if (!employeeId) {
-      console.error('Invalid employeeId input:', employeeId);
+    if (!person) {
+      console.error('Invalid person input:', person);
       return [];
     }
 
-    const data = await RetrieveEmployeeMenuItems({employeeId});
+    const data = await RetrieveEmployeeMenuItems({person});
     if (!data || !Array.isArray(data)) {
       console.error('Unexpected menu Item data format:', data);
       return [];
@@ -428,26 +426,18 @@ export const fetchEmployeeMenuItems = async employeeId => {
   }
 };
 
-export const fetchEmployeeMenuItemsByCompany = async (
-  employeeId,
-  legalEntity,
-) => {
+export const fetchEmployeeMenuItemsByCompany = async (person, legalEntity) => {
   try {
-    if (!employeeId || !legalEntity) {
+    if (!person || !legalEntity) {
       console.error(
-        'Invalid employeeId or legalEntity input:',
-        employeeId,
+        'Invalid person or legalEntity input:',
+        person,
         legalEntity,
       );
       return [];
     }
 
-    // You'll need to modify your API call to accept legalEntity parameter
-    const data = await RetrieveEmployeeMenuItems({
-      employeeId,
-      legalEntity, // Pass the selected legal entity
-    });
-
+    const data = await RetrieveEmployeeMenuItems({person});
     if (!data || !Array.isArray(data)) {
       console.error('Unexpected menu Item data format:', data);
       return [];

@@ -359,10 +359,6 @@ const ContactDetailsSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          {/* <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
@@ -474,16 +470,16 @@ const ContactDetailsSaveRecord = () => {
               processingButton === 'create' || processingButton === 'submit'
             }
           />
-          {/* </KeyboardAvoidingView> */}
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => setAlertModal(false)}
-          />
         </SafeAreaView>
       )}
+
+      {/* ✅ Moved OUTSIDE the loading block */}
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };

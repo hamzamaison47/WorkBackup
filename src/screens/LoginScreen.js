@@ -60,15 +60,9 @@ const LoginScreen = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [backPressedOnce, setBackPressedOnce] = useState(false);
 
-  // FIX #1: Replace global.onDialogOk with a proper React state callback.
-  // The global was a shared mutable variable — concurrent flows (auto-biometric
-  // + manual login) could overwrite each other's callback.
   const [onAlertConfirm, setOnAlertConfirm] = useState(null);
   const [onDialogConfirm, setOnDialogConfirm] = useState(null);
 
-  // FIX #2: Cancelled flag prevents state updates and navigation on an
-  // unmounted component, and stops the auto-biometric flow from racing
-  // with a manual login the user initiated while biometrics were in progress.
   useEffect(() => {
     let cancelled = false;
 
@@ -120,8 +114,6 @@ const LoginScreen = () => {
           credentials.provider,
         );
 
-        // FIX #2 cont: Re-check cancelled after every async call before
-        // touching state or navigation
         if (cancelled) return;
 
         navigation.navigate('DrawerNavigator');
@@ -136,16 +128,12 @@ const LoginScreen = () => {
         );
         setAlertModal(true);
       } finally {
-        // FIX #3: Only call setLoading if still mounted/not cancelled to
-        // avoid "state update on unmounted component" warning
         if (!cancelled) setLoading(false);
       }
     };
 
     tryAutoBiometricLogin();
 
-    // Cleanup: mark as cancelled when the component unmounts or the effect
-    // re-runs, so no in-flight async work can affect state afterwards
     return () => {
       cancelled = true;
     };
@@ -192,7 +180,6 @@ const LoginScreen = () => {
         setAlertMessage(
           'Configuration Required\nNo configuration found. Please scan a QR code first to set up your environment.',
         );
-        // FIX #1: Store the confirm action in state instead of global
         setOnAlertConfirm(
           () => () => navigation.navigate('ConfigSelectionScreen'),
         );
@@ -242,8 +229,6 @@ const LoginScreen = () => {
         list => dispatch(setLegalEntities(list)),
         menus => dispatch(setMenuItems(menus)),
         provider,
-        // FIX #1: Pass a callback setter so authUtils can set a confirm action
-        // without touching a global variable
         setOnAlertConfirm,
         setOnDialogConfirm,
       );
@@ -282,7 +267,6 @@ const LoginScreen = () => {
         setAlertMessage(
           'Configuration Required\nNo active configuration found.\nPlease select a configuration from the QR code screen before using biometric login.',
         );
-        // FIX #1: Use state callback instead of global
         setOnAlertConfirm(
           () => () => navigation.navigate('ConfigSelectionScreen'),
         );
@@ -405,8 +389,8 @@ const LoginScreen = () => {
         console.log(`Fetching legal entities for employee: ${user.EmployeeId}`);
         const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
 
-        console.log(`Fetching menu items for employee: ${user.EmployeeId}`);
-        const menus = await fetchEmployeeMenuItems(user.EmployeeId);
+        console.log(`Fetching menu items for person: ${user.Person}`);
+        const menus = await fetchEmployeeMenuItems(user.Person);
 
         dispatch(setLegalEntities(legalEntities));
         dispatch(setMenuItems(menus));
@@ -439,8 +423,6 @@ const LoginScreen = () => {
     [dispatch],
   );
 
-  // FIX #1: Unified alert dismiss handler — runs the stored confirm callback
-  // (if any) then clears it, so it can never fire twice or be overwritten mid-flow
   const handleAlertConfirm = useCallback(() => {
     setAlertModal(false);
     if (onAlertConfirm) {
@@ -565,7 +547,6 @@ const LoginScreen = () => {
             </Text>
           </TouchableOpacity>
 
-          {/* FIX #1: Use handleDialogConfirm instead of global.onDialogOk */}
           <TouchableOpacity
             style={[styles.Login_DialogButton, {backgroundColor: '#0A66C2'}]}
             onPress={handleDialogConfirm}>
@@ -574,7 +555,6 @@ const LoginScreen = () => {
         </View>
       </PopupDialog>
 
-      {/* FIX #1: Use handleAlertConfirm instead of global.onDialogOk */}
       <AlertModal
         visible={alertModal}
         heading={t('common.dynaface')}

@@ -430,6 +430,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
       ...prev,
       transactionDate: formatted,
     }));
+    setShowCalendar(false);
   };
 
   const formatDate = date => {
@@ -684,10 +685,6 @@ const ExpenseManagmentLinesSaveRecord = () => {
       ) : (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
           <SafeAreaView style={styles.DSR_SafeArea}>
-            {/* <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.DSR_ContentWrapper}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
@@ -805,35 +802,36 @@ const ExpenseManagmentLinesSaveRecord = () => {
               }
               showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
             />
-            {/* </KeyboardAvoidingView> */}
-
-            <CalendarModal
-              visible={showCalendar}
-              current={formData.transactionDate}
-              onDateSelected={handleDateChange}
-              onClose={() => setShowCalendar(false)}
-            />
-
-            <AlertModal
-              visible={alertModal}
-              heading="Alert"
-              text={alertMessage}
-              onPress={() => setAlertModal(false)}
-            />
-
-            <ConfirmationAlert
-              visible={showCreateNewConfirm}
-              heading="Create Another Expense Line?"
-              text="Do you want to create another expense line for this report?"
-              primaryButtonText="Create New"
-              secondaryButtonText="Cancel"
-              onPrimaryPress={handleCreateNewLine}
-              onSecondaryPress={handleNavigateBack}
-              type="info"
-            />
           </SafeAreaView>
         </Animated.View>
       )}
+
+      {/* ✅ All modals moved OUTSIDE the loading block */}
+      {/* ✅ current prop renamed to initialDate */}
+      <CalendarModal
+        visible={showCalendar}
+        initialDate={formData.transactionDate}
+        onDateSelected={handleDateChange}
+        onClose={() => setShowCalendar(false)}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
+
+      <ConfirmationAlert
+        visible={showCreateNewConfirm}
+        heading="Create Another Expense Line?"
+        text="Do you want to create another expense line for this report?"
+        primaryButtonText="Create New"
+        secondaryButtonText="Cancel"
+        onPrimaryPress={handleCreateNewLine}
+        onSecondaryPress={handleNavigateBack}
+        type="info"
+      />
     </ActionPaneContainer>
   );
 };

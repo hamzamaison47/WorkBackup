@@ -107,12 +107,10 @@ const PersonalEducationSaveRecord = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [educationDisciplines, setEducationDisciplines] = useState([]);
-  const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
-  const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
-  const [startDateCalendarField, setstartDateCalendarField] = useState('');
-  const [endDateCalendarField, setendDateCalendarField] = useState('');
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
+  const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
 
   /* ---------- helpers ---------- */
   const formatDate = date => {
@@ -280,18 +278,12 @@ const PersonalEducationSaveRecord = () => {
     setFormData(prev => ({...prev, [field]: value}));
 
   const handleStartDateChange = date => {
-    setFormData(prev => ({
-      ...prev,
-      [startDateCalendarField]: convertDateFormat(date),
-    }));
+    setFormData(prev => ({...prev, StartDate: convertDateFormat(date)}));
     setShowStartDateCalendar(false);
   };
 
   const handleEndDateChange = date => {
-    setFormData(prev => ({
-      ...prev,
-      [endDateCalendarField]: convertDateFormat(date),
-    }));
+    setFormData(prev => ({...prev, EndDate: convertDateFormat(date)}));
     setShowEndDateCalendar(false);
   };
   /* ---------- validation ---------- */
@@ -421,10 +413,6 @@ const PersonalEducationSaveRecord = () => {
       {isLoading && <CustomIndicator />}
       {!isLoading && (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          {/* <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
@@ -523,10 +511,7 @@ const PersonalEducationSaveRecord = () => {
             <Text style={styles.DSR_Label}>Start Date *</Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
-              onPress={() => {
-                setstartDateCalendarField('StartDate');
-                setShowStartDateCalendar(true);
-              }}>
+              onPress={() => setShowStartDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
                   {formData.StartDate
@@ -540,10 +525,7 @@ const PersonalEducationSaveRecord = () => {
             <Text style={styles.DSR_Label}>End Date *</Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
-              onPress={() => {
-                setendDateCalendarField('EndDate');
-                setShowEndDateCalendar(true);
-              }}>
+              onPress={() => setShowEndDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
                   {formData.EndDate
@@ -588,36 +570,30 @@ const PersonalEducationSaveRecord = () => {
               showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
             />
           )}
-          {/* </KeyboardAvoidingView> */}
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => setAlertModal(false)}
-          />
-
-          <CalendarModal
-            visible={showStartDateCalendar}
-            initialDate={formData[endDateCalendarField]}
-            current={
-              formData[startDateCalendarField]
-                ? new Date(formData[startDateCalendarField])
-                : null
-            }
-            onDateSelected={handleStartDateChange}
-            onClose={() => setShowStartDateCalendar(false)}
-          />
-
-          <CalendarModal
-            visible={showEndDateCalendar}
-            initialDate={formData[endDateCalendarField]}
-            current={formData[endDateCalendarField]}
-            onDateSelected={handleEndDateChange}
-            onClose={() => setShowEndDateCalendar(false)}
-          />
         </SafeAreaView>
       )}
+
+      {/* ✅ One CalendarModal per date field, outside the loading block */}
+      <CalendarModal
+        visible={showStartDateCalendar}
+        initialDate={formData.StartDate}
+        onDateSelected={handleStartDateChange}
+        onClose={() => setShowStartDateCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showEndDateCalendar}
+        initialDate={formData.EndDate}
+        onDateSelected={handleEndDateChange}
+        onClose={() => setShowEndDateCalendar(false)}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };

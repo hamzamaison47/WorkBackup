@@ -22,30 +22,9 @@ import {setMenuItems} from '../../store/slices/menuItemSlice';
 
 import styles from '../../styles/styles';
 
-// // Helper function to calculate grid dimensions - FIXED 3 COLUMNS
-// const getGridLayout = screenWidth => {
-//   const numColumns = 3; // Fixed 3 columns always
-
-//   const cardMargin = screenWidth < 360 ? 6 : screenWidth > 414 ? 10 : 8;
-//   const horizontalPadding = screenWidth < 360 ? 8 : screenWidth > 414 ? 16 : 12;
-
-//   const totalMargins = horizontalPadding * 2 + cardMargin * (numColumns * 2);
-//   const cardWidth = (screenWidth - totalMargins) / numColumns;
-//   const cardHeight = screenWidth < 360 ? 130 : screenWidth > 414 ? 160 : 145;
-
-//   return {
-//     cardWidth: Math.max(cardWidth, 90),
-//     cardHeight: Math.max(cardHeight, 120),
-//     cardMargin,
-//     numColumns,
-//   };
-// };
-
-// Helper function to calculate grid dimensions - FIXED 3 COLUMNS
 const getGridLayout = screenWidth => {
   const numColumns = 3;
 
-  // ↓ REDUCED margins
   const cardMargin = screenWidth < 360 ? 4 : screenWidth > 414 ? 4 : 3;
   const horizontalPadding = screenWidth < 360 ? 6 : screenWidth > 414 ? 10 : 8;
 
@@ -53,7 +32,6 @@ const getGridLayout = screenWidth => {
 
   const cardWidth = (screenWidth - totalMargins) / numColumns;
 
-  // ✅ REDUCED HEIGHT (KEY FIX)
   const cardHeight = screenWidth < 360 ? 110 : screenWidth > 414 ? 130 : 135;
 
   return {
@@ -93,7 +71,7 @@ const DisplayListPage = () => {
     setRefreshing(true);
     try {
       const newMenuItems = await fetchEmployeeMenuItemsByCompany(
-        userData?.employeeId,
+        userData?.Person,
         selectedLegalEntity,
       );
       dispatch(setMenuItems(newMenuItems));

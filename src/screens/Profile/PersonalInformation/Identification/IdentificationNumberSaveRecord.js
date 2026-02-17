@@ -67,11 +67,12 @@ const IdentificationNumberSaveRecord = () => {
   const [showExpirationPicker, setShowExpirationPicker] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarField, setCalendarField] = useState('');
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showIssueDateCalendar, setShowIssueDateCalendar] = useState(false);
+  const [showExpirationDateCalendar, setShowExpirationDateCalendar] =
+    useState(false);
   const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
     {},
   );
@@ -291,9 +292,14 @@ const IdentificationNumberSaveRecord = () => {
     )}-${String(d.getDate()).padStart(2, '0')}T12:00:00`;
   };
 
-  const handleDateChange = date => {
-    setFormData(prev => ({...prev, [calendarField]: convertDateFormat(date)}));
-    setShowCalendar(false);
+  const handleIssueDateChange = date => {
+    setFormData(prev => ({...prev, IssueDate: convertDateFormat(date)}));
+    setShowIssueDateCalendar(false);
+  };
+
+  const handleExpirationDateChange = date => {
+    setFormData(prev => ({...prev, ExpirationDate: convertDateFormat(date)}));
+    setShowExpirationDateCalendar(false);
   };
 
   const handleInputChange = (field, value) =>
@@ -457,6 +463,7 @@ const IdentificationNumberSaveRecord = () => {
   const today = new Date().toISOString().split('T')[0];
   const isEditRecordESS =
     formData.WorkflowOperation === '' && mode === 'edit' ? true : false;
+
   return (
     <ActionPaneContainer
       pageTitle={
@@ -472,10 +479,6 @@ const IdentificationNumberSaveRecord = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          {/* <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.DSR_ContentWrapper}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}> */}
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
@@ -594,10 +597,7 @@ const IdentificationNumberSaveRecord = () => {
             </Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
-              onPress={() => {
-                setCalendarField('IssueDate');
-                setShowCalendar(true);
-              }}>
+              onPress={() => setShowIssueDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
                   {formData.IssueDate
@@ -641,10 +641,7 @@ const IdentificationNumberSaveRecord = () => {
             </Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
-              onPress={() => {
-                setCalendarField('ExpirationDate');
-                setShowCalendar(true);
-              }}>
+              onPress={() => setShowExpirationDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
                   {formData.ExpirationDate
@@ -665,23 +662,30 @@ const IdentificationNumberSaveRecord = () => {
               processingButton === 'create' || processingButton === 'submit'
             }
           />
-          {/* </KeyboardAvoidingView> */}
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => setAlertModal(false)}
-          />
-
-          <CalendarModal
-            visible={showCalendar}
-            current={formData[calendarField]}
-            onDateSelected={handleDateChange}
-            onClose={() => setShowCalendar(false)}
-          />
         </SafeAreaView>
       )}
+
+      {/* ✅ One CalendarModal per date field, outside the loading block */}
+      <CalendarModal
+        visible={showIssueDateCalendar}
+        initialDate={formData.IssueDate}
+        onDateSelected={handleIssueDateChange}
+        onClose={() => setShowIssueDateCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showExpirationDateCalendar}
+        initialDate={formData.ExpirationDate}
+        onDateSelected={handleExpirationDateChange}
+        onClose={() => setShowExpirationDateCalendar(false)}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };

@@ -197,7 +197,7 @@ const SplashScreens = ({navigation}) => {
 
             const [legalEntities, menus] = await Promise.all([
               fetchEmployeeLegalEntities(user.EmployeeId),
-              fetchEmployeeMenuItems(user.EmployeeId),
+              fetchEmployeeMenuItems(user.Person),
             ]);
 
             if (Array.isArray(legalEntities)) {

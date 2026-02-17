@@ -77,8 +77,6 @@ const GenericAdvanceSaveScreen = () => {
   const [filteredGuarantors2, setFilteredGuarantors2] = useState([]);
   const [guarantor1SearchQuery, setGuarantor1SearchQuery] = useState('');
   const [guarantor2SearchQuery, setGuarantor2SearchQuery] = useState('');
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [currentDateField, setCurrentDateField] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
@@ -90,6 +88,9 @@ const GenericAdvanceSaveScreen = () => {
   );
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  const [showPaymentDateCalendar, setShowPaymentDateCalendar] = useState(false);
+  const [showRecoveryDateCalendar, setShowRecoveryDateCalendar] =
+    useState(false);
 
   const fetchEmployeeAdvanceLabels = async () => {
     setIsLoading(true);
@@ -652,21 +653,18 @@ const GenericAdvanceSaveScreen = () => {
     }
   };
 
-  // Enhanced date change handler with validation
-  const handleDateChange = async (date, fieldName) => {
+  const handlePaymentDateChange = async date => {
     const formatted = formatToISOWithTime(date);
+    setFormData(prev => ({...prev, RequestedPaymentDate: formatted}));
+    setTimeout(() => validateField('RequestedPaymentDate', formatted), 100);
+    setShowPaymentDateCalendar(false);
+  };
 
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: formatted,
-    }));
-
-    // Validate the date field with delay to ensure state is updated
-    setTimeout(() => {
-      validateField(fieldName, formatted);
-    }, 100);
-
-    setShowCalendar(false);
+  const handleRecoveryDateChange = async date => {
+    const formatted = formatToISOWithTime(date);
+    setFormData(prev => ({...prev, RecoveryStartDate: formatted}));
+    setTimeout(() => validateField('RecoveryStartDate', formatted), 100);
+    setShowRecoveryDateCalendar(false);
   };
 
   const handleAdvanceAmountChange = value => {
@@ -1020,9 +1018,6 @@ const GenericAdvanceSaveScreen = () => {
         <CustomIndicator />
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
-          {/* <KeyboardAvoidingView
-            behavior="padding"
-            style={styles.DSR_ContentWrapper}> */}
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
@@ -1115,12 +1110,25 @@ const GenericAdvanceSaveScreen = () => {
               {EmployeeAdvanceLabelsData?.RequestedPaymentDatelbl ||
                 'Payment Date *'}
             </Text>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => {
                 setCurrentDateField('RequestedPaymentDate');
                 setShowCalendar(true);
               }}>
+              <View style={{flex: 1}}>
+                <Text style={styles.DSR_DateText}>
+                  {formData.RequestedPaymentDate
+                    ? formatDate(formData.RequestedPaymentDate)
+                    : 'Select Payment Date'}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
+            </TouchableOpacity> */}
+            {/* Payment Date */}
+            <TouchableOpacity
+              style={styles.DSR_DateSelector}
+              onPress={() => setShowPaymentDateCalendar(true)}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
                   {formData.RequestedPaymentDate
@@ -1138,12 +1146,10 @@ const GenericAdvanceSaveScreen = () => {
                   {EmployeeAdvanceLabelsData?.RecoveryStartDatelbl ||
                     'Recovery Start Date'}
                 </Text>
+                {/* Recovery Start Date */}
                 <TouchableOpacity
                   style={styles.DSR_DateSelector}
-                  onPress={() => {
-                    setCurrentDateField('RecoveryStartDate');
-                    setShowCalendar(true);
-                  }}>
+                  onPress={() => setShowRecoveryDateCalendar(true)}>
                   <View style={{flex: 1}}>
                     <Text style={styles.DSR_DateText}>
                       {formData.RecoveryStartDate
@@ -1288,29 +1294,30 @@ const GenericAdvanceSaveScreen = () => {
               processingButton === 'create' || processingButton === 'submit'
             }
           />
-          {/* </KeyboardAvoidingView> */}
-
-          <CalendarModal
-            visible={showCalendar}
-            current={
-              currentDateField === 'RequestedPaymentDate'
-                ? formData.RequestedPaymentDate
-                : formData.RecoveryStartDate
-            }
-            onDateSelected={date => handleDateChange(date, currentDateField)}
-            onClose={() => setShowCalendar(false)}
-          />
-
-          <AlertModal
-            visible={alertModal}
-            heading="Alert"
-            text={alertMessage}
-            onPress={() => {
-              setAlertModal(false);
-            }}
-          />
         </SafeAreaView>
       )}
+
+      {/* ✅ One CalendarModal per date field, outside the loading block */}
+      <CalendarModal
+        visible={showPaymentDateCalendar}
+        initialDate={formData.RequestedPaymentDate}
+        onDateSelected={handlePaymentDateChange}
+        onClose={() => setShowPaymentDateCalendar(false)}
+      />
+
+      <CalendarModal
+        visible={showRecoveryDateCalendar}
+        initialDate={formData.RecoveryStartDate}
+        onDateSelected={handleRecoveryDateChange}
+        onClose={() => setShowRecoveryDateCalendar(false)}
+      />
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
     </ActionPaneContainer>
   );
 };
