@@ -78,7 +78,19 @@ const AppNavigator = () => {
         )}
       </Stack.Screen>
 
-      <Stack.Screen name="ConfigSelectionScreen" options={{headerShown: false}}>
+      <Stack.Screen
+        name="ConfigSelectionScreen"
+        component={ConfigSelectionScreen}
+        options={{headerShown: false}}
+      />
+
+      <Stack.Screen
+        name="QRSetupScreen"
+        component={QRSetupScreen}
+        options={{headerShown: false}}
+      />
+
+      {/* <Stack.Screen name="ConfigSelectionScreen" options={{headerShown: false}}>
         {() => (
           <ScreenWithSessionTimeout>
             <ConfigSelectionScreen />
@@ -92,7 +104,7 @@ const AppNavigator = () => {
             <QRSetupScreen />
           </ScreenWithSessionTimeout>
         )}
-      </Stack.Screen>
+      </Stack.Screen> */}
     </Stack.Navigator>
   );
 };

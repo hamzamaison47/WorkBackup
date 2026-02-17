@@ -127,22 +127,26 @@ export const handleLogin = async (
   setLegalEntities,
   setMenuItems,
   provider,
+  setOnAlertConfirm,
+  setOnDialogConfirm,
 ) => {
   setLoading(true);
 
   try {
-    // Use the new active config system
     const scan = await getActiveConfigData();
     if (!scan || Object.keys(scan).length === 0) {
       setAlertMessage(
         'Login failed\nPlease setup your environment configuration first',
       );
+
+      if (setOnAlertConfirm) {
+        setOnAlertConfirm(
+          () => () => navigation.navigate('ConfigSelectionScreen'),
+        );
+      }
+
       setAlertModal(true);
       setLoading(false);
-      global.onDialogOk = () => {
-        setAlertModal(false); // close the alert
-        navigation.navigate('ConfigSelectionScreen'); // navigate to config screen
-      };
       return;
     }
 
@@ -157,7 +161,6 @@ export const handleLogin = async (
       const tokenToUse =
         provider === 'Azure' ? result.accessToken : result.idToken;
 
-      // Store tokens in Redux
       if (provider === 'Azure') {
         store.dispatch(setAccessToken(tokenToUse));
       } else {
@@ -165,7 +168,6 @@ export const handleLogin = async (
       }
       store.dispatch(setRefreshToken(result.refreshToken));
 
-      // Pass the complete result object to handleSuccessfulLogin
       await handleSuccessfulLogin(
         tokenToUse,
         result,
@@ -177,6 +179,7 @@ export const handleLogin = async (
         setLegalEntities,
         setMenuItems,
         provider,
+        setOnDialogConfirm,
       );
     }
   } catch (error) {
@@ -202,16 +205,15 @@ export const handleSuccessfulLogin = async (
   setLegalEntities,
   setMenuItems,
   provider,
+  setOnDialogConfirm, // NEW — replaces global.onDialogOk for the registration dialog
 ) => {
   try {
     const decodedAccessToken = jwtDecode(accessToken);
-    // Store access token in Redux
     store.dispatch(setAccessToken(accessToken));
 
     const userEmailOrUPN =
       provider === 'Azure' ? decodedAccessToken.upn : decodedAccessToken.email;
 
-    // Step 1: Get user info first
     const userInfo = await fetchUserInfo(userEmailOrUPN);
 
     if (
@@ -224,30 +226,26 @@ export const handleSuccessfulLogin = async (
         "Incorrect Login Details.\nYour email isn't registered in our system. Would you like to create an account?",
       );
 
+      if (setOnDialogConfirm) {
+        setOnDialogConfirm(
+          () => () => navigation.navigate('RequestForRegistration'),
+        );
+      }
+
       setDialogVisible(true);
-
-      global.onDialogOk = () => {
-        setDialogVisible(false);
-        navigation.navigate('RequestForRegistration');
-      };
-
       return;
     }
 
     const user = userInfo[0];
 
-    // Step 2: Initialize default legal entity in Redux first
     await initializeLegalEntity(user.DefaultLegalEntity);
 
-    // Step 3: Fetch legal entities using the employee ID
     const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
     const menus = await fetchEmployeeMenuItems(user.EmployeeId);
 
-    // Step 4: Set legal entities in Redux
     setLegalEntities(legalEntities);
     setMenuItems(menus);
 
-    // Step 5: Prepare complete user data object
     const completeUserData = {
       userName: decodedAccessToken.name,
       employeeName: user.EmployeeName,
@@ -274,16 +272,12 @@ export const handleSuccessfulLogin = async (
       employeeFullInfo: user,
     };
 
-    // Set user data in Redux
     setUserData(completeUserData);
 
-    // Step 6: CRITICAL - Clear previous user's Firebase data FIRST
     console.log('Clearing previous Firebase data before setting new user data');
     store.dispatch(clearFirebaseData());
-    // store.dispatch(chatbotClearChat());
     store.dispatch(chatbotClearMessages());
 
-    // Then save NEW user's Firebase data to Redux
     console.log(
       'Setting Firebase user data for:',
       userEmailOrUPN,
@@ -297,14 +291,10 @@ export const handleSuccessfulLogin = async (
       }),
     );
 
-    // Mark Firebase as initialized
     store.dispatch(setFirebaseInitialized(true));
 
-    // Step 7: Register device with Dynamics for push notifications (PHASE 1)
     try {
       console.log('Starting Firebase device registration...');
-      // const registrationResult =
-      //   await firebaseService.registerDeviceWithDynamics();
       const registrationResult = await firebaseService.syncDeviceAfterLogin();
 
       if (registrationResult.success) {
@@ -317,14 +307,11 @@ export const handleSuccessfulLogin = async (
           'Firebase registration warning:',
           registrationResult.message,
         );
-        // Don't block login, just log warning
       }
     } catch (firebaseError) {
       console.error('Firebase registration error:', firebaseError);
-      // Don't block login on Firebase errors
     }
 
-    // Step 8: Save account with complete user data
     const savedAccount = await saveAccountAfterLogin(userEmailOrUPN, provider, {
       displayName: decodedAccessToken.name || user.EmployeeName,
       employeeId: user.EmployeeId,
@@ -334,7 +321,6 @@ export const handleSuccessfulLogin = async (
       ...completeUserData,
     });
 
-    // Step 9: Navigate to main app
     navigation.navigate('DrawerNavigator', {
       userName: decodedAccessToken.name,
     });

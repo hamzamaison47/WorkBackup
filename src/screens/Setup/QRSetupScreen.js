@@ -106,30 +106,34 @@ const QRSetupScreen = () => {
         throw new Error(t('qrSetup.invalidQRData'));
       }
 
-      // Enhanced duplicate check
       const allConfigs = await getAllConfigs();
-      const isDuplicate = allConfigs.some(config => {
+
+      // FIX (Issue #5): Previously isDuplicate used a 3-field check (resource +
+      // client_id + grant_type) but the subsequent .find() for the name only
+      // used 2 fields (resource + client_id). When isDuplicate was true but
+      // the 2-field find returned undefined, the alert showed "undefined" as
+      // the config name.
+      //
+      // Fix: use a single .find() for both purposes so the check and the name
+      // lookup are always the same operation and can never diverge.
+      const existingConfig = allConfigs.find(config => {
         const configData = config.data;
-
-        // Check multiple properties to determine duplicates
-        const sameResource = configData.resource === parsedData.resource;
-        const sameClientId = configData.client_id === parsedData.client_id;
-        const sameGrantType = configData.grant_type === parsedData.grant_type;
-
-        // Consider it a duplicate if core properties match
-        return sameResource && sameClientId && sameGrantType;
+        return (
+          configData.resource === parsedData.resource &&
+          configData.client_id === parsedData.client_id &&
+          configData.grant_type === parsedData.grant_type
+        );
       });
 
-      if (isDuplicate) {
-        const existingConfig = allConfigs.find(
-          config =>
-            config.data.resource === parsedData.resource &&
-            config.data.client_id === parsedData.client_id,
-        );
-        console.log(existingConfig);
+      if (existingConfig) {
         setAlertMessage(
           t('qrSetup.duplicateConfig', {
-            configName: existingConfig?.name || t('qrSetup.existingConfig'),
+            // existingConfig is guaranteed to exist here, so .name/.customTitle
+            // will never be undefined
+            configName:
+              existingConfig.customTitle ||
+              existingConfig.name ||
+              t('qrSetup.existingConfig'),
           }),
         );
         setAlertModal(true);
@@ -170,7 +174,6 @@ const QRSetupScreen = () => {
 
   const handleScanFromGallery = async () => {
     try {
-      // Check photo library permission
       const permissionType =
         Platform.OS === 'ios'
           ? PERMISSIONS.IOS.PHOTO_LIBRARY
@@ -193,7 +196,6 @@ const QRSetupScreen = () => {
         return;
       }
 
-      // Launch image picker
       const result = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 1,
@@ -221,7 +223,6 @@ const QRSetupScreen = () => {
         console.log('Selected image URI:', imageUri);
 
         try {
-          // Detect QR code from the selected image
           const response = await RNQRGenerator.detect({
             uri: imageUri,
           });
@@ -300,10 +301,6 @@ const QRSetupScreen = () => {
     setAlertModal(false);
   };
 
-  // const scanLineTranslate = scanAnimation.interpolate({
-  //   inputRange: [0, 1],
-  //   outputRange: [0, 250],
-  // });
   const SCAN_FRAME_HEIGHT = conditionalVerticalScale(220, 250, 270, 320);
   const SCAN_LINE_HEIGHT = 2;
 

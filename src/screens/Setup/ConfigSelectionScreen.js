@@ -100,10 +100,10 @@ const ConfigSelectionScreen = () => {
       const allConfigs = await getAllConfigs();
       const activeId = await getActiveConfig();
 
-      // Enhance configs with extracted titles
       const enhancedConfigs = allConfigs.map(config => ({
         ...config,
-        displayTitle: config.customTitle || extractTitle(config.data),
+        displayTitle:
+          config.customTitle || config.name || extractTitle(config.data),
         formattedData: formatConfigData(config.data),
       }));
 
@@ -133,13 +133,16 @@ const ConfigSelectionScreen = () => {
 
   const handleSelectConfiguration = async configId => {
     try {
-      await setActiveConfig(configId);
-      setActiveConfigId(configId);
-
       const selectedConfig = configs.find(config => config.id === configId);
+
+      // Save data first — if this fails, we stop before updating the active ID
       if (selectedConfig) {
         await saveConfig(selectedConfig.data);
       }
+
+      // Only mark as active after data is safely persisted
+      await setActiveConfig(configId);
+      setActiveConfigId(configId);
 
       setAlertMessage(t('configSelection.activateSuccess'));
       setAlertModal(true);
@@ -158,11 +161,14 @@ const ConfigSelectionScreen = () => {
 
   const saveEditedTitle = async () => {
     try {
+      if (!editingConfig) return;
+
       const updatedConfig = {
-        ...editingConfig,
+        id: editingConfig.id,
         name: editedTitle,
         customTitle: editedTitle,
         data: editingConfig.data,
+        createdAt: editingConfig.createdAt,
       };
 
       await updateConfigById(editingConfig.id, updatedConfig);
@@ -187,14 +193,34 @@ const ConfigSelectionScreen = () => {
 
   const deleteConfiguration = async configId => {
     try {
-      if (configId === activeConfigId) {
+      const isDeletingActive = configId === activeConfigId;
+
+      // Remove the config from Keychain and the list
+      await clearConfigById(configId);
+
+      if (isDeletingActive) {
+        // Clear the active pointer and the main config fallback
         await setActiveConfig(null);
         await clearConfig();
         setActiveConfigId(null);
       }
 
-      await clearConfigById(configId);
+      // Reload configs to get the updated list after deletion
       await loadConfigurations();
+
+      if (isDeletingActive) {
+        // Check if other configs are still available after reload
+        const remaining = await getAllConfigs();
+        if (remaining.length > 0) {
+          // Auto-activate the first remaining config so the user doesn't
+          // get stuck with no active config
+          console.log(
+            'Auto-selecting next config after active config deletion:',
+            remaining[0].id,
+          );
+          await handleSelectConfiguration(remaining[0].id);
+        }
+      }
 
       setAlertMessage(t('configSelection.deleteSuccess'));
       setAlertModal(true);
@@ -282,50 +308,6 @@ const ConfigSelectionScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Card Details */}
-        {/* <View style={styles.ConfigSelection_CardDetails}>
-          <View style={styles.ConfigSelection_DetailRow}>
-            <Icon
-              name="globe"
-              size={iconSize.xs}
-              color="#666"
-              style={styles.ConfigSelection_DetailIcon}
-            />
-            <Text style={styles.ConfigSelection_DetailLabel}>
-              {t('configSelection.environment')}:
-            </Text>
-            <Text
-              style={[
-                styles.ConfigSelection_DetailValue,
-                isActive && {color: '#0A66C2'},
-              ]}>
-              {item.formattedData.environment}
-            </Text>
-          </View>
-
-          <View style={styles.ConfigSelection_DetailRow}>
-            <Icon
-              name="link"
-              size={iconSize.xs}
-              color="#666"
-              style={styles.ConfigSelection_DetailIcon}
-            />
-            <Text style={styles.ConfigSelection_DetailLabel}>
-              {t('configSelection.resource')}:
-            </Text>
-            <Text
-              style={[
-                styles.ConfigSelection_DetailValue,
-                {fontFamily: 'monospace'},
-                isActive && {color: '#0A66C2'},
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="middle">
-              {item.formattedData.resourceUrl}
-            </Text>
-          </View>
-        </View> */}
       </TouchableOpacity>
     );
   };
