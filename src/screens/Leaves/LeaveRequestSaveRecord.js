@@ -553,11 +553,20 @@ const LeaveRequestSaveRecord = () => {
 
     // Fetch data after state update
     if (formData.leaveStartDate && formData.leaveCode) {
-      await fetchLeaveDaysFromAPI(formData.leaveStartDate, formatted);
-      await fetchBalanceQuotaEligibility(
-        formData.leaveCode,
-        formData.leaveStartDate,
-      );
+      setIsProcessing(true);
+
+      try {
+        await fetchLeaveDaysFromAPI(formData.leaveStartDate, formatted);
+
+        await fetchBalanceQuotaEligibility(
+          formData.leaveCode,
+          formData.leaveStartDate,
+        );
+      } catch (error) {
+        console.log('Error while fetching leave data:', error);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 
