@@ -404,22 +404,28 @@ const FamilyContact_SaveRecord = () => {
         isDependent: data.isDependent ? 1 : 0,
         isBeneficiary: data.isBeneficiary ? 1 : 0,
         BeneficiaryFromDate: data.beneficiaryValidFrom
-          ? `${data.beneficiaryValidFrom}T00:00:00.000Z`
+          ? data.beneficiaryValidFrom
           : '1900-01-01T00:00:00.000Z',
 
-        BeneficiaryToDate: data.beneficiaryValidTo
-          ? `${data.beneficiaryValidTo}T23:59:59.000Z`
-          : D365_MAX_DATETIME,
+        BeneficiaryToDate:
+          data.beneficiaryValidTo === D365_MAX_DATETIME
+            ? D365_MAX_DATETIME
+            : data.beneficiaryValidTo
+            ? data.beneficiaryValidTo
+            : D365_MAX_DATETIME,
 
         Gender: data.Gender || '',
         BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
         DependentValidFrom: data.dependentValidFrom
-          ? `${data.dependentValidFrom}T00:00:00.000Z`
+          ? data.dependentValidFrom
           : '1900-01-01T00:00:00.000Z',
 
-        DependentValidTo: data.dependentValidTo
-          ? `${data.dependentValidTo}T23:59:59.000Z`
-          : D365_MAX_DATETIME,
+        DependentValidTo:
+          data.dependentValidTo === D365_MAX_DATETIME
+            ? D365_MAX_DATETIME
+            : data.dependentValidTo
+            ? data.dependentValidTo
+            : D365_MAX_DATETIME,
 
         IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
         IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
@@ -521,7 +527,7 @@ const FamilyContact_SaveRecord = () => {
             ? prev.beneficiaryValidFrom || today
             : '',
           beneficiaryValidTo: newValue
-            ? prev.beneficiaryValidTo || 'MAX_DATE'
+            ? prev.beneficiaryValidTo || D365_MAX_DATETIME
             : '',
         };
       }
@@ -531,7 +537,9 @@ const FamilyContact_SaveRecord = () => {
           ...prev,
           isDependent: newValue,
           dependentValidFrom: newValue ? prev.dependentValidFrom || today : '',
-          dependentValidTo: newValue ? prev.dependentValidTo || 'MAX_DATE' : '',
+          dependentValidTo: newValue
+            ? prev.dependentValidTo || D365_MAX_DATETIME
+            : '',
         };
       }
 
@@ -721,7 +729,7 @@ const FamilyContact_SaveRecord = () => {
                         color: formData.beneficiaryValidTo ? '#000' : '#888',
                         fontSize: 16,
                       }}>
-                      {formData.beneficiaryValidTo === 'MAX_DATE'
+                      {formData.beneficiaryValidTo === D365_MAX_DATETIME
                         ? 'Never'
                         : formData.beneficiaryValidTo
                         ? formatDisplayDate(formData.beneficiaryValidTo)
@@ -842,7 +850,7 @@ const FamilyContact_SaveRecord = () => {
                                 : '#888',
                               fontSize: 16,
                             }}>
-                            {formData.dependentValidTo === 'MAX_DATE'
+                            {formData.dependentValidTo === D365_MAX_DATETIME
                               ? 'Never'
                               : formData.dependentValidTo
                               ? formatDisplayDate(formData.dependentValidTo)

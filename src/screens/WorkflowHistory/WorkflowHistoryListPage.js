@@ -809,7 +809,7 @@ const WorkflowHistoryScreen = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}>
       {isLoading ? (
