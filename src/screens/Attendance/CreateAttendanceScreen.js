@@ -784,7 +784,7 @@ const CreateAttendanceScreen = () => {
         // Location matches but IP is wrong
         // lastGeofenceErrorRef.current = `Your location is correct, but your device IP (${deviceIP}) does not match the authorized office IP for this location. Please connect to the office network.`;
         lastGeofenceErrorRef.current =
-          'Please connect to the office network for mark attendance.';
+          'Please connect to the office network for attendance marking.';
 
         throw new Error(lastGeofenceErrorRef.current);
       } else {

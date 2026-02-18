@@ -467,10 +467,10 @@ const CreateEmployeeAdjustment = ({
           keyboardShouldPersistTaps="handled"
           nestedScrollEnabled>
           {/* Employee Name */}
-          <Text style={styles.LReqSR_Label}>Employee</Text>
+          {/* <Text style={styles.LReqSR_Label}>Employee</Text>
           <Text style={[styles.LReqSR_Input, styles.LReqSR_Disabled]}>
             {form.employeeName || targetEmployeeId || 'Not available'}
-          </Text>
+          </Text> */}
 
           {/* Shift Selection */}
           <Text style={styles.LReqSR_Label}>Shift *</Text>
