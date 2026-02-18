@@ -7,6 +7,7 @@ import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const SubmitIdentificationRequest = async ({recId}) => {
+  console.log('ReciD : ', recId);
   try {
     // Handle if recId comes wrapped in an object
     if (typeof recId === 'object') {

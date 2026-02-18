@@ -37,6 +37,7 @@ const CreateIdentityRequest = async ({identityData}) => {
         responseType: 'text',
       },
     );
+    console.log('Raw Result :', xml);
 
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -48,9 +49,11 @@ const CreateIdentityRequest = async ({identityData}) => {
 
     const parsed = parser.parse(xml);
 
+    const envelope = parsed?.['s:Envelope'] || parsed?.['soap:Envelope'];
+
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['createResponse']?.['result'] ||
-      parsed?.['soap:Envelope']?.['soap:Body']?.['createResponse']?.['result'];
+      envelope?.['s:Body']?.['createResponse']?.['result'] ||
+      envelope?.['soap:Body']?.['createResponse']?.['result'];
 
     if (!result) {
       console.log('No result found in SOAP response');
@@ -58,6 +61,37 @@ const CreateIdentityRequest = async ({identityData}) => {
     }
 
     const cleanedResult = cleanObject(result);
+
+    // 🔹 Extract Infolog message (fallback)
+    const infolog =
+      envelope?.['s:Header']?.['Infolog'] ||
+      envelope?.['soap:Header']?.['Infolog'];
+
+    let infologMessage = null;
+
+    if (infolog?.['Entries']?.['InfologEntry']) {
+      const entry = infolog['Entries']['InfologEntry'];
+
+      if (Array.isArray(entry)) {
+        infologMessage = entry
+          .map(e => e?.['Message'])
+          .filter(Boolean)
+          .join('\n');
+      } else {
+        infologMessage = entry?.['Message'] || null;
+      }
+    }
+
+    // 🔹 Prefer result.Message, fallback to infolog
+    let finalMessage =
+      cleanedResult?.Message && cleanedResult.Message.trim() !== ''
+        ? cleanedResult.Message
+        : infologMessage;
+
+    cleanedResult.Message = finalMessage;
+
+    console.log('Cleaned Result ', cleanedResult);
+
     return cleanedResult;
   } catch (error) {
     console.error(
