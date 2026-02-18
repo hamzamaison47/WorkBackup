@@ -73,11 +73,11 @@ const FamilyContact_SaveRecord = () => {
   } = routeParams;
 
   const today = new Date().toISOString().split('T')[0];
-  const D365_MAX_DATE = '2154-12-31T23:59:59Z';
+  const D365_MAX_DATE = '2154-12-31T23:59:59';
   const D365_MIN_DATE = '1900-01-01T00:00:00Z';
   const D365_MIN_DATETIME = '1900-01-01T12:00:00';
   const D365_MAX_DATE_ONLY = '2154-12-31';
-  const D365_MAX_DATETIME = '2154-12-31T23:59:59.000Z';
+  const D365_MAX_DATETIME = '2154-12-31T23:59:59.000';
 
   const getTodayISO = () => new Date().toISOString().split('T')[0];
 
@@ -388,7 +388,9 @@ const FamilyContact_SaveRecord = () => {
   );
 
   const formatDisplayDate = useCallback(dateString => {
+    console.log('Date string :', dateString);
     if (!dateString) return '';
+    else if (dateString === D365_MAX_DATE) return 'Never';
     const d = new Date(dateString);
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -647,7 +649,7 @@ const FamilyContact_SaveRecord = () => {
               placeholderTextColor="#888"
             />
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              {PersonalContactsLabelData?.middleNamelbl || 'Middle Name'}
+              {PersonalContactsLabelData?.middleNamelbl || 'Middle name'}
             </Text>
             <TextInput
               style={styles.DSR_Input}

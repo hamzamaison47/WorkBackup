@@ -96,8 +96,6 @@ const LeaveRequestListPage = () => {
         employeeId: effectiveEmployeeId,
       });
 
-      console.log('LeaveData', {LeaveData});
-
       setLeavesData(LeaveData);
     } catch (error) {
       setAlertMessage(t('leaveRequest.fetchFailed'));
@@ -330,6 +328,7 @@ const LeaveRequestListPage = () => {
   // Define button configuration
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
+    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
 
     return {
       edit: {
@@ -340,8 +339,9 @@ const LeaveRequestListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !isDraft && !isRejected,
+        customStyle:
+          !isDraft && !isRejected ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: true,
@@ -366,12 +366,12 @@ const LeaveRequestListPage = () => {
         customStyle: {},
       },
       submit: {
-        show: isWorkflowConfigured && isDraft,
+        show: isWorkflowConfigured && (isDraft || isRejected),
         position: 'bottom',
         style: 'text',
         icon: 'send',
         iconSize: 16,
-        text: t('buttons.submit'),
+        text: isRejected ? 'Re-submit' : t('buttons.submit'),
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },
@@ -413,7 +413,9 @@ const LeaveRequestListPage = () => {
         handleDeletePress(itemData);
         break;
       case BUTTON_TYPES.SUBMIT:
-        handleSubmitPress(itemData);
+        itemData.WFStatus === 'submit'
+          ? handleSubmitPress(itemData)
+          : handleSubmitPress(itemData);
         break;
       case BUTTON_TYPES.ATTACHMENT:
         handleReceiptAttachmentPress(itemData);
@@ -541,6 +543,50 @@ const LeaveRequestListPage = () => {
     }
   };
 
+  const handleReSubmitPress = async itemData => {
+    setIsProcessing(true);
+    setButtonProcessing(itemData.RecId, 'submit', true);
+
+    try {
+      // const response = await SubmitLeaveRequest({
+      //   recId: Number(itemData.RecId),
+      // });
+      const response = 'Resubmit in progress';
+      const resObj = Array.isArray(response) ? response[0] : response;
+
+      if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+        setAlertMessage(
+          t('leaveRequest.submitSuccess', {leaveCode: itemData.LeaveCode}),
+        );
+        setAlertModal(true);
+
+        setHighlightedRecId(itemData.RecId);
+
+        setTimeout(() => {
+          setHighlightedRecId(null);
+        }, 3000);
+
+        setTimeout(() => {
+          fetchLeavesData();
+        }, 1000);
+      } else {
+        const errorMessage =
+          resObj && resObj.Message
+            ? resObj.Message
+            : `Failed to Submit ${itemData.LeaveCode} Request`;
+        setAlertMessage(errorMessage);
+        setAlertModal(true);
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      setAlertMessage(`Failed to Submit ${itemData.LeaveCode} Request`);
+      setAlertModal(true);
+    } finally {
+      setIsProcessing(false);
+      setButtonProcessing(itemData.RecId, 'submit', false);
+    }
+  };
+
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
@@ -617,9 +663,8 @@ const LeaveRequestListPage = () => {
           <Text style={styles.DLP_NoDataText}>
             {t('leaveRequest.noDataFound')}
           </Text>
-          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap + to add a new record
+            Tap the + button to create your first leave request
           </Text>
         </ScrollView>
       )}

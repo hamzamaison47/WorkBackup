@@ -68,7 +68,7 @@ const FamilyContacts_ListPageScreen = () => {
         employeeId: effectiveEmployeeId, // ✅
       });
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
-      console.log(familycontactsdata);
+      console.log(FamilyContactData);
       setfamilycontactsdata(FamilyContactData);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
@@ -121,7 +121,7 @@ const FamilyContacts_ListPageScreen = () => {
     fields: [
       {
         key: 'Name',
-        label: familycontactsdata[0]?.firstNamelbl || 'Name',
+        label: familycontactsdata[0]?.Namelbl || 'Name',
         type: 'text',
       },
       {

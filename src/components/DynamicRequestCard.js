@@ -895,7 +895,7 @@ const DynamicRequestCard = ({
               size={12}
               color={isTrue ? '#065f46' : COLOR_PALETTE.gray[400]}
             />
-            <Text
+            {/* <Text
               style={[
                 styles.DRC_booleanText,
                 isTrue
@@ -903,7 +903,7 @@ const DynamicRequestCard = ({
                   : styles.DRC_booleanTextFalse,
               ]}>
               {isTrue ? 'Yes' : 'No'}
-            </Text>
+            </Text> */}
           </View>
         </View>
       );

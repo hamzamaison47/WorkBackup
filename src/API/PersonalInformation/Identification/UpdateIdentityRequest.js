@@ -39,6 +39,8 @@ const UpdateIdentityRequest = async ({identityData}) => {
       },
     );
 
+    console.log('Raw Result :', xml);
+
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -48,16 +50,49 @@ const UpdateIdentityRequest = async ({identityData}) => {
     });
 
     const parsed = parser.parse(xml);
+
+    const envelope = parsed?.['s:Envelope'] || parsed?.['soap:Envelope'];
+
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.['updateResponse']?.['result'] ||
       parsed?.['soap:Envelope']?.['soap:Body']?.['updateResponse']?.['result'];
 
     if (!result) {
-      console.log('No result found in Update SOAP response');
+      console.log('No result found in SOAP response');
       return null;
     }
 
     const cleanedResult = cleanObject(result);
+
+    // 🔹 Extract Infolog message (fallback)
+    const infolog =
+      envelope?.['s:Header']?.['Infolog'] ||
+      envelope?.['soap:Header']?.['Infolog'];
+
+    let infologMessage = null;
+
+    if (infolog?.['Entries']?.['InfologEntry']) {
+      const entry = infolog['Entries']['InfologEntry'];
+
+      if (Array.isArray(entry)) {
+        infologMessage = entry
+          .map(e => e?.['Message'])
+          .filter(Boolean)
+          .join('\n');
+      } else {
+        infologMessage = entry?.['Message'] || null;
+      }
+    }
+
+    // 🔹 Prefer result.Message, fallback to infolog
+    let finalMessage =
+      cleanedResult?.Message && cleanedResult.Message.trim() !== ''
+        ? cleanedResult.Message
+        : infologMessage;
+
+    cleanedResult.Message = finalMessage;
+
+    console.log('Cleaned Result ', cleanedResult);
     return cleanedResult;
   } catch (error) {
     console.error(

@@ -357,6 +357,8 @@ const IdentificationNumberSaveRecord = () => {
 
   // 🔧 Centralized Save/Update/Submit logic
   const handleAction = async (actionType, modalMode, data) => {
+    console.log('Action Type', actionType);
+    console.log('Modal Mode', modalMode);
     try {
       const contract = {
         RecId: data.recId || '',
@@ -386,10 +388,12 @@ const IdentificationNumberSaveRecord = () => {
         }
       } else if (modalMode === 'update') {
         response = await UpdateIdentityRequest({identityData: contract});
-        if (actionType === 'submit' && response.IsSuccess) {
+        console.log('Resposne from UPdate Record', response);
+        if (actionType === 'submit' && response?.IsSuccess === 'true') {
           submitResult = await SubmitIdentificationRequest({
-            recId: contract.RecId,
+            recId: response.RecId,
           });
+          console.log('Resposne from UPdate and submit Record', submitResult);
         }
       }
       if (response?.IsSuccess === 'true') {
@@ -407,14 +411,18 @@ const IdentificationNumberSaveRecord = () => {
           );
         }
 
+        setAlertMessage(`Record ${textAction} Successfully`);
         setAlertModal(true);
-        setAlertMessage(
-          `${contract.IdentificationTypeId} is ${textAction} Successfully`,
-        );
         return {success: true, recId: response.RecId || contract.RecId};
       } else if (response?.IsSuccess === 'false') {
         const textAction = modalMode === 'create' ? 'Creating' : 'Updating';
-        setAlertMessage(`Error in ${textAction} Record`);
+        setAlertMessage(
+          response?.Message
+            ? response?.Message
+            : `Error in ${textAction} Record`,
+        );
+        setAlertModal(true);
+        return {success: false, recId: 0};
       } else {
         throw new Error('No response from server');
       }

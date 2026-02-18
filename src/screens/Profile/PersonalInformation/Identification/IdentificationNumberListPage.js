@@ -269,15 +269,34 @@ const IdentificationNumberListPage = () => {
         IdentificationTypeId: itemData.IdentificationTypeId,
         Description: itemData.Description,
         IsPrimary: itemData.IsPrimary,
-        ExpirationDate: itemData.ExpirationDate,
-        IssueDate: itemData.IssuedDate,
+        ExpirationDate:
+          itemData.ExpirationDate === 'Never'
+            ? D365_MAX_DATE
+            : itemData.ExpirationDate === '-'
+            ? D365_MIN_DATE
+            : itemData.ExpirationDate,
+        IssueDate:
+          itemData.IssuedDate === 'Never'
+            ? D365_MAX_DATE
+            : itemData.IssuedDate === '-'
+            ? D365_MIN_DATE
+            : itemData.IssuedDate,
         IssuingAgency: itemData.IssuingAgency,
         IssuingAgencyId: itemData.IssuingAgencyId,
         WorkflowOperation: itemData.WorkflowOperation,
       },
     });
   };
-
+  // ExpirationDate: item.ExpirationDate.startsWith(D365_MAX_DATE)
+  //   ? 'Never'
+  //   : item.ExpirationDate === D365_MIN_DATE
+  //   ? '-'
+  //   : item.ExpirationDate,
+  // IssuedDate: item.IssuedDate.startsWith(D365_MAX_DATE)
+  //   ? 'Never'
+  //   : item.IssuedDate === D365_MIN_DATE
+  //   ? '-'
+  //   : item.IssuedDate,
   const handleDeletePress = itemData => {
     setItemToDelete(itemData);
     setDeleteModal(true);
@@ -483,6 +502,8 @@ const IdentificationNumberListPage = () => {
     };
   };
 
+  const D365_MAX_DATE = '2154-12-31T12:00:00';
+  const D365_MIN_DATE = '1900-01-01T12:00:00';
   // Render identification card
   const renderIdentificationCard = ({item}) => {
     // const isHighlighted = highlightedRecId === item.recId;
@@ -493,6 +514,16 @@ const IdentificationNumberListPage = () => {
       ...item,
       employeeId: item.employeeId || employeeId,
       employeeName: item.employeeName || employeeName,
+      ExpirationDate: item.ExpirationDate.startsWith(D365_MAX_DATE)
+        ? 'Never'
+        : item.ExpirationDate === D365_MIN_DATE
+        ? '-'
+        : item.ExpirationDate,
+      IssuedDate: item.IssuedDate.startsWith(D365_MAX_DATE)
+        ? 'Never'
+        : item.IssuedDate === D365_MIN_DATE
+        ? '-'
+        : item.IssuedDate,
     };
     return (
       <DynamicRequestCard
