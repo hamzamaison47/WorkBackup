@@ -62,6 +62,7 @@ const ExpenseManagmentListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   // Card config
   const CARD_CONFIG = {
@@ -194,6 +195,23 @@ const ExpenseManagmentListPage = () => {
     });
   };
 
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return expenseData;
+    return expenseData.filter(
+      item => getStatusLabel(item.WFStatus) === activeFilter,
+    );
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: expenseData.length};
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      counts[pill] = expenseData.filter(
+        item => getStatusLabel(item.WFStatus) === pill,
+      ).length;
+    });
+    return counts;
+  };
+
   // Card click - Navigate to Lines List
   const handleCardPress = itemData => {
     const itemRecId = normalizeRecId(itemData);
@@ -240,6 +258,7 @@ const ExpenseManagmentListPage = () => {
   // Buttons config
   const getButtonConfig = item => {
     const isDraft = item.DocumentStatus === 'Draft';
+    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
 
     return {
       edit: {
@@ -264,16 +283,32 @@ const ExpenseManagmentListPage = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      submit: {
-        show: isDraft,
+      //   submit: {
+      //     show: isDraft,
+      //     position: 'bottom',
+      //     style: 'text',
+      //     icon: 'send',
+      //     iconSize: 16,
+      //     text: 'Submit',
+      //     textColor: '#0A66C2',
+      //     iconColor: '#0A66C2',
+      //   },
+      // };
+      approval: {
+        show: isDraft || isRejected,
         position: 'bottom',
-        style: 'text',
-        icon: 'send',
-        iconSize: 16,
-        text: 'Submit',
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        // no icon field needed anymore
         textColor: '#0A66C2',
-        iconColor: '#0A66C2',
-        customStyle: {transform: [{translateY: -28}]},
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
       },
     };
   };
@@ -321,10 +356,9 @@ const ExpenseManagmentListPage = () => {
 
   const handleSubmitPress = async itemData => {
     const itemRecId = normalizeRecId(itemData);
-    // setButtonProcessing(itemRecId, 'submit', true);
 
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
+      setIsProcessing(true);
       setButtonProcessing(itemData.RecId, 'submit', true);
 
       try {
@@ -332,20 +366,26 @@ const ExpenseManagmentListPage = () => {
           expenseReportNumberList: [itemData.ExpenseReportNumber],
           legalEntity: selectedLegalEntity,
         });
+        console.log('here is theresult', result);
 
         if (result.success) {
           setAlertMessage('Request submitted successfully.');
+          setAlertModal(true); // ADD THIS - Show the alert modal
           setTimeout(() => fetchExpenseData(), 1000);
         } else {
-          setAlertMessage(result.message || 'Failed to submit request');
+          // This will show exactly what the API sent
+          setAlertMessage(result.message);
+          setAlertModal(true); // ADD THIS - Show the alert modal
+          console.log('API error message:', result.message);
         }
       } catch (error) {
         setAlertMessage(`Failed to submit request: ${error.message}`);
+        setAlertModal(true); // ADD THIS - Show the alert modal
       } finally {
-        setIsProcessing(false); // Hide processing overlay
+        setIsProcessing(false);
         setButtonProcessing(itemData.recId, 'submit', false);
       }
-    }, 100); // Same delay pattern
+    }, 100);
   };
 
   const handleDeleteConfirm = async () => {
@@ -421,25 +461,18 @@ const ExpenseManagmentListPage = () => {
     };
 
     return (
-      <Pressable
+      <DynamicRequestCard
+        data={processedItem}
+        headerConfig={CARD_CONFIG.headerConfig}
+        fields={CARD_CONFIG.fields}
+        buttons={getButtonConfig(item)}
+        onButtonPress={handleButtonPress}
         onPress={() => handleCardPress(processedItem)}
-        style={({pressed}) => [
-          styles.DLP_PressableCard,
-          pressed && styles.DLP_PressableCardPressed,
-        ]}>
-        <DynamicRequestCard
-          data={processedItem}
-          headerConfig={CARD_CONFIG.headerConfig}
-          fields={CARD_CONFIG.fields}
-          buttons={getButtonConfig(item)}
-          onButtonPress={handleButtonPress}
-          isExpandable={true}
-          gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
-          processingButtons={processingButtons[itemRecId] || []}
-          isClickable={true}
-          showNavigationArrow={true}
-        />
-      </Pressable>
+        isExpandable={true}
+        gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
+        processingButtons={processingButtons[item.RecId] || []}
+        showNavigationArrow={true}
+      />
     );
   };
 
@@ -452,7 +485,11 @@ const ExpenseManagmentListPage = () => {
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleCreateExpense}>
+      onFloatingButtonPress={handleCreateExpense}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -470,9 +507,9 @@ const ExpenseManagmentListPage = () => {
       ) : (
         <Animated.View
           style={[styles.DLP_AnimatedContainer, {opacity: fadeAnim}]}>
-          {expenseData.length > 0 ? (
+          {getFilteredData().length > 0 ? (
             <FlatList
-              data={expenseData}
+              data={getFilteredData()}
               renderItem={renderExpenseCard}
               keyExtractor={(item, index) =>
                 normalizeRecId(item)?.toString() ||
@@ -505,14 +542,12 @@ const ExpenseManagmentListPage = () => {
           )}
         </Animated.View>
       )}
-
       <AlertModal
         visible={alertModal}
         heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
-
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"

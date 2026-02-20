@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
 import React, {useState, useEffect, useCallback, useRef} from 'react';
@@ -12,6 +13,7 @@ import {
   Dimensions,
   ScrollView,
   RefreshControl,
+  AppState,
 } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,6 +32,7 @@ import {
   SummaryItem,
 } from '../../components/Attendance/AttendanceComponents';
 import {useNavigation} from '@react-navigation/native';
+import NetInfo from '@react-native-community/netinfo';
 
 // Screen sizing
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -40,11 +43,18 @@ const GEO_TTL_MS = 30 * 60 * 1000; // 30m for less frequent network calls
 const FRESH_FIX_MS = 30 * 1000; // 30s to allow more cache hits
 const MAX_ALLOWED_ACCURACY = 150; // Relaxed to 150m for faster fixes
 const GEOF_KEY = 'df_geofences_v1';
+const OFFLINE_ATTENDANCE_KEY = 'offline_attendance_queue';
+const FAILED_ATTENDANCE_KEY = 'failed_attendance_queue'; // For permanently failed records
 
 /* =================== Helper to get device IP =================== */
 const getDeviceIPAddress = async () => {
   try {
-    const response = await fetch('https://api.ipify.org?format=json');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const response = await fetch('https://api.ipify.org?format=json', {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
     const data = await response.json();
     return data.ip;
   } catch (error) {
@@ -53,7 +63,135 @@ const getDeviceIPAddress = async () => {
   }
 };
 
-/* =================== Helpers =================== */
+/* =================== Network connectivity check =================== */
+/**
+ * Returns true only when we are confident internet is reachable.
+ */
+const checkInternetConnectivity = async () => {
+  try {
+    const netInfoState = await NetInfo.fetch();
+
+    if (!netInfoState.isConnected) return false;
+
+    // isInternetReachable is explicitly false → offline
+    if (netInfoState.isInternetReachable === false) return false;
+
+    // isInternetReachable is null (indeterminate on Android) → probe manually
+    if (netInfoState.isInternetReachable === null) {
+      return await probeInternet();
+    }
+
+    // isInternetReachable === true → still probe to handle "connected WiFi, no backend"
+    return await probeInternet();
+  } catch (error) {
+    console.log('Error checking connectivity:', error);
+    return false;
+  }
+};
+
+/**
+ * Quick HEAD request to a reliable endpoint to confirm actual internet.
+ */
+const probeInternet = async () => {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch('https://clients3.google.com/generate_204', {
+      method: 'HEAD',
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return res.status === 204 || res.ok;
+  } catch {
+    return false;
+  }
+};
+
+/* =================== Offline Attendance Storage =================== */
+const saveOfflineAttendance = async attendanceData => {
+  try {
+    const existingQueue = await loadOfflineAttendanceQueue();
+
+    const newRecord = {
+      id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...attendanceData,
+      createdAt: moment().toISOString(),
+      retryCount: 0,
+      lastAttempt: null,
+      failureReason: null,
+    };
+
+    const updatedQueue = [...existingQueue, newRecord];
+    await AsyncStorage.setItem(
+      OFFLINE_ATTENDANCE_KEY,
+      JSON.stringify(updatedQueue),
+    );
+
+    console.log('Saved offline attendance:', newRecord);
+    return true;
+  } catch (error) {
+    console.log('Error saving offline attendance:', error);
+    return false;
+  }
+};
+
+const loadOfflineAttendanceQueue = async () => {
+  try {
+    const queue = await AsyncStorage.getItem(OFFLINE_ATTENDANCE_KEY);
+    return queue ? JSON.parse(queue) : [];
+  } catch (error) {
+    console.log('Error loading offline queue:', error);
+    return [];
+  }
+};
+
+const removeOfflineAttendanceRecord = async recordId => {
+  try {
+    const queue = await loadOfflineAttendanceQueue();
+    const updatedQueue = queue.filter(record => record.id !== recordId);
+    await AsyncStorage.setItem(
+      OFFLINE_ATTENDANCE_KEY,
+      JSON.stringify(updatedQueue),
+    );
+    return true;
+  } catch (error) {
+    console.log('Error removing offline record:', error);
+    return false;
+  }
+};
+
+// Save permanently failed records (for debugging/admin review)
+const saveFailedAttendance = async (record, reason) => {
+  try {
+    const failedQueue = await loadFailedAttendanceQueue();
+    const failedRecord = {
+      ...record,
+      failedAt: moment().toISOString(),
+      failureReason: reason,
+    };
+    const updatedQueue = [...failedQueue, failedRecord];
+    await AsyncStorage.setItem(
+      FAILED_ATTENDANCE_KEY,
+      JSON.stringify(updatedQueue),
+    );
+    return true;
+  } catch (error) {
+    console.log('Error saving failed attendance:', error);
+    return false;
+  }
+};
+
+const loadFailedAttendanceQueue = async () => {
+  try {
+    const queue = await AsyncStorage.getItem(FAILED_ATTENDANCE_KEY);
+    return queue ? JSON.parse(queue) : [];
+  } catch (error) {
+    console.log('Error loading failed queue:', error);
+    return [];
+  }
+};
+
+/* =================== Geofence helpers =================== */
 const saveGeofences = async sites => {
   try {
     const payload = {ts: Date.now(), sites: Array.isArray(sites) ? sites : []};
@@ -78,13 +216,15 @@ const loadGeofences = async () => {
 const CreateAttendanceScreen = () => {
   // Loading states
   const [loadingAttendance, setLoadingAttendance] = useState(false);
-  const [loadingSummary, setLoadingSummary] = useState(false);
   const [loadingRegister, setLoadingRegister] = useState(false);
   const [loadingGeo, setLoadingGeo] = useState(false);
+  const [processingOffline, setProcessingOffline] = useState(false);
 
   // UI
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  const [failedQueueCount, setFailedQueueCount] = useState(0);
 
   // Time and values
   const [currentTime, setCurrentTime] = useState(moment());
@@ -94,7 +234,7 @@ const CreateAttendanceScreen = () => {
   const [clockInSeconds, setClockInSeconds] = useState(null);
   const [remainingShiftTime, setRemainingShiftTime] = useState(null);
 
-  // Overview counts (ALWAYS current month)
+  // Overview counts (current month)
   const [presentCount, setPresentCount] = useState(0);
   const [absentCount, setAbsentCount] = useState(0);
   const [lateCount, setLateCount] = useState(0);
@@ -104,55 +244,20 @@ const CreateAttendanceScreen = () => {
   const [overviewLateColor, setOverviewLateColor] = useState('');
   const [overviewEarlyOutColor, setOverviewEarlyOutColor] = useState('');
 
-  // Summary counts (DEPEND on selected month)
-  const [summaryPresentCount, setSummaryPresentCount] = useState(0);
-  const [summaryAbsentCount, setSummaryAbsentCount] = useState(0);
-  const [summaryLateCount, setSummaryLateCount] = useState(0);
-  const [summaryEarlyOutCount, setSummaryEarlyOutCount] = useState(0);
-  const [summaryLeaveCount, setSummaryLeaveCount] = useState(0);
-  const [summaryOffDayCount, setSummaryOffDayCount] = useState(0);
-  const [summaryGazettedDayCount, setSummaryGazettedDayCount] = useState(0);
-  const [summaryErrorCount, setSummaryErrorCount] = useState(0);
-  const [summaryPresentColor, setSummaryPresentColor] = useState('');
-  const [summaryAbsentColor, setSummaryAbsentColor] = useState('');
-  const [summaryLateColor, setSummaryLateColor] = useState('');
-  const [summaryEarlyOutColor, setSummaryEarlyOutColor] = useState('');
-  const [summaryLeaveColor, setSummaryLeaveColor] = useState('');
-  const [summaryOffDayColor, setSummaryOffDayColor] = useState('');
-  const [summaryGazettedDayColor, setSummaryGazettedDayColor] = useState('');
-  const [summaryErrorColor, setSummaryErrorColor] = useState('');
-
-  // Month & View
-  const [activeTab, setActiveTab] = useState('home');
-  const [selectedMonthYM, setSelectedMonthYM] = useState({
-    year: moment().year(),
-    monthIndex: moment().month(),
-  });
-
-  const getSelectedRange = useCallback(() => {
-    const m = moment()
-      .year(selectedMonthYM.year)
-      .month(selectedMonthYM.monthIndex);
-    return {
-      fromDate: m.clone().startOf('month').format('YYYY-MM-DD'),
-      toDate: m.clone().endOf('month').format('YYYY-MM-DD'),
-      label: m.clone().format('MMMM YYYY'),
-      key: m.clone().format('YYYY-MM'),
-    };
-  }, [selectedMonthYM]);
-
   const {userData} = useSelector(state => state.user || {});
   const navigation = useNavigation();
   const selectedLegalEntity = useSelector(
     state => state.company.selectedLegalEntity,
   );
+
   // Location & geofence caches
   const lastCoordsRef = useRef(null);
   const watchIdRef = useRef(null);
   const geofenceCacheRef = useRef({sites: [], ts: 0});
   const permissionStatusRef = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
+  const netInfoUnsubscribeRef = useRef(null);
 
-  // Track last geofence error to force refresh on retry
   const lastGeofenceErrorRef = useRef(null);
 
   // Pull-to-refresh
@@ -167,56 +272,15 @@ const CreateAttendanceScreen = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    const unsub = navigation.addListener('blur', () => setActiveTab('home'));
-    return unsub;
-  }, [navigation]);
+  // Load queue counts
+  const updateQueueCounts = useCallback(async () => {
+    const queue = await loadOfflineAttendanceQueue();
+    setOfflineQueueCount(queue.length);
+    const failed = await loadFailedAttendanceQueue();
+    setFailedQueueCount(failed.length);
+  }, []);
 
-  // Add this useEffect to refresh data when legal entity changes
-  useEffect(() => {
-    if (userData?.employeeId) {
-      // Clear all cached data
-      lastCoordsRef.current = null;
-      geofenceCacheRef.current = {sites: [], ts: 0};
-
-      // Refresh all data
-      fetchAttendanceRegister();
-      fetchOverviewSummary();
-      getGeofencesCached(true); // Force refresh geofences
-
-      // If on summary tab, refresh monthly summary too
-      if (activeTab === 'summary') {
-        fetchMonthlySummary();
-      }
-    }
-  }, [
-    activeTab,
-    fetchAttendanceRegister,
-    fetchMonthlySummary,
-    fetchOverviewSummary,
-    getGeofencesCached,
-    selectedLegalEntity,
-    userData?.employeeId,
-  ]);
-
-  // Helpers for UI
-  const secondsTo12Hour = seconds => {
-    if (seconds == null || seconds === 0) return null;
-    const date = new Date(0);
-    date.setSeconds(seconds);
-    return moment.utc(date).format('hh:mm A');
-  };
-
-  const formatSeconds = totalSeconds => {
-    if (totalSeconds == null) return '-';
-    const duration = moment.duration(totalSeconds, 'seconds');
-    const hours = String(Math.floor(duration.asHours())).padStart(2, '0');
-    const minutes = String(duration.minutes()).padStart(2, '0');
-    const seconds = String(duration.seconds()).padStart(2, '0');
-    return `${hours}:${minutes}:${seconds}`;
-  };
-
-  // TODAY register
+  // ─── TODAY register ────────────────────────────────────────────────────────
   const fetchAttendanceRegister = useCallback(async () => {
     if (!userData?.employeeId) return;
     try {
@@ -265,7 +329,7 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId]);
 
-  // Overview summary (current month)
+  // ─── Overview summary ──────────────────────────────────────────────────────
   const fetchOverviewSummary = useCallback(async () => {
     if (!userData?.employeeId) return;
     try {
@@ -283,7 +347,6 @@ const CreateAttendanceScreen = () => {
         setAbsentCount(Number(s.AbsentCount ?? 0));
         setLateCount(Number(s.LateArrivalCount ?? 0));
         setEarlyOutCount(Number(s.EarlyOutCount ?? 0));
-
         setOverviewPresentColor(String(s.PresentColor));
         setOverviewAbsentColor(String(s.AbsentColor));
         setOverviewLateColor(String(s.LateArrivalColor));
@@ -303,63 +366,7 @@ const CreateAttendanceScreen = () => {
     }
   }, [userData?.employeeId]);
 
-  // Monthly summary (selected month)
-  const fetchMonthlySummary = useCallback(async () => {
-    if (!userData?.employeeId) return;
-    try {
-      setLoadingSummary(true);
-      const {fromDate, toDate} = getSelectedRange();
-      const summary = await getRegisterSummaryColorByDate({
-        employeeId: userData.employeeId,
-        fromDate,
-        toDate,
-      });
-
-      if (Array.isArray(summary) && summary.length > 0) {
-        const s = summary[0] || {};
-        setSummaryPresentCount(Number(s.PresentCount ?? 0));
-        setSummaryAbsentCount(Number(s.AbsentCount ?? 0));
-        setSummaryLateCount(Number(s.LateArrivalCount ?? 0));
-        setSummaryEarlyOutCount(Number(s.EarlyOutCount ?? 0));
-        setSummaryLeaveCount(Number(s.LeaveCount ?? 0));
-        setSummaryOffDayCount(Number(s.OffDayCount ?? 0));
-        setSummaryGazettedDayCount(Number(s.GazettedDayCount ?? 0));
-        setSummaryErrorCount(Number(s.ErrorCount ?? 0));
-
-        setSummaryPresentColor(String(s.PresentColor));
-        setSummaryAbsentColor(String(s.AbsentColor));
-        setSummaryLateColor(String(s.LateArrivalColor));
-        setSummaryEarlyOutColor(String(s.EarlyOutColor));
-        setSummaryLeaveColor(String(s.LeaveColor));
-        setSummaryOffDayColor(String(s.OffDayColor));
-        setSummaryGazettedDayColor(String(s.GazettedDayColor));
-        setSummaryErrorColor(String(s.ErrorColor));
-      } else {
-        setSummaryPresentCount(0);
-        setSummaryAbsentCount(0);
-        setSummaryLateCount(0);
-        setSummaryEarlyOutCount(0);
-        setSummaryLeaveCount(0);
-        setSummaryOffDayCount(0);
-        setSummaryGazettedDayCount(0);
-        setSummaryErrorCount(0);
-        setSummaryPresentColor('');
-        setSummaryAbsentColor('');
-        setSummaryLateColor('');
-        setSummaryEarlyOutColor('');
-        setSummaryLeaveColor('');
-        setSummaryOffDayColor('');
-        setSummaryGazettedDayColor('');
-        setSummaryErrorColor('');
-      }
-    } catch {
-      // ignore
-    } finally {
-      setLoadingSummary(false);
-    }
-  }, [userData?.employeeId, getSelectedRange]);
-
-  // Geofences (persistent cache)
+  // ─── Geofences (persistent cache) ─────────────────────────────────────────
   const getGeofencesCached = useCallback(async (forceRefresh = false) => {
     const now = Date.now();
 
@@ -391,19 +398,344 @@ const CreateAttendanceScreen = () => {
     return clean;
   }, []);
 
-  // Initial loads
+  // ─── Validate attendance against geofences (reuses online validation logic) ───
+  const validateAttendanceWithGeofences = useCallback(
+    async (latitude, longitude, accuracy, deviceIP) => {
+      try {
+        const freshSites = await getGeofencesCached(false);
+
+        if (!Array.isArray(freshSites) || freshSites.length === 0) {
+          return {
+            isValid: false,
+            reason: 'No office geofence available from D365.',
+          };
+        }
+
+        const matchResult = findMatchingGeofence(
+          latitude,
+          longitude,
+          accuracy,
+          deviceIP,
+          freshSites,
+        );
+
+        if (!matchResult) {
+          return {
+            isValid: false,
+            reason:
+              'No matching geofence found. Please check your location and network connection.',
+          };
+        }
+
+        if (matchResult.matchedBy === 'both') {
+          if (matchResult.effectiveDistance > matchResult.radius) {
+            const displayDist = Math.max(0, Math.round(matchResult.distance));
+            return {
+              isValid: false,
+              reason: `You are ~${displayDist}m from office (±${Math.round(
+                accuracy,
+              )}m). Must be within ${Math.round(matchResult.radius)}m.`,
+            };
+          }
+          return {isValid: true};
+        } else if (matchResult.matchedBy === 'ip_only') {
+          const distToCorrectLocation = Math.round(
+            matchResult.distanceToIPMatch || matchResult.distance,
+          );
+          return {
+            isValid: false,
+            reason: `Your location is ${distToCorrectLocation}m from the authorized location for this IP. Please move to the correct location.`,
+          };
+        } else if (matchResult.matchedBy === 'location_only') {
+          return {
+            isValid: false,
+            reason:
+              'Please connect to the office network for attendance marking.',
+          };
+        } else {
+          return {
+            isValid: false,
+            reason:
+              'Please ensure you are at the office and connected to the office network.',
+          };
+        }
+      } catch (error) {
+        return {
+          isValid: false,
+          reason: error?.message || 'Validation failed',
+        };
+      }
+    },
+    [getGeofencesCached, findMatchingGeofence],
+  );
+
+  // ─── Process offline queue with validation ─────────────────────────────────
+  const processOfflineQueue = useCallback(async () => {
+    const isOnline = await checkInternetConnectivity();
+    if (!isOnline) return;
+
+    const queue = await loadOfflineAttendanceQueue();
+    if (queue.length === 0) return;
+
+    setProcessingOffline(true);
+    console.log(
+      `Processing ${queue.length} offline attendance records with validation`,
+    );
+
+    const failedRecords = [];
+    const successCount = 0;
+    const failureDetails = [];
+
+    for (const record of queue) {
+      try {
+        // Get current device IP for validation
+        const currentDeviceIP = await getDeviceIPAddress();
+
+        // Parse coordinates from the stored location string
+        const locationMatch = record.location.match(
+          /([-+]?\d+\.\d+),\s*([-+]?\d+\.\d+)/,
+        );
+        let latitude,
+          longitude,
+          accuracy = 150;
+
+        if (locationMatch) {
+          latitude = parseFloat(locationMatch[1]);
+          longitude = parseFloat(locationMatch[2]);
+
+          // Try to extract accuracy if present
+          const accuracyMatch = record.location.match(/±(\d+)m/);
+          if (accuracyMatch) {
+            accuracy = parseInt(accuracyMatch[1], 10);
+          }
+        } else {
+          // If we can't parse coordinates, we can't validate properly
+          throw new Error('Invalid location data in offline record');
+        }
+
+        // STEP 1: Validate with current geofences and IP
+        const validation = await validateAttendanceWithGeofences(
+          latitude,
+          longitude,
+          accuracy,
+          currentDeviceIP,
+        );
+
+        if (!validation.isValid) {
+          // Validation failed - move to failed queue with reason
+          await saveFailedAttendance(record, validation.reason);
+          await removeOfflineAttendanceRecord(record.id);
+          failureDetails.push({
+            id: record.id,
+            reason: validation.reason,
+            timestamp: record.punchDateTime,
+          });
+          continue;
+        }
+
+        // STEP 2: Validation passed - try to submit to API
+        const payload = {
+          employeeId: record.employeeId,
+          punchDateTime: record.punchDateTime,
+          location: `${record.location} (synced from offline)`,
+          machineIPAddress: currentDeviceIP || record.machineIPAddress,
+          isOfflineSync: true,
+          originalOfflineTimestamp: record.createdAt,
+        };
+
+        const response = await CreateAttendance(payload);
+
+        if (response?.isSuccess || response === true) {
+          // Success - remove from queue
+          await removeOfflineAttendanceRecord(record.id);
+          // eslint-disable-next-line no-const-assign
+          successCount++;
+          console.log('Successfully synced offline record:', record.id);
+        } else {
+          // API returned failure - retry logic
+          record.retryCount += 1;
+          record.lastAttempt = moment().toISOString();
+
+          if (record.retryCount < 3) {
+            failedRecords.push(record);
+          } else {
+            // Max retries exceeded - move to failed queue
+            await saveFailedAttendance(
+              record,
+              response?.message || 'Max retries exceeded',
+            );
+            await removeOfflineAttendanceRecord(record.id);
+            failureDetails.push({
+              id: record.id,
+              reason: response?.message || 'Max retries exceeded',
+              timestamp: record.punchDateTime,
+            });
+          }
+        }
+      } catch (error) {
+        console.log('Error syncing offline record:', record.id, error);
+        record.retryCount += 1;
+        record.lastAttempt = moment().toISOString();
+
+        if (record.retryCount < 3) {
+          failedRecords.push(record);
+        } else {
+          // Max retries exceeded - move to failed queue
+          await saveFailedAttendance(record, error?.message || 'Network error');
+          await removeOfflineAttendanceRecord(record.id);
+          failureDetails.push({
+            id: record.id,
+            reason: error?.message || 'Network error',
+            timestamp: record.punchDateTime,
+          });
+        }
+      }
+    }
+
+    // Update queue with failed records
+    await AsyncStorage.setItem(
+      OFFLINE_ATTENDANCE_KEY,
+      JSON.stringify(failedRecords),
+    );
+
+    setProcessingOffline(false);
+    updateQueueCounts();
+
+    // Show appropriate message
+    const processedCount = queue.length - failedRecords.length;
+    if (processedCount > 0) {
+      let message = `${processedCount} offline attendance record${
+        processedCount > 1 ? 's' : ''
+      } synced successfully.`;
+
+      if (failureDetails.length > 0) {
+        message += `\n\n${failureDetails.length} record${
+          failureDetails.length > 1 ? 's' : ''
+        } failed:`;
+        failureDetails.slice(0, 2).forEach(f => {
+          message += `\n• ${f.reason}`; // Removed the timestamp
+        });
+        if (failureDetails.length > 2) {
+          message += `\n• ...and ${failureDetails.length - 2} more`;
+        }
+      }
+
+      setAlertMessage(message);
+      setAlertModal(true);
+
+      // Refresh UI
+      fetchAttendanceRegister();
+      fetchOverviewSummary();
+    }
+  }, [
+    fetchAttendanceRegister,
+    fetchOverviewSummary,
+    updateQueueCounts,
+    validateAttendanceWithGeofences,
+  ]);
+
+  // ─── IMMEDIATE SYNC when internet returns ─────────────────────────────────
+  useEffect(() => {
+    // Set up NetInfo listener for immediate connectivity changes
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const hasInternet =
+        state.isConnected && state.isInternetReachable !== false;
+
+      if (hasInternet) {
+        console.log('Internet connection detected - attempting immediate sync');
+        // Check if we have offline records
+        loadOfflineAttendanceQueue().then(queue => {
+          if (queue.length > 0) {
+            // Small delay to ensure network is fully ready
+            setTimeout(() => {
+              processOfflineQueue();
+            }, 1000);
+          }
+        });
+      }
+    });
+
+    netInfoUnsubscribeRef.current = unsubscribe;
+
+    return () => {
+      if (netInfoUnsubscribeRef.current) {
+        netInfoUnsubscribeRef.current();
+      }
+    };
+  }, [processOfflineQueue]);
+
+  // ─── App foreground sync ───────────────────────────────────────────────────
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App came to foreground - check for internet and sync
+        checkInternetConnectivity().then(isOnline => {
+          if (isOnline) {
+            processOfflineQueue();
+          }
+        });
+      }
+      appStateRef.current = nextAppState;
+    });
+
+    // Initial check
+    checkInternetConnectivity().then(isOnline => {
+      if (isOnline) {
+        processOfflineQueue();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [processOfflineQueue]);
+
+  // ─── Periodic fallback check (every 2 min) ─────────────────────────────────
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkInternetConnectivity().then(isOnline => {
+        if (isOnline) {
+          processOfflineQueue();
+        }
+      });
+    }, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [processOfflineQueue]);
+
+  // ─── Refresh on legal entity change ───────────────────────────────────────
+  useEffect(() => {
+    if (userData?.employeeId) {
+      lastCoordsRef.current = null;
+      geofenceCacheRef.current = {sites: [], ts: 0};
+      fetchAttendanceRegister();
+      fetchOverviewSummary();
+      getGeofencesCached(true);
+      updateQueueCounts();
+    }
+  }, [
+    fetchAttendanceRegister,
+    fetchOverviewSummary,
+    getGeofencesCached,
+    selectedLegalEntity,
+    userData?.employeeId,
+    updateQueueCounts,
+  ]);
+
+  // ─── Initial loads ─────────────────────────────────────────────────────────
   useEffect(() => {
     fetchAttendanceRegister();
     fetchOverviewSummary();
     getGeofencesCached();
-  }, [fetchAttendanceRegister, fetchOverviewSummary, getGeofencesCached]);
+    updateQueueCounts();
+  }, [
+    fetchAttendanceRegister,
+    fetchOverviewSummary,
+    getGeofencesCached,
+    updateQueueCounts,
+  ]);
 
-  // Reload summary when month changes or when entering summary tab
-  useEffect(() => {
-    if (activeTab === 'summary') fetchMonthlySummary();
-  }, [fetchMonthlySummary, activeTab]);
-
-  // Remaining shift timer
+  // ─── Remaining shift timer ─────────────────────────────────────────────────
   useEffect(() => {
     if (!shiftHours || !clockInSeconds) {
       setRemainingShiftTime(null);
@@ -418,7 +750,24 @@ const CreateAttendanceScreen = () => {
     return () => clearInterval(interval);
   }, [shiftHours, clockInSeconds]);
 
-  // Permissions + warm watch
+  // ─── Helpers for UI ────────────────────────────────────────────────────────
+  const secondsTo12Hour = seconds => {
+    if (seconds == null || seconds === 0) return null;
+    const date = new Date(0);
+    date.setSeconds(seconds);
+    return moment.utc(date).format('hh:mm A');
+  };
+
+  const formatSeconds = totalSeconds => {
+    if (totalSeconds == null) return '-';
+    const duration = moment.duration(totalSeconds, 'seconds');
+    const hours = String(Math.floor(duration.asHours())).padStart(2, '0');
+    const minutes = String(duration.minutes()).padStart(2, '0');
+    const seconds = String(duration.seconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  };
+
+  // ─── Permissions + warm watch ──────────────────────────────────────────────
   const ensureLocationPermission = useCallback(async () => {
     if (permissionStatusRef.current === true) return true;
     try {
@@ -573,15 +922,10 @@ const CreateAttendanceScreen = () => {
     return R * c;
   }, []);
 
-  // NEW FUNCTION: Find any geofence that matches both location AND IP
   const findMatchingGeofence = useCallback(
     (userLat, userLon, accuracy, deviceIP, points) => {
       if (!points || points.length === 0) return null;
 
-      console.log('Checking all geofence records for match...');
-      console.log('Device IP:', deviceIP);
-
-      // Track the best location match for error messaging
       let bestLocationMatch = null;
       let ipMatchFound = false;
       let ipMatchRecord = null;
@@ -599,33 +943,18 @@ const CreateAttendanceScreen = () => {
         )
           continue;
 
-        // Calculate distance
         const distance = calculateDistance(userLat, userLon, lat1, lon1);
         const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
         const effectiveDistance = Math.max(0, distance - Math.min(acc, radius));
         const isWithinRange = effectiveDistance <= radius;
-
-        // Check if IP matches (if geofence has an IP)
         const ipMatches = !geofenceIP || geofenceIP === deviceIP;
 
-        console.log(`Geofence ${p.latitude},${p.longitude}:`, {
-          geofenceIP,
-          ipMatches,
-          isWithinRange,
-          distance: Math.round(distance),
-          effectiveDistance: Math.round(effectiveDistance),
-          radius,
-        });
-
-        // Track if we found an IP match
         if (geofenceIP === deviceIP) {
           ipMatchFound = true;
           ipMatchRecord = p;
         }
 
-        // If both conditions are met, return this geofence immediately
         if (isWithinRange && ipMatches) {
-          console.log('✅ Found matching geofence with both location and IP');
           return {
             latitude: lat1,
             longitude: lon1,
@@ -637,7 +966,6 @@ const CreateAttendanceScreen = () => {
           };
         }
 
-        // Track the best location match (for error messages)
         if (!bestLocationMatch || distance < bestLocationMatch.distance) {
           bestLocationMatch = {
             latitude: lat1,
@@ -650,12 +978,7 @@ const CreateAttendanceScreen = () => {
         }
       }
 
-      // No geofence satisfied both conditions
-      console.log('❌ No geofence matched both location and IP');
-
-      // Determine the failure reason
       if (ipMatchFound && ipMatchRecord) {
-        // We found an IP match but location is wrong
         const distance = calculateDistance(
           userLat,
           userLon,
@@ -673,14 +996,12 @@ const CreateAttendanceScreen = () => {
         bestLocationMatch &&
         bestLocationMatch.effectiveDistance <= bestLocationMatch.radius
       ) {
-        // Location matches but IP is wrong
         return {
           ...bestLocationMatch,
           failureReason: 'ip',
           matchedBy: 'location_only',
         };
       } else {
-        // Neither matches
         return {
           ...bestLocationMatch,
           failureReason: 'both',
@@ -691,14 +1012,37 @@ const CreateAttendanceScreen = () => {
     [calculateDistance],
   );
 
-  // fire-and-forget helper so UI doesn't wait
   const refreshAfterMark = useCallback(() => {
     try {
       fetchAttendanceRegister();
       fetchOverviewSummary();
+      updateQueueCounts();
     } catch {}
-  }, [fetchAttendanceRegister, fetchOverviewSummary]);
+  }, [fetchAttendanceRegister, fetchOverviewSummary, updateQueueCounts]);
 
+  // ─── Save and queue attendance ────────────────────────────────────────────
+  const saveAndQueueAttendance = useCallback(
+    async (payload, reason) => {
+      const saved = await saveOfflineAttendance(payload);
+      setLoadingAttendance(false);
+      markInFlightRef.current = false;
+
+      if (saved) {
+        setAlertMessage(
+          reason ||
+            'Internet is not available right now. Your attendance will be marked automatically once internet is available.',
+        );
+        setAlertModal(true);
+        refreshAfterMark();
+      } else {
+        setAlertMessage('Failed to save attendance. Please try again.');
+        setAlertModal(true);
+      }
+    },
+    [refreshAfterMark],
+  );
+
+  // ─── Main attendance handler ───────────────────────────────────────────────
   const handleAttendance = useCallback(async () => {
     if (markInFlightRef.current) return;
     markInFlightRef.current = true;
@@ -707,40 +1051,57 @@ const CreateAttendanceScreen = () => {
       setLoadingAttendance(true);
       setLoadingGeo(true);
 
-      // Get device IP address first
-      const deviceIP = await getDeviceIPAddress();
-      if (!deviceIP) {
-        throw new Error(
-          'Unable to get device IP address. Please check your network connection.',
-        );
-      }
+      // ── 1. Check real internet connectivity
+      const isOnline = await checkInternetConnectivity();
 
-      console.log('Device IP:', deviceIP);
+      // ── 2. Get IP (may be null if offline)
+      const deviceIP = isOnline ? await getDeviceIPAddress() : null;
+
+      console.log('Device IP:', deviceIP, '| Is Online:', isOnline);
 
       const forceRefresh = lastGeofenceErrorRef.current !== null;
 
-      const [freshSites, coords] = await Promise.all([
-        getGeofencesCached(forceRefresh),
-        getCurrentLocationFast(),
-      ]);
-
-      console.log('All geofence records:', freshSites);
+      // ── 3. Get GPS coordinates (works fully offline)
+      const coords = await getCurrentLocationFast();
 
       setLoadingGeo(false);
+
+      if (!coords?.latitude || !coords?.longitude) {
+        lastGeofenceErrorRef.current = 'Unable to get location from device.';
+        throw new Error(lastGeofenceErrorRef.current);
+      }
+
+      const {latitude, longitude, accuracy = 9999} = coords;
+
+      // ── 4. Build payload
+      const payload = {
+        employeeId: userData?.employeeId,
+        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
+        location: `${latitude},${longitude} (±${Math.round(accuracy)}m)${
+          deviceIP ? ` - IP: ${deviceIP}` : ''
+        }`,
+        machineIPAddress: deviceIP || 'unknown',
+      };
+
+      // ── 5. OFFLINE PATH — save for later sync
+      if (!isOnline) {
+        console.log('Offline mode — queuing attendance');
+        await saveAndQueueAttendance(
+          payload,
+          'No internet connection. Your attendance has been saved and will sync automatically when connectivity is restored.',
+        );
+        return;
+      }
+
+      // ── 6. ONLINE PATH — geofence verification
+      const freshSites = await getGeofencesCached(forceRefresh);
 
       if (!Array.isArray(freshSites) || freshSites.length === 0) {
         lastGeofenceErrorRef.current =
           'No office geofence available from D365.';
         throw new Error(lastGeofenceErrorRef.current);
       }
-      if (!coords?.latitude || !coords?.longitude) {
-        lastGeofenceErrorRef.current = 'Invalid location from device';
-        throw new Error(lastGeofenceErrorRef.current);
-      }
 
-      const {latitude, longitude, accuracy = 9999} = coords;
-
-      // Find matching geofence (checks ALL records for both location AND IP)
       const matchResult = findMatchingGeofence(
         latitude,
         longitude,
@@ -755,15 +1116,7 @@ const CreateAttendanceScreen = () => {
         throw new Error(lastGeofenceErrorRef.current);
       }
 
-      // Handle different match scenarios
       if (matchResult.matchedBy === 'both') {
-        // Perfect match found - proceed with attendance
-        console.log(
-          'Found matching geofence with IP:',
-          matchResult.machineIPAddress,
-        );
-
-        // Double-check range (should be true, but just to be safe)
         if (matchResult.effectiveDistance > matchResult.radius) {
           const displayDist = Math.max(0, Math.round(matchResult.distance));
           lastGeofenceErrorRef.current = `You are ~${displayDist}m from office (±${Math.round(
@@ -772,43 +1125,38 @@ const CreateAttendanceScreen = () => {
           throw new Error(lastGeofenceErrorRef.current);
         }
       } else if (matchResult.matchedBy === 'ip_only') {
-        // IP matches but location is wrong
         const distToCorrectLocation = Math.round(
           matchResult.distanceToIPMatch || matchResult.distance,
         );
-        // lastGeofenceErrorRef.current = `You are connected to the correct network (IP: ${deviceIP}), but your location is ${distToCorrectLocation}m from the authorized location for this IP. Please move to the correct location.`;
         lastGeofenceErrorRef.current = `Your location is ${distToCorrectLocation}m from the authorized location for this IP. Please move to the correct location.`;
-
         throw new Error(lastGeofenceErrorRef.current);
       } else if (matchResult.matchedBy === 'location_only') {
-        // Location matches but IP is wrong
-        // lastGeofenceErrorRef.current = `Your location is correct, but your device IP (${deviceIP}) does not match the authorized office IP for this location. Please connect to the office network.`;
         lastGeofenceErrorRef.current =
-          'Please connect to the office network for mark attendance.';
-
+          'Please connect to the office network for attendance marking.';
         throw new Error(lastGeofenceErrorRef.current);
       } else {
-        // Neither matches
-        // lastGeofenceErrorRef.current = `Your location (${displayDist}m from office) and IP (${deviceIP}) do not match any authorized office configuration. Please ensure you are at the office and connected to the office network.`;
         lastGeofenceErrorRef.current =
           'Please ensure you are at the office and connected to the office network.';
-
         throw new Error(lastGeofenceErrorRef.current);
       }
 
-      // All checks passed - mark attendance
+      // ── 7. All checks passed — attempt API call
       lastGeofenceErrorRef.current = null;
 
-      const payload = {
-        employeeId: userData?.employeeId,
-        punchDateTime: moment().format('YYYY-MM-DDTHH:mm:ss[Z]'),
-        location: `${latitude},${longitude} (±${Math.round(
-          accuracy,
-        )}m) - IP: ${deviceIP}`,
-        machineIPAddress: deviceIP,
-      };
-
-      const response = await CreateAttendance(payload);
+      let response;
+      try {
+        response = await CreateAttendance(payload);
+      } catch (apiErr) {
+        console.log(
+          'API call failed, falling back to offline queue:',
+          apiErr?.message,
+        );
+        await saveAndQueueAttendance(
+          payload,
+          'Could not reach the server right now. Your attendance has been saved and will sync automatically.',
+        );
+        return;
+      }
 
       if (response?.isSuccess || response === true) {
         setLoadingAttendance(false);
@@ -819,7 +1167,14 @@ const CreateAttendanceScreen = () => {
         return;
       }
 
-      throw new Error(response?.message || 'Failed to save attendance');
+      // ── API returned a failure response — fall back to offline queue
+      console.log('API returned failure, falling back to offline queue');
+      await saveAndQueueAttendance(
+        payload,
+        response?.message
+          ? `Server: ${response.message}. Your attendance has been saved offline and will sync automatically.`
+          : 'Failed to save attendance on server. Saved offline — will sync when available.',
+      );
     } catch (err) {
       setAlertMessage(err?.message || 'Failed to mark attendance.');
       setAlertModal(true);
@@ -834,38 +1189,79 @@ const CreateAttendanceScreen = () => {
     userData?.employeeId,
     findMatchingGeofence,
     refreshAfterMark,
+    saveAndQueueAttendance,
   ]);
 
+  // ─── Manual sync ───────────────────────────────────────────────────────────
+  const handleManualSync = useCallback(async () => {
+    if (processingOffline) return;
+
+    const isOnline = await checkInternetConnectivity();
+    if (!isOnline) {
+      setAlertMessage(
+        'Still no internet connection. Attendance will sync automatically when connectivity is restored.',
+      );
+      setAlertModal(true);
+      return;
+    }
+
+    setAlertMessage('Syncing offline attendance records...');
+    setAlertModal(true);
+    await processOfflineQueue();
+  }, [processingOffline, processOfflineQueue]);
+
+  // ─── Pull-to-refresh ───────────────────────────────────────────────────────
   const onRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
-      if (activeTab === 'home') {
-        await Promise.all([
-          fetchAttendanceRegister(),
-          fetchOverviewSummary(),
-          getGeofencesCached(true),
-        ]);
-      } else {
-        await fetchMonthlySummary();
-      }
+      await Promise.all([
+        fetchAttendanceRegister(),
+        fetchOverviewSummary(),
+        getGeofencesCached(true),
+        processOfflineQueue(),
+      ]);
     } finally {
       setRefreshing(false);
     }
   }, [
-    activeTab,
     fetchAttendanceRegister,
     fetchOverviewSummary,
-    fetchMonthlySummary,
     getGeofencesCached,
+    processOfflineQueue,
   ]);
 
+  // ─── Render ────────────────────────────────────────────────────────────────
   const renderHomeScreen = () => (
     <View style={styles.homeRoot}>
+      {/* Offline Queue Indicator */}
+      {(offlineQueueCount > 0 || failedQueueCount > 0) && (
+        <View>
+          {offlineQueueCount > 0 && (
+            <TouchableOpacity
+              style={styles.offlineIndicator}
+              onPress={handleManualSync}
+              disabled={processingOffline}>
+              <Icon name="cloud-off" size={20} color="#FFA000" />
+              <Text style={styles.offlineText}>
+                {processingOffline
+                  ? 'Syncing...'
+                  : `${offlineQueueCount} offline attendance${
+                      offlineQueueCount > 1 ? 's' : ''
+                    } pending sync`}
+              </Text>
+              {!processingOffline && (
+                <Icon name="sync" size={20} color="#1E88E5" />
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       <View style={styles.timeContainer}>
-        <Text numberOfLines={1} adjustsFontSizeToFit style={styles.timeText}>
+        <Text numberOfLines={1} adjustsFontToSizeFit style={styles.timeText}>
           {currentTime.format('hh:mm:ss A')}
         </Text>
-        <Text numberOfLines={1} adjustsFontSizeToFit style={styles.dateText}>
+        <Text numberOfLines={1} adjustsFontToSizeFit style={styles.dateText}>
           {currentTime.format('dddd, MMM D, YYYY')}
         </Text>
       </View>
@@ -898,7 +1294,7 @@ const CreateAttendanceScreen = () => {
         />
         {loadingGeo ? (
           <Text style={{marginTop: 8, color: '#757575', fontSize: 12}}>
-            Getting location and verifying IP…
+            Getting location and verifying…
           </Text>
         ) : null}
       </View>
@@ -906,13 +1302,6 @@ const CreateAttendanceScreen = () => {
       <View style={styles.quickSummaryCard}>
         <View style={styles.quickSummaryHeaderRow}>
           <Text style={styles.quickSummaryTitle}>This Month Overview</Text>
-          <TouchableOpacity
-            onPress={() => setActiveTab('summary')}
-            style={styles.summarySwitchBtn}
-            activeOpacity={0.8}>
-            <Text style={styles.summarySwitchBtnText}>Monthly Summary</Text>
-            <Icon name="chevron-right" size={18} color="#1E88E5" />
-          </TouchableOpacity>
         </View>
         <View style={styles.quickSummaryRow}>
           <View className="item" style={styles.quickSummaryItem}>
@@ -951,107 +1340,6 @@ const CreateAttendanceScreen = () => {
     </View>
   );
 
-  const renderMonthlySummary = () => {
-    const keyForMonth = getSelectedRange().key;
-    return (
-      <View key={keyForMonth} style={styles.summaryRoot}>
-        <View style={styles.topRow}>
-          <TouchableOpacity
-            onPress={() => setActiveTab('home')}
-            style={styles.backBtn}
-            activeOpacity={0.8}>
-            <Icon name="chevron-left" size={20} color="#1E88E5" />
-            <Text style={styles.backBtnText}>Overview</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.monthSelector}>
-          <TouchableOpacity
-            onPress={() =>
-              setSelectedMonthYM(prev => {
-                const m = moment()
-                  .year(prev.year)
-                  .month(prev.monthIndex)
-                  .subtract(1, 'month');
-                return {year: m.year(), monthIndex: m.month()};
-              })
-            }>
-            <Icon name="chevron-left" size={28} color="#1E88E5" />
-          </TouchableOpacity>
-          <Text numberOfLines={1} adjustsFontSizeToFit style={styles.monthText}>
-            {getSelectedRange().label}
-          </Text>
-          <TouchableOpacity
-            onPress={() =>
-              setSelectedMonthYM(prev => {
-                const m = moment()
-                  .year(prev.year)
-                  .month(prev.monthIndex)
-                  .add(1, 'month');
-                return {year: m.year(), monthIndex: m.month()};
-              })
-            }>
-            <Icon name="chevron-right" size={28} color="#1E88E5" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryCardTitle}>Attendance Summary</Text>
-          {loadingSummary ? (
-            <ActivityIndicator
-              size="large"
-              color="#1E88E5"
-              style={styles.loader}
-            />
-          ) : (
-            <View style={styles.summaryList}>
-              <SummaryItem
-                label="Present Days"
-                value={String(summaryPresentCount)}
-                color={summaryPresentColor}
-              />
-              <SummaryItem
-                label="Absent Days"
-                value={String(summaryAbsentCount)}
-                color={summaryAbsentColor}
-              />
-              <SummaryItem
-                label="Late Arrivals"
-                value={String(summaryLateCount)}
-                color={summaryLateColor}
-              />
-              <SummaryItem
-                label="Early Outs"
-                value={String(summaryEarlyOutCount)}
-                color={summaryEarlyOutColor}
-              />
-              <SummaryItem
-                label="Leave Days"
-                value={String(summaryLeaveCount)}
-                color={summaryLeaveColor}
-              />
-              <SummaryItem
-                label="Off Days"
-                value={String(summaryOffDayCount)}
-                color={summaryOffDayColor}
-              />
-              <SummaryItem
-                label="Gazetted Days"
-                value={String(summaryGazettedDayCount)}
-                color={summaryGazettedDayColor}
-              />
-              <SummaryItem
-                label="Error Days"
-                value={String(summaryErrorCount)}
-                color={summaryErrorColor}
-              />
-            </View>
-          )}
-        </View>
-      </View>
-    );
-  };
-
   return (
     <ActionPaneContainer
       pageTitle="Attendance"
@@ -1063,12 +1351,11 @@ const CreateAttendanceScreen = () => {
         <ScrollView
           style={styles.content}
           contentContainerStyle={styles.contentContainer}
-          scrollEnabled={activeTab === 'summary'}
           alwaysBounceVertical
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }>
-          {activeTab === 'home' ? renderHomeScreen() : renderMonthlySummary()}
+          {renderHomeScreen()}
         </ScrollView>
       </View>
       <AlertModal
@@ -1141,21 +1428,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1E88E5',
   },
-  summarySwitchBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: '#E3F2FD',
-    marginLeft: 6,
-  },
-  summarySwitchBtnText: {
-    fontSize: isSmallDevice ? 11 : 12,
-    color: '#1E88E5',
-    fontWeight: '600',
-    marginRight: 2,
-  },
   quickSummaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1174,57 +1446,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  summaryRoot: {flex: 1, padding: PAD, backgroundColor: '#F5F5F5', gap: 10},
-  topRow: {flexDirection: 'row', justifyContent: 'flex-start'},
-  backBtn: {
+  offlineIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-    backgroundColor: '#E3F2FD',
-    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    backgroundColor: '#FFF3E0',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    gap: 8,
   },
-  backBtnText: {
-    fontSize: isSmallDevice ? 12 : 13,
-    color: '#1E88E5',
-    fontWeight: '600',
-    marginLeft: 2,
-  },
-  monthSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF',
-    padding: isSmallDevice ? 10 : 12,
-    borderRadius: 12,
-    elevation: 2,
-    minHeight: 52,
-    justifyContent: 'space-between',
-  },
-  monthText: {
-    fontSize: isSmallDevice ? 18 : 20,
-    fontWeight: '600',
-    color: '#1E88E5',
-    textAlign: 'center',
+  offlineText: {
+    fontSize: 14,
+    color: '#FFA000',
     flex: 1,
-    marginHorizontal: 10,
-  },
-  summaryCard: {
-    backgroundColor: '#FFF',
-    padding: isSmallDevice ? 12 : 16,
-    borderRadius: 12,
-    elevation: 2,
-    alignSelf: 'stretch',
-  },
-  summaryCardTitle: {
-    fontSize: isSmallDevice ? 17 : 19,
-    fontWeight: 'bold',
-    color: '#1E88E5',
-    marginBottom: 8,
     textAlign: 'center',
   },
-  summaryList: {gap: isSmallDevice ? 6 : 8},
-  loader: {marginVertical: 16},
 });
 
 export default CreateAttendanceScreen;

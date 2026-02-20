@@ -58,6 +58,7 @@ const BankAccountListPage = () => {
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -200,6 +201,41 @@ const BankAccountListPage = () => {
       Completed: 'Completed',
     };
     return statusMap[status] || 'Draft';
+  };
+
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return banksaccountdata;
+
+    return banksaccountdata.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+
+      // Special handling for Pending filter - include any status that contains "Pending"
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: banksaccountdata.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending"
+        counts[pill] = banksaccountdata.filter(item =>
+          getStatusLabel(item.WFStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = banksaccountdata.filter(
+          item => getStatusLabel(item.WFStatus) === pill,
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts); // Debug
+    return counts;
   };
 
   // Card Configuration
@@ -484,7 +520,11 @@ const BankAccountListPage = () => {
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleBankAccountRecordCreation}>
+      onFloatingButtonPress={handleBankAccountRecordCreation}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -499,9 +539,9 @@ const BankAccountListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : banksaccountdata.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={banksaccountdata}
+          data={getFilteredData()}
           renderItem={renderBankAccountCard}
           keyExtractor={(item, index) =>
             item.recId?.toString() || index.toString()
@@ -524,14 +564,12 @@ const BankAccountListPage = () => {
           </Text>
         </ScrollView>
       )}
-
       <AlertModal
         visible={alertModal}
         heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
-
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
