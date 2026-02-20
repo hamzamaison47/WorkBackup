@@ -35,7 +35,7 @@ const RetrieveAllAdvanceTypeRequest = async ({employeeId}) => {
       },
     );
 
-    console.log({soapEnvelope});
+    // console.log({soapEnvelope});
 
     const parser = new XMLParser({
       ignoreAttributes: false,

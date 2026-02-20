@@ -1,9 +1,10 @@
+/* eslint-disable curly */
+/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
-
 
 const GetEmployeeAdvanceLabels = async () => {
   try {
@@ -30,7 +31,8 @@ const GetEmployeeAdvanceLabels = async () => {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction: 'http://tempuri.org/PREmployeeAdvanceRequestSvc/getEmployeeAdvanceLabels',
+          SOAPAction:
+            'http://tempuri.org/PREmployeeAdvanceRequestSvc/getEmployeeAdvanceLabels',
         },
         responseType: 'text',
       },
@@ -51,7 +53,8 @@ const GetEmployeeAdvanceLabels = async () => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['getEmployeeAdvanceLabelsResponse']?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.['getEmployeeAdvanceLabelsResponse']
+        ?.result;
 
     // console.log('Raw result:', result);
 

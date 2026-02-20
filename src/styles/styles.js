@@ -2581,8 +2581,8 @@ const styles = StyleSheet.create({
   },
 
   DSR_Label: {
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
-    marginTop: conditionalVerticalScale(16, 18, 20, 22),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    marginTop: conditionalVerticalScale(14, 16, 18, 20),
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.2,
@@ -2592,9 +2592,9 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(1),
     borderColor: '#E0E0E0',
     borderRadius: borderRadius.lg,
-    padding: conditionalScale(12, 13, 14, 15),
-    marginTop: conditionalVerticalScale(6, 7, 8, 9),
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    padding: conditionalScale(11, 12, 13, 14),
+    marginTop: conditionalVerticalScale(5, 6, 7, 8),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     color: '#1A1A1A',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -2611,9 +2611,9 @@ const styles = StyleSheet.create({
   },
 
   DSR_TextArea: {
-    height: conditionalVerticalScale(100, 110, 120, 130),
+    height: conditionalVerticalScale(95, 105, 115, 125),
     textAlignVertical: 'top',
-    paddingTop: conditionalVerticalScale(12, 13, 14, 15),
+    paddingTop: conditionalVerticalScale(11, 12, 13, 14),
   },
 
   DSR_DateSelector: {
@@ -2622,8 +2622,8 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(1),
     borderColor: '#E0E0E0',
     borderRadius: borderRadius.lg,
-    padding: conditionalScale(12, 13, 14, 15),
-    marginTop: conditionalVerticalScale(6, 7, 8, 9),
+    padding: conditionalScale(11, 12, 13, 14),
+    marginTop: conditionalVerticalScale(5, 6, 7, 8),
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOpacity: 0.02,
@@ -2633,7 +2633,7 @@ const styles = StyleSheet.create({
   },
 
   DSR_DateText: {
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     color: '#1A1A1A',
     letterSpacing: 0.2,
     flex: 1,
@@ -2641,54 +2641,54 @@ const styles = StyleSheet.create({
 
   DSR_DropdownPlaceholder: {
     color: '#A0A0A0',
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     letterSpacing: 0.2,
   },
 
   DSR_DropdownSelectedText: {
     color: '#1A1A1A',
     fontWeight: '400',
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     letterSpacing: 0.2,
   },
 
   DSR_DropdownItemText: {
     color: '#1A1A1A',
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     letterSpacing: 0.2,
   },
 
   DSR_DropdownContainer: {
-    borderWidth: moderateScale(1),
+    borderWidth: moderateScale(0.5),
     borderColor: '#E0E0E0',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: moderateScale(2)},
-    shadowOpacity: 0.08,
-    shadowRadius: moderateScale(6),
-    elevation: 4,
-    marginTop: conditionalVerticalScale(2, 3, 4, 5),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    shadowOpacity: 0.05,
+    shadowRadius: moderateScale(3),
+    elevation: 2,
+    // marginTop: conditionalVerticalScale(2, 3, 4, 5),
   },
 
   DSR_DropdownItemContainer: {
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
-    paddingVertical: conditionalVerticalScale(10, 11, 12, 13),
+    paddingHorizontal: conditionalScale(6, 7, 8, 9),
+    paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
   },
 
   DSR_DropdownSearchInput: {
     color: '#1A1A1A',
     backgroundColor: '#FFFFFF',
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(10, 10.5, 11, 11.5),
     borderBottomWidth: moderateScale(1),
     borderBottomColor: '#F0F0F0',
-    paddingVertical: conditionalVerticalScale(2, 3, 4, 5),
-    paddingHorizontal: conditionalScale(4, 5, 6, 7),
+    paddingVertical: conditionalVerticalScale(0.5, 1, 1.5, 2),
+    paddingHorizontal: conditionalScale(1, 2, 3, 4),
   },
 
   DSR_DropdownIcon: {
-    width: conditionalScale(20, 21, 22, 23),
-    height: conditionalScale(20, 21, 22, 23),
+    width: conditionalScale(19, 20, 21, 22),
+    height: conditionalScale(19, 20, 21, 22),
     tintColor: '#6366F1',
   },
 
@@ -2707,38 +2707,38 @@ const styles = StyleSheet.create({
   DSR_ProcessingContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: borderRadius.xl,
-    padding: conditionalScale(24, 28, 32, 36),
+    padding: conditionalScale(22, 24, 26, 28),
     alignItems: 'center',
-    minWidth: conditionalScale(200, 220, 240, 260),
+    minWidth: conditionalScale(180, 190, 200, 210),
     shadowColor: '#6366F1',
-    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOffset: {width: 0, height: moderateScale(3)},
     shadowOpacity: 0.15,
-    shadowRadius: moderateScale(12),
-    elevation: 8,
+    shadowRadius: moderateScale(10),
+    elevation: 7,
     borderWidth: moderateScale(1),
     borderColor: '#F0F0F0',
   },
 
   DSR_ProcessingText: {
-    marginTop: conditionalVerticalScale(12, 14, 16, 18),
-    fontSize: conditionalFontScale(16, 17, 18, 19),
+    marginTop: conditionalVerticalScale(11, 13, 15, 17),
+    fontSize: conditionalFontScale(15, 16, 17, 18),
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
   },
 
   DSR_CharCount: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
+    fontSize: conditionalFontScale(11, 11.5, 12, 12.5),
     color: '#757575',
-    marginTop: conditionalVerticalScale(4, 5, 6, 7),
+    marginTop: conditionalVerticalScale(3, 4, 5, 6),
     textAlign: 'right',
     letterSpacing: 0.2,
   },
 
   DSR_FormHeader: {
     backgroundColor: '#F8F9FA',
-    padding: conditionalScale(16, 18, 20, 22),
-    marginBottom: conditionalVerticalScale(20, 22, 24, 26),
+    padding: conditionalScale(15, 16, 17, 18),
+    marginBottom: conditionalVerticalScale(18, 20, 22, 24),
     borderLeftWidth: moderateScale(4),
     borderLeftColor: '#6366F1',
     borderRadius: borderRadius.lg,
@@ -2750,18 +2750,18 @@ const styles = StyleSheet.create({
   },
 
   DSR_FormHeaderText: {
-    fontSize: conditionalFontScale(17, 18, 19, 20),
+    fontSize: conditionalFontScale(16, 17, 18, 19),
     fontWeight: '600',
     color: '#6366F1',
-    marginBottom: conditionalVerticalScale(4, 5, 6, 7),
+    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
     letterSpacing: 0.3,
   },
 
   DSR_FormHeaderSubtext: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#757575',
     letterSpacing: 0.2,
-    lineHeight: conditionalFontScale(18, 19, 20, 21),
+    lineHeight: conditionalFontScale(17, 18, 19, 20),
   },
 
   DSR_SwitchRow: {
@@ -2769,16 +2769,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#F8F9FA',
-    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
-    paddingHorizontal: conditionalScale(16, 17, 18, 19),
+    paddingVertical: conditionalVerticalScale(11, 12, 13, 14),
+    paddingHorizontal: conditionalScale(15, 16, 17, 18),
     borderRadius: borderRadius.lg,
-    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+    marginBottom: conditionalVerticalScale(11, 13, 15, 17),
     borderWidth: moderateScale(1),
     borderColor: '#F0F0F0',
   },
 
   DSR_SwitchLabel: {
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     color: '#1A1A1A',
     fontWeight: '500',
     letterSpacing: 0.2,
@@ -2787,13 +2787,13 @@ const styles = StyleSheet.create({
 
   DSR_ExpandableContent: {
     backgroundColor: '#F8F9FA',
-    paddingHorizontal: conditionalScale(16, 17, 18, 19),
-    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
-    paddingBottom: conditionalVerticalScale(16, 18, 20, 22),
+    paddingHorizontal: conditionalScale(15, 16, 17, 18),
+    paddingTop: conditionalVerticalScale(7, 9, 11, 13),
+    paddingBottom: conditionalVerticalScale(14, 16, 18, 20),
     borderBottomLeftRadius: borderRadius.lg,
     borderBottomRightRadius: borderRadius.lg,
-    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
-    marginTop: conditionalVerticalScale(-4, -5, -6, -7),
+    marginBottom: conditionalVerticalScale(11, 13, 15, 17),
+    marginTop: conditionalVerticalScale(-3, -4, -5, -6),
     borderWidth: moderateScale(1),
     borderTopWidth: 0,
     borderColor: '#F0F0F0',
@@ -2802,20 +2802,20 @@ const styles = StyleSheet.create({
   DSR_GuarantorHeader: {
     flexDirection: 'row',
     backgroundColor: '#F8F9FA',
-    paddingVertical: conditionalVerticalScale(10, 11, 12, 13),
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(9, 10, 11, 12),
+    paddingHorizontal: conditionalScale(13, 14, 15, 16),
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
     borderWidth: moderateScale(1),
     borderBottomWidth: 0,
     borderColor: '#F0F0F0',
-    marginTop: conditionalVerticalScale(12, 14, 16, 18),
+    marginTop: conditionalVerticalScale(11, 13, 15, 17),
   },
 
   DSR_GuarantorHeaderId: {
     flex: 0.3,
     fontWeight: '600',
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#1A1A1A',
     letterSpacing: 0.2,
   },
@@ -2823,16 +2823,16 @@ const styles = StyleSheet.create({
   DSR_GuarantorHeaderName: {
     flex: 0.7,
     fontWeight: '600',
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#1A1A1A',
-    paddingLeft: conditionalScale(8, 10, 12, 14),
+    paddingLeft: conditionalScale(7, 9, 11, 13),
     letterSpacing: 0.2,
   },
 
   DSR_GuarantorItem: {
     flexDirection: 'row',
-    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(11, 12, 13, 14),
+    paddingHorizontal: conditionalScale(13, 14, 15, 16),
     alignItems: 'center',
     borderBottomWidth: moderateScale(1),
     borderBottomColor: '#F5F5F5',
@@ -2840,7 +2840,7 @@ const styles = StyleSheet.create({
 
   DSR_GuarantorId: {
     flex: 0.3,
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     color: '#1A1A1A',
     fontWeight: '500',
     letterSpacing: 0.2,
@@ -2848,9 +2848,9 @@ const styles = StyleSheet.create({
 
   DSR_GuarantorName: {
     flex: 0.7,
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     color: '#757575',
-    paddingLeft: conditionalScale(8, 10, 12, 14),
+    paddingLeft: conditionalScale(7, 9, 11, 13),
     letterSpacing: 0.2,
   },
 
@@ -2858,9 +2858,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
 
-  // ============================================
+  // ==========================================================
   // DYNAMIC REQUEST CARD - COMPLETE RESPONSIVE STYLES
-  // ============================================
+  // ==========================================================
 
   // Card Container
   DRC_cardContainer: {
@@ -5233,7 +5233,7 @@ const styles = StyleSheet.create({
   SRBtn_Button: {
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xxl,
     paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
     alignItems: 'center',
     justifyContent: 'center',
@@ -5820,7 +5820,7 @@ const styles = StyleSheet.create({
   DNav_MaisonLogo: {
     position: 'absolute',
     top: verticalScale(14),
-    right: scale(16),
+    left: scale(16),
     width: scale(96),
     height: verticalScale(36),
     resizeMode: 'contain',
