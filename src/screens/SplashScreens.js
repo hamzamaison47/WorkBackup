@@ -344,11 +344,6 @@ const SplashScreens = ({navigation}) => {
       />
 
       {/* Logo with fade animation */}
-      <Animated.Image
-        source={require('../assets/cloud.png')}
-        style={[styles.splash_Logo, {opacity: logoOpacity}]}
-        resizeMode="contain"
-      />
 
       {/* Text with fade animations */}
       <Animated.Text style={[styles.splash_Text, {opacity: textOpacity}]}>
@@ -356,8 +351,14 @@ const SplashScreens = ({navigation}) => {
       </Animated.Text>
 
       <Animated.Text style={[styles.splash_Tagline, {opacity: taglineOpacity}]}>
-        Your Technology Partner
+        Secure Mobile Gateway to Dynamics365
       </Animated.Text>
+
+      <Animated.Image
+        source={require('../assets/cloud.png')}
+        style={[styles.splash_Logo, {opacity: logoOpacity}]}
+        resizeMode="contain"
+      />
     </LinearGradient>
   );
 };

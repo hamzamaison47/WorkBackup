@@ -62,6 +62,7 @@ const IdentificationNumberListPage = () => {
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -180,6 +181,43 @@ const IdentificationNumberListPage = () => {
     fetchIdentifications();
   };
 
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return identificationsData;
+
+    return identificationsData.filter(item => {
+      const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
+
+      // Special handling for Pending filter
+      if (activeFilter === 'Pending') {
+        // Include any status that contains "Pending" OR is "IN REVIEW"
+        return status.includes('Pending') || status === 'IN REVIEW';
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: identificationsData.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending" - using ApprovalStatus
+        counts[pill] = identificationsData.filter(item => {
+          const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
+          return status.includes('Pending') || status === 'IN REVIEW';
+        }).length;
+      } else {
+        counts[pill] = identificationsData.filter(
+          item => getStatusLabel(item.ApprovalStatus) === pill, // ✅ Use ApprovalStatus
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts);
+    return counts;
+  };
+
   // Card Configuration
   const cardConfig = {
     headerConfig: {
@@ -208,7 +246,7 @@ const IdentificationNumberListPage = () => {
 
     const statusMap = {
       draft: 'Draft',
-      inreview: 'In review',
+      inreview: 'IN REVIEW',
       approved: 'Approved Waiting',
       waiting: 'Waiting',
       cancelled: 'Canceled',
@@ -580,7 +618,11 @@ const IdentificationNumberListPage = () => {
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={fetchIdentifications}
-      onFloatingButtonPress={handleCreateRequest}>
+      onFloatingButtonPress={handleCreateRequest}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -595,9 +637,9 @@ const IdentificationNumberListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : identificationsData.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={identificationsData}
+          data={getFilteredData()}
           renderItem={renderIdentificationCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()

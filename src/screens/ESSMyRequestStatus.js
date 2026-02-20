@@ -438,7 +438,7 @@ import {
   RefreshControl,
   ScrollView,
   View,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import {
   useNavigation,
@@ -449,6 +449,7 @@ import {useSelector} from 'react-redux';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../components/Alert/AlertModal';
+import DynamicRequestCard from '../components/DynamicRequestCard';
 
 import {retrieveMyRequestStatus} from '../API/ESSMyRequestStatus/retrieveAllESSMyRequestStatus';
 import styles from '../styles/styles';
@@ -465,16 +466,13 @@ const ESSMyRequestStatusListPage = () => {
     highlightRecId,
     userData: routeUserData,
   } = route.params || {};
-  // Get userData from Redux as fallback
+
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = routeUserData || reduxUserData;
 
-  // Use effective user data for all operations
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
-
-  console.log('Employee ID:', effectiveEmployeeId);
 
   const [requestData, setRequestData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -482,11 +480,11 @@ const ESSMyRequestStatusListPage = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
-  // Filter state - using pill buttons
+  // ── Filter pill state ──
   const [activeFilter, setActiveFilter] = useState('All');
 
   /* ==============================
-     Fetch Request Status Data
+     Fetch Data
   ============================== */
 
   const fetchRequestStatus = useCallback(async () => {
@@ -501,16 +499,16 @@ const ESSMyRequestStatusListPage = () => {
       const data = await retrieveMyRequestStatus({
         employeeId: effectiveEmployeeId,
       });
-      console.log('here is the adta', data);
 
       const formattedData = (data || []).map((item, index) => ({
         id: item.RecId ?? index,
-        requestId: item.RequestId,
-        description: item.Description,
-        status: item.PRWFStatus,
         recId: item.RecId,
-        tableName: item.TableName,
-        ModifiedDateTime: item.ModifiedDateTime,
+        // Keep raw fields — no joining/splitting
+        RequestId: item.RequestId || '',
+        Description: item.Description || '',
+        PRWFStatus: item.PRWFStatus || '',
+        TableName: item.TableName || '',
+        ModifiedDateTime: item.ModifiedDateTime || '',
       }));
 
       setRequestData(formattedData);
@@ -539,7 +537,6 @@ const ESSMyRequestStatusListPage = () => {
         navigation.goBack();
         return true;
       };
-
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
@@ -547,235 +544,109 @@ const ESSMyRequestStatusListPage = () => {
   );
 
   /* ==============================
-     Filter Logic (using pill buttons)
+     Filter Logic
   ============================== */
+
+  // Normalise raw API status to a pill-friendly label
+  const normaliseStatus = status => {
+    const s = status?.toLowerCase() || '';
+    if (s === 'approved') return 'Approved';
+    if (s === 'rejected') return 'Rejected';
+    if (s.includes('pending') || s === 'submitted') return 'Pending';
+    if (s === 'completed' || s === 'workflowcompleted') return 'Completed';
+    return 'Draft';
+  };
 
   const getFilteredData = () => {
-    switch (activeFilter) {
-      case 'All':
-        return requestData;
-      case 'Pending':
-        return requestData.filter(
-          item =>
-            item.status?.toLowerCase().includes('pending') ||
-            item.status?.toLowerCase() === 'submitted',
-        );
-      case 'Approved':
-        return requestData.filter(
-          item => item.status?.toLowerCase() === 'approved',
-        );
-      case 'Rejected':
-        return requestData.filter(
-          item => item.status?.toLowerCase() === 'rejected',
-        );
-      default:
-        return requestData;
-    }
+    if (activeFilter === 'All') return requestData;
+    return requestData.filter(
+      item => normaliseStatus(item.PRWFStatus) === activeFilter,
+    );
+  };
+
+  // Count per pill
+  const getFilterCounts = () => {
+    const counts = {All: requestData.length};
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      counts[pill] = requestData.filter(
+        item => normaliseStatus(item.PRWFStatus) === pill,
+      ).length;
+    });
+    return counts;
   };
 
   /* ==============================
-     Get Status Counts
-  ============================== */
-
-  const getStatusCounts = () => {
-    const pending = requestData.filter(
-      item =>
-        item.status?.toLowerCase().includes('pending') ||
-        item.status?.toLowerCase() === 'submitted',
-    ).length;
-
-    const approved = requestData.filter(
-      item => item.status?.toLowerCase() === 'approved',
-    ).length;
-
-    const rejected = requestData.filter(
-      item => item.status?.toLowerCase() === 'rejected',
-    ).length;
-
-    return {
-      all: requestData.length,
-      pending,
-      approved,
-      rejected,
-    };
-  };
-
-  /* ==============================
-     Format Date
+     Format helpers
   ============================== */
 
   const formatDateTime = dateTimeString => {
     if (!dateTimeString) return 'N/A';
-
     try {
       const date = new Date(dateTimeString);
-      const options = {
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-      };
-      return date.toLocaleDateString('en-US', options);
+      });
     } catch {
       return dateTimeString;
     }
   };
 
   /* ==============================
-     Get Status Color
+     Card Config
   ============================== */
 
-  const getStatusColor = status => {
-    const statusLower = status?.toLowerCase() || '';
-
-    if (statusLower === 'approved') {
-      return '#28a745';
-    } else if (statusLower === 'rejected') {
-      return '#dc3545';
-    } else if (statusLower.includes('pending') || statusLower === 'submitted') {
-      return '#fd7e14';
-    } else {
-      return '#6c757d';
-    }
+  const CARD_CONFIG = {
+    headerConfig: {
+      title: {key: 'TableName'},
+    },
+    fields: [
+      {key: 'RequestId', label: 'Request ID', type: 'text'},
+      {key: 'Description', label: 'Description', type: 'text'},
+      {key: 'ModifiedDateTime', label: 'Modified Date', type: 'text'},
+      {key: 'PRWFStatus', label: '', type: 'status'},
+    ],
   };
+
+  // No action buttons — read-only list
+  const BUTTON_CONFIG = {};
 
   /* ==============================
      Render Card
   ============================== */
 
   const renderRequestCard = ({item}) => {
-    const statusColor = getStatusColor(item.status);
+    const processedItem = {
+      ...item,
+      // Format date for display
+      ModifiedDateTime: formatDateTime(item.ModifiedDateTime),
+      // PRWFStatus drives the status badge inside DynamicRequestCard
+      PRWFStatus: item.PRWFStatus || 'Unknown',
+    };
 
     return (
-      <TouchableOpacity
-        activeOpacity={0.7}
-        onPress={() => {
-          // Navigate based on filter
-          switch (activeFilter) {
-            case 'Pending':
-              console.log('Navigate to pending detail:', item.recId);
-              break;
-            case 'Approved':
-              console.log('Navigate to approved detail:', item.recId);
-              break;
-            case 'Rejected':
-              console.log('Navigate to rejected detail:', item.recId);
-              break;
-            default:
-              console.log('Navigate to detail:', item.recId);
-          }
-        }}
-        style={styles.ESS_cardWrapper}>
-        <View
-          style={[
-            styles.ESS_card,
-            {borderLeftColor: statusColor, borderLeftWidth: 4},
-          ]}>
-          {/* Table Name */}
-          <View style={styles.ESS_tableNameSection}>
-            <Text style={styles.ESS_labelText}>Type</Text>
-            <Text style={styles.ESS_tableNameText}>
-              {item.tableName || 'N/A'}
-            </Text>
-          </View>
-
-          {/* Request ID */}
-          <View style={styles.ESS_section}>
-            <Text style={styles.ESS_labelText}>Request ID</Text>
-            <Text style={styles.ESS_requestIdText}>
-              {item.requestId || 'N/A'}
-            </Text>
-          </View>
-
-          {/* Description */}
-          <View style={styles.ESS_section}>
-            <Text style={styles.ESS_labelText}>Description</Text>
-            <Text style={styles.ESS_descriptionText} numberOfLines={2}>
-              {item.description || 'No description available'}
-            </Text>
-          </View>
-
-          {/* Created Date Only */}
-          <View style={styles.ESS_footerSection}>
-            <View style={styles.ESS_dateRow}>
-              <Text style={styles.ESS_dateIcon}>📅</Text>
-              <Text style={styles.ESS_dateText}>
-                Modified Date: {formatDateTime(item.ModifiedDateTime)}
-              </Text>
-            </View>
-          </View>
-
-          {/* Status Indicator */}
-          <View
-            style={[
-              styles.ESS_statusIndicator,
-              {backgroundColor: statusColor},
-            ]}>
-            <Text style={styles.ESS_statusIndicatorText}>
-              {item.status || 'Unknown'}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  /* ==============================
-     Filter Pills (using global styles)
-  ============================== */
-
-  const renderFilterPills = () => {
-    const counts = getStatusCounts();
-
-    const filters = [
-      {key: 'All', label: 'All', count: counts.all, color: '#0066CC'},
-      {
-        key: 'Pending',
-        label: 'Pending',
-        count: counts.pending,
-        color: '#0066CC',
-      },
-      {
-        key: 'Approved',
-        label: 'Approved',
-        count: counts.approved,
-        color: '#0066CC',
-      },
-      {
-        key: 'Rejected',
-        label: 'Rejected',
-        count: counts.rejected,
-        color: '#0066CC',
-      },
-    ];
-
-    return (
-      <View style={styles.Pill_container}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.Pill_scrollContent}>
-          {filters.map(filter => (
-            <TouchableOpacity
-              key={filter.key}
-              style={[
-                styles.Pill_pill,
-                activeFilter === filter.key && styles.Pill_activePill,
-                activeFilter === filter.key && {backgroundColor: filter.color},
-              ]}
-              onPress={() => setActiveFilter(filter.key)}>
-              <Text
-                style={[
-                  styles.Pill_pillText,
-                  activeFilter === filter.key && styles.Pill_activePillText,
-                ]}>
-                {filter.label} ({filter.count})
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      <Pressable
+        style={({pressed}) => [
+          styles.DLP_PressableCard,
+          pressed && styles.DLP_PressableCardPressed,
+        ]}
+        onPress={() => console.log('Navigate to detail:', item.recId)}>
+        <DynamicRequestCard
+          data={processedItem}
+          headerConfig={CARD_CONFIG.headerConfig}
+          fields={CARD_CONFIG.fields}
+          buttons={BUTTON_CONFIG}
+          onButtonPress={() => {}}
+          isExpandable={false}
+          gradientColors={['#f0f9ff', '#e0f2fe', '#dbeafe']}
+          processingButtons={[]}
+          showNavigationArrow={false}
+          isClickable={true}
+        />
+      </Pressable>
     );
   };
 
@@ -793,10 +664,12 @@ const ESSMyRequestStatusListPage = () => {
       showFloatingButton={false}
       isHeaderActive={true}
       showTabNavigator={false}
-      onRefresh={fetchRequestStatus}>
-      {/* Filter Pills - Always visible */}
-      {!isLoading && requestData.length > 0 && renderFilterPills()}
-
+      onRefresh={fetchRequestStatus}
+      // ── Filter pills ──
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isLoading ? (
         <CustomIndicator />
       ) : filteredData.length > 0 ? (
@@ -804,7 +677,7 @@ const ESSMyRequestStatusListPage = () => {
           data={filteredData}
           renderItem={renderRequestCard}
           keyExtractor={item => item.recId?.toString()}
-          contentContainerStyle={styles.ESS_listContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -812,38 +685,26 @@ const ESSMyRequestStatusListPage = () => {
               onRefresh={fetchRequestStatus}
             />
           }
-          ListHeaderComponent={
-            <View style={styles.ESS_filterHeader}>
-              <Text style={styles.ESS_filterTitle}>
-                {activeFilter === 'All'
-                  ? 'All Requests'
-                  : `${activeFilter} Requests (${filteredData.length})`}
-              </Text>
-            </View>
-          }
         />
       ) : (
         <ScrollView
-          contentContainerStyle={styles.ESS_emptyContainer}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
               onRefresh={fetchRequestStatus}
             />
           }>
-          <View style={styles.ESS_emptyState}>
-            <Text style={styles.ESS_emptyIcon}>📋</Text>
-            <Text style={styles.ESS_emptyTitle}>
-              {activeFilter === 'All'
-                ? 'No Requests Found'
-                : `No ${activeFilter} Requests`}
-            </Text>
-            <Text style={styles.ESS_emptySubtitle}>
-              {activeFilter === 'All'
-                ? 'You have not submitted any requests yet'
-                : `You have no ${activeFilter.toLowerCase()} requests at the moment`}
-            </Text>
-          </View>
+          <Text style={styles.DLP_NoDataText}>
+            {activeFilter === 'All'
+              ? 'No requests found'
+              : `No ${activeFilter.toLowerCase()} requests`}
+          </Text>
+          <Text style={styles.DLP_NoDataSubText}>
+            {activeFilter === 'All'
+              ? 'You have not submitted any requests yet'
+              : `You have no ${activeFilter.toLowerCase()} requests at the moment`}
+          </Text>
         </ScrollView>
       )}
 

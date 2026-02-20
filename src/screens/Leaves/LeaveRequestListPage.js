@@ -73,6 +73,7 @@ const LeaveRequestListPage = () => {
   const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -325,6 +326,41 @@ const LeaveRequestListPage = () => {
     isRTL: isRTL,
   };
 
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return leavesData;
+
+    return leavesData.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+
+      // Special handling for Pending filter - include any status that contains "Pending"
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: leavesData.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending"
+        counts[pill] = leavesData.filter(item =>
+          getStatusLabel(item.WFStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = leavesData.filter(
+          item => getStatusLabel(item.WFStatus) === pill,
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts); // Debug
+    return counts;
+  };
+
   // Define button configuration
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
@@ -365,15 +401,21 @@ const LeaveRequestListPage = () => {
         disabled: false,
         customStyle: {},
       },
-      submit: {
-        show: isWorkflowConfigured && (isDraft || isRejected),
+      approval: {
+        show: isDraft || isRejected, // only visible when action is possible
         position: 'bottom',
-        style: 'text',
-        icon: 'send',
-        iconSize: 16,
-        text: isRejected ? 'Re-submit' : t('buttons.submit'),
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square-o',
         textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
       },
     };
   };
@@ -626,7 +668,11 @@ const LeaveRequestListPage = () => {
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleCreateLeave}>
+      onFloatingButtonPress={handleCreateLeave}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -641,9 +687,9 @@ const LeaveRequestListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : leavesData.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={leavesData}
+          data={getFilteredData()}
           renderItem={renderLeavesCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()

@@ -57,6 +57,7 @@ const PersonalEducation = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
   // const [refreshing, setRefreshing] = useState(false);
 
   /* ---------- fetch ---------- */
@@ -199,6 +200,41 @@ const PersonalEducation = () => {
       noworkflow: '',
     };
     return map[normalizedStatus] || 'Unknown';
+  };
+
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return educationData;
+
+    return educationData.filter(item => {
+      const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
+
+      // Special handling for Pending filter
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: educationData.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending"
+        counts[pill] = educationData.filter(
+          item => getStatusLabel(item.ApprovalStatus).includes('Pending'), // ✅ Use ApprovalStatus
+        ).length;
+      } else {
+        counts[pill] = educationData.filter(
+          item => getStatusLabel(item.ApprovalStatus) === pill, // ✅ Use ApprovalStatus
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts);
+    return counts;
   };
 
   /* ---------- buttons ---------- */
@@ -428,7 +464,11 @@ const PersonalEducation = () => {
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateEducation}
       onBackPress={handleGoBack}
-      onRefresh={fetchEducationData}>
+      onRefresh={fetchEducationData}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -443,9 +483,9 @@ const PersonalEducation = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : educationData.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={educationData}
+          data={getFilteredData()}
           renderItem={renderEducationCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()

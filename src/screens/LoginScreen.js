@@ -454,10 +454,10 @@ const LoginScreen = () => {
 
           {/* Header */}
           <View style={styles.Login_Header}>
-            <Image
+            {/* <Image
               source={require('../assets/cloud.png')}
               style={styles.Login_Logo}
-            />
+            /> */}
             <Text style={styles.Login_Title}>{t('login.welcomeTitle')}</Text>
             <Text style={styles.Login_Subtitle}>
               {t('login.welcomeSubtitle')}
@@ -510,6 +510,10 @@ const LoginScreen = () => {
               color="#0A66C2"
             />
           </TouchableOpacity>
+          <Image
+            source={require('../assets/cloud.png')}
+            style={styles.Login_Logo}
+          />
         </>
       )}
 
