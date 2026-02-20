@@ -252,6 +252,7 @@ const PersonalEducation = () => {
     // console.log(getStatusLabel(item.ApprovalStatus));
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
+    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
     return {
       edit: {
         show: true,
@@ -275,15 +276,31 @@ const PersonalEducation = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      submit: {
-        show: isWorkflowConfigured && isDraft,
+      // submit: {
+      //   show: isWorkflowConfigured && isDraft,
+      //   position: 'bottom',
+      //   style: 'text',
+      //   icon: 'send',
+      //   iconSize: 16,
+      //   text: 'Submit',
+      //   textColor: '#0A66C2',
+      //   iconColor: '#0A66C2',
+      // },
+      approval: {
+        show: isDraft || isRejected, // only visible when action is possible
         position: 'bottom',
-        style: 'text',
-        icon: 'send',
-        iconSize: 16,
-        text: 'Submit',
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square-o',
         textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
       },
     };
   };

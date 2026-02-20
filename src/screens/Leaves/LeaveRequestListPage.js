@@ -706,11 +706,12 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>
+          {/* <Text style={styles.DLP_NoDataText}>
             {t('leaveRequest.noDataFound')}
-          </Text>
+          </Text> */}
+          <Text style={styles.DLP_NoDataText}>Get started</Text>
           <Text style={styles.DLP_NoDataSubText}>
-            Tap the + button to create your first leave request
+            Tap + to add a new record
           </Text>
         </ScrollView>
       )}

@@ -349,7 +349,7 @@ const PersonalEducationSaveRecord = () => {
       setAlertMessage(
         actionType === 'submit'
           ? 'Request submitted successfully.'
-          : 'Record saved successfully.',
+          : 'Record created successfully.',
       );
       setAlertModal(true);
       setTimeout(() => {

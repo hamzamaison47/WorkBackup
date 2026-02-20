@@ -397,12 +397,12 @@ const IdentificationNumberSaveRecord = () => {
         }
       }
       if (response?.IsSuccess === 'true') {
-        const textAction = modalMode === 'create' ? 'Created' : 'Updated';
+        const textAction = modalMode === 'create' ? 'created' : 'updated';
         let textSubmit;
         if (submitResult?.IsSuccess === 'true') {
           textSubmit = actionType === 'submit' ? ' and Submitted' : '';
           setAlertMessage(
-            `${contract.IdentificationTypeId} is ${textAction}${textSubmit} Successfully`,
+            `${contract.IdentificationTypeId} is ${textAction}${textSubmit} successfully`,
           );
         } else if (submitResult?.IsSuccess === 'false') {
           textSubmit = actionType === 'submit' ? ' but not Submitted' : '';
@@ -411,7 +411,7 @@ const IdentificationNumberSaveRecord = () => {
           );
         }
 
-        setAlertMessage(`Record ${textAction} Successfully`);
+        setAlertMessage(`Record ${textAction} successfully`);
         setAlertModal(true);
         return {success: true, recId: response.RecId || contract.RecId};
       } else if (response?.IsSuccess === 'false') {
