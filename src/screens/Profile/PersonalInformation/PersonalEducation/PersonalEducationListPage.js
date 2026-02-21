@@ -251,8 +251,12 @@ const PersonalEducation = () => {
     // console.log(item.ApprovalStatus);
     // console.log(getStatusLabel(item.ApprovalStatus));
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
+    const isCancelled =
+      getStatusLabel(item.ApprovalStatus) === 'Cancelled' ||
+      getStatusLabel(item.ApprovalStatus) === 'Canceled';
+    const canDelete = isDraft || isCancelled;
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
+    const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
     return {
       edit: {
         show: true,
@@ -262,8 +266,11 @@ const PersonalEducation = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: isHCMRecord ? false : !isDraft,
-        customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: isHCMRecord ? false : !isDraft && !isRejected,
+        customStyle:
+          !isDraft && !isRejected && !isHCMRecord
+            ? {backgroundColor: '#BDBDBD'}
+            : {},
       },
       delete: {
         show: true,
@@ -273,8 +280,8 @@ const PersonalEducation = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !canDelete,
+        customStyle: !canDelete ? {backgroundColor: '#BDBDBD'} : {},
       },
       // submit: {
       //   show: isWorkflowConfigured && isDraft,
@@ -287,7 +294,7 @@ const PersonalEducation = () => {
       //   iconColor: '#0A66C2',
       // },
       approval: {
-        show: isDraft || isRejected, // only visible when action is possible
+        show: isDraft || isRejected,
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
@@ -476,7 +483,7 @@ const PersonalEducation = () => {
       pageTitle="Education Details"
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={true}
+      showFloatingButton={isWorkflowConfigured}
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateEducation}
