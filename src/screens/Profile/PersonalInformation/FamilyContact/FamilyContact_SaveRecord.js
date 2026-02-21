@@ -499,7 +499,7 @@ const FamilyContact_SaveRecord = () => {
       }
 
       if (response.IsSuccess === 'true') {
-        const actionText = mode === 'edit' ? 'Updated' : 'Created';
+        const actionText = mode === 'edit' ? 'updated' : 'created';
         setAlertMessage(`Record ${actionText} successfully`);
         setAlertModal(true);
         return {
@@ -507,7 +507,7 @@ const FamilyContact_SaveRecord = () => {
           recId: response.RecId || contract.RecId,
         };
       } else if (response.IsSuccess === 'false') {
-        const actionText = mode === 'edit' ? 'Updated' : 'Created';
+        const actionText = mode === 'edit' ? 'updated' : 'created';
         setAlertMessage(response.Message);
         setAlertModal(true);
         return {

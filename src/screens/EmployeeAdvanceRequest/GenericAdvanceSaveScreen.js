@@ -463,6 +463,7 @@ const GenericAdvanceSaveScreen = () => {
       const getEmployeeLookup = await GetEmployeeLookup();
 
       // console.log({allAdvanceCodes});
+      // console.log(getEmployeeLookup, {getEmployeeLookup});
 
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
@@ -478,7 +479,6 @@ const GenericAdvanceSaveScreen = () => {
           )
           .map(emp => ({
             ...emp,
-            // Create a combined label for search
             combinedLabel: `${emp.EmployeeId} - ${emp.EmployeeName}`,
           }));
 
@@ -821,7 +821,7 @@ const GenericAdvanceSaveScreen = () => {
       }
 
       if (response.IsSuccess === 'true') {
-        const actionText = modalMode === 'create' ? 'Created' : 'update';
+        const actionText = modalMode === 'create' ? 'created' : 'update';
         let submitText = '';
 
         if (submitResult?.IsSuccess === 'true') {
@@ -1165,17 +1165,26 @@ const GenericAdvanceSaveScreen = () => {
                 <Dropdown
                   style={styles.DSR_Input}
                   data={[
-                    {EmployeeId: null, EmployeeName: 'Select Guarantor 1'},
+                    {
+                      EmployeeId: '',
+                      EmployeeName: 'Select Guarantor 1',
+                      combinedLabel: '',
+                    },
                     ...guarantorsData.filter(
                       emp => emp.EmployeeId !== formData.Guarantor2,
                     ),
                   ]}
                   labelField="EmployeeName"
                   valueField="EmployeeId"
+                  search
+                  searchPlaceholder="Search by ID or Name"
+                  searchField="combinedLabel"
+                  onChangeText={text => setGuarantor1SearchQuery(text)}
                   placeholder="Select Guarantor 1"
                   value={formData.Guarantor1}
                   onChange={item => {
                     handleInputChange('Guarantor1', item.EmployeeId);
+                    setGuarantor1SearchQuery('');
                   }}
                   placeholderStyle={styles.DSR_DropdownPlaceholder}
                   selectedTextStyle={styles.DSR_DropdownSelectedText}
@@ -1184,12 +1193,9 @@ const GenericAdvanceSaveScreen = () => {
                   containerStyle={styles.DSR_DropdownContainer}
                   itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
-                  search
-                  searchPlaceholder="Search by ID or Name"
                   inputSearchStyle={styles.DSR_DropdownSearchInput}
                   iconStyle={styles.DSR_DropdownIcon}
                   renderItem={renderGuarantorItem}
-                  searchField="combinedLabel"
                 />
 
                 {/* Guarantor 2 */}
@@ -1199,17 +1205,26 @@ const GenericAdvanceSaveScreen = () => {
                 <Dropdown
                   style={styles.DSR_Input}
                   data={[
-                    {EmployeeId: null, EmployeeName: 'Select Guarantor 2'},
+                    {
+                      EmployeeId: '',
+                      EmployeeName: 'Select Guarantor 2',
+                      combinedLabel: '',
+                    },
                     ...guarantorsData.filter(
                       emp => emp.EmployeeId !== formData.Guarantor1,
                     ),
                   ]}
                   labelField="EmployeeName"
                   valueField="EmployeeId"
+                  search
+                  searchPlaceholder="Search by ID or Name"
+                  searchField="combinedLabel"
+                  onChangeText={text => setGuarantor2SearchQuery(text)}
                   placeholder="Select Guarantor 2"
                   value={formData.Guarantor2}
                   onChange={item => {
                     handleInputChange('Guarantor2', item.EmployeeId);
+                    setGuarantor2SearchQuery('');
                   }}
                   placeholderStyle={styles.DSR_DropdownPlaceholder}
                   selectedTextStyle={styles.DSR_DropdownSelectedText}
@@ -1218,12 +1233,9 @@ const GenericAdvanceSaveScreen = () => {
                   containerStyle={styles.DSR_DropdownContainer}
                   itemContainerStyle={styles.DSR_DropdownItemContainer}
                   maxHeight={280}
-                  search
-                  searchPlaceholder="Search by ID or Name"
                   inputSearchStyle={styles.DSR_DropdownSearchInput}
                   iconStyle={styles.DSR_DropdownIcon}
                   renderItem={renderGuarantorItem}
-                  searchField="combinedLabel"
                 />
 
                 <Text style={styles.DSR_Label}>

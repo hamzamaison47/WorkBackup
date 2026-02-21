@@ -411,7 +411,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
       } else {
         const errorMessage =
           response?.Message ||
-          `Error ${modalMode === 'create' ? 'Creating' : 'Updating'} Record`;
+          `Error ${modalMode === 'create' ? 'creating' : 'updating'} Record`;
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};

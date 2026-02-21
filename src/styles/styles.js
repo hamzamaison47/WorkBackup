@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
 
   Login_FingerprintButton: {
     position: 'absolute',
-    bottom: conditionalVerticalScale(45, 50, 55, 65),
+    bottom: conditionalVerticalScale(100, 110, 120, 140),
     width: conditionalScale(64, 70, 76, 90),
     height: conditionalScale(64, 70, 76, 90),
     borderRadius: conditionalScale(32, 35, 38, 45),
@@ -151,9 +151,11 @@ const styles = StyleSheet.create({
   },
 
   Login_Logo: {
-    width: conditionalScale(190, 210, 230, 280),
-    height: conditionalVerticalScale(90, 100, 110, 130),
-    marginBottom: conditionalVerticalScale(16, 20, 24, 32),
+    width: conditionalScale(80, 90, 100, 110),
+    height: conditionalVerticalScale(40, 45, 50, 60),
+    position: 'absolute', // 👈 ADD THIS
+    bottom: 20, // 👈 Move to bottom
+    alignSelf: 'center', // 👈 Keep centered horizontally
     resizeMode: 'contain',
   },
 
@@ -2581,8 +2583,8 @@ const styles = StyleSheet.create({
   },
 
   DSR_Label: {
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
-    marginTop: conditionalVerticalScale(16, 18, 20, 22),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    marginTop: conditionalVerticalScale(14, 16, 18, 20),
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.2,
@@ -2592,9 +2594,9 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(1),
     borderColor: '#E0E0E0',
     borderRadius: borderRadius.lg,
-    padding: conditionalScale(12, 13, 14, 15),
-    marginTop: conditionalVerticalScale(6, 7, 8, 9),
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    padding: conditionalScale(11, 12, 13, 14),
+    marginTop: conditionalVerticalScale(5, 6, 7, 8),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     color: '#1A1A1A',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -2611,9 +2613,9 @@ const styles = StyleSheet.create({
   },
 
   DSR_TextArea: {
-    height: conditionalVerticalScale(100, 110, 120, 130),
+    height: conditionalVerticalScale(95, 105, 115, 125),
     textAlignVertical: 'top',
-    paddingTop: conditionalVerticalScale(12, 13, 14, 15),
+    paddingTop: conditionalVerticalScale(11, 12, 13, 14),
   },
 
   DSR_DateSelector: {
@@ -2622,8 +2624,8 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(1),
     borderColor: '#E0E0E0',
     borderRadius: borderRadius.lg,
-    padding: conditionalScale(12, 13, 14, 15),
-    marginTop: conditionalVerticalScale(6, 7, 8, 9),
+    padding: conditionalScale(11, 12, 13, 14),
+    marginTop: conditionalVerticalScale(5, 6, 7, 8),
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOpacity: 0.02,
@@ -2633,7 +2635,7 @@ const styles = StyleSheet.create({
   },
 
   DSR_DateText: {
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     color: '#1A1A1A',
     letterSpacing: 0.2,
     flex: 1,
@@ -2641,54 +2643,54 @@ const styles = StyleSheet.create({
 
   DSR_DropdownPlaceholder: {
     color: '#A0A0A0',
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     letterSpacing: 0.2,
   },
 
   DSR_DropdownSelectedText: {
     color: '#1A1A1A',
     fontWeight: '400',
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     letterSpacing: 0.2,
   },
 
   DSR_DropdownItemText: {
     color: '#1A1A1A',
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     letterSpacing: 0.2,
   },
 
   DSR_DropdownContainer: {
-    borderWidth: moderateScale(1),
+    borderWidth: moderateScale(0.5),
     borderColor: '#E0E0E0',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: moderateScale(2)},
-    shadowOpacity: 0.08,
-    shadowRadius: moderateScale(6),
-    elevation: 4,
-    marginTop: conditionalVerticalScale(2, 3, 4, 5),
+    shadowOffset: {width: 0, height: moderateScale(1)},
+    shadowOpacity: 0.05,
+    shadowRadius: moderateScale(3),
+    elevation: 2,
+    // marginTop: conditionalVerticalScale(2, 3, 4, 5),
   },
 
   DSR_DropdownItemContainer: {
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
-    paddingVertical: conditionalVerticalScale(10, 11, 12, 13),
+    paddingHorizontal: conditionalScale(6, 7, 8, 9),
+    paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
   },
 
   DSR_DropdownSearchInput: {
     color: '#1A1A1A',
     backgroundColor: '#FFFFFF',
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(10, 10.5, 11, 11.5),
     borderBottomWidth: moderateScale(1),
     borderBottomColor: '#F0F0F0',
-    paddingVertical: conditionalVerticalScale(2, 3, 4, 5),
-    paddingHorizontal: conditionalScale(4, 5, 6, 7),
+    paddingVertical: conditionalVerticalScale(0.5, 1, 1.5, 2),
+    paddingHorizontal: conditionalScale(1, 2, 3, 4),
   },
 
   DSR_DropdownIcon: {
-    width: conditionalScale(20, 21, 22, 23),
-    height: conditionalScale(20, 21, 22, 23),
+    width: conditionalScale(19, 20, 21, 22),
+    height: conditionalScale(19, 20, 21, 22),
     tintColor: '#6366F1',
   },
 
@@ -2707,38 +2709,38 @@ const styles = StyleSheet.create({
   DSR_ProcessingContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: borderRadius.xl,
-    padding: conditionalScale(24, 28, 32, 36),
+    padding: conditionalScale(22, 24, 26, 28),
     alignItems: 'center',
-    minWidth: conditionalScale(200, 220, 240, 260),
+    minWidth: conditionalScale(180, 190, 200, 210),
     shadowColor: '#6366F1',
-    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOffset: {width: 0, height: moderateScale(3)},
     shadowOpacity: 0.15,
-    shadowRadius: moderateScale(12),
-    elevation: 8,
+    shadowRadius: moderateScale(10),
+    elevation: 7,
     borderWidth: moderateScale(1),
     borderColor: '#F0F0F0',
   },
 
   DSR_ProcessingText: {
-    marginTop: conditionalVerticalScale(12, 14, 16, 18),
-    fontSize: conditionalFontScale(16, 17, 18, 19),
+    marginTop: conditionalVerticalScale(11, 13, 15, 17),
+    fontSize: conditionalFontScale(15, 16, 17, 18),
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
   },
 
   DSR_CharCount: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
+    fontSize: conditionalFontScale(11, 11.5, 12, 12.5),
     color: '#757575',
-    marginTop: conditionalVerticalScale(4, 5, 6, 7),
+    marginTop: conditionalVerticalScale(3, 4, 5, 6),
     textAlign: 'right',
     letterSpacing: 0.2,
   },
 
   DSR_FormHeader: {
     backgroundColor: '#F8F9FA',
-    padding: conditionalScale(16, 18, 20, 22),
-    marginBottom: conditionalVerticalScale(20, 22, 24, 26),
+    padding: conditionalScale(15, 16, 17, 18),
+    marginBottom: conditionalVerticalScale(18, 20, 22, 24),
     borderLeftWidth: moderateScale(4),
     borderLeftColor: '#6366F1',
     borderRadius: borderRadius.lg,
@@ -2750,18 +2752,18 @@ const styles = StyleSheet.create({
   },
 
   DSR_FormHeaderText: {
-    fontSize: conditionalFontScale(17, 18, 19, 20),
+    fontSize: conditionalFontScale(16, 17, 18, 19),
     fontWeight: '600',
     color: '#6366F1',
-    marginBottom: conditionalVerticalScale(4, 5, 6, 7),
+    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
     letterSpacing: 0.3,
   },
 
   DSR_FormHeaderSubtext: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#757575',
     letterSpacing: 0.2,
-    lineHeight: conditionalFontScale(18, 19, 20, 21),
+    lineHeight: conditionalFontScale(17, 18, 19, 20),
   },
 
   DSR_SwitchRow: {
@@ -2769,16 +2771,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#F8F9FA',
-    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
-    paddingHorizontal: conditionalScale(16, 17, 18, 19),
+    paddingVertical: conditionalVerticalScale(11, 12, 13, 14),
+    paddingHorizontal: conditionalScale(15, 16, 17, 18),
     borderRadius: borderRadius.lg,
-    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+    marginBottom: conditionalVerticalScale(11, 13, 15, 17),
     borderWidth: moderateScale(1),
     borderColor: '#F0F0F0',
   },
 
   DSR_SwitchLabel: {
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
     color: '#1A1A1A',
     fontWeight: '500',
     letterSpacing: 0.2,
@@ -2787,13 +2789,13 @@ const styles = StyleSheet.create({
 
   DSR_ExpandableContent: {
     backgroundColor: '#F8F9FA',
-    paddingHorizontal: conditionalScale(16, 17, 18, 19),
-    paddingTop: conditionalVerticalScale(8, 10, 12, 14),
-    paddingBottom: conditionalVerticalScale(16, 18, 20, 22),
+    paddingHorizontal: conditionalScale(15, 16, 17, 18),
+    paddingTop: conditionalVerticalScale(7, 9, 11, 13),
+    paddingBottom: conditionalVerticalScale(14, 16, 18, 20),
     borderBottomLeftRadius: borderRadius.lg,
     borderBottomRightRadius: borderRadius.lg,
-    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
-    marginTop: conditionalVerticalScale(-4, -5, -6, -7),
+    marginBottom: conditionalVerticalScale(11, 13, 15, 17),
+    marginTop: conditionalVerticalScale(-3, -4, -5, -6),
     borderWidth: moderateScale(1),
     borderTopWidth: 0,
     borderColor: '#F0F0F0',
@@ -2802,20 +2804,20 @@ const styles = StyleSheet.create({
   DSR_GuarantorHeader: {
     flexDirection: 'row',
     backgroundColor: '#F8F9FA',
-    paddingVertical: conditionalVerticalScale(10, 11, 12, 13),
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(9, 10, 11, 12),
+    paddingHorizontal: conditionalScale(13, 14, 15, 16),
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
     borderWidth: moderateScale(1),
     borderBottomWidth: 0,
     borderColor: '#F0F0F0',
-    marginTop: conditionalVerticalScale(12, 14, 16, 18),
+    marginTop: conditionalVerticalScale(11, 13, 15, 17),
   },
 
   DSR_GuarantorHeaderId: {
     flex: 0.3,
     fontWeight: '600',
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#1A1A1A',
     letterSpacing: 0.2,
   },
@@ -2823,16 +2825,16 @@ const styles = StyleSheet.create({
   DSR_GuarantorHeaderName: {
     flex: 0.7,
     fontWeight: '600',
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
     color: '#1A1A1A',
-    paddingLeft: conditionalScale(8, 10, 12, 14),
+    paddingLeft: conditionalScale(7, 9, 11, 13),
     letterSpacing: 0.2,
   },
 
   DSR_GuarantorItem: {
     flexDirection: 'row',
-    paddingVertical: conditionalVerticalScale(12, 13, 14, 15),
-    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    paddingVertical: conditionalVerticalScale(11, 12, 13, 14),
+    paddingHorizontal: conditionalScale(13, 14, 15, 16),
     alignItems: 'center',
     borderBottomWidth: moderateScale(1),
     borderBottomColor: '#F5F5F5',
@@ -2840,7 +2842,7 @@ const styles = StyleSheet.create({
 
   DSR_GuarantorId: {
     flex: 0.3,
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     color: '#1A1A1A',
     fontWeight: '500',
     letterSpacing: 0.2,
@@ -2848,9 +2850,9 @@ const styles = StyleSheet.create({
 
   DSR_GuarantorName: {
     flex: 0.7,
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
     color: '#757575',
-    paddingLeft: conditionalScale(8, 10, 12, 14),
+    paddingLeft: conditionalScale(7, 9, 11, 13),
     letterSpacing: 0.2,
   },
 
@@ -2858,9 +2860,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
 
-  // ============================================
+  // ==========================================================
   // DYNAMIC REQUEST CARD - COMPLETE RESPONSIVE STYLES
-  // ============================================
+  // ==========================================================
 
   // Card Container
   DRC_cardContainer: {
@@ -3276,6 +3278,67 @@ const styles = StyleSheet.create({
   // Animations
   DRC_spinning: {
     transform: [{rotate: '45deg'}],
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  ADD THESE STYLES to your existing styles.js DynamicRequestCard (DRC_) section
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Modal overlay — covers full screen, transparent, lets touches pass to close
+  DRC_modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+
+  // ── Approval Button (bottom of card) ──
+  DRC_approvalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+    gap: 6,
+  },
+
+  DRC_approvalButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#10b981',
+  },
+
+  // ── Approval dropdown panel (rendered via Modal) ──
+  DRC_approvalDropdown: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+    minWidth: 140,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+
+  DRC_approvalMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+
+  DRC_approvalMenuItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+
+  DRC_approvalMenuItemText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#065f46', // dark green text
   },
 
   // ==================================================================================================================
@@ -5233,7 +5296,7 @@ const styles = StyleSheet.create({
   SRBtn_Button: {
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xxl,
     paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
     alignItems: 'center',
     justifyContent: 'center',
@@ -5820,7 +5883,7 @@ const styles = StyleSheet.create({
   DNav_MaisonLogo: {
     position: 'absolute',
     top: verticalScale(14),
-    right: scale(16),
+    left: scale(16),
     width: scale(96),
     height: verticalScale(36),
     resizeMode: 'contain',
@@ -7363,445 +7426,569 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  //End of IdentificationRequestCard
+
   // ============================================
-  // ESS MY REQUEST STATUS - RESPONSIVE STYLES
+  // PAGE STYLES - RESPONSIVE STYLES
   // ============================================
-
-  // Card Styles
-  ESS_cardWrapper: {
-    marginHorizontal: conditionalScale(12, 14, 16, 18),
-    marginVertical: conditionalVerticalScale(6, 7, 8, 10),
-  },
-
-  ESS_card: {
-    backgroundColor: '#ffffff',
-    borderRadius: borderRadius.lg,
-    padding: conditionalScale(12, 14, 16, 18),
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: moderateScale(2)},
-        shadowOpacity: 0.08,
-        shadowRadius: moderateScale(8),
-      },
-      android: {
-        elevation: moderateScale(3),
-      },
-    }),
-    borderWidth: moderateScale(1),
-    borderColor: '#f0f0f0',
-    position: 'relative',
-  },
-
-  ESS_tableNameSection: {
-    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
-  },
-
-  ESS_labelText: {
-    fontSize: conditionalFontScale(10, 10.5, 11, 12),
-    fontWeight: '600',
-    color: '#6c757d',
-    marginBottom: conditionalVerticalScale(1, 1.5, 2, 2.5),
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  ESS_tableNameText: {
-    fontSize: conditionalFontScale(14, 15, 16, 17),
-    fontWeight: '600',
-    color: '#495057',
-  },
-
-  ESS_section: {
-    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
-  },
-
-  ESS_requestIdText: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 15),
-    fontWeight: '500',
-    color: '#007bff',
-  },
-
-  ESS_descriptionText: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 14),
-    lineHeight: conditionalVerticalScale(16, 17, 18, 19),
-    color: '#495057',
-  },
-
-  ESS_footerSection: {
-    marginTop: conditionalVerticalScale(6, 7, 8, 10),
-    paddingTop: conditionalVerticalScale(6, 7, 8, 10),
-    borderTopWidth: moderateScale(1),
-    borderTopColor: '#f0f0f0',
-  },
-
-  ESS_dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: conditionalScale(4, 5, 6, 7),
-  },
-
-  ESS_dateIcon: {
-    fontSize: conditionalFontScale(11, 11.5, 12, 13),
-  },
-
-  ESS_dateText: {
-    fontSize: conditionalFontScale(10, 10.5, 11, 12),
-    color: '#6c757d',
-  },
-
-  ESS_statusIndicator: {
-    position: 'absolute',
-    top: conditionalVerticalScale(10, 11, 12, 13),
-    right: conditionalScale(10, 11, 12, 13),
-    paddingHorizontal: conditionalScale(8, 9, 10, 11),
-    paddingVertical: conditionalVerticalScale(3, 3.5, 4, 5),
-    borderRadius: conditionalScale(3, 3.5, 4, 5),
-    opacity: 0.9,
-  },
-
-  ESS_statusIndicatorText: {
-    color: '#ffffff',
-    fontSize: conditionalFontScale(9, 9.5, 10, 11),
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-
-  // Filter Tiles Styles
-  ESS_tileContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: conditionalScale(12, 14, 16, 18),
-    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
-    gap: conditionalScale(6, 7, 8, 10),
-    backgroundColor: '#ffffff',
-    borderBottomWidth: moderateScale(1),
-    borderBottomColor: '#e9ecef',
-  },
-
-  ESS_tile: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-    borderRadius: borderRadius.lg,
-    padding: conditionalScale(8, 10, 12, 14),
-    alignItems: 'center',
-    borderWidth: moderateScale(1.5),
-    borderColor: '#e9ecef',
-    position: 'relative',
-  },
-
-  ESS_pendingTile: {
-    backgroundColor: '#fff8e1',
-    borderColor: '#ffeaa7',
-  },
-
-  ESS_approvedTile: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#c3e6cb',
-  },
-
-  ESS_rejectedTile: {
-    backgroundColor: '#ffebee',
-    borderColor: '#f5c6cb',
-  },
-
-  ESS_activeTile: {
-    borderColor: '#007bff',
-    borderWidth: moderateScale(2),
-    transform: [{scale: 1.02}],
-  },
-
-  ESS_tileCount: {
-    fontSize: conditionalFontScale(20, 22, 24, 26),
-    fontWeight: '800',
-    color: '#212529',
-    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
-  },
-
-  ESS_pendingText: {
-    color: '#fd7e14',
-  },
-
-  ESS_approvedText: {
-    color: '#28a745',
-  },
-
-  ESS_rejectedText: {
-    color: '#dc3545',
-  },
-
-  ESS_activeCount: {
-    color: '#007bff',
-  },
-
-  ESS_tileLabel: {
-    fontSize: conditionalFontScale(9, 9.5, 10, 11),
-    fontWeight: '600',
-    color: '#6c757d',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-
-  ESS_activeLabel: {
-    color: '#007bff',
-    fontWeight: '700',
-  },
-
-  ESS_activeIndicator: {
-    position: 'absolute',
-    bottom: conditionalVerticalScale(-1, -1.5, -2, -2.5),
-    width: conditionalScale(16, 18, 20, 22),
-    height: conditionalScale(2.5, 2.75, 3, 3.5),
-    backgroundColor: '#007bff',
-    borderRadius: conditionalScale(1.25, 1.375, 1.5, 1.75),
-  },
-
-  // List Styles
-  ESS_listContainer: {
-    paddingVertical: conditionalVerticalScale(6, 7, 8, 10),
+  Page_ListContainer: {
+    padding: conditionalScale(14, 15, 16, 17),
     paddingBottom: conditionalVerticalScale(20, 22, 24, 26),
   },
 
-  ESS_filterHeader: {
-    paddingHorizontal: conditionalScale(12, 14, 16, 18),
-    paddingVertical: conditionalVerticalScale(10, 11, 12, 14),
-    backgroundColor: '#f8f9fa',
-    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
-  },
-
-  ESS_filterTitle: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 15),
-    fontWeight: '600',
-    color: '#495057',
-  },
-
-  ESS_emptyContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  ESS_emptyState: {
-    alignItems: 'center',
-    paddingHorizontal: conditionalScale(30, 35, 40, 45),
-  },
-
-  ESS_emptyIcon: {
-    fontSize: conditionalFontScale(54, 58, 62, 68),
-    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
-    opacity: 0.5,
-  },
-
-  ESS_emptyTitle: {
-    fontSize: conditionalFontScale(18, 19, 20, 22),
-    fontWeight: '700',
-    color: '#495057',
-    marginBottom: conditionalVerticalScale(6, 7, 8, 10),
-    textAlign: 'center',
-  },
-
-  ESS_emptySubtitle: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 15),
-    color: '#6c757d',
-    textAlign: 'center',
-    lineHeight: conditionalVerticalScale(18, 19, 20, 22),
-  },
-  // ============================================
-  // WORKFLOW HISTORY - RESPONSIVE STYLES
-  // ============================================
-
-  WFH_container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-
-  WFH_summaryContainer: {
-    backgroundColor: '#ffffff',
-    paddingVertical: conditionalVerticalScale(16, 18, 20, 22),
-    paddingHorizontal: conditionalScale(16, 18, 20, 22),
-    borderBottomWidth: moderateScale(1),
-    borderBottomColor: '#e5e7eb',
-    marginBottom: conditionalVerticalScale(6, 7, 8, 10),
-  },
-
-  WFH_summaryTitle: {
-    fontSize: conditionalFontScale(20, 21, 22, 24),
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
-    letterSpacing: -0.5,
-  },
-
-  WFH_summarySubtitle: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 15),
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-
-  WFH_listContent: {
-    paddingHorizontal: conditionalScale(12, 14, 16, 18),
-    paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
-  },
-
-  WFH_itemContainer: {
-    flexDirection: 'row',
-    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
-  },
-
-  WFH_timelineColumn: {
-    width: conditionalScale(36, 38, 40, 42),
-    alignItems: 'center',
+  Page_CardWrapper: {
+    marginBottom: conditionalVerticalScale(10, 11, 12, 13),
     position: 'relative',
   },
 
-  WFH_iconCircle: {
-    width: conditionalScale(32, 34, 36, 38),
-    height: conditionalScale(32, 34, 36, 38),
-    borderRadius: conditionalScale(16, 17, 18, 19),
-    borderWidth: moderateScale(2.5),
+  Page_CardWrapperSelected: {
+    borderRadius: conditionalScale(12, 13, 14, 15),
+  },
+
+  Page_CheckboxContainer: {
+    position: 'absolute',
+    right: conditionalScale(10, 11, 12, 13),
+    top: conditionalVerticalScale(10, 11, 12, 13),
+    zIndex: 10,
+  },
+
+  Page_Checkbox: {
+    width: conditionalScale(20, 21, 22, 23),
+    height: conditionalScale(20, 21, 22, 23),
+    borderRadius: conditionalScale(10, 10.5, 11, 11.5),
+    borderWidth: moderateScale(2),
+    borderColor: '#CCCCCC',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    zIndex: 2,
   },
 
-  WFH_icon: {
-    fontSize: conditionalFontScale(14, 15, 16, 17),
-    fontWeight: 'bold',
+  Page_CheckboxSelected: {
+    borderColor: '#0066CC',
+    backgroundColor: '#0066CC',
   },
 
-  WFH_timelineLine: {
-    position: 'absolute',
-    top: conditionalVerticalScale(32, 34, 36, 38),
-    bottom: conditionalVerticalScale(-2, -3, -4, -5),
-    width: moderateScale(2.5),
-    backgroundColor: '#e5e7eb',
-    left: '50%',
-    marginLeft: moderateScale(-1.25),
+  Page_Checkmark: {
+    color: '#FFFFFF',
+    fontSize: conditionalFontScale(11, 11.5, 12, 12.5),
+    fontWeight: '600',
   },
 
-  WFH_contentContainer: {
+  // ============================================
+  // BULK TOOLBAR - RESPONSIVE STYLES
+  // ============================================
+  BulkToolbar_Container: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: conditionalVerticalScale(14, 15, 16, 17),
+    paddingHorizontal: conditionalScale(14, 15, 16, 17),
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: '#F0F0F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(2)},
+    shadowOpacity: 0.05,
+    shadowRadius: moderateScale(4),
+    elevation: moderateScale(2),
+  },
+
+  BulkToolbar_ActionRow: {
+    flexDirection: 'row',
+    gap: conditionalScale(10, 11, 12, 13),
+    marginBottom: conditionalVerticalScale(10, 11, 12, 13),
+  },
+
+  BulkToolbar_ApproveButton: {
     flex: 1,
-    paddingLeft: conditionalScale(8, 10, 12, 14),
-    paddingBottom: conditionalVerticalScale(12, 14, 16, 18),
-  },
-
-  WFH_card: {
-    backgroundColor: '#ffffff',
-    borderRadius: borderRadius.lg,
-    padding: conditionalScale(12, 14, 16, 18),
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: moderateScale(1)},
-        shadowOpacity: 0.05,
-        shadowRadius: moderateScale(3),
-      },
-      android: {
-        elevation: moderateScale(2),
-      },
-    }),
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: conditionalVerticalScale(9, 9.5, 10, 10.5),
+    borderRadius: conditionalScale(7, 7.5, 8, 8.5),
+    backgroundColor: '#FFFFFF',
     borderWidth: moderateScale(1),
-    borderColor: '#f3f4f6',
+    borderColor: '#2E7D32',
   },
 
-  WFH_cardHeader: {
+  BulkToolbar_ApproveText: {
+    color: '#2E7D32',
+    fontWeight: '500',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+  },
+
+  BulkToolbar_RejectButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: conditionalVerticalScale(9, 9.5, 10, 10.5),
+    borderRadius: conditionalScale(7, 7.5, 8, 8.5),
+    backgroundColor: '#FFFFFF',
+    borderWidth: moderateScale(1),
+    borderColor: '#C62828',
+  },
+
+  BulkToolbar_RejectText: {
+    color: '#C62828',
+    fontWeight: '500',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+  },
+
+  BulkToolbar_ControlRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
-  },
-
-  WFH_headerLeft: {
-    flex: 1,
-    marginRight: conditionalScale(8, 10, 12, 14),
-  },
-
-  WFH_statusText: {
-    fontSize: conditionalFontScale(14, 15, 16, 17),
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
-    letterSpacing: -0.3,
-  },
-
-  WFH_instanceText: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 14),
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-
-  WFH_statusBadge: {
-    paddingHorizontal: conditionalScale(8, 10, 12, 14),
-    paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
-    borderRadius: conditionalScale(12, 14, 16, 18),
-  },
-
-  WFH_badgeText: {
-    fontSize: conditionalFontScale(11, 11.5, 12, 13),
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-
-  WFH_dateContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    paddingVertical: conditionalVerticalScale(6, 7, 8, 9),
-    paddingHorizontal: conditionalScale(8, 10, 12, 14),
-    borderRadius: conditionalScale(6, 7, 8, 10),
   },
 
-  WFH_dateIcon: {
-    fontSize: conditionalFontScale(12, 13, 14, 15),
-    marginRight: conditionalScale(4, 6, 8, 10),
+  BulkToolbar_TextButton: {
+    paddingVertical: conditionalVerticalScale(3, 3.5, 4, 4.5),
   },
 
-  WFH_dateText: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 14),
-    color: '#4b5563',
-    fontWeight: '600',
+  BulkToolbar_PrimaryButtonText: {
+    color: '#0066CC',
+    fontWeight: '500',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
   },
 
-  Pill_container: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: moderateScale(1),
-    borderBottomColor: '#e9ecef',
-    paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
+  BulkToolbar_SecondaryButtonText: {
+    color: '#666666',
+    fontWeight: '500',
+    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
   },
+  // //End of IdentificationRequestCard
+  // // ============================================
+  // // ESS MY REQUEST STATUS - RESPONSIVE STYLES
+  // // ============================================
 
-  Pill_scrollContent: {
-    paddingHorizontal: conditionalScale(12, 14, 16, 18),
-    gap: conditionalScale(6, 7, 8, 10),
-  },
+  // // Card Styles
+  // ESS_cardWrapper: {
+  //   marginHorizontal: conditionalScale(12, 14, 16, 18),
+  //   marginVertical: conditionalVerticalScale(6, 7, 8, 10),
+  // },
 
-  Pill_pill: {
-    paddingHorizontal: conditionalScale(14, 16, 18, 20),
-    paddingVertical: conditionalVerticalScale(6, 7, 8, 9),
-    borderRadius: conditionalScale(20, 22, 24, 26),
-    backgroundColor: '#f8f9fa',
-    borderWidth: moderateScale(1),
-    borderColor: '#dee2e6',
-  },
+  // ESS_card: {
+  //   backgroundColor: '#ffffff',
+  //   borderRadius: borderRadius.lg,
+  //   padding: conditionalScale(12, 14, 16, 18),
+  //   ...Platform.select({
+  //     ios: {
+  //       shadowColor: '#000',
+  //       shadowOffset: {width: 0, height: moderateScale(2)},
+  //       shadowOpacity: 0.08,
+  //       shadowRadius: moderateScale(8),
+  //     },
+  //     android: {
+  //       elevation: moderateScale(3),
+  //     },
+  //   }),
+  //   borderWidth: moderateScale(1),
+  //   borderColor: '#f0f0f0',
+  //   position: 'relative',
+  // },
 
-  Pill_activePill: {
-    borderColor: 'transparent',
-    elevation: moderateScale(2),
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: moderateScale(1)},
-    shadowOpacity: 0.2,
-    shadowRadius: moderateScale(2),
-  },
+  // ESS_tableNameSection: {
+  //   marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+  // },
 
-  Pill_pillText: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 14),
-    fontWeight: '600',
-    color: '#495057',
-  },
+  // ESS_labelText: {
+  //   fontSize: conditionalFontScale(10, 10.5, 11, 12),
+  //   fontWeight: '600',
+  //   color: '#6c757d',
+  //   marginBottom: conditionalVerticalScale(1, 1.5, 2, 2.5),
+  //   textTransform: 'uppercase',
+  //   letterSpacing: 0.5,
+  // },
 
-  Pill_activePillText: {
-    color: '#ffffff',
-  },
+  // ESS_tableNameText: {
+  //   fontSize: conditionalFontScale(14, 15, 16, 17),
+  //   fontWeight: '600',
+  //   color: '#495057',
+  // },
+
+  // ESS_section: {
+  //   marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+  // },
+
+  // ESS_requestIdText: {
+  //   fontSize: conditionalFontScale(13, 13.5, 14, 15),
+  //   fontWeight: '500',
+  //   color: '#007bff',
+  // },
+
+  // ESS_descriptionText: {
+  //   fontSize: conditionalFontScale(12, 12.5, 13, 14),
+  //   lineHeight: conditionalVerticalScale(16, 17, 18, 19),
+  //   color: '#495057',
+  // },
+
+  // ESS_footerSection: {
+  //   marginTop: conditionalVerticalScale(6, 7, 8, 10),
+  //   paddingTop: conditionalVerticalScale(6, 7, 8, 10),
+  //   borderTopWidth: moderateScale(1),
+  //   borderTopColor: '#f0f0f0',
+  // },
+
+  // ESS_dateRow: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   gap: conditionalScale(4, 5, 6, 7),
+  // },
+
+  // ESS_dateIcon: {
+  //   fontSize: conditionalFontScale(11, 11.5, 12, 13),
+  // },
+
+  // ESS_dateText: {
+  //   fontSize: conditionalFontScale(10, 10.5, 11, 12),
+  //   color: '#6c757d',
+  // },
+
+  // ESS_statusIndicator: {
+  //   position: 'absolute',
+  //   top: conditionalVerticalScale(10, 11, 12, 13),
+  //   right: conditionalScale(10, 11, 12, 13),
+  //   paddingHorizontal: conditionalScale(8, 9, 10, 11),
+  //   paddingVertical: conditionalVerticalScale(3, 3.5, 4, 5),
+  //   borderRadius: conditionalScale(3, 3.5, 4, 5),
+  //   opacity: 0.9,
+  // },
+
+  // ESS_statusIndicatorText: {
+  //   color: '#ffffff',
+  //   fontSize: conditionalFontScale(9, 9.5, 10, 11),
+  //   fontWeight: '700',
+  //   textTransform: 'uppercase',
+  // },
+
+  // // Filter Tiles Styles
+  // ESS_tileContainer: {
+  //   flexDirection: 'row',
+  //   paddingHorizontal: conditionalScale(12, 14, 16, 18),
+  //   paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+  //   gap: conditionalScale(6, 7, 8, 10),
+  //   backgroundColor: '#ffffff',
+  //   borderBottomWidth: moderateScale(1),
+  //   borderBottomColor: '#e9ecef',
+  // },
+
+  // ESS_tile: {
+  //   flex: 1,
+  //   backgroundColor: '#f8f9fa',
+  //   borderRadius: borderRadius.lg,
+  //   padding: conditionalScale(8, 10, 12, 14),
+  //   alignItems: 'center',
+  //   borderWidth: moderateScale(1.5),
+  //   borderColor: '#e9ecef',
+  //   position: 'relative',
+  // },
+
+  // ESS_pendingTile: {
+  //   backgroundColor: '#fff8e1',
+  //   borderColor: '#ffeaa7',
+  // },
+
+  // ESS_approvedTile: {
+  //   backgroundColor: '#e8f5e9',
+  //   borderColor: '#c3e6cb',
+  // },
+
+  // ESS_rejectedTile: {
+  //   backgroundColor: '#ffebee',
+  //   borderColor: '#f5c6cb',
+  // },
+
+  // ESS_activeTile: {
+  //   borderColor: '#007bff',
+  //   borderWidth: moderateScale(2),
+  //   transform: [{scale: 1.02}],
+  // },
+
+  // ESS_tileCount: {
+  //   fontSize: conditionalFontScale(20, 22, 24, 26),
+  //   fontWeight: '800',
+  //   color: '#212529',
+  //   marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+  // },
+
+  // ESS_pendingText: {
+  //   color: '#fd7e14',
+  // },
+
+  // ESS_approvedText: {
+  //   color: '#28a745',
+  // },
+
+  // ESS_rejectedText: {
+  //   color: '#dc3545',
+  // },
+
+  // ESS_activeCount: {
+  //   color: '#007bff',
+  // },
+
+  // ESS_tileLabel: {
+  //   fontSize: conditionalFontScale(9, 9.5, 10, 11),
+  //   fontWeight: '600',
+  //   color: '#6c757d',
+  //   textTransform: 'uppercase',
+  //   letterSpacing: 0.5,
+  // },
+
+  // ESS_activeLabel: {
+  //   color: '#007bff',
+  //   fontWeight: '700',
+  // },
+
+  // ESS_activeIndicator: {
+  //   position: 'absolute',
+  //   bottom: conditionalVerticalScale(-1, -1.5, -2, -2.5),
+  //   width: conditionalScale(16, 18, 20, 22),
+  //   height: conditionalScale(2.5, 2.75, 3, 3.5),
+  //   backgroundColor: '#007bff',
+  //   borderRadius: conditionalScale(1.25, 1.375, 1.5, 1.75),
+  // },
+
+  // // List Styles
+  // ESS_listContainer: {
+  //   paddingVertical: conditionalVerticalScale(6, 7, 8, 10),
+  //   paddingBottom: conditionalVerticalScale(20, 22, 24, 26),
+  // },
+
+  // ESS_filterHeader: {
+  //   paddingHorizontal: conditionalScale(12, 14, 16, 18),
+  //   paddingVertical: conditionalVerticalScale(10, 11, 12, 14),
+  //   backgroundColor: '#f8f9fa',
+  //   marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+  // },
+
+  // ESS_filterTitle: {
+  //   fontSize: conditionalFontScale(13, 13.5, 14, 15),
+  //   fontWeight: '600',
+  //   color: '#495057',
+  // },
+
+  // ESS_emptyContainer: {
+  //   flexGrow: 1,
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  // },
+
+  // ESS_emptyState: {
+  //   alignItems: 'center',
+  //   paddingHorizontal: conditionalScale(30, 35, 40, 45),
+  // },
+
+  // ESS_emptyIcon: {
+  //   fontSize: conditionalFontScale(54, 58, 62, 68),
+  //   marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+  //   opacity: 0.5,
+  // },
+
+  // ESS_emptyTitle: {
+  //   fontSize: conditionalFontScale(18, 19, 20, 22),
+  //   fontWeight: '700',
+  //   color: '#495057',
+  //   marginBottom: conditionalVerticalScale(6, 7, 8, 10),
+  //   textAlign: 'center',
+  // },
+
+  // ESS_emptySubtitle: {
+  //   fontSize: conditionalFontScale(13, 13.5, 14, 15),
+  //   color: '#6c757d',
+  //   textAlign: 'center',
+  //   lineHeight: conditionalVerticalScale(18, 19, 20, 22),
+  // },
+  // // ============================================
+  // // WORKFLOW HISTORY - RESPONSIVE STYLES
+  // // ============================================
+
+  // WFH_container: {
+  //   flex: 1,
+  //   backgroundColor: '#f8f9fa',
+  // },
+
+  // WFH_summaryContainer: {
+  //   backgroundColor: '#ffffff',
+  //   paddingVertical: conditionalVerticalScale(16, 18, 20, 22),
+  //   paddingHorizontal: conditionalScale(16, 18, 20, 22),
+  //   borderBottomWidth: moderateScale(1),
+  //   borderBottomColor: '#e5e7eb',
+  //   marginBottom: conditionalVerticalScale(6, 7, 8, 10),
+  // },
+
+  // WFH_summaryTitle: {
+  //   fontSize: conditionalFontScale(20, 21, 22, 24),
+  //   fontWeight: '700',
+  //   color: '#1f2937',
+  //   marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+  //   letterSpacing: -0.5,
+  // },
+
+  // WFH_summarySubtitle: {
+  //   fontSize: conditionalFontScale(13, 13.5, 14, 15),
+  //   color: '#6b7280',
+  //   fontWeight: '500',
+  // },
+
+  // WFH_listContent: {
+  //   paddingHorizontal: conditionalScale(12, 14, 16, 18),
+  //   paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
+  // },
+
+  // WFH_itemContainer: {
+  //   flexDirection: 'row',
+  //   marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+  // },
+
+  // WFH_timelineColumn: {
+  //   width: conditionalScale(36, 38, 40, 42),
+  //   alignItems: 'center',
+  //   position: 'relative',
+  // },
+
+  // WFH_iconCircle: {
+  //   width: conditionalScale(32, 34, 36, 38),
+  //   height: conditionalScale(32, 34, 36, 38),
+  //   borderRadius: conditionalScale(16, 17, 18, 19),
+  //   borderWidth: moderateScale(2.5),
+  //   alignItems: 'center',
+  //   justifyContent: 'center',
+  //   backgroundColor: '#ffffff',
+  //   zIndex: 2,
+  // },
+
+  // WFH_icon: {
+  //   fontSize: conditionalFontScale(14, 15, 16, 17),
+  //   fontWeight: 'bold',
+  // },
+
+  // WFH_timelineLine: {
+  //   position: 'absolute',
+  //   top: conditionalVerticalScale(32, 34, 36, 38),
+  //   bottom: conditionalVerticalScale(-2, -3, -4, -5),
+  //   width: moderateScale(2.5),
+  //   backgroundColor: '#e5e7eb',
+  //   left: '50%',
+  //   marginLeft: moderateScale(-1.25),
+  // },
+
+  // WFH_contentContainer: {
+  //   flex: 1,
+  //   paddingLeft: conditionalScale(8, 10, 12, 14),
+  //   paddingBottom: conditionalVerticalScale(12, 14, 16, 18),
+  // },
+
+  // WFH_card: {
+  //   backgroundColor: '#ffffff',
+  //   borderRadius: borderRadius.lg,
+  //   padding: conditionalScale(12, 14, 16, 18),
+  //   ...Platform.select({
+  //     ios: {
+  //       shadowColor: '#000',
+  //       shadowOffset: {width: 0, height: moderateScale(1)},
+  //       shadowOpacity: 0.05,
+  //       shadowRadius: moderateScale(3),
+  //     },
+  //     android: {
+  //       elevation: moderateScale(2),
+  //     },
+  //   }),
+  //   borderWidth: moderateScale(1),
+  //   borderColor: '#f3f4f6',
+  // },
+
+  // WFH_cardHeader: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   alignItems: 'flex-start',
+  //   marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+  // },
+
+  // WFH_headerLeft: {
+  //   flex: 1,
+  //   marginRight: conditionalScale(8, 10, 12, 14),
+  // },
+
+  // WFH_statusText: {
+  //   fontSize: conditionalFontScale(14, 15, 16, 17),
+  //   fontWeight: '700',
+  //   color: '#1f2937',
+  //   marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+  //   letterSpacing: -0.3,
+  // },
+
+  // WFH_instanceText: {
+  //   fontSize: conditionalFontScale(12, 12.5, 13, 14),
+  //   color: '#6b7280',
+  //   fontWeight: '500',
+  // },
+
+  // WFH_statusBadge: {
+  //   paddingHorizontal: conditionalScale(8, 10, 12, 14),
+  //   paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
+  //   borderRadius: conditionalScale(12, 14, 16, 18),
+  // },
+
+  // WFH_badgeText: {
+  //   fontSize: conditionalFontScale(11, 11.5, 12, 13),
+  //   fontWeight: '700',
+  //   letterSpacing: 0.3,
+  // },
+
+  // WFH_dateContainer: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   backgroundColor: '#f9fafb',
+  //   paddingVertical: conditionalVerticalScale(6, 7, 8, 9),
+  //   paddingHorizontal: conditionalScale(8, 10, 12, 14),
+  //   borderRadius: conditionalScale(6, 7, 8, 10),
+  // },
+
+  // WFH_dateIcon: {
+  //   fontSize: conditionalFontScale(12, 13, 14, 15),
+  //   marginRight: conditionalScale(4, 6, 8, 10),
+  // },
+
+  // WFH_dateText: {
+  //   fontSize: conditionalFontScale(12, 12.5, 13, 14),
+  //   color: '#4b5563',
+  //   fontWeight: '600',
+  // },
+
+  // Pill_container: {
+  //   backgroundColor: '#ffffff',
+  //   borderBottomWidth: moderateScale(1),
+  //   borderBottomColor: '#e9ecef',
+  //   paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
+  // },
+
+  // Pill_scrollContent: {
+  //   paddingHorizontal: conditionalScale(12, 14, 16, 18),
+  //   gap: conditionalScale(6, 7, 8, 10),
+  // },
+
+  // Pill_pill: {
+  //   paddingHorizontal: conditionalScale(14, 16, 18, 20),
+  //   paddingVertical: conditionalVerticalScale(6, 7, 8, 9),
+  //   borderRadius: conditionalScale(20, 22, 24, 26),
+  //   backgroundColor: '#f8f9fa',
+  //   borderWidth: moderateScale(1),
+  //   borderColor: '#dee2e6',
+  // },
+
+  // Pill_activePill: {
+  //   borderColor: 'transparent',
+  //   elevation: moderateScale(2),
+  //   shadowColor: '#000',
+  //   shadowOffset: {width: 0, height: moderateScale(1)},
+  //   shadowOpacity: 0.2,
+  //   shadowRadius: moderateScale(2),
+  // },
+
+  // Pill_pillText: {
+  //   fontSize: conditionalFontScale(12, 12.5, 13, 14),
+  //   fontWeight: '600',
+  //   color: '#495057',
+  // },
+
+  // Pill_activePillText: {
+  //   color: '#ffffff',
+  // },
 });
 
 export default styles;

@@ -477,27 +477,34 @@
 
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable curly */
-import React, {useState, useEffect, useRef} from 'react';
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable curly */
+/* eslint-disable react-native/no-inline-styles */
+/* eslint-disable curly */
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Animated,
+  Modal,
   Dimensions,
-  Platform,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import styles from '../styles/styles';
+import {findNodeHandle, UIManager} from 'react-native';
 
-const {width} = Dimensions.get('window');
+const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-// Button type constants for header buttons
+// Button type constants
 const BUTTON_TYPES = {
   EDIT: 'edit',
   DELETE: 'delete',
   ATTACHMENT: 'attachment',
   SUBMIT: 'submit',
   VIEW: 'view',
+  APPROVAL: 'approval', // new dropdown button
 };
 
 const COLOR_PALETTE = {
@@ -526,6 +533,22 @@ const COLOR_PALETTE = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  Global menu manager — ensures only ONE 3-dot menu is open at a time
+// ─────────────────────────────────────────────────────────────────────────────
+let globalMenuCloser = null;
+const registerMenuCloser = closer => {
+  if (globalMenuCloser && globalMenuCloser !== closer) {
+    globalMenuCloser(); // close previously open menu
+  }
+  globalMenuCloser = closer;
+};
+const unregisterMenuCloser = closer => {
+  if (globalMenuCloser === closer) {
+    globalMenuCloser = null;
+  }
+};
+
 const DynamicRequestCard = ({
   data = {},
   fields = [],
@@ -541,58 +564,137 @@ const DynamicRequestCard = ({
   expandableFields = [],
   isExpandable = false,
   onButtonPress = () => {},
+  onPress = null,
   processingButtons = [],
   showNavigationArrow = false,
   isRTL = false,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
-  const [pressed, setPressed] = useState(false);
+  const [approvalDropdownVisible, setApprovalDropdownVisible] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({top: 0, right: 0});
+  const [approvalPosition, setApprovalPosition] = useState({top: 0, left: 0});
+  const [dropdownTop, setDropdownTop] = useState(true); // true = opens downward
+  const buttonRef = useRef(null);
 
   const arrowAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const menuFadeAnim = useRef(new Animated.Value(0)).current;
+  const approvalFadeAnim = useRef(new Animated.Value(0)).current;
   const animationIntervalRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const approvalButtonRef = useRef(null);
 
-  // Menu fade animation
-  useEffect(() => {
-    if (menuVisible) {
+  // ── Close this card's 3-dot menu ──
+  const closeMenu = useCallback(() => {
+    Animated.timing(menuFadeAnim, {
+      toValue: 0,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => setMenuVisible(false));
+    unregisterMenuCloser(closeMenu);
+  }, [menuFadeAnim]);
+
+  // ── Open 3-dot menu ──
+  const openMenu = () => {
+    // Measure position for the modal dropdown
+    menuButtonRef.current?.measure((fx, fy, w, h, px, py) => {
+      setMenuPosition({
+        top: py + h + 4,
+        right: SCREEN_WIDTH - px - w,
+      });
+      registerMenuCloser(closeMenu); // close any other open menu
+      setMenuVisible(true);
       Animated.timing(menuFadeAnim, {
         toValue: 1,
-        duration: 200,
+        duration: 180,
         useNativeDriver: true,
       }).start();
+    });
+  };
+
+  const toggleMenu = () => {
+    if (menuVisible) {
+      closeMenu();
     } else {
-      Animated.timing(menuFadeAnim, {
-        toValue: 0,
-        duration: 150,
+      openMenu();
+    }
+  };
+
+  const handleApprovalPress = () => {
+    if (buttonRef.current) {
+      buttonRef.current.measure((x, y, width, height, pageX, pageY) => {
+        const dropdownHeight = 240; // approximate height of your dropdown (6 items × 40px)
+        const screenHeight = Dimensions.get('window').height;
+        const spaceBelow = screenHeight - (pageY + height);
+
+        if (spaceBelow < dropdownHeight) {
+          setDropdownTop(false); // not enough space below → open upward
+        } else {
+          setDropdownTop(true); // enough space below → open downward
+        }
+
+        setApprovalDropdownVisible(true); // or whatever your toggle state is called
+      });
+    }
+  };
+
+  // ── Approval dropdown ──
+  // const openApprovalDropdown = () => {
+  //   approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
+  //     setApprovalPosition({
+  //       top: py - 48, // opens upward above the button
+  //       left: px,
+  //       width: w,
+  //     });
+  //     setApprovalDropdownVisible(true);
+  //     Animated.timing(approvalFadeAnim, {
+  //       toValue: 1,
+  //       duration: 180,
+  //       useNativeDriver: true,
+  //     }).start();
+  //   });
+  // };
+
+  const openApprovalDropdown = () => {
+    approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
+      const dropdownHeight = actions => (actions?.length || 1) * 48;
+      const approvalConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
+      const estimatedHeight = dropdownHeight(approvalConfig.actions);
+      const spaceBelow = SCREEN_HEIGHT - (py + h);
+      const opensUpward = spaceBelow < estimatedHeight;
+
+      setApprovalPosition({
+        top: opensUpward ? py - estimatedHeight : py + h + 4,
+        left: px,
+        width: w,
+      });
+      setApprovalDropdownVisible(true);
+      Animated.timing(approvalFadeAnim, {
+        toValue: 1,
+        duration: 180,
         useNativeDriver: true,
       }).start();
+    });
+  };
+
+  const closeApprovalDropdown = () => {
+    Animated.timing(approvalFadeAnim, {
+      toValue: 0,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => setApprovalDropdownVisible(false));
+  };
+
+  const toggleApprovalDropdown = () => {
+    if (approvalDropdownVisible) {
+      closeApprovalDropdown();
+    } else {
+      openApprovalDropdown();
     }
-  }, [menuVisible, menuFadeAnim]);
-
-  // Press animations
-  const handlePressIn = () => {
-    setPressed(true);
-    Animated.spring(scaleAnim, {
-      toValue: 0.98,
-      useNativeDriver: true,
-      tension: 150,
-      friction: 3,
-    }).start();
   };
 
-  const handlePressOut = () => {
-    setPressed(false);
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 150,
-      friction: 3,
-    }).start();
-  };
-
-  // Highlight animation
+  // ── Highlight pulse ──
   useEffect(() => {
     let animation;
     if (isHighlighted) {
@@ -614,15 +716,10 @@ const DynamicRequestCard = ({
     } else {
       scaleAnim.setValue(1);
     }
-
-    return () => {
-      if (animation) {
-        animation.stop();
-      }
-    };
+    return () => animation?.stop();
   }, [isHighlighted, scaleAnim]);
 
-  // Continuous arrow animation
+  // ── Navigation arrow pulse ──
   useEffect(() => {
     if (showNavigationArrow) {
       const startAnimation = () => {
@@ -639,26 +736,27 @@ const DynamicRequestCard = ({
           }),
         ]).start();
       };
-
       startAnimation();
       animationIntervalRef.current = setInterval(startAnimation, 2500);
-
-      return () => {
-        if (animationIntervalRef.current) {
-          clearInterval(animationIntervalRef.current);
-        }
-      };
+      return () => clearInterval(animationIntervalRef.current);
     } else {
       arrowAnim.setValue(0);
-      if (animationIntervalRef.current) {
-        clearInterval(animationIntervalRef.current);
-      }
+      clearInterval(animationIntervalRef.current);
     }
   }, [showNavigationArrow, arrowAnim]);
 
+  // ── Cleanup on unmount ──
+  useEffect(() => {
+    return () => {
+      unregisterMenuCloser(closeMenu);
+      clearInterval(animationIntervalRef.current);
+    };
+  }, [closeMenu]);
+
+  // ─────────────────────── helpers ───────────────────────
+
   const formatValue = (value, fieldType) => {
     if (value === null || value === undefined) return '—';
-
     switch (fieldType) {
       case 'date': {
         const d = new Date(value);
@@ -681,16 +779,17 @@ const DynamicRequestCard = ({
       }
       case 'currency': {
         const num = Number(value);
-        if (isNaN(num)) return value;
-        return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return isNaN(num)
+          ? value
+          : num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       }
       case 'number': {
         const n = Number(value);
-        if (isNaN(n)) return value;
-        return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return isNaN(n)
+          ? value
+          : n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       }
       case 'status':
-        return value;
       case 'boolean':
         return value;
       default:
@@ -699,18 +798,20 @@ const DynamicRequestCard = ({
   };
 
   const getStatusColor = status => {
-    const statusStr = String(status).toLowerCase();
-    if (
-      ['active', 'completed', 'approved', 'success', 'yes', 'true'].includes(
-        statusStr,
-      )
-    ) {
+    const s = String(status).toLowerCase();
+    if (['active', 'approved', 'success', 'yes', 'true'].includes(s))
       return {
         bg: COLOR_PALETTE.successLight,
         text: '#065f46',
         dot: COLOR_PALETTE.success,
       };
-    }
+
+    if (s === 'completed')
+      return {
+        bg: '#EDE9FE',
+        text: '#4C1D95',
+        dot: '#7C3AED',
+      };
     if (
       [
         'pending',
@@ -719,23 +820,19 @@ const DynamicRequestCard = ({
         'waiting',
         'processing',
         'in progress',
-      ].includes(statusStr)
-    ) {
+      ].includes(s)
+    )
       return {
         bg: COLOR_PALETTE.warningLight,
         text: '#92400e',
         dot: COLOR_PALETTE.warning,
       };
-    }
-    if (
-      ['cancelled', 'rejected', 'failed', 'no', 'false'].includes(statusStr)
-    ) {
+    if (['cancelled', 'rejected', 'failed', 'no', 'false'].includes(s))
       return {
         bg: COLOR_PALETTE.dangerLight,
         text: '#991b1b',
         dot: COLOR_PALETTE.danger,
       };
-    }
     return {
       bg: COLOR_PALETTE.gray[100],
       text: COLOR_PALETTE.gray[700],
@@ -743,7 +840,8 @@ const DynamicRequestCard = ({
     };
   };
 
-  // Default button configurations
+  // ─────────────────────── button config ───────────────────────
+
   const defaultButtonConfigs = {
     [BUTTON_TYPES.EDIT]: {
       show: false,
@@ -785,7 +883,7 @@ const DynamicRequestCard = ({
       iconSize: 14,
       iconColor: '#fff',
       position: 'bottom',
-      style: 'icon',
+      style: 'text',
       backgroundColor: COLOR_PALETTE.success,
       customStyle: {},
     },
@@ -800,88 +898,66 @@ const DynamicRequestCard = ({
       backgroundColor: COLOR_PALETTE.info,
       customStyle: {},
     },
+    [BUTTON_TYPES.APPROVAL]: {
+      show: false,
+      text: 'Approval',
+      icon: null,
+      iconSize: 14,
+      iconColor: '#fff',
+      position: 'bottom',
+      style: 'approval_dropdown',
+      backgroundColor: COLOR_PALETTE.success,
+      textColor: COLOR_PALETTE.success,
+      // Sub-actions shown in dropdown
+      actions: [{key: 'submit', label: 'Submit', icon: 'paper-plane'}],
+      customStyle: {},
+    },
   };
 
   const getMergedButtonConfig = buttonType => {
     const defaultConfig = defaultButtonConfigs[buttonType] || {};
     const userConfig = buttons[buttonType] || {};
-    return {
-      ...defaultConfig,
-      ...userConfig,
-      show: userConfig.show === true,
-    };
+    return {...defaultConfig, ...userConfig, show: userConfig.show === true};
   };
 
-  const getEnabledButtons = () => {
-    return Object.keys(buttons).filter(buttonType => {
-      const config = getMergedButtonConfig(buttonType);
-      return config.show === true;
-    });
-  };
+  const getEnabledButtons = () =>
+    Object.keys(buttons).filter(bt => getMergedButtonConfig(bt).show === true);
 
-  const getButtonsByPosition = position => {
-    return getEnabledButtons().filter(buttonType => {
-      const config = getMergedButtonConfig(buttonType);
-      return config.position === position;
-    });
-  };
+  const getButtonsByPosition = position =>
+    getEnabledButtons().filter(
+      bt => getMergedButtonConfig(bt).position === position,
+    );
+
+  // ─────────────────────── renderers ───────────────────────
 
   const renderField = (field, index) => {
     const value = data[field.key];
     const formattedValue = formatValue(value, field.type);
 
-    // Never show status fields here (they're shown in header)
     if (field.type === 'status') return null;
 
-    // Check if we have a meaningful label
     const hasLabel = field.label && String(field.label).trim().length > 0;
 
-    // ────────────────────────────────────────────────
-    //  CASE 1: NO LABEL → full-width, left-aligned value
-    // ────────────────────────────────────────────────
     if (!hasLabel) {
       return (
         <View key={index} style={styles.DRC_fieldRowNoLabel}>
-          <View style={styles.DRC_fieldValueFull}>
-            <Text
-              style={[
-                styles.DRC_fieldValueNoLabel,
-                showNavigationArrow && styles.DRC_fieldValueNoLabelWithArrow,
-                field.trend && styles.DRC_fieldValueWithTrend,
-              ]}>
-              {formattedValue}
-            </Text>
-
-            {field.trend && (
-              <View style={styles.DRC_trendIndicator}>
-                <FontAwesome
-                  name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
-                  size={11}
-                  color={
-                    field.trend === 'up'
-                      ? COLOR_PALETTE.success
-                      : COLOR_PALETTE.danger
-                  }
-                />
-              </View>
-            )}
-          </View>
+          <Text
+            style={[
+              styles.DRC_fieldValueNoLabel,
+              showNavigationArrow && styles.DRC_fieldValueNoLabelWithArrow,
+            ]}>
+            {formattedValue}
+          </Text>
         </View>
       );
     }
 
-    // ────────────────────────────────────────────────
-    //  CASE 2: HAS LABEL → normal label | value layout
-    // ────────────────────────────────────────────────
-
-    // Boolean field with badge
     if (field.type === 'boolean') {
       const isTrue =
         formattedValue === true ||
         formattedValue === 'true' ||
         formattedValue === 1 ||
         formattedValue === '1';
-
       return (
         <View key={index} style={styles.DRC_fieldRow}>
           <Text style={styles.DRC_fieldLabel}>{field.label}</Text>
@@ -895,7 +971,7 @@ const DynamicRequestCard = ({
               size={12}
               color={isTrue ? '#065f46' : COLOR_PALETTE.gray[400]}
             />
-            {/* <Text
+            <Text
               style={[
                 styles.DRC_booleanText,
                 isTrue
@@ -903,17 +979,15 @@ const DynamicRequestCard = ({
                   : styles.DRC_booleanTextFalse,
               ]}>
               {isTrue ? 'Yes' : 'No'}
-            </Text> */}
+            </Text>
           </View>
         </View>
       );
     }
 
-    // Default case: regular field with label + value on right
     return (
       <View key={index} style={styles.DRC_fieldRow}>
         <Text style={styles.DRC_fieldLabel}>{field.label}</Text>
-
         <View style={styles.DRC_fieldValueWrapper}>
           <Text
             style={[
@@ -922,38 +996,26 @@ const DynamicRequestCard = ({
             ]}>
             {formattedValue}
           </Text>
-
-          {field.trend && (
-            <View style={styles.DRC_trendIndicator}>
-              <FontAwesome
-                name={field.trend === 'up' ? 'arrow-up' : 'arrow-down'}
-                size={10}
-                color={
-                  field.trend === 'up'
-                    ? COLOR_PALETTE.success
-                    : COLOR_PALETTE.danger
-                }
-              />
-            </View>
-          )}
         </View>
       </View>
     );
   };
 
+  // 3-dot menu item
   const renderMenuButton = buttonType => {
     const buttonConfig = getMergedButtonConfig(buttonType);
     if (!buttonConfig.show) return null;
 
     const isProcessing = processingButtons.includes(buttonType);
     const isDisabled =
-      buttonConfig.disabled || isProcessing || processingButtons.length > 0;
+      buttonConfig.disabled ||
+      (buttonType !== BUTTON_TYPES.SUBMIT && processingButtons.length > 0);
 
     return (
       <TouchableOpacity
         key={buttonType}
         onPress={() => {
-          setMenuVisible(false);
+          closeMenu();
           onButtonPress(buttonType, data);
         }}
         disabled={isDisabled}
@@ -967,7 +1029,7 @@ const DynamicRequestCard = ({
               name="spinner"
               size={16}
               color={COLOR_PALETTE.gray[400]}
-              style={[styles.DRC_menuIcon, styles.DRC_spinning]}
+              style={styles.DRC_menuIcon}
             />
           ) : (
             buttonConfig.icon && (
@@ -993,9 +1055,13 @@ const DynamicRequestCard = ({
     );
   };
 
+  // Regular bottom text/icon button
   const renderButton = buttonType => {
     const buttonConfig = getMergedButtonConfig(buttonType);
     if (!buttonConfig.show) return null;
+
+    // Approval dropdown is handled separately
+    if (buttonConfig.style === 'approval_dropdown') return null;
 
     const isProcessing = processingButtons.includes(buttonType);
     const isDisabled =
@@ -1021,7 +1087,6 @@ const DynamicRequestCard = ({
               name="spinner"
               size={buttonConfig.iconSize || 14}
               color={buttonConfig.iconColor || '#fff'}
-              style={styles.DRC_spinning}
             />
           ) : (
             buttonConfig.icon && (
@@ -1066,7 +1131,6 @@ const DynamicRequestCard = ({
             name="spinner"
             size={buttonConfig.iconSize || 14}
             color={COLOR_PALETTE.gray[400]}
-            style={styles.DRC_spinning}
           />
         )}
         <Text
@@ -1085,27 +1149,144 @@ const DynamicRequestCard = ({
     );
   };
 
+  // ── Approval Dropdown Button ──
+  const renderApprovalDropdownButton = () => {
+    const buttonConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
+    if (!buttonConfig.show) return null;
+
+    const isDisabled = buttonConfig.disabled || processingButtons.length > 0;
+    const actions = buttonConfig.actions || [
+      {key: 'submit', label: 'Submit', icon: 'paper-plane'},
+    ];
+
+    return (
+      <>
+        {/* The "Approval ▾" button */}
+        <TouchableOpacity
+          ref={approvalButtonRef}
+          onPress={toggleApprovalDropdown}
+          disabled={isDisabled}
+          style={[
+            styles.DRC_approvalButton,
+            isDisabled && styles.DRC_disabledButton,
+            buttonConfig.customStyle,
+          ]}>
+          <Text
+            style={[
+              styles.DRC_approvalButtonText,
+              {
+                color: isDisabled
+                  ? COLOR_PALETTE.gray[300]
+                  : buttonConfig.textColor || COLOR_PALETTE.success,
+              },
+            ]}>
+            {buttonConfig.text || 'Approval'}
+          </Text>
+          <FontAwesome
+            name={approvalDropdownVisible ? 'chevron-up' : 'chevron-down'}
+            size={10}
+            color={
+              isDisabled
+                ? COLOR_PALETTE.gray[300]
+                : buttonConfig.textColor || COLOR_PALETTE.success
+            }
+            style={{marginLeft: 4}}
+          />
+        </TouchableOpacity>
+
+        {/* Approval dropdown via Modal (renders above everything) */}
+        <Modal
+          transparent
+          visible={approvalDropdownVisible}
+          animationType="none"
+          onRequestClose={closeApprovalDropdown}>
+          <TouchableWithoutFeedback onPress={closeApprovalDropdown}>
+            <View style={styles.DRC_modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View
+                  style={[
+                    styles.DRC_approvalDropdown,
+                    {
+                      top: approvalPosition.top,
+                      left: approvalPosition.left,
+                      minWidth: approvalPosition.width || 140,
+                      opacity: approvalFadeAnim,
+                      transform: [
+                        {
+                          translateY: approvalFadeAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [8, 0],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}>
+                  {actions.map((action, idx) => {
+                    const isActionProcessing = processingButtons.includes(
+                      action.key,
+                    );
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        style={[
+                          styles.DRC_approvalMenuItem,
+                          idx < actions.length - 1 &&
+                            styles.DRC_approvalMenuItemBorder,
+                        ]}
+                        onPress={() => {
+                          closeApprovalDropdown();
+                          // Fire onButtonPress with the sub-action key
+                          onButtonPress(action.key, data);
+                        }}
+                        disabled={isActionProcessing}>
+                        {action.icon && (
+                          <FontAwesome
+                            name={action.icon}
+                            size={14}
+                            color={
+                              isActionProcessing
+                                ? COLOR_PALETTE.gray[400]
+                                : COLOR_PALETTE.success
+                            }
+                            style={{marginRight: 8}}
+                          />
+                        )}
+                        <Text
+                          style={[
+                            styles.DRC_approvalMenuItemText,
+                            isActionProcessing && {
+                              color: COLOR_PALETTE.gray[400],
+                            },
+                          ]}>
+                          {isActionProcessing ? 'Processing...' : action.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </>
+    );
+  };
+
   const renderNavigationArrow = () => {
     if (!showNavigationArrow) return null;
-
     const translateX = arrowAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [0, 8],
     });
-
     const opacity = arrowAnim.interpolate({
       inputRange: [0, 0.5, 1],
       outputRange: [0.3, 0.8, 1],
     });
-
     return (
       <Animated.View
         style={[
           styles.DRC_navigationArrow,
-          {
-            transform: [{translateX}],
-            opacity,
-          },
+          {transform: [{translateX}], opacity},
         ]}>
         <View style={styles.DRC_navigationArrowInner}>
           <FontAwesome
@@ -1118,13 +1299,18 @@ const DynamicRequestCard = ({
     );
   };
 
+  // ─────────────────────── compose layout ───────────────────────
+
   const headerButtons = getButtonsByPosition('header');
   const bottomButtons = getButtonsByPosition('bottom');
   const hasHeaderButtons = headerButtons.length > 0;
   const hasBottomButtons = bottomButtons.length > 0;
   const shouldShowExpandToggle = isExpandable && expandableFields.length > 0;
 
-  const statusField = fields.find(field => field.type === 'status');
+  const approvalConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
+  const hasApprovalButton = approvalConfig.show;
+
+  const statusField = fields.find(f => f.type === 'status');
   const statusValue = statusField
     ? formatValue(data[statusField.key], 'status')
     : null;
@@ -1136,155 +1322,162 @@ const DynamicRequestCard = ({
         style={[
           styles.DRC_card,
           isHighlighted && styles.DRC_cardHighlighted,
-          {
-            transform: [{scale: scaleAnim}],
-          },
+          {transform: [{scale: scaleAnim}]},
         ]}>
-        <TouchableOpacity
-          activeOpacity={1}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
+        {/* Tapping the card body closes the 3-dot menu (without interfering with navigation Pressable above) */}
+        <TouchableWithoutFeedback
           onPress={() => {
-            // Close menu when pressing anywhere on the card
             if (menuVisible) {
-              setMenuVisible(false);
+              closeMenu();
+            } else if (onPress) {
+              onPress();
             }
-          }}
-          style={styles.DRC_cardInner}>
-          {renderNavigationArrow()}
+          }}>
+          <View style={styles.DRC_cardInner}>
+            {renderNavigationArrow()}
 
-          {/* Header */}
-          <View style={[styles.DRC_header, isRTL && styles.DRC_headerRTL]}>
-            <View
-              style={[
-                styles.DRC_headerContent,
-                showNavigationArrow && styles.DRC_headerContentWithArrow,
-              ]}>
-              {headerConfig.title && (
-                <Text style={styles.DRC_headerTitle} numberOfLines={1}>
-                  {data[headerConfig.title.key] ||
-                    headerConfig.title.defaultValue}
-                </Text>
-              )}
-              {headerConfig.subtitle && (
-                <Text style={styles.DRC_headerSubtitle} numberOfLines={1}>
-                  {data[headerConfig.subtitle.key] ||
-                    headerConfig.subtitle.defaultValue}
-                </Text>
-              )}
-            </View>
+            {/* ── Header ── */}
+            <View style={[styles.DRC_header, isRTL && styles.DRC_headerRTL]}>
+              <View
+                style={[
+                  styles.DRC_headerContent,
+                  showNavigationArrow && styles.DRC_headerContentWithArrow,
+                ]}>
+                {headerConfig.title && (
+                  <Text style={styles.DRC_headerTitle} numberOfLines={1}>
+                    {data[headerConfig.title.key] ||
+                      headerConfig.title.defaultValue}
+                  </Text>
+                )}
+                {headerConfig.subtitle && (
+                  <Text style={styles.DRC_headerSubtitle} numberOfLines={1}>
+                    {data[headerConfig.subtitle.key] ||
+                      headerConfig.subtitle.defaultValue}
+                  </Text>
+                )}
+              </View>
 
-            <View style={styles.DRC_headerRightSection}>
-              {/* Status Badge */}
-              {statusValue && statusColors && (
-                <View
-                  style={[
-                    styles.DRC_statusBadge,
-                    {backgroundColor: statusColors.bg},
-                  ]}>
+              <View style={styles.DRC_headerRightSection}>
+                {/* Status Badge */}
+                {statusValue && statusColors && (
                   <View
                     style={[
-                      styles.DRC_statusDot,
-                      {backgroundColor: statusColors.dot},
-                    ]}
-                  />
-                  <Text
-                    style={[styles.DRC_statusText, {color: statusColors.text}]}>
-                    {statusValue}
-                  </Text>
-                </View>
-              )}
+                      styles.DRC_statusBadge,
+                      {backgroundColor: statusColors.bg},
+                    ]}>
+                    <View
+                      style={[
+                        styles.DRC_statusDot,
+                        {backgroundColor: statusColors.dot},
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.DRC_statusText,
+                        {color: statusColors.text},
+                      ]}>
+                      {statusValue}
+                    </Text>
+                  </View>
+                )}
 
-              {/* 3-Dot Menu */}
-              {hasHeaderButtons && (
-                <View style={styles.DRC_menuContainer}>
+                {/* 3-Dot Menu — rendered via Modal to escape card clipping */}
+                {hasHeaderButtons && (
+                  <View style={styles.DRC_menuContainer}>
+                    <TouchableOpacity
+                      ref={menuButtonRef}
+                      style={styles.DRC_menuButton}
+                      onPress={toggleMenu}>
+                      <FontAwesome
+                        name="ellipsis-v"
+                        size={18}
+                        color={COLOR_PALETTE.gray[500]}
+                      />
+                    </TouchableOpacity>
+
+                    <Modal
+                      transparent
+                      visible={menuVisible}
+                      animationType="none"
+                      onRequestClose={closeMenu}>
+                      <TouchableWithoutFeedback onPress={closeMenu}>
+                        <View style={styles.DRC_modalOverlay}>
+                          <TouchableWithoutFeedback>
+                            <Animated.View
+                              style={[
+                                styles.DRC_dropdownMenu,
+                                {
+                                  position: 'absolute',
+                                  top: menuPosition.top,
+                                  right: menuPosition.right,
+                                  opacity: menuFadeAnim,
+                                  transform: [
+                                    {
+                                      translateY: menuFadeAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [-8, 0],
+                                      }),
+                                    },
+                                  ],
+                                },
+                              ]}>
+                              {headerButtons.map(bt => renderMenuButton(bt))}
+                            </Animated.View>
+                          </TouchableWithoutFeedback>
+                        </View>
+                      </TouchableWithoutFeedback>
+                    </Modal>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* ── Fields ── */}
+            <View style={styles.DRC_fieldsContainer}>
+              {fields
+                .filter(f => f.type !== 'status')
+                .map((field, index) => renderField(field, index))}
+            </View>
+
+            {/* ── Expandable fields ── */}
+            {expanded && expandableFields.length > 0 && (
+              <Animated.View style={styles.DRC_expandedFieldsContainer}>
+                {expandableFields.map((field, index) =>
+                  renderField(field, index),
+                )}
+              </Animated.View>
+            )}
+
+            {/* ── Footer ── */}
+            {(shouldShowExpandToggle ||
+              hasBottomButtons ||
+              hasApprovalButton) && (
+              <View style={styles.DRC_footer}>
+                {shouldShowExpandToggle && (
                   <TouchableOpacity
-                    style={styles.DRC_menuButton}
-                    onPress={() => setMenuVisible(!menuVisible)}>
+                    onPress={() => setExpanded(!expanded)}
+                    style={styles.DRC_expandButton}>
+                    <Text style={styles.DRC_expandButtonText}>
+                      {expanded ? 'Show less' : 'Show more'}
+                    </Text>
                     <FontAwesome
-                      name="ellipsis-v"
-                      size={18}
+                      name={expanded ? 'chevron-up' : 'chevron-down'}
+                      size={12}
                       color={COLOR_PALETTE.gray[500]}
                     />
                   </TouchableOpacity>
+                )}
 
-                  {/* Dropdown Menu with Fade Animation */}
-                  {menuVisible && (
-                    <>
-                      <Animated.View
-                        style={[
-                          styles.DRC_dropdownMenu,
-                          {
-                            opacity: menuFadeAnim,
-                            transform: [
-                              {
-                                translateY: menuFadeAnim.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [-10, 0],
-                                }),
-                              },
-                            ],
-                          },
-                        ]}>
-                        <View style={styles.DRC_dropdownArrow} />
-                        {headerButtons.map(buttonType =>
-                          renderMenuButton(buttonType),
-                        )}
-                      </Animated.View>
-                      <TouchableOpacity
-                        style={styles.DRC_dropdownOverlay}
-                        activeOpacity={1}
-                        onPress={() => setMenuVisible(false)}
-                      />
-                    </>
-                  )}
-                </View>
-              )}
-            </View>
-          </View>
-
-          {/* Fields */}
-          <View style={styles.DRC_fieldsContainer}>
-            {fields
-              .filter(f => f.type !== 'status')
-              .map((field, index) => renderField(field, index))}
-          </View>
-
-          {/* Expandable fields */}
-          {expanded && expandableFields.length > 0 && (
-            <Animated.View style={styles.DRC_expandedFieldsContainer}>
-              {expandableFields.map((field, index) =>
-                renderField(field, index),
-              )}
-            </Animated.View>
-          )}
-
-          {/* Footer */}
-          {(shouldShowExpandToggle || hasBottomButtons) && (
-            <View style={styles.DRC_footer}>
-              {shouldShowExpandToggle && (
-                <TouchableOpacity
-                  onPress={() => setExpanded(!expanded)}
-                  style={styles.DRC_expandButton}>
-                  <Text style={styles.DRC_expandButtonText}>
-                    {expanded ? 'Show less' : 'Show more'}
-                  </Text>
-                  <FontAwesome
-                    name={expanded ? 'chevron-up' : 'chevron-down'}
-                    size={12}
-                    color={COLOR_PALETTE.gray[500]}
-                  />
-                </TouchableOpacity>
-              )}
-
-              {hasBottomButtons && (
                 <View style={styles.DRC_bottomButtons}>
-                  {bottomButtons.map(buttonType => renderButton(buttonType))}
+                  {/* Regular bottom buttons (excluding approval_dropdown) */}
+                  {bottomButtons.map(bt => renderButton(bt))}
+                  {/* Approval dropdown button */}
+                  {renderApprovalDropdownButton()}
                 </View>
-              )}
-            </View>
-          )}
-        </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </TouchableWithoutFeedback>
       </Animated.View>
     </View>
   );

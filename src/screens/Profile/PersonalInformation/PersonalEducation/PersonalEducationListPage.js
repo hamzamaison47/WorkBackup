@@ -57,6 +57,7 @@ const PersonalEducation = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
   // const [refreshing, setRefreshing] = useState(false);
 
   /* ---------- fetch ---------- */
@@ -201,6 +202,41 @@ const PersonalEducation = () => {
     return map[normalizedStatus] || 'Unknown';
   };
 
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return educationData;
+
+    return educationData.filter(item => {
+      const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
+
+      // Special handling for Pending filter
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: educationData.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending"
+        counts[pill] = educationData.filter(
+          item => getStatusLabel(item.ApprovalStatus).includes('Pending'), // ✅ Use ApprovalStatus
+        ).length;
+      } else {
+        counts[pill] = educationData.filter(
+          item => getStatusLabel(item.ApprovalStatus) === pill, // ✅ Use ApprovalStatus
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts);
+    return counts;
+  };
+
   /* ---------- buttons ---------- */
   const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
@@ -215,7 +251,12 @@ const PersonalEducation = () => {
     // console.log(item.ApprovalStatus);
     // console.log(getStatusLabel(item.ApprovalStatus));
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
+    const isCancelled =
+      getStatusLabel(item.ApprovalStatus) === 'Cancelled' ||
+      getStatusLabel(item.ApprovalStatus) === 'Canceled';
+    const canDelete = isDraft || isCancelled;
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
+    const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
     return {
       edit: {
         show: true,
@@ -225,8 +266,11 @@ const PersonalEducation = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: isHCMRecord ? false : !isDraft,
-        customStyle: false ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: isHCMRecord ? false : !isDraft && !isRejected,
+        customStyle:
+          !isDraft && !isRejected && !isHCMRecord
+            ? {backgroundColor: '#BDBDBD'}
+            : {},
       },
       delete: {
         show: true,
@@ -236,18 +280,34 @@ const PersonalEducation = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !canDelete,
+        customStyle: !canDelete ? {backgroundColor: '#BDBDBD'} : {},
       },
-      submit: {
-        show: isWorkflowConfigured && isDraft,
+      // submit: {
+      //   show: isWorkflowConfigured && isDraft,
+      //   position: 'bottom',
+      //   style: 'text',
+      //   icon: 'send',
+      //   iconSize: 16,
+      //   text: 'Submit',
+      //   textColor: '#0A66C2',
+      //   iconColor: '#0A66C2',
+      // },
+      approval: {
+        show: isDraft || isRejected,
         position: 'bottom',
-        style: 'text',
-        icon: 'send',
-        iconSize: 16,
-        text: 'Submit',
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square-o',
         textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
       },
     };
   };
@@ -423,12 +483,16 @@ const PersonalEducation = () => {
       pageTitle="Education Details"
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={true}
+      showFloatingButton={isWorkflowConfigured}
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateEducation}
       onBackPress={handleGoBack}
-      onRefresh={fetchEducationData}>
+      onRefresh={fetchEducationData}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -443,9 +507,9 @@ const PersonalEducation = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : educationData.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={educationData}
+          data={getFilteredData()}
           renderItem={renderEducationCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()

@@ -356,7 +356,7 @@ const SplashScreens = ({navigation}) => {
       </Animated.Text>
 
       <Animated.Text style={[styles.splash_Tagline, {opacity: taglineOpacity}]}>
-        Your Technology Partner
+        Secure Mobile Gateway to Dynamics365
       </Animated.Text>
     </LinearGradient>
   );

@@ -58,6 +58,7 @@ const FamilyContacts_ListPageScreen = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
 
   const fetchFamilyContactsData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -200,6 +201,41 @@ const FamilyContacts_ListPageScreen = () => {
       default:
         console.log('Unknown button pressed:', buttonType);
     }
+  };
+
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return familycontactsdata;
+
+    return familycontactsdata.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+
+      // Special handling for Pending filter - include any status that contains "Pending"
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: familycontactsdata.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending"
+        counts[pill] = familycontactsdata.filter(item =>
+          getStatusLabel(item.WFStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = familycontactsdata.filter(
+          item => getStatusLabel(item.WFStatus) === pill,
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts); // Debug
+    return counts;
   };
 
   const handleEditPress = itemData => {
@@ -379,7 +415,11 @@ const FamilyContacts_ListPageScreen = () => {
       onButtonPress={handleButtonPress}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleFamilyContactRecordCreate}>
+      onFloatingButtonPress={handleFamilyContactRecordCreate}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -394,9 +434,9 @@ const FamilyContacts_ListPageScreen = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : familycontactsdata.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={familycontactsdata}
+          data={getFilteredData()}
           renderItem={renderFamilyContactCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()

@@ -24,18 +24,18 @@ import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {translate as t} from '../../../../store/utils/translate';
 
-import ActionPaneContainer from '../../../../components/ActionPaneContainer';
-import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../../../components/Alert/AlertModal';
-import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import CalendarModal from '../../../../components/Leaves/CalendarModal';
+import ActionPaneContainer from '../../../../components/ActionPaneContainer';
+import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
+import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
+import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 
 import {RetrieveAllEducationDisciplines} from '../../../../API/PersonalInformation/Education/RetrieveAllEducationDisciplines';
 import {CreateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationCreate';
 import {UpdateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonEducationIUpdate';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
-import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
 
 import styles from '../../../../styles/styles';
 import {conditionalVerticalScale} from '../../../../store/utils/scaling';
@@ -315,6 +315,7 @@ const PersonalEducationSaveRecord = () => {
     try {
       console.log('Form Data :', formData);
       const payload = buildPayload(formData);
+      console.log('Payload :', payload);
       let response;
       if (mode === 'edit') {
         response = await UpdateEducationDetails({educationData: payload});
@@ -349,7 +350,7 @@ const PersonalEducationSaveRecord = () => {
       setAlertMessage(
         actionType === 'submit'
           ? 'Request submitted successfully.'
-          : 'Record saved successfully.',
+          : 'Record created successfully.',
       );
       setAlertModal(true);
       setTimeout(() => {
