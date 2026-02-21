@@ -821,7 +821,7 @@ const GenericAdvanceSaveScreen = () => {
       }
 
       if (response.IsSuccess === 'true') {
-        const actionText = modalMode === 'create' ? 'Created' : 'update';
+        const actionText = modalMode === 'create' ? 'created' : 'update';
         let submitText = '';
 
         if (submitResult?.IsSuccess === 'true') {

@@ -799,13 +799,18 @@ const DynamicRequestCard = ({
 
   const getStatusColor = status => {
     const s = String(status).toLowerCase();
-    if (
-      ['active', 'completed', 'approved', 'success', 'yes', 'true'].includes(s)
-    )
+    if (['active', 'approved', 'success', 'yes', 'true'].includes(s))
       return {
         bg: COLOR_PALETTE.successLight,
         text: '#065f46',
         dot: COLOR_PALETTE.success,
+      };
+
+    if (s === 'completed')
+      return {
+        bg: '#EDE9FE',
+        text: '#4C1D95',
+        dot: '#7C3AED',
       };
     if (
       [

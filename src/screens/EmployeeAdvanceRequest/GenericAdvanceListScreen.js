@@ -184,21 +184,38 @@ const GenericAdvanceListScreen = () => {
 
   const getFilteredData = () => {
     if (activeFilter === 'All') return allAdvanceData;
-    return allAdvanceData.filter(
-      item => getStatusLabel(item.WFStatus) === activeFilter,
-    );
+
+    return allAdvanceData.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+
+      // Special handling for Pending filter - include any status that contains "Pending"
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+      }
+
+      return status === activeFilter;
+    });
   };
 
   const getFilterCounts = () => {
     const counts = {All: allAdvanceData.length};
+
     ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      counts[pill] = allAdvanceData.filter(
-        item => getStatusLabel(item.WFStatus) === pill,
-      ).length;
+      if (pill === 'Pending') {
+        // Count any status that includes "Pending"
+        counts[pill] = allAdvanceData.filter(item =>
+          getStatusLabel(item.WFStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = allAdvanceData.filter(
+          item => getStatusLabel(item.WFStatus) === pill,
+        ).length;
+      }
     });
+
+    console.log('Filter counts:', counts); // Debug
     return counts;
   };
-
   /** Enhanced refresh handler */
   const handleRefresh = () => {
     fetchAllAdvanceData();

@@ -491,6 +491,7 @@ const IdentificationNumberListPage = () => {
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
+    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
     // const apiEditEnabled = canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
     // console.log("Item Number : ", item.ApprovalStatus);
     // console.log("apiEditEnabled : ", apiEditEnabled);
@@ -527,15 +528,31 @@ const IdentificationNumberListPage = () => {
           ? {backgroundColor: '#BDBDBD'}
           : {},
       },
-      submit: {
-        show: isDraft,
+      // submit: {
+      //   show: isDraft,
+      //   position: 'bottom',
+      //   style: 'text',
+      //   icon: 'send',
+      //   iconSize: 16,
+      //   text: 'Submit',
+      //   textColor: '#0A66C2',
+      //   iconColor: '#0A66C2',
+      // },
+      approval: {
+        show: isDraft || isRejected, // only visible when action is possible
         position: 'bottom',
-        style: 'text',
-        icon: 'send',
-        iconSize: 16,
-        text: 'Submit',
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square-o',
         textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
       },
     };
   };
