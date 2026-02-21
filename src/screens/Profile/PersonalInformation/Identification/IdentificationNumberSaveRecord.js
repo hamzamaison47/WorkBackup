@@ -345,8 +345,8 @@ const IdentificationNumberSaveRecord = () => {
     if (!formData.employeeId) missing.push('Employee Id');
     if (!formData.IdentificationType) missing.push('Identification Type');
     if (!formData.IdentificationNumber) missing.push('Identification Number');
-    if (!formData.IssueDate) missing.push('Issue Date');
-    if (!formData.ExpirationDate) missing.push('Expiration Date');
+    // if (!formData.IssueDate) missing.push('Issue Date');
+    // if (!formData.ExpirationDate) missing.push('Expiration Date');
     if (missing.length > 0) {
       setAlertMessage('Please fill in:\n' + missing.join('\n'));
       setAlertModal(true);
@@ -526,13 +526,16 @@ const IdentificationNumberSaveRecord = () => {
                 'Identification Type *'}
             </Text>
             <Dropdown
-              style={[styles.DSR_Input, isEditRecordESS && styles.DSR_Disabled]}
+              style={[
+                styles.DSR_Input,
+                (isEditRecordESS || mode === 'edit') && styles.DSR_Disabled,
+              ]}
               data={identTypes}
               labelField="label"
               valueField="value"
               placeholder="Select Identification Type"
               value={formData.IdentificationType}
-              disable={isEditRecordESS}
+              disable={isEditRecordESS || mode === 'edit'}
               onChange={item =>
                 setFormData(prev => ({
                   ...prev,
@@ -606,7 +609,7 @@ const IdentificationNumberSaveRecord = () => {
               )} */}
 
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date *'}
+              {PersonalContactsLabelData?.IssuedDatelbl || 'Issue Date'}
             </Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
@@ -650,7 +653,7 @@ const IdentificationNumberSaveRecord = () => {
 
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.ExpirationDatelbl ||
-                'Expiration Date *'}
+                'Expiration Date'}
             </Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
