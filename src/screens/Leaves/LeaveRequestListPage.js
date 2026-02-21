@@ -35,6 +35,7 @@ import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
 import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import {isLeaveWorkflowConfigured} from '../../API/Leaves/isLeaveWorkflowEnabled';
+import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
@@ -548,15 +549,16 @@ const LeaveRequestListPage = () => {
     setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
-      // const response = await SubmitLeaveRequest({
-      //   recId: Number(itemData.RecId),
-      // });
-      const response = 'Resubmit in progress';
+      const response = await WorkflowItemAction({
+        recId: itemData.RecId,
+        ActionTyoe: 'Resubmit',
+      });
       const resObj = Array.isArray(response) ? response[0] : response;
 
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
         setAlertMessage(
-          t('leaveRequest.submitSuccess', {leaveCode: itemData.LeaveCode}),
+          // t('leaveRequest.submitSuccess', {leaveCode: itemData.LeaveCode}),
+          'Record Resubmitted Successfully',
         );
         setAlertModal(true);
 
@@ -573,13 +575,13 @@ const LeaveRequestListPage = () => {
         const errorMessage =
           resObj && resObj.Message
             ? resObj.Message
-            : `Failed to Submit ${itemData.LeaveCode} Request`;
+            : `Failed to Re-Submit ${itemData.LeaveCode} Request`;
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage(`Failed to Submit ${itemData.LeaveCode} Request`);
+      setAlertMessage(`Failed to Re-Submit ${itemData.LeaveCode} Request`);
       setAlertModal(true);
     } finally {
       setIsProcessing(false);

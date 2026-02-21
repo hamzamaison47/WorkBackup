@@ -474,8 +474,8 @@ const IdentificationNumberSaveRecord = () => {
   };
 
   const today = new Date().toISOString().split('T')[0];
-  const isEditRecordESS =
-    formData.WorkflowOperation === '' && mode === 'edit' ? true : false;
+  const isEditRecordESS = mode === 'edit' ? true : false;
+  // formData.WorkflowOperation === '' && mode === 'edit' ? true : false;
 
   return (
     <ActionPaneContainer

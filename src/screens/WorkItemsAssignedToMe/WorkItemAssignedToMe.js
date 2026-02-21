@@ -112,10 +112,9 @@ const WorkItemsAssignedToMePage = () => {
           requester: requester,
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
+          workflowWorkItemType: item.workflowWorkItemType,
         };
       });
-
-      console.log('here is log', data);
 
       setTableData(formattedData);
     } catch (error) {
@@ -439,6 +438,12 @@ const WorkItemsAssignedToMePage = () => {
             <Text style={cardStyles.title}>{item.documentType}</Text>
 
             {/* Requester Info */}
+            {item.requester ? (
+              <View style={cardStyles.requesterContainer}>
+                <Text style={cardStyles.requesterLabel}>Requester</Text>
+                <Text style={cardStyles.requesterValue}>{item.requester}</Text>
+              </View>
+            ) : null}
             {item.requester ? (
               <View style={cardStyles.requesterContainer}>
                 <Text style={cardStyles.requesterLabel}>Requester</Text>
