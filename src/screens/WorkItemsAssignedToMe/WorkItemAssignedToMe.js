@@ -1276,6 +1276,8 @@ const WorkItemsAssignedToMePage = () => {
           fields={CARD_CONFIG.fields}
           buttons={getButtonConfig()}
           onButtonPress={handleButtonPress}
+          onPress={() => selectionMode && toggleSelection(item.recId)}
+          onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
           gradientColors={
             isSelected
