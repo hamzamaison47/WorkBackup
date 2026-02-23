@@ -134,6 +134,7 @@ const MainDashboard = () => {
   return (
     <ActionPaneContainer
       pageTitle="Dynaface"
+      showPageTitleRow={false}
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}

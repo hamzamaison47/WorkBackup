@@ -480,23 +480,13 @@ const WorkflowHistoryScreen = () => {
   const route = useRoute();
 
   const {recId, tableId} = route.params ?? {};
-  console.log(
-    'WorkflowHistoryScreen received => recId:',
-    recId,
-    'tableId:',
-    tableId,
-  );
 
-  // 🔹 Modals & Alerts
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-
-  // 🔹 Processing states
   const [isLoading, setIsLoading] = useState(false);
   const [workflowData, setWorkflowData] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
 
-  // 🔹 Fetch Workflow History from API
   const fetchWorkflowHistory = useCallback(async () => {
     if (!recId) {
       setAlertMessage('Missing required parameter: recId');
@@ -512,65 +502,49 @@ const WorkflowHistoryScreen = () => {
         _tableId: tableId,
       });
 
-      // Store total count
       setTotalRecords(data.length);
 
-      // Transform API data to match expected format
       const transformedData = data.map(item => {
-        // Map TrackingType number to meaningful description
         let trackingType = 'Unknown';
-        let instanceNumber = 'N/A';
 
-        // Parse tracking type from number to description
         switch (item.TrackingType) {
-          case 1:
-            trackingType = 'Workflow Started';
-            break;
-          case 2:
-            trackingType = 'Task Assigned';
-            break;
-          case 3:
-            trackingType = 'Task Completed';
-            break;
-          case 4:
-            trackingType = 'Workflow Completed';
-            break;
-          case 5:
-            trackingType = 'Workflow Cancelled';
-            break;
-          case 6:
-            trackingType = 'Workflow Rejected';
-            break;
-          case 7:
-            trackingType = 'Workflow Pending';
-            break;
-          case 8:
-            trackingType = 'Workflow Approved';
-            break;
-          case 9:
-            trackingType = 'Workflow Created';
-            break;
-          case 10:
-            trackingType = 'Workflow Submitted';
-            break;
+          // case 1:
+          //   trackingType = 'Workflow Started';
+          //   break;
+          // case 2:
+          //   trackingType = 'Task Assigned';
+          //   break;
+          // case 3:
+          //   trackingType = 'Task Completed';
+          //   break;
+          // case 4:
+          //   trackingType = 'Workflow Completed';
+          //   break;
+          // case 5:
+          //   trackingType = 'Workflow Cancelled';
+          //   break;
+          // case 6:
+          //   trackingType = 'Workflow Rejected';
+          //   break;
+          // case 7:
+          //   trackingType = 'Workflow Pending';
+          //   break;
+          // case 8:
+          //   trackingType = 'Workflow Approved';
+          //   break;
+          // case 9:
+          //   trackingType = 'Workflow Created';
+          //   break;
+          // case 10:
+          //   trackingType = 'Workflow Submitted';
+          //   break;
           default:
-            trackingType = `Workflow Status ${item.TrackingType}`;
-        }
-
-        // Extract instance number from Name field if available
-        if (item.Name) {
-          const instanceMatch =
-            item.Name.match(/Instance\s+#?(\d+)/i) ||
-            item.Name.match(/(\d{6})/);
-          if (instanceMatch) {
-            instanceNumber = instanceMatch[1];
-          }
+            trackingType = item.TrackingType;
         }
 
         return {
-          RecId: item.TrackingId, // Use TrackingId as unique identifier
+          RecId: item.TrackingId,
           TrackingType: trackingType,
-          InstanceNumber: instanceNumber,
           CreatedDateTime: item.Created,
           User: item.User,
           Comment: item.Comment || '',
@@ -579,20 +553,16 @@ const WorkflowHistoryScreen = () => {
           TrackingContext: item.TrackingContext,
           Name: item.Name,
           LocalizedTrackingMessage: item.LocalizedTrackingMessage,
-          // Keep original data if needed
           originalData: item,
         };
       });
 
-      // Sort by Created date (most recent first)
       transformedData.sort(
         (a, b) => new Date(a.CreatedDateTime) - new Date(b.CreatedDateTime),
       );
 
-      // Show all events without filtering
       setWorkflowData(transformedData);
     } catch (error) {
-      console.log('Failed to fetch workflow history:', error);
       setAlertMessage('Failed to load workflow history');
       setAlertModal(true);
     } finally {
@@ -600,7 +570,6 @@ const WorkflowHistoryScreen = () => {
     }
   }, [recId]);
 
-  // 🔹 Run fetch when screen focused
   useFocusEffect(
     useCallback(() => {
       fetchWorkflowHistory();
@@ -613,189 +582,206 @@ const WorkflowHistoryScreen = () => {
         handleGoBack();
         return true;
       };
-
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation]),
   );
 
-  // 🔹 Handle refresh
   const handleRefresh = () => fetchWorkflowHistory();
+  const handleGoBack = () => navigation.goBack();
 
-  // Handle back navigation
-  const handleGoBack = () => {
-    navigation.goBack();
-  };
-
-  // 🔹 Format DateTime
   const formatDateTime = dateTimeStr => {
     if (!dateTimeStr) return 'N/A';
     try {
       const date = new Date(dateTimeStr);
-      return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
+      const month = date.getMonth() + 1;
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      const time = date.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
+        hour12: true,
       });
+      return `${month}/${day}/${year}  ${time}`;
     } catch {
       return dateTimeStr;
     }
   };
 
-  // 🔹 Get status config based on tracking type
+  /**
+   * Returns status config with color, icon, and category.
+   * The badge label now reflects a SHORT category only (e.g. "Approved"),
+   * while the card title shows the full tracking type — no duplication.
+   */
   const getStatusConfig = trackingType => {
     const type = trackingType?.toLowerCase() || '';
 
-    if (type.includes('created')) {
+    if (type.includes('created'))
       return {
-        color: '#3b82f6',
-        bgColor: '#dbeafe',
-        icon: '✦',
-        label: 'Created',
+        color: '#2563EB',
+        bgColor: '#EFF6FF',
+        dotColor: '#BFDBFE',
+        icon: '⬡',
+        category: 'Created',
       };
-    } else if (type.includes('started')) {
+    if (type.includes('started'))
       return {
-        color: '#8b5cf6',
-        bgColor: '#ede9fe',
-        icon: '▶',
-        label: 'Started',
+        color: '#7C3AED',
+        bgColor: '#F5F3FF',
+        dotColor: '#DDD6FE',
+        icon: '▷',
+        category: 'Started',
       };
-    } else if (type.includes('submitted')) {
+    if (type.includes('submitted'))
       return {
-        color: '#8b5cf6',
-        bgColor: '#ede9fe',
+        color: '#0891B2',
+        bgColor: '#ECFEFF',
+        dotColor: '#A5F3FC',
         icon: '↗',
-        label: 'Submitted',
+        category: 'Submitted',
       };
-    } else if (type.includes('assigned')) {
+    if (type.includes('assigned'))
       return {
-        color: '#f59e0b',
-        bgColor: '#fef3c7',
-        icon: '👤',
-        label: 'Assigned',
+        color: '#D97706',
+        bgColor: '#FFFBEB',
+        dotColor: '#FDE68A',
+        icon: '⊕',
+        category: 'Assigned',
       };
-    } else if (type.includes('pending')) {
+    if (type.includes('pending'))
       return {
-        color: '#f59e0b',
-        bgColor: '#fef3c7',
-        icon: '◷',
-        label: 'Pending',
+        color: '#B45309',
+        bgColor: '#FEF3C7',
+        dotColor: '#FDE68A',
+        icon: '◔',
+        category: 'Pending',
       };
-    } else if (type.includes('approved')) {
+    if (type.includes('approved'))
       return {
-        color: '#10b981',
-        bgColor: '#d1fae5',
+        color: '#059669',
+        bgColor: '#ECFDF5',
+        dotColor: '#A7F3D0',
         icon: '✓',
-        label: 'Approved',
+        category: 'Approved',
       };
-    } else if (type.includes('completed')) {
+    if (type.includes('completed'))
       return {
-        color: '#10b981',
-        bgColor: '#d1fae5',
+        color: '#047857',
+        bgColor: '#F0FDF4',
+        dotColor: '#BBF7D0',
         icon: '✓',
-        label: 'Completed',
+        category: 'Completed',
       };
-    } else if (type.includes('rejected')) {
+    if (type.includes('rejected'))
       return {
-        color: '#ef4444',
-        bgColor: '#fee2e2',
+        color: '#DC2626',
+        bgColor: '#FEF2F2',
+        dotColor: '#FECACA',
         icon: '✕',
-        label: 'Rejected',
+        category: 'Rejected',
       };
-    } else if (type.includes('cancelled')) {
+    if (type.includes('cancelled'))
       return {
-        color: '#6b7280',
-        bgColor: '#f3f4f6',
+        color: '#6B7280',
+        bgColor: '#F9FAFB',
+        dotColor: '#E5E7EB',
         icon: '⊘',
-        label: 'Cancelled',
+        category: 'Cancelled',
       };
-    }
 
     return {
-      color: '#6b7280',
-      bgColor: '#f3f4f6',
+      color: '#6B7280',
+      bgColor: '#F9FAFB',
+      dotColor: '#E5E7EB',
       icon: '●',
-      label: trackingType || 'Unknown',
+      category: 'Unknown',
     };
   };
 
-  // 🔹 Render Timeline Item
   const renderTimelineItem = ({item, index}) => {
     const isLast = index === workflowData.length - 1;
     const statusConfig = getStatusConfig(item.TrackingType);
+    const hasMessage =
+      item.LocalizedTrackingMessage &&
+      item.LocalizedTrackingMessage.trim() !== '' &&
+      item.LocalizedTrackingMessage !== item.TrackingType;
+    const hasComment = item.Comment && item.Comment.trim() !== '';
 
     return (
-      <View style={timelineStyles.itemContainer}>
-        {/* Timeline Line */}
-        <View style={timelineStyles.timelineColumn}>
+      <View style={tl.row}>
+        {/* ── Left: connector column ── */}
+        <View style={tl.connectorCol}>
           <View
             style={[
-              timelineStyles.iconCircle,
+              tl.dot,
               {
-                backgroundColor: statusConfig.bgColor,
                 borderColor: statusConfig.color,
+                backgroundColor: statusConfig.bgColor,
               },
             ]}>
-            <Text style={[timelineStyles.icon, {color: statusConfig.color}]}>
+            <Text style={[tl.dotIcon, {color: statusConfig.color}]}>
               {statusConfig.icon}
             </Text>
           </View>
-          {!isLast && <View style={timelineStyles.timelineLine} />}
+          {!isLast && (
+            <View style={[tl.line, {backgroundColor: statusConfig.dotColor}]} />
+          )}
         </View>
 
-        {/* Content */}
-        <View style={timelineStyles.contentContainer}>
-          <View style={timelineStyles.card}>
-            {/* Header */}
-            <View style={timelineStyles.cardHeader}>
-              <View style={timelineStyles.headerLeft}>
-                <Text style={timelineStyles.statusText}>
-                  {item.TrackingType}
-                </Text>
-              </View>
-              <View
-                style={[
-                  timelineStyles.statusBadge,
-                  {backgroundColor: statusConfig.bgColor},
-                ]}>
-                <Text
-                  style={[
-                    timelineStyles.badgeText,
-                    {color: statusConfig.color},
-                  ]}>
-                  {statusConfig.label}
-                </Text>
-              </View>
-            </View>
-
-            {/* Date/Time */}
-            <View style={timelineStyles.dateContainer}>
-              <Text style={timelineStyles.dateIcon}>🕒</Text>
-              <Text style={timelineStyles.dateText}>
-                {formatDateTime(item.CreatedDateTime)}
+        {/* ── Right: card ── */}
+        <View style={tl.cardWrap}>
+          <View style={[tl.card, {borderLeftColor: statusConfig.color}]}>
+            {/* Top row: title + badge */}
+            <View style={tl.cardTop}>
+              <Text style={tl.title} numberOfLines={2}>
+                {item.TrackingType}
               </Text>
-            </View>
-
-            {/* Localized Message (if exists and different from TrackingType) */}
-            {item.LocalizedTrackingMessage &&
-              item.LocalizedTrackingMessage !== item.TrackingType && (
-                <View style={timelineStyles.messageContainer}>
-                  <Text style={timelineStyles.messageIcon}>📋</Text>
-                  <Text style={timelineStyles.messageText}>
-                    {item.LocalizedTrackingMessage}
+              {statusConfig.category !== 'Unknown' && (
+                <View
+                  style={[tl.badge, {backgroundColor: statusConfig.bgColor}]}>
+                  <View
+                    style={[tl.badgeDot, {backgroundColor: statusConfig.color}]}
+                  />
+                  <Text style={[tl.badgeText, {color: statusConfig.color}]}>
+                    Action
                   </Text>
                 </View>
               )}
+            </View>
 
-            {/* Comment (if exists) */}
-            {item.Comment && item.Comment.trim() !== '' && (
-              <View style={timelineStyles.commentContainer}>
-                <Text style={timelineStyles.commentIcon}>💬</Text>
-                <Text style={timelineStyles.commentText}>{item.Comment}</Text>
+            {/* TrackingContext */}
+            {item.TrackingContext ? (
+              <View style={tl.contextRow}>
+                <Text style={tl.contextText}>{item.TrackingContext}</Text>
+              </View>
+            ) : null}
+
+            {/* Timestamp */}
+            <Text style={tl.timestamp}>
+              {formatDateTime(item.CreatedDateTime)}
+            </Text>
+
+            {/* User (if available) */}
+            {item.User ? (
+              <View style={tl.metaRow}>
+                <Text style={tl.metaIcon}>👤</Text>
+                <Text style={tl.metaText}>{item.User}</Text>
+              </View>
+            ) : null}
+
+            {/* Localized message */}
+            {hasMessage && (
+              <View style={tl.infoBox}>
+                <Text style={tl.infoText}>{item.LocalizedTrackingMessage}</Text>
+              </View>
+            )}
+
+            {/* Comment */}
+            {hasComment && (
+              <View style={tl.commentBox}>
+                <Text style={tl.commentLabel}>Comment</Text>
+                <Text style={tl.commentText}>"{item.Comment}"</Text>
               </View>
             )}
           </View>
@@ -804,14 +790,15 @@ const WorkflowHistoryScreen = () => {
     );
   };
 
+  /* ─── Render ─── */
   return (
     <ActionPaneContainer
       pageTitle="Workflow History"
-      isBackButton={true}
+      isBackButton
       showFooter={false}
       showFloatingButton={false}
-      isHeaderActive={true}
-      showTabNavigator={true}
+      isHeaderActive
+      showTabNavigator
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}>
       {isLoading ? (
@@ -819,32 +806,28 @@ const WorkflowHistoryScreen = () => {
           <CustomIndicator />
         </View>
       ) : workflowData.length > 0 ? (
-        <View style={timelineStyles.container}>
-          {/* Summary Header */}
-          <View style={timelineStyles.summaryContainer}>
-            <Text style={timelineStyles.summaryTitle}>Workflow Timeline</Text>
-            <Text style={timelineStyles.summarySubtitle}>
-              {totalRecords} total {totalRecords === 1 ? 'event' : 'events'}
-            </Text>
-          </View>
-
-          {/* Timeline */}
-          <FlatList
-            data={workflowData}
-            renderItem={renderTimelineItem}
-            keyExtractor={(item, index) =>
-              item.RecId?.toString() || index.toString()
-            }
-            contentContainerStyle={timelineStyles.listContent}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={handleRefresh}
-              />
-            }
-          />
-        </View>
+        <FlatList
+          data={workflowData}
+          renderItem={renderTimelineItem}
+          keyExtractor={(item, index) =>
+            item.RecId?.toString() || index.toString()
+          }
+          ListHeaderComponent={
+            <View style={tl.header}>
+              <Text style={tl.headerTitle}>Workflow Tracking</Text>
+              <View style={tl.headerPill}>
+                <Text style={tl.headerPillText}>
+                  {totalRecords} {totalRecords === 1 ? 'event' : 'events'}
+                </Text>
+              </View>
+            </View>
+          }
+          contentContainerStyle={tl.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
+        />
       ) : (
         <ScrollView
           contentContainerStyle={styles.DLP_NoDataContainer}
@@ -868,174 +851,208 @@ const WorkflowHistoryScreen = () => {
   );
 };
 
-const timelineStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  summaryContainer: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    marginBottom: 8,
-  },
-  summaryTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  summarySubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
+/* ─────────────────────────────────────────
+   Styles
+───────────────────────────────────────── */
+const tl = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingBottom: 32,
+    backgroundColor: '#F8FAFC',
   },
-  itemContainer: {
+
+  // ── Header ──
+  header: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 20,
+    paddingHorizontal: 4,
     marginBottom: 4,
   },
-  timelineColumn: {
-    width: 40,
-    alignItems: 'center',
-    position: 'relative',
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.4,
   },
-  iconCircle: {
+  headerPill: {
+    backgroundColor: '#E2E8F0',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  headerPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+
+  // ── Row ──
+  row: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+
+  // ── Connector ──
+  connectorCol: {
+    width: 44,
+    alignItems: 'center',
+  },
+  dot: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    borderWidth: 2.5,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
     zIndex: 2,
   },
-  icon: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  dotIcon: {
+    fontSize: 15,
+    fontWeight: '700',
   },
-  timelineLine: {
-    position: 'absolute',
-    top: 36,
-    bottom: -4,
-    width: 2.5,
-    backgroundColor: '#e5e7eb',
-    left: '50%',
-    marginLeft: -1.25,
-  },
-  contentContainer: {
+  line: {
     flex: 1,
-    paddingLeft: 12,
+    width: 2,
+    marginTop: 2,
+    marginBottom: -2,
+    borderRadius: 1,
+    minHeight: 16,
+  },
+
+  // ── Card ──
+  cardWrap: {
+    flex: 1,
+    paddingLeft: 10,
     paddingBottom: 16,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    padding: 14,
+    borderLeftWidth: 3,
+    // subtle shadow
+    shadowColor: '#64748B',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
-    borderWidth: 1,
-    borderColor: '#f3f4f6',
   },
-  cardHeader: {
+  cardTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    gap: 8,
   },
-  headerLeft: {
+  title: {
     flex: 1,
-    marginRight: 12,
-  },
-  statusText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#1f2937',
-    marginBottom: 4,
-    letterSpacing: -0.3,
+    color: '#0F172A',
+    letterSpacing: -0.2,
+    lineHeight: 21,
   },
-  instanceText: {
-    fontSize: 13,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  dateContainer: {
+
+  // ── Badge (short category only, no duplication) ──
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 20,
+    gap: 5,
+    flexShrink: 0,
   },
-  dateIcon: {
-    fontSize: 14,
-    marginRight: 8,
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
-  dateText: {
-    fontSize: 13,
-    color: '#4b5563',
+  badgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+
+  // ── TrackingContext ──
+  contextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  contextText: {
+    fontSize: 11,
     fontWeight: '600',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  messageContainer: {
+
+  // ── Timestamp ──
+  timestamp: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+    marginBottom: 6,
+  },
+
+  // ── User meta row ──
+  metaRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f0f9ff',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 6,
+  },
+  metaIcon: {
+    fontSize: 12,
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+
+  // ── Localized message ──
+  infoBox: {
+    marginTop: 6,
+    backgroundColor: '#F0F9FF',
     borderRadius: 8,
-  },
-  messageIcon: {
-    fontSize: 14,
-    marginRight: 8,
-    color: '#0284c7',
-  },
-  messageText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#0369a1',
-    lineHeight: 18,
-  },
-  commentContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 8,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#fef3c7',
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    borderLeftWidth: 2,
+    borderLeftColor: '#38BDF8',
   },
-  commentIcon: {
-    fontSize: 14,
-    marginRight: 8,
-    color: '#b45309',
+  infoText: {
+    fontSize: 12,
+    color: '#0369A1',
+    lineHeight: 17,
+  },
+
+  // ── Comment ──
+  commentBox: {
+    marginTop: 6,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderLeftWidth: 2,
+    borderLeftColor: '#FCD34D',
+  },
+  commentLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#92400E',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: 3,
   },
   commentText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#92400e',
+    fontSize: 12,
+    color: '#78350F',
     fontStyle: 'italic',
-    lineHeight: 18,
+    lineHeight: 17,
   },
 });
 

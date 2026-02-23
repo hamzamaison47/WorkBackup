@@ -997,17 +997,50 @@ const WorkItemsAssignedToMePage = () => {
       const data = await RetrieveByEmail({email: effectiveUserData.email});
       console.log('heree is the data', data);
 
-      const formattedData = (data || []).map((item, index) => ({
-        id: item.workflowWorkItemRecId ?? index,
-        recId: item.workflowWorkItemRecId,
-        Document: item.Document || '',
-        DocumentType: item.DocumentType || '',
-        workflowWorkItemType: item.workflowWorkItemType,
-        // Store the workflow status so pills can filter on it
-        WFStatus: item.WFStatus || item.DocumentStatus || '',
-        ContextTableId: item.ContextTableId,
-        ContextRecId: item.ContextRecId,
-      }));
+      // const formattedData = (data || []).map((item, index) => ({
+      //   id: item.workflowWorkItemRecId ?? index,
+      //   recId: item.workflowWorkItemRecId,
+      //   Document: item.Document || '',
+      //   DocumentType: item.DocumentType || '',
+      //   workflowWorkItemType: item.workflowWorkItemType,
+      //   // Store the workflow status so pills can filter on it
+      //   WFStatus: item.WFStatus || item.DocumentStatus || '',
+      //   ContextTableId: item.ContextTableId,
+      //   ContextRecId: item.ContextRecId,
+      // }));
+
+      const formattedData = (data || []).map((item, index) => {
+        const document = item.Document || '';
+
+        const [typePart, restPart] = document.split(':');
+
+        let documentId = '';
+        let documentName = '';
+
+        if (restPart) {
+          const parts = restPart.split(',');
+          documentId = parts[0]?.trim() || '';
+          documentName = parts[1]?.trim() || '';
+        }
+
+        return {
+          id: item.workflowWorkItemRecId ?? index,
+          recId: item.workflowWorkItemRecId,
+
+          // Original full string (optional)
+          Document: document,
+
+          // Parsed values
+          DocumentType: typePart?.trim() || '',
+          DocumentId: documentId,
+          DocumentName: documentName,
+
+          workflowWorkItemType: item.workflowWorkItemType,
+          WFStatus: item.WFStatus || item.DocumentStatus || '',
+          ContextTableId: item.ContextTableId,
+          ContextRecId: item.ContextRecId,
+        };
+      });
 
       setTableData(formattedData);
     } catch (error) {
@@ -1088,7 +1121,7 @@ const WorkItemsAssignedToMePage = () => {
   // Count badges per pill
   const getFilterCounts = () => {
     const counts = {};
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+    ['Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
       counts[pill] = tableData.filter(
         item => (item.WFStatus || '') === pill,
       ).length;
@@ -1186,7 +1219,11 @@ const WorkItemsAssignedToMePage = () => {
     headerConfig: {
       title: {key: 'workflowWorkItemType'},
     },
-    fields: [{key: 'DocumentType', label: 'Document Type', type: 'text'}],
+    fields: [
+      {key: 'DocumentType', label: 'Document Type', type: 'text'},
+      {key: 'DocumentId', label: 'Id#', type: 'text'},
+      {key: 'DocumentName', label: 'Name', type: 'text'},
+    ],
   };
 
   const getButtonConfig = () => ({
@@ -1291,6 +1328,7 @@ const WorkItemsAssignedToMePage = () => {
       showTabNavigator={false}
       onRefresh={handleRefresh}
       showFilterPills={true}
+      filterPills={['All', 'Pending', 'Approved', 'Rejected', 'Completed']} // ✅ no Draft
       activeFilter={activeFilter}
       onFilterChange={filter => {
         setActiveFilter(filter);

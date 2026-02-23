@@ -277,6 +277,7 @@ import {
   ScrollView,
   BackHandler,
   StyleSheet,
+  Keyboard,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -299,6 +300,7 @@ import {fetchEmployeeMenuItemsByCompany} from '../Controller/authUtils';
 
 import {RetrieveEmployeeNotification} from '../API/Notification/RetriveEmployeeNotification';
 import styles from '../styles/styles';
+import SearchBar from './SearchBar';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Status color map — shared with pill renderer
@@ -461,6 +463,12 @@ const ActionPaneContainer = ({
   showTabNavigator = true,
   onFloatingButtonPress,
   onRefresh,
+  showPageTitleRow = false,
+  showSearchBar = false,
+  onSearchChange = () => {},
+  onSortChange = () => {},
+  activeSortOrder = null,
+  searchPlaceholder = 'Search...',
 
   // ── Filter pills props (all optional) ──
   showFilterPills = false, // set true to show the pill bar
@@ -477,6 +485,7 @@ const ActionPaneContainer = ({
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [activeTab, setActiveTab] = useState('MainDashboard');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -502,6 +511,19 @@ const ActionPaneContainer = ({
     });
     return unsubscribe;
   }, [navigation]);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () =>
+      setKeyboardVisible(true),
+    );
+    const hide = Keyboard.addListener('keyboardDidHide', () =>
+      setKeyboardVisible(false),
+    );
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Close overlays
   const closeAllOverlays = useCallback(() => {
@@ -632,6 +654,17 @@ const ActionPaneContainer = ({
     <View style={styles.APCont_container}>
       {/* Main content */}
       <View style={styles.APCont_content}>
+        {showPageTitleRow && (
+          <View style={styles.APCont_pageTitleRow}>
+            <SearchBar
+              pageTitle={pageTitle}
+              onSearchChange={onSearchChange}
+              onSortChange={onSortChange}
+              activeSortOrder={activeSortOrder}
+              placeholder={searchPlaceholder}
+            />
+          </View>
+        )}
         {/* ── Filter Pills (rendered at the top of content area) ── */}
         {showFilterPills && (
           <FilterPills
@@ -646,7 +679,7 @@ const ActionPaneContainer = ({
       </View>
 
       {/* Custom Tab Bar */}
-      {showTabNavigator && (
+      {showTabNavigator && !keyboardVisible && (
         <CustomTabBar activeTab={activeTab} onTabPress={handleTabPress} />
       )}
 
