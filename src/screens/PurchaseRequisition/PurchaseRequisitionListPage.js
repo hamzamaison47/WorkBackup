@@ -543,6 +543,11 @@ const PurchaseRequisitionListPage = () => {
   const [itemToSubmit, setItemToSubmit] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Card config — mirrors Expense screen pattern
   const CARD_CONFIG = {
@@ -591,6 +596,7 @@ const PurchaseRequisitionListPage = () => {
   const getButtonConfig = item => {
     const isDraft =
       item.RequisitionStatus === 'Draft' || !item.RequisitionStatus;
+    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
 
     return {
       edit: {
@@ -615,15 +621,31 @@ const PurchaseRequisitionListPage = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      submit: {
-        show: isDraft,
+      // submit: {
+      //   show: isDraft,
+      //   position: 'bottom',
+      //   style: 'text',
+      //   icon: 'send',
+      //   iconSize: 16,
+      //   text: 'Submit',
+      //   textColor: '#0A66C2',
+      //   iconColor: '#0A66C2',
+      // },
+      approval: {
+        show: isDraft || isRejected, // only visible when action is possible
         position: 'bottom',
-        style: 'text',
-        icon: 'send',
-        iconSize: 16,
-        text: 'Submit',
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square-o',
         textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
       },
     };
   };
@@ -691,6 +713,8 @@ const PurchaseRequisitionListPage = () => {
         employeeId: effectiveEmployeeId,
       });
       setPurchaseRequisitionData(data);
+      setRawData(data); // ← add
+      setDisplayData(data); // ← add
 
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -740,6 +764,76 @@ const PurchaseRequisitionListPage = () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation]),
   );
+
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return purchaseRequisitiondata;
+
+  //   return purchaseRequisitiondata.filter(item => {
+  //     const rawStatus = item.RequisitionStatus?.toLowerCase();
+
+  //     if (activeFilter === 'Pending') {
+  //       return (
+  //         rawStatus === 'submitted' ||
+  //         rawStatus === 'in review' ||
+  //         rawStatus === 'inreview'
+  //       );
+  //     }
+
+  //     if (activeFilter === 'Completed') {
+  //       return rawStatus === 'closed';
+  //     }
+
+  //     return rawStatus === activeFilter.toLowerCase();
+  //   });
+  // };
+
+  const getFilteredData = () => {
+    const base = displayData.length > 0 ? displayData : purchaseRequisitiondata;
+
+    if (activeFilter === 'All') return base;
+
+    return base.filter(item => {
+      const rawStatus = item.RequisitionStatus?.toLowerCase();
+
+      if (activeFilter === 'Pending') {
+        return (
+          rawStatus === 'submitted' ||
+          rawStatus === 'in review' ||
+          rawStatus === 'inreview'
+        );
+      }
+
+      if (activeFilter === 'Completed') {
+        return rawStatus === 'closed';
+      }
+
+      return rawStatus === activeFilter.toLowerCase();
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: purchaseRequisitiondata.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        counts[pill] = purchaseRequisitiondata.filter(item => {
+          const status = item.RequisitionStatus?.toLowerCase();
+          return (
+            status === 'submitted' ||
+            status === 'in review' ||
+            status === 'inreview'
+          );
+        }).length;
+      } else {
+        counts[pill] = purchaseRequisitiondata.filter(
+          item => getStatusLabel(item.RequisitionStatus) === pill,
+        ).length;
+      }
+    });
+
+    console.log('Filter counts:', counts); // Debug
+    return counts;
+  };
 
   // Handle back navigation
   const handleGoBack = () => {
@@ -820,6 +914,47 @@ const PurchaseRequisitionListPage = () => {
     }
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const handleCreateRecord = () => {
     navigation.navigate('PurchaseRequisitionSaveRecord', {
       mode: 'create',
@@ -871,14 +1006,23 @@ const PurchaseRequisitionListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Purchase requisitions prepared by me"
+      pageTitle="Purchase requisitions"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleCreateRecord}>
+      onFloatingButtonPress={handleCreateRecord}
+      showFilterPills={true}
+      activeFilter={activeFilter}
+      onFilterChange={setActiveFilter}
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -887,7 +1031,6 @@ const PurchaseRequisitionListPage = () => {
           </View>
         </View>
       )}
-
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
@@ -895,9 +1038,9 @@ const PurchaseRequisitionListPage = () => {
       ) : (
         <Animated.View
           style={[styles.DLP_AnimatedContainer, {opacity: fadeAnim}]}>
-          {purchaseRequisitiondata.length > 0 ? (
+          {getFilteredData().length > 0 ? (
             <FlatList
-              data={purchaseRequisitiondata}
+              data={getFilteredData()}
               keyExtractor={item => item.RecId?.toString()}
               renderItem={renderPurchaseRequisitionCard}
               contentContainerStyle={styles.DLP_ListContainer}
@@ -926,14 +1069,12 @@ const PurchaseRequisitionListPage = () => {
           )}
         </Animated.View>
       )}
-
       <AlertModal
         visible={alertModal}
         heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
-
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
@@ -977,7 +1118,6 @@ const PurchaseRequisitionListPage = () => {
           setItemToDelete(null);
         }}
       />
-
       <AlertSubmitModal
         visible={submitModal}
         heading="Confirm Submission"

@@ -1105,7 +1105,7 @@ const WorkItemsAssignedToMePage = () => {
   // Count badges per pill
   const getFilterCounts = () => {
     const counts = {};
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+    ['Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
       counts[pill] = tableData.filter(
         item => (item.WFStatus || '') === pill,
       ).length;
@@ -1203,7 +1203,11 @@ const WorkItemsAssignedToMePage = () => {
     headerConfig: {
       title: {key: 'workflowWorkItemType'},
     },
-    fields: [{key: 'DocumentType', label: 'Document Type', type: 'text'}],
+    fields: [
+      {key: 'DocumentType', label: 'Document Type', type: 'text'},
+      {key: 'DocumentId', label: 'Id#', type: 'text'},
+      {key: 'DocumentName', label: 'Name', type: 'text'},
+    ],
   };
 
   const getButtonConfig = () => ({
@@ -1310,6 +1314,7 @@ const WorkItemsAssignedToMePage = () => {
       showTabNavigator={false}
       onRefresh={handleRefresh}
       showFilterPills={true}
+      filterPills={['All', 'Pending', 'Approved', 'Rejected', 'Completed']} // ✅ no Draft
       activeFilter={activeFilter}
       onFilterChange={filter => {
         setActiveFilter(filter);

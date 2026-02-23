@@ -75,6 +75,10 @@ const LeaveRequestListPage = () => {
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -99,6 +103,8 @@ const LeaveRequestListPage = () => {
       });
 
       setLeavesData(LeaveData);
+      setRawData(LeaveData); // ← here
+      setDisplayData(LeaveData); // ← here
     } catch (error) {
       setAlertMessage(t('leaveRequest.fetchFailed'));
       setAlertModal(true);
@@ -327,17 +333,28 @@ const LeaveRequestListPage = () => {
     isRTL: isRTL,
   };
 
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return leavesData;
+
+  //   return leavesData.filter(item => {
+  //     const status = getStatusLabel(item.WFStatus);
+
+  //     // Special handling for Pending filter - include any status that contains "Pending"
+  //     if (activeFilter === 'Pending') {
+  //       return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+  //     }
+
+  //     return status === activeFilter;
+  //   });
+  // };
+
+  // Replace getFilteredData() with this
   const getFilteredData = () => {
-    if (activeFilter === 'All') return leavesData;
-
-    return leavesData.filter(item => {
+    const base = displayData.length > 0 ? displayData : rawData;
+    if (activeFilter === 'All') return base;
+    return base.filter(item => {
       const status = getStatusLabel(item.WFStatus);
-
-      // Special handling for Pending filter - include any status that contains "Pending"
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
-      }
-
+      if (activeFilter === 'Pending') return status.includes('Pending');
       return status === activeFilter;
     });
   };
@@ -631,6 +648,47 @@ const LeaveRequestListPage = () => {
     }
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
@@ -674,7 +732,12 @@ const LeaveRequestListPage = () => {
       showFilterPills={true}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}>
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -708,13 +771,24 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* <Text style={styles.DLP_NoDataText}>
-            {t('leaveRequest.noDataFound')}
-          </Text> */}
-          <Text style={styles.DLP_NoDataText}>Get started</Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            Tap + to add a new record
-          </Text>
+          {/* Show different messages based on filter and data availability */}
+          {rawData.length === 0 && activeFilter === 'All' ? (
+            // No data at all AND "All" filter is active - show "Get started" message
+            <>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
+            </>
+          ) : (
+            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
+            // Show filter-specific message
+            <>
+              <Text style={styles.DLP_NoDataText}>
+                {`${activeFilter} record not found.`}
+              </Text>
+            </>
+          )}
         </ScrollView>
       )}
 

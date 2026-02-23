@@ -482,6 +482,10 @@ const ESSMyRequestStatusListPage = () => {
 
   // ── Filter pill state ──
   const [activeFilter, setActiveFilter] = useState('All');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   /* ==============================
      Fetch Data
@@ -512,6 +516,8 @@ const ESSMyRequestStatusListPage = () => {
       }));
 
       setRequestData(formattedData);
+      setRawData(formattedData); // ← here
+      setDisplayData(formattedData); // ← here
     } catch (error) {
       setAlertMessage('Failed to fetch request status data.');
       setAlertModal(true);
@@ -557,11 +563,22 @@ const ESSMyRequestStatusListPage = () => {
     return 'Draft';
   };
 
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return requestData;
+  //   return requestData.filter(
+  //     item => normaliseStatus(item.PRWFStatus) === activeFilter,
+  //   );
+  // };
+
   const getFilteredData = () => {
-    if (activeFilter === 'All') return requestData;
-    return requestData.filter(
-      item => normaliseStatus(item.PRWFStatus) === activeFilter,
-    );
+    const base = displayData.length > 0 ? displayData : requestData;
+    if (activeFilter === 'All') return base;
+
+    return base.filter(item => {
+      const status = normaliseStatus(item.PRWFStatus);
+      if (activeFilter === 'Pending') return status.includes('Pending');
+      return status === activeFilter;
+    });
   };
 
   // Count per pill
@@ -618,6 +635,47 @@ const ESSMyRequestStatusListPage = () => {
      Render Card
   ============================== */
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderRequestCard = ({item}) => {
     const processedItem = {
       ...item,
@@ -669,7 +727,12 @@ const ESSMyRequestStatusListPage = () => {
       showFilterPills={true}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}>
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isLoading ? (
         <CustomIndicator />
       ) : filteredData.length > 0 ? (

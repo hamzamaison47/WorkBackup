@@ -29,7 +29,7 @@ const MainPageHeader = ({
           color="white"
         />
       </TouchableOpacity>
-      <Text style={styles.MPH_title}>{onTitle}</Text>
+      <Text style={styles.MPH_title}>Dynaface</Text>
     </View>
   ),
   headerRight: () => (
