@@ -95,6 +95,32 @@ const WorkflowItemAction = async ({recId, action}) => {
 
     const cleanedResult = cleanObject(result);
 
+    const infolog =
+      parsed?.['s:Header']?.['Infolog'] || parsed?.['soap:Header']?.['Infolog'];
+
+    let infologMessage = null;
+
+    if (infolog?.['Entries']?.['InfologEntry']) {
+      const entry = infolog['Entries']['InfologEntry'];
+
+      if (Array.isArray(entry)) {
+        infologMessage = entry
+          .map(e => e?.['Message'])
+          .filter(Boolean)
+          .join('\n');
+      } else {
+        infologMessage = entry?.['Message'] || null;
+      }
+    }
+    cleanedResult.Message = '';
+    // 🔹 Prefer result.Message, fallback to infolog
+    let finalMessage =
+      cleanedResult?.Message && cleanedResult.Message.trim() !== ''
+        ? cleanedResult.Message
+        : infologMessage;
+
+    cleanedResult.Message = finalMessage;
+
     return cleanedResult;
   } catch (error) {
     console.error(
