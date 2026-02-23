@@ -102,10 +102,10 @@ const PRSalarySlip = () => {
         employeeId: userData.employeeId,
       });
 
-      // console.log('Send Salary Slip by Email', response);
+      // console.log('Send Salary Slip by Email: ', response);
 
       // Show the actual response message from API
-      if (response === 'Email sent Successfully') {
+      if (response === 'Email(s) sent Successfully') {
         showMessage(
           'Success',
           'Your salary slip has been emailed successfully.',

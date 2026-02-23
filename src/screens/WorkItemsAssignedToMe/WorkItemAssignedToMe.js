@@ -997,48 +997,32 @@ const WorkItemsAssignedToMePage = () => {
       const data = await RetrieveByEmail({email: effectiveUserData.email});
       console.log('heree is the data', data);
 
-      // const formattedData = (data || []).map((item, index) => ({
-      //   id: item.workflowWorkItemRecId ?? index,
-      //   recId: item.workflowWorkItemRecId,
-      //   Document: item.Document || '',
-      //   DocumentType: item.DocumentType || '',
-      //   workflowWorkItemType: item.workflowWorkItemType,
-      //   // Store the workflow status so pills can filter on it
-      //   WFStatus: item.WFStatus || item.DocumentStatus || '',
-      //   ContextTableId: item.ContextTableId,
-      //   ContextRecId: item.ContextRecId,
-      // }));
-
       const formattedData = (data || []).map((item, index) => {
-        const document = item.Document || '';
+        const documentStr = item.Document || '';
 
-        const [typePart, restPart] = document.split(':');
+        // Extract the document ID (everything after ':' and before ',')
+        const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
+        const documentId = documentIdMatch
+          ? documentIdMatch[1].trim()
+          : documentStr;
 
-        let documentId = '';
-        let documentName = '';
+        // Extract requester (after last comma)
+        const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+        const requester = requesterMatch ? requesterMatch[1].trim() : '';
 
-        if (restPart) {
-          const parts = restPart.split(',');
-          documentId = parts[0]?.trim() || '';
-          documentName = parts[1]?.trim() || '';
-        }
+        // Get document type from API if exists
+        let documentType = item.DocumentType || '';
+        documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
 
         return {
           id: item.workflowWorkItemRecId ?? index,
           recId: item.workflowWorkItemRecId,
-
-          // Original full string (optional)
-          Document: document,
-
-          // Parsed values
-          DocumentType: typePart?.trim() || '',
-          DocumentId: documentId,
-          DocumentName: documentName,
-
-          workflowWorkItemType: item.workflowWorkItemType,
-          WFStatus: item.WFStatus || item.DocumentStatus || '',
+          documentId: documentId, // USMF-00060
+          documentType: documentType, // Employee Leave Requests
+          requester: requester,
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
+          workflowWorkItemType: item.workflowWorkItemType,
         };
       });
 
@@ -1296,6 +1280,8 @@ const WorkItemsAssignedToMePage = () => {
           fields={CARD_CONFIG.fields}
           buttons={getButtonConfig()}
           onButtonPress={handleButtonPress}
+          onPress={() => selectionMode && toggleSelection(item.recId)}
+          onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
           gradientColors={
             isSelected

@@ -565,6 +565,7 @@ const DynamicRequestCard = ({
   isExpandable = false,
   onButtonPress = () => {},
   onPress = null,
+  onLongPress = null,
   processingButtons = [],
   showNavigationArrow = false,
   isRTL = false,
@@ -1331,6 +1332,11 @@ const DynamicRequestCard = ({
               closeMenu();
             } else if (onPress) {
               onPress();
+            }
+          }}
+          onLongPress={() => {
+            if (onLongPress) {
+              onLongPress();
             }
           }}>
           <View style={styles.DRC_cardInner}>

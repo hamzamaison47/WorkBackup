@@ -13,72 +13,74 @@ export const useDashboardData = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const isMountedRef = useRef(true);
 
-  // Use memoized selector to prevent unnecessary re-renders
   const userData = useSelector(selectUserData);
 
-  // Memoize the employee ID to prevent unnecessary function calls
   const employeeId = useMemo(
     () => userData?.employeeId,
     [userData?.employeeId],
   );
 
-  const fetchProfilePicture = useCallback(async empId => {
-    if (!empId) return;
+  const fetchProfilePicture = useCallback(
+    async (empId, forceRefresh = false) => {
+      if (!empId) return;
 
-    // Check cache first (15 minute TTL for profile pictures)
-    const cacheKey = `profilePicture:${empId}`;
-    if (apiCache.has(`profilePicture`, {employeeId: empId})) {
-      const cachedData = apiCache.get(`profilePicture`, {employeeId: empId});
-      if (isMountedRef.current) {
-        setProfilePictureUrl(cachedData);
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    if (isMountedRef.current) {
-      setIsLoading(true);
-      setRefreshing(true);
-    }
-
-    try {
-      const data = await ProfilePicture({employeeId: empId});
-      const img = Array.isArray(data) && data.length > 0 ? data[0] : data;
-
-      if (img?.StringImage) {
-        const clean = img.StringImage.replace(/\s/g, '');
-        const imageUrl = `data:image/png;base64,${clean}`;
-
-        // Cache the result (15 minutes)
-        apiCache.set(`profilePicture`, imageUrl, 15 * 60 * 1000, {
-          employeeId: empId,
-        });
-
+      if (
+        !forceRefresh &&
+        apiCache.has(`profilePicture`, {employeeId: empId})
+      ) {
+        const cachedData = apiCache.get(`profilePicture`, {employeeId: empId});
         if (isMountedRef.current) {
-          setProfilePictureUrl(imageUrl);
+          setProfilePictureUrl(cachedData);
+          setIsLoading(false);
         }
-      } else {
+        return;
+      }
+
+      if (isMountedRef.current) {
+        setIsLoading(true);
+        setRefreshing(true);
+      }
+
+      try {
+        const data = await ProfilePicture({employeeId: empId});
+        const img = Array.isArray(data) && data.length > 0 ? data[0] : data;
+
+        if (img?.StringImage) {
+          const clean = img.StringImage.replace(/\s/g, '');
+          const imageUrl = `data:image/png;base64,${clean}`;
+
+          // Cache the result (15 minutes)
+          apiCache.set(`profilePicture`, imageUrl, 15 * 60 * 1000, {
+            employeeId: empId,
+          });
+
+          if (isMountedRef.current) {
+            setProfilePictureUrl(imageUrl);
+          }
+        } else {
+          if (isMountedRef.current) {
+            setProfilePictureUrl(null);
+          }
+        }
+      } catch (error) {
+        console.log('Failed to fetch profile pic:', error);
         if (isMountedRef.current) {
           setProfilePictureUrl(null);
         }
+      } finally {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+          setRefreshing(false);
+        }
       }
-    } catch (error) {
-      console.log('Failed to fetch profile pic:', error);
-      if (isMountedRef.current) {
-        setProfilePictureUrl(null);
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-        setRefreshing(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Memoize the refresh handler
   const handleRefresh = useCallback(() => {
     if (employeeId) {
-      fetchProfilePicture(employeeId);
+      fetchProfilePicture(employeeId, true);
     }
   }, [employeeId, fetchProfilePicture]);
 
