@@ -202,9 +202,18 @@ const PurchaseRequisitionLinesSaveRecord = () => {
         return;
       }
 
+      const formatDateForSOAP = dateStr => {
+        if (!dateStr) return null;
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        // Format: "2025-08-27T00:00:00"
+        return date.toISOString().split('.')[0];
+      };
+
       const data = await itemLookupforPurchRequisitionLine({
         _dataAreaId: selectedLegalEntity,
-        _requireddate: RequiredDate,
+        // _requireddate: RequiredDate,
+        _requireddate: formatDateForSOAP(RequiredDate),
         _operatingUnitRecId: 0,
       });
 

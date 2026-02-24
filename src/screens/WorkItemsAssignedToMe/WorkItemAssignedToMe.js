@@ -1023,6 +1023,10 @@ const WorkItemsAssignedToMePage = () => {
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
           workflowWorkItemType: item.workflowWorkItemType,
+          Document: item.Document,
+          createdDateTime: item.createdDateTime,
+          From: item.From,
+          Subject: item.Subject,
         };
       });
 
@@ -1099,18 +1103,33 @@ const WorkItemsAssignedToMePage = () => {
 
   const getFilteredData = () => {
     if (activeFilter === 'All') return tableData;
-    return tableData.filter(item => (item.WFStatus || '') === activeFilter);
+
+    if (activeFilter === 'Pending') {
+      return tableData.filter(
+        item => (item.workflowWorkItemType || '') === 'WorkItem',
+      );
+    }
+
+    if (activeFilter === 'Returned') {
+      return tableData.filter(
+        item => (item.workflowWorkItemType || '') === 'Return',
+      );
+    }
+
+    return tableData;
   };
 
   // Count badges per pill
   const getFilterCounts = () => {
-    const counts = {};
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      counts[pill] = tableData.filter(
-        item => (item.WFStatus || '') === pill,
-      ).length;
-    });
-    return counts;
+    return {
+      All: tableData.length,
+      Pending: tableData.filter(
+        item => (item.workflowWorkItemType || '') === 'WorkItem',
+      ).length,
+      Returned: tableData.filter(
+        item => (item.workflowWorkItemType || '') === 'Return',
+      ).length,
+    };
   };
 
   /* ==============================
@@ -1201,12 +1220,17 @@ const WorkItemsAssignedToMePage = () => {
 
   const CARD_CONFIG = {
     headerConfig: {
-      title: {key: 'workflowWorkItemType'},
+      title: {key: 'documentType'},
     },
-    fields: [{key: 'DocumentType', label: 'Document Type', type: 'text'}],
+    fields: [
+      {key: 'Document', label: '', type: 'text'},
+      {key: 'Subject', label: 'Subject', type: 'text'},
+      {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
+      {key: 'From', label: 'From', type: 'text'},
+    ],
   };
 
-  const getButtonConfig = () => ({
+  const getButtonConfig = Item => ({
     approval: {
       show: !selectionMode,
       position: 'bottom',
@@ -1214,14 +1238,17 @@ const WorkItemsAssignedToMePage = () => {
       text: 'Approval',
       textColor: '#0A66C2',
       disabled: isActionLoading,
-      actions: [
-        {key: 'approve', label: 'Approve', icon: 'check'},
-        {key: 'reject', label: 'Reject', icon: 'times'},
-        {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
-        {key: 'delegate', label: 'Delegate', icon: 'user'},
-        {key: 'recall', label: 'Recall', icon: 'undo'},
-        {key: 'viewHistory', label: 'View History', icon: 'history'},
-      ],
+      actions:
+        Item.workflowWorkItemType === 'WorkItem'
+          ? [
+              {key: 'approve', label: 'Approve', icon: 'check'},
+              {key: 'reject', label: 'Reject', icon: 'times'},
+              // {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
+              // {key: 'delegate', label: 'Delegate', icon: 'user'},
+              // {key: 'recall', label: 'Recall', icon: 'undo'},
+              {key: 'viewHistory', label: 'View History', icon: 'history'},
+            ]
+          : [{key: 'viewHistory', label: 'View History', icon: 'history'}],
     },
   });
 
@@ -1274,7 +1301,7 @@ const WorkItemsAssignedToMePage = () => {
           data={item}
           headerConfig={CARD_CONFIG.headerConfig}
           fields={CARD_CONFIG.fields}
-          buttons={getButtonConfig()}
+          buttons={getButtonConfig(item)}
           onButtonPress={handleButtonPress}
           onPress={() => selectionMode && toggleSelection(item.recId)}
           onLongPress={() => enterSelectionMode(item.recId)}
@@ -1298,6 +1325,22 @@ const WorkItemsAssignedToMePage = () => {
 
   const filteredData = getFilteredData();
 
+  const areSelectedItemsSameType = () => {
+    if (selectedRecIds.length === 0) return true;
+
+    const selectedItems = tableData.filter(item =>
+      selectedRecIds.includes(item.recId),
+    );
+
+    const firstType = selectedItems[0]?.workflowWorkItemType;
+
+    return selectedItems.every(item => item.workflowWorkItemType === firstType);
+  };
+
+  const isUniformSelection = areSelectedItemsSameType();
+  const selectedItems = tableData.filter(t => selectedRecIds.includes(t.recId));
+
+  const firstSelectedType = selectedItems[0]?.workflowWorkItemType;
   return (
     <ActionPaneContainer
       pageTitle={
@@ -1310,6 +1353,7 @@ const WorkItemsAssignedToMePage = () => {
       showTabNavigator={false}
       onRefresh={handleRefresh}
       showFilterPills={true}
+      filterPills={['All', 'Pending', 'Returned']} // ✅ no Draft
       activeFilter={activeFilter}
       onFilterChange={filter => {
         setActiveFilter(filter);
@@ -1329,36 +1373,81 @@ const WorkItemsAssignedToMePage = () => {
       {/* Bulk Toolbar */}
       {selectionMode && (
         <View style={styles.BulkToolbar_Container}>
-          <View style={styles.BulkToolbar_ActionRow}>
-            <TouchableOpacity
-              disabled={isActionLoading}
-              onPress={() => handleBulkAction('Approve')}
-              style={styles.BulkToolbar_ApproveButton}>
-              {isActionLoading ? (
-                <ActivityIndicator color="#2E7D32" size="small" />
-              ) : (
-                <Text style={styles.BulkToolbar_ApproveText}>Approve All</Text>
-              )}
-            </TouchableOpacity>
+          {selectedRecIds.length === 0 ? (
+            <View style={{paddingVertical: 10}}>
+              <Text
+                style={{
+                  textAlign: 'center',
+                  color: '#555',
+                  fontWeight: '600',
+                }}>
+                Please select at least one record.
+              </Text>
+            </View>
+          ) : !isUniformSelection ? (
+            <View style={{paddingVertical: 10}}>
+              <Text
+                style={{
+                  textAlign: 'center',
+                  color: '#C62828',
+                  fontWeight: '600',
+                }}>
+                Selected items must be of the same type.
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.BulkToolbar_ActionRow}>
+              {firstSelectedType === 'WorkItem' ? (
+                <>
+                  <TouchableOpacity
+                    disabled={isActionLoading}
+                    onPress={() => handleBulkAction('Approve')}
+                    style={styles.BulkToolbar_ApproveButton}>
+                    {isActionLoading ? (
+                      <ActivityIndicator size="small" />
+                    ) : (
+                      <Text style={styles.BulkToolbar_ApproveText}>
+                        Approve All
+                      </Text>
+                    )}
+                  </TouchableOpacity>
 
-            <TouchableOpacity
-              disabled={isActionLoading}
-              onPress={() => handleBulkAction('Reject')}
-              style={styles.BulkToolbar_RejectButton}>
-              {isActionLoading ? (
-                <ActivityIndicator color="#C62828" size="small" />
+                  <TouchableOpacity
+                    disabled={isActionLoading}
+                    onPress={() => handleBulkAction('Reject')}
+                    style={styles.BulkToolbar_RejectButton}>
+                    {isActionLoading ? (
+                      <ActivityIndicator size="small" />
+                    ) : (
+                      <Text style={styles.BulkToolbar_RejectText}>
+                        Reject All
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </>
               ) : (
-                <Text style={styles.BulkToolbar_RejectText}>Reject All</Text>
+                <TouchableOpacity
+                  disabled={isActionLoading}
+                  onPress={() => handleBulkAction('Resubmit')}
+                  style={styles.BulkToolbar_ApproveButton}>
+                  {isActionLoading ? (
+                    <ActivityIndicator size="small" />
+                  ) : (
+                    <Text style={styles.BulkToolbar_ApproveText}>
+                      Resubmit All
+                    </Text>
+                  )}
+                </TouchableOpacity>
               )}
-            </TouchableOpacity>
-          </View>
-
+            </View>
+          )}
           <View style={styles.BulkToolbar_ControlRow}>
             <TouchableOpacity
               onPress={selectAll}
               style={styles.BulkToolbar_TextButton}>
               <Text style={styles.BulkToolbar_PrimaryButtonText}>
-                {selectedRecIds.length === filteredData.length
+                {selectedRecIds.length === filteredData.length &&
+                filteredData.length > 0
                   ? 'Unselect all'
                   : 'Select all'}
               </Text>

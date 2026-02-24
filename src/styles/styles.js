@@ -2989,7 +2989,7 @@ const styles = StyleSheet.create({
     fontSize: conditionalFontScale(10, 10.5, 11, 12),
     fontWeight: '600',
     letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    // textTransform: 'uppercase',
   },
 
   // Menu
@@ -3396,6 +3396,147 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: conditionalVerticalScale(6, 8, 9, 10),
     minHeight: conditionalVerticalScale(44, 48, 52, 56),
+  },
+
+  //
+
+  APCont_pageTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: conditionalScale(14, 16, 18, 20),
+    paddingVertical: conditionalVerticalScale(8, 9, 10, 11),
+    backgroundColor: '#0A66C2',
+    gap: conditionalScale(8, 10, 12, 14),
+  },
+
+  APCont_pageTitleText: {
+    flex: 1,
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+
+  SearchBar_row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: conditionalScale(8, 10, 12, 14),
+  },
+
+  SearchBar_inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: moderateScale(1),
+    borderColor: 'rgba(255,255,255,0.4)',
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: conditionalScale(10, 11, 12, 14),
+    height: conditionalVerticalScale(34, 36, 38, 42),
+  },
+  SearchBar_input: {
+    flex: 1,
+    fontSize: conditionalFontScale(13, 14, 15, 16),
+    color: '#ffffff',
+    paddingVertical: 0,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+  },
+
+  SearchBar_searchIcon: {
+    marginRight: conditionalScale(7, 8, 9, 10),
+  },
+
+  SearchBar_clearButton: {
+    paddingLeft: conditionalScale(6, 7, 8, 9),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  SearchBar_rightIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: conditionalScale(12, 14, 16, 18),
+  },
+
+  SearchBar_flaskButton: {
+    width: conditionalScale(28, 30, 32, 36),
+    height: conditionalScale(28, 30, 32, 36),
+    borderRadius: borderRadius.md,
+    borderWidth: moderateScale(1),
+    borderColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  SearchBar_flaskButtonActive: {
+    backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
+  },
+
+  SearchBar_activeDot: {
+    position: 'absolute',
+    top: conditionalVerticalScale(5, 6, 6, 7),
+    right: conditionalScale(5, 6, 6, 7),
+    width: conditionalScale(6, 7, 7, 8),
+    height: conditionalScale(6, 7, 7, 8),
+    borderRadius: conditionalScale(3, 3.5, 3.5, 4),
+    backgroundColor: '#fff',
+    borderWidth: moderateScale(1),
+    borderColor: '#0A66C2',
+  },
+
+  SearchBar_modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+
+  SearchBar_dropdown: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderRadius: borderRadius.lg,
+    minWidth: conditionalScale(180, 190, 200, 220),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: moderateScale(4)},
+    shadowOpacity: 0.12,
+    shadowRadius: moderateScale(8),
+    elevation: 8,
+    borderWidth: moderateScale(1),
+    borderColor: '#E5E7EB',
+  },
+
+  SearchBar_dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: conditionalScale(14, 15, 16, 18),
+    paddingVertical: conditionalVerticalScale(11, 12, 13, 15),
+  },
+
+  SearchBar_dropdownItemBorder: {
+    borderBottomWidth: moderateScale(1),
+    borderBottomColor: '#F3F4F6',
+  },
+
+  SearchBar_dropdownItemActive: {
+    backgroundColor: '#EBF5FF',
+  },
+
+  SearchBar_dropdownIcon: {
+    marginRight: conditionalScale(10, 11, 12, 13),
+    width: conditionalScale(16, 17, 18, 19),
+  },
+
+  SearchBar_dropdownText: {
+    flex: 1,
+    fontSize: conditionalFontScale(13, 13.5, 14, 15),
+    color: '#374151',
+    fontWeight: '500',
+  },
+
+  SearchBar_dropdownTextActive: {
+    color: '#0A66C2',
+    fontWeight: '600',
   },
 
   // ============================================
