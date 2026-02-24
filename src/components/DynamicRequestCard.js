@@ -797,19 +797,26 @@ const DynamicRequestCard = ({
           'Dec',
         ];
 
-        const hours = d.getHours().toString().padStart(2, '0');
-        const minutes = d.getMinutes().toString().padStart(2, '0');
-        const seconds = d.getSeconds().toString().padStart(2, '0');
+        let hours = d.getUTCHours();
+        const minutes = d.getUTCMinutes().toString().padStart(2, '0');
+        const seconds = d.getUTCSeconds().toString().padStart(2, '0');
+
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours === 0 ? 12 : hours; // 0 becomes 12
 
         return `${
-          months[d.getMonth()]
-        } ${d.getDate()}, ${d.getFullYear()} ${hours}:${minutes}:${seconds}`;
+          months[d.getUTCMonth()]
+        } ${d.getUTCDate()}, ${d.getUTCFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
       }
       case 'link': {
         // Return a React Native Text component styled like a link
         return (
           <Text
-            style={{color: 'blue', textDecorationLine: 'underline'}}
+            style={{
+              color: '#0A66C2',
+              textDecorationLine: 'underline',
+            }}
             onPress={() => {}}>
             {value}
           </Text>

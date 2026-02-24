@@ -34,14 +34,13 @@ const GetLeaveBalance = async ({
     // console.log('Leave Balance Soap Envelop', {soapEnvelope});
 
     const {data: xml} = await axios.post(
-      `${config.resource}soap/services/PREmploymentInformationSvcGroup`,
+      `${config.resource}soap/services/PREmployeeLeavesSvcGroup`,
       soapEnvelope,
       {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction:
-            'http://tempuri.org/PREmploymentInformationSvc/getLeaveBalance',
+          SOAPAction: 'http://tempuri.org/PREmployeeLeavesSvc/getLeaveBalance',
         },
         responseType: 'text',
       },

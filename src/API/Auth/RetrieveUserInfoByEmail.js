@@ -31,7 +31,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
       </soapenv:Body>
     </soapenv:Envelope>`;
 
-    // console.log({soapEnvelope});
+    console.log({soapEnvelope});
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/DFUserInfoSvcGroup`,

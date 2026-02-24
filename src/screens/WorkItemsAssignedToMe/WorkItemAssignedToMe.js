@@ -1168,7 +1168,7 @@ const WorkItemsAssignedToMePage = () => {
 
       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
 
-      setAlertMessage('Workitem ${actionType}ed');
+      setAlertMessage(`Workitem ${actionType}ed`);
       setAlertModal(true);
       await fetchWorkItems();
     } catch (error) {
@@ -1223,7 +1223,7 @@ const WorkItemsAssignedToMePage = () => {
       title: {key: 'documentType'},
     },
     fields: [
-      {key: 'Document', label: '', type: 'text'},
+      {key: 'Document', label: '', type: 'link'},
       {key: 'Subject', label: 'Subject', type: 'text'},
       {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
       {key: 'From', label: 'From', type: 'text'},
