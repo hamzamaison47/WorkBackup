@@ -6052,6 +6052,290 @@ const styles = StyleSheet.create({
     color: '#111111',
   },
 
+  // ====================================================
+  // DYNAMIC ATTACHMENT MODAL - RESPONSIVE STYLES
+  // ====================================================
+
+  DAM_modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+
+  DAM_modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: moderateScale(28),
+    borderTopRightRadius: moderateScale(28),
+    height: '85%',
+    padding: conditionalScale(16, 18, 20, 24),
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -moderateScale(4)},
+    shadowOpacity: 0.1,
+    shadowRadius: moderateScale(8),
+    elevation: 10,
+  },
+
+  DAM_modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+  },
+
+  DAM_modalTitle: {
+    fontSize: conditionalFontScale(16, 18, 20, 22),
+    fontWeight: '700',
+    color: '#1e293b',
+    letterSpacing: 0.3,
+  },
+
+  DAM_closeButton: {
+    width: conditionalScale(26, 28, 30, 34),
+    height: conditionalScale(26, 28, 30, 34),
+    borderRadius: conditionalScale(13, 14, 15, 17),
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  DAM_closeButtonText: {
+    fontSize: conditionalFontScale(13, 14, 16, 18),
+    color: '#475569',
+    fontWeight: '600',
+  },
+
+  // ── Details Section ──────────────────────────────────────────
+  DAM_detailsSection: {
+    backgroundColor: '#f8fafc',
+    borderRadius: moderateScale(16),
+    padding: conditionalScale(12, 14, 16, 20),
+    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+  },
+
+  DAM_sectionTitle: {
+    fontSize: conditionalFontScale(13, 14, 16, 18),
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+  },
+
+  DAM_detailRow: {
+    flexDirection: 'row',
+    marginBottom: conditionalVerticalScale(5, 6, 7, 8),
+    alignItems: 'center',
+  },
+
+  DAM_detailLabel: {
+    fontSize: conditionalFontScale(12, 13, 14, 15),
+    color: '#64748b',
+    width: scale(105),
+    fontWeight: '500',
+    marginRight: conditionalScale(12, 14, 16, 20),
+  },
+
+  DAM_detailValue: {
+    fontSize: conditionalFontScale(12, 13, 14, 15),
+    color: '#1e293b',
+    flex: 1,
+    fontWeight: '600',
+    paddingLeft: conditionalScale(6, 8, 10, 12),
+  },
+
+  // ── Add Attachment Buttons ───────────────────────────────────
+  DAM_buttonSection: {
+    marginBottom: conditionalVerticalScale(10, 12, 14, 16),
+  },
+
+  DAM_addButtonContainer: {
+    flexDirection: 'row',
+    gap: conditionalScale(6, 8, 10, 12),
+  },
+
+  DAM_addButton: {
+    flex: 1,
+    backgroundColor: '#2563eb',
+    borderRadius: moderateScale(10),
+    paddingVertical: conditionalVerticalScale(8, 9, 10, 12),
+    alignItems: 'center',
+  },
+
+  DAM_addButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+  },
+
+  // ── Attachments List Section ─────────────────────────────────
+  DAM_attachmentsSection: {
+    flex: 1,
+    marginBottom: conditionalVerticalScale(12, 14, 16, 18),
+  },
+
+  DAM_attachmentsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: conditionalVerticalScale(8, 10, 12, 14),
+  },
+
+  DAM_refreshButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: moderateScale(6),
+    paddingHorizontal: conditionalScale(8, 9, 10, 12),
+    paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: conditionalScale(30, 32, 34, 40),
+    minHeight: conditionalVerticalScale(26, 28, 30, 34),
+  },
+
+  DAM_refreshButtonDisabled: {
+    backgroundColor: '#94a3b8',
+    opacity: 0.7,
+  },
+
+  DAM_attachmentsScrollView: {
+    flex: 1,
+  },
+
+  DAM_loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: conditionalScale(12, 14, 16, 18),
+  },
+
+  DAM_loadingText: {
+    marginTop: conditionalVerticalScale(6, 7, 8, 9),
+    color: '#64748b',
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+  },
+
+  DAM_noAttachmentsText: {
+    textAlign: 'center',
+    color: '#64748b',
+    fontStyle: 'italic',
+    padding: conditionalScale(12, 14, 16, 18),
+    fontSize: conditionalFontScale(10, 11, 12, 13),
+  },
+
+  DAM_attachmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: conditionalScale(9, 10, 11, 13),
+    borderRadius: moderateScale(8),
+    marginBottom: conditionalVerticalScale(5, 6, 7, 8),
+  },
+
+  DAM_attachmentInfo: {
+    flex: 1,
+    flexDirection: 'column',
+    marginRight: conditionalScale(7, 9, 11, 13),
+  },
+
+  DAM_attachmentName: {
+    fontSize: conditionalFontScale(11, 12, 13, 14),
+    color: '#1e293b',
+    fontWeight: '500',
+    marginBottom: conditionalVerticalScale(2, 3, 4, 5),
+  },
+
+  DAM_newBadge: {
+    backgroundColor: '#10b981',
+    color: '#fff',
+    fontSize: conditionalFontScale(8, 9, 10, 11),
+    fontWeight: '600',
+    paddingHorizontal: scale(6),
+    paddingVertical: verticalScale(1),
+    borderRadius: moderateScale(3),
+    alignSelf: 'flex-start',
+  },
+
+  DAM_existingBadge: {
+    backgroundColor: '#3b82f6',
+    color: '#fff',
+    fontSize: conditionalFontScale(8, 9, 10, 11),
+    fontWeight: '600',
+    paddingHorizontal: scale(6),
+    paddingVertical: verticalScale(1),
+    borderRadius: moderateScale(3),
+    alignSelf: 'flex-start',
+  },
+
+  DAM_attachmentActions: {
+    flexDirection: 'row',
+    gap: conditionalScale(4, 5, 6, 7),
+  },
+
+  DAM_downloadButton: {
+    backgroundColor: '#0eaa11',
+    paddingHorizontal: conditionalScale(5, 5, 6, 7),
+    paddingVertical: conditionalVerticalScale(5, 5, 6, 7),
+    borderRadius: moderateScale(4),
+    minWidth: conditionalScale(24, 26, 28, 32),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  DAM_removeButton: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: conditionalScale(5, 5, 6, 7),
+    paddingVertical: conditionalVerticalScale(5, 5, 6, 7),
+    borderRadius: moderateScale(4),
+    minWidth: conditionalScale(24, 26, 28, 32),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  DAM_disabledActionButton: {
+    backgroundColor: '#cbd5e1',
+    opacity: 0.6,
+  },
+
+  // ── Bottom Action Buttons ────────────────────────────────────
+  DAM_buttonContainer: {
+    flexDirection: 'row',
+    gap: conditionalScale(8, 10, 12, 16),
+    paddingBottom: conditionalVerticalScale(8, 8, 10, 12),
+  },
+
+  DAM_cancelButton: {
+    flex: 1,
+    backgroundColor: '#f1f5f9',
+    borderRadius: moderateScale(12),
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 17),
+    alignItems: 'center',
+  },
+
+  DAM_saveButton: {
+    flex: 1,
+    borderRadius: moderateScale(12),
+    paddingVertical: conditionalVerticalScale(12, 13, 14, 17),
+    alignItems: 'center',
+    backgroundColor: '#0A66C2',
+  },
+
+  DAM_saveButtonDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
+
+  DAM_disabledButton: {
+    backgroundColor: '#e2e8f0',
+  },
+
+  DAM_cancelButtonText: {
+    fontSize: conditionalFontScale(13, 14, 15, 18),
+    fontWeight: '600',
+    color: '#475569',
+  },
+
+  DAM_saveButtonText: {
+    fontSize: conditionalFontScale(13, 14, 15, 18),
+    fontWeight: '700',
+    color: '#fff',
+  },
+
   // ==================================================================================================================
   // END OF COMPONENT - RESPONSIVE COMPONENT STYLES
   // ==================================================================================================================

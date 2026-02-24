@@ -280,12 +280,12 @@ const PurchaseRequisitionSaveRecord = () => {
       {isLoading ? (
         <CustomIndicator />
       ) : (
-        <SafeAreaView style={styles.LReqSR_SafeArea}>
+        <SafeAreaView style={styles.DSR_SafeArea}>
           {isProcessing && (
-            <View style={styles.LReqSR_ProcessingOverlay}>
-              <View style={styles.LReqSR_ProcessingContainer}>
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
                 <ActivityIndicator size="large" color="#0A66C2" />
-                <Text style={styles.LReqSR_ProcessingText}>
+                <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
               </View>
@@ -293,14 +293,14 @@ const PurchaseRequisitionSaveRecord = () => {
           )}
           <ScrollView
             ref={scrollViewRef}
-            contentContainerStyle={styles.LReqSR_FormContainer}
+            contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
             {/* FIELD 1 */}
-            <Text style={styles.LReqSR_Label}>Purchase requisition</Text>
+            <Text style={styles.DSR_Label}>Purchase requisition</Text>
             <TextInput
               style={[
-                styles.LReqSR_Input,
+                styles.DSR_Input,
                 {backgroundColor: '#f5f5f5', color: '#888'},
               ]}
               value={formData.PurchReqId}
@@ -312,9 +312,9 @@ const PurchaseRequisitionSaveRecord = () => {
             />
 
             {/* FIELD 2 */}
-            <Text style={styles.LReqSR_Label}>Name *</Text>
+            <Text style={styles.DSR_Label}>Name *</Text>
             <TextInput
-              style={styles.LReqSR_Input}
+              style={styles.DSR_Input}
               value={formData.PurchReqName}
               onChangeText={text => handleInputChange('PurchReqName', text)}
               placeholder="Enter Name"
@@ -322,12 +322,12 @@ const PurchaseRequisitionSaveRecord = () => {
             />
 
             {/* FIELD 3 */}
-            <Text style={styles.LReqSR_Label}>Requested Date</Text>
+            <Text style={styles.DSR_Label}>Requested Date</Text>
             <TouchableOpacity
-              style={styles.LReqSR_DateSelector}
+              style={styles.DSR_DateSelector}
               onPress={() => setShowRequiredDateCalendar(true)}>
               <View style={{flex: 1}}>
-                <Text style={styles.LReqSR_DateText}>
+                <Text style={styles.DSR_DateText}>
                   {formData.RequiredDate
                     ? formatDate(formData.RequiredDate)
                     : formatDate(new Date())}
@@ -337,12 +337,12 @@ const PurchaseRequisitionSaveRecord = () => {
             </TouchableOpacity>
 
             {/* FIELD 4 */}
-            <Text style={styles.LReqSR_Label}>Accounting Date</Text>
+            <Text style={styles.DSR_Label}>Accounting Date</Text>
             <TouchableOpacity
-              style={styles.LReqSR_DateSelector}
+              style={styles.DSR_DateSelector}
               onPress={() => setShowTransDateCalendar(true)}>
               <View style={{flex: 1}}>
-                <Text style={styles.LReqSR_DateText}>
+                <Text style={styles.DSR_DateText}>
                   {formData.TransDate
                     ? formatDate(formData.TransDate)
                     : formatDate(new Date())}
@@ -365,7 +365,7 @@ const PurchaseRequisitionSaveRecord = () => {
         </SafeAreaView>
       )}
 
-      {/* ✅ One CalendarModal per date field, outside the loading block */}
+      {/* Calendar Modals */}
       <CalendarModal
         visible={showRequiredDateCalendar}
         initialDate={formData.RequiredDate}

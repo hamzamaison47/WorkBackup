@@ -1,4 +1,3 @@
-/* eslint-disable no-shadow */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 import React, {useState, useCallback} from 'react';
@@ -7,6 +6,8 @@ import {
   FlatList,
   BackHandler,
   RefreshControl,
+  ScrollView,
+  I18nManager,
   View,
   ActivityIndicator,
 } from 'react-native';
@@ -15,23 +16,24 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
+import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import styles from '../../../../styles/styles';
 import {translate as t} from '../../../../store/utils/translate';
 
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
-import {useSelector} from 'react-redux';
-import {ScrollView} from 'react-native-gesture-handler';
 
 const FamilyContacts_ListPageScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const isRTL = I18nManager.isRTL;
 
   const {
     employeeId,
@@ -43,12 +45,12 @@ const FamilyContacts_ListPageScreen = () => {
   } = route.params || {};
 
   const reduxUserData = useSelector(state => state.user.userData);
+  const {selectedLegalEntity} = useSelector(state => state.company);
   const effectiveUserData = routeUserData || reduxUserData;
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
 
-  // Example states
   const [isLoading, setIsLoading] = useState(false);
   const [familycontactsdata, setfamilycontactsdata] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
@@ -59,6 +61,8 @@ const FamilyContacts_ListPageScreen = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedContactItem, setSelectedContactItem] = useState(null);
 
   const fetchFamilyContactsData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -66,10 +70,9 @@ const FamilyContacts_ListPageScreen = () => {
     setIsLoading(true);
     try {
       const FamilyContactData = await retrieveAllFamilyContacts({
-        employeeId: effectiveEmployeeId, // ✅
+        employeeId: effectiveEmployeeId,
       });
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
-      console.log(FamilyContactData);
       setfamilycontactsdata(FamilyContactData);
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
@@ -114,11 +117,78 @@ const FamilyContacts_ListPageScreen = () => {
     }, [navigation]),
   );
 
+  const handleGoBack = () => {
+    navigation.navigate('DisplayPersonalInfo');
+  };
+
+  const handleRefresh = () => {
+    fetchFamilyContactsData();
+  };
+
+  const getStatusLabel = status => {
+    const statusMap = {
+      NotSubmitted: 'Draft',
+      Submitted: 'Submitted',
+      Approved: 'Approved',
+      Rejected: 'Rejected',
+      Cancelled: 'Cancelled',
+      ChangeRequest: 'Change Request',
+      PendingCancellation: 'Pending Cancellation',
+      Returned: 'Returned',
+      PendingApproval: 'Pending Approval',
+      PendingComplete: 'Pending Complete',
+      WorkflowCompleted: 'Workflow Completed',
+      Completed: 'Completed',
+    };
+    return statusMap[status] || 'Draft';
+  };
+
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return familycontactsdata;
+
+    return familycontactsdata.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending');
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: familycontactsdata.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        counts[pill] = familycontactsdata.filter(item =>
+          getStatusLabel(item.WFStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = familycontactsdata.filter(
+          item => getStatusLabel(item.WFStatus) === pill,
+        ).length;
+      }
+    });
+
+    return counts;
+  };
+
+  const handleReceiptAttachmentPress = async itemData => {
+    try {
+      setSelectedContactItem(itemData);
+      setAttachmentModalVisible(true);
+    } catch (error) {
+      setAlertMessage('Failed to open attachments');
+      setAlertModal(true);
+    }
+  };
+
   const cardConfig = {
     headerConfig: {
       title: {key: 'Name'},
     },
-
     fields: [
       {
         key: 'Name',
@@ -131,7 +201,6 @@ const FamilyContacts_ListPageScreen = () => {
         type: 'text',
       },
     ],
-
     expandableFields: [
       {
         key: 'EmergencyContact',
@@ -150,6 +219,7 @@ const FamilyContacts_ListPageScreen = () => {
         type: 'boolean',
       },
     ],
+    isRTL: isRTL,
   };
 
   const getButtonConfig = item => {
@@ -163,7 +233,7 @@ const FamilyContacts_ListPageScreen = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2', // Add this line
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -174,22 +244,34 @@ const FamilyContacts_ListPageScreen = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2', // Add this line
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      // submit: {
-      //   show: isDraft,
-      //   position: 'bottom',
-      //   style: 'text',
-      //   icon: 'send',
-      //   iconSize: 16,
-      //   text: 'Submit',
-      //   textColor: '#0A66C2',
-      //   iconColor: '#0A66C2',
-      // },
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
+        icon: 'paperclip',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: false,
+        customStyle: {},
+      },
     };
   };
+
+  // Fix: rename param to avoid shadowing isProcessing state
+  const setButtonProcessing = (recId, buttonType, isProcessingState) => {
+    setProcessingButtons(prev => ({
+      ...prev,
+      [recId]: isProcessingState
+        ? [...(prev[recId] || []), buttonType]
+        : (prev[recId] || []).filter(btn => btn !== buttonType),
+    }));
+  };
+
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
       case 'edit':
@@ -198,44 +280,12 @@ const FamilyContacts_ListPageScreen = () => {
       case 'delete':
         handleDeletePress(itemData);
         break;
+      case 'attachment':
+        handleReceiptAttachmentPress(itemData);
+        break;
       default:
         console.log('Unknown button pressed:', buttonType);
     }
-  };
-
-  const getFilteredData = () => {
-    if (activeFilter === 'All') return familycontactsdata;
-
-    return familycontactsdata.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-
-      // Special handling for Pending filter - include any status that contains "Pending"
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
-      }
-
-      return status === activeFilter;
-    });
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: familycontactsdata.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        // Count any status that includes "Pending"
-        counts[pill] = familycontactsdata.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = familycontactsdata.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
-    });
-
-    console.log('Filter counts:', counts); // Debug
-    return counts;
   };
 
   const handleEditPress = itemData => {
@@ -252,11 +302,11 @@ const FamilyContacts_ListPageScreen = () => {
         employeeId: itemData.employeeId || effectiveEmployeeId,
         employeeName: itemData.employeeName || effectiveEmployeeName,
         WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
-        Name: itemData.Name, // ← Pass the full name
+        Name: itemData.Name,
         FirstName: itemData.FirstName,
         MiddleName: itemData.MiddleName,
         LastName: itemData.LastName,
-        RelationShipTypeId: itemData.RelationShipTypeId, // ← Fixed spelling
+        RelationShipTypeId: itemData.RelationShipTypeId,
         EmergencyContact: itemData.EmergencyContact,
         isBeneficiary: itemData.isBeneficiary,
         BeneficiaryFromDate: itemData.BeneficiaryFromDate,
@@ -270,23 +320,20 @@ const FamilyContacts_ListPageScreen = () => {
         IsPersonWithDisabilities: itemData.IsPersonWithDisabilities,
       },
     });
-    console.log('SENT FPR EDIT', itemData);
   };
 
   const handleDeletePress = itemData => {
-    setItemToDelete(itemData); // <-- stores the whole item
+    setItemToDelete(itemData);
     setDeleteModal(true);
   };
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    // First close the delete modal
     setDeleteModal(false);
 
-    // Small delay to ensure modal is closed before showing processing overlay
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
+      setIsProcessing(true);
       setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
@@ -306,52 +353,16 @@ const FamilyContacts_ListPageScreen = () => {
         console.log('Delete error:', error);
         setAlertMessage('Failed to delete record');
       } finally {
-        setIsProcessing(false); // Hide processing overlay
+        setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
 
-        // Optional: refresh after short delay so user sees success message first
         setTimeout(() => {
           fetchFamilyContactsData();
         }, 800);
       }
-    }, 100); // Small delay to ensure modal closes first
-  };
-
-  const getStatusLabel = status => {
-    const statusMap = {
-      NotSubmitted: 'Draft',
-      Submitted: 'Submitted',
-      Approved: 'Approved',
-      Rejected: 'Rejected',
-      Cancelled: 'Cancelled',
-      ChangeRequest: 'Change Request',
-      PendingCancellation: 'Pending Cancellation',
-      Returned: 'Returned',
-      PendingApproval: 'Pending Approval', // ← now matches the enum
-      PendingComplete: 'Pending Complete',
-      WorkflowCompleted: 'Workflow Completed',
-      Completed: 'Completed',
-    };
-    return statusMap[status] || 'Draft';
-  };
-
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
-    setProcessingButtons(prev => ({
-      ...prev,
-      [recId]: isProcessing
-        ? [...(prev[recId] || []), buttonType]
-        : (prev[recId] || []).filter(btn => btn !== buttonType),
-    }));
-  };
-
-  const handleRefresh = () => {
-    fetchFamilyContactsData();
-  };
-
-  const handleGoBack = () => {
-    navigation.navigate('DisplayPersonalInfo');
+    }, 100);
   };
 
   const handleFamilyContactRecordCreate = () => {
@@ -381,7 +392,6 @@ const FamilyContacts_ListPageScreen = () => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
 
-    // Process/massage the item data before passing to the card
     const processedItem = {
       ...item,
       employeeId: item.employeeId || effectiveEmployeeId,
@@ -391,16 +401,17 @@ const FamilyContacts_ListPageScreen = () => {
     return (
       <DynamicRequestCard
         data={processedItem}
-        headerConfig={cardConfig.headerConfig} // make sure you define cardConfig
+        headerConfig={cardConfig.headerConfig}
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
-        buttons={getButtonConfig(item)} // define getButtonConfig to generate button configs per item
+        buttons={getButtonConfig(item)}
         isHighlighted={isHighlighted}
-        onButtonPress={handleButtonPress} // define handleButtonPress to handle button clicks
+        onButtonPress={handleButtonPress}
         isExpandable={true}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
+        isRTL={isRTL}
       />
     );
   };
@@ -412,7 +423,6 @@ const FamilyContacts_ListPageScreen = () => {
       showFooter={true}
       showFloatingButton={true}
       isHeaderActive={true}
-      onButtonPress={handleButtonPress}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleFamilyContactRecordCreate}
@@ -459,6 +469,38 @@ const FamilyContacts_ListPageScreen = () => {
           </Text>
         </ScrollView>
       )}
+
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedContactItem}
+        recordIdKey="RecId"
+        tableName="DirPartyTable"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedContactItem(null);
+        }}
+        onSave={() => {
+          fetchFamilyContactsData();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Contact Attachments"
+        showDetails={true}
+        detailFields={[
+          {key: 'Name', label: 'Name'},
+          {key: 'RelationShipTypeId', label: 'Relationship'},
+        ]}
+        detailData={selectedContactItem || {}}
+        showTakePhoto={
+          getStatusLabel(selectedContactItem?.WFStatus) === 'Draft'
+        }
+        showChooseFile={
+          getStatusLabel(selectedContactItem?.WFStatus) === 'Draft'
+        }
+        showDownload={true}
+        showDelete={getStatusLabel(selectedContactItem?.WFStatus) === 'Draft'}
+      />
 
       <AlertModal
         visible={alertModal}

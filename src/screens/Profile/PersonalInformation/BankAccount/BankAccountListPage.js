@@ -6,6 +6,8 @@ import {
   FlatList,
   BackHandler,
   RefreshControl,
+  ScrollView,
+  I18nManager,
   View,
   ActivityIndicator,
 } from 'react-native';
@@ -14,24 +16,25 @@ import {
   useRoute,
   useFocusEffect,
 } from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
+import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import styles from '../../../../styles/styles';
 import {translate as t} from '../../../../store/utils/translate';
 
 import {retrieveAllBankAccounts} from '../../../../API/PersonalInformation/BankAccounts/BankAccountfindbyEmployee';
 import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts/BankAccountDelete';
-import {useSelector} from 'react-redux';
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
-import {ScrollView} from 'react-native-gesture-handler';
 
 const BankAccountListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const isRTL = I18nManager.isRTL;
 
   const {
     employeeId,
@@ -42,11 +45,10 @@ const BankAccountListPage = () => {
     userData: routeUserData,
   } = route.params || {};
 
-  // Get userData from Redux as fallback
   const reduxUserData = useSelector(state => state.user.userData);
+  const {selectedLegalEntity} = useSelector(state => state.company);
   const effectiveUserData = routeUserData || reduxUserData;
 
-  // Use effective user data for all operations
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
@@ -59,10 +61,12 @@ const BankAccountListPage = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-
-  // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+
+  // Attachment modal state
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedBankItem, setSelectedBankItem] = useState(null);
 
   // Fetch Bank Account data
   const fetchBankAccountData = useCallback(async () => {
@@ -71,11 +75,11 @@ const BankAccountListPage = () => {
     setIsLoading(true);
     try {
       const BankAccountData = await retrieveAllBankAccounts({
-        employeeId: effectiveEmployeeId, // ✅
+        employeeId: effectiveEmployeeId,
       });
 
-      // ✅ Sort newest record on top
-      BankAccountData.sort((a, b) => (b.recId || 0) - (a.recId || 0));
+      // Fix: sort using RecId (uppercase) — recId (lowercase) may be undefined
+      BankAccountData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
 
       setbankaccountdata(BankAccountData);
     } catch (error) {
@@ -86,14 +90,12 @@ const BankAccountListPage = () => {
     }
   }, [effectiveEmployeeId]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchBankAccountData();
     }, [fetchBankAccountData]),
   );
 
-  // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
       if (highlightRecId) {
@@ -123,43 +125,14 @@ const BankAccountListPage = () => {
     }, [navigation]),
   );
 
-  // Handle back navigation
-  // const handleGoBack = () => {
-  //   let targetRoute = 'MainDashboard'; // default
-
-  //   switch (cameFrom) {
-  //     case 'MainDashboard':
-  //       targetRoute = 'MainDashboard';
-  //       break;
-  //     case 'DisplayListPage':
-  //       targetRoute = 'DisplayListPage';
-  //       break;
-  //     case 'DrawerNavigator':
-  //       targetRoute = 'MainDashboard';
-  //       break;
-  //     case 'WorkerAssignedToMe':
-  //       targetRoute = 'WorkerAssignedToMe';
-  //       break;
-  //     default:
-  //       navigation.goBack();
-  //       return; // exit early
-  //   }
-
-  //   navigation.reset({
-  //     index: 0, // top of the stack
-  //     routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
-  //   });
-  // };
   const handleGoBack = () => {
     navigation.navigate('DisplayPersonalInfo');
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     fetchBankAccountData();
   };
 
-  // Handle create Bank Account Record
   const handleBankAccountRecordCreation = () => {
     navigation.navigate('BankAccountSaveRecord', {
       mode: 'create',
@@ -173,7 +146,7 @@ const BankAccountListPage = () => {
         employeeId: effectiveEmployeeId,
         employeeName: effectiveEmployeeName,
         WorkerRecId: effectiveWorkerRecId,
-        recId: '',
+        RecId: '',
         AccountId: '',
         AccountNum: '',
         BankIBAN: '',
@@ -195,7 +168,7 @@ const BankAccountListPage = () => {
       ChangeRequest: 'Change Request',
       PendingCancellation: 'Pending Cancellation',
       Returned: 'Returned',
-      PendingApproval: 'Pending Approval', // ← now matches the enum
+      PendingApproval: 'Pending Approval',
       PendingComplete: 'Pending Complete',
       WorkflowCompleted: 'Workflow Completed',
       Completed: 'Completed',
@@ -209,9 +182,8 @@ const BankAccountListPage = () => {
     return banksaccountdata.filter(item => {
       const status = getStatusLabel(item.WFStatus);
 
-      // Special handling for Pending filter - include any status that contains "Pending"
       if (activeFilter === 'Pending') {
-        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+        return status.includes('Pending');
       }
 
       return status === activeFilter;
@@ -223,7 +195,6 @@ const BankAccountListPage = () => {
 
     ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
       if (pill === 'Pending') {
-        // Count any status that includes "Pending"
         counts[pill] = banksaccountdata.filter(item =>
           getStatusLabel(item.WFStatus).includes('Pending'),
         ).length;
@@ -234,7 +205,6 @@ const BankAccountListPage = () => {
       }
     });
 
-    console.log('Filter counts:', counts); // Debug
     return counts;
   };
 
@@ -243,7 +213,6 @@ const BankAccountListPage = () => {
     headerConfig: {
       title: {key: 'AccountId'},
     },
-
     fields: [
       {
         key: 'Name',
@@ -262,7 +231,6 @@ const BankAccountListPage = () => {
       },
       {key: 'WFStatus', label: '', type: 'status'},
     ],
-
     expandableFields: [
       {
         key: 'AccountId',
@@ -284,11 +252,10 @@ const BankAccountListPage = () => {
         label: banksaccountdata[0]?.BranchNamelbl || 'Branch Name',
         type: 'text',
       },
-      // {key: 'CreatedBy', label: 'Created By', type: 'text'},
     ],
+    isRTL: isRTL,
   };
 
-  // Define button configuration
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
     const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
@@ -301,7 +268,7 @@ const BankAccountListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2', // Add this line
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -312,22 +279,23 @@ const BankAccountListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2', // Add this line
+        backgroundColor: '#0A66C2',
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      // submit: {
-      //   show: isDraft,
-      //   position: 'bottom',
-      //   style: 'text',
-      //   icon: 'send',
-      //   iconSize: 16,
-      //   text: 'Submit',
-      //   textColor: '#0A66C2',
-      //   iconColor: '#0A66C2',
-      // },
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
+        icon: 'paperclip',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: false,
+        customStyle: {},
+      },
       approval: {
-        show: isDraft || isRejected, // only visible when action is possible
+        show: isDraft || isRejected,
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
@@ -345,17 +313,17 @@ const BankAccountListPage = () => {
     };
   };
 
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
+  // Fix: rename param to avoid shadowing isProcessing state
+  const setButtonProcessing = (recId, buttonType, isProcessingState) => {
     setProcessingButtons(prev => ({
       ...prev,
-      [recId]: isProcessing
+      [recId]: isProcessingState
         ? [...(prev[recId] || []), buttonType]
         : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
   };
 
   const handleButtonPress = (buttonType, itemData) => {
-    console.log(itemData);
     switch (buttonType) {
       case 'edit':
         handleEditPress(itemData);
@@ -365,6 +333,9 @@ const BankAccountListPage = () => {
         break;
       case 'submit':
         handleSubmitPress(itemData);
+        break;
+      case 'attachment':
+        handleReceiptAttachmentPress(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);
@@ -381,11 +352,12 @@ const BankAccountListPage = () => {
         employeeId,
         employeeName,
         WorkerRecId,
-      }, // Ensure userData is passed
+      },
       cameFrom: 'BankAccountListPage',
       originalCameFrom: cameFrom,
       bankaccountdata: {
-        recId: itemData.recId,
+        // Fix: use RecId (uppercase) consistently
+        RecId: itemData.RecId,
         employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
         WorkerRecId: itemData.WorkerRecId || WorkerRecId,
@@ -408,25 +380,24 @@ const BankAccountListPage = () => {
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    // setButtonProcessing(itemToDelete.recId, 'delete', true);
-
-    // First close the delete modal
     setDeleteModal(false);
 
-    // Small delay to ensure modal is closed before showing processing overlay
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
-      setButtonProcessing(itemToDelete.recId, 'delete', true);
+      setIsProcessing(true);
+      // Fix: use RecId (uppercase) consistently
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
         const response = await DeletBankAccount({
-          recordsRecId: [itemToDelete.recId],
+          // Fix: use RecId (uppercase) consistently
+          recordsRecId: [itemToDelete.RecId],
         });
 
         if (response[0].IsSuccess) {
           setAlertMessage('Record deleted successfully');
+          // Fix: filter using RecId (uppercase) consistently
           setbankaccountdata(prev =>
-            prev.filter(bank => bank.recId !== itemToDelete.recId),
+            prev.filter(bank => bank.RecId !== itemToDelete.RecId),
           );
         } else {
           setAlertMessage('Unable to delete record. Please try again.');
@@ -435,8 +406,9 @@ const BankAccountListPage = () => {
         setAlertMessage('Failed to delete record');
         console.log('Delete Bank Account response', error);
       } finally {
-        setIsProcessing(false); // Hide processing overlay
-        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setIsProcessing(false);
+        // Fix: use RecId (uppercase) consistently
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
 
@@ -444,34 +416,28 @@ const BankAccountListPage = () => {
           fetchBankAccountData();
         }, 800);
       }
-    }, 100); // Small delay to ensure modal closes first
+    }, 100);
   };
 
   const handleSubmitPress = async itemData => {
-    // setButtonProcessing(itemData.recId, 'submit', true);
-
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
+      setIsProcessing(true);
+      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemData.RecId, 'submit', true);
 
       try {
         const response = await SubmitBankAccountRecord({
-          recId: itemData.recId,
+          // Fix: use RecId (uppercase) consistently
+          recId: itemData.RecId,
         });
 
-        // console.log('itemData-0-0-0--0-0-0-0-0-0--', itemData);
-        // console.log({response});
+        const resObj = Array.isArray(response) ? response[0] : response;
 
-        if (
-          response &&
-          (Array.isArray(response) ? response[0] : response) &&
-          String(
-            (Array.isArray(response) ? response[0] : response).IsSuccess,
-          ).toLowerCase() === 'true'
-        ) {
+        if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
-          setHighlightedRecId(itemData.recId);
+          // Fix: use RecId (uppercase) consistently
+          setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {
             setHighlightedRecId(null);
@@ -481,7 +447,6 @@ const BankAccountListPage = () => {
             fetchBankAccountData();
           }, 1000);
         } else {
-          const resObj = Array.isArray(response) ? response[0] : response;
           const errorMessage =
             resObj && resObj.Message
               ? resObj.Message
@@ -494,21 +459,33 @@ const BankAccountListPage = () => {
         setAlertMessage('Failed to submit request');
         setAlertModal(true);
       } finally {
-        setIsProcessing(false); // Hide processing overlay
-        setButtonProcessing(itemData.recId, 'submit', false);
+        setIsProcessing(false);
+        // Fix: use RecId (uppercase) consistently
+        setButtonProcessing(itemData.RecId, 'submit', false);
       }
-    }, 100); // Same delay pattern
+    }, 100);
+  };
+
+  const handleReceiptAttachmentPress = async itemData => {
+    try {
+      setSelectedBankItem(itemData);
+      setAttachmentModalVisible(true);
+    } catch (error) {
+      setAlertMessage('Failed to open attachments');
+      setAlertModal(true);
+    }
   };
 
   const renderBankAccountCard = ({item}) => {
-    const isHighlighted = highlightedRecId === item.recId;
-    const itemProcessingButtons = processingButtons[item.recId] || [];
+    // Fix: use RecId (uppercase) consistently
+    const isHighlighted = highlightedRecId === item.RecId;
+    const itemProcessingButtons = processingButtons[item.RecId] || [];
 
     const processedItem = {
       ...item,
       employeeId: item.employeeId || employeeId,
       employeeName: item.employeeName || employeeName,
-      WFStatus: getStatusLabel(item.WFStatus), // ✅ map enum → display label here
+      WFStatus: getStatusLabel(item.WFStatus),
     };
 
     return (
@@ -524,6 +501,7 @@ const BankAccountListPage = () => {
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
+        isRTL={isRTL}
       />
     );
   };
@@ -560,8 +538,9 @@ const BankAccountListPage = () => {
         <FlatList
           data={getFilteredData()}
           renderItem={renderBankAccountCard}
+          // Fix: use RecId (uppercase) consistently
           keyExtractor={(item, index) =>
-            item.recId?.toString() || index.toString()
+            item.RecId?.toString() || index.toString()
           }
           contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
@@ -581,6 +560,37 @@ const BankAccountListPage = () => {
           </Text>
         </ScrollView>
       )}
+
+      {/* Attachment Modal */}
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedBankItem}
+        recordIdKey="recId"
+        tableName="ESSWorkerBankAccount"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedBankItem(null);
+        }}
+        onSave={() => {
+          fetchBankAccountData();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Bank Account Attachments"
+        showDetails={true}
+        detailFields={[
+          {key: 'AccountId', label: 'Account ID'},
+          {key: 'Name', label: 'Account Name'},
+          {key: 'AccountNum', label: 'Account Number'},
+        ]}
+        detailData={selectedBankItem || {}}
+        showTakePhoto={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
+        showChooseFile={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
+        showDownload={true}
+        showDelete={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
+      />
+
       <AlertModal
         visible={alertModal}
         heading="Alert"

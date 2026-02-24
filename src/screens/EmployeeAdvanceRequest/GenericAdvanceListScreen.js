@@ -1,5 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
+/* eslint-disable no-shadow */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback} from 'react';
 import {
   Text,
@@ -22,14 +23,16 @@ import {useSelector} from 'react-redux';
 import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
 import {FindByEmployeeAdvanceRequest} from '../../API/EmployeeAdvanceRequest/FindByEmployeeAdvanceRequest';
-// import {RetrieveAllEmployees} from '../../API/EmployeeAdvanceRequest/RetrieveAllEmployees';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import DynamicRequestCard from '../../components/DynamicRequestCard';
-// import RequestTypeSelectionModal from '../../components/EmployeeAdvanceRequest/RequestTypeSelectionModal';
+import DynamicRequestCard, {
+  BUTTON_TYPES,
+} from '../../components/DynamicRequestCard';
+import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+
 import styles from '../../styles/styles';
 
 const GenericAdvanceListScreen = () => {
@@ -43,11 +46,16 @@ const GenericAdvanceListScreen = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-  // const [typeSelectionModal, setTypeSelectionModal] = useState(false);
+
+  // Attachment modal state
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedAdvanceItem, setSelectedAdvanceItem] = useState(null);
 
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
+
+  const {selectedLegalEntity} = useSelector(state => state.company);
 
   const {
     employeeId,
@@ -61,12 +69,11 @@ const GenericAdvanceListScreen = () => {
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = routeUserData || reduxUserData;
 
-  // Use effective user data for all operations
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
 
-  /** Fetch all advance data (both loans and advances) */
+  /** Fetch all advance data */
   const fetchAllAdvanceData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
     setIsLoading(true);
@@ -74,31 +81,26 @@ const GenericAdvanceListScreen = () => {
     try {
       const allResults = await FindByEmployeeAdvanceRequest({employeeId});
 
-      // Filter to show only Loan and Advance types (excluding Expense)
       const filteredResults = allResults.filter(item => {
         const type = item.AdvanceTypeCode?.toLowerCase() || '';
-        return !type.includes('expense'); // filter OUT expenses
+        return !type.includes('expense');
       });
 
-      // Sort by CreatedDateTime in descending order (latest first)
       const sortedResults = filteredResults.sort((a, b) => {
-        // Parse CreatedDateTime timestamps
         const aCreated = new Date(a.CreatedDateTime || a.RequestDate || 0);
         const bCreated = new Date(b.CreatedDateTime || b.RequestDate || 0);
 
-        // If both have valid CreatedDateTime timestamps
         if (!isNaN(aCreated.getTime()) && !isNaN(bCreated.getTime())) {
           if (bCreated.getTime() !== aCreated.getTime()) {
-            return bCreated - aCreated; // Latest timestamp first
+            return bCreated - aCreated;
           }
         }
 
-        // Fallback to RecId if CreatedDateTime is equal or invalid
         const aRecId = parseInt(a.RecId, 10);
         const bRecId = parseInt(b.RecId, 10);
 
         if (!isNaN(aRecId) && !isNaN(bRecId)) {
-          return bRecId - aRecId; // Highest RecId first
+          return bRecId - aRecId;
         }
 
         return 0;
@@ -116,14 +118,12 @@ const GenericAdvanceListScreen = () => {
     }
   }, [effectiveEmployeeId, employeeId]);
 
-  /** Enhanced refresh data when screen comes into focus */
   useFocusEffect(
     useCallback(() => {
       fetchAllAdvanceData();
     }, [fetchAllAdvanceData]),
   );
 
-  /** Enhanced highlighting with SubmitSuccess support */
   useFocusEffect(
     useCallback(() => {
       if (highlightRecId) {
@@ -153,9 +153,8 @@ const GenericAdvanceListScreen = () => {
     }, [navigation]),
   );
 
-  /** Enhanced back navigation with better parameter handling */
   const handleGoBack = () => {
-    let targetRoute = 'MainDashboard'; // default
+    let targetRoute = 'MainDashboard';
 
     switch (cameFrom) {
       case 'MainDashboard':
@@ -188,9 +187,8 @@ const GenericAdvanceListScreen = () => {
     return allAdvanceData.filter(item => {
       const status = getStatusLabel(item.WFStatus);
 
-      // Special handling for Pending filter - include any status that contains "Pending"
       if (activeFilter === 'Pending') {
-        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+        return status.includes('Pending');
       }
 
       return status === activeFilter;
@@ -202,7 +200,6 @@ const GenericAdvanceListScreen = () => {
 
     ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
       if (pill === 'Pending') {
-        // Count any status that includes "Pending"
         counts[pill] = allAdvanceData.filter(item =>
           getStatusLabel(item.WFStatus).includes('Pending'),
         ).length;
@@ -213,15 +210,13 @@ const GenericAdvanceListScreen = () => {
       }
     });
 
-    console.log('Filter counts:', counts); // Debug
     return counts;
   };
-  /** Enhanced refresh handler */
+
   const handleRefresh = () => {
     fetchAllAdvanceData();
   };
 
-  /** Creating Record. */
   const handleCreateRequest = () => {
     navigation.navigate('GenericAdvanceSaveScreen', {
       mode: 'create',
@@ -251,14 +246,9 @@ const GenericAdvanceListScreen = () => {
     });
   };
 
-  /** Enhanced request type detection */
   const getRequestTypeFromData = itemData => {
     if (!itemData || !itemData.AdvanceTypeCode) {
-      return {
-        type: 'Loan',
-        advanceType: 0,
-        screenName: 'Loan Request',
-      };
+      return {type: 'Loan', advanceType: 0, screenName: 'Loan Request'};
     }
 
     const advanceTypeCode = itemData.AdvanceTypeCode.toLowerCase();
@@ -267,31 +257,17 @@ const GenericAdvanceListScreen = () => {
       advanceTypeCode.includes('loan') ||
       advanceTypeCode.includes('company loan')
     ) {
-      return {
-        type: 'Loan',
-        advanceType: 0,
-        screenName: 'Loan Request',
-      };
+      return {type: 'Loan', advanceType: 0, screenName: 'Loan Request'};
     } else if (
       advanceTypeCode.includes('advance') ||
       advanceTypeCode.includes('salary')
     ) {
-      return {
-        type: 'Advance',
-        advanceType: 1,
-        screenName: 'Advance Salary',
-      };
+      return {type: 'Advance', advanceType: 1, screenName: 'Advance Salary'};
     }
 
-    // Default fallback
-    return {
-      type: 'Loan',
-      advanceType: 0,
-      screenName: 'Loan Request',
-    };
+    return {type: 'Loan', advanceType: 0, screenName: 'Loan Request'};
   };
 
-  /** Enhanced status label mapper */
   const getStatusLabel = status => {
     if (!status) return 'Draft';
 
@@ -313,7 +289,30 @@ const GenericAdvanceListScreen = () => {
     return statusMap[status] || 'Draft';
   };
 
-  /** Card configuration */
+  // Handle attachment button press (mirrors LeaveRequestListPage logic)
+  const handleReceiptAttachmentPress = async itemData => {
+    try {
+      const formatDateOnly = date => {
+        if (!date) return '';
+        const d = new Date(date);
+        return d.toISOString().split('T')[0];
+      };
+
+      const cleanedItem = {
+        ...itemData,
+        RequestedPaymentDate: formatDateOnly(itemData.RequestedPaymentDate),
+        RecoveryStartDate: formatDateOnly(itemData.RecoveryStartDate),
+        RequestDate: formatDateOnly(itemData.RequestDate),
+      };
+
+      setSelectedAdvanceItem(cleanedItem);
+      setAttachmentModalVisible(true);
+    } catch (error) {
+      setAlertMessage('Failed to open attachments');
+      setAlertModal(true);
+    }
+  };
+
   const cardConfig = {
     headerConfig: {
       title: {key: 'AdvanceTypeCode'},
@@ -367,7 +366,6 @@ const GenericAdvanceListScreen = () => {
     isRTL: isRTL,
   };
 
-  /** Enhanced button configuration */
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
     const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
@@ -395,12 +393,22 @@ const GenericAdvanceListScreen = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
+        icon: 'paperclip',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: false,
+        customStyle: {},
+      },
       approval: {
         show: isDraft || isRejected,
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
-        // no icon field needed anymore
         textColor: '#0A66C2',
         disabled: false,
         actions: [
@@ -414,7 +422,6 @@ const GenericAdvanceListScreen = () => {
     };
   };
 
-  /** Enhanced processing state management */
   const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
       ...prev,
@@ -424,7 +431,6 @@ const GenericAdvanceListScreen = () => {
     }));
   };
 
-  /** Enhanced button handlers */
   const handleButtonPress = (buttonType, itemData) => {
     if (!itemData) {
       setAlertMessage('Invalid item data. Please refresh and try again.');
@@ -433,14 +439,21 @@ const GenericAdvanceListScreen = () => {
     }
 
     switch (buttonType) {
+      case BUTTON_TYPES.EDIT:
       case 'edit':
         handleEditPress(itemData);
         break;
+      case BUTTON_TYPES.DELETE:
       case 'delete':
         handleDeletePress(itemData);
         break;
+      case BUTTON_TYPES.SUBMIT:
       case 'submit':
         handleSubmitPress(itemData);
+        break;
+      case BUTTON_TYPES.ATTACHMENT:
+      case 'attachment':
+        handleReceiptAttachmentPress(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);
@@ -452,7 +465,7 @@ const GenericAdvanceListScreen = () => {
     const d = new Date(date);
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear(); // always 4 digits
+    const year = d.getFullYear();
     return `${month}/${day}/${year}`;
   };
 
@@ -467,14 +480,11 @@ const GenericAdvanceListScreen = () => {
 
   const formatNumberForDisplay = value => {
     if (value === null || value === undefined) return '0';
-
-    const num = Number(value.toString().replace(/,/g, '')); // clean commas if already present
+    const num = Number(value.toString().replace(/,/g, ''));
     if (isNaN(num)) return '0';
-
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
-  /** Enhanced edit handler */
   const handleEditPress = itemData => {
     const requestTypeInfo = getRequestTypeFromData(itemData);
 
@@ -514,22 +524,16 @@ const GenericAdvanceListScreen = () => {
     setDeleteModal(true);
   };
 
-  /** Enhanced delete confirmation with better error handling */
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
 
-    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
-
-    // First close the delete modal
     setDeleteModal(false);
 
-    // Small delay to ensure modal is closed before showing processing overlay
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
-      setButtonProcessing(itemToDelete.recId, 'delete', true);
+      setIsProcessing(true);
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
-        // console.log('Delete Advance Request response', itemToDelete.RecId);
         const response = await DeleteAdvanceRequest({
           recordsRecId: [itemToDelete.RecId],
         });
@@ -550,8 +554,8 @@ const GenericAdvanceListScreen = () => {
         console.log('Delete Advance Request error:', error);
         setAlertMessage('Failed to delete record');
       } finally {
-        setIsProcessing(false); // Hide processing overlay
-        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setIsProcessing(false);
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
 
@@ -559,18 +563,14 @@ const GenericAdvanceListScreen = () => {
           fetchAllAdvanceData();
         }, 800);
       }
-    }, 100); // Small delay to ensure modal closes first
+    }, 100);
   };
 
-  /** FIXED: Enhanced submit handler with highlighting support */
   const handleSubmitPress = async itemData => {
-    // setButtonProcessing(itemData.RecId, 'submit', true);
-
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
+      setIsProcessing(true);
       setButtonProcessing(itemData.RecId, 'submit', true);
       try {
-        // console.log('Submit Advance Request:', itemData.RecId);
         const response = await SubmitAdvanceRequest({recId: itemData.RecId});
         const resObj = Array.isArray(response) ? response[0] : response;
 
@@ -578,10 +578,8 @@ const GenericAdvanceListScreen = () => {
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
 
-          // FIXED: Set highlighting for submitted record
           setHighlightedRecId(itemData.RecId);
 
-          // Set a timer to remove highlighting after 3 seconds
           setTimeout(() => {
             setHighlightedRecId(null);
           }, 3000);
@@ -602,13 +600,12 @@ const GenericAdvanceListScreen = () => {
         setAlertMessage('Failed to submit request');
         setAlertModal(true);
       } finally {
-        setIsProcessing(false); // Hide processing overlay
-        setButtonProcessing(itemData.recId, 'submit', false);
+        setIsProcessing(false);
+        setButtonProcessing(itemData.RecId, 'submit', false);
       }
-    }, 100); // Same delay pattern
+    }, 100);
   };
 
-  /** Enhanced render card with better data validation and comma formatting */
   const renderAdvanceCard = ({item}) => {
     if (!item) return null;
 
@@ -705,6 +702,37 @@ const GenericAdvanceListScreen = () => {
           </Text>
         </ScrollView>
       )}
+
+      {/* Attachment Modal */}
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedAdvanceItem}
+        recordIdKey="RecId"
+        tableName="PREmployeeAdvanceRequest"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedAdvanceItem(null);
+        }}
+        onSave={() => {
+          fetchAllAdvanceData();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Loan Request Attachments"
+        showDetails={true}
+        detailFields={[
+          {
+            key: 'AdvanceRequestId',
+            label: allAdvanceData[0]?.AdvanceRequestIdlbl || 'Request Id',
+          },
+        ]}
+        detailData={selectedAdvanceItem || {}}
+        showTakePhoto={selectedAdvanceItem?.WFStatus === 'Draft'}
+        showChooseFile={selectedAdvanceItem?.WFStatus === 'Draft'}
+        showDownload={true}
+        showDelete={selectedAdvanceItem?.WFStatus === 'Draft'}
+      />
 
       {/* Alert Modal */}
       <AlertModal
