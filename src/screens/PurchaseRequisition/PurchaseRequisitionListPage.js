@@ -637,15 +637,16 @@ const PurchaseRequisitionListPage = () => {
       // },
       approval: {
         show: isDraft || isRejected, // only visible when action is possible
-      attachment: {
-        show: true,
-        position: 'header',
-        style: 'icon',
-        icon: 'paperclip',
-        iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
-        customStyle: {},
+        attachment: {
+          show: true,
+          position: 'header',
+          style: 'icon',
+          icon: 'paperclip',
+          iconSize: 20,
+          iconColor: '#fff',
+          backgroundColor: '#0A66C2',
+          customStyle: {},
+        },
       },
       submit: {
         show: isDraft,

@@ -214,7 +214,6 @@ const GenericAdvanceListScreen = () => {
       // Special handling for Pending filter
       if (activeFilter === 'Pending') {
         return status.includes('Pending');
-        return status.includes('Pending');
       }
 
       return status === activeFilter;
