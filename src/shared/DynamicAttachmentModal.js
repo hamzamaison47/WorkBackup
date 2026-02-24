@@ -1,5 +1,4 @@
 /* eslint-disable curly */
-/* eslint-disable quotes */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState} from 'react';
@@ -9,8 +8,8 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import DocumentPicker from 'react-native-document-picker';
@@ -20,42 +19,44 @@ import RNFS from 'react-native-fs';
 import {RetrieveReceipts} from '../API/ExpenseManagment/Receipt/RetrieveReciepts';
 import {DeleteReceipts} from '../API/ExpenseManagment/Receipt/DeleteReceipts';
 import {RetrieveAttachment} from '../API/ExpenseManagment/Receipt/RetrieveAttachment';
-// import {UploadReceipt} from '../API/ExpenseManagment/Receipt/UploadReceipt';
-// import {AttachReceiptToExpenseLine} from '../API/ExpenseManagment/Receipt/AttachReceiptToExpenseLine';
+import {SaveAttachmentByteArray} from '../API/ExpenseManagment/Receipt/SaveAttachmentByteArray';
 
 import AlertModal from '../components/Alert/AlertModal';
 import AlertDeleteModal from '../components/Alert/AlertDeleteModal';
-
 import notificationService from '../Controller/notificationService';
-import {SaveAttachmentByteArray} from '../API/ExpenseManagment/Receipt/SaveAttachmentByteArray';
+
+import styles from '../styles/styles';
+import {iconSize} from '../store/utils/scaling';
 
 /**
- * Dynamic Attachment Modal Component
+ * DynamicAttachmentModal
  *
- * @param {boolean} visible - Controls modal visibility
- * @param {string|number} recordId - The record ID to attach files to
- * @param {string} tableName - The table name in the database
- * @param {function} onClose - Callback when modal is closed
- * @param {function} onSave - Callback after successful save
- * @param {string} legalEntity - Legal entity identifier
- * @param {string} employeeId - Employee ID
- * @param {string} employeeName - Employee name (optional)
- * @param {string} modalTitle - Custom title for the modal (default: "Attachments")
+ * @param {boolean}  visible        - Controls modal visibility
+ * @param {object}   recordData     - The record object. Must contain a numeric ID
+ *                                    accessible via the `recordIdKey` prop.
+ * @param {string}   recordIdKey    - Key used to extract the record ID from recordData
+ *                                    (default: 'RecId')
+ * @param {string}   tableName      - Table name sent to the API (required)
+ * @param {function} onClose        - Called when the modal should close
+ * @param {function} onSave         - Called after a successful upload
+ * @param {string}   legalEntity    - Legal entity identifier
+ * @param {string}   employeeId     - Employee ID
+ * @param {string}   employeeName   - Employee name (optional)
+ * @param {string}   modalTitle     - Modal header title (default: "Attachments")
  *
  * Display Configuration Props:
- * @param {boolean} showDetails - Show/hide the details section (default: false)
- * @param {Array} detailFields - Array of detail fields to display when showDetails=true
- *   Example: [{key: 'ExpenseType', label: 'Type'}, {key: 'AmountCurr', label: 'Amount'}]
- * @param {object} detailData - Data object containing values for detail fields
- *
- * @param {boolean} showTakePhoto - Show/hide take photo button (default: true)
- * @param {boolean} showChooseFile - Show/hide choose file button (default: true)
- * @param {boolean} showDownload - Show/hide download button for existing attachments (default: true)
- * @param {boolean} showDelete - Show/hide delete button for attachments (default: true)
+ * @param {boolean}  showDetails    - Show/hide the details section (default: false)
+ * @param {Array}    detailFields   - [{key, label}] fields to display in details section
+ * @param {object}   detailData     - Data object for detail fields
+ * @param {boolean}  showTakePhoto  - Show take-photo button (default: true)
+ * @param {boolean}  showChooseFile - Show choose-file button (default: true)
+ * @param {boolean}  showDownload   - Show download button on existing attachments (default: true)
+ * @param {boolean}  showDelete     - Show delete button on attachments (default: true)
  */
 const DynamicAttachmentModal = ({
   visible,
   recordData,
+  recordIdKey = 'RecId',
   tableName,
   onClose,
   onSave,
@@ -63,7 +64,6 @@ const DynamicAttachmentModal = ({
   employeeId,
   employeeName,
   modalTitle = 'Attachments',
-  // Display configuration
   showDetails = false,
   detailFields = [],
   detailData = {},
@@ -80,13 +80,13 @@ const DynamicAttachmentModal = ({
   const [processingAction, setProcessingAction] = useState(null);
   const [isDeleteProcessing, setIsDeleteProcessing] = useState(false);
   const [attachmentToDelete, setAttachmentToDelete] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const recordId =
-    recordData?.recId ||
-    recordData?.RecId ||
-    recordData?.ExpenseTransactionNumber ||
-    recordData?.leaveReqId ||
-    recordData?.LeaveReqId;
+  // Dynamically resolve the record ID using the provided key
+  const recordId = recordData?.[recordIdKey];
+  console.log('recordData', {recordData});
+  console.log('recordIdKey', {recordIdKey});
+  console.log('recordId', {recordId});
 
   useEffect(() => {
     if (visible && recordId) {
@@ -101,7 +101,7 @@ const DynamicAttachmentModal = ({
 
   const loadExistingAttachments = async () => {
     if (!recordId) {
-      console.log('No Record ID found');
+      console.log('DynamicAttachmentModal: No Record ID found');
       return;
     }
 
@@ -109,8 +109,10 @@ const DynamicAttachmentModal = ({
     try {
       const result = await RetrieveReceipts({
         recordRefRecId: recordId,
-        tableName: tableName || 'TrvExpTrans',
+        tableName: tableName,
       });
+
+      console.log('RetrieveReceipts', {result});
 
       if (result.success && result.attachments) {
         const formattedAttachments = Array.isArray(result.attachments)
@@ -123,15 +125,9 @@ const DynamicAttachmentModal = ({
             }))
           : [];
         setAttachments(formattedAttachments);
-      } else {
-        console.log('DEBUG: No attachments or result not successful');
       }
     } catch (error) {
       console.error('Error loading attachments:', error);
-      console.log('DEBUG: Error details:', {
-        message: error.message,
-        response: error.response?.data,
-      });
       setAlertMessage('Failed to load existing attachments');
       setAlertModal(true);
     } finally {
@@ -139,10 +135,19 @@ const DynamicAttachmentModal = ({
     }
   };
 
+  const handleRefresh = async () => {
+    if (isRefreshing || isLoading || isAnyProcessing) return;
+    setIsRefreshing(true);
+    try {
+      await loadExistingAttachments();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const convertToBase64 = async uri => {
     try {
-      const base64 = await RNFS.readFile(uri, 'base64');
-      return base64;
+      return await RNFS.readFile(uri, 'base64');
     } catch (error) {
       console.error('Error converting to base64:', error);
       throw new Error('Failed to convert file to base64');
@@ -152,24 +157,18 @@ const DynamicAttachmentModal = ({
   const getFileExtension = filename => {
     const parts = filename.split('.');
     if (parts.length <= 1) return '';
-    const extension = parts.pop().toLowerCase();
-    if (!extension && parts.length > 0) {
-      return parts.pop().toLowerCase();
-    }
-    return extension;
+    return parts.pop().toLowerCase();
   };
 
   const takePhoto = async () => {
     try {
-      const options = {
+      const result = await launchCamera({
         mediaType: 'photo',
         quality: 0.8,
         maxWidth: 1024,
         maxHeight: 1024,
         includeBase64: true,
-      };
-
-      const result = await launchCamera(options);
+      });
 
       if (result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
@@ -179,19 +178,18 @@ const DynamicAttachmentModal = ({
         }
 
         const timestamp = Date.now();
-        const fileName = `attachment_${timestamp}.jpg`;
-
-        const newAttachment = {
-          id: `temp_${timestamp}`,
-          uri: asset.uri,
-          name: fileName,
-          base64: base64,
-          type: 'image/jpeg',
-          extension: 'jpg',
-          isNew: true,
-        };
-
-        setAttachments(prev => [...prev, newAttachment]);
+        setAttachments(prev => [
+          ...prev,
+          {
+            id: `temp_${timestamp}`,
+            uri: asset.uri,
+            name: `attachment_${timestamp}.jpg`,
+            base64,
+            type: 'image/jpeg',
+            extension: 'jpg',
+            isNew: true,
+          },
+        ]);
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -220,29 +218,26 @@ const DynamicAttachmentModal = ({
       const file = result[0];
       const base64 = await convertToBase64(file.uri);
       const originalExtension = getFileExtension(file.name);
-      let finalExtension = originalExtension;
+      const finalExtension =
+        originalExtension || file.type?.split('/').pop() || '';
 
-      if (!originalExtension && file.type) {
-        finalExtension = file.type.split('/').pop();
-      }
+      const cleanFileName =
+        !originalExtension && finalExtension && !file.name.includes('.')
+          ? `${file.name}.${finalExtension}`
+          : file.name;
 
-      let cleanFileName = file.name;
-      if (originalExtension && file.name.endsWith(`.${originalExtension}`)) {
-        cleanFileName = file.name;
-      } else if (finalExtension && !file.name.includes('.')) {
-        cleanFileName = `${file.name}.${finalExtension}`;
-      }
-
-      const newAttachment = {
-        id: `temp_${Date.now()}`,
-        uri: file.uri,
-        name: cleanFileName,
-        base64: base64,
-        type: file.type,
-        extension: finalExtension,
-        isNew: true,
-      };
-      setAttachments(prev => [...prev, newAttachment]);
+      setAttachments(prev => [
+        ...prev,
+        {
+          id: `temp_${Date.now()}`,
+          uri: file.uri,
+          name: cleanFileName,
+          base64,
+          type: file.type,
+          extension: finalExtension,
+          isNew: true,
+        },
+      ]);
     } catch (error) {
       if (!DocumentPicker.isCancel(error)) {
         console.error('Error picking document:', error);
@@ -252,76 +247,57 @@ const DynamicAttachmentModal = ({
     }
   };
 
-  // const getContentType = filename => {
-  //   const extension = filename.split('.').pop().toLowerCase();
-
-  //   const contentTypeMap = {
-  //     pdf: 'application/pdf',
-  //     doc: 'application/msword',
-  //     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  //     xls: 'application/vnd.ms-excel',
-  //     xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  //     ppt: 'application/vnd.ms-powerpoint',
-  //     pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  //     txt: 'text/plain',
-  //     rtf: 'application/rtf',
-  //     csv: 'text/csv',
-  //     odt: 'application/vnd.oasis.opendocument.text',
-  //     ods: 'application/vnd.oasis.opendocument.spreadsheet',
-  //     odp: 'application/vnd.oasis.opendocument.presentation',
-  //     jpg: 'image/jpeg',
-  //     jpeg: 'image/jpeg',
-  //     png: 'image/png',
-  //     gif: 'image/gif',
-  //     webp: 'image/webp',
-  //     bmp: 'image/bmp',
-  //     tiff: 'image/tiff',
-  //     tif: 'image/tiff',
-  //     svg: 'image/svg+xml',
-  //     heic: 'image/heic',
-  //     heif: 'image/heif',
-  //   };
-
-  //   return contentTypeMap[extension] || 'application/octet-stream';
-  // };
+  /**
+   * Single source of truth for closing the delete confirm modal.
+   * Blocked while the API call is in-flight so the user cannot
+   * accidentally dismiss it mid-deletion.
+   */
+  const closeDeleteModal = () => {
+    if (isDeleteProcessing) return;
+    setDeleteModal(false);
+    setAttachmentToDelete(null);
+  };
 
   const handleDeleteAttachment = async () => {
     if (!attachmentToDelete) return;
 
     const attachment = attachments.find(a => a.id === attachmentToDelete);
-
     if (!attachment) return;
 
-    setIsDeleteProcessing(true);
-
-    if (attachment.isExisting && attachment.docuRefRecId) {
-      setProcessingAction(`delete_${attachmentToDelete}`);
-      try {
-        const result = await DeleteReceipts({
-          docuRefRecIds: [attachment.docuRefRecId],
-        });
-
-        if (result.success) {
-          setAttachments(prev => prev.filter(a => a.id !== attachmentToDelete));
-          setAlertMessage('Attachment deleted successfully');
-          setAlertModal(true);
-        } else {
-          setAlertMessage('Failed to delete attachment');
-          setAlertModal(true);
-        }
-      } catch (error) {
-        console.error('Error deleting attachment:', error);
-        setAlertMessage(error.message || 'Failed to delete attachment');
-        setAlertModal(true);
-      } finally {
-        setIsDeleteProcessing(false);
-        setDeleteModal(false);
-        setProcessingAction(null);
-        setAttachmentToDelete(null);
-      }
-    } else {
+    // Locally-added (not yet uploaded) — no API call needed, just remove
+    if (attachment.isNew) {
       setAttachments(prev => prev.filter(a => a.id !== attachmentToDelete));
+      setDeleteModal(false);
+      setAttachmentToDelete(null);
+      return;
+    }
+
+    if (!attachment.docuRefRecId) return;
+
+    // Show spinner on the confirm button and disable cancel
+    setIsDeleteProcessing(true);
+    setProcessingAction(`delete_${attachmentToDelete}`);
+
+    try {
+      const result = await DeleteReceipts({
+        docuRefRecIds: [attachment.docuRefRecId],
+      });
+
+      if (result.success) {
+        setAttachments(prev => prev.filter(a => a.id !== attachmentToDelete));
+        setAlertMessage('Attachment deleted successfully');
+      } else {
+        setAlertMessage('Failed to delete attachment');
+      }
+      setAlertModal(true);
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+      setAlertMessage(error.message || 'Failed to delete attachment');
+      setAlertModal(true);
+    } finally {
+      // Always reset in correct order: flags first, then close modal
       setIsDeleteProcessing(false);
+      setProcessingAction(null);
       setDeleteModal(false);
       setAttachmentToDelete(null);
     }
@@ -330,11 +306,13 @@ const DynamicAttachmentModal = ({
   const removeAttachment = attachmentId => {
     const attachment = attachments.find(a => a.id === attachmentId);
 
-    if (attachment && attachment.isNew) {
+    // New attachments: skip confirm modal, remove instantly
+    if (attachment?.isNew) {
       setAttachments(prev => prev.filter(a => a.id !== attachmentId));
       return;
     }
 
+    // Existing attachments: show confirm modal
     setAttachmentToDelete(attachmentId);
     setDeleteModal(true);
   };
@@ -354,20 +332,16 @@ const DynamicAttachmentModal = ({
       });
 
       if (result.success && result.base64) {
-        let cleanBase64 = result.base64.trim();
-
-        if (cleanBase64.includes('<')) {
-          cleanBase64 = cleanBase64.replace(/<[^>]*>/g, '');
-        }
-
-        cleanBase64 = cleanBase64.replace(/\s/g, '');
+        let cleanBase64 = result.base64
+          .trim()
+          .replace(/<[^>]*>/g, '')
+          .replace(/\s/g, '');
 
         if (cleanBase64.length % 4 !== 0) {
-          cleanBase64 = cleanBase64 + '='.repeat(4 - (cleanBase64.length % 4));
+          cleanBase64 += '='.repeat(4 - (cleanBase64.length % 4));
         }
 
         let fileName = result.fileName || attachment.name;
-
         if (!fileName.includes('.')) {
           const serverType = result.fileType || attachment.type;
           const extension =
@@ -375,32 +349,39 @@ const DynamicAttachmentModal = ({
           fileName = `${fileName}.${extension}`;
         }
 
-        const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+        // Use CachesDirectoryPath — always writable on all Android versions
+        const filePath = `${RNFS.CachesDirectoryPath}/${fileName}`;
         await RNFS.writeFile(filePath, cleanBase64, 'base64');
 
         const fileExists = await RNFS.exists(filePath);
         const fileInfo = await RNFS.stat(filePath);
 
         if (fileExists && fileInfo.size > 0) {
+          // Copy from cache to Downloads using MediaStore (Android 10+ compatible)
+          if (Platform.OS === 'android') {
+            await RNFS.copyFile(
+              filePath,
+              `${RNFS.DownloadDirectoryPath}/${fileName}`,
+            ).catch(async () => {
+              // If copy fails on Android 10+, just notify with cache path
+              notificationService.showReceiptDownloadNotification(
+                fileName,
+                filePath,
+              );
+            });
+          }
           notificationService.showReceiptDownloadNotification(
             fileName,
             filePath,
           );
           setAlertMessage(`Attachment downloaded successfully: ${fileName}`);
-          setAlertModal(true);
         } else {
           setAlertMessage('File was created but appears to be empty');
-          setAlertModal(true);
         }
+        setAlertModal(true);
       } else {
-        let errorMsg =
+        const errorMsg =
           result.message || 'No attachment content received from server';
-        if (result.debugInfo) {
-          errorMsg += `\n\nDebug Info:\n`;
-          errorMsg += `Response Length: ${result.debugInfo.responseLength}\n`;
-          errorMsg += `Has Buffer Tag: ${result.debugInfo.hasBuffer}\n`;
-          errorMsg += `Has Base64 Pattern: ${result.debugInfo.hasBase64Pattern}`;
-        }
         notificationService.showErrorNotification(errorMsg);
         setAlertMessage(errorMsg);
         setAlertModal(true);
@@ -431,53 +412,35 @@ const DynamicAttachmentModal = ({
     try {
       for (const attachment of newAttachments) {
         let fileExt = getFileExtension(attachment.name);
-        if (!fileExt) {
-          if (attachment.type) {
-            const mimeParts = attachment.type.split('/');
-            if (mimeParts.length > 1) {
-              fileExt = '.' + mimeParts[1];
-            }
-          }
+        if (!fileExt && attachment.type) {
+          fileExt = attachment.type.split('/')[1] || '';
         }
+        if (fileExt && !fileExt.startsWith('.')) fileExt = '.' + fileExt;
+        if (!fileExt) fileExt = '.bin';
 
-        if (fileExt && !fileExt.startsWith('.')) {
-          fileExt = '.' + fileExt;
-        }
-
-        if (!fileExt) {
-          fileExt = '.bin';
-        }
-
-        const approaches = [
-          {
-            name: 'base64',
-            fileByteArray: attachment.base64,
-          },
-          {
-            name: 'base64_with_padding',
-            fileByteArray: (() => {
-              let base64 = attachment.base64;
-              while (base64.length % 4 !== 0) {
-                base64 += '=';
-              }
-              return base64;
-            })(),
-          },
+        // Try plain base64 first, then padded fallback
+        const base64Variants = [
+          attachment.base64,
+          (() => {
+            let b = attachment.base64;
+            while (b.length % 4 !== 0) b += '=';
+            return b;
+          })(),
         ];
 
-        let lastError = null;
         let success = false;
+        let lastError = null;
 
-        for (const approach of approaches) {
+        for (const fileByteArray of base64Variants) {
           try {
             const saveResult = await SaveAttachmentByteArray({
               recordRefRecId: recordId,
-              tableName: tableName || 'PREmployeeLeaveRequest',
-              legalEntity: legalEntity,
-              employeeId: employeeId,
+              tableName: tableName,
+              legalEntity,
+              employeeId,
               fileName: attachment.name,
-              fileExt: fileExt,
-              fileByteArray: approach.fileByteArray,
+              fileExt,
+              fileByteArray,
             });
 
             if (saveResult.IsSuccess) {
@@ -486,27 +449,19 @@ const DynamicAttachmentModal = ({
             } else {
               lastError = saveResult.Message;
             }
-          } catch (error) {
-            lastError = error.message;
+          } catch (err) {
+            lastError = err.message;
           }
         }
 
-        if (!success) {
-          throw new Error(lastError || 'Failed to save attachment');
-        }
+        if (!success) throw new Error(lastError || 'Failed to save attachment');
 
-        const attachmentIndex = attachments.findIndex(
-          a => a.id === attachment.id,
+        // Mark as uploaded in local state
+        setAttachments(prev =>
+          prev.map(a =>
+            a.id === attachment.id ? {...a, isExisting: true, isNew: false} : a,
+          ),
         );
-        if (attachmentIndex !== -1) {
-          const updatedAttachments = [...attachments];
-          updatedAttachments[attachmentIndex] = {
-            ...updatedAttachments[attachmentIndex],
-            isExisting: true,
-            isNew: false,
-          };
-          setAttachments(updatedAttachments);
-        }
 
         await new Promise(resolve => setTimeout(resolve, 300));
       }
@@ -517,9 +472,7 @@ const DynamicAttachmentModal = ({
       );
       setAlertModal(true);
 
-      if (onSave) {
-        onSave();
-      }
+      if (onSave) onSave();
 
       setTimeout(async () => {
         await loadExistingAttachments();
@@ -542,9 +495,9 @@ const DynamicAttachmentModal = ({
     if (!value || value === 'N/A') return null;
 
     return (
-      <View key={`${field.key}-${index}`} style={styles.detailRow}>
-        <Text style={styles.detailLabel}>{field.label}:</Text>
-        <Text style={styles.detailValue}>{value}</Text>
+      <View key={`${field.key}-${index}`} style={styles.DAM_detailRow}>
+        <Text style={styles.DAM_detailLabel}>{field.label}:</Text>
+        <Text style={styles.DAM_detailValue}>{value}</Text>
       </View>
     );
   };
@@ -555,23 +508,23 @@ const DynamicAttachmentModal = ({
       animationType="slide"
       transparent
       onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
+      <View style={styles.DAM_modalOverlay}>
+        <View style={styles.DAM_modalContainer}>
           {/* Header */}
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{modalTitle}</Text>
+          <View style={styles.DAM_modalHeader}>
+            <Text style={styles.DAM_modalTitle}>{modalTitle}</Text>
             <TouchableOpacity
               onPress={onClose}
-              style={styles.closeButton}
+              style={styles.DAM_closeButton}
               disabled={isAnyProcessing}>
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={styles.DAM_closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Details Section (Conditional) */}
+          {/* Details Section */}
           {showDetails && detailFields.length > 0 && (
-            <View style={styles.detailsSection}>
-              <Text style={styles.sectionTitle}>Details</Text>
+            <View style={styles.DAM_detailsSection}>
+              <Text style={styles.DAM_sectionTitle}>Details</Text>
               {detailFields.map((field, index) =>
                 renderDetailRow(field, index),
               )}
@@ -580,32 +533,31 @@ const DynamicAttachmentModal = ({
 
           {/* Add Attachment Buttons */}
           {(showTakePhoto || showChooseFile) && (
-            <View style={styles.buttonSection}>
-              <Text style={styles.sectionTitle}>Add Attachment</Text>
-              <View style={styles.addButtonContainer}>
+            <View style={styles.DAM_buttonSection}>
+              <Text style={styles.DAM_sectionTitle}>Add Attachment</Text>
+              <View style={styles.DAM_addButtonContainer}>
                 {showTakePhoto && (
                   <TouchableOpacity
                     style={[
-                      styles.addButton,
-                      isAnyProcessing && styles.disabledButton,
+                      styles.DAM_addButton,
+                      isAnyProcessing && styles.DAM_disabledButton,
                       !showChooseFile && {flex: 1},
                     ]}
                     onPress={takePhoto}
                     disabled={isAnyProcessing}>
-                    <Text style={styles.addButtonText}>📸 Take Photo</Text>
+                    <Text style={styles.DAM_addButtonText}>📸 Take Photo</Text>
                   </TouchableOpacity>
                 )}
-
                 {showChooseFile && (
                   <TouchableOpacity
                     style={[
-                      styles.addButton,
-                      isAnyProcessing && styles.disabledButton,
+                      styles.DAM_addButton,
+                      isAnyProcessing && styles.DAM_disabledButton,
                       !showTakePhoto && {flex: 1},
                     ]}
                     onPress={pickDocument}
                     disabled={isAnyProcessing}>
-                    <Text style={styles.addButtonText}>📁 Choose File</Text>
+                    <Text style={styles.DAM_addButtonText}>📁 Choose File</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -613,46 +565,68 @@ const DynamicAttachmentModal = ({
           )}
 
           {/* Attachments List */}
-          <View style={styles.attachmentsSection}>
-            <Text style={styles.sectionTitle}>
-              Attachments ({attachments.length})
-            </Text>
+          <View style={styles.DAM_attachmentsSection}>
+            {/* Section header row with title + refresh button */}
+            <View style={styles.DAM_attachmentsSectionHeader}>
+              <Text style={styles.DAM_sectionTitle}>
+                Attachments ({attachments.length})
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.DAM_refreshButton,
+                  (isRefreshing || isLoading || isAnyProcessing) &&
+                    styles.DAM_refreshButtonDisabled,
+                ]}
+                onPress={handleRefresh}
+                disabled={isRefreshing || isLoading || isAnyProcessing}>
+                {isRefreshing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <FontAwesome name="refresh" size={iconSize.xs} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
 
             {isLoading ? (
-              <View style={styles.loadingContainer}>
+              <View style={styles.DAM_loadingContainer}>
                 <ActivityIndicator size="large" color="#2563eb" />
-                <Text style={styles.loadingText}>Loading attachments...</Text>
+                <Text style={styles.DAM_loadingText}>
+                  Loading attachments...
+                </Text>
               </View>
             ) : (
               <ScrollView
-                style={styles.attachmentsScrollView}
+                style={styles.DAM_attachmentsScrollView}
                 showsVerticalScrollIndicator={false}>
                 {attachments.length === 0 ? (
-                  <Text style={styles.noAttachmentsText}>
+                  <Text style={styles.DAM_noAttachmentsText}>
                     No attachments added. Add files using the buttons above.
                   </Text>
                 ) : (
                   attachments.map((attachment, index) => (
                     <View
-                      key={attachment.id || `attachment-${index}-${Date.now()}`}
-                      style={styles.attachmentItem}>
-                      <View style={styles.attachmentInfo}>
-                        <Text style={styles.attachmentName} numberOfLines={2}>
+                      key={attachment.id || `attachment-${index}`}
+                      style={styles.DAM_attachmentItem}>
+                      <View style={styles.DAM_attachmentInfo}>
+                        <Text
+                          style={styles.DAM_attachmentName}
+                          numberOfLines={2}>
                           {attachment.name || `Attachment ${index + 1}`}
                         </Text>
                         {attachment.isNew && (
-                          <Text style={styles.newBadge}>New</Text>
+                          <Text style={styles.DAM_newBadge}>New</Text>
                         )}
                         {attachment.isExisting && (
-                          <Text style={styles.existingBadge}>Uploaded</Text>
+                          <Text style={styles.DAM_existingBadge}>Uploaded</Text>
                         )}
                       </View>
-                      <View style={styles.attachmentActions}>
+                      <View style={styles.DAM_attachmentActions}>
                         {showDownload && attachment.isExisting && (
                           <TouchableOpacity
                             style={[
-                              styles.downloadButton,
-                              isAnyProcessing && styles.disabledActionButton,
+                              styles.DAM_downloadButton,
+                              isAnyProcessing &&
+                                styles.DAM_disabledActionButton,
                             ]}
                             onPress={() => downloadAttachment(attachment)}
                             disabled={isAnyProcessing}>
@@ -662,8 +636,8 @@ const DynamicAttachmentModal = ({
                             ) : (
                               <FontAwesome
                                 name="download"
-                                size={16}
-                                color="#ffffffff"
+                                size={iconSize.xs}
+                                color="#fff"
                               />
                             )}
                           </TouchableOpacity>
@@ -671,8 +645,9 @@ const DynamicAttachmentModal = ({
                         {showDelete && (
                           <TouchableOpacity
                             style={[
-                              styles.removeButton,
-                              isAnyProcessing && styles.disabledActionButton,
+                              styles.DAM_removeButton,
+                              isAnyProcessing &&
+                                styles.DAM_disabledActionButton,
                             ]}
                             onPress={() => removeAttachment(attachment.id)}
                             disabled={isAnyProcessing}>
@@ -681,8 +656,8 @@ const DynamicAttachmentModal = ({
                             ) : (
                               <FontAwesome
                                 name="trash"
-                                size={16}
-                                color="#ffffffff"
+                                size={iconSize.xs}
+                                color="#fff"
                               />
                             )}
                           </TouchableOpacity>
@@ -696,28 +671,28 @@ const DynamicAttachmentModal = ({
           </View>
 
           {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
+          <View style={styles.DAM_buttonContainer}>
             <TouchableOpacity
               style={[
-                styles.cancelButton,
-                isAnyProcessing && styles.disabledButton,
+                styles.DAM_cancelButton,
+                isAnyProcessing && styles.DAM_disabledButton,
               ]}
               onPress={onClose}
               disabled={isAnyProcessing}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.DAM_cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.saveButton,
-                isSaveDisabled && styles.saveButtonDisabled,
+                styles.DAM_saveButton,
+                isSaveDisabled && styles.DAM_saveButtonDisabled,
               ]}
               onPress={handleSave}
               disabled={isSaveDisabled}>
               {processingAction === 'save' ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.saveButtonText}>
+                <Text style={styles.DAM_saveButtonText}>
                   Save ({attachments.filter(a => a.isNew).length})
                 </Text>
               )}
@@ -726,7 +701,6 @@ const DynamicAttachmentModal = ({
         </View>
       </View>
 
-      {/* Custom Alert Modals */}
       <AlertModal
         visible={alertModal}
         heading="Attachments"
@@ -739,230 +713,11 @@ const DynamicAttachmentModal = ({
         heading="Confirm Deletion"
         text="Are you sure you want to delete this attachment? This action cannot be undone."
         onPress={handleDeleteAttachment}
-        onClose={() => {
-          if (!isDeleteProcessing) {
-            setDeleteModal(false);
-            setAttachmentToDelete(null);
-          }
-        }}
+        onCancel={closeDeleteModal}
         isProcessing={isDeleteProcessing}
       />
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    height: '85%',
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: -4},
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1e293b',
-    letterSpacing: 0.3,
-  },
-  closeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#f1f5f9',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#475569',
-    fontWeight: '600',
-  },
-  detailsSection: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    width: 100,
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#1e293b',
-    flex: 1,
-    fontWeight: '600',
-  },
-  buttonSection: {
-    marginBottom: 20,
-  },
-  addButtonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  addButton: {
-    flex: 1,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  attachmentsSection: {
-    flex: 1,
-    marginBottom: 20,
-  },
-  attachmentsScrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    color: '#64748b',
-    fontSize: 14,
-  },
-  noAttachmentsText: {
-    textAlign: 'center',
-    color: '#64748b',
-    fontStyle: 'italic',
-    padding: 20,
-  },
-  attachmentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  attachmentInfo: {
-    flex: 1,
-    flexDirection: 'column',
-    marginRight: 12,
-  },
-  attachmentName: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  newBadge: {
-    backgroundColor: '#10b981',
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  existingBadge: {
-    backgroundColor: '#3b82f6',
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  attachmentActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  downloadButton: {
-    backgroundColor: '#0eaa11ff',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 6,
-    minWidth: 30,
-    alignItems: 'center',
-  },
-  removeButton: {
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 6,
-    minWidth: 30,
-    alignItems: 'center',
-  },
-  disabledActionButton: {
-    backgroundColor: '#cbd5e1',
-    opacity: 0.6,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingBottom: 10,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  saveButton: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-  },
-  saveButtonDisabled: {
-    backgroundColor: '#cbd5e1',
-  },
-  disabledButton: {
-    backgroundColor: '#e2e8f0',
-  },
-  cancelButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#475569',
-  },
-  saveButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
-  },
-});
 
 export default DynamicAttachmentModal;

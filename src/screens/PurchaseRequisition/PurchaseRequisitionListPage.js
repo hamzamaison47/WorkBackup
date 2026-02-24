@@ -474,9 +474,10 @@
 // };
 
 // export default PurchaseRequisitionListPage;
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
+
 /* eslint-disable curly */
+/* eslint-disable no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback} from 'react';
 import {
   Text,
@@ -485,7 +486,6 @@ import {
   RefreshControl,
   View,
   ActivityIndicator,
-  Pressable,
   Animated,
 } from 'react-native';
 import {
@@ -500,6 +500,7 @@ import AlertSubmitModal from '../../components/PurchaseRequisition/AlertSubmitMo
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
+import ReceiptDetailsModal from '../../shared/ReceiptDetailsModal';
 import styles from '../../styles/styles';
 
 import {retrievePurchaseRequisitionByMe} from '../../API/PurchaseRequisition/PurchaseRequisitionListPage';
@@ -508,6 +509,7 @@ import {submitPurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseR
 
 import {useSelector} from 'react-redux';
 import {ScrollView} from 'react-native-gesture-handler';
+import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 const PurchaseRequisitionListPage = () => {
   const navigation = useNavigation();
@@ -522,11 +524,10 @@ const PurchaseRequisitionListPage = () => {
     userData: routeUserData,
   } = route.params || {};
 
-  // Get userData from Redux as fallback
   const reduxUserData = useSelector(state => state.user.userData);
+  const {selectedLegalEntity} = useSelector(state => state.company);
   const effectiveUserData = routeUserData || reduxUserData;
 
-  // Use effective user data for all operations
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
@@ -549,7 +550,10 @@ const PurchaseRequisitionListPage = () => {
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Card config — mirrors Expense screen pattern
+  // Attachment modal state
+  const [attachmentModal, setAttachmentModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
   const CARD_CONFIG = {
     headerConfig: {
       title: {key: 'PurchReqId'},
@@ -633,6 +637,19 @@ const PurchaseRequisitionListPage = () => {
       // },
       approval: {
         show: isDraft || isRejected, // only visible when action is possible
+        attachment: {
+          show: true,
+          position: 'header',
+          style: 'icon',
+          icon: 'paperclip',
+          iconSize: 20,
+          iconColor: '#fff',
+          backgroundColor: '#0A66C2',
+          customStyle: {},
+        },
+      },
+      submit: {
+        show: isDraft,
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
@@ -653,6 +670,7 @@ const PurchaseRequisitionListPage = () => {
   const handleButtonPress = (buttonType, item) => {
     if (buttonType === 'edit') handleEditPress(item);
     else if (buttonType === 'delete') handleDeletePress(item);
+    else if (buttonType === 'attachment') handleAttachmentPress(item);
     else if (buttonType === 'submit') handleSubmitRequest(item);
   };
 
@@ -681,6 +699,11 @@ const PurchaseRequisitionListPage = () => {
   const handleDeletePress = item => {
     setItemToDelete(item);
     setDeleteModal(true);
+  };
+
+  const handleAttachmentPress = item => {
+    setSelectedItem(item);
+    setAttachmentModal(true);
   };
 
   const handleCardPress = item => {
@@ -716,6 +739,8 @@ const PurchaseRequisitionListPage = () => {
       setRawData(data); // ← add
       setDisplayData(data); // ← add
 
+      // console.log({data});
+
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
@@ -729,7 +754,6 @@ const PurchaseRequisitionListPage = () => {
     }
   }, [effectiveEmployeeId]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchPurchaseRequisitionData();
@@ -835,7 +859,6 @@ const PurchaseRequisitionListPage = () => {
     return counts;
   };
 
-  // Handle back navigation
   const handleGoBack = () => {
     let targetRoute = 'MainDashboard';
 
@@ -976,7 +999,6 @@ const PurchaseRequisitionListPage = () => {
     });
   };
 
-  // Render purchase requisition card — mirrors Expense screen pattern
   const renderPurchaseRequisitionCard = ({item}) => {
     const processedItem = {
       ...item,
@@ -1083,6 +1105,84 @@ const PurchaseRequisitionListPage = () => {
           )}
         </Animated.View>
       )}
+
+      {/* ReceiptDetailsModal — mirrors DynamicAttachmentModal usage in LeaveRequestListPage */}
+      <DynamicAttachmentModal
+        visible={attachmentModal}
+        recordData={selectedItem}
+        recordIdKey="RecId"
+        tableName="PurchReqTable"
+        onClose={() => {
+          setAttachmentModal(false);
+          setSelectedItem(null);
+        }}
+        onSave={() => {
+          fetchPurchaseRequisitionData();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle={'Purchase Requisition Receipts'}
+        showDetails={true}
+        detailFields={[
+          {key: 'PurchReqId', label: 'Requisition ID'},
+          {key: 'PurchReqName', label: 'Title'},
+          {key: 'RequiredDate', label: 'Required Date'},
+        ]}
+        detailData={selectedItem || {}}
+        showTakePhoto={
+          !selectedItem?.RequisitionStatus ||
+          selectedItem?.RequisitionStatus === 'Draft'
+        }
+        showChooseFile={
+          !selectedItem?.RequisitionStatus ||
+          selectedItem?.RequisitionStatus === 'Draft'
+        }
+        showDownload={true}
+        showDelete={
+          !selectedItem?.RequisitionStatus ||
+          selectedItem?.RequisitionStatus === 'Draft'
+        }
+      />
+      {/* <ReceiptDetailsModal
+        visible={attachmentModal}
+        recordData={selectedItem}
+        recordIdKey="RecId"
+        transactionNumberKey="PurchReqId"
+        tableName="PurchReqTable"
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Purchase Requisition Receipts"
+        onClose={() => {
+          setAttachmentModal(false);
+          setSelectedItem(null);
+        }}
+        onSave={() => {
+          fetchPurchaseRequisitionData();
+        }}
+        showDetails={true}
+        detailFields={[
+          {key: 'PurchReqId', label: 'Requisition ID'},
+          {key: 'PurchReqName', label: 'Title'},
+          {key: 'RequiredDate', label: 'Required Date'},
+        ]}
+        detailData={selectedItem || {}}
+        showTakePhoto={
+          !selectedItem?.RequisitionStatus ||
+          selectedItem?.RequisitionStatus === 'Draft'
+        }
+        showChooseFile={
+          !selectedItem?.RequisitionStatus ||
+          selectedItem?.RequisitionStatus === 'Draft'
+        }
+        showDownload={true}
+        showDelete={
+          !selectedItem?.RequisitionStatus ||
+          selectedItem?.RequisitionStatus === 'Draft'
+        }
+      /> */}
+
       <AlertModal
         visible={alertModal}
         heading="Alert"

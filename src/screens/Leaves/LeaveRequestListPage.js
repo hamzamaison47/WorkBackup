@@ -244,16 +244,52 @@ const LeaveRequestListPage = () => {
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
-      const formatDateOnly = date => {
-        if (!date) return '';
-        const d = new Date(date);
-        return d.toISOString().split('T')[0]; // YYYY-MM-DD
+      const formatValue = (value, fieldType) => {
+        if (value === null || value === undefined) return '—';
+        switch (fieldType) {
+          case 'date': {
+            const d = new Date(value);
+            if (isNaN(d.getTime())) return value;
+            const months = [
+              'Jan',
+              'Feb',
+              'Mar',
+              'Apr',
+              'May',
+              'Jun',
+              'Jul',
+              'Aug',
+              'Sep',
+              'Oct',
+              'Nov',
+              'Dec',
+            ];
+            return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+          }
+          case 'currency': {
+            const num = Number(value);
+            return isNaN(num)
+              ? value
+              : num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          }
+          case 'number': {
+            const n = Number(value);
+            return isNaN(n)
+              ? value
+              : n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+          }
+          case 'status':
+          case 'boolean':
+            return value;
+          default:
+            return String(value) || '—';
+        }
       };
 
       const cleanedItem = {
         ...itemData,
-        LeaveStartDate: formatDateOnly(itemData.LeaveStartDate),
-        LeaveEndDate: formatDateOnly(itemData.LeaveEndDate),
+        LeaveStartDate: formatValue(itemData.LeaveStartDate, 'date'),
+        LeaveEndDate: formatValue(itemData.LeaveEndDate, 'date'),
       };
 
       setSelectedLeaveItem(cleanedItem);
@@ -796,6 +832,7 @@ const LeaveRequestListPage = () => {
       <DynamicAttachmentModal
         visible={attachmentModalVisible}
         recordData={selectedLeaveItem}
+        recordIdKey="RecId"
         tableName="PREmployeeLeaveRequest"
         onClose={() => {
           setAttachmentModalVisible(false);

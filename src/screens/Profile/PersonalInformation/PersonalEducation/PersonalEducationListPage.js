@@ -8,6 +8,7 @@ import {
   RefreshControl,
   BackHandler,
   ScrollView,
+  I18nManager,
   View,
   ActivityIndicator,
 } from 'react-native';
@@ -24,6 +25,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
+import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import {translate as t} from '../../../../store/utils/translate';
 
 // API
@@ -36,15 +38,20 @@ import styles from '../../../../styles/styles';
 
 const PersonalEducation = () => {
   const navigation = useNavigation();
-  const route = useRoute(); // ➜ ADD THIS
+  const route = useRoute();
+  const isRTL = I18nManager.isRTL;
 
-  /* ---------- redux user ---------- */
+  /* ---------- redux ---------- */
   const reduxUserData = useSelector(state => state.user.userData);
+  const {selectedLegalEntity} = useSelector(state => state.company);
   const effectiveUserData = reduxUserData || {};
 
   const effectiveEmployeeId = effectiveUserData?.employeeId;
   const effectiveEmployeeName = effectiveUserData?.employeeName;
   const effectiveWorkerRecId = effectiveUserData?.WorkerRecId;
+
+  const routeParams = route.params || {};
+  const cameFrom = routeParams.cameFrom;
 
   /* ---------- state ---------- */
   const [isLoading, setIsLoading] = useState(false);
@@ -55,10 +62,13 @@ const PersonalEducation = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
-  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  const [isWorkflowEnabled, setIsWorkflowEnabled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-  // const [refreshing, setRefreshing] = useState(false);
+
+  // Attachment modal state
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedEducationItem, setSelectedEducationItem] = useState(null);
 
   /* ---------- fetch ---------- */
   const fetchEducationData = useCallback(async () => {
@@ -68,10 +78,8 @@ const PersonalEducation = () => {
       const data = await EmployeePersonalEducation({
         employeeId: effectiveEmployeeId,
       });
-      console.log('Herer is the data', data);
-      // newest record on top
+      // Newest record on top
       data.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
-      console.log('Education Data : ', data);
       setEducationData(data);
     } catch (error) {
       console.log('Failed to fetch education details:', error);
@@ -82,38 +90,50 @@ const PersonalEducation = () => {
     }
   }, [effectiveEmployeeId]);
 
-  const routeParams = route.params || {};
-  const routeUserData = routeParams.userData;
-  const cameFrom = routeParams.cameFrom;
-  const highlightRecId = routeParams.highlightRecId; // ➜ THE FIX
-
   useFocusEffect(
     useCallback(() => {
       fetchEducationData();
     }, [fetchEducationData]),
   );
 
+  /* ---------- workflow ---------- */
+  const checkWorkflowConfig = useCallback(async () => {
+    try {
+      const res = await isEducationWorkflowConfigured();
+      setIsWorkflowEnabled(res === true || res === 1);
+    } catch (e) {
+      setIsWorkflowEnabled(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkWorkflowConfig();
+    }, [checkWorkflowConfig]),
+  );
+
   /* ---------- highlight ---------- */
-  /* 1.  copy route param into state once  */
+  // Copy route param into state once
   useFocusEffect(
     useCallback(() => {
       const id = route.params?.highlightRecId;
       if (id && id !== highlightedRecId) {
-        setHighlightedRecId(id); // start highlight
-        navigation.setParams({highlightRecId: undefined}); // ← forget it
+        setHighlightedRecId(id);
+        navigation.setParams({highlightRecId: undefined});
       }
     }, [route.params?.highlightRecId, highlightedRecId, navigation]),
   );
 
-  /* 2.  auto-clear highlight after 3 s  */
+  // Auto-clear highlight after 3s
   useFocusEffect(
     useCallback(() => {
       if (!highlightedRecId) return;
-      const t = setTimeout(() => setHighlightedRecId(null), 3000);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setHighlightedRecId(null), 3000);
+      return () => clearTimeout(timer);
     }, [highlightedRecId]),
   );
 
+  /* ---------- back handler ---------- */
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -128,57 +148,18 @@ const PersonalEducation = () => {
     }, [navigation]),
   );
 
-  // Handle back navigation
   const handleGoBack = () => {
     navigation.navigate('DisplayPersonalInfo');
   };
 
-  // Handle refresh
   const handleRefresh = () => {
     fetchEducationData();
-  };
-
-  const checkWorkflowConfig = useCallback(async () => {
-    try {
-      const res = await isEducationWorkflowConfigured();
-      setIsWorkflowConfigured(res === true || res === 1);
-    } catch (e) {
-      setIsWorkflowConfigured(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      checkWorkflowConfig();
-    }, [checkWorkflowConfig]),
-  );
-
-  /* ---------- create ---------- */
-  const handleCreateEducation = () => {
-    navigation.navigate('PersonalEducationSaveRecord', {
-      mode: 'create',
-      employeeId: effectiveEmployeeId,
-      employeeName: effectiveEmployeeName,
-      WorkerRecId: effectiveWorkerRecId,
-      userData: effectiveUserData,
-      cameFrom: 'PersonalEducation',
-      originalCameFrom: 'PersonalEducation',
-      educationData: {
-        Education: '',
-        Description: '',
-        DurationUnit: '',
-        Duration: '',
-        StartDate: '',
-        EndDate: '',
-        Notes: '',
-      },
-    });
   };
 
   /* ---------- status ---------- */
   const getStatusLabel = status => {
     if (!status) return '';
-    const normalizedStatus = status.replace(/\s+/g, '').toLowerCase(); // remove spaces & lowercase
+    const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
 
     const map = {
       draft: 'Draft',
@@ -199,18 +180,18 @@ const PersonalEducation = () => {
       taskcompleted: 'Task Completed',
       noworkflow: '',
     };
-    return map[normalizedStatus] || 'Unknown';
+    // Fix: return '' instead of 'Unknown' for unrecognised statuses
+    return map[normalizedStatus] ?? '';
   };
 
   const getFilteredData = () => {
     if (activeFilter === 'All') return educationData;
 
     return educationData.filter(item => {
-      const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
+      const status = getStatusLabel(item.ApprovalStatus);
 
-      // Special handling for Pending filter
       if (activeFilter === 'Pending') {
-        return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
+        return status.includes('Pending');
       }
 
       return status === activeFilter;
@@ -222,34 +203,31 @@ const PersonalEducation = () => {
 
     ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
       if (pill === 'Pending') {
-        // Count any status that includes "Pending"
-        counts[pill] = educationData.filter(
-          item => getStatusLabel(item.ApprovalStatus).includes('Pending'), // ✅ Use ApprovalStatus
+        counts[pill] = educationData.filter(item =>
+          getStatusLabel(item.ApprovalStatus).includes('Pending'),
         ).length;
       } else {
         counts[pill] = educationData.filter(
-          item => getStatusLabel(item.ApprovalStatus) === pill, // ✅ Use ApprovalStatus
+          item => getStatusLabel(item.ApprovalStatus) === pill,
         ).length;
       }
     });
 
-    console.log('Filter counts:', counts);
     return counts;
   };
 
   /* ---------- buttons ---------- */
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
+  // Fix: rename param to avoid shadowing isProcessing state
+  const setButtonProcessing = (recId, buttonType, isProcessingState) => {
     setProcessingButtons(prev => ({
       ...prev,
-      [recId]: isProcessing
+      [recId]: isProcessingState
         ? [...(prev[recId] || []), buttonType]
         : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
   };
 
   const getButtonConfig = item => {
-    // console.log(item.ApprovalStatus);
-    // console.log(getStatusLabel(item.ApprovalStatus));
     const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
     const isCancelled =
       getStatusLabel(item.ApprovalStatus) === 'Cancelled' ||
@@ -257,6 +235,7 @@ const PersonalEducation = () => {
     const canDelete = isDraft || isCancelled;
     const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
     const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
+
     return {
       edit: {
         show: true,
@@ -283,16 +262,17 @@ const PersonalEducation = () => {
         disabled: !canDelete,
         customStyle: !canDelete ? {backgroundColor: '#BDBDBD'} : {},
       },
-      // submit: {
-      //   show: isWorkflowConfigured && isDraft,
-      //   position: 'bottom',
-      //   style: 'text',
-      //   icon: 'send',
-      //   iconSize: 16,
-      //   text: 'Submit',
-      //   textColor: '#0A66C2',
-      //   iconColor: '#0A66C2',
-      // },
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
+        icon: 'paperclip',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: false,
+        customStyle: {},
+      },
       approval: {
         show: isDraft || isRejected,
         position: 'bottom',
@@ -334,21 +314,44 @@ const PersonalEducation = () => {
       case 'submit':
         handleSubmitPress(itemData);
         break;
+      case 'attachment':
+        handleReceiptAttachmentPress(itemData);
+        break;
       default:
         console.log('Unknown button type:', buttonType);
     }
   };
 
+  /* ---------- create ---------- */
+  const handleCreateEducation = () => {
+    navigation.navigate('PersonalEducationSaveRecord', {
+      mode: 'create',
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: effectiveUserData,
+      cameFrom: 'PersonalEducation',
+      originalCameFrom: 'PersonalEducation',
+      educationData: {
+        Education: '',
+        Description: '',
+        DurationUnit: '',
+        Duration: '',
+        StartDate: '',
+        EndDate: '',
+        Notes: '',
+      },
+    });
+  };
+
   /* ---------- delete ---------- */
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
     setDeleteModal(false);
 
-    // Small delay to ensure modal is closed before showing processing overlay
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
+      setIsProcessing(true);
       setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
@@ -357,6 +360,7 @@ const PersonalEducation = () => {
         });
         if (response[0]?.IsSuccess) {
           setAlertMessage('Record deleted successfully.');
+          // Fix: filter using RecId (uppercase) consistently
           setEducationData(prev =>
             prev.filter(ed => ed.RecId !== itemToDelete.RecId),
           );
@@ -367,49 +371,21 @@ const PersonalEducation = () => {
         console.error('DeleteEducationDetails error:', error);
         setAlertMessage('Failed to delete record');
       } finally {
-        setIsProcessing(false); // Hide processing overlay
+        setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
 
-        // Optional: refresh after short delay so user sees success message first
         setTimeout(() => {
           fetchEducationData();
         }, 800);
       }
-    }, 100); // Small delay to ensure modal closes first
+    }, 100);
   };
 
   /* ---------- submit ---------- */
-  // const handleSubmitPress = async itemData => {
-  //   // setButtonProcessing(itemData.RecId, 'submit', true);
-
-  //   setTimeout(async () => {
-  //     setIsProcessing(true); // Show processing overlay
-  //     setButtonProcessing(itemData.RecId, 'submit', true);
-  //     try {
-  //       const response = await SubmitEducationRequest({recId: itemData.RecId});
-  //       const res = Array.isArray(response) ? response[0] : response;
-  //       if (String(res?.IsSuccess).toLowerCase() === 'true') {
-  //         setAlertMessage('Request submitted successfully.');
-  //         setHighlightedRecId(itemData.RecId);
-  //         setTimeout(() => setHighlightedRecId(null), 3000);
-  //         setTimeout(() => fetchEducationData(), 1000);
-  //       } else {
-  //         setAlertMessage(res?.Message || 'Failed to submit request.');
-  //       }
-  //     } catch (error) {
-  //       console.error('Submit error:', error);
-  //       setAlertMessage('Failed to submit request.');
-  //     } finally {
-  //       setIsProcessing(false); // Hide processing overlay
-  //       setButtonProcessing(itemData.recId, 'submit', false);
-  //     }
-  //   }, 100); // Same delay pattern
-  // };
-
   const handleSubmitPress = async itemData => {
-    setIsProcessing(true); // Show processing overlay
+    setIsProcessing(true);
     setButtonProcessing(itemData.RecId, 'submit', true);
 
     try {
@@ -423,6 +399,7 @@ const PersonalEducation = () => {
         setAlertMessage('Request submitted successfully.');
         setAlertModal(true);
 
+        // Fix: use RecId (uppercase) consistently
         setHighlightedRecId(itemData.RecId);
 
         setTimeout(() => setHighlightedRecId(null), 3000);
@@ -436,8 +413,20 @@ const PersonalEducation = () => {
       setAlertMessage('Failed to submit request.');
       setAlertModal(true);
     } finally {
-      setIsProcessing(false); // Hide processing overlay
+      setIsProcessing(false);
+      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemData.RecId, 'submit', false);
+    }
+  };
+
+  /* ---------- attachment ---------- */
+  const handleReceiptAttachmentPress = async itemData => {
+    try {
+      setSelectedEducationItem(itemData);
+      setAttachmentModalVisible(true);
+    } catch (error) {
+      setAlertMessage('Failed to open attachments');
+      setAlertModal(true);
     }
   };
 
@@ -445,7 +434,6 @@ const PersonalEducation = () => {
   const cardConfig = {
     headerConfig: {title: {key: 'EducationDisciplineId', label: 'Education'}},
     fields: [
-      // {key: 'EducationDisciplineId', label: 'Education', type: 'text'},
       {key: 'Description', label: 'Description', type: 'text'},
       {key: 'DurationUnit', label: 'Duration Unit', type: 'text'},
       {key: 'Duration', label: 'Duration', type: 'number'},
@@ -455,8 +443,8 @@ const PersonalEducation = () => {
       {key: 'StartDate', label: 'Start Date', type: 'date'},
       {key: 'EndDate', label: 'End Date', type: 'date'},
       {key: 'Notes', label: 'Notes', type: 'text'},
-      // {key: 'WorkflowOperation', label: 'Workflow Operation', type: 'text'},
     ],
+    isRTL: isRTL,
   };
 
   const renderEducationCard = ({item}) => {
@@ -474,6 +462,7 @@ const PersonalEducation = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         isHighlighted={highlightedRecId === item.RecId}
         processingButtons={processingButtons[item.RecId] || []}
+        isRTL={isRTL}
       />
     );
   };
@@ -483,12 +472,12 @@ const PersonalEducation = () => {
       pageTitle="Education Details"
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={isWorkflowConfigured}
+      showFloatingButton={isWorkflowEnabled}
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateEducation}
       onBackPress={handleGoBack}
-      onRefresh={fetchEducationData}
+      onRefresh={handleRefresh}
       showFilterPills={true}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
@@ -532,6 +521,44 @@ const PersonalEducation = () => {
           </Text>
         </ScrollView>
       )}
+
+      {/* Attachment Modal */}
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedEducationItem}
+        recordIdKey="RecId"
+        tableName="EssPersonEducation"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedEducationItem(null);
+        }}
+        onSave={() => {
+          fetchEducationData();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Education Attachments"
+        showDetails={true}
+        detailFields={[
+          {key: 'EducationDisciplineId', label: 'Education'},
+          {key: 'Description', label: 'Description'},
+        ]}
+        detailData={selectedEducationItem || {}}
+        showTakePhoto={
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'Draft' ||
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === ''
+        }
+        showChooseFile={
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'Draft' ||
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === ''
+        }
+        showDownload={true}
+        showDelete={
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'Draft' ||
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === ''
+        }
+      />
 
       <AlertModal
         visible={alertModal}
