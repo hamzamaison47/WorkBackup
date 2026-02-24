@@ -20,7 +20,6 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import LogoutAlertModal from '../../components/Alert/LogoutAlertModal';
 import LanguageModal from '../../components/Alert/LanguageModal';
-import TranslatableText from '../../shared/TranslatableText';
 import ProfilePictureEditor from '../../components/PersonalInformation/ProfilePictureEditor';
 
 // API imports
@@ -215,27 +214,6 @@ const Profile = ({navigation}) => {
               <View style={styles.Profile_card}>
                 {settingsItems.map(renderSettingItem)}
               </View>
-
-              {/* SignOut Button */}
-              {/* <TouchableOpacity
-                style={styles.Profile_signOutButton}
-                onPress={handleLogout}>
-                <TranslatableText
-                  translationKey="profile.logout"
-                  style={styles.Profile_signOutText}
-                />
-              </TouchableOpacity> */}
-
-              {/* Version Info */}
-              {/* <View style={styles.Profile_versionContainer}>
-                <TranslatableText
-                  translationKey="profile.version"
-                  style={styles.Profile_versionText}
-                />
-                <Text style={styles.Profile_versionText}>
-                  {getPoweredByText()}
-                </Text>
-              </View> */}
             </KeyboardAvoidingView>
           </ScrollView>
         </View>

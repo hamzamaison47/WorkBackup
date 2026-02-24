@@ -63,6 +63,10 @@ const ExpenseManagmentListPage = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Card config
   const CARD_CONFIG = {
@@ -131,6 +135,8 @@ const ExpenseManagmentListPage = () => {
         legalEntity: selectedLegalEntity,
       });
 
+      console.log('here is the data', myExpenseHeaderData);
+
       const sortedData = (myExpenseHeaderData || []).sort((a, b) => {
         const dateA = new Date(a.createdDateTime || a.CreatedDate || 0);
         const dateB = new Date(b.createdDateTime || b.CreatedDate || 0);
@@ -138,6 +144,8 @@ const ExpenseManagmentListPage = () => {
       });
 
       setExpenseData(sortedData);
+      setRawData(sortedData); // ← here
+      setDisplayData(sortedData); // ← here
 
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -195,11 +203,21 @@ const ExpenseManagmentListPage = () => {
     });
   };
 
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return expenseData;
+  //   return expenseData.filter(
+  //     item => getStatusLabel(item.WFStatus) === activeFilter,
+  //   );
+  // };
+
   const getFilteredData = () => {
-    if (activeFilter === 'All') return expenseData;
-    return expenseData.filter(
-      item => getStatusLabel(item.WFStatus) === activeFilter,
-    );
+    const base = displayData;
+    if (activeFilter === 'All') return base;
+    return base.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+      if (activeFilter === 'Pending') return status.includes('Pending');
+      return status === activeFilter;
+    });
   };
 
   const getFilterCounts = () => {
@@ -434,6 +452,47 @@ const ExpenseManagmentListPage = () => {
     fetchExpenseData();
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   // Render expense card
   const renderExpenseCard = ({item}) => {
     const itemRecId = normalizeRecId(item);
@@ -489,7 +548,12 @@ const ExpenseManagmentListPage = () => {
       showFilterPills={true}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}>
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -534,10 +598,24 @@ const ExpenseManagmentListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              <Text style={styles.DLP_NoDataText}>Get started</Text>
-              <Text style={styles.DLP_NoDataSubText}>
-                Tap + to add a new record
-              </Text>
+              {/* Show different messages based on filter and data availability */}
+              {rawData.length === 0 && activeFilter === 'All' ? (
+                // No data at all AND "All" filter is active - show "Get started" message
+                <>
+                  <Text style={styles.DLP_NoDataText}>Get started</Text>
+                  <Text style={styles.DLP_NoDataSubText}>
+                    Tap + to add a new record
+                  </Text>
+                </>
+              ) : (
+                // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
+                // Show filter-specific message
+                <>
+                  <Text style={styles.DLP_NoDataText}>
+                    {`${activeFilter} record not found.`}
+                  </Text>
+                </>
+              )}
             </ScrollView>
           )}
         </Animated.View>

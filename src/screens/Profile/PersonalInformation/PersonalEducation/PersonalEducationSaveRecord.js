@@ -293,8 +293,8 @@ const PersonalEducationSaveRecord = () => {
     if (!formData.Description.trim()) missing.push('Description');
     if (!formData.DurationUnit) missing.push('Duration Unit');
     if (!formData.Duration) missing.push('Duration');
-    if (!formData.StartDate) missing.push('Start Date');
-    if (!formData.EndDate) missing.push('End Date');
+    // if (!formData.StartDate) missing.push('Start Date');
+    // if (!formData.EndDate) missing.push('End Date');
     if (missing.length) {
       setAlertMessage(
         'Please fill in the following required fields:\n' + missing.join('\n'),
@@ -509,7 +509,7 @@ const PersonalEducationSaveRecord = () => {
               keyboardType="numeric"
             />
 
-            <Text style={styles.DSR_Label}>Start Date *</Text>
+            <Text style={styles.DSR_Label}>Start Date</Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => setShowStartDateCalendar(true)}>
@@ -523,7 +523,7 @@ const PersonalEducationSaveRecord = () => {
               <Icon name="calendar" size={20} color="#0A66C2" />
             </TouchableOpacity>
 
-            <Text style={styles.DSR_Label}>End Date *</Text>
+            <Text style={styles.DSR_Label}>End Date</Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => setShowEndDateCalendar(true)}>

@@ -679,7 +679,8 @@ const ExpenseManagmentLinesSaveRecord = () => {
       isHeaderActive={true}
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
-      onRefresh={handleRefresh}>
+      onRefresh={handleRefresh}
+      showPageTitleRow={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : (

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
@@ -24,13 +23,12 @@ import {DeleteExpenseLines} from '../../../API/ExpenseManagment/Lines/DeleteExpe
 import {GetAllExpenseReports} from '../../../API/ExpenseManagment/Headers/GetAllExpenseReports';
 
 import AlertModal from '../../../components/Alert/AlertModal';
-import DynamicRequestCard, {
-  BUTTON_TYPES,
-} from '../../../components/DynamicRequestCard';
+import DynamicRequestCard from '../../../components/DynamicRequestCard';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
-import ReceiptDetailsModal from '../../../components/ExpenseManagment/ReceiptDetailsModal';
+import ReceiptDetailsModal from '../../../shared/ReceiptDetailsModal';
+
 import styles from '../../../styles/styles';
 
 const ExpenseManagmentLinesListPage = () => {
@@ -52,9 +50,6 @@ const ExpenseManagmentLinesListPage = () => {
 
   const reduxUserData = useSelector(state => state.user.userData);
   const {selectedLegalEntity} = useSelector(state => state.company);
-  const {menuItems} = useSelector(state => state.menuItem);
-
-  // console.log(menuItems);
 
   const effectiveUserData = routeUserData || reduxUserData;
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
@@ -79,6 +74,10 @@ const ExpenseManagmentLinesListPage = () => {
 
   const [receiptModal, setReceiptModal] = useState(false);
   const [selectedExpenseLine, setSelectedExpenseLine] = useState(null);
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const CARD_CONFIG = {
     headerConfig: {
@@ -200,6 +199,8 @@ const ExpenseManagmentLinesListPage = () => {
       });
 
       setExpenseLinesData(sortedExpenseLines);
+      setRawData(sortedExpenseLines); // ✅ set raw data
+      setDisplayData(sortedExpenseLines);
 
       const myExpenseHeaderData = await GetAllExpenseReports({
         employeeId: effectiveEmployeeId,
@@ -219,10 +220,6 @@ const ExpenseManagmentLinesListPage = () => {
         duration: 300,
         useNativeDriver: true,
       }).start();
-
-      if (!sortedExpenseLines || sortedExpenseLines.length === 0) {
-        console.log(`No expense lines found for report ${expenseReportNumber}`);
-      }
     } catch (error) {
       console.error('Failed to fetch Expense Lines data:', error);
       setAlertMessage('Failed to fetch data');
@@ -363,10 +360,8 @@ const ExpenseManagmentLinesListPage = () => {
 
     const extractNumericValue = currencyString => {
       if (!currencyString) return '0';
-
       const numericString = currencyString.replace(/[^\d.-]/g, '');
       const numericValue = parseFloat(numericString);
-
       return isNaN(numericValue) ? '0' : numericValue.toString();
     };
 
@@ -467,17 +462,51 @@ const ExpenseManagmentLinesListPage = () => {
     setSelectedExpenseLine(null);
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderExpenseLineCard = ({item, index}) => {
     const itemRecId = normalizeRecId(item);
     const itemProcessingButtons = processingButtons[itemRecId] || [];
-
     const buttonConfig = getButtonConfig(item);
-
-    // DELETE THESE LINES:
-    // const headerButtons = [];
-    // if (buttonConfig.edit?.show) headerButtons.push(BUTTON_TYPES.EDIT);
-    // if (buttonConfig.delete?.show) headerButtons.push(BUTTON_TYPES.DELETE);
-    // if (buttonConfig.attachment?.show) headerButtons.push(BUTTON_TYPES.ATTACHMENT);
 
     const processedItem = {
       ...item,
@@ -549,7 +578,12 @@ const ExpenseManagmentLinesListPage = () => {
       isHeaderActive
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleCreateExpense}>
+      onFloatingButtonPress={handleCreateExpense}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isLoading && <CustomIndicator />}
 
       {!isLoading && (
@@ -601,13 +635,36 @@ const ExpenseManagmentLinesListPage = () => {
         </Animated.View>
       )}
 
+      {/* ReceiptDetailsModal — mirrors DynamicAttachmentModal usage in LeaveRequestListPage */}
       <ReceiptDetailsModal
         visible={receiptModal}
-        expenseLine={selectedExpenseLine}
+        recordData={selectedExpenseLine}
+        recordIdKey="recId"
+        transactionNumberKey="ExpenseTransactionNumber"
+        tableName="TrvExpTrans"
         legalEntity={effectiveLegalEntity}
         employeeId={effectiveEmployeeId}
-        onCancel={handleReceiptModalClose}
-        onSave={handleReceiptsSaved}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Expense Line Receipts"
+        onClose={() => {
+          setReceiptModal(false);
+          setSelectedExpenseLine(null);
+        }}
+        onSave={() => {
+          fetchExpenseLinesData();
+        }}
+        showDetails={true}
+        detailFields={[
+          {key: 'ExpenseType', label: 'Expense Type'},
+          {key: 'AmountCurr', label: 'Amount'},
+          {key: 'TransDate', label: 'Date'},
+          {key: 'Description', label: 'Description'},
+        ]}
+        detailData={selectedExpenseLine || {}}
+        showTakePhoto={selectedExpenseLine?.ApprovalStatus === 'Draft'}
+        showChooseFile={selectedExpenseLine?.ApprovalStatus === 'Draft'}
+        showDownload={true}
+        showDelete={selectedExpenseLine?.ApprovalStatus === 'Draft'}
       />
 
       <AlertModal

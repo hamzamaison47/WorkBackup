@@ -210,7 +210,9 @@ const EntitlementBalance = () => {
       showFloatingButton={false}
       isHeaderActive
       onBackPress={handleGoBack}
-      onRefresh={handleRefresh}>
+      onRefresh={handleRefresh}
+      showPageTitleRow={true}
+      showSearchBar={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : allEntitlementData.length > 0 ? (

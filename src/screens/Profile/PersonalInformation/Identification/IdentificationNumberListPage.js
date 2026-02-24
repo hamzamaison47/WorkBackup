@@ -1,5 +1,4 @@
 /* eslint-disable curly */
-/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback} from 'react';
 import {
@@ -7,6 +6,8 @@ import {
   FlatList,
   BackHandler,
   RefreshControl,
+  ScrollView,
+  I18nManager,
   View,
   ActivityIndicator,
 } from 'react-native';
@@ -24,19 +25,22 @@ import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identif
 import {canEnableEditButton} from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
 import {translate as t} from '../../../../store/utils/translate';
 
-import IdentificationRequestCard from '../../../../components/IdentificationRequestCard';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import AlertModal from '../../../../components/Alert/AlertModal';
-import styles from '../../../../styles/styles';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
-import {ScrollView} from 'react-native-gesture-handler';
-import {itemModifiedforPurchaseRequisitionLines} from '../../../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesItemModified';
+import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
+import styles from '../../../../styles/styles';
+
+// D365 boundary dates — defined at module level, not inside render
+const D365_MAX_DATE = '2154-12-31T12:00:00';
+const D365_MIN_DATE = '1900-01-01T12:00:00';
 
 const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const isRTL = I18nManager.isRTL;
 
   const {
     employeeId,
@@ -48,8 +52,9 @@ const IdentificationNumberListPage = () => {
   } = route.params || {};
 
   const reduxUserData = useSelector(state => state.user.userData);
-  const effectiveUserData = routeUserData || reduxUserData;
+  const {selectedLegalEntity} = useSelector(state => state.company);
 
+  const effectiveUserData = routeUserData || reduxUserData;
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
@@ -63,10 +68,13 @@ const IdentificationNumberListPage = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [editEnabled, setEditEnabled] = useState(true);
+
+  // Attachment modal state
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedIdentityItem, setSelectedIdentityItem] = useState(null);
+
   // Fetch Identification Data
   const fetchIdentifications = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -76,7 +84,8 @@ const IdentificationNumberListPage = () => {
       const data = await IdentificationFindRequest({
         employeeId: effectiveEmployeeId,
       });
-      // ✅ Sort newest record on top
+
+      // Sort newest record on top
       data.sort(
         (a, b) =>
           new Date(b.CreatedDateTime).getTime() -
@@ -108,23 +117,6 @@ const IdentificationNumberListPage = () => {
     }
   }, [effectiveEmployeeId]);
 
-  // const checkEditButton = async (recId, recVersion) => {
-  //   try {
-  //     const enabled = await canEnableEditButton(recId, recVersion);
-  //     setEditButtonEnabledMap(prev => ({
-  //       ...prev,
-  //       [recId]: enabled,
-  //     }));
-  //   } catch (error) {
-  //     console.error('Failed to check Edit permission:', error);
-  //     setEditButtonEnabledMap(prev => ({
-  //       ...prev,
-  //       [recId]: false, // disable on error
-  //     }));
-  //   }
-  // };
-
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchIdentifications();
@@ -141,7 +133,6 @@ const IdentificationNumberListPage = () => {
     }, []),
   );
 
-  // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
       if (highlightRecId) {
@@ -171,78 +162,18 @@ const IdentificationNumberListPage = () => {
     }, [navigation]),
   );
 
-  // Handle back navigation
   const handleGoBack = () => {
     navigation.navigate('DisplayPersonalInfo');
   };
 
-  // Refresh handler
+  // Consistent refresh handler used everywhere
   const handleRefresh = () => {
     fetchIdentifications();
   };
 
-  const getFilteredData = () => {
-    if (activeFilter === 'All') return identificationsData;
-
-    return identificationsData.filter(item => {
-      const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
-
-      // Special handling for Pending filter
-      if (activeFilter === 'Pending') {
-        // Include any status that contains "Pending" OR is "IN REVIEW"
-        return status.includes('Pending') || status === 'IN REVIEW';
-      }
-
-      return status === activeFilter;
-    });
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: identificationsData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        // Count any status that includes "Pending" - using ApprovalStatus
-        counts[pill] = identificationsData.filter(item => {
-          const status = getStatusLabel(item.ApprovalStatus); // ✅ Use ApprovalStatus
-          return status.includes('Pending') || status === 'IN REVIEW';
-        }).length;
-      } else {
-        counts[pill] = identificationsData.filter(
-          item => getStatusLabel(item.ApprovalStatus) === pill, // ✅ Use ApprovalStatus
-        ).length;
-      }
-    });
-
-    console.log('Filter counts:', counts);
-    return counts;
-  };
-
-  // Card Configuration
-  const cardConfig = {
-    headerConfig: {
-      title: {key: 'IdentificationTypeId'},
-      subtitle: {key: 'IdentificationNumber'},
-    },
-    fields: [
-      {
-        key: 'IssuedDate',
-        label: identificationsData[0]?.IssuedDatelbl || 'Issued Date',
-        type: 'date',
-      },
-      {
-        key: 'ExpirationDate',
-        label: identificationsData[0]?.ExpirationDatelbl || 'Expiration Date',
-        type: 'date',
-      },
-      //   {key: 'IssuingCountry', label: 'Issuing Agency', type: 'text'},
-      {key: 'ApprovalStatus', label: '', type: 'status'},
-    ],
-    expandableFields: [],
-  };
   const getStatusLabel = status => {
     if (!status) return '';
-    const normalizedStatus = status.replace(/\s+/g, '').toLowerCase(); // remove spaces & lowercase
+    const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
 
     const statusMap = {
       draft: 'Draft',
@@ -267,6 +198,133 @@ const IdentificationNumberListPage = () => {
     return statusMap[normalizedStatus] ?? '';
   };
 
+  const getFilteredData = () => {
+    if (activeFilter === 'All') return identificationsData;
+
+    return identificationsData.filter(item => {
+      const status = getStatusLabel(item.ApprovalStatus);
+
+      if (activeFilter === 'Pending') {
+        return status.includes('Pending') || status === 'IN REVIEW';
+      }
+
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: identificationsData.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        counts[pill] = identificationsData.filter(item => {
+          const status = getStatusLabel(item.ApprovalStatus);
+          return status.includes('Pending') || status === 'IN REVIEW';
+        }).length;
+      } else {
+        counts[pill] = identificationsData.filter(
+          item => getStatusLabel(item.ApprovalStatus) === pill,
+        ).length;
+      }
+    });
+
+    return counts;
+  };
+
+  // Card Configuration
+  const cardConfig = {
+    headerConfig: {
+      title: {key: 'IdentificationTypeId'},
+      subtitle: {key: 'IdentificationNumber'},
+    },
+    fields: [
+      {
+        key: 'IssuedDate',
+        label: identificationsData[0]?.IssuedDatelbl || 'Issued Date',
+        type: 'date',
+      },
+      {
+        key: 'ExpirationDate',
+        label: identificationsData[0]?.ExpirationDatelbl || 'Expiration Date',
+        type: 'date',
+      },
+      {key: 'ApprovalStatus', label: '', type: 'status'},
+    ],
+    expandableFields: [],
+    isRTL: isRTL,
+  };
+
+  const getButtonConfig = item => {
+    const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
+    const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
+    const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
+    const isCancelled = getStatusLabel(item.ApprovalStatus) === 'Cancelled';
+
+    return {
+      edit: {
+        show: workflowEnabled,
+        position: 'header',
+        style: 'icon',
+        icon: 'edit',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: isHCMRecord ? !item.canEdit : !isDraft,
+        customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
+      },
+      delete: {
+        show: workflowEnabled,
+        position: 'header',
+        style: 'icon',
+        icon: 'trash',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: !(isDraft || isCancelled),
+        customStyle: !(isDraft || isCancelled)
+          ? {backgroundColor: '#BDBDBD'}
+          : {},
+      },
+      attachment: {
+        show: true,
+        position: 'header',
+        style: 'icon',
+        icon: 'paperclip',
+        iconSize: 20,
+        iconColor: '#fff',
+        backgroundColor: '#0A66C2',
+        disabled: false,
+        customStyle: {},
+      },
+      approval: {
+        show: isDraft || isRejected,
+        position: 'bottom',
+        style: 'approval_dropdown',
+        text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square-o',
+        textColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'submit',
+            label: isRejected ? 'Re-submit' : 'Submit',
+            icon: 'paper-plane',
+          },
+        ],
+      },
+    };
+  };
+
+  // Helper function to set button processing state
+  const setButtonProcessing = (recId, buttonType, isProcessingState) => {
+    setProcessingButtons(prev => ({
+      ...prev,
+      [recId]: isProcessingState
+        ? [...(prev[recId] || []), buttonType]
+        : (prev[recId] || []).filter(btn => btn !== buttonType),
+    }));
+  };
+
   // Handle button presses
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
@@ -278,6 +336,9 @@ const IdentificationNumberListPage = () => {
         break;
       case 'submit':
         handleSubmitPress(itemData);
+        break;
+      case 'attachment':
+        handleReceiptAttachmentPress(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);
@@ -294,7 +355,7 @@ const IdentificationNumberListPage = () => {
         employeeId,
         employeeName,
         WorkerRecId,
-      }, // Ensure userData is passed
+      },
       cameFrom: 'IdentificationListPage',
       originalCameFrom: cameFrom,
       identityData: {
@@ -325,16 +386,7 @@ const IdentificationNumberListPage = () => {
       },
     });
   };
-  // ExpirationDate: item.ExpirationDate.startsWith(D365_MAX_DATE)
-  //   ? 'Never'
-  //   : item.ExpirationDate === D365_MIN_DATE
-  //   ? '-'
-  //   : item.ExpirationDate,
-  // IssuedDate: item.IssuedDate.startsWith(D365_MAX_DATE)
-  //   ? 'Never'
-  //   : item.IssuedDate === D365_MIN_DATE
-  //   ? '-'
-  //   : item.IssuedDate,
+
   const handleDeletePress = itemData => {
     setItemToDelete(itemData);
     setDeleteModal(true);
@@ -342,15 +394,12 @@ const IdentificationNumberListPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
-    // First close the delete modal
     setDeleteModal(false);
 
-    // Small delay to ensure modal is closed before showing processing overlay
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
-      setButtonProcessing(itemToDelete.recId, 'delete', true);
+      setIsProcessing(true);
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
         const response = await DeleteIdentityRequest({
@@ -359,10 +408,9 @@ const IdentificationNumberListPage = () => {
 
         if (response[0].IsSuccess) {
           setAlertMessage('Record deleted successfully');
+          // Fix: filter using RecId (uppercase) consistently
           setIdentificationsData(prev =>
-            prev.filter(
-              identification => identification.recId !== itemToDelete.recId,
-            ),
+            prev.filter(item => item.RecId !== itemToDelete.RecId),
           );
         } else {
           setAlertMessage('Unable to delete record. Please try again.');
@@ -371,8 +419,8 @@ const IdentificationNumberListPage = () => {
         setAlertMessage('Failed to delete record');
         console.log('Delete Identification Request response', error);
       } finally {
-        setIsProcessing(false); // Hide processing overlay
-        setButtonProcessing(itemToDelete.recId, 'delete', false);
+        setIsProcessing(false);
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
 
@@ -380,76 +428,27 @@ const IdentificationNumberListPage = () => {
           fetchIdentifications();
         }, 800);
       }
-    }, 100); // Small delay to ensure modal closes first
+    }, 100);
   };
 
-  // const handleSubmitPress = async itemData => {
-  //   setButtonProcessing(itemData.RecId, 'submit', true);
-
-  //   try {
-  //     // Call the Submit API
-  //     const response = await SubmitIdentificationRequest({
-  //       recId: itemData.RecId,
-  //     });
-
-  //     if (
-  //       response &&
-  //       (Array.isArray(response) ? response[0] : response) &&
-  //       String(
-  //         (Array.isArray(response) ? response[0] : response).IsSuccess,
-  //       ).toLowerCase() === 'true'
-  //     ) {
-  //       setAlertMessage('Request submitted successfully');
-  //       setAlertModal(true);
-  //       setHighlightedRecId(itemData.recId);
-
-  //       setTimeout(() => {
-  //         setHighlightedRecId(null);
-  //       }, 3000);
-
-  //       setTimeout(() => {
-  //         fetchIdentifications();
-  //       }, 1000);
-  //     } else {
-  //       const resObj = Array.isArray(response) ? response[0] : response;
-  //       const errorMessage =
-  //         resObj && resObj.Message
-  //           ? resObj.Message
-  //           : 'Failed to submit request';
-  //       setAlertMessage(errorMessage);
-  //       setAlertModal(true);
-  //     }
-  //   } catch (error) {
-  //     console.error('Submit error:', error);
-  //     setAlertMessage('Failed to submit request');
-  //     setAlertModal(true);
-  //   } finally {
-  //     setButtonProcessing(itemData.recId, 'submit', false);
-  //   }
-  // };
-
   const handleSubmitPress = async itemData => {
-    // Small delay pattern like delete logic
     setTimeout(async () => {
-      setIsProcessing(true); // Show processing overlay
+      setIsProcessing(true);
       setButtonProcessing(itemData.RecId, 'submit', true);
 
       try {
-        // Call the Submit API
         const response = await SubmitIdentificationRequest({
           recId: itemData.RecId,
         });
 
-        if (
-          response &&
-          (Array.isArray(response) ? response[0] : response) &&
-          String(
-            (Array.isArray(response) ? response[0] : response).IsSuccess,
-          ).toLowerCase() === 'true'
-        ) {
+        const resObj = Array.isArray(response) ? response[0] : response;
+
+        if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
-          setHighlightedRecId(itemData.recId);
+
+          // Fix: use RecId (uppercase) consistently
+          setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {
             setHighlightedRecId(null);
@@ -459,7 +458,6 @@ const IdentificationNumberListPage = () => {
             fetchIdentifications();
           }, 1000);
         } else {
-          const resObj = Array.isArray(response) ? response[0] : response;
           const errorMessage =
             resObj && resObj.Message
               ? resObj.Message
@@ -472,114 +470,45 @@ const IdentificationNumberListPage = () => {
         setAlertMessage('Failed to submit request');
         setAlertModal(true);
       } finally {
-        setIsProcessing(false); // Hide processing overlay
-        setButtonProcessing(itemData.recId, 'submit', false);
+        setIsProcessing(false);
+        // Fix: use RecId (uppercase) consistently
+        setButtonProcessing(itemData.RecId, 'submit', false);
       }
-    }, 100); // Same delay pattern
+    }, 100);
   };
 
-  // Helper function to set button processing state
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
-    setProcessingButtons(prev => ({
-      ...prev,
-      [recId]: isProcessing
-        ? [...(prev[recId] || []), buttonType]
-        : (prev[recId] || []).filter(btn => btn !== buttonType),
-    }));
+  const handleReceiptAttachmentPress = async itemData => {
+    try {
+      setSelectedIdentityItem(itemData);
+      setAttachmentModalVisible(true);
+    } catch (error) {
+      setAlertMessage('Failed to open attachments');
+      setAlertModal(true);
+    }
   };
 
-  const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
-    const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
-    // const apiEditEnabled = canEnableEditButton(item.RecId, item.PersonIdentificationNumberRecVersion);
-    // console.log("Item Number : ", item.ApprovalStatus);
-    // console.log("apiEditEnabled : ", apiEditEnabled);
-    // console.log(
-    //   item.ApprovalStatus +
-    //     ' ' +
-    //     getStatusLabel(item.ApprovalStatus) +
-    //     ' ' +
-    //     isHCMRecord,
-    // );
-    const isCancelled = getStatusLabel(item.ApprovalStatus) === 'Cancelled';
-    return {
-      edit: {
-        show: workflowEnabled,
-        position: 'header',
-        style: 'icon',
-        icon: 'edit',
-        iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
-        disabled: isHCMRecord ? !item.canEdit : !isDraft,
-        customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
-      },
-      delete: {
-        show: workflowEnabled,
-        position: 'header',
-        style: 'icon',
-        icon: 'trash',
-        iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
-        disabled: !(isDraft || isCancelled),
-        customStyle: !(isDraft || isCancelled)
-          ? {backgroundColor: '#BDBDBD'}
-          : {},
-      },
-      // submit: {
-      //   show: isDraft,
-      //   position: 'bottom',
-      //   style: 'text',
-      //   icon: 'send',
-      //   iconSize: 16,
-      //   text: 'Submit',
-      //   textColor: '#0A66C2',
-      //   iconColor: '#0A66C2',
-      // },
-      approval: {
-        show: isDraft || isRejected, // only visible when action is possible
-        position: 'bottom',
-        style: 'approval_dropdown',
-        text: isRejected ? 'Re-submit' : 'Approval',
-        icon: 'check-square-o',
-        textColor: '#0A66C2',
-        disabled: false,
-        actions: [
-          {
-            key: 'submit',
-            label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
-          },
-        ],
-      },
-    };
-  };
-
-  const D365_MAX_DATE = '2154-12-31T12:00:00';
-  const D365_MIN_DATE = '1900-01-01T12:00:00';
-  // Render identification card
   const renderIdentificationCard = ({item}) => {
-    // const isHighlighted = highlightedRecId === item.recId;
+    // Fix: use RecId (uppercase) consistently
     const isHighlighted = highlightedRecId === item.RecId;
-    const itemProcessingButtons = processingButtons[item.recId] || [];
+    const itemProcessingButtons = processingButtons[item.RecId] || [];
 
     const processedItem = {
       ...item,
       employeeId: item.employeeId || employeeId,
       employeeName: item.employeeName || employeeName,
-      ExpirationDate: item.ExpirationDate.startsWith(D365_MAX_DATE)
+      // Fix: use optional chaining to avoid crash if date is null/undefined
+      ExpirationDate: item.ExpirationDate?.startsWith(D365_MAX_DATE)
         ? 'Never'
         : item.ExpirationDate === D365_MIN_DATE
         ? '-'
         : item.ExpirationDate,
-      IssuedDate: item.IssuedDate.startsWith(D365_MAX_DATE)
+      IssuedDate: item.IssuedDate?.startsWith(D365_MAX_DATE)
         ? 'Never'
         : item.IssuedDate === D365_MIN_DATE
         ? '-'
         : item.IssuedDate,
     };
+
     return (
       <DynamicRequestCard
         data={processedItem}
@@ -593,11 +522,11 @@ const IdentificationNumberListPage = () => {
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
+        isRTL={isRTL}
       />
     );
   };
 
-  // Handle create leave
   const handleCreateRequest = () => {
     navigation.navigate('IdentificationNumberSaveRecord', {
       mode: 'create',
@@ -634,7 +563,7 @@ const IdentificationNumberListPage = () => {
       showFloatingButton={workflowEnabled}
       isHeaderActive={true}
       onBackPress={handleGoBack}
-      onRefresh={fetchIdentifications}
+      onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}
       showFilterPills={true}
       activeFilter={activeFilter}
@@ -679,6 +608,44 @@ const IdentificationNumberListPage = () => {
           </Text>
         </ScrollView>
       )}
+
+      {/* Attachment Modal */}
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedIdentityItem}
+        recordIdKey="RecId"
+        tableName="HcmPersonIdentificationNumber"
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedIdentityItem(null);
+        }}
+        onSave={() => {
+          fetchIdentifications();
+        }}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Identification Attachments"
+        showDetails={true}
+        detailFields={[
+          {key: 'IdentificationTypeId', label: 'ID Type'},
+          {key: 'IdentificationNumber', label: 'ID Number'},
+        ]}
+        detailData={selectedIdentityItem || {}}
+        showTakePhoto={
+          getStatusLabel(selectedIdentityItem?.ApprovalStatus) === 'Draft' ||
+          getStatusLabel(selectedIdentityItem?.ApprovalStatus) === ''
+        }
+        showChooseFile={
+          getStatusLabel(selectedIdentityItem?.ApprovalStatus) === 'Draft' ||
+          getStatusLabel(selectedIdentityItem?.ApprovalStatus) === ''
+        }
+        showDownload={true}
+        showDelete={
+          getStatusLabel(selectedIdentityItem?.ApprovalStatus) === 'Draft' ||
+          getStatusLabel(selectedIdentityItem?.ApprovalStatus) === ''
+        }
+      />
 
       <AlertDeleteModal
         visible={deleteModal}
