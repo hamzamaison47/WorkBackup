@@ -145,7 +145,7 @@ const SearchBar = ({
             isFilterActive && styles.SearchBar_flaskButtonActive,
           ]}>
           <FontAwesome
-            name="filter"
+            name="sort"
             size={15}
             color={isFilterActive ? '#0A66C2' : '#ffffff'}
           />

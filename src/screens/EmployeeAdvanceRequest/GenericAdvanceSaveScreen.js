@@ -1011,7 +1011,8 @@ const GenericAdvanceSaveScreen = () => {
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={{}}>
+      onFloatingButtonPress={{}}
+      showPageTitleRow={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : (

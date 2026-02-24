@@ -804,7 +804,8 @@ const LeaveRequestSaveRecord = () => {
       isHeaderActive={true}
       onBackPress={goBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={{}}>
+      onFloatingButtonPress={{}}
+      showPageTitleRow={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : (

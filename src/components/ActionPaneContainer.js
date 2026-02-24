@@ -654,7 +654,7 @@ const ActionPaneContainer = ({
     <View style={styles.APCont_container}>
       {/* Main content */}
       <View style={styles.APCont_content}>
-        {showPageTitleRow && (
+        {/* {showPageTitleRow && (
           <View style={styles.APCont_pageTitleRow}>
             <SearchBar
               pageTitle={pageTitle}
@@ -663,6 +663,25 @@ const ActionPaneContainer = ({
               activeSortOrder={activeSortOrder}
               placeholder={searchPlaceholder}
             />
+          </View>
+        )} */}
+        {showPageTitleRow && (
+          <View style={styles.APCont_pageTitleRow}>
+            {showSearchBar ? (
+              <SearchBar
+                pageTitle={pageTitle}
+                onSearchChange={onSearchChange}
+                onSortChange={onSortChange}
+                activeSortOrder={activeSortOrder}
+                placeholder={searchPlaceholder}
+              />
+            ) : (
+              <View style={styles.APCont_pageTitleCenteredContainer}>
+                <Text style={styles.APCont_pageTitleCenteredText}>
+                  {pageTitle}
+                </Text>
+              </View>
+            )}
           </View>
         )}
         {/* ── Filter Pills (rendered at the top of content area) ── */}

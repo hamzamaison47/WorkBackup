@@ -66,6 +66,10 @@ const PurchaseRequisitionLinesListPage = () => {
   const [itemToSubmit, setItemToSubmit] = useState(null);
   const [deletingItemId, setDeletingItemId] = useState(null); // Track which item is being deleted
   const isActionsDisabled = RequisitionStatus && RequisitionStatus !== 'Draft';
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const leftFields = ['ItemId', 'ItemName'];
   const rightFields = [
@@ -89,7 +93,11 @@ const PurchaseRequisitionLinesListPage = () => {
       const response = await retrievePurchaseRequisitionLines({
         _purchReqId: PurchReqId,
       });
-      setLines(Array.isArray(response) ? response : []);
+      const data = Array.isArray(response) ? response : [];
+
+      setLines(data);
+      setRawData(data); // ✅ set raw data
+      setDisplayData(data);
     } catch (error) {
       console.log('Error fetching PR lines:', error);
       setLines([]);
@@ -254,6 +262,47 @@ const PurchaseRequisitionLinesListPage = () => {
     });
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderLineCard = ({item, index}) => (
     <PRLinesList
       item={item}
@@ -278,7 +327,12 @@ const PurchaseRequisitionLinesListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={onRefresh}
       onFloatingButtonPress={handlePurchaseRequisitionLinesRecordCreation}
-      floatingButtonDisabled={isActionsDisabled} // Disable floating button
+      floatingButtonDisabled={isActionsDisabled}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder} // Disable floating button
     >
       {/* ✅ ADD PROCESSING OVERLAY HERE */}
       {isLoading && (
@@ -323,7 +377,7 @@ const PurchaseRequisitionLinesListPage = () => {
         <CustomIndicator />
       ) : (
         <FlatList
-          data={lines}
+          data={displayData}
           keyExtractor={(item, index) => index.toString()}
           renderItem={renderLineCard}
           contentContainerStyle={{paddingBottom: 20}}

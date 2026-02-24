@@ -475,12 +475,6 @@
 // export default DynamicRequestCard;
 // export {BUTTON_TYPES};
 
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable curly */
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable curly */
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable curly */
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
@@ -490,21 +484,20 @@ import {
   Animated,
   Modal,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import styles from '../styles/styles';
-import {findNodeHandle, UIManager} from 'react-native';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-// Button type constants
 const BUTTON_TYPES = {
   EDIT: 'edit',
   DELETE: 'delete',
   ATTACHMENT: 'attachment',
   SUBMIT: 'submit',
   VIEW: 'view',
-  APPROVAL: 'approval', // new dropdown button
+  APPROVAL: 'approval',
 };
 
 const COLOR_PALETTE = {
@@ -533,13 +526,10 @@ const COLOR_PALETTE = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Global menu manager — ensures only ONE 3-dot menu is open at a time
-// ─────────────────────────────────────────────────────────────────────────────
 let globalMenuCloser = null;
 const registerMenuCloser = closer => {
   if (globalMenuCloser && globalMenuCloser !== closer) {
-    globalMenuCloser(); // close previously open menu
+    globalMenuCloser();
   }
   globalMenuCloser = closer;
 };
@@ -554,12 +544,6 @@ const DynamicRequestCard = ({
   fields = [],
   headerConfig = {},
   buttons = {},
-  gradientColors = [
-    COLOR_PALETTE.primaryLight,
-    COLOR_PALETTE.primarySoft,
-    '#f0f4ff',
-  ],
-  highlightGradientColors = ['#f0fdf4', '#dcfce7'],
   isHighlighted = false,
   expandableFields = [],
   isExpandable = false,
@@ -575,18 +559,18 @@ const DynamicRequestCard = ({
   const [approvalDropdownVisible, setApprovalDropdownVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({top: 0, right: 0});
   const [approvalPosition, setApprovalPosition] = useState({top: 0, left: 0});
-  const [dropdownTop, setDropdownTop] = useState(true); // true = opens downward
-  const buttonRef = useRef(null);
 
   const arrowAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const menuFadeAnim = useRef(new Animated.Value(0)).current;
   const approvalFadeAnim = useRef(new Animated.Value(0)).current;
+  // Rotates 0 → 1 when expanded (0deg → 180deg)
+  const expandRotateAnim = useRef(new Animated.Value(0)).current;
   const animationIntervalRef = useRef(null);
   const menuButtonRef = useRef(null);
   const approvalButtonRef = useRef(null);
 
-  // ── Close this card's 3-dot menu ──
+  // ── Close 3-dot menu ──
   const closeMenu = useCallback(() => {
     Animated.timing(menuFadeAnim, {
       toValue: 0,
@@ -598,13 +582,9 @@ const DynamicRequestCard = ({
 
   // ── Open 3-dot menu ──
   const openMenu = () => {
-    // Measure position for the modal dropdown
     menuButtonRef.current?.measure((fx, fy, w, h, px, py) => {
-      setMenuPosition({
-        top: py + h + 4,
-        right: SCREEN_WIDTH - px - w,
-      });
-      registerMenuCloser(closeMenu); // close any other open menu
+      setMenuPosition({top: py + h + 4, right: SCREEN_WIDTH - px - w});
+      registerMenuCloser(closeMenu);
       setMenuVisible(true);
       Animated.timing(menuFadeAnim, {
         toValue: 1,
@@ -614,54 +594,25 @@ const DynamicRequestCard = ({
     });
   };
 
-  const toggleMenu = () => {
-    if (menuVisible) {
-      closeMenu();
-    } else {
-      openMenu();
-    }
-  };
+  const toggleMenu = () => (menuVisible ? closeMenu() : openMenu());
 
-  const handleApprovalPress = () => {
-    if (buttonRef.current) {
-      buttonRef.current.measure((x, y, width, height, pageX, pageY) => {
-        const dropdownHeight = 240; // approximate height of your dropdown (6 items × 40px)
-        const screenHeight = Dimensions.get('window').height;
-        const spaceBelow = screenHeight - (pageY + height);
-
-        if (spaceBelow < dropdownHeight) {
-          setDropdownTop(false); // not enough space below → open upward
-        } else {
-          setDropdownTop(true); // enough space below → open downward
-        }
-
-        setApprovalDropdownVisible(true); // or whatever your toggle state is called
-      });
-    }
+  // ── Expand toggle with smooth arrow rotation ──
+  const toggleExpanded = () => {
+    const toValue = expanded ? 0 : 1;
+    Animated.spring(expandRotateAnim, {
+      toValue,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 10,
+    }).start();
+    setExpanded(prev => !prev);
   };
 
   // ── Approval dropdown ──
-  // const openApprovalDropdown = () => {
-  //   approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
-  //     setApprovalPosition({
-  //       top: py - 48, // opens upward above the button
-  //       left: px,
-  //       width: w,
-  //     });
-  //     setApprovalDropdownVisible(true);
-  //     Animated.timing(approvalFadeAnim, {
-  //       toValue: 1,
-  //       duration: 180,
-  //       useNativeDriver: true,
-  //     }).start();
-  //   });
-  // };
-
   const openApprovalDropdown = () => {
     approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
-      const dropdownHeight = actions => (actions?.length || 1) * 48;
       const approvalConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
-      const estimatedHeight = dropdownHeight(approvalConfig.actions);
+      const estimatedHeight = (approvalConfig.actions?.length || 1) * 48;
       const spaceBelow = SCREEN_HEIGHT - (py + h);
       const opensUpward = spaceBelow < estimatedHeight;
 
@@ -687,13 +638,8 @@ const DynamicRequestCard = ({
     }).start(() => setApprovalDropdownVisible(false));
   };
 
-  const toggleApprovalDropdown = () => {
-    if (approvalDropdownVisible) {
-      closeApprovalDropdown();
-    } else {
-      openApprovalDropdown();
-    }
-  };
+  const toggleApprovalDropdown = () =>
+    approvalDropdownVisible ? closeApprovalDropdown() : openApprovalDropdown();
 
   // ── Highlight pulse ──
   useEffect(() => {
@@ -746,7 +692,6 @@ const DynamicRequestCard = ({
     }
   }, [showNavigationArrow, arrowAnim]);
 
-  // ── Cleanup on unmount ──
   useEffect(() => {
     return () => {
       unregisterMenuCloser(closeMenu);
@@ -781,7 +726,6 @@ const DynamicRequestCard = ({
       case 'datetime': {
         const d = new Date(value);
         if (isNaN(d.getTime())) return value;
-
         const months = [
           'Jan',
           'Feb',
@@ -796,17 +740,14 @@ const DynamicRequestCard = ({
           'Nov',
           'Dec',
         ];
-
         const hours = d.getHours().toString().padStart(2, '0');
         const minutes = d.getMinutes().toString().padStart(2, '0');
         const seconds = d.getSeconds().toString().padStart(2, '0');
-
         return `${
           months[d.getMonth()]
         } ${d.getDate()}, ${d.getFullYear()} ${hours}:${minutes}:${seconds}`;
       }
-      case 'link': {
-        // Return a React Native Text component styled like a link
+      case 'link':
         return (
           <Text
             style={{color: 'blue', textDecorationLine: 'underline'}}
@@ -814,7 +755,6 @@ const DynamicRequestCard = ({
             {value}
           </Text>
         );
-      }
       case 'currency': {
         const num = Number(value);
         return isNaN(num)
@@ -843,13 +783,8 @@ const DynamicRequestCard = ({
         text: '#065f46',
         dot: COLOR_PALETTE.success,
       };
-
     if (s === 'completed')
-      return {
-        bg: '#EDE9FE',
-        text: '#4C1D95',
-        dot: '#7C3AED',
-      };
+      return {bg: '#EDE9FE', text: '#4C1D95', dot: '#7C3AED'};
     if (
       [
         'pending',
@@ -946,7 +881,6 @@ const DynamicRequestCard = ({
       style: 'approval_dropdown',
       backgroundColor: COLOR_PALETTE.success,
       textColor: COLOR_PALETTE.success,
-      // Sub-actions shown in dropdown
       actions: [{key: 'submit', label: 'Submit', icon: 'paper-plane'}],
       customStyle: {},
     },
@@ -1009,15 +943,6 @@ const DynamicRequestCard = ({
               size={12}
               color={isTrue ? '#065f46' : COLOR_PALETTE.gray[400]}
             />
-            {/* <Text
-              style={[
-                styles.DRC_booleanText,
-                isTrue
-                  ? styles.DRC_booleanTextTrue
-                  : styles.DRC_booleanTextFalse,
-              ]}>
-              {isTrue ? 'Yes' : 'No'}
-            </Text> */}
           </View>
         </View>
       );
@@ -1039,7 +964,6 @@ const DynamicRequestCard = ({
     );
   };
 
-  // 3-dot menu item
   const renderMenuButton = buttonType => {
     const buttonConfig = getMergedButtonConfig(buttonType);
     if (!buttonConfig.show) return null;
@@ -1093,12 +1017,9 @@ const DynamicRequestCard = ({
     );
   };
 
-  // Regular bottom text/icon button
   const renderButton = buttonType => {
     const buttonConfig = getMergedButtonConfig(buttonType);
     if (!buttonConfig.show) return null;
-
-    // Approval dropdown is handled separately
     if (buttonConfig.style === 'approval_dropdown') return null;
 
     const isProcessing = processingButtons.includes(buttonType);
@@ -1187,7 +1108,7 @@ const DynamicRequestCard = ({
     );
   };
 
-  // ── Approval Dropdown Button ──
+  // ── Approval Dropdown Button — clean inline style ──
   const renderApprovalDropdownButton = () => {
     const buttonConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
     if (!buttonConfig.show) return null;
@@ -1199,40 +1120,41 @@ const DynamicRequestCard = ({
 
     return (
       <>
-        {/* The "Approval ▾" button */}
         <TouchableOpacity
           ref={approvalButtonRef}
           onPress={toggleApprovalDropdown}
           disabled={isDisabled}
+          activeOpacity={0.7}
           style={[
-            styles.DRC_approvalButton,
-            isDisabled && styles.DRC_disabledButton,
+            localStyles.approvalButton,
+            isDisabled && localStyles.approvalButtonDisabled,
             buttonConfig.customStyle,
           ]}>
+          {/* Label */}
           <Text
             style={[
-              styles.DRC_approvalButtonText,
-              {
-                color: isDisabled
-                  ? COLOR_PALETTE.gray[300]
-                  : buttonConfig.textColor || COLOR_PALETTE.success,
-              },
+              localStyles.approvalButtonText,
+              isDisabled && localStyles.approvalButtonTextDisabled,
             ]}>
             {buttonConfig.text || 'Approval'}
           </Text>
-          <FontAwesome
-            name={approvalDropdownVisible ? 'chevron-up' : 'chevron-down'}
-            size={10}
-            color={
-              isDisabled
-                ? COLOR_PALETTE.gray[300]
-                : buttonConfig.textColor || COLOR_PALETTE.success
-            }
-            style={{marginLeft: 4}}
-          />
+
+          {/* Animated chevron */}
+          <Animated.View
+            style={{
+              marginLeft: 5,
+              transform: [
+                {rotate: approvalDropdownVisible ? '180deg' : '0deg'},
+              ],
+            }}>
+            <FontAwesome
+              name="chevron-down"
+              size={9}
+              color={isDisabled ? COLOR_PALETTE.gray[300] : COLOR_PALETTE.info}
+            />
+          </Animated.View>
         </TouchableOpacity>
 
-        {/* Approval dropdown via Modal (renders above everything) */}
         <Modal
           transparent
           visible={approvalDropdownVisible}
@@ -1243,17 +1165,17 @@ const DynamicRequestCard = ({
               <TouchableWithoutFeedback>
                 <Animated.View
                   style={[
-                    styles.DRC_approvalDropdown,
+                    localStyles.approvalDropdownMenu,
                     {
                       top: approvalPosition.top,
                       left: approvalPosition.left,
-                      minWidth: approvalPosition.width || 140,
+                      minWidth: approvalPosition.width || 160,
                       opacity: approvalFadeAnim,
                       transform: [
                         {
                           translateY: approvalFadeAnim.interpolate({
                             inputRange: [0, 1],
-                            outputRange: [8, 0],
+                            outputRange: [6, 0],
                           }),
                         },
                       ],
@@ -1263,35 +1185,36 @@ const DynamicRequestCard = ({
                     const isActionProcessing = processingButtons.includes(
                       action.key,
                     );
+                    const isLast = idx === actions.length - 1;
                     return (
                       <TouchableOpacity
                         key={idx}
                         style={[
-                          styles.DRC_approvalMenuItem,
-                          idx < actions.length - 1 &&
-                            styles.DRC_approvalMenuItemBorder,
+                          localStyles.approvalDropdownItem,
+                          !isLast && localStyles.approvalDropdownItemBorder,
                         ]}
                         onPress={() => {
                           closeApprovalDropdown();
-                          // Fire onButtonPress with the sub-action key
                           onButtonPress(action.key, data);
                         }}
+                        activeOpacity={0.7}
                         disabled={isActionProcessing}>
                         {action.icon && (
-                          <FontAwesome
-                            name={action.icon}
-                            size={14}
-                            color={
-                              isActionProcessing
-                                ? COLOR_PALETTE.gray[400]
-                                : COLOR_PALETTE.success
-                            }
-                            style={{marginRight: 8}}
-                          />
+                          <View style={localStyles.approvalDropdownIconWrap}>
+                            <FontAwesome
+                              name={action.icon}
+                              size={13}
+                              color={
+                                isActionProcessing
+                                  ? COLOR_PALETTE.gray[400]
+                                  : COLOR_PALETTE.info
+                              }
+                            />
+                          </View>
                         )}
                         <Text
                           style={[
-                            styles.DRC_approvalMenuItemText,
+                            localStyles.approvalDropdownItemText,
                             isActionProcessing && {
                               color: COLOR_PALETTE.gray[400],
                             },
@@ -1337,10 +1260,12 @@ const DynamicRequestCard = ({
     );
   };
 
-  // ─────────────────────── compose layout ───────────────────────
+  // ─────────────────────── layout ───────────────────────
 
   const headerButtons = getButtonsByPosition('header');
-  const bottomButtons = getButtonsByPosition('bottom');
+  const bottomButtons = getButtonsByPosition('bottom').filter(
+    bt => getMergedButtonConfig(bt).style !== 'approval_dropdown',
+  );
   const hasHeaderButtons = headerButtons.length > 0;
   const hasBottomButtons = bottomButtons.length > 0;
   const shouldShowExpandToggle = isExpandable && expandableFields.length > 0;
@@ -1354,6 +1279,15 @@ const DynamicRequestCard = ({
     : null;
   const statusColors = statusValue ? getStatusColor(statusValue) : null;
 
+  // Animated rotate for expand arrow
+  const expandIconRotation = expandRotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+
+  const showFooter =
+    shouldShowExpandToggle || hasBottomButtons || hasApprovalButton;
+
   return (
     <View style={styles.DRC_cardContainer}>
       <Animated.View
@@ -1362,20 +1296,12 @@ const DynamicRequestCard = ({
           isHighlighted && styles.DRC_cardHighlighted,
           {transform: [{scale: scaleAnim}]},
         ]}>
-        {/* Tapping the card body closes the 3-dot menu (without interfering with navigation Pressable above) */}
         <TouchableWithoutFeedback
           onPress={() => {
-            if (menuVisible) {
-              closeMenu();
-            } else if (onPress) {
-              onPress();
-            }
+            if (menuVisible) closeMenu();
+            else if (onPress) onPress();
           }}
-          onLongPress={() => {
-            if (onLongPress) {
-              onLongPress();
-            }
-          }}>
+          onLongPress={() => onLongPress && onLongPress()}>
           <View style={styles.DRC_cardInner}>
             {renderNavigationArrow()}
 
@@ -1401,7 +1327,6 @@ const DynamicRequestCard = ({
               </View>
 
               <View style={styles.DRC_headerRightSection}>
-                {/* Status Badge */}
                 {statusValue && statusColors && (
                   <View
                     style={[
@@ -1424,7 +1349,6 @@ const DynamicRequestCard = ({
                   </View>
                 )}
 
-                {/* 3-Dot Menu — rendered via Modal to escape card clipping */}
                 {hasHeaderButtons && (
                   <View style={styles.DRC_menuContainer}>
                     <TouchableOpacity
@@ -1484,39 +1408,47 @@ const DynamicRequestCard = ({
 
             {/* ── Expandable fields ── */}
             {expanded && expandableFields.length > 0 && (
-              <Animated.View style={styles.DRC_expandedFieldsContainer}>
+              <View style={styles.DRC_expandedFieldsContainer}>
                 {expandableFields.map((field, index) =>
                   renderField(field, index),
                 )}
-              </Animated.View>
+              </View>
             )}
 
-            {/* ── Footer ── */}
-            {(shouldShowExpandToggle ||
-              hasBottomButtons ||
-              hasApprovalButton) && (
-              <View style={styles.DRC_footer}>
-                {shouldShowExpandToggle && (
-                  <TouchableOpacity
-                    onPress={() => setExpanded(!expanded)}
-                    style={styles.DRC_expandButton}>
-                    <Text style={styles.DRC_expandButtonText}>
-                      {expanded ? 'Show less' : 'Show more'}
-                    </Text>
-                    <FontAwesome
-                      name={expanded ? 'chevron-up' : 'chevron-down'}
-                      size={12}
-                      color={COLOR_PALETTE.gray[500]}
-                    />
-                  </TouchableOpacity>
+            {/* ── Footer — NO top border line ── */}
+            {showFooter && (
+              <View style={localStyles.footer}>
+                {/* Bottom row: left-side buttons + right-aligned approval */}
+                {(hasBottomButtons || hasApprovalButton) && (
+                  <View style={localStyles.bottomRow}>
+                    {/* Left-side non-approval buttons */}
+                    <View style={localStyles.bottomLeft}>
+                      {bottomButtons.map(bt => renderButton(bt))}
+                    </View>
+
+                    {/* Approval always on right */}
+                    <View style={localStyles.bottomRight}>
+                      {renderApprovalDropdownButton()}
+                    </View>
+                  </View>
                 )}
 
-                <View style={styles.DRC_bottomButtons}>
-                  {/* Regular bottom buttons (excluding approval_dropdown) */}
-                  {bottomButtons.map(bt => renderButton(bt))}
-                  {/* Approval dropdown button */}
-                  {renderApprovalDropdownButton()}
-                </View>
+                {/* Expand arrow pinned at very bottom center of card */}
+                {shouldShowExpandToggle && (
+                  <TouchableOpacity
+                    onPress={toggleExpanded}
+                    activeOpacity={0.6}
+                    style={localStyles.expandArrowButton}>
+                    <Animated.View
+                      style={{transform: [{rotate: expandIconRotation}]}}>
+                      <FontAwesome
+                        name="chevron-down"
+                        size={14}
+                        color={COLOR_PALETTE.gray[400]}
+                      />
+                    </Animated.View>
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           </View>
@@ -1525,6 +1457,105 @@ const DynamicRequestCard = ({
     </View>
   );
 };
+
+// ─────────────────────── Local styles (additions only) ───────────────────────
+const localStyles = StyleSheet.create({
+  /* Footer — no top border */
+  footer: {
+    paddingTop: 4,
+  },
+
+  /* Centered expand/collapse arrow button */
+  expandArrowButton: {
+    alignSelf: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    marginTop: 6,
+  },
+
+  /* Bottom row: left buttons + right approval */
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+    paddingBottom: 2,
+  },
+  bottomLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  bottomRight: {
+    alignItems: 'flex-end',
+    marginTop: 4,
+  },
+
+  /* Pill approval button — bordered, slightly larger, clearly tappable */
+  approvalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: COLOR_PALETTE.info,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+  },
+  approvalButtonDisabled: {
+    borderColor: COLOR_PALETTE.gray[300],
+    opacity: 0.5,
+  },
+  approvalButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLOR_PALETTE.info,
+  },
+  approvalButtonTextDisabled: {
+    color: COLOR_PALETTE.gray[300],
+  },
+
+  /* Approval dropdown menu */
+  approvalDropdownMenu: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowOffset: {width: 0, height: 6},
+    shadowRadius: 16,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: COLOR_PALETTE.gray[100],
+    overflow: 'hidden',
+  },
+  approvalDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  approvalDropdownItemBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLOR_PALETTE.gray[100],
+  },
+  approvalDropdownIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  approvalDropdownItemText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLOR_PALETTE.gray[700],
+  },
+});
 
 export default DynamicRequestCard;
 export {BUTTON_TYPES};

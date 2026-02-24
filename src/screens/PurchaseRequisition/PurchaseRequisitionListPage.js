@@ -1061,10 +1061,24 @@ const PurchaseRequisitionListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              <Text style={styles.DLP_NoDataText}>Get started</Text>
-              <Text style={styles.DLP_NoDataSubText}>
-                Tap + to add a new record
-              </Text>
+              {/* Show different messages based on filter and data availability */}
+              {rawData.length === 0 && activeFilter === 'All' ? (
+                // No data at all AND "All" filter is active - show "Get started" message
+                <>
+                  <Text style={styles.DLP_NoDataText}>Get started</Text>
+                  <Text style={styles.DLP_NoDataSubText}>
+                    Tap + to add a new record
+                  </Text>
+                </>
+              ) : (
+                // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
+                // Show filter-specific message
+                <>
+                  <Text style={styles.DLP_NoDataText}>
+                    {`${activeFilter} record not found.`}
+                  </Text>
+                </>
+              )}
             </ScrollView>
           )}
         </Animated.View>

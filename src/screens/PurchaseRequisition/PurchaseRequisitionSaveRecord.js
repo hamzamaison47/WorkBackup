@@ -276,7 +276,8 @@ const PurchaseRequisitionSaveRecord = () => {
       isHeaderActive
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
-      onRefresh={clearFormData}>
+      onRefresh={clearFormData}
+      showPageTitleRow={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : (

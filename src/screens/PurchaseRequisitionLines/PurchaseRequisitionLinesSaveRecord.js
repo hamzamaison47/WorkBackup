@@ -995,7 +995,9 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       showFloatingButton={false}
       isHeaderActive
       showTabNavigator={!isKeyboardVisible}
-      onBackPress={goBack}>
+      onBackPress={goBack}
+      showPageTitleRow={true}
+      showSearchBar={false}>
       {isLoading ? (
         <CustomIndicator />
       ) : (

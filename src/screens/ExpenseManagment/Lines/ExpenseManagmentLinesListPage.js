@@ -79,6 +79,10 @@ const ExpenseManagmentLinesListPage = () => {
 
   const [receiptModal, setReceiptModal] = useState(false);
   const [selectedExpenseLine, setSelectedExpenseLine] = useState(null);
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const CARD_CONFIG = {
     headerConfig: {
@@ -200,6 +204,8 @@ const ExpenseManagmentLinesListPage = () => {
       });
 
       setExpenseLinesData(sortedExpenseLines);
+      setRawData(sortedExpenseLines); // ✅ set raw data
+      setDisplayData(sortedExpenseLines);
 
       const myExpenseHeaderData = await GetAllExpenseReports({
         employeeId: effectiveEmployeeId,
@@ -467,6 +473,47 @@ const ExpenseManagmentLinesListPage = () => {
     setSelectedExpenseLine(null);
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderExpenseLineCard = ({item, index}) => {
     const itemRecId = normalizeRecId(item);
     const itemProcessingButtons = processingButtons[itemRecId] || [];
@@ -549,7 +596,12 @@ const ExpenseManagmentLinesListPage = () => {
       isHeaderActive
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleCreateExpense}>
+      onFloatingButtonPress={handleCreateExpense}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isLoading && <CustomIndicator />}
 
       {!isLoading && (

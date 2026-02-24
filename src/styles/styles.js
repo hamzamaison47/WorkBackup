@@ -3416,6 +3416,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
+  APCont_pageTitleCenteredContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+
+  APCont_pageTitleCenteredText: {
+    color: '#ffffff',
+    fontSize: conditionalFontScale(12, 14, 16, 18),
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
   SearchBar_row: {
     flex: 1,
     flexDirection: 'row',
