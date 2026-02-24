@@ -217,10 +217,10 @@
   "tabNavigator": {
     "home": "Home",
     "myTeam": "My Team",
-    "MyWorkItems": "Work Items",
+    "MyWorkItems": "Approval",
     "history": "History",
     "profile": "Profile",
-    "ESSMyRequestStatusListPage": "My Request Status"
+    "ESSMyRequestStatusListPage": "My Request"
   },
   "dynamic": {
     "leaveCategories": {

@@ -47,7 +47,7 @@ export const screenMapping = {
   PurchaseRequisitionLinesListPage: PurchaseRequisitionLinesListPage,
   PurchaseRequisitionLinesSaveRecord: PurchaseRequisitionLinesSaveRecord,
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
-  WorkflowHistoryScreen: WorkflowHistoryScreen,
+  // WorkflowHistoryScreen: WorkflowHistoryScreen,
 };
 
 // Map Images → Screen component

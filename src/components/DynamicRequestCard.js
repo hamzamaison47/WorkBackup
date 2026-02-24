@@ -778,6 +778,43 @@ const DynamicRequestCard = ({
         ];
         return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
       }
+      case 'datetime': {
+        const d = new Date(value);
+        if (isNaN(d.getTime())) return value;
+
+        const months = [
+          'Jan',
+          'Feb',
+          'Mar',
+          'Apr',
+          'May',
+          'Jun',
+          'Jul',
+          'Aug',
+          'Sep',
+          'Oct',
+          'Nov',
+          'Dec',
+        ];
+
+        const hours = d.getHours().toString().padStart(2, '0');
+        const minutes = d.getMinutes().toString().padStart(2, '0');
+        const seconds = d.getSeconds().toString().padStart(2, '0');
+
+        return `${
+          months[d.getMonth()]
+        } ${d.getDate()}, ${d.getFullYear()} ${hours}:${minutes}:${seconds}`;
+      }
+      case 'link': {
+        // Return a React Native Text component styled like a link
+        return (
+          <Text
+            style={{color: 'blue', textDecorationLine: 'underline'}}
+            onPress={() => {}}>
+            {value}
+          </Text>
+        );
+      }
       case 'currency': {
         const num = Number(value);
         return isNaN(num)
