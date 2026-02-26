@@ -385,7 +385,7 @@ const PurchaseRequisitionLinesListPage = () => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
-            <View style={{paddingTop: 350, alignItems: 'center'}}>
+            <View style={{paddingTop: 250, alignItems: 'center'}}>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
                 Tap + to add a new record

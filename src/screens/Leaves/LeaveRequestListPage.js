@@ -811,6 +811,7 @@ const LeaveRequestListPage = () => {
           {rawData.length === 0 && activeFilter === 'All' ? (
             // No data at all AND "All" filter is active - show "Get started" message
             <>
+              {/* <Text style={styles.DLP_NoDataText}>No data found.</Text> */}
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
                 Tap + to add a new record

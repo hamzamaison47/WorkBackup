@@ -343,7 +343,7 @@ const BankAccountSaveRecord = () => {
       }
 
       if (response) {
-        const actionText = modalMode === 'create' ? 'Created' : 'Updated';
+        const actionText = modalMode === 'create' ? 'created' : 'updated';
         let submitText = '';
 
         if (submitResult?.IsSuccess === 'true') {
@@ -444,7 +444,8 @@ const BankAccountSaveRecord = () => {
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={{}}>
+      onFloatingButtonPress={{}}
+      showPageTitleRow={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : (

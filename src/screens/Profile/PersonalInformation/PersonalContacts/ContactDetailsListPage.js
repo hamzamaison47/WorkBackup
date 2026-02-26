@@ -49,6 +49,10 @@ const ContactDetailsListPage = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // 🔹 Processing states
   const [processingButtons, setProcessingButtons] = useState({});
@@ -62,6 +66,8 @@ const ContactDetailsListPage = () => {
       const data = await ContactDetails({employeeId: effectiveEmployeeId});
       // console.log({data});
       setContactsData(data);
+      setRawData(data); // ← here
+      setDisplayData(data); // ← here
     } catch (error) {
       console.log('Failed to fetch contacts:', error);
     } finally {
@@ -247,6 +253,52 @@ const ContactDetailsListPage = () => {
     }
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
+  const getFilteredData = () => {
+    const base = displayData.length > 0 ? displayData : rawData;
+    return base;
+  };
+
   // 🔹 Render Each Contact Card
   const renderContactCard = ({item}) => {
     const itemProcessingButtons = processingButtons[item.RecId] || [];
@@ -278,14 +330,19 @@ const ContactDetailsListPage = () => {
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateContact}
       onBackPress={handleGoBack}
-      onRefresh={handleRefresh}>
+      onRefresh={handleRefresh}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : contactsData.length > 0 ? (
+      ) : getFilteredData().length > 0 ? (
         <FlatList
-          data={contactsData}
+          data={getFilteredData()}
           renderItem={renderContactCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()

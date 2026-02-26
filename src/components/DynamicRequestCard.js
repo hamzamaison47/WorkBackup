@@ -474,7 +474,6 @@
 
 // export default DynamicRequestCard;
 // export {BUTTON_TYPES};
-
 import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
@@ -484,7 +483,6 @@ import {
   Animated,
   Modal,
   Dimensions,
-  StyleSheet,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import styles from '../styles/styles';
@@ -564,7 +562,6 @@ const DynamicRequestCard = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const menuFadeAnim = useRef(new Animated.Value(0)).current;
   const approvalFadeAnim = useRef(new Animated.Value(0)).current;
-  // Rotates 0 → 1 when expanded (0deg → 180deg)
   const expandRotateAnim = useRef(new Animated.Value(0)).current;
   const animationIntervalRef = useRef(null);
   const menuButtonRef = useRef(null);
@@ -596,7 +593,7 @@ const DynamicRequestCard = ({
 
   const toggleMenu = () => (menuVisible ? closeMenu() : openMenu());
 
-  // ── Expand toggle with smooth arrow rotation ──
+  // ── Expand toggle ──
   const toggleExpanded = () => {
     const toValue = expanded ? 0 : 1;
     Animated.spring(expandRotateAnim, {
@@ -616,11 +613,16 @@ const DynamicRequestCard = ({
       const spaceBelow = SCREEN_HEIGHT - (py + h);
       const opensUpward = spaceBelow < estimatedHeight;
 
+      const dropdownWidth = 160;
+      const PADDING = 8;
+      const clampedLeft = Math.min(px, SCREEN_WIDTH - dropdownWidth - PADDING);
+
       setApprovalPosition({
         top: opensUpward ? py - estimatedHeight : py + h + 4,
-        left: px,
+        left: clampedLeft,
         width: w,
       });
+
       setApprovalDropdownVisible(true);
       Animated.timing(approvalFadeAnim, {
         toValue: 1,
@@ -740,15 +742,12 @@ const DynamicRequestCard = ({
           'Nov',
           'Dec',
         ];
-
         let hours = d.getUTCHours();
         const minutes = d.getUTCMinutes().toString().padStart(2, '0');
         const seconds = d.getUTCSeconds().toString().padStart(2, '0');
-
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
-        hours = hours === 0 ? 12 : hours; // 0 becomes 12
-
+        hours = hours === 0 ? 12 : hours;
         return `${
           months[d.getUTCMonth()]
         } ${d.getUTCDate()}, ${d.getUTCFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
@@ -756,10 +755,7 @@ const DynamicRequestCard = ({
       case 'link':
         return (
           <Text
-            style={{
-              color: '#0A66C2',
-              textDecorationLine: 'underline',
-            }}
+            style={{color: '#0A66C2', textDecorationLine: 'underline'}}
             onPress={() => {}}>
             {value}
           </Text>
@@ -914,9 +910,7 @@ const DynamicRequestCard = ({
   const renderField = (field, index) => {
     const value = data[field.key];
     const formattedValue = formatValue(value, field.type);
-
     if (field.type === 'status') return null;
-
     const hasLabel = field.label && String(field.label).trim().length > 0;
 
     if (!hasLabel) {
@@ -976,7 +970,6 @@ const DynamicRequestCard = ({
   const renderMenuButton = buttonType => {
     const buttonConfig = getMergedButtonConfig(buttonType);
     if (!buttonConfig.show) return null;
-
     const isProcessing = processingButtons.includes(buttonType);
     const isDisabled =
       buttonConfig.disabled ||
@@ -1117,7 +1110,7 @@ const DynamicRequestCard = ({
     );
   };
 
-  // ── Approval Dropdown Button — clean inline style ──
+  // ── Approval Dropdown Button ──
   const renderApprovalDropdownButton = () => {
     const buttonConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
     if (!buttonConfig.show) return null;
@@ -1135,20 +1128,17 @@ const DynamicRequestCard = ({
           disabled={isDisabled}
           activeOpacity={0.7}
           style={[
-            localStyles.approvalButton,
-            isDisabled && localStyles.approvalButtonDisabled,
+            styles.DRC_approvalButton2,
+            isDisabled && styles.DRC_approvalButtonDisabled,
             buttonConfig.customStyle,
           ]}>
-          {/* Label */}
           <Text
             style={[
-              localStyles.approvalButtonText,
-              isDisabled && localStyles.approvalButtonTextDisabled,
+              styles.DRC_approvalButtonText2,
+              isDisabled && styles.DRC_approvalButtonTextDisabled,
             ]}>
             {buttonConfig.text || 'Approval'}
           </Text>
-
-          {/* Animated chevron */}
           <Animated.View
             style={{
               marginLeft: 5,
@@ -1159,7 +1149,7 @@ const DynamicRequestCard = ({
             <FontAwesome
               name="chevron-down"
               size={9}
-              color={isDisabled ? COLOR_PALETTE.gray[300] : COLOR_PALETTE.info}
+              color={isDisabled ? '#d1d5db' : '#93c5fd'}
             />
           </Animated.View>
         </TouchableOpacity>
@@ -1174,7 +1164,7 @@ const DynamicRequestCard = ({
               <TouchableWithoutFeedback>
                 <Animated.View
                   style={[
-                    localStyles.approvalDropdownMenu,
+                    styles.DRC_approvalDropdownMenu,
                     {
                       top: approvalPosition.top,
                       left: approvalPosition.left,
@@ -1199,8 +1189,8 @@ const DynamicRequestCard = ({
                       <TouchableOpacity
                         key={idx}
                         style={[
-                          localStyles.approvalDropdownItem,
-                          !isLast && localStyles.approvalDropdownItemBorder,
+                          styles.DRC_approvalDropdownItem,
+                          !isLast && styles.DRC_approvalDropdownItemBorder,
                         ]}
                         onPress={() => {
                           closeApprovalDropdown();
@@ -1209,7 +1199,7 @@ const DynamicRequestCard = ({
                         activeOpacity={0.7}
                         disabled={isActionProcessing}>
                         {action.icon && (
-                          <View style={localStyles.approvalDropdownIconWrap}>
+                          <View style={styles.DRC_approvalDropdownIconWrap}>
                             <FontAwesome
                               name={action.icon}
                               size={13}
@@ -1223,7 +1213,7 @@ const DynamicRequestCard = ({
                         )}
                         <Text
                           style={[
-                            localStyles.approvalDropdownItemText,
+                            styles.DRC_approvalDropdownItemText,
                             isActionProcessing && {
                               color: COLOR_PALETTE.gray[400],
                             },
@@ -1288,7 +1278,6 @@ const DynamicRequestCard = ({
     : null;
   const statusColors = statusValue ? getStatusColor(statusValue) : null;
 
-  // Animated rotate for expand arrow
   const expandIconRotation = expandRotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
@@ -1424,40 +1413,44 @@ const DynamicRequestCard = ({
               </View>
             )}
 
-            {/* ── Footer — NO top border line ── */}
+            {/* ── Footer ── */}
             {showFooter && (
-              <View style={localStyles.footer}>
-                {/* Bottom row: left-side buttons + right-aligned approval */}
-                {(hasBottomButtons || hasApprovalButton) && (
-                  <View style={localStyles.bottomRow}>
-                    {/* Left-side non-approval buttons */}
-                    <View style={localStyles.bottomLeft}>
-                      {bottomButtons.map(bt => renderButton(bt))}
-                    </View>
-
-                    {/* Approval always on right */}
-                    <View style={localStyles.bottomRight}>
-                      {renderApprovalDropdownButton()}
-                    </View>
+              <View style={styles.DRC_footer2}>
+                {/*
+                  Layout: 3-column row
+                  [left buttons] [center expand arrow] [right approval]
+                  Each side column has equal flex so arrow stays truly centered.
+                */}
+                <View style={styles.DRC_footerRow}>
+                  {/* LEFT — bottom buttons */}
+                  <View style={styles.DRC_footerLeft}>
+                    {bottomButtons.map(bt => renderButton(bt))}
                   </View>
-                )}
 
-                {/* Expand arrow pinned at very bottom center of card */}
-                {shouldShowExpandToggle && (
-                  <TouchableOpacity
-                    onPress={toggleExpanded}
-                    activeOpacity={0.6}
-                    style={localStyles.expandArrowButton}>
-                    <Animated.View
-                      style={{transform: [{rotate: expandIconRotation}]}}>
-                      <FontAwesome
-                        name="chevron-down"
-                        size={14}
-                        color={COLOR_PALETTE.gray[400]}
-                      />
-                    </Animated.View>
-                  </TouchableOpacity>
-                )}
+                  {/* CENTER — expand arrow */}
+                  <View style={styles.DRC_footerCenter}>
+                    {shouldShowExpandToggle && (
+                      <TouchableOpacity
+                        onPress={toggleExpanded}
+                        activeOpacity={0.6}
+                        style={styles.DRC_expandArrowButton}>
+                        <Animated.View
+                          style={{transform: [{rotate: expandIconRotation}]}}>
+                          <FontAwesome
+                            name="chevron-down"
+                            size={14}
+                            color={COLOR_PALETTE.gray[400]}
+                          />
+                        </Animated.View>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* RIGHT — approval button */}
+                  <View style={styles.DRC_footerRight}>
+                    {hasApprovalButton && renderApprovalDropdownButton()}
+                  </View>
+                </View>
               </View>
             )}
           </View>
@@ -1466,105 +1459,6 @@ const DynamicRequestCard = ({
     </View>
   );
 };
-
-// ─────────────────────── Local styles (additions only) ───────────────────────
-const localStyles = StyleSheet.create({
-  /* Footer — no top border */
-  footer: {
-    paddingTop: 4,
-  },
-
-  /* Centered expand/collapse arrow button */
-  expandArrowButton: {
-    alignSelf: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 20,
-    marginTop: 6,
-  },
-
-  /* Bottom row: left buttons + right approval */
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-    paddingBottom: 2,
-  },
-  bottomLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-  },
-  bottomRight: {
-    alignItems: 'flex-end',
-    marginTop: 4,
-  },
-
-  /* Pill approval button — bordered, slightly larger, clearly tappable */
-  approvalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: COLOR_PALETTE.info,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    backgroundColor: '#fff',
-  },
-  approvalButtonDisabled: {
-    borderColor: COLOR_PALETTE.gray[300],
-    opacity: 0.5,
-  },
-  approvalButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLOR_PALETTE.info,
-  },
-  approvalButtonTextDisabled: {
-    color: COLOR_PALETTE.gray[300],
-  },
-
-  /* Approval dropdown menu */
-  approvalDropdownMenu: {
-    position: 'absolute',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.14,
-    shadowOffset: {width: 0, height: 6},
-    shadowRadius: 16,
-    elevation: 10,
-    borderWidth: 1,
-    borderColor: COLOR_PALETTE.gray[100],
-    overflow: 'hidden',
-  },
-  approvalDropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  approvalDropdownItemBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLOR_PALETTE.gray[100],
-  },
-  approvalDropdownIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#eff6ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  approvalDropdownItemText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLOR_PALETTE.gray[700],
-  },
-});
 
 export default DynamicRequestCard;
 export {BUTTON_TYPES};

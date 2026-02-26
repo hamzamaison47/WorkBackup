@@ -611,14 +611,15 @@ const FamilyContact_SaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        mode === 'edit' ? 'Edit Personal Contact' : 'Create Personal Contact'
+        mode === 'edit' ? 'Edit Personal Contact' : 'Create Personal Contacts'
       }
       isBackButton={true}
       showFooter={false}
       isHeaderActive={true}
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
-      onRefresh={handleRefresh}>
+      onRefresh={handleRefresh}
+      showPageTitleRow={true}>
       {isLoading && <CustomIndicator />}
 
       {!isLoading && (

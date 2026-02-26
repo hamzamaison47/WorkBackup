@@ -63,6 +63,10 @@ const BankAccountListPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -82,6 +86,8 @@ const BankAccountListPage = () => {
       BankAccountData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
 
       setbankaccountdata(BankAccountData);
+      setRawData(BankAccountData); // ← here
+      setDisplayData(BankAccountData); // ← here
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
@@ -176,10 +182,26 @@ const BankAccountListPage = () => {
     return statusMap[status] || 'Draft';
   };
 
-  const getFilteredData = () => {
-    if (activeFilter === 'All') return banksaccountdata;
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return banksaccountdata;
 
-    return banksaccountdata.filter(item => {
+  //   return banksaccountdata.filter(item => {
+  //     const status = getStatusLabel(item.WFStatus);
+
+  //     if (activeFilter === 'Pending') {
+  //       return status.includes('Pending');
+  //     }
+
+  //     return status === activeFilter;
+  //   });
+  // };
+
+  const getFilteredData = () => {
+    const base = displayData.length > 0 ? displayData : banksaccountdata;
+
+    if (activeFilter === 'All') return base;
+
+    return base.filter(item => {
       const status = getStatusLabel(item.WFStatus);
 
       if (activeFilter === 'Pending') {
@@ -476,6 +498,47 @@ const BankAccountListPage = () => {
     }
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderBankAccountCard = ({item}) => {
     // Fix: use RecId (uppercase) consistently
     const isHighlighted = highlightedRecId === item.RecId;
@@ -519,7 +582,12 @@ const BankAccountListPage = () => {
       showFilterPills={true}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}>
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -554,10 +622,24 @@ const BankAccountListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>Get started</Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            Tap + to add a new record
-          </Text>
+          {/* Show different messages based on filter and data availability */}
+          {rawData.length === 0 && activeFilter === 'All' ? (
+            // No data at all AND "All" filter is active - show "Get started" message
+            <>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
+            </>
+          ) : (
+            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
+            // Show filter-specific message
+            <>
+              <Text style={styles.DLP_NoDataText}>
+                {`${activeFilter} record not found.`}
+              </Text>
+            </>
+          )}
         </ScrollView>
       )}
 

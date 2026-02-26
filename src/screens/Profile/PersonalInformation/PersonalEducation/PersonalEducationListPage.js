@@ -65,6 +65,10 @@ const PersonalEducation = () => {
   const [isWorkflowEnabled, setIsWorkflowEnabled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -78,9 +82,12 @@ const PersonalEducation = () => {
       const data = await EmployeePersonalEducation({
         employeeId: effectiveEmployeeId,
       });
+      console.log('Here is the data', data);
       // Newest record on top
       data.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       setEducationData(data);
+      setRawData(data); // ← here
+      setDisplayData(data); // ← here
     } catch (error) {
       console.log('Failed to fetch education details:', error);
       setAlertMessage('Failed to fetch data.');
@@ -184,14 +191,30 @@ const PersonalEducation = () => {
     return map[normalizedStatus] ?? '';
   };
 
-  const getFilteredData = () => {
-    if (activeFilter === 'All') return educationData;
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return educationData;
 
-    return educationData.filter(item => {
+  //   return educationData.filter(item => {
+  //     const status = getStatusLabel(item.ApprovalStatus);
+
+  //     if (activeFilter === 'Pending') {
+  //       return status.includes('Pending');
+  //     }
+
+  //     return status === activeFilter;
+  //   });
+  // };
+
+  const getFilteredData = () => {
+    const base = displayData.length > 0 ? displayData : educationData;
+
+    if (activeFilter === 'All') return base;
+
+    return base.filter(item => {
       const status = getStatusLabel(item.ApprovalStatus);
 
       if (activeFilter === 'Pending') {
-        return status.includes('Pending');
+        return status === 'In review' || status.includes('Pending');
       }
 
       return status === activeFilter;
@@ -203,9 +226,10 @@ const PersonalEducation = () => {
 
     ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
       if (pill === 'Pending') {
-        counts[pill] = educationData.filter(item =>
-          getStatusLabel(item.ApprovalStatus).includes('Pending'),
-        ).length;
+        counts[pill] = educationData.filter(item => {
+          const status = getStatusLabel(item.ApprovalStatus);
+          return status === 'In review' || status.includes('Pending');
+        }).length;
       } else {
         counts[pill] = educationData.filter(
           item => getStatusLabel(item.ApprovalStatus) === pill,
@@ -447,6 +471,47 @@ const PersonalEducation = () => {
     isRTL: isRTL,
   };
 
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   const renderEducationCard = ({item}) => {
     const updatedItem = {...item, EducationTitle: 'Education'};
     return (
@@ -481,7 +546,12 @@ const PersonalEducation = () => {
       showFilterPills={true}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}>
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -515,10 +585,24 @@ const PersonalEducation = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>Get started</Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            Tap + to add a new record
-          </Text>
+          {/* Show different messages based on filter and data availability */}
+          {rawData.length === 0 && activeFilter === 'All' ? (
+            // No data at all AND "All" filter is active - show "Get started" message
+            <>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
+            </>
+          ) : (
+            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
+            // Show filter-specific message
+            <>
+              <Text style={styles.DLP_NoDataText}>
+                {`${activeFilter} record not found.`}
+              </Text>
+            </>
+          )}
         </ScrollView>
       )}
 

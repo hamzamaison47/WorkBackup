@@ -410,7 +410,8 @@ const PersonalEducationSaveRecord = () => {
       isHeaderActive
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
-      onRefresh={fetchDisciplines}>
+      onRefresh={fetchDisciplines}
+      showPageTitleRow={true}>
       {isLoading && <CustomIndicator />}
       {!isLoading && (
         <SafeAreaView style={styles.DSR_SafeArea}>

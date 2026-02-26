@@ -3290,55 +3290,117 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
 
-  // ── Approval Button (bottom of card) ──
-  DRC_approvalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-    gap: 6,
+  // ── Footer layout ──
+  DRC_footer2: {
+    paddingTop: conditionalVerticalScale(3, 3.5, 4, 5),
   },
 
-  DRC_approvalButtonText: {
-    fontSize: 13,
+  DRC_footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: conditionalScale(2, 2, 2, 2),
+    paddingBottom: conditionalVerticalScale(2, 2, 2, 2),
+  },
+
+  DRC_footerLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: conditionalScale(6, 7, 8, 10),
+  },
+
+  DRC_footerCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  DRC_footerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+
+  // ── Expand arrow button ──
+  DRC_expandArrowButton: {
+    paddingVertical: conditionalVerticalScale(5, 5.5, 6, 7),
+    paddingHorizontal: conditionalScale(14, 15, 16, 18),
+  },
+
+  // ── Approval button (pill trigger) ──
+  DRC_approvalButton2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: conditionalScale(18, 19, 20, 22),
+    borderWidth: moderateScale(1.5),
+    borderColor: '#0A66C2',
+    paddingVertical: conditionalVerticalScale(4, 4.5, 5, 6),
+    paddingHorizontal: conditionalScale(10, 11, 12, 14),
+    backgroundColor: '#0A66C2',
+  },
+
+  DRC_approvalButtonDisabled: {
+    borderColor: '#d1d5db',
+    opacity: 0.5,
+  },
+
+  DRC_approvalButtonText2: {
+    fontSize: conditionalFontScale(12, 12.5, 13, 14),
     fontWeight: '600',
-    color: '#10b981',
+    color: '#ffffff',
   },
 
-  // ── Approval dropdown panel (rendered via Modal) ──
-  DRC_approvalDropdown: {
+  DRC_approvalButtonTextDisabled: {
+    color: '#d1d5db',
+  },
+
+  // ── Approval dropdown panel ──
+  DRC_approvalDropdownMenu: {
     position: 'absolute',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
-    minWidth: 140,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
+    borderRadius: conditionalScale(10, 11, 12, 14),
+    paddingVertical: conditionalVerticalScale(3, 3.5, 4, 5),
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOpacity: 0.14,
+        shadowOffset: {width: 0, height: moderateScale(6)},
+        shadowRadius: moderateScale(16),
+      },
+      android: {
+        elevation: moderateScale(10),
+      },
+    }),
+    borderWidth: moderateScale(1),
+    borderColor: '#f3f4f6',
+    overflow: 'hidden',
+    minWidth: conditionalScale(140, 150, 160, 180),
   },
 
-  DRC_approvalMenuItem: {
+  DRC_approvalDropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: conditionalVerticalScale(10, 11, 12, 14),
+    paddingHorizontal: conditionalScale(14, 15, 16, 18),
   },
 
-  DRC_approvalMenuItemBorder: {
-    borderBottomWidth: 1,
+  DRC_approvalDropdownItemBorder: {
+    borderBottomWidth: 0.5,
     borderBottomColor: '#f3f4f6',
   },
 
-  DRC_approvalMenuItemText: {
-    fontSize: 14,
+  DRC_approvalDropdownIconWrap: {
+    width: conditionalScale(24, 26, 28, 30),
+    height: conditionalScale(24, 26, 28, 30),
+    borderRadius: conditionalScale(6, 7, 8, 10),
+    backgroundColor: '#eff6ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: conditionalScale(8, 9, 10, 12),
+  },
+
+  DRC_approvalDropdownItemText: {
+    fontSize: conditionalFontScale(13, 13.5, 14, 15),
     fontWeight: '500',
-    color: '#065f46', // dark green text
+    color: '#374151',
   },
 
   // ==================================================================================================================
