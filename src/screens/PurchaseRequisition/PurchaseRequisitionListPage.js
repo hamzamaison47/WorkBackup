@@ -500,7 +500,7 @@ import AlertSubmitModal from '../../components/PurchaseRequisition/AlertSubmitMo
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
-import ReceiptDetailsModal from '../../shared/ReceiptDetailsModal';
+import MultiSelectActionBar from '../../components/MultiSelectActionBar'; // ← new
 import styles from '../../styles/styles';
 
 import {retrievePurchaseRequisitionByMe} from '../../API/PurchaseRequisition/PurchaseRequisitionListPage';
@@ -510,6 +510,8 @@ import {submitPurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseR
 import {useSelector} from 'react-redux';
 import {ScrollView} from 'react-native-gesture-handler';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+
+// ── Height of your custom tab navigator — adjust if needed ──
 
 const PurchaseRequisitionListPage = () => {
   const navigation = useNavigation();
@@ -553,6 +555,13 @@ const PurchaseRequisitionListPage = () => {
   // Attachment modal state
   const [attachmentModal, setAttachmentModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+
+  // ── Multi-select state ──────────────────────────────────────
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  // ────────────────────────────────────────────────────────────
 
   const CARD_CONFIG = {
     headerConfig: {
@@ -625,18 +634,8 @@ const PurchaseRequisitionListPage = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      // submit: {
-      //   show: isDraft,
-      //   position: 'bottom',
-      //   style: 'text',
-      //   icon: 'send',
-      //   iconSize: 16,
-      //   text: 'Submit',
-      //   textColor: '#0A66C2',
-      //   iconColor: '#0A66C2',
-      // },
       approval: {
-        show: isDraft || isRejected, // only visible when action is possible
+        show: isDraft || isRejected,
         attachment: {
           show: true,
           position: 'header',
@@ -720,6 +719,105 @@ const PurchaseRequisitionListPage = () => {
     });
   };
 
+  // ── Multi-select handlers ───────────────────────────────────
+
+  const handleLongPress = useCallback(data => {
+    setIsMultiSelectMode(true);
+    setSelectedIds(new Set([data.RecId]));
+  }, []);
+
+  const handleSelectToggle = useCallback(data => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(data.RecId)) {
+        next.delete(data.RecId);
+      } else {
+        next.add(data.RecId);
+      }
+      if (next.size === 0) setIsMultiSelectMode(false);
+      return next;
+    });
+  }, []);
+
+  const handleMultiSelectCancel = useCallback(() => {
+    setSelectedIds(new Set());
+    setIsMultiSelectMode(false);
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    const allIds = getFilteredData().map(item => item.RecId);
+    setSelectedIds(new Set(allIds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayData, activeFilter, purchaseRequisitiondata]);
+
+  // Bulk Submit — only submits Draft items from the selection
+  const handleBulkSubmit = useCallback(async () => {
+    const filteredData = getFilteredData();
+    const selectedItems = filteredData.filter(
+      item =>
+        selectedIds.has(item.RecId) &&
+        (item.RequisitionStatus === 'Draft' || !item.RequisitionStatus),
+    );
+
+    if (selectedItems.length === 0) {
+      setAlertMessage('No draft records selected for submission.');
+      setAlertModal(true);
+      return;
+    }
+
+    setIsBulkSubmitting(true);
+    try {
+      const requestList = selectedItems.map(item => item.PurchReqId);
+      const response = await submitPurchaseRequisition({
+        _requestList: requestList,
+      });
+
+      const resObj = Array.isArray(response) ? response[0] : response;
+
+      if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+        setAlertMessage(
+          `${selectedItems.length} record(s) submitted successfully.`,
+        );
+        setAlertModal(true);
+        fetchPurchaseRequisitionData();
+      } else {
+        setAlertMessage(resObj?.Message || 'Failed to submit records.');
+        setAlertModal(true);
+      }
+    } catch (error) {
+      setAlertMessage('Failed to submit records.');
+      setAlertModal(true);
+    } finally {
+      setIsBulkSubmitting(false);
+      handleMultiSelectCancel();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds, fetchPurchaseRequisitionData, handleMultiSelectCancel]);
+
+  // Bulk Delete — only deletes Draft items from the selection
+  const handleBulkDelete = useCallback(async () => {
+    const filteredData = getFilteredData();
+    const selectedItems = filteredData.filter(
+      item =>
+        selectedIds.has(item.RecId) &&
+        (item.RequisitionStatus === 'Draft' || !item.RequisitionStatus),
+    );
+
+    if (selectedItems.length === 0) {
+      setAlertMessage('No draft records selected for deletion.');
+      setAlertModal(true);
+      return;
+    }
+
+    // Reuse existing delete confirmation modal for bulk too
+    // Store all selected items temporarily
+    setItemToDelete({_bulk: true, items: selectedItems});
+    setDeleteModal(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIds]);
+
+  // ────────────────────────────────────────────────────────────
+
   const fetchPurchaseRequisitionData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
 
@@ -736,10 +834,8 @@ const PurchaseRequisitionListPage = () => {
         employeeId: effectiveEmployeeId,
       });
       setPurchaseRequisitionData(data);
-      setRawData(data); // ← add
-      setDisplayData(data); // ← add
-
-      // console.log({data});
+      setRawData(data);
+      setDisplayData(data);
 
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -752,7 +848,7 @@ const PurchaseRequisitionListPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [effectiveEmployeeId]);
+  }, [effectiveEmployeeId, fadeAnim]);
 
   useFocusEffect(
     useCallback(() => {
@@ -778,38 +874,21 @@ const PurchaseRequisitionListPage = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        // If multi-select is active, cancel it instead of going back
+        if (isMultiSelectMode) {
+          handleMultiSelectCancel();
+          return true;
+        }
         handleGoBack();
         return true;
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigation, isMultiSelectMode, handleMultiSelectCancel]),
   );
-
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return purchaseRequisitiondata;
-
-  //   return purchaseRequisitiondata.filter(item => {
-  //     const rawStatus = item.RequisitionStatus?.toLowerCase();
-
-  //     if (activeFilter === 'Pending') {
-  //       return (
-  //         rawStatus === 'submitted' ||
-  //         rawStatus === 'in review' ||
-  //         rawStatus === 'inreview'
-  //       );
-  //     }
-
-  //     if (activeFilter === 'Completed') {
-  //       return rawStatus === 'closed';
-  //     }
-
-  //     return rawStatus === activeFilter.toLowerCase();
-  //   });
-  // };
 
   const getFilteredData = () => {
     const base = displayData.length > 0 ? displayData : purchaseRequisitiondata;
@@ -855,7 +934,6 @@ const PurchaseRequisitionListPage = () => {
       }
     });
 
-    console.log('Filter counts:', counts); // Debug
     return counts;
   };
 
@@ -1022,6 +1100,11 @@ const PurchaseRequisitionListPage = () => {
         gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
+        // ── Multi-select wiring ──
+        isMultiSelectMode={isMultiSelectMode}
+        isSelected={selectedIds.has(item.RecId)}
+        onLongPress={handleLongPress}
+        onSelectToggle={handleSelectToggle}
       />
     );
   };
@@ -1053,6 +1136,7 @@ const PurchaseRequisitionListPage = () => {
           </View>
         </View>
       )}
+
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
@@ -1083,9 +1167,7 @@ const PurchaseRequisitionListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              {/* Show different messages based on filter and data availability */}
               {rawData.length === 0 && activeFilter === 'All' ? (
-                // No data at all AND "All" filter is active - show "Get started" message
                 <>
                   <Text style={styles.DLP_NoDataText}>Get started</Text>
                   <Text style={styles.DLP_NoDataSubText}>
@@ -1093,20 +1175,27 @@ const PurchaseRequisitionListPage = () => {
                   </Text>
                 </>
               ) : (
-                // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-                // Show filter-specific message
-                <>
-                  <Text style={styles.DLP_NoDataText}>
-                    {`${activeFilter} record not found.`}
-                  </Text>
-                </>
+                <Text style={styles.DLP_NoDataText}>
+                  {`${activeFilter} record not found.`}
+                </Text>
               )}
             </ScrollView>
           )}
         </Animated.View>
       )}
 
-      {/* ReceiptDetailsModal — mirrors DynamicAttachmentModal usage in LeaveRequestListPage */}
+      {/* ── Floating multi-select action bar ── */}
+      <MultiSelectActionBar
+        visible={isMultiSelectMode}
+        selectedCount={selectedIds.size}
+        onSubmitAll={handleBulkSubmit}
+        onDeleteAll={handleBulkDelete}
+        onCancel={handleMultiSelectCancel}
+        isSubmitting={isBulkSubmitting}
+        isDeleting={isBulkDeleting}
+        topOffset={8}
+      />
+
       <DynamicAttachmentModal
         visible={attachmentModal}
         recordData={selectedItem}
@@ -1144,44 +1233,6 @@ const PurchaseRequisitionListPage = () => {
           selectedItem?.RequisitionStatus === 'Draft'
         }
       />
-      {/* <ReceiptDetailsModal
-        visible={attachmentModal}
-        recordData={selectedItem}
-        recordIdKey="RecId"
-        transactionNumberKey="PurchReqId"
-        tableName="PurchReqTable"
-        legalEntity={selectedLegalEntity}
-        employeeId={effectiveEmployeeId}
-        employeeName={effectiveEmployeeName}
-        modalTitle="Purchase Requisition Receipts"
-        onClose={() => {
-          setAttachmentModal(false);
-          setSelectedItem(null);
-        }}
-        onSave={() => {
-          fetchPurchaseRequisitionData();
-        }}
-        showDetails={true}
-        detailFields={[
-          {key: 'PurchReqId', label: 'Requisition ID'},
-          {key: 'PurchReqName', label: 'Title'},
-          {key: 'RequiredDate', label: 'Required Date'},
-        ]}
-        detailData={selectedItem || {}}
-        showTakePhoto={
-          !selectedItem?.RequisitionStatus ||
-          selectedItem?.RequisitionStatus === 'Draft'
-        }
-        showChooseFile={
-          !selectedItem?.RequisitionStatus ||
-          selectedItem?.RequisitionStatus === 'Draft'
-        }
-        showDownload={true}
-        showDelete={
-          !selectedItem?.RequisitionStatus ||
-          selectedItem?.RequisitionStatus === 'Draft'
-        }
-      /> */}
 
       <AlertModal
         visible={alertModal}
@@ -1189,11 +1240,51 @@ const PurchaseRequisitionListPage = () => {
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
+
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"
-        text="Are you sure you want to delete this record?"
+        text={
+          itemToDelete?._bulk
+            ? `Are you sure you want to delete ${itemToDelete.items.length} selected record(s)?`
+            : 'Are you sure you want to delete this record?'
+        }
         onPress={async () => {
+          // ── Bulk delete path ──
+          if (itemToDelete?._bulk) {
+            setDeleteModal(false);
+            setIsBulkDeleting(true);
+            try {
+              const contractList = itemToDelete.items.map(i => ({
+                RecId: i.RecId,
+              }));
+              await deletePurchaseRequisition({_contractList: contractList});
+
+              const deletedIds = new Set(itemToDelete.items.map(i => i.RecId));
+              setPurchaseRequisitionData(prev =>
+                prev.filter(i => !deletedIds.has(i.RecId)),
+              );
+              setRawData(prev => prev.filter(i => !deletedIds.has(i.RecId)));
+              setDisplayData(prev =>
+                prev.filter(i => !deletedIds.has(i.RecId)),
+              );
+
+              setAlertMessage(
+                `${itemToDelete.items.length} record(s) deleted successfully.`,
+              );
+              setAlertModal(true);
+            } catch (error) {
+              setAlertMessage('Failed to delete records.');
+              setAlertModal(true);
+            } finally {
+              setIsBulkDeleting(false);
+              setItemToDelete(null);
+              handleMultiSelectCancel();
+            }
+            return;
+          }
+
+          // ── Single delete path (unchanged) ──
           if (!itemToDelete?.RecId) {
             setAlertMessage('Invalid record selected for deletion');
             setAlertModal(true);
@@ -1232,6 +1323,7 @@ const PurchaseRequisitionListPage = () => {
           setItemToDelete(null);
         }}
       />
+
       <AlertSubmitModal
         visible={submitModal}
         heading="Confirm Submission"
