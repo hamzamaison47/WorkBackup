@@ -209,7 +209,10 @@ const styles = StyleSheet.create({
   },
 
   Login_Icon: {
-    marginRight: spacing.sm,
+    width: iconSize.sm,
+    height: iconSize.sm,
+    resizeMode: 'contain',
+    marginRight: 8,
   },
 
   Login_LoadingContainer: {

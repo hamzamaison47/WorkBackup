@@ -335,13 +335,13 @@ export default function CustomTabBar(props) {
       iconUnfocused: 'people-outline',
       color: '#0A66C2',
     },
-    {
-      name: 'DisplayListPage',
-      label: t('tabNavigator.history'),
-      iconFocused: 'grid',
-      iconUnfocused: 'grid-outline',
-      color: '#0A66C2',
-    },
+    // {
+    //   name: 'DisplayListPage',
+    //   label: t('tabNavigator.history'),
+    //   iconFocused: 'grid',
+    //   iconUnfocused: 'grid-outline',
+    //   color: '#0A66C2',
+    // },
     {
       name: 'WorkItemAssigned',
       label: t('tabNavigator.MyWorkItems'),

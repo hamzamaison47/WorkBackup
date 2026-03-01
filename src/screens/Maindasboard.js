@@ -167,13 +167,13 @@ const MainDashboard = () => {
               onProfilePress={() => navigation.navigate('Profile')}
             />
 
-            <AttendanceCalendar
+            {/* <AttendanceCalendar
               userData={userData}
               navigation={navigation}
               screenWidth={dimensions.screenWidth}
               H_PADDING={dimensions.H_PADDING}
               ref={calendarRef}
-            />
+            /> */}
 
             {/* Only render LeaveEntitlementProgress if there's data */}
             {hasLeaveData && (
@@ -202,19 +202,19 @@ const MainDashboard = () => {
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
       />
-
+      {/* 
       <AIFloatingButton
         scrollY={scrollY}
         onPress={() => setChatVisible(true)}
         hasLeaveData={hasLeaveData} // Pass the leave data status
-      />
+      /> */}
 
       {/* GENERIC: Pass service instance */}
-      <AIChatbot
+      {/* <AIChatbot
         visible={chatVisible}
         onClose={() => setChatVisible(false)}
         serviceInstance={masterService}
-      />
+      /> */}
     </ActionPaneContainer>
   );
 };

@@ -423,6 +423,9 @@ const LoginScreen = () => {
     [dispatch],
   );
 
+  const googleIcon = require('../assets/google.png');
+  const microsoftIcon = require('../assets/microsoft.png');
+
   const handleAlertConfirm = useCallback(() => {
     setAlertModal(false);
     if (onAlertConfirm) {
@@ -471,12 +474,7 @@ const LoginScreen = () => {
               style={styles.Login_Button}
               onPress={() => handleProviderLogin('Azure')}
               disabled={loading}>
-              <Icon
-                name="windows"
-                size={iconSize.sm}
-                color="#0A66C2"
-                style={styles.Login_Icon}
-              />
+              <Image source={microsoftIcon} style={styles.Login_Icon} />
               <Text style={styles.Login_ButtonText}>
                 {t('login.signInMicrosoft')}
               </Text>
@@ -487,12 +485,7 @@ const LoginScreen = () => {
               style={styles.Login_Button}
               onPress={() => handleProviderLogin('Google')}
               disabled={loading}>
-              <Icon
-                name="google"
-                size={iconSize.sm}
-                color="#0A66C2"
-                style={styles.Login_Icon}
-              />
+              <Image source={googleIcon} style={styles.Login_Icon} />
               <Text style={styles.Login_ButtonText}>
                 {t('login.signInGoogle')}
               </Text>
