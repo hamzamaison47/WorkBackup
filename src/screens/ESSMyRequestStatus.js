@@ -452,6 +452,7 @@ import AlertModal from '../components/Alert/AlertModal';
 import DynamicRequestCard from '../components/DynamicRequestCard';
 
 import {retrieveMyRequestStatus} from '../API/ESSMyRequestStatus/retrieveAllESSMyRequestStatus';
+import {retrieveMyReuestStatusAll} from '../API/ESSMyRequestStatus/retrieveMyReuestStatusAll';
 import styles from '../styles/styles';
 
 const ESSMyRequestStatusListPage = () => {
@@ -500,10 +501,9 @@ const ESSMyRequestStatusListPage = () => {
 
     setIsLoading(true);
     try {
-      const data = await retrieveMyRequestStatus({
-        employeeId: effectiveEmployeeId,
+      const data = await retrieveMyReuestStatusAll({
+        email: effectiveUserData.email,
       });
-
       const formattedData = (data || []).map((item, index) => ({
         id: item.RecId ?? index,
         recId: item.RecId,

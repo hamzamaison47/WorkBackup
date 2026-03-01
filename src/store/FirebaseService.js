@@ -331,7 +331,7 @@ class FirebaseService {
       // Step 5: Update token in Dynamics
       const result = await UpdateFirebaseToken({updateData: updateData});
 
-      if (result && result.parmIsSuccess) {
+      if (result && result.IsSuccess) {
         // Update Redux with synced token
         store.dispatch(setLastSyncedToken(firebaseToken));
         store.dispatch(setDynamicsSynced(true));
