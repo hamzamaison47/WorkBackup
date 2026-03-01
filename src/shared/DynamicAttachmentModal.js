@@ -84,10 +84,6 @@ const DynamicAttachmentModal = ({
 
   // Dynamically resolve the record ID using the provided key
   const recordId = recordData?.[recordIdKey];
-  console.log('recordData', {recordData});
-  console.log('recordIdKey', {recordIdKey});
-  console.log('recordId', {recordId});
-
   useEffect(() => {
     if (visible && recordId) {
       loadExistingAttachments();

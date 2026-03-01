@@ -357,7 +357,7 @@ const GenericAdvanceListScreen = () => {
       {
         key: 'RecoveryStartDate',
         label: allAdvanceData[0]?.RecoveryStartDatelbl || 'Recovery Start Date',
-        type: 'text',
+        type: 'date',
       },
       {
         key: 'WFStatus',
@@ -481,7 +481,6 @@ const GenericAdvanceListScreen = () => {
         handleReceiptAttachmentPress(itemData);
         break;
       default:
-        console.log('Unknown button pressed:', buttonType);
     }
   };
 
@@ -576,7 +575,6 @@ const GenericAdvanceListScreen = () => {
           setAlertMessage('Unable to delete record. Please try again.');
         }
       } catch (error) {
-        console.log('Delete Advance Request error:', error);
         setAlertMessage('Failed to delete record');
       } finally {
         setIsProcessing(false);
@@ -793,7 +791,7 @@ const GenericAdvanceListScreen = () => {
         visible={attachmentModalVisible}
         recordData={selectedAdvanceItem}
         recordIdKey="RecId"
-        tableName="PREmployeeAdvanceRequest"
+        tableName="PREmployeeAdvanceRequests"
         onClose={() => {
           setAttachmentModalVisible(false);
           setSelectedAdvanceItem(null);
