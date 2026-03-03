@@ -611,7 +611,7 @@ const FamilyContact_SaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        mode === 'edit' ? 'Edit Personal Contact' : 'Create Personal Contacts'
+        mode === 'edit' ? 'Edit Personal Contact' : 'Create Personal Contact'
       }
       isBackButton={true}
       showFooter={false}
@@ -1056,6 +1056,7 @@ const FamilyContact_SaveRecord = () => {
         initialDate={formData.BirthDate}
         onDateSelected={handleBirthDateChange}
         onClose={() => setShowBirthDateCalendar(false)}
+        maxDate={today}
       />
 
       {/* ✅ AlertModal outside the loading block */}

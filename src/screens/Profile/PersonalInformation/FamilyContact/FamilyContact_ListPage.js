@@ -76,6 +76,7 @@ const FamilyContacts_ListPageScreen = () => {
       const FamilyContactData = await retrieveAllFamilyContacts({
         employeeId: effectiveEmployeeId,
       });
+      console.log('here is the data', FamilyContactData);
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       setfamilycontactsdata(FamilyContactData);
       setRawData(FamilyContactData); // ← here
@@ -204,7 +205,7 @@ const FamilyContacts_ListPageScreen = () => {
         type: 'text',
       },
       {
-        key: 'RelationShipTypeId',
+        key: 'formattedRelationship', // Use the formatted version
         label: familycontactsdata[0]?.RelationShipTypeIdlbl || 'Relationship',
         type: 'text',
       },
@@ -441,10 +442,17 @@ const FamilyContacts_ListPageScreen = () => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
 
+    // Format the relationship type
+    const formatRelationshipType = value => {
+      if (!value) return value;
+      return value.replace(/([A-Z])/g, ' $1').trim();
+    };
+
     const processedItem = {
       ...item,
       employeeId: item.employeeId || effectiveEmployeeId,
       employeeName: item.employeeName || effectiveEmployeeName,
+      formattedRelationship: formatRelationshipType(item.RelationShipTypeId),
     };
 
     return (
