@@ -46,6 +46,7 @@ import {FamilyContacts_ListPageScreen} from '../screens/Profile/PersonalInformat
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
 import FamilyContact_SaveRecord from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_SaveRecord';
 import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
+import WorkflowDetailScreen from '../screens/WorkflowDetailScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -333,7 +334,20 @@ const DrawerNavigator = () => {
           headerShadowVisible: false,
         }}
       />
-
+      {/* Static screens */}
+      <Drawer.Screen
+        name="WorkflowDetailScreen"
+        component={WorkflowDetailScreen}
+        initialParams={{userData}}
+        options={{
+          title: 'WorkflowDetailScreen',
+          drawerIcon: () => (
+            <Ionicons name="calendar" size={24} color="#0A66C2" />
+          ),
+          headerShown: true,
+          headerShadowVisible: false,
+        }}
+      />
       <Drawer.Screen
         name="ChangeProfileImage"
         component={ChangeProfileImage}
