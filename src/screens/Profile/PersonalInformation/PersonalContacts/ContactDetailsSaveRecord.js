@@ -30,13 +30,54 @@ import {translate as t} from '../../../../store/utils/translate';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../../../components/Alert/AlertModal';
-import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../../../components/Buttons/SaveRecordButtons';
 
 import {CreateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/CreateContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
 import {getContactDetailsLabels} from '../../../../API/PersonalInformation/ContactDetails/GetContactDetailsLabel';
 
 import styles from '../../../../styles/styles';
+
+/* -------  PHONE TYPES (show Extension field for these)  ------- */
+const PHONE_TYPES = [
+  'Phone',
+  'Home number',
+  'Work number',
+  'Mobile number',
+  'Fax',
+  'Telex',
+];
+
+/* -------  Per-type locator label + placeholder  ------- */
+const LOCATOR_CONFIG = {
+  Phone: {label: 'Phone Number *', placeholder: 'e.g., +921234567890'},
+  Email: {label: 'Email Address *', placeholder: 'e.g., john.doe@email.com'},
+  URL: {label: 'URL *', placeholder: 'e.g., https://example.com'},
+  Telex: {label: 'Telex Number *', placeholder: 'e.g., 12345'},
+  Fax: {label: 'Fax Number *', placeholder: 'e.g., +921234567890'},
+  Facebook: {
+    label: 'Facebook Profile URL *',
+    placeholder: 'e.g., https://facebook.com/username',
+  },
+  Twitter: {label: 'Twitter Handle *', placeholder: 'e.g., @username'},
+  LinkedIn: {
+    label: 'LinkedIn Profile URL *',
+    placeholder: 'e.g., https://linkedin.com/in/username',
+  },
+  'Home number': {label: 'Home Number *', placeholder: 'e.g., +921234567890'},
+  'Work number': {label: 'Work Number *', placeholder: 'e.g., +921234567890'},
+  'Mobile number': {
+    label: 'Mobile Number *',
+    placeholder: 'e.g., +921234567890',
+  },
+};
+
+const DEFAULT_LOCATOR = {
+  label: 'Locator (Email or Phone No.) *',
+  placeholder: 'Select a type first',
+};
 
 /* --------------  MAIN COMPONENT  -------------- */
 const ContactDetailsSaveRecord = () => {
@@ -63,12 +104,13 @@ const ContactDetailsSaveRecord = () => {
     originalCameFrom = null,
   } = route.params || {};
   console.log('Contract Data', contactData);
+
   /* -------  FORM INITIALISER  ------- */
   const createInitialFormData = () => ({
     RecId: contactData?.RecId || '',
     EmployeeId: employeeId,
     WorkerRecId: WorkerRecId,
-    Type: contactData?.Type || '',
+    Type: contactData?.Type || 'Phone',
     Locator: contactData?.Locator || '',
     LocatorExtension: contactData?.LocatorExtension || '',
     Description: contactData?.Description || '',
@@ -96,6 +138,12 @@ const ContactDetailsSaveRecord = () => {
   const [contactDetailsLabels, setContactDetailsLabels] = useState({});
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
+  /* -------  DERIVED  ------- */
+  const isPhoneType = PHONE_TYPES.includes(formData.Type);
+  const currentLocator = formData.Type
+    ? LOCATOR_CONFIG[formData.Type] || DEFAULT_LOCATOR
+    : DEFAULT_LOCATOR;
+
   /* -------  STATIC DROPDOWN DATA  ------- */
   const contactTypeOptions = [
     {label: 'Phone', value: 'Phone'},
@@ -120,6 +168,7 @@ const ContactDetailsSaveRecord = () => {
       return {};
     }
   };
+
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -242,6 +291,18 @@ const ContactDetailsSaveRecord = () => {
     setFormData(prev => ({...prev, [field]: value}));
   };
 
+  const handleTypeChange = item => {
+    if (mode === 'edit') return;
+    // Clear extension when switching away from a phone type
+    const newIsPhone = PHONE_TYPES.includes(item.value);
+    setFormData(prev => ({
+      ...prev,
+      Type: item.value,
+      Locator: '',
+      LocatorExtension: newIsPhone ? prev.LocatorExtension : '',
+    }));
+  };
+
   const clearFormData = useCallback(() => {
     setFormData(createInitialFormData());
   }, []);
@@ -249,16 +310,15 @@ const ContactDetailsSaveRecord = () => {
   const validateForm = () => {
     const missing = [];
     if (!formData.Type) missing.push('Type');
-    if (!formData.Locator) missing.push('Locator');
+    if (!formData.Locator) missing.push(currentLocator.label.replace(' *', ''));
     return missing;
   };
 
-  /* -------  REFRESH (same pattern as leave)  ------- */
+  /* -------  REFRESH  ------- */
   const handleRefresh = async () => {
     setIsLoading(true);
     try {
       clearFormData();
-      /* no remote data to refetch for contacts – keep same shape */
     } catch (error) {
       console.error('Refresh error', error);
     } finally {
@@ -297,6 +357,7 @@ const ContactDetailsSaveRecord = () => {
       };
       console.log('mode', mode);
       console.log('PAYLOAD: ', payload);
+
       let response;
       if (mode === 'edit') {
         response = await UpdateContactDetails({contactData: payload});
@@ -307,8 +368,8 @@ const ContactDetailsSaveRecord = () => {
       const isSuccess =
         response?.IsSuccess === true || response?.IsSuccess === 'true';
       if (isSuccess) {
-        const actionText = mode === 'edit' ? 'Updated' : 'Created';
-        setAlertMessage(`Contact ${actionText} Successfully`);
+        const actionText = mode === 'edit' ? 'updated' : 'created';
+        setAlertMessage(`Record ${actionText} successfully`);
         setAlertModal(true);
 
         setTimeout(() => {
@@ -354,7 +415,8 @@ const ContactDetailsSaveRecord = () => {
       showTabNavigator={!isKeyboardVisible}
       onBackPress={goBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={{}}>
+      onFloatingButtonPress={{}}
+      showPageTitleRow={true}>
       {isLoading ? (
         <CustomIndicator />
       ) : (
@@ -374,6 +436,7 @@ const ContactDetailsSaveRecord = () => {
             contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
+            {/* ── Type ── */}
             <Text style={styles.DSR_Label}>Type *</Text>
             <Dropdown
               style={[styles.DSR_Input, mode === 'edit' && styles.DSR_Disabled]}
@@ -382,9 +445,7 @@ const ContactDetailsSaveRecord = () => {
               valueField="value"
               placeholder="Select Type"
               value={formData.Type}
-              onChange={item => {
-                if (mode !== 'edit') handleInputChange('Type', item.value);
-              }}
+              onChange={handleTypeChange}
               maxHeight={280}
               search
               searchPlaceholder="Search Type"
@@ -400,25 +461,42 @@ const ContactDetailsSaveRecord = () => {
               disable={mode === 'edit'}
             />
 
-            <Text style={styles.DSR_Label}>Locator (Email or Phone No.) *</Text>
+            {/* ── Locator – label changes based on selected Type ── */}
+            <Text style={styles.DSR_Label}>{currentLocator.label}</Text>
             <TextInput
               style={styles.DSR_Input}
               value={formData.Locator}
               onChangeText={text => handleInputChange('Locator', text)}
-              placeholder="e.g., john.doe@email.com"
+              placeholder={currentLocator.placeholder}
               placeholderTextColor="#888"
               autoCapitalize="none"
+              keyboardType={
+                isPhoneType
+                  ? 'phone-pad'
+                  : formData.Type === 'Email'
+                  ? 'email-address'
+                  : 'default'
+              }
             />
 
-            <Text style={styles.DSR_Label}>Extension</Text>
-            <TextInput
-              style={styles.DSR_Input}
-              value={formData.LocatorExtension}
-              onChangeText={text => handleInputChange('LocatorExtension', text)}
-              placeholder="e.g., +92"
-              placeholderTextColor="#888"
-            />
+            {/* ── Extension – only for phone-type contacts ── */}
+            {isPhoneType && (
+              <>
+                <Text style={styles.DSR_Label}>Extension</Text>
+                <TextInput
+                  style={styles.DSR_Input}
+                  value={formData.LocatorExtension}
+                  onChangeText={text =>
+                    handleInputChange('LocatorExtension', text)
+                  }
+                  placeholder="e.g., +92"
+                  placeholderTextColor="#888"
+                  keyboardType="phone-pad"
+                />
+              </>
+            )}
 
+            {/* ── Description ── */}
             <Text style={styles.DSR_Label}>Description</Text>
             <TextInput
               style={[styles.DSR_Input, styles.DSR_TextArea]}
@@ -430,6 +508,7 @@ const ContactDetailsSaveRecord = () => {
               numberOfLines={4}
             />
 
+            {/* ── Toggles ── */}
             <View style={styles.DSR_SwitchRow}>
               <Text style={styles.DSR_SwitchLabel}>Is Primary</Text>
               <Switch
@@ -449,25 +528,20 @@ const ContactDetailsSaveRecord = () => {
                 thumbColor={formData.IsPrivate ? '#2196F3' : '#f4f3f4'}
               />
             </View>
-
-            <View style={styles.DSR_SwitchRow}>
-              <Text style={styles.DSR_SwitchLabel}>Is Mobile Phone</Text>
-              <Switch
-                value={!!formData.IsMobilePhone}
-                onValueChange={val => handleInputChange('IsMobilePhone', val)}
-                trackColor={{false: '#767577', true: '#81b0ff'}}
-                thumbColor={formData.IsMobilePhone ? '#2196F3' : '#f4f3f4'}
-              />
-            </View>
           </ScrollView>
 
           <SaveRecordButtons
             mode={mode}
             processingButton={processingButton}
-            onSave={() => handleAction('save')}
+            onSave={() => handleAction(mode === 'edit' ? 'update' : 'create')}
             onCancel={goBack}
             isDisabled={
               processingButton === 'create' || processingButton === 'submit'
+            }
+            showButtons={
+              mode === 'edit'
+                ? [BUTTON_TYPES.UPDATE, BUTTON_TYPES.CANCEL]
+                : [BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]
             }
           />
         </SafeAreaView>
