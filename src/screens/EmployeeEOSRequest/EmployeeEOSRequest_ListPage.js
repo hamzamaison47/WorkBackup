@@ -207,8 +207,8 @@ const EmployeeEOSRequestListPage = () => {
     }
 
     navigation.reset({
-      index: 0, // top of the stack
-      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+      index: 0,
+      routes: [{name: targetRoute}],
     });
   };
 

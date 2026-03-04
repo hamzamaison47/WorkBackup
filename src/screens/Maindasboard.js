@@ -22,6 +22,9 @@ import MenuGrid from '../components/MainDashboard/MenuGrid';
 import AIChatbot from '../components/AIChatbot/AIChatbot';
 import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
 import LeaveEntitlementProgress from '../components/MainDashboard/LeaveEntitlementProgress';
+import QuickAccessSheet, {
+  QuickAccessButton,
+} from '../components/MainDashboard/QuickAccessSheet';
 
 import MasterService from '../services/MasterService';
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
@@ -66,6 +69,7 @@ const MainDashboard = () => {
 
   // State to track if leave data is available
   const [hasLeaveData, setHasLeaveData] = useState(true);
+  const [quickAccessVisible, setQuickAccessVisible] = useState(false);
 
   // Initialize Leave Service
   const masterService = MasterService();
@@ -139,7 +143,7 @@ const MainDashboard = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={!quickAccessVisible}
       onRefresh={handleRefresh}>
       {isLoading ? (
         <CustomIndicator />
@@ -214,6 +218,16 @@ const MainDashboard = () => {
         visible={chatVisible}
         onClose={() => setChatVisible(false)}
         serviceInstance={masterService}
+      />
+
+      {/* Sticky Quick Access Button */}
+      <QuickAccessButton onPress={() => setQuickAccessVisible(true)} />
+
+      <QuickAccessSheet
+        visible={quickAccessVisible}
+        onClose={() => setQuickAccessVisible(false)}
+        menus={dynamicMenus}
+        onCardPress={handleCardPress}
       />
     </ActionPaneContainer>
   );

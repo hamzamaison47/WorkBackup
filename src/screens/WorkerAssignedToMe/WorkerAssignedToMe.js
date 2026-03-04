@@ -316,7 +316,7 @@ const WorkerAssignedToMe = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={true}
       onRefresh={() =>
         fetchEmployeeReportToMe(rootChain[rootChain.length - 1] || userData)
       }>

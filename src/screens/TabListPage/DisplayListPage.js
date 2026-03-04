@@ -63,7 +63,8 @@ const DisplayListPage = () => {
     return (
       screenMapping[item.MenuId] &&
       [0, 2, 3].includes(Number(item.Type)) &&
-      item.Visible === '1'
+      item.Visible === '1' &&
+      item.DisplayOnMainScreen === 'Yes'
     );
   });
 
@@ -124,7 +125,7 @@ const DisplayListPage = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={true}
       onRefresh={handleRefresh}>
       {refreshing ? (
         <CustomIndicator />

@@ -106,12 +106,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
     if (cameFrom === 'MainDashboard') {
       navigation.reset({
         index: 0,
-        routes: [
-          {
-            name: 'TabNavigator',
-            params: {screen: 'MainDashboard'},
-          },
-        ],
+        routes: [{name: 'MainDashboard'}],
       });
     } else if (cameFrom === 'ExpenseManagmentListPage') {
       const targetCameFrom = originalCameFrom || 'DisplayListPage';

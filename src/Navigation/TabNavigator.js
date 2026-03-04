@@ -18,11 +18,25 @@ import styles from '../styles/styles';
 import CustomTabBar from '../Controller/CustomTabBar';
 import {translate as t} from '../store/utils/translate';
 import WorkItemsAssignedToMePage from '../screens/WorkItemsAssignedToMe/WorkItemAssignedToMe';
+import {screenMapping} from '../Controller/screenMapping';
 
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
   const currentLanguage = useSelector(state => state.language.currentLanguage);
+  const {menuItems} = useSelector(state => state.menuItem);
+
+  const footerTabs = menuItems.filter(
+    item =>
+      screenMapping[item.MenuId] &&
+      item.Visible === '1' &&
+      item.DisplayOnFooter === 'Yes',
+  );
+
+  const uniqueFooterTabs = footerTabs.filter(
+    (it, idx, arr) =>
+      !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
+  );
 
   return (
     <Tab.Navigator
@@ -66,36 +80,25 @@ const TabNavigator = () => {
         tabBarLabelStyle: styles.TNav_TabLabelO,
         headerShadowVisible: false,
       })}>
-      <Tab.Screen
-        name="MainDashboard"
-        component={MainDashboard}
-        options={{tabBarLabel: t('tabNavigator.home')}}
-      />
-      <Tab.Screen
-        name="WorkerAssignedToMe"
-        component={WorkerAssignedToMe}
-        options={{tabBarLabel: t('tabNavigator.myTeam')}}
-      />
-      <Tab.Screen
-        name="DisplayListPage"
-        component={DisplayListPage}
-        options={{tabBarLabel: t('tabNavigator.history')}}
-      />
-      <Tab.Screen
-        name="WorkItemAssigned"
-        component={WorkItemsAssignedToMePage}
-        options={{tabBarLabel: t('tabNavigator.MyWorkItems')}}
-      />
-      <Tab.Screen
-        name="ESSMyRequestStatusListPage"
-        component={ESSMyRequestStatusListPage}
-        options={{tabBarLabel: t('tabNavigator.ESSMyRequestStatusListPage')}}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={Profile}
-        options={{tabBarLabel: t('tabNavigator.profile')}}
-      />
+      {uniqueFooterTabs.length > 0 ? (
+        uniqueFooterTabs.map((item, idx) => {
+          const ScreenComponent = screenMapping[item.MenuId];
+          return (
+            <Tab.Screen
+              key={`${item.MenuId}-${item.Sequence ?? idx}`}
+              name={item.MenuId}
+              component={ScreenComponent}
+              options={{tabBarLabel: item.Label || item.MenuId}}
+            />
+          );
+        })
+      ) : (
+        <Tab.Screen
+          name="MainDashboard"
+          component={MainDashboard}
+          options={{tabBarLabel: 'Home'}}
+        />
+      )}
     </Tab.Navigator>
   );
 };

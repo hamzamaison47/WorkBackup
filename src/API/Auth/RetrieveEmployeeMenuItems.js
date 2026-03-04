@@ -181,7 +181,7 @@ const RetrieveEmployeeMenuItems = async ({person}) => {
       return cleanObj;
     });
 
-    // console.log('Final cleaned menu data:', cleanedData);
+    console.log('Final cleaned menu data:', cleanedData);
 
     return cleanedData;
   } catch (err) {

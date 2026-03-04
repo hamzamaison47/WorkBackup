@@ -184,7 +184,7 @@ const GenericAdvanceListScreen = () => {
 
     navigation.reset({
       index: 0,
-      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+      routes: [{name: targetRoute}],
     });
   };
 

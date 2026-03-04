@@ -171,7 +171,7 @@ const Profile = ({navigation}) => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={true}
       onRefresh={() => handleRefresh()}>
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>

@@ -721,7 +721,7 @@ const ESSMyRequestStatusListPage = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={true}
       onRefresh={fetchRequestStatus}
       // ── Filter pills ──
       showFilterPills={true}

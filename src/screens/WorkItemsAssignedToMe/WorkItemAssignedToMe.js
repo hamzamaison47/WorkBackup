@@ -1350,7 +1350,7 @@ const WorkItemsAssignedToMePage = () => {
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={false}
+      showTabNavigator={true}
       onRefresh={handleRefresh}
       showFilterPills={true}
       filterPills={['All', 'Pending', 'Returned']} // ✅ no Draft

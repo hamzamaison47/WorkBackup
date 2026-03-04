@@ -190,7 +190,7 @@ const GenericAdvanceSaveScreen = () => {
     if (cameFrom === 'MainDashboard') {
       navigation.reset({
         index: 0,
-        routes: [{name: 'TabNavigator', params: {screen: 'MainDashboard'}}],
+        routes: [{name: 'MainDashboard'}],
       });
     } else if (cameFrom === 'GenericAdvanceListScreen') {
       const targetCameFrom = originalCameFrom || 'DisplayListPage';

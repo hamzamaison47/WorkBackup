@@ -94,12 +94,7 @@ const BankAccountSaveRecord = () => {
       // Reset stack so only MainDashboard remains
       navigation.reset({
         index: 0,
-        routes: [
-          {
-            name: 'TabNavigator',
-            params: {screen: 'MainDashboard'},
-          },
-        ],
+        routes: [{name: 'MainDashboard'}],
       });
     } else if (cameFrom === 'BankAccountListPage') {
       // Reset stack so only PersonalEducationListPage remains

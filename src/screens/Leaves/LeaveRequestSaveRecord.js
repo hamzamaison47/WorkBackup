@@ -111,7 +111,6 @@ const LeaveRequestSaveRecord = () => {
     ATTENDANCE_DETAILS: 'AttendanceDetailsScreen',
     MAIN_DASHBOARD: 'MainDashboard',
     LEAVES_LIST: 'LeavesListPage',
-    TAB_NAVIGATOR: 'TabNavigator',
     DISPLAY_LIST: 'DisplayListPage',
   };
 
@@ -190,12 +189,7 @@ const LeaveRequestSaveRecord = () => {
         case NAVIGATION_SCREENS.MAIN_DASHBOARD:
           navigation.reset({
             index: 0,
-            routes: [
-              {
-                name: NAVIGATION_SCREENS.TAB_NAVIGATOR,
-                params: {screen: NAVIGATION_SCREENS.MAIN_DASHBOARD},
-              },
-            ],
+            routes: [{name: NAVIGATION_SCREENS.MAIN_DASHBOARD}],
           });
           break;
 
