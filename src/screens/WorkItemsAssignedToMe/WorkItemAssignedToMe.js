@@ -995,7 +995,6 @@ const WorkItemsAssignedToMePage = () => {
     setIsLoading(true);
     try {
       const data = await RetrieveByEmail({email: effectiveUserData.email});
-      console.log('heree is the data', data);
 
       const formattedData = (data || []).map((item, index) => {
         const documentStr = item.Document || '';
@@ -1186,7 +1185,12 @@ const WorkItemsAssignedToMePage = () => {
       tableId: ContextTableId,
     });
   };
-
+  const handleWorkflowDetail = (ContextRecId, ContextTableId) => {
+    navigation.navigate('WorkflowDetailScreen', {
+      tableId: ContextTableId,
+      contextRecId: ContextRecId,
+    });
+  };
   const handleBulkAction = async actionType => {
     if (selectedRecIds.length === 0 || isActionLoading) return;
 
@@ -1270,13 +1274,6 @@ const WorkItemsAssignedToMePage = () => {
 
   const renderWorkItemCard = ({item}) => {
     const isSelected = selectedRecIds.includes(item.recId);
-
-    // ✅ Debug start
-    console.log('DEBUG ITEM =>', item);
-    console.log('TITLE KEY =>', CARD_CONFIG.headerConfig.title.key);
-    console.log('TITLE VALUE =>', item[CARD_CONFIG.headerConfig.title.key]);
-    // ✅ Debug end
-
     return (
       <Pressable
         onLongPress={() => enterSelectionMode(item.recId)}
@@ -1303,7 +1300,7 @@ const WorkItemsAssignedToMePage = () => {
           fields={CARD_CONFIG.fields}
           buttons={getButtonConfig(item)}
           onButtonPress={handleButtonPress}
-          onPress={() => selectionMode && toggleSelection(item.recId)}
+          onPress={() => handleWorkflowDetail(item.recId, item.ContextTableId)}
           onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
           gradientColors={

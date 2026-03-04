@@ -452,6 +452,7 @@ import AlertModal from '../components/Alert/AlertModal';
 import DynamicRequestCard from '../components/DynamicRequestCard';
 
 import {retrieveMyRequestStatus} from '../API/ESSMyRequestStatus/retrieveAllESSMyRequestStatus';
+import {retrieveMyReuestStatusAll} from '../API/ESSMyRequestStatus/retrieveMyReuestStatusAll';
 import styles from '../styles/styles';
 
 const ESSMyRequestStatusListPage = () => {
@@ -500,21 +501,51 @@ const ESSMyRequestStatusListPage = () => {
 
     setIsLoading(true);
     try {
-      const data = await retrieveMyRequestStatus({
-        employeeId: effectiveEmployeeId,
+      const data = await retrieveMyReuestStatusAll({
+        email: effectiveUserData.email,
       });
+      // const formattedData = (data || []).map((item, index) => ({
+      //   id: item.RecId ?? index,
+      //   recId: item.RecId,
+      //   // Keep raw fields — no joining/splitting
+      //   RequestId: item.RequestId || '',
+      //   Description: item.Description || '',
+      //   PRWFStatus: item.PRWFStatus || '',
+      //   TableName: item.TableName || '',
+      //   ModifiedDateTime: item.ModifiedDateTime || '',
+      // }));
+      const formattedData = (data || []).map((item, index) => {
+        const documentStr = item.Document || '';
 
-      const formattedData = (data || []).map((item, index) => ({
-        id: item.RecId ?? index,
-        recId: item.RecId,
-        // Keep raw fields — no joining/splitting
-        RequestId: item.RequestId || '',
-        Description: item.Description || '',
-        PRWFStatus: item.PRWFStatus || '',
-        TableName: item.TableName || '',
-        ModifiedDateTime: item.ModifiedDateTime || '',
-      }));
+        // Extract the document ID (everything after ':' and before ',')
+        const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
+        const documentId = documentIdMatch
+          ? documentIdMatch[1].trim()
+          : documentStr;
 
+        // Extract requester (after last comma)
+        const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+        const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
+        // Get document type from API if exists
+        let documentType = item.DocumentType || '';
+        documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+        return {
+          id: item.workflowWorkItemRecId ?? index,
+          recId: item.workflowWorkItemRecId,
+          documentId: documentId, // USMF-00060
+          documentType: documentType, // Employee Leave Requests
+          requester: requester,
+          ContextTableId: item.ContextTableId,
+          ContextRecId: item.ContextRecId,
+          workflowWorkItemType: item.workflowWorkItemType,
+          Document: item.Document,
+          createdDateTime: item.createdDateTime,
+          From: item.From,
+          Subject: item.Subject,
+        };
+      });
       setRequestData(formattedData);
       setRawData(formattedData); // ← here
       setDisplayData(formattedData); // ← here
@@ -618,13 +649,13 @@ const ESSMyRequestStatusListPage = () => {
 
   const CARD_CONFIG = {
     headerConfig: {
-      title: {key: 'TableName'},
+      title: {key: 'documentType'},
     },
     fields: [
-      {key: 'RequestId', label: 'Request ID', type: 'text'},
-      {key: 'Description', label: 'Description', type: 'text'},
-      {key: 'ModifiedDateTime', label: 'Modified Date', type: 'text'},
-      {key: 'PRWFStatus', label: '', type: 'status'},
+      {key: 'Document', label: '', type: 'link'},
+      {key: 'Subject', label: 'Subject', type: 'text'},
+      {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
+      {key: 'From', label: 'From', type: 'text'},
     ],
   };
 

@@ -85,8 +85,6 @@ const SaveAttachmentByteArray = async ({
   </s:Body>
 </s:Envelope>`;
 
-    console.log('SOAP Envelope length:', soapEnvelope.length);
-
     const endpoint = `${config.resource}soap/services/DocumentAttachmentSvcGroup`;
 
     const response = await axios.post(endpoint, soapEnvelope, {
@@ -100,11 +98,7 @@ const SaveAttachmentByteArray = async ({
       timeout: 60000,
       validateStatus: () => true,
     });
-
     const xml = response.data;
-    console.log('Response status:', response.status);
-    console.log('Response length:', xml?.length);
-
     if (!xml || xml.trim() === '') {
       return {
         IsSuccess: false,

@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useEffect, useCallback} from 'react';
+import React, {useEffect, useCallback, useRef} from 'react';
 import {Provider, useSelector} from 'react-redux';
 import {NavigationContainer} from '@react-navigation/native';
 import {I18nManager, Text, TextInput} from 'react-native';
@@ -12,7 +12,7 @@ import AppNavigator from './src/Navigation/AppNavigator';
 import firebaseService from './src/store/FirebaseService';
 import {selectIsRTL, selectCurrentLanguage} from './src/store/selectors';
 
-// Disable font scaling
+// Disable font scaling globally
 if (Text.defaultProps == null) Text.defaultProps = {};
 Text.defaultProps.allowFontScaling = false;
 
@@ -22,6 +22,12 @@ TextInput.defaultProps.allowFontScaling = false;
 const AppContent = () => {
   const isRTL = useSelector(selectIsRTL);
   const currentLanguage = useSelector(selectCurrentLanguage);
+
+  /**
+   * navigationRef is passed to FirebaseService so that notification taps can
+   * call navigation.navigate() from outside the React tree (e.g. background tap handler).
+   */
+  const navigationRef = useRef(null);
 
   const checkRTL = useCallback(() => {
     try {
@@ -35,9 +41,11 @@ const AppContent = () => {
   }, [isRTL, currentLanguage]);
 
   useEffect(() => {
-    const cleanup = firebaseService.setupMessageHandlers();
+    // Pass the navigation ref so notification taps can navigate correctly.
+    // requestPermissions is called inside setupMessageHandlers → getFCMToken → ensureNotificationPermissions.
+    // No need for a separate requestPermissions() call here.
+    const cleanup = firebaseService.setupMessageHandlers(navigationRef.current);
 
-    firebaseService.requestPermissions().catch(console.error);
     checkRTL();
 
     return () => {
@@ -46,7 +54,7 @@ const AppContent = () => {
   }, [checkRTL]);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <AppNavigator />
     </NavigationContainer>
   );

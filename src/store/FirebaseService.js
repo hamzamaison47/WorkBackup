@@ -45,17 +45,15 @@ class FirebaseService {
   // Check and request notification permissions
   async ensureNotificationPermissions() {
     try {
-      if (Platform.OS === 'android') {
-        // NEW: Use requestPermission directly (not this.messaging.requestPermission())
-        const authStatus = await requestPermission(this.messaging);
-        const enabled =
-          authStatus === AuthorizationStatus.AUTHORIZED ||
-          authStatus === AuthorizationStatus.PROVISIONAL;
+      // Request permission on BOTH iOS and Android (Android 13+ requires it)
+      const authStatus = await requestPermission(this.messaging);
+      const enabled =
+        authStatus === AuthorizationStatus.AUTHORIZED ||
+        authStatus === AuthorizationStatus.PROVISIONAL;
 
-        if (!enabled) {
-          console.log('User declined push notifications');
-          return false;
-        }
+      if (!enabled) {
+        console.log('User declined push notifications');
+        return false;
       }
       return true;
     } catch (error) {
@@ -78,16 +76,13 @@ class FirebaseService {
       const savedToken = state.firebase.fcmToken;
 
       if (savedToken) {
-        console.log(
-          'Using saved FCM token from Redux:',
-          savedToken.substring(0, 20) + '...',
-        );
+        console.log('Using saved FCM token from Redux:', savedToken);
         return savedToken;
       }
 
       // NEW: Use getToken with messaging instance as first parameter
       const token = await getToken(this.messaging);
-      console.log('New FCM Token obtained:', token.substring(0, 20) + '...');
+      console.log('New FCM Token obtained:', token);
       // Save to Redux
       store.dispatch(setFirebaseToken(token));
       return token;
@@ -97,11 +92,11 @@ class FirebaseService {
     }
   }
 
-  // Setup message handlers (should be called from main app component)
+  // Setup message handlers (call from App.js, pass navigationRef.current)
   setupMessageHandlers(navigation) {
     console.log('Setting up Firebase message handlers');
 
-    // NEW: Use onMessage with messaging instance
+    // Foreground messages — show Alert when app is open
     const unsubscribeForeground = onMessage(
       this.messaging,
       async remoteMessage => {
@@ -110,32 +105,36 @@ class FirebaseService {
       },
     );
 
-    // NEW: Use onNotificationOpenedApp with messaging instance
+    // App opened from a notification while it was backgrounded (not killed)
     const unsubscribeOpenedApp = onNotificationOpenedApp(
       this.messaging,
       remoteMessage => {
-        console.log('App opened from notification:', remoteMessage);
+        console.log('App opened from background notification:', remoteMessage);
         this.handleNotificationTap(remoteMessage, navigation);
       },
     );
 
-    // NEW: Use getInitialNotification with messaging instance
+    // App opened from a notification while it was KILLED
+    // Navigation may not be mounted yet — wait 1 second then navigate.
     getInitialNotification(this.messaging).then(remoteMessage => {
       if (remoteMessage) {
-        console.log('App opened from quit state:', remoteMessage);
-        this.handleNotificationTap(remoteMessage, navigation);
+        console.log(
+          'App opened from killed state notification:',
+          remoteMessage,
+        );
+        setTimeout(() => {
+          this.handleNotificationTap(remoteMessage, navigation);
+        }, 1000);
       }
     });
 
-    // NEW: Use onTokenRefresh with messaging instance
+    // Token refresh — keep Dynamics in sync
     const unsubscribeTokenRefresh = onTokenRefresh(
       this.messaging,
       async newToken => {
         console.log('FCM token refreshed:', newToken.substring(0, 20) + '...');
-        // Update Redux
         store.dispatch(setFirebaseToken(newToken));
 
-        // Update token in Dynamics if user is logged in
         const {userEmail} = this.getUserDataFromRedux();
         if (userEmail) {
           await this.updateTokenInDynamics(newToken);
@@ -143,7 +142,11 @@ class FirebaseService {
       },
     );
 
-    // Return cleanup function
+    // Eagerly obtain the FCM token now that handlers are ready
+    this.getFCMToken().catch(err =>
+      console.error('Error obtaining FCM token on startup:', err),
+    );
+
     return () => {
       unsubscribeForeground?.();
       unsubscribeOpenedApp?.();

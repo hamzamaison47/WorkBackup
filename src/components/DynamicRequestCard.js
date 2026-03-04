@@ -551,6 +551,10 @@ const DynamicRequestCard = ({
   processingButtons = [],
   showNavigationArrow = false,
   isRTL = false,
+  // ── Multi-select props ──
+  isMultiSelectMode = false,
+  isSelected = false,
+  onSelectToggle = null, // (data) => void — called when card tapped in multiselect mode
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -563,9 +567,26 @@ const DynamicRequestCard = ({
   const menuFadeAnim = useRef(new Animated.Value(0)).current;
   const approvalFadeAnim = useRef(new Animated.Value(0)).current;
   const expandRotateAnim = useRef(new Animated.Value(0)).current;
+  const checkScaleAnim = useRef(new Animated.Value(0)).current;
+  const selectedBorderAnim = useRef(new Animated.Value(0)).current;
   const animationIntervalRef = useRef(null);
   const menuButtonRef = useRef(null);
   const approvalButtonRef = useRef(null);
+
+  // ── Animate check icon in/out ──
+  useEffect(() => {
+    Animated.spring(checkScaleAnim, {
+      toValue: isSelected ? 1 : 0,
+      useNativeDriver: true,
+      tension: 120,
+      friction: 8,
+    }).start();
+    Animated.timing(selectedBorderAnim, {
+      toValue: isSelected ? 1 : 0,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
+  }, [isSelected, checkScaleAnim, selectedBorderAnim]);
 
   // ── Close 3-dot menu ──
   const closeMenu = useCallback(() => {
@@ -1259,6 +1280,51 @@ const DynamicRequestCard = ({
     );
   };
 
+  // ── Multi-select checkbox overlay ──
+  const renderSelectCheckbox = () => {
+    if (!isMultiSelectMode) return null;
+    return (
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: 10,
+          left: 10,
+          zIndex: 10,
+          transform: [
+            {
+              scale: checkScaleAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.4, 1],
+              }),
+            },
+          ],
+          opacity: checkScaleAnim,
+        }}>
+        <View
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            borderWidth: 2,
+            borderColor: isSelected
+              ? COLOR_PALETTE.primary
+              : COLOR_PALETTE.gray[400],
+            backgroundColor: isSelected ? COLOR_PALETTE.primary : '#fff',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: {width: 0, height: 1},
+            shadowOpacity: 0.15,
+            shadowRadius: 2,
+            elevation: 2,
+          }}>
+          {isSelected && <FontAwesome name="check" size={11} color="#fff" />}
+        </View>
+      </Animated.View>
+    );
+  };
+
   // ─────────────────────── layout ───────────────────────
 
   const headerButtons = getButtonsByPosition('header');
@@ -1286,21 +1352,52 @@ const DynamicRequestCard = ({
   const showFooter =
     shouldShowExpandToggle || hasBottomButtons || hasApprovalButton;
 
+  // Interpolate border color for selected state
+  const cardBorderColor = selectedBorderAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#e5e7eb', COLOR_PALETTE.primary],
+  });
+  const cardBgColor = selectedBorderAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#ffffff', '#eef2ff'],
+  });
+
   return (
     <View style={styles.DRC_cardContainer}>
       <Animated.View
         style={[
           styles.DRC_card,
           isHighlighted && styles.DRC_cardHighlighted,
-          {transform: [{scale: scaleAnim}]},
+          {
+            transform: [{scale: scaleAnim}],
+            borderColor: cardBorderColor,
+            borderWidth: isMultiSelectMode ? 1.5 : undefined,
+            backgroundColor: cardBgColor,
+          },
         ]}>
+        {/* Checkbox overlay — rendered outside TouchableWithoutFeedback so it doesn't block taps */}
+        {renderSelectCheckbox()}
+
         <TouchableWithoutFeedback
           onPress={() => {
+            if (isMultiSelectMode) {
+              onSelectToggle && onSelectToggle(data);
+              return;
+            }
             if (menuVisible) closeMenu();
             else if (onPress) onPress();
           }}
-          onLongPress={() => onLongPress && onLongPress()}>
-          <View style={styles.DRC_cardInner}>
+          onLongPress={() => {
+            if (!isMultiSelectMode) {
+              // Trigger multi-select mode via onLongPress from parent
+              onLongPress && onLongPress(data);
+            }
+          }}>
+          <View
+            style={[
+              styles.DRC_cardInner,
+              isMultiSelectMode && {paddingLeft: 40},
+            ]}>
             {renderNavigationArrow()}
 
             {/* ── Header ── */}
@@ -1347,7 +1444,7 @@ const DynamicRequestCard = ({
                   </View>
                 )}
 
-                {hasHeaderButtons && (
+                {hasHeaderButtons && !isMultiSelectMode && (
                   <View style={styles.DRC_menuContainer}>
                     <TouchableOpacity
                       ref={menuButtonRef}
@@ -1414,20 +1511,12 @@ const DynamicRequestCard = ({
             )}
 
             {/* ── Footer ── */}
-            {showFooter && (
+            {showFooter && !isMultiSelectMode && (
               <View style={styles.DRC_footer2}>
-                {/*
-                  Layout: 3-column row
-                  [left buttons] [center expand arrow] [right approval]
-                  Each side column has equal flex so arrow stays truly centered.
-                */}
                 <View style={styles.DRC_footerRow}>
-                  {/* LEFT — bottom buttons */}
                   <View style={styles.DRC_footerLeft}>
                     {bottomButtons.map(bt => renderButton(bt))}
                   </View>
-
-                  {/* CENTER — expand arrow */}
                   <View style={styles.DRC_footerCenter}>
                     {shouldShowExpandToggle && (
                       <TouchableOpacity
@@ -1445,8 +1534,6 @@ const DynamicRequestCard = ({
                       </TouchableOpacity>
                     )}
                   </View>
-
-                  {/* RIGHT — approval button */}
                   <View style={styles.DRC_footerRight}>
                     {hasApprovalButton && renderApprovalDropdownButton()}
                   </View>

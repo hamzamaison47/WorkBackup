@@ -21,7 +21,7 @@ const formatLocalDate = date => {
 };
 
 const FrozenDatePicker = React.memo(
-  ({value, onChange, display}) => {
+  ({value, onChange, display, maximumDate}) => {
     return (
       <DateTimePicker
         value={value}
@@ -29,6 +29,7 @@ const FrozenDatePicker = React.memo(
         display={display}
         onChange={onChange}
         accentColor="#0A66C2"
+        maximumDate={maximumDate} // ← add this
       />
     );
   },
@@ -36,7 +37,7 @@ const FrozenDatePicker = React.memo(
 );
 
 const FrozenIOSPicker = React.memo(
-  ({value, onChange, style}) => {
+  ({value, onChange, style, maximumDate}) => {
     return (
       <DateTimePicker
         value={value}
@@ -45,16 +46,24 @@ const FrozenIOSPicker = React.memo(
         onChange={onChange}
         accentColor="#0A66C2"
         style={style}
+        maximumDate={maximumDate} // ← add this
       />
     );
   },
   () => true,
 );
 
-const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
+const CalendarModal = ({
+  visible,
+  initialDate,
+  onDateSelected,
+  onClose,
+  maxDate,
+}) => {
   const dateRef = useRef(parseLocalDate(initialDate));
   const [showPicker, setShowPicker] = useState(false);
   const [iosDate, setIosDate] = useState(parseLocalDate(initialDate));
+  const maxDateObj = maxDate ? parseLocalDate(maxDate) : undefined;
 
   useEffect(() => {
     if (!visible) {
@@ -104,6 +113,7 @@ const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
         value={dateRef.current}
         onChange={handleAndroidChange}
         display="calendar"
+        maximumDate={maxDateObj} // ← add this
       />
     );
   }
@@ -124,6 +134,7 @@ const CalendarModal = ({visible, initialDate, onDateSelected, onClose}) => {
             value={iosDate}
             onChange={handleIOSChange}
             style={styles.CalModal_datePicker}
+            maximumDate={maxDateObj} // ← add this
           />
 
           <View style={styles.CalModal_footer}>

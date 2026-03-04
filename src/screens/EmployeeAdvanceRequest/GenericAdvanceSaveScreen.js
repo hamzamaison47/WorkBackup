@@ -33,13 +33,16 @@ import {RetrieveAllAdvanceTypeRequest} from '../../API/EmployeeAdvanceRequest/Re
 import {FindFirstPayGroupPayPeriod} from '../../API/PayGroupPayPeriod/FindFirstPayGroupPayPeriod';
 import {GetEmployeeLookup} from '../../API/EmployeeAdvanceRequest/GetEmployeeLookup';
 import {GetEmployeeAdvanceLabels} from '../../API/EmployeeAdvanceRequest/GetEmployeeAdvanceLabels';
+import {isAdvanceWorkflowConfigured} from '../../API/EmployeeAdvanceRequest/isAdvanceWorkflowConfigured';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
-import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../components/Buttons/SaveRecordButtons';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -89,6 +92,7 @@ const GenericAdvanceSaveScreen = () => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [showPaymentDateCalendar, setShowPaymentDateCalendar] = useState(false);
+  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [showRecoveryDateCalendar, setShowRecoveryDateCalendar] =
     useState(false);
 
@@ -221,6 +225,34 @@ const GenericAdvanceSaveScreen = () => {
     WorkerRecId,
     effectiveUserData,
   ]);
+
+  const checkIsWorkflowConfigured = async () => {
+    try {
+      const result = await isAdvanceWorkflowConfigured();
+      // console.log('Here is the data', result);
+      return result === true || result === 'true' || result === 1;
+    } catch (error) {
+      console.error('Workflow config check failed:', error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadWorkflowConfig = async () => {
+      const enabled = await checkIsWorkflowConfigured();
+      if (isMounted) {
+        setIsWorkflowConfigured(enabled);
+      }
+    };
+
+    loadWorkflowConfig();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Get advance type mapping based on API response
   const getAdvanceTypeMapping = () => {
@@ -1296,15 +1328,30 @@ const GenericAdvanceSaveScreen = () => {
             </Text>
           </ScrollView>
 
-          <SaveRecordButtons
-            mode={mode}
-            processingButton={processingButton}
-            onSave={handleSave}
-            onCancel={goBack}
-            isDisabled={
-              processingButton === 'create' || processingButton === 'submit'
-            }
-          />
+          {isWorkflowConfigured ? (
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+              // No showButtons needed — default already includes all 3
+            />
+          ) : (
+            <SaveRecordButtons
+              mode={mode}
+              processingButton={processingButton}
+              onSave={handleSave}
+              onCancel={goBack}
+              isDisabled={
+                processingButton === 'create' || processingButton === 'submit'
+              }
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]} // ✅ hides SUBMIT only
+            />
+          )}
+          {/* </KeyboardAvoidingView> */}
         </SafeAreaView>
       )}
 
