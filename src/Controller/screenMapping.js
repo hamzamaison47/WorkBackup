@@ -31,6 +31,18 @@ import ESSMyRequestStatusListPage from '../screens/ESSMyRequestStatus';
 import AttendanceCalendarScreen from '../screens/Attendance/AttendanceCalendarScreen';
 import WorkItemsAssignedToMePage from '../screens/WorkItemsAssignedToMe/WorkItemAssignedToMe';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
+import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayPersonalInfo';
+import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
+import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
+import {FamilyContact_ListPage} from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_ListPage';
+import FamilyContact_SaveRecord from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_SaveRecord';
+import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
+import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
+import PersonalEducationListPage from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
+import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
+import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
+import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
+import DateFormatSettingsScreen from '../screens/Profile/Preferences/DateSettings/DateFormatSettingsScreen';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -67,6 +79,18 @@ export const screenMapping = {
   ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
   ExpenseManagmentLinesSaveRecord: ExpenseManagmentLinesSaveRecord,
   BiometricSettings: BiometricSettings,
+  DisplayPersonalInfo: DisplayPersonalInfo,
+  ContactDetailsListPage: ContactDetailsListPage,
+  ContactDetailsSaveRecord: ContactDetailsSaveRecord,
+  FamilyContact_ListPage: FamilyContact_ListPage,
+  FamilyContact_SaveRecord: FamilyContact_SaveRecord,
+  IdentificationNumberListPage: IdentificationNumberListPage,
+  IdentificationNumberSaveRecord: IdentificationNumberSaveRecord,
+  PersonalEducationListPage: PersonalEducationListPage,
+  PersonalEducationSaveRecord: PersonalEducationSaveRecord,
+  BankAccountListPage: BankAccountListPage,
+  BankAccountSaveRecord: BankAccountSaveRecord,
+  DateFormatSettingsScreen: DateFormatSettingsScreen,
   // OutstandingAdvancesScreen: OutstandingAdvancesScreen,
   // TimeClockListPage: TimeClockListPage,
 };

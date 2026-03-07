@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-shadow */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   Text,
   FlatList,
@@ -203,41 +203,6 @@ const GenericAdvanceListScreen = () => {
   //   });
   // };
 
-  const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : allAdvanceData;
-
-    if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-
-      // Special handling for Pending filter
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending');
-      }
-
-      return status === activeFilter;
-    });
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: allAdvanceData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = allAdvanceData.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = allAdvanceData.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
-    });
-
-    return counts;
-  };
-
   const handleRefresh = () => {
     fetchAllAdvanceData();
   };
@@ -313,6 +278,84 @@ const GenericAdvanceListScreen = () => {
     };
     return statusMap[status] || 'Draft';
   };
+
+  // const getFilteredData = () => {
+  //   const base = displayData.length > 0 ? displayData : allAdvanceData;
+
+  //   if (activeFilter === 'All') return base;
+
+  //   return base.filter(item => {
+  //     const status = getStatusLabel(item.WFStatus);
+
+  //     // Special handling for Pending filter
+  //     if (activeFilter === 'Pending') {
+  //       return status.includes('Pending');
+  //     }
+
+  //     return status === activeFilter;
+  //   });
+  // };
+
+  const getFilteredData = () => {
+    // Use displayData when a search is active, otherwise use rawData
+    const base = searchQuery.trim() ? displayData : rawData;
+    if (activeFilter === 'All') return base;
+    return base.filter(item => {
+      const status = getStatusLabel(item.WFStatus);
+      if (activeFilter === 'Pending') return status.includes('Pending');
+      return status === activeFilter;
+    });
+  };
+
+  const getFilterCounts = () => {
+    const counts = {All: allAdvanceData.length};
+
+    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
+      if (pill === 'Pending') {
+        counts[pill] = allAdvanceData.filter(item =>
+          getStatusLabel(item.WFStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = allAdvanceData.filter(
+          item => getStatusLabel(item.WFStatus) === pill,
+        ).length;
+      }
+    });
+
+    return counts;
+  };
+
+  // Add this after your existing state declarations
+  const visiblePills = useMemo(() => {
+    if (!allAdvanceData.length) return ['All'];
+
+    const presentStatuses = new Set(
+      allAdvanceData.map(item => getStatusLabel(item.WFStatus)),
+    );
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => {
+      if (pill === 'All') return true;
+      if (pill === 'Pending') {
+        // match any status containing "Pending"
+        return [...presentStatuses].some(s => s.includes('Pending'));
+      }
+      return presentStatuses.has(pill);
+    });
+  }, [allAdvanceData]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
 
   // Handle attachment button press (mirrors LeaveRequestListPage logic)
   const handleReceiptAttachmentPress = async itemData => {
@@ -710,6 +753,7 @@ const GenericAdvanceListScreen = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -724,6 +768,7 @@ const GenericAdvanceListScreen = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -765,9 +810,14 @@ const GenericAdvanceListScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            // Search returned no results
+            <>
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -775,8 +825,6 @@ const GenericAdvanceListScreen = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
             <>
               <Text style={styles.DLP_NoDataText}>
                 {`${activeFilter} record not found.`}

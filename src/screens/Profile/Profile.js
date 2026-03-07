@@ -113,6 +113,13 @@ const Profile = ({navigation}) => {
         screen: 'BiometricSettings',
       },
       {
+        id: 'DateFormatSettingsScreen',
+        icon: 'calendar',
+        title: t('Date & Time Settings'),
+        subtitle: t('Manage your date & time format preferences.'),
+        screen: 'DateFormatSettingsScreen',
+      },
+      {
         id: 'language',
         icon: 'globe',
         title: t('profile.language'),

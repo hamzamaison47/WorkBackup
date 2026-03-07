@@ -1,6 +1,6 @@
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -88,6 +88,8 @@ const IdentificationNumberListPage = () => {
       const data = await IdentificationFindRequest({
         employeeId: effectiveEmployeeId,
       });
+
+      console.log('here is the data for identification', data);
 
       // Sort newest record on top
       data.sort(
@@ -205,21 +207,18 @@ const IdentificationNumberListPage = () => {
   };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : identificationsData;
+    const base = searchQuery.trim() ? displayData : identificationsData;
 
     if (activeFilter === 'All') return base;
 
     return base.filter(item => {
       const status = getStatusLabel(item.ApprovalStatus);
-
       if (activeFilter === 'Pending') {
         return status.includes('Pending') || status === 'IN REVIEW';
       }
-
       return status === activeFilter;
     });
   };
-
   const getFilterCounts = () => {
     const counts = {All: identificationsData.length};
 
@@ -238,6 +237,40 @@ const IdentificationNumberListPage = () => {
 
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!identificationsData.length) return ['All'];
+
+    const normalizeStatus = status => {
+      if (!status) return 'Draft'; // empty ApprovalStatus → Draft
+      const lower = status.toLowerCase();
+
+      if (lower.includes('in review')) return 'Pending';
+      if (lower.includes('pending')) return 'Pending';
+
+      return status;
+    };
+
+    const presentStatuses = new Set(
+      identificationsData.map(item => normalizeStatus(item.ApprovalStatus)),
+    );
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => pill === 'All' || presentStatuses.has(pill));
+  }, [identificationsData]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
 
   // Card Configuration
   const cardConfig = {
@@ -572,6 +605,7 @@ const IdentificationNumberListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -615,6 +649,7 @@ const IdentificationNumberListPage = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -656,9 +691,14 @@ const IdentificationNumberListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -666,13 +706,9 @@ const IdentificationNumberListPage = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}

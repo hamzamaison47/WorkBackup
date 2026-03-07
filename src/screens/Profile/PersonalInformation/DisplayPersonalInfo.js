@@ -61,7 +61,7 @@ const DisplayPersonalInfo = () => {
       icon: 'pen-tool',
       title: t('personalInfo.education'),
       subtitle: t('personalInfo.educationSubtitle'),
-      screen: 'PersonalEducation',
+      screen: 'PersonalEducationListPage',
     },
     {
       id: 'bankaccounts',

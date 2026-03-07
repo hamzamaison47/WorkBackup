@@ -1,6 +1,6 @@
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useState, useMemo, useEffect} from 'react';
 import {
   Text,
   RefreshControl,
@@ -88,7 +88,6 @@ const ExpenseManagmentListPage = () => {
     Paid: 'Paid',
     Pending: 'Pending Approval',
   };
-
   const cleanJsonPlaceholder = value => {
     if (!value) return '';
     const pattern =
@@ -211,10 +210,10 @@ const ExpenseManagmentListPage = () => {
   // };
 
   const getFilteredData = () => {
-    const base = displayData;
+    const base = searchQuery.trim() ? displayData : expenseData;
     if (activeFilter === 'All') return base;
     return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
+      const status = getStatusLabel(item.DocumentStatus); // 👈 DocumentStatus not WFStatus
       if (activeFilter === 'Pending') return status.includes('Pending');
       return status === activeFilter;
     });
@@ -223,12 +222,56 @@ const ExpenseManagmentListPage = () => {
   const getFilterCounts = () => {
     const counts = {All: expenseData.length};
     ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      counts[pill] = expenseData.filter(
-        item => getStatusLabel(item.WFStatus) === pill,
-      ).length;
+      if (pill === 'Pending') {
+        counts[pill] = expenseData.filter(item =>
+          getStatusLabel(item.DocumentStatus).includes('Pending'),
+        ).length;
+      } else {
+        counts[pill] = expenseData.filter(
+          item => getStatusLabel(item.DocumentStatus) === pill,
+        ).length;
+      }
     });
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!expenseData.length) return ['All'];
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => {
+      if (pill === 'All') return true;
+      if (pill === 'Pending') {
+        return expenseData.some(item =>
+          getStatusLabel(item.DocumentStatus).includes('Pending'),
+        );
+      }
+      if (pill === 'Approved') {
+        // match both Approved and Matched
+        return expenseData.some(
+          item =>
+            item.DocumentStatus === 'Approved' ||
+            item.DocumentStatus === 'Matched',
+        );
+      }
+      return expenseData.some(
+        item => getStatusLabel(item.DocumentStatus) === pill,
+      );
+    });
+  }, [expenseData]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
 
   // Card click - Navigate to Lines List
   const handleCardPress = itemData => {
@@ -531,6 +574,7 @@ const ExpenseManagmentListPage = () => {
         gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -545,7 +589,8 @@ const ExpenseManagmentListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateExpense}
-      showFilterPills={true}
+      showFilterPills={true} // ← this is missing
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -598,9 +643,14 @@ const ExpenseManagmentListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              {/* Show different messages based on filter and data availability */}
-              {rawData.length === 0 && activeFilter === 'All' ? (
-                // No data at all AND "All" filter is active - show "Get started" message
+              {searchQuery.trim() ? (
+                <>
+                  {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+                  <Text style={styles.DLP_NoDataSubText}>
+                    No records match "{searchQuery}"
+                  </Text>
+                </>
+              ) : rawData.length === 0 && activeFilter === 'All' ? (
                 <>
                   <Text style={styles.DLP_NoDataText}>Get started</Text>
                   <Text style={styles.DLP_NoDataSubText}>
@@ -608,13 +658,9 @@ const ExpenseManagmentListPage = () => {
                   </Text>
                 </>
               ) : (
-                // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-                // Show filter-specific message
-                <>
-                  <Text style={styles.DLP_NoDataText}>
-                    {`${activeFilter} record not found.`}
-                  </Text>
-                </>
+                <Text style={styles.DLP_NoDataText}>
+                  {`${activeFilter} record not found.`}
+                </Text>
               )}
             </ScrollView>
           )}

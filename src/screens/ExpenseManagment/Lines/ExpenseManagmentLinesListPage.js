@@ -538,6 +538,7 @@ const ExpenseManagmentLinesListPage = () => {
         showNavigationArrow={false}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         processingButtons={itemProcessingButtons}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -594,9 +595,9 @@ const ExpenseManagmentLinesListPage = () => {
             </Text>
           </View>
 
-          {expenseLinesData.length > 0 && (
+          {displayData.length > 0 && (
             <FlatList
-              data={expenseLinesData}
+              data={displayData} // 👈 was expenseLinesData
               renderItem={renderExpenseLineCard}
               keyExtractor={(item, index) => {
                 const itemRecId = normalizeRecId(item);
@@ -617,7 +618,7 @@ const ExpenseManagmentLinesListPage = () => {
             />
           )}
 
-          {expenseLinesData.length === 0 && (
+          {displayData.length === 0 && ( // 👈 was expenseLinesData.length === 0
             <ScrollView
               contentContainerStyle={styles.DLP_NoDataContainer}
               refreshControl={
@@ -626,10 +627,21 @@ const ExpenseManagmentLinesListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              <Text style={styles.DLP_NoDataText}>Get started</Text>
-              <Text style={styles.DLP_NoDataSubText}>
-                Tap + to add a new record
-              </Text>
+              {searchQuery.trim() ? (
+                <>
+                  {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+                  <Text style={styles.DLP_NoDataSubText}>
+                    No records match "{searchQuery}"
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.DLP_NoDataText}>Get started</Text>
+                  <Text style={styles.DLP_NoDataSubText}>
+                    Tap + to add a new record
+                  </Text>
+                </>
+              )}
             </ScrollView>
           )}
         </Animated.View>

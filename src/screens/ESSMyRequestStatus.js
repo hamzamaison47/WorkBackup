@@ -430,7 +430,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -623,6 +623,38 @@ const ESSMyRequestStatusListPage = () => {
     return counts;
   };
 
+  // Add this after your existing state declarations
+  const visiblePills = useMemo(() => {
+    if (!requestData.length) return ['All'];
+
+    const presentStatuses = new Set(
+      requestData.map(item => normaliseStatus(item.PRWFStatus)),
+    );
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => {
+      if (pill === 'All') return true;
+      if (pill === 'Pending') {
+        // match any status containing "Pending"
+        return [...presentStatuses].some(s => s.includes('Pending'));
+      }
+      return presentStatuses.has(pill);
+    });
+  }, [requestData]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
+
   /* ==============================
      Format helpers
   ============================== */
@@ -756,6 +788,7 @@ const ESSMyRequestStatusListPage = () => {
       onRefresh={fetchRequestStatus}
       // ── Filter pills ──
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}

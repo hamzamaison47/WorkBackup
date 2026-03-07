@@ -10,6 +10,7 @@ import {
   FlatList,
   ScrollView,
   BackHandler,
+  Switch,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -75,9 +76,47 @@ const BiometricSettings = () => {
     navigation.navigate('Profile');
   };
 
-  const initializeBiometricSettings = async () => {
+  // const initializeBiometricSettings = async () => {
+  //   try {
+  //     setIsLoading(true);
+
+  //     const {available, biometryType} = await checkBiometricAvailability();
+  //     setBiometricAvailable(available);
+  //     setBiometricType(biometryType);
+
+  //     const hasPersistentCredentials =
+  //       await hasPersistentBiometricCredentials();
+
+  //     if (hasPersistentCredentials) {
+  //       const credentials = await getBiometricCredentials();
+  //       setBiometricEnabled(true);
+  //       setBiometricEmail(credentials.email);
+
+  //       // Find matching account from accounts list
+  //       const accounts = await getAccountsByProvider();
+  //       const allAccounts = [...accounts.Azure, ...accounts.Google];
+  //       const matchingAccount = allAccounts.find(
+  //         acc => acc.email === credentials.email,
+  //       );
+  //       setSelectedAccount(matchingAccount);
+  //     } else {
+  //       const enabled = await isBiometricEnabled();
+  //       setBiometricEnabled(enabled);
+  //     }
+
+  //     const accounts = await getAccountsByProvider();
+  //     setGroupedAccounts(accounts);
+  //   } catch (error) {
+  //     console.error('Error initializing biometric settings:', error);
+  //     showAlert(t('biometricSettings.loadFailed'));
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  const initializeBiometricSettings = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
 
       const {available, biometryType} = await checkBiometricAvailability();
       setBiometricAvailable(available);
@@ -91,7 +130,6 @@ const BiometricSettings = () => {
         setBiometricEnabled(true);
         setBiometricEmail(credentials.email);
 
-        // Find matching account from accounts list
         const accounts = await getAccountsByProvider();
         const allAccounts = [...accounts.Azure, ...accounts.Google];
         const matchingAccount = allAccounts.find(
@@ -109,7 +147,7 @@ const BiometricSettings = () => {
       console.error('Error initializing biometric settings:', error);
       showAlert(t('biometricSettings.loadFailed'));
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -127,43 +165,127 @@ const BiometricSettings = () => {
     setShowEnableConfirm(true);
   };
 
-  const handleEnableBiometric = async () => {
+  // const handleEnableBiometric = async () => {
+  //   try {
+  //     if (!userData || !userData.employeeId) {
+  //       showAlert(t('biometricSettings.noSessionFound'));
+  //       setShowEnableConfirm(false);
+  //       return;
+  //     }
+
+  //     const activeConfigId = await getActiveConfig();
+  //     if (!activeConfigId) {
+  //       showAlert(t('biometricSettings.noActiveConfig'));
+  //       setShowEnableConfirm(false);
+  //       return;
+  //     }
+
+  //     // Only store email and provider
+  //     const success = await enableBiometric(
+  //       selectedAccount.email,
+  //       selectedAccount.provider,
+  //     );
+
+  //     if (success) {
+  //       setBiometricEnabled(true);
+  //       setBiometricEmail(selectedAccount.email);
+  //       setShowEnableConfirm(false);
+  //       showAlert(
+  //         `${getBiometricDisplayName()} ${t('biometricSettings.enabledFor')}\n${
+  //           selectedAccount.email
+  //         }`,
+  //       );
+
+  //       await initializeBiometricSettings();
+  //     } else {
+  //       showAlert(t('biometricSettings.enableFailed'));
+  //     }
+  //   } catch (error) {
+  //     console.error('Error enabling biometric:', error);
+  //     showAlert(t('biometricSettings.enableFailed'));
+  //   }
+  // };
+
+  // const handleEnableBiometric = async account => {
+  //   const target = account || selectedAccount;
+  //   try {
+  //     if (!userData || !userData.employeeId) {
+  //       showAlert(t('biometricSettings.noSessionFound'));
+  //       return;
+  //     }
+  //     const activeConfigId = await getActiveConfig();
+  //     if (!activeConfigId) {
+  //       showAlert(t('biometricSettings.noActiveConfig'));
+  //       return;
+  //     }
+
+  //     const success = await enableBiometric(target.email, target.provider);
+  //     if (success) {
+  //       setBiometricEnabled(true);
+  //       setBiometricEmail(target.email);
+  //       showAlert(
+  //         `${getBiometricDisplayName()} ${t('biometricSettings.enabledFor')}\n${
+  //           target.email
+  //         }`,
+  //       );
+  //       await initializeBiometricSettings();
+  //     } else {
+  //       showAlert(t('biometricSettings.enableFailed'));
+  //     }
+  //   } catch (error) {
+  //     showAlert(t('biometricSettings.enableFailed'));
+  //   }
+  // };
+
+  // const handleDisableBiometric = async () => {
+  //   try {
+  //     const success = await disableBiometric();
+  //     if (success) {
+  //       setBiometricEnabled(false);
+  //       setSelectedAccount(null);
+  //       setBiometricEmail(null);
+  //       showAlert(
+  //         `${getBiometricDisplayName()} ${t(
+  //           'biometricSettings.hasBeenDisabled',
+  //         )}`,
+  //       );
+  //       await initializeBiometricSettings();
+  //     } else {
+  //       showAlert(t('biometricSettings.disableFailed'));
+  //     }
+  //   } catch (error) {
+  //     console.error('Error disabling biometric:', error);
+  //     showAlert(t('biometricSettings.disableFailed'));
+  //   }
+  // };
+
+  const handleEnableBiometric = async account => {
+    const target = account || selectedAccount;
     try {
       if (!userData || !userData.employeeId) {
         showAlert(t('biometricSettings.noSessionFound'));
-        setShowEnableConfirm(false);
         return;
       }
-
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) {
         showAlert(t('biometricSettings.noActiveConfig'));
-        setShowEnableConfirm(false);
         return;
       }
 
-      // Only store email and provider
-      const success = await enableBiometric(
-        selectedAccount.email,
-        selectedAccount.provider,
-      );
-
+      const success = await enableBiometric(target.email, target.provider);
       if (success) {
         setBiometricEnabled(true);
-        setBiometricEmail(selectedAccount.email);
-        setShowEnableConfirm(false);
+        setBiometricEmail(target.email);
         showAlert(
           `${getBiometricDisplayName()} ${t('biometricSettings.enabledFor')}\n${
-            selectedAccount.email
+            target.email
           }`,
         );
-
-        await initializeBiometricSettings();
+        await initializeBiometricSettings(true); // silent ✅
       } else {
         showAlert(t('biometricSettings.enableFailed'));
       }
     } catch (error) {
-      console.error('Error enabling biometric:', error);
       showAlert(t('biometricSettings.enableFailed'));
     }
   };
@@ -175,14 +297,12 @@ const BiometricSettings = () => {
         setBiometricEnabled(false);
         setSelectedAccount(null);
         setBiometricEmail(null);
-        setShowDisableConfirm(false);
         showAlert(
           `${getBiometricDisplayName()} ${t(
             'biometricSettings.hasBeenDisabled',
           )}`,
         );
-
-        await initializeBiometricSettings();
+        await initializeBiometricSettings(true); // silent ✅
       } else {
         showAlert(t('biometricSettings.disableFailed'));
       }
@@ -201,11 +321,20 @@ const BiometricSettings = () => {
     setSelectedAccount(null);
   };
 
+  // const handleAccountSelection = async account => {
+  //   if (biometricEnabled && biometricEmail === account.email) {
+  //     handleShowDisableConfirm();
+  //   } else {
+  //     handleShowEnableConfirm(account);
+  //   }
+  // };
+
   const handleAccountSelection = async account => {
     if (biometricEnabled && biometricEmail === account.email) {
-      handleShowDisableConfirm();
+      await handleDisableBiometric(); // call directly, no popup
     } else {
-      handleShowEnableConfirm(account);
+      setSelectedAccount(account);
+      await handleEnableBiometric(account);
     }
   };
 
@@ -222,9 +351,26 @@ const BiometricSettings = () => {
     }
   };
 
+  // const getBiometricDisplayName = () => {
+  //   const normalizedType =
+  //     biometricType === 'Biometrics' ? 'Biometric' : biometricType;
+
+  //   switch (normalizedType) {
+  //     case 'FaceID':
+  //       return 'Face ID';
+  //     case 'TouchID':
+  //       return 'Touch ID';
+  //     case 'Fingerprint':
+  //       return 'Fingerprint';
+  //     case 'Face':
+  //       return 'Face Recognition';
+  //     default:
+  //       return normalizedType || 'Biometric';
+  //   }
+  // };
   const getBiometricDisplayName = () => {
     const normalizedType =
-      biometricType === 'Biometrics' ? 'Biometric' : biometricType;
+      biometricType === 'Biometrics' ? 'Fingerprint' : biometricType;
 
     switch (normalizedType) {
       case 'FaceID':
@@ -236,7 +382,7 @@ const BiometricSettings = () => {
       case 'Face':
         return 'Face Recognition';
       default:
-        return normalizedType || 'Biometric';
+        return normalizedType || 'Fingerprint';
     }
   };
 
@@ -254,21 +400,73 @@ const BiometricSettings = () => {
       : t('biometricSettings.selectAccountToEnable');
   };
 
+  // const renderAccountItem = ({item}) => {
+  //   const isEnabled = biometricEnabled && biometricEmail === item.email;
+  //   const shouldHighlight = isEnabled;
+
+  //   return (
+  //     <TouchableOpacity
+  //       style={[
+  //         styles.Biometric_accountItem,
+  //         shouldHighlight && styles.Biometric_selectedAccountItem,
+  //       ]}
+  //       onPress={() => handleAccountSelection(item)}>
+  //       <View
+  //         style={[
+  //           styles.Biometric_accountIcon,
+  //           shouldHighlight && {
+  //             backgroundColor: `${getProviderColor(item.provider)}15`,
+  //           },
+  //         ]}>
+  //         <MaterialCommunityIcons
+  //           name={getProviderIcon(item.provider)}
+  //           size={styles.Biometric_accountIconSize}
+  //           color={getProviderColor(item.provider)}
+  //         />
+  //       </View>
+  //       <View style={styles.Biometric_accountInfo}>
+  //         <Text
+  //           style={[
+  //             styles.Biometric_accountEmail,
+  //             shouldHighlight && styles.Biometric_selectedAccountEmail,
+  //           ]}>
+  //           {item.email}
+  //         </Text>
+  //         {item.displayName && (
+  //           <Text style={styles.Biometric_accountName}>{item.displayName}</Text>
+  //         )}
+  //         {isEnabled && (
+  //           <Text style={styles.Biometric_enabledBadge}>
+  //             {t('biometricSettings.biometricEnabled')}
+  //           </Text>
+  //         )}
+  //       </View>
+  //       {shouldHighlight && (
+  //         <MaterialCommunityIcons
+  //           name="check-circle"
+  //           size={styles.Biometric_checkIconSize}
+  //           color="#007AFF"
+  //         />
+  //       )}
+  //     </TouchableOpacity>
+  //   );
+  // };
+
   const renderAccountItem = ({item}) => {
     const isEnabled = biometricEnabled && biometricEmail === item.email;
-    const shouldHighlight = isEnabled;
 
     return (
       <TouchableOpacity
         style={[
           styles.Biometric_accountItem,
-          shouldHighlight && styles.Biometric_selectedAccountItem,
+          isEnabled && styles.Biometric_selectedAccountItem,
         ]}
-        onPress={() => handleAccountSelection(item)}>
+        onPress={() => handleAccountSelection(item)}
+        activeOpacity={0.7}>
         <View
           style={[
             styles.Biometric_accountIcon,
-            shouldHighlight && {
+            isEnabled && {
               backgroundColor: `${getProviderColor(item.provider)}15`,
             },
           ]}>
@@ -282,7 +480,7 @@ const BiometricSettings = () => {
           <Text
             style={[
               styles.Biometric_accountEmail,
-              shouldHighlight && styles.Biometric_selectedAccountEmail,
+              isEnabled && styles.Biometric_selectedAccountEmail,
             ]}>
             {item.email}
           </Text>
@@ -295,13 +493,13 @@ const BiometricSettings = () => {
             </Text>
           )}
         </View>
-        {shouldHighlight && (
-          <MaterialCommunityIcons
-            name="check-circle"
-            size={styles.Biometric_checkIconSize}
-            color="#007AFF"
-          />
-        )}
+        <Switch
+          value={isEnabled}
+          onValueChange={() => handleAccountSelection(item)}
+          trackColor={{false: '#E5E7EB', true: '#007AFF'}}
+          thumbColor={'#FFFFFF'}
+          ios_backgroundColor="#E5E7EB"
+        />
       </TouchableOpacity>
     );
   };
@@ -402,7 +600,7 @@ const BiometricSettings = () => {
                 })}
               </Text>
 
-              <View
+              {/* <View
                 style={[
                   styles.Biometric_statusBadge,
                   biometricEnabled
@@ -429,7 +627,7 @@ const BiometricSettings = () => {
                         'biometricSettings.inactive',
                       )}`}
                 </Text>
-              </View>
+              </View> */}
             </View>
           </LinearGradient>
 
@@ -492,7 +690,7 @@ const BiometricSettings = () => {
         type="info"
       />
 
-      <ConfirmationAlert
+      {/* <ConfirmationAlert
         visible={showDisableConfirm}
         heading={`${t(
           'biometricSettings.disable',
@@ -506,7 +704,7 @@ const BiometricSettings = () => {
         onPrimaryPress={handleDisableBiometric}
         onSecondaryPress={handleCancelDisable}
         type="warning"
-      />
+      /> */}
     </ActionPaneContainer>
   );
 };

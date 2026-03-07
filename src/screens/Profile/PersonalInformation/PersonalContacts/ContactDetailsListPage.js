@@ -307,8 +307,7 @@ const ContactDetailsListPage = () => {
   };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : rawData;
-    return base;
+    return searchQuery.trim() ? displayData : rawData;
   };
 
   // 🔹 Render Each Contact Card
@@ -328,6 +327,7 @@ const ContactDetailsListPage = () => {
         isExpandable
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -381,10 +381,21 @@ const ContactDetailsListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>Get started</Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            Tap + to add a new record
-          </Text>
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
+            </>
+          )}
         </ScrollView>
       )}
 
