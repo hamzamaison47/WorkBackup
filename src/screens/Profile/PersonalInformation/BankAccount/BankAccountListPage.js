@@ -182,82 +182,32 @@ const BankAccountListPage = () => {
     return statusMap[status] || 'Draft';
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return banksaccountdata;
-
-  //   return banksaccountdata.filter(item => {
-  //     const status = getStatusLabel(item.WFStatus);
-
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending');
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
   const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : banksaccountdata;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-      if (activeFilter === 'Pending') return status.includes('Pending');
-      return status === activeFilter;
-    });
+    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter); // ← fix
   };
 
   const getFilterCounts = () => {
     const counts = {All: banksaccountdata.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = banksaccountdata.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = banksaccountdata.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(banksaccountdata.map(item => getStatusLabel(item.WFStatus))),
+    ].forEach(status => {
+      // ← fix
+      counts[status] = banksaccountdata.filter(
+        item => getStatusLabel(item.WFStatus) === status,
+      ).length;
     });
-
     return counts;
   };
 
-  // Add this after your existing state declarations
   const visiblePills = useMemo(() => {
     if (!banksaccountdata.length) return ['All'];
-
-    const presentStatuses = new Set(
-      banksaccountdata.map(item => getStatusLabel(item.WFStatus)),
-    );
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => {
-      if (pill === 'All') return true;
-      if (pill === 'Pending') {
-        // match any status containing "Pending"
-        return [...presentStatuses].some(s => s.includes('Pending'));
-      }
-      return presentStatuses.has(pill);
-    });
+    const unique = [
+      ...new Set(banksaccountdata.map(item => getStatusLabel(item.WFStatus))), // ← fix
+    ];
+    return ['All', ...unique];
   }, [banksaccountdata]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
-
   // Card Configuration
   const cardConfig = {
     headerConfig: {

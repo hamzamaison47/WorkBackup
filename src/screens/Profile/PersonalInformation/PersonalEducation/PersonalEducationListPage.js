@@ -165,9 +165,8 @@ const PersonalEducationListPage = () => {
 
   /* ---------- status ---------- */
   const getStatusLabel = status => {
-    if (!status) return '';
+    if (!status) return 'Approved'; // ← empty = Approved
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
-
     const map = {
       draft: 'Draft',
       inreview: 'In review',
@@ -191,93 +190,38 @@ const PersonalEducationListPage = () => {
     return map[normalizedStatus] ?? '';
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return educationData;
-
-  //   return educationData.filter(item => {
-  //     const status = getStatusLabel(item.ApprovalStatus);
-
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending');
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
   const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : educationData;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.ApprovalStatus);
-      if (activeFilter === 'Pending') {
-        return status === 'In review' || status.includes('Pending');
-      }
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => getStatusLabel(item.ApprovalStatus) === activeFilter,
+    ); // ← fix
   };
 
   const getFilterCounts = () => {
     const counts = {All: educationData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = educationData.filter(item => {
-          const status = getStatusLabel(item.ApprovalStatus);
-          return status === 'In review' || status.includes('Pending');
-        }).length;
-      } else {
-        counts[pill] = educationData.filter(
-          item => getStatusLabel(item.ApprovalStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(
+        educationData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ),
+    ].forEach(status => {
+      // ← fix
+      counts[status] = educationData.filter(
+        item => getStatusLabel(item.ApprovalStatus) === status,
+      ).length;
     });
-
     return counts;
   };
 
   const visiblePills = useMemo(() => {
     if (!educationData.length) return ['All'];
-
-    const normalizeStatus = status => {
-      if (!status || status.toLowerCase() === 'noworkflow') return null; // ← don't count as Draft
-      const lower = status.toLowerCase().replace(/\s+/g, '');
-
-      if (lower.includes('inreview')) return 'Pending';
-      if (lower.includes('pending')) return 'Pending';
-      if (lower.includes('draft')) return 'Draft';
-      if (lower.includes('approved')) return 'Approved';
-      if (lower.includes('rejected')) return 'Rejected';
-      if (lower.includes('completed') || lower.includes('workflowcomplete'))
-        return 'Completed';
-
-      return null; // unknown statuses don't show a pill
-    };
-
-    const presentStatuses = new Set(
-      educationData
-        .map(item => normalizeStatus(item.ApprovalStatus))
-        .filter(Boolean), // ← remove nulls
-    );
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => pill === 'All' || presentStatuses.has(pill));
+    const unique = [
+      ...new Set(
+        educationData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ), // ← fix
+    ];
+    return ['All', ...unique.filter(s => s !== '')];
   }, [educationData]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   /* ---------- buttons ---------- */
   // Fix: rename param to avoid shadowing isProcessing state

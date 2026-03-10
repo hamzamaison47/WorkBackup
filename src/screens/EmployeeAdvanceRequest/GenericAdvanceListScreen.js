@@ -279,83 +279,31 @@ const GenericAdvanceListScreen = () => {
     return statusMap[status] || 'Draft';
   };
 
-  // const getFilteredData = () => {
-  //   const base = displayData.length > 0 ? displayData : allAdvanceData;
-
-  //   if (activeFilter === 'All') return base;
-
-  //   return base.filter(item => {
-  //     const status = getStatusLabel(item.WFStatus);
-
-  //     // Special handling for Pending filter
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending');
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
   const getFilteredData = () => {
-    // Use displayData when a search is active, otherwise use rawData
     const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-    return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-      if (activeFilter === 'Pending') return status.includes('Pending');
-      return status === activeFilter;
-    });
+    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter);
   };
 
   const getFilterCounts = () => {
     const counts = {All: allAdvanceData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = allAdvanceData.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = allAdvanceData.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(allAdvanceData.map(item => getStatusLabel(item.WFStatus))),
+    ].forEach(status => {
+      counts[status] = allAdvanceData.filter(
+        item => getStatusLabel(item.WFStatus) === status,
+      ).length;
     });
-
     return counts;
   };
 
-  // Add this after your existing state declarations
   const visiblePills = useMemo(() => {
     if (!allAdvanceData.length) return ['All'];
-
-    const presentStatuses = new Set(
-      allAdvanceData.map(item => getStatusLabel(item.WFStatus)),
-    );
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => {
-      if (pill === 'All') return true;
-      if (pill === 'Pending') {
-        // match any status containing "Pending"
-        return [...presentStatuses].some(s => s.includes('Pending'));
-      }
-      return presentStatuses.has(pill);
-    });
+    const unique = [
+      ...new Set(allAdvanceData.map(item => getStatusLabel(item.WFStatus))),
+    ];
+    return ['All', ...unique];
   }, [allAdvanceData]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   // Handle attachment button press (mirrors LeaveRequestListPage logic)
   const handleReceiptAttachmentPress = async itemData => {

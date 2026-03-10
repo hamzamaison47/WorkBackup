@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   Animated,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import styles from '../styles/styles';
@@ -26,6 +27,10 @@ const SearchBar = ({
   onSortChange = () => {},
   placeholder = 'Search...',
   activeSortOrder = null,
+  showDocumentTypeFilter = false,
+  documentTypes = [],
+  selectedDocumentType = null,
+  onDocumentTypeChange = () => {},
 }) => {
   const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -34,6 +39,11 @@ const SearchBar = ({
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const flaskRef = useRef(null);
   const inputRef = useRef(null);
+
+  const [docTypeVisible, setDocTypeVisible] = useState(false);
+  const [docTypePos, setDocTypePos] = useState({top: 0, right: 0});
+  const docTypeAnim = useRef(new Animated.Value(0)).current;
+  const docTypeRef = useRef(null);
 
   const handleSearch = text => {
     setQuery(text);
@@ -84,6 +94,30 @@ const SearchBar = ({
 
   const isFilterActive = activeSortOrder !== null;
 
+  const openDocTypeDropdown = () => {
+    docTypeRef.current?.measure((fx, fy, w, h, px, py) => {
+      setDocTypePos({top: py + h + 6, right: SCREEN_WIDTH - px - w});
+      setDocTypeVisible(true);
+      Animated.timing(docTypeAnim, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    });
+  };
+
+  const closeDocTypeDropdown = () => {
+    Animated.timing(docTypeAnim, {
+      toValue: 0,
+      duration: 120,
+      useNativeDriver: true,
+    }).start(() => setDocTypeVisible(false));
+  };
+
+  const handleDocTypeSelect = type => {
+    closeDocTypeDropdown();
+    onDocumentTypeChange(type);
+  };
   return (
     <View style={styles.SearchBar_row}>
       {/* Page Title — hidden when search is open */}
@@ -125,9 +159,8 @@ const SearchBar = ({
         </View>
       )}
 
-      {/* Right side icons — always visible */}
+      {/* Right side icons */}
       <View style={styles.SearchBar_rightIcons}>
-        {/* Search toggle */}
         <TouchableOpacity onPress={toggleSearch}>
           <FontAwesome
             name={searchOpen ? 'times' : 'search'}
@@ -136,7 +169,6 @@ const SearchBar = ({
           />
         </TouchableOpacity>
 
-        {/* Filter flask */}
         <TouchableOpacity
           ref={flaskRef}
           onPress={openDropdown}
@@ -150,9 +182,25 @@ const SearchBar = ({
             color={isFilterActive ? '#0A66C2' : '#ffffff'}
           />
         </TouchableOpacity>
+
+        {showDocumentTypeFilter && (
+          <TouchableOpacity
+            ref={docTypeRef}
+            onPress={openDocTypeDropdown}
+            style={[
+              styles.SearchBar_flaskButton,
+              selectedDocumentType && styles.SearchBar_flaskButtonActive,
+            ]}>
+            <FontAwesome
+              name="filter"
+              size={14}
+              color={selectedDocumentType ? '#0A66C2' : '#ffffff'}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Sort Dropdown Modal */}
+      {/* ── Sort Dropdown Modal ── */}
       <Modal
         transparent
         visible={dropdownVisible}
@@ -215,8 +263,259 @@ const SearchBar = ({
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* ── Document Type Dropdown Modal — Modern Sleek ── */}
+      {showDocumentTypeFilter && (
+        <Modal
+          transparent
+          visible={docTypeVisible}
+          animationType="none"
+          onRequestClose={closeDocTypeDropdown}>
+          <TouchableWithoutFeedback onPress={closeDocTypeDropdown}>
+            <View style={styles.SearchBar_modalOverlay}>
+              <TouchableWithoutFeedback>
+                <Animated.View
+                  style={[
+                    docTypeStyles.panel,
+                    {
+                      top: docTypePos.top,
+                      right: docTypePos.right,
+                      opacity: docTypeAnim,
+                      transform: [
+                        {
+                          translateY: docTypeAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-8, 0],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}>
+                  {/* Header */}
+                  <View style={docTypeStyles.header}>
+                    <View style={docTypeStyles.headerLeft}>
+                      <View style={docTypeStyles.headerIconWrap}>
+                        <FontAwesome name="filter" size={11} color="#0A66C2" />
+                      </View>
+                      <Text style={docTypeStyles.headerTitle}>
+                        Document Type
+                      </Text>
+                    </View>
+                    {selectedDocumentType && (
+                      <TouchableOpacity
+                        onPress={() => handleDocTypeSelect(null)}
+                        style={docTypeStyles.clearBtn}>
+                        <Text style={docTypeStyles.clearBtnText}>Clear</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Divider */}
+                  <View style={docTypeStyles.divider} />
+
+                  {/* All Types */}
+                  <TouchableOpacity
+                    onPress={() => handleDocTypeSelect(null)}
+                    style={[
+                      docTypeStyles.option,
+                      !selectedDocumentType && docTypeStyles.optionActive,
+                    ]}>
+                    <View style={docTypeStyles.optionLeft}>
+                      <View
+                        style={[
+                          docTypeStyles.radioOuter,
+                          !selectedDocumentType &&
+                            docTypeStyles.radioOuterActive,
+                        ]}>
+                        {!selectedDocumentType && (
+                          <View style={docTypeStyles.radioInner} />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          docTypeStyles.optionText,
+                          !selectedDocumentType &&
+                            docTypeStyles.optionTextActive,
+                        ]}>
+                        All Types
+                      </Text>
+                    </View>
+                    {!selectedDocumentType && (
+                      <View style={docTypeStyles.activeBadge}>
+                        <Text style={docTypeStyles.activeBadgeText}>
+                          {documentTypes.length} types
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  {/* Document Types */}
+                  {documentTypes.map((type, idx) => {
+                    const isActive = selectedDocumentType === type;
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => handleDocTypeSelect(type)}
+                        style={[
+                          docTypeStyles.option,
+                          isActive && docTypeStyles.optionActive,
+                          idx === documentTypes.length - 1 &&
+                            docTypeStyles.optionLast,
+                        ]}>
+                        <View style={docTypeStyles.optionLeft}>
+                          <View
+                            style={[
+                              docTypeStyles.radioOuter,
+                              isActive && docTypeStyles.radioOuterActive,
+                            ]}>
+                            {isActive && (
+                              <View style={docTypeStyles.radioInner} />
+                            )}
+                          </View>
+                          <Text
+                            style={[
+                              docTypeStyles.optionText,
+                              isActive && docTypeStyles.optionTextActive,
+                            ]}
+                            numberOfLines={1}>
+                            {type}
+                          </Text>
+                        </View>
+                        {isActive && (
+                          <FontAwesome name="check" size={12} color="#0A66C2" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </Animated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      )}
     </View>
   );
 };
+
+const docTypeStyles = StyleSheet.create({
+  panel: {
+    position: 'absolute',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    minWidth: 220,
+    maxWidth: 280,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F4F8',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#FAFBFC',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: '#E8F1FB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A2E',
+    letterSpacing: 0.2,
+  },
+  clearBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: '#FEE2E2',
+  },
+  clearBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#DC2626',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F4F8',
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F7FA',
+  },
+  optionActive: {
+    backgroundColor: '#F0F7FF',
+  },
+  optionLast: {
+    borderBottomWidth: 0,
+  },
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    marginRight: 8,
+  },
+  radioOuter: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterActive: {
+    borderColor: '#0A66C2',
+  },
+  radioInner: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#0A66C2',
+  },
+  optionText: {
+    fontSize: 13,
+    color: '#4B5563',
+    fontWeight: '500',
+    flex: 1,
+  },
+  optionTextActive: {
+    color: '#0A66C2',
+    fontWeight: '600',
+  },
+  activeBadge: {
+    backgroundColor: '#E8F1FB',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  activeBadgeText: {
+    fontSize: 10,
+    color: '#0A66C2',
+    fontWeight: '600',
+  },
+});
 
 export default SearchBar;

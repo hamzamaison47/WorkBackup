@@ -8,6 +8,7 @@ import QRSetupScreen from '../screens/Setup/QRSetupScreen';
 import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
 import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
+import SettingsScreen from '../screens/Settingsscreen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -87,6 +88,12 @@ const AppNavigator = () => {
       <Stack.Screen
         name="QRSetupScreen"
         component={QRSetupScreen}
+        options={{headerShown: false}}
+      />
+
+      <Stack.Screen
+        name="SettingsScreen"
+        component={SettingsScreen}
         options={{headerShown: false}}
       />
 
