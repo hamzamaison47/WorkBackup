@@ -81,6 +81,43 @@ const ESSEmployeeTask_ListPage = () => {
     gradientColors: ['#6ee0ff', '#bddeff', '#cce6ff'],
     isRTL: isRTL,
   };
+  const getButtonConfig = () => {
+    return {
+      approval: {
+        show: true,
+        position: 'bottom',
+        style: 'approval_dropdown',
+        text: 'Change Status',
+        icon: 'check-square-o',
+        textColor: '#0A66C2',
+        disabled: false,
+        actions: [
+          {
+            key: 'inprogress',
+            label: 'In Progress',
+            icon: 'play',
+          },
+          {
+            key: 'confirmed',
+            label: 'Confirmed',
+            icon: 'check',
+          },
+          {
+            key: 'cancelled',
+            label: 'Cancelled',
+            icon: 'times',
+          },
+        ],
+      },
+    };
+  };
+
+  /** Dropdown Click (No functionality yet) */
+  const handleButtonPress = () => {
+    console.log('Dropdown clicked');
+  };
+
+  /** Handle Dropdown Actions */
 
   /** Render Task Card */
   const renderTaskCard = ({item}) => {
@@ -102,6 +139,8 @@ const ESSEmployeeTask_ListPage = () => {
         item['a:displayProcessType'] || item.displayProcessType || '',
       dueDate: item['a:dueDate'] || item.dueDate || '',
     };
+    const buttonConfig = getButtonConfig();
+
     console.log('Processed Item for Card:', processedItem); // ✅ Verify recId here
 
     return (
@@ -110,6 +149,8 @@ const ESSEmployeeTask_ListPage = () => {
         headerConfig={cardConfig.headerConfig}
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
+        buttons={buttonConfig}
+        onButtonPress={handleButtonPress}
         isExpandable={true}
         onPress={() => {
           console.log(processedItem);
