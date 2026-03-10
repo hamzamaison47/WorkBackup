@@ -141,6 +141,9 @@ const EntitlementBalance = () => {
 
   const navigation = useNavigation();
   const {userData} = useSelector(state => state.user);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
 
   // Fetch entitlement data
   const fetchEntitlementData = useCallback(async () => {
@@ -155,6 +158,9 @@ const EntitlementBalance = () => {
       const filteredEntitlementData = myEntitlementData.filter(
         e => e.EmployeeId === userData.employeeId,
       );
+      setAllEntitlementData(filteredEntitlementData);
+      setRawData(filteredEntitlementData);
+      setDisplayData(filteredEntitlementData);
 
       setAllEntitlementData(filteredEntitlementData);
     } catch (error) {
@@ -189,6 +195,24 @@ const EntitlementBalance = () => {
     ],
   };
 
+  const handleSearch = query => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setDisplayData(rawData);
+    } else {
+      const q = query.toLowerCase();
+      setDisplayData(
+        rawData.filter(item =>
+          Object.values(item).some(val =>
+            String(val ?? '')
+              .toLowerCase()
+              .includes(q),
+          ),
+        ),
+      );
+    }
+  };
+
   const renderEntitlementCard = ({item}) => (
     <DynamicRequestCard
       data={item}
@@ -200,6 +224,7 @@ const EntitlementBalance = () => {
       isExpandable
       gradientColors={['#e0f2fe', '#bae6fd', '#dbeafe']}
       showNavigationArrow={false}
+      searchQuery={searchQuery}
     />
   );
 
@@ -212,12 +237,13 @@ const EntitlementBalance = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       showPageTitleRow={true}
-      showSearchBar={true}>
+      showSearchBar={true}
+      onSearchChange={handleSearch}>
       {isLoading ? (
         <CustomIndicator />
-      ) : allEntitlementData.length > 0 ? (
+      ) : displayData.length > 0 ? (
         <FlatList
-          data={allEntitlementData}
+          data={displayData}
           renderItem={renderEntitlementCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() ||
@@ -232,11 +258,20 @@ const EntitlementBalance = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.EntBal_NoDataText}>No Data Found</Text>
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.DLP_NoDataText}>No Data Found</Text>
+          )}
         </ScrollView>
       )}
 

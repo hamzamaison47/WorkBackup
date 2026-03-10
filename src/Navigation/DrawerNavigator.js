@@ -25,27 +25,7 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 
-import TabNavigator from './TabNavigator';
 import styles from '../styles/styles';
-
-import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayPersonalInfo';
-import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
-import MarkPresentScreen from '../screens/Attendance/MarkPresentScreen';
-import EditAttendanceScreen from '../screens/Attendance/EditAttendanceScreen';
-import CreateEmployeeAdjustment from '../components/Attendance/CreateEmployeeAdjustment';
-import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
-import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
-import PersonalEducation from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
-import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
-import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
-import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
-import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
-import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
-import Preferences from '../screens/Profile/Preferences/Preferences';
-import {FamilyContacts_ListPageScreen} from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_ListPage';
-import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
-import FamilyContact_SaveRecord from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_SaveRecord';
-import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
 
 const Drawer = createDrawerNavigator();
 
@@ -152,7 +132,8 @@ const CustomDrawerContent = props => {
     return (
       screenMapping[item.MenuId] &&
       [0, 2, 3].includes(Number(item.Type)) &&
-      item.Visible === '1'
+      item.Visible === '1' &&
+      item.DisplayOnSideNavigation === 'Yes'
     );
   });
 
@@ -203,12 +184,12 @@ const CustomDrawerContent = props => {
       </ImageBackground>
 
       <DrawerContentScrollView {...props} showsVerticalScrollIndicator={false}>
-        <CustomDrawerItem
+        {/* <CustomDrawerItem
           label="Dashboard"
           icon={require('../assets/Maindashboard/dashboard.png')}
           isActive={activeRoute === 'MainDashboard'}
           onPress={() => navigateToScreen('MainDashboard')}
-        />
+        /> */}
 
         {uniqueMenuItems.map((item, idx) => (
           <CustomDrawerItem
@@ -269,284 +250,56 @@ const DrawerNavigator = () => {
   const userData = useSelector(state => state.user.userData);
   const {menuItems} = useSelector(state => state.menuItem);
 
-  const filteredMenuItems = menuItems.filter(item => {
-    return screenMapping[item.MenuId];
-  });
+  // ALL valid screens available in the app to be registered in Drawer
+  const validScreens = menuItems.filter(item => screenMapping[item.MenuId]);
 
-  const uniqueMenuItems = filteredMenuItems.filter(
+  const uniqueScreens = validScreens.filter(
     (it, idx, arr) =>
       !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
   );
 
   return (
     <Drawer.Navigator
-      initialRouteName="TabNavigator"
+      initialRouteName="MainDashboard"
       drawerContent={props => <CustomDrawerContent {...props} />}
       screenOptions={{
         drawerStyle: {backgroundColor: '#f9fcffff'},
         drawerActiveTintColor: '#0A66C2',
         drawerInactiveTintColor: '#333333',
-        headerShown: false,
+        headerShown: true,
       }}>
+      {/* MainDashboard manages its own header internally via ActionPaneContainer */}
       <Drawer.Screen
-        name="TabNavigator"
-        component={TabNavigator}
+        name="MainDashboard"
+        component={screenMapping.MainDashboard}
         initialParams={{userData}}
         options={{
           title: 'Home',
-          drawerIcon: () => (
-            <Ionicons name="speedometer" size={24} color="#0A66C2" />
-          ),
-        }}
-      />
-
-      {uniqueMenuItems.map((item, idx) => {
-        const ScreenComponent = screenMapping[item.MenuId];
-        return (
-          <Drawer.Screen
-            key={`${item.MenuId}-${item.Sequence ?? idx}`}
-            name={item.MenuId}
-            component={ScreenComponent}
-            initialParams={{userData}}
-            options={{
-              title: item.DisplayName || item.MenuId,
-              drawerIcon: () => (
-                <Ionicons name="menu" size={24} color="#0A66C2" />
-              ),
-              headerShown: true,
-            }}
-          />
-        );
-      })}
-
-      {/* Static screens */}
-      <Drawer.Screen
-        name="DisplayPersonalInfo"
-        component={DisplayPersonalInfo}
-        initialParams={{userData}}
-        options={{
-          title: 'DisplayPersonalInfo',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-          headerShadowVisible: false,
-        }}
-      />
-
-      <Drawer.Screen
-        name="ChangeProfileImage"
-        component={ChangeProfileImage}
-        initialParams={{userData}}
-        options={{
-          title: 'ChangeProfileImage',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
+          drawerIcon: () => <Ionicons name="home" size={24} color="#0A66C2" />,
           headerShown: true,
         }}
       />
 
-      <Drawer.Screen
-        name="MarkPresentScreen"
-        component={MarkPresentScreen}
-        initialParams={{userData}}
-        options={{
-          title: 'MarkPresentScreen',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="EditAttendanceScreen"
-        component={EditAttendanceScreen}
-        initialParams={{userData}}
-        options={{
-          title: 'EditAttendanceScreen',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="CreateEmployeeAdjustment"
-        component={CreateEmployeeAdjustment}
-        initialParams={{userData}}
-        options={{
-          title: 'CreateEmployeeAdjustment',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="ContactDetailsListPage"
-        component={ContactDetailsListPage}
-        initialParams={{userData}}
-        options={{
-          title: 'ContactDetailsListPage',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="ContactDetailsSaveRecord"
-        component={ContactDetailsSaveRecord}
-        initialParams={{userData}}
-        options={{
-          title: 'ContactDetailsSaveRecord',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="PersonalEducation"
-        component={PersonalEducation}
-        initialParams={{userData}}
-        options={{
-          title: 'Education',
-          drawerIcon: () => (
-            <Ionicons name="school-outline" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="BankAccountListPage"
-        component={BankAccountListPage}
-        initialParams={{userData}}
-        options={{
-          title: 'Bank Account',
-          drawerIcon: () => (
-            <Ionicons name="school-outline" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="BankAccountSaveRecord"
-        component={BankAccountSaveRecord}
-        options={{
-          title: 'Add / Edit Bank Account Details',
-          drawerItemStyle: {display: 'none'},
-          headerShown: true,
-          headerStyle: {backgroundColor: '#0A66C2'},
-          headerTintColor: '#fff',
-        }}
-      />
-
-      <Drawer.Screen
-        name="PersonalEducationSaveRecord"
-        component={PersonalEducationSaveRecord}
-        options={{
-          title: 'Add / Edit Education',
-          drawerItemStyle: {display: 'none'},
-          headerShown: true,
-          headerStyle: {backgroundColor: '#0A66C2'},
-          headerTintColor: '#fff',
-        }}
-      />
-
-      <Drawer.Screen
-        name="IdentificationNumberListPage"
-        component={IdentificationNumberListPage}
-        initialParams={{userData}}
-        options={{
-          title: 'IdentificationListPage',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="IdentificationNumberSaveRecord"
-        component={IdentificationNumberSaveRecord}
-        initialParams={{userData}}
-        options={{
-          title: 'IdentificationNumberSaveRecord',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="FamilyContact_SaveRecord"
-        component={FamilyContact_SaveRecord}
-        initialParams={{userData}}
-        options={{
-          title: 'Personal contact create',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-
-      <Drawer.Screen
-        name="Preferences"
-        component={Preferences}
-        options={{
-          title: 'Add / Edit Education',
-          drawerItemStyle: {display: 'none'},
-          headerShown: true,
-          headerStyle: {backgroundColor: '#0A66C2'},
-          headerTintColor: '#fff',
-          headerShadowVisible: false,
-        }}
-      />
-
-      <Drawer.Screen
-        name="BiometricSettings"
-        component={BiometricSettings}
-        options={{
-          title: 'Biometric Settings',
-          drawerItemStyle: {display: 'none'},
-          headerShown: true,
-          headerStyle: {backgroundColor: '#0A66C2'},
-          headerTintColor: '#fff',
-          headerShadowVisible: false,
-        }}
-      />
-      <Drawer.Screen
-        name="FamilyContact_ListPage"
-        component={FamilyContacts_ListPageScreen}
-        initialParams={{userData}}
-        options={{
-          title: 'FamilyContact_ListPage',
-          drawerIcon: () => (
-            <Ionicons name="calendar" size={24} color="#0A66C2" />
-          ),
-          headerShown: true,
-        }}
-      />
-      <Drawer.Screen
-        name="WorkflowHistoryScreen"
-        component={WorkflowHistoryScreen}
-        options={{
-          title: 'Workflow History',
-          drawerItemStyle: {display: 'none'}, // hides from drawer
-          headerShown: true,
-        }}
-      />
+      {uniqueScreens
+        .filter(item => item.MenuId !== 'MainDashboard')
+        .map((item, idx) => {
+          const ScreenComponent = screenMapping[item.MenuId];
+          return (
+            <Drawer.Screen
+              key={`${item.MenuId}-${item.Sequence ?? idx}`}
+              name={item.MenuId}
+              component={ScreenComponent}
+              initialParams={{userData}}
+              options={{
+                title: item.DisplayName || item.MenuId,
+                drawerIcon: () => (
+                  <Ionicons name="menu" size={24} color="#0A66C2" />
+                ),
+                headerShown: true,
+              }}
+            />
+          );
+        })}
     </Drawer.Navigator>
   );
 };

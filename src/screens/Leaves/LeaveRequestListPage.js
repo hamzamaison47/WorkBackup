@@ -2,7 +2,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   Text,
   FlatList,
@@ -178,8 +178,8 @@ const LeaveRequestListPage = () => {
     }
 
     navigation.reset({
-      index: 0, // top of the stack
-      routes: [{name: 'TabNavigator', params: {screen: targetRoute}}],
+      index: 0,
+      routes: [{name: targetRoute}],
     });
   };
 
@@ -385,8 +385,19 @@ const LeaveRequestListPage = () => {
   // };
 
   // Replace getFilteredData() with this
+  // const getFilteredData = () => {
+  //   const base = displayData.length > 0 ? displayData : rawData;
+  //   if (activeFilter === 'All') return base;
+  //   return base.filter(item => {
+  //     const status = getStatusLabel(item.WFStatus);
+  //     if (activeFilter === 'Pending') return status.includes('Pending');
+  //     return status === activeFilter;
+  //   });
+  // };
+
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : rawData;
+    // Use displayData when a search is active, otherwise use rawData
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
     return base.filter(item => {
       const status = getStatusLabel(item.WFStatus);
@@ -414,6 +425,38 @@ const LeaveRequestListPage = () => {
     console.log('Filter counts:', counts); // Debug
     return counts;
   };
+
+  // Add this after your existing state declarations
+  const visiblePills = useMemo(() => {
+    if (!leavesData.length) return ['All'];
+
+    const presentStatuses = new Set(
+      leavesData.map(item => getStatusLabel(item.WFStatus)),
+    );
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => {
+      if (pill === 'All') return true;
+      if (pill === 'Pending') {
+        // match any status containing "Pending"
+        return [...presentStatuses].some(s => s.includes('Pending'));
+      }
+      return presentStatuses.has(pill);
+    });
+  }, [leavesData]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
 
   // Define button configuration
   const getButtonConfig = item => {
@@ -751,6 +794,7 @@ const LeaveRequestListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -766,6 +810,7 @@ const LeaveRequestListPage = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -807,19 +852,21 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            // Search returned no results
             <>
-              {/* <Text style={styles.DLP_NoDataText}>No data found.</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
+            <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
                 Tap + to add a new record
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
             <>
               <Text style={styles.DLP_NoDataText}>
                 {`${activeFilter} record not found.`}

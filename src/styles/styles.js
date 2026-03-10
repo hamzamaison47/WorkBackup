@@ -3998,86 +3998,83 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
 
-  // ====================================================
-  // MAIN PAGE HEADER COMPONENTS - RESPONSIVE STYLES
-  // ====================================================
+  // ============================================
+  // MAIN PAGE HEADER (MPH_) - RESPONSIVE STYLES
+  // ============================================
   MPH_leftContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: conditionalScale(6, 8, 10, 12),
+    paddingLeft: conditionalScale(8, 10, 12, 14),
   },
-
   MPH_leftSide: {
-    width: conditionalScale(32, 36, 40, 44),
-    alignItems: 'center',
-    height: conditionalVerticalScale(44, 48, 52, 56),
+    padding: conditionalScale(6, 7, 8, 10),
     justifyContent: 'center',
-    // marginRight: conditionalScale(8, 12, 16, 20),
+    alignItems: 'center',
   },
-
   MPH_title: {
-    color: '#ffffff',
-    fontSize: conditionalFontScale(12, 14, 16, 18),
-    fontWeight: 'bold',
+    fontSize: conditionalFontScale(16, 17, 18, 20),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginLeft: conditionalScale(6, 8, 10, 12),
+    letterSpacing: 0.3,
   },
-
   MPH_rightSideView: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: conditionalScale(10, 12, 14, 16),
+    paddingRight: conditionalScale(6, 8, 10, 12),
+    gap: conditionalScale(2, 3, 4, 6),
   },
-
   MPH_dropdownContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: conditionalScale(8, 10, 12, 14),
-    paddingVertical: conditionalVerticalScale(8, 10, 11, 13),
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: conditionalScale(8, 9, 10, 12),
+    paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
     borderRadius: borderRadius.md,
-    marginRight: conditionalScale(8, 10, 12, 14),
+    maxWidth: conditionalScale(80, 90, 100, 120),
   },
-
   MPH_dropdownText: {
-    color: '#ffffff',
-    fontSize: conditionalFontScale(12, 13, 14, 16),
+    color: '#FFFFFF',
+    fontSize: conditionalFontScale(10, 11, 11, 12),
     fontWeight: '600',
+    letterSpacing: 0.5,
+    flexShrink: 1,
   },
-
   MPH_dropdownIcon: {
-    marginLeft: conditionalScale(4, 6, 7, 8),
+    marginLeft: conditionalScale(3, 4, 4, 5),
   },
 
-  // ====================================================
-  // NOTIFICATION BUTTON COMPONENT - RESPONSIVE STYLES
-  // ====================================================
+  // ============================================
+  // NOTIFICATION BUTTON (NB_) - RESPONSIVE STYLES
+  // ============================================
   NB_button: {
-    marginRight: conditionalScale(8, 10, 12, 14),
+    padding: conditionalScale(6, 7, 8, 10),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
   NB_iconContainer: {
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   NB_badgeContainer: {
     position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#FF4500',
-    borderRadius: moderateScale(10),
-    width: conditionalScale(16, 18, 19, 21),
-    height: conditionalScale(16, 18, 19, 21),
+    top: conditionalVerticalScale(-6, -7, -8, -9),
+    right: conditionalScale(-6, -7, -8, -9),
+    backgroundColor: '#FF3B30',
+    borderRadius: borderRadius.round,
+    minWidth: conditionalScale(16, 17, 18, 20),
+    height: conditionalVerticalScale(16, 17, 18, 20),
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
+    paddingHorizontal: conditionalScale(3, 3, 4, 4),
+    borderWidth: 1.5,
+    borderColor: '#0A66C2',
   },
-
   NB_badgeText: {
     color: '#FFFFFF',
-    fontSize: conditionalFontScale(10, 11, 12, 13),
-    fontWeight: 'bold',
+    fontSize: conditionalFontScale(9, 9, 10, 11),
+    fontWeight: '800',
   },
 
   // ====================================================
@@ -4087,103 +4084,88 @@ const styles = StyleSheet.create({
     marginRight: conditionalScale(8, 10, 12, 14),
   },
 
-  // ====================================================
-  // COMPANY DROPDOWN COMPONENT - RESPONSIVE STYLES
-  // ====================================================
+  // ============================================
+  // COMPANY DROPDOWN (CD_) - RESPONSIVE STYLES
+  // ============================================
   CD_Overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
+    backgroundColor: 'transparent',
+    zIndex: 999,
   },
-
   CD_DropdownContainer: {
-    marginTop: conditionalVerticalScale(8, 10, 12, 14),
-    marginRight: conditionalScale(8, 10, 12, 14),
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
+    position: 'absolute',
+    top: conditionalVerticalScale(56, 60, 64, 70),
+    right: conditionalScale(10, 12, 14, 16),
+    zIndex: 1000,
+    elevation: 10,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    width: conditionalScale(180, 200, 220, 260),
-    maxHeight: conditionalVerticalScale(350, 400, 420, 480),
+    shadowRadius: 12,
   },
-
   CD_DropdownContent: {
-    padding: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.lg,
+    width: conditionalScale(200, 220, 240, 270),
+    maxHeight: conditionalVerticalScale(260, 280, 300, 340),
+    overflow: 'hidden',
   },
-
   CD_DropdownTitle: {
-    fontSize: conditionalFontScale(16, 18, 19, 22),
-    fontWeight: 'bold',
-    color: '#0A66C2',
-    textAlign: 'center',
-    paddingVertical: conditionalVerticalScale(12, 15, 17, 19),
-    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    fontSize: conditionalFontScale(13, 14, 14, 15),
+    fontWeight: '700',
+    color: '#1A1A2E',
+    paddingHorizontal: conditionalScale(14, 16, 16, 18),
+    paddingVertical: conditionalVerticalScale(10, 12, 12, 14),
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
+    backgroundColor: '#FAFAFA',
   },
-
   CD_ScrollView: {
-    maxHeight: conditionalVerticalScale(260, 300, 320, 360),
+    maxHeight: conditionalVerticalScale(180, 200, 220, 260),
   },
-
   CD_CompanyItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
-    paddingHorizontal: conditionalScale(16, 20, 22, 26),
+    paddingHorizontal: conditionalScale(14, 16, 16, 18),
+    paddingVertical: conditionalVerticalScale(10, 12, 12, 14),
     borderBottomWidth: 1,
     borderBottomColor: '#F5F5F5',
   },
-
+  CD_SelectedCompanyItem: {
+    backgroundColor: '#EBF4FF',
+  },
+  CD_FirstSelectedItem: {
+    borderTopLeftRadius: borderRadius.md,
+    borderTopRightRadius: borderRadius.md,
+  },
+  CD_LastSelectedItem: {
+    borderBottomLeftRadius: borderRadius.md,
+    borderBottomRightRadius: borderRadius.md,
+  },
   CD_CompanyInfo: {
     flex: 1,
   },
-
   CD_CompanyName: {
-    fontSize: conditionalFontScale(14, 16, 17, 19),
+    fontSize: conditionalFontScale(12, 13, 13, 14),
     fontWeight: '600',
     color: '#333333',
-    marginBottom: conditionalVerticalScale(3, 4, 5, 6),
   },
-
   CD_SelectedCompanyName: {
     color: '#0A66C2',
   },
-
   CD_CheckIcon: {
-    marginLeft: conditionalScale(8, 10, 12, 14),
+    marginLeft: conditionalScale(6, 8, 8, 10),
   },
-
   CD_NoDataText: {
-    fontSize: conditionalFontScale(13, 14, 15, 17),
-    color: '#999999',
+    fontSize: conditionalFontScale(12, 13, 13, 14),
+    color: '#888888',
     textAlign: 'center',
-    paddingVertical: conditionalVerticalScale(16, 20, 22, 26),
-    fontStyle: 'italic',
-  },
-
-  CD_FirstSelectedItem: {
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
-  },
-
-  CD_LastSelectedItem: {
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
-  },
-
-  CD_SelectedCompanyItem: {
-    backgroundColor: '#ebf5ff',
-    zIndex: 1,
+    paddingVertical: conditionalVerticalScale(14, 16, 18, 20),
   },
 
   // ============================================
@@ -8492,6 +8474,54 @@ const styles = StyleSheet.create({
 
   // Pill_activePillText: {
   //   color: '#ffffff',
+  // },
+
+  // // ============================================
+  // // ACTION PANE CONTAINER (APCont_) - RESPONSIVE STYLES
+  // // ============================================
+  // APCont_container: {
+  //   flex: 1,
+  //   backgroundColor: '#F5F7FA',
+  // },
+  // APCont_content: {
+  //   flex: 1,
+  // },
+  // APCont_pageTitleRow: {
+  //   backgroundColor: '#FFFFFF',
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: '#EEEEEE',
+  // },
+  // APCont_pageTitleCenteredContainer: {
+  //   paddingHorizontal: conditionalScale(14, 16, 18, 20),
+  //   paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
+  // },
+  // APCont_pageTitleCenteredText: {
+  //   fontSize: conditionalFontScale(16, 17, 18, 20),
+  //   fontWeight: '700',
+  //   color: '#1A1A2E',
+  // },
+  // APCont_floatingPlusButtonContainer: {
+  //   position: 'absolute',
+  //   bottom: conditionalVerticalScale(80, 90, 95, 105),
+  //   right: conditionalScale(20, 22, 24, 28),
+  //   zIndex: 100,
+  // },
+  // APCont_floatingPlusButton: {
+  //   width: conditionalScale(52, 56, 60, 68),
+  //   height: conditionalScale(52, 56, 60, 68),
+  //   borderRadius: conditionalScale(26, 28, 30, 34),
+  //   backgroundColor: '#0A66C2',
+  //   justifyContent: 'center',
+  //   alignItems: 'center',
+  //   elevation: 6,
+  //   shadowColor: '#0A66C2',
+  //   shadowOffset: {width: 0, height: 4},
+  //   shadowOpacity: 0.35,
+  //   shadowRadius: 8,
+  // },
+  // APCont_plusIcon: {
+  //   fontSize: conditionalFontScale(22, 24, 26, 30),
+  //   color: '#FFFFFF',
   // },
 });
 

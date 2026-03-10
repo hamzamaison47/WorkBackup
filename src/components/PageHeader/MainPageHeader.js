@@ -1,21 +1,23 @@
 /* eslint-disable react/react-in-jsx-scope */
-import {TouchableOpacity, View, Text, Dimensions} from 'react-native';
+import {TouchableOpacity, View, Text} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import NotificationButton from './NotificationButton';
-import LogoutButton from './LogoutButton';
 import styles from '../../styles/styles';
-
-const {height} = Dimensions.get('window');
+import {
+  conditionalFontScale,
+  conditionalScale,
+  iconSize,
+} from '../../store/utils/scaling';
 
 const MainPageHeader = ({
   onToggleDrawer,
   onTitle,
   onShowNotify,
   onCount,
-  onLogout,
+  onHeaderMenuPress,
   isBack = false,
-  onDatPress,
+  // onDatPress,
   selectedDat,
   defaultDat,
 }) => ({
@@ -25,33 +27,48 @@ const MainPageHeader = ({
       <TouchableOpacity onPress={onToggleDrawer} style={styles.MPH_leftSide}>
         <Icon
           name={isBack ? 'arrow-left' : 'bars'}
-          size={height * 0.025} // was hp(6)
+          size={iconSize.sm}
           color="white"
         />
       </TouchableOpacity>
-      <Text style={styles.MPH_title}>Dynaface</Text>
+      <Text style={styles.MPH_title} numberOfLines={1}>
+        Dynaface
+      </Text>
     </View>
   ),
   headerRight: () => (
     <View style={styles.MPH_rightSideView}>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.MPH_dropdownContainer}
         onPress={onDatPress}>
-        <Text style={styles.MPH_dropdownText}>{selectedDat.toUpperCase()}</Text>
+        <Text style={styles.MPH_dropdownText} numberOfLines={1}>
+          {selectedDat ? selectedDat.toUpperCase() : ''}
+        </Text>
         <Icon
           name="chevron-down"
-          size={12}
+          size={conditionalFontScale(8, 9, 10, 11)}
           color="#ffffff"
           style={styles.MPH_dropdownIcon}
         />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       <NotificationButton onPress={onShowNotify} notificationCount={onCount} />
-      <LogoutButton onPress={onLogout} />
+      <TouchableOpacity
+        onPress={onHeaderMenuPress}
+        style={[
+          styles.MPH_leftSide,
+          {width: conditionalScale(30, 34, 38, 42)},
+        ]}>
+        <Icon
+          name="user"
+          size={conditionalFontScale(16, 17, 18, 20)}
+          color="#fff"
+        />
+      </TouchableOpacity>
     </View>
   ),
   headerStyle: {
     backgroundColor: '#0A66C2',
-    height: height * 0.08, // was hp(14)
+    height: conditionalScale(52, 56, 60, 64),
   },
   headerTintColor: '#fff',
   headerTitleAlign: 'center',

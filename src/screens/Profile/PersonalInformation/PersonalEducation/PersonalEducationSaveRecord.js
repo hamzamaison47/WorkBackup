@@ -165,17 +165,17 @@ const PersonalEducationSaveRecord = () => {
 
   /* ---------- back ---------- */
   const goBack = useCallback(() => {
-    if (cameFrom === 'PersonalEducation') {
+    if (cameFrom === 'PersonalEducationListPage') {
       navigation.reset({
         index: 0,
         routes: [
           {
-            name: 'PersonalEducation',
+            name: 'PersonalEducationListPage',
             params: {
               employeeId,
               employeeName,
               WorkerRecId,
-              cameFrom: originalCameFrom || 'PersonalEducation',
+              cameFrom: originalCameFrom || 'PersonalEducationListPage',
             },
           },
         ],
@@ -356,26 +356,26 @@ const PersonalEducationSaveRecord = () => {
       setTimeout(() => {
         setAlertModal(false);
         /* ── same reset logic used by Cancel ── */
-        if (cameFrom === 'PersonalEducation') {
+        if (cameFrom === 'PersonalEducationListPage') {
           navigation.reset({
             index: 0,
             routes: [
               {
-                name: 'PersonalEducation',
+                name: 'PersonalEducationListPage',
                 params: {
                   employeeId,
                   employeeName,
                   WorkerRecId: WorkerRecId,
-                  cameFrom: originalCameFrom || 'PersonalEducation',
+                  cameFrom: originalCameFrom || 'PersonalEducationListPage',
                   highlightRecId: recId, // optional – scroll to the row
                 },
               },
             ],
           });
         } else {
-          navigation.navigate('PersonalEducation', {
+          navigation.navigate('PersonalEducationListPage', {
             highlightRecId: recId,
-            cameFrom: originalCameFrom || 'PersonalEducation',
+            cameFrom: originalCameFrom || 'PersonalEducationListPage',
           });
         }
       }, 1200);

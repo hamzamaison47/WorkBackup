@@ -63,57 +63,28 @@ export const useMenuBuilder = (userData, selectedLegalEntity, navigation) => {
   const getDynamicMenus = () => {
     const filtered = menuItems.filter(item => {
       const hasScreen = screenMapping[item.MenuId];
-      const validType = [1, 2, 3].includes(Number(item.Type));
       const isVisible = item.Visible === '1';
-      return hasScreen && validType && isVisible;
+      const isOnMainScreen = item.DisplayOnMainScreen === 'Yes';
+      return hasScreen && isVisible && isOnMainScreen;
     });
 
     if (filtered.length === 0) return [];
 
-    let cards = filtered
-      .filter(item => item.MenuId !== 'GenericAdvanceSaveScreen')
-      .map((menuItem, index) => ({
-        id: menuItem.MenuId || index.toString(),
-        title: menuItem.Label || menuItem.DisplayName || menuItem.MenuId,
-        icon:
-          iconMapping[menuItem.MenuId] ||
-          require('../assets/Maindashboard/calendar.png'),
-        menuItem,
-      }));
-
-    // Add Loan Request
-    const loanCard = {
-      id: 'GenericLoanSaveScreen',
-      title: 'Loan Request',
-      icon: require('../assets/Maindashboard/signing.png'),
-      menuItem: {MenuId: 'GenericAdvanceSaveScreen', Type: '1'},
-      isLoanRequest: true,
-    };
-
-    cards.push(loanCard);
-    return cards;
+    return filtered.map((menuItem, index) => ({
+      id: menuItem.MenuId || index.toString(),
+      title: menuItem.Label || menuItem.DisplayName || menuItem.MenuId,
+      icon:
+        iconMapping[menuItem.MenuId] ||
+        require('../assets/Maindashboard/calendar.png'),
+      menuItem,
+    }));
   };
 
   const handleCardPress = card => {
-    if (card.isLoanRequest) {
-      const params = getNavigationParams({
-        MenuId: 'GenericAdvanceSaveScreen',
-        Type: '1',
-      });
-
-      navigation.navigate('GenericAdvanceSaveScreen', {
-        ...params,
-        cameFrom: 'MainDashboard',
-        requestType: 'Loan',
-        advanceType: 0,
-        screenName: 'Loan Request',
-      });
-    } else {
-      navigation.navigate(
-        card.menuItem.MenuId,
-        getNavigationParams(card.menuItem),
-      );
-    }
+    navigation.navigate(
+      card.menuItem.MenuId,
+      getNavigationParams(card.menuItem),
+    );
   };
 
   const dynamicMenus = getDynamicMenus();

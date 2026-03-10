@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -36,7 +36,7 @@ import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation
 
 import styles from '../../../../styles/styles';
 
-const PersonalEducation = () => {
+const PersonalEducationListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
@@ -206,17 +206,15 @@ const PersonalEducation = () => {
   // };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : educationData;
+    const base = searchQuery.trim() ? displayData : educationData;
 
     if (activeFilter === 'All') return base;
 
     return base.filter(item => {
       const status = getStatusLabel(item.ApprovalStatus);
-
       if (activeFilter === 'Pending') {
         return status === 'In review' || status.includes('Pending');
       }
-
       return status === activeFilter;
     });
   };
@@ -239,6 +237,47 @@ const PersonalEducation = () => {
 
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!educationData.length) return ['All'];
+
+    const normalizeStatus = status => {
+      if (!status || status.toLowerCase() === 'noworkflow') return null; // ← don't count as Draft
+      const lower = status.toLowerCase().replace(/\s+/g, '');
+
+      if (lower.includes('inreview')) return 'Pending';
+      if (lower.includes('pending')) return 'Pending';
+      if (lower.includes('draft')) return 'Draft';
+      if (lower.includes('approved')) return 'Approved';
+      if (lower.includes('rejected')) return 'Rejected';
+      if (lower.includes('completed') || lower.includes('workflowcomplete'))
+        return 'Completed';
+
+      return null; // unknown statuses don't show a pill
+    };
+
+    const presentStatuses = new Set(
+      educationData
+        .map(item => normalizeStatus(item.ApprovalStatus))
+        .filter(Boolean), // ← remove nulls
+    );
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => pill === 'All' || presentStatuses.has(pill));
+  }, [educationData]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
 
   /* ---------- buttons ---------- */
   // Fix: rename param to avoid shadowing isProcessing state
@@ -326,8 +365,8 @@ const PersonalEducation = () => {
           employeeName: effectiveEmployeeName,
           WorkerRecId: effectiveWorkerRecId,
           userData: effectiveUserData,
-          cameFrom: 'PersonalEducation',
-          originalCameFrom: 'PersonalEducation',
+          cameFrom: 'PersonalEducationListPage',
+          originalCameFrom: 'PersonalEducationListPage',
           educationData: itemData,
         });
         break;
@@ -354,8 +393,8 @@ const PersonalEducation = () => {
       employeeName: effectiveEmployeeName,
       WorkerRecId: effectiveWorkerRecId,
       userData: effectiveUserData,
-      cameFrom: 'PersonalEducation',
-      originalCameFrom: 'PersonalEducation',
+      cameFrom: 'PersonalEducationListPage',
+      originalCameFrom: 'PersonalEducationListPage',
       educationData: {
         Education: '',
         Description: '',
@@ -528,6 +567,7 @@ const PersonalEducation = () => {
         isHighlighted={highlightedRecId === item.RecId}
         processingButtons={processingButtons[item.RecId] || []}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -544,6 +584,7 @@ const PersonalEducation = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -585,9 +626,14 @@ const PersonalEducation = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -595,13 +641,9 @@ const PersonalEducation = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}
@@ -665,4 +707,4 @@ const PersonalEducation = () => {
   );
 };
 
-export default PersonalEducation;
+export default PersonalEducationListPage;

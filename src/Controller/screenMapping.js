@@ -22,32 +22,79 @@ import PurchaseRequisitionLinesListPage from '../screens/PurchaseRequisitionLine
 import PurchaseRequisitionLinesSaveRecord from '../screens/PurchaseRequisitionLines/PurchaseRequisitionLinesSaveRecord';
 import EmployeeEOSRequestListPage from '../screens/EmployeeEOSRequest/EmployeeEOSRequest_ListPage';
 import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
+import MainDashboard from '../screens/Maindasboard';
+import Profile from '../screens/Profile/Profile';
+import DisplayListPage from '../screens/TabListPage/DisplayListPage';
+import WorkerAssignedToMe from '../screens/WorkerAssignedToMe/WorkerAssignedToMe';
+import WorkItemAssigned from '../screens/WorkItemsAssignedToMe/WorkItemAssigned';
+import ESSMyRequestStatusListPage from '../screens/ESSMyRequestStatus';
+import AttendanceCalendarScreen from '../screens/Attendance/AttendanceCalendarScreen';
+import WorkItemsAssignedToMePage from '../screens/WorkItemsAssignedToMe/WorkItemAssignedToMe';
+import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
+import DisplayPersonalInfo from '../screens/Profile/PersonalInformation/DisplayPersonalInfo';
+import ContactDetailsListPage from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsListPage';
+import ContactDetailsSaveRecord from '../screens/Profile/PersonalInformation/PersonalContacts/ContactDetailsSaveRecord';
+import {FamilyContact_ListPage} from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_ListPage';
+import FamilyContact_SaveRecord from '../screens/Profile/PersonalInformation/FamilyContact/FamilyContact_SaveRecord';
+import IdentificationNumberListPage from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberListPage';
+import IdentificationNumberSaveRecord from '../screens/Profile/PersonalInformation/Identification/IdentificationNumberSaveRecord';
+import PersonalEducationListPage from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationListPage';
+import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/PersonalEducation/PersonalEducationSaveRecord';
+import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
+import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
+import DateFormatSettingsScreen from '../screens/Profile/Preferences/DateSettings/DateFormatSettingsScreen';
 import ESSEmployeeTask_ListPage from '../screens/ESSEmployeeTask/ESSEmployeeTask_ListPage';
 import ESSEmployeeTaskDetail from '../screens/ESSEmployeeTask/ESSEmployeeTaskDetail';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
+  // Tab Navigator Screens
+  MainDashboard: MainDashboard,
+  WorkerAssignedToMe: WorkerAssignedToMe,
+  DisplayListPage: DisplayListPage,
+  WorkItemAssigned: WorkItemAssigned,
+  ESSMyRequestStatusListPage: ESSMyRequestStatusListPage,
+  WorkItemsAssignedToMePage: WorkItemsAssignedToMePage,
+  Profile: Profile,
+
+  // Home And Drawer Navigator Screens
+  WorkflowHistoryScreen: WorkflowHistoryScreen,
   LeavesListPage: LeaveRequestListPage,
   LeaveSaveRecord: LeaveRequestSaveRecord,
   PRSalarySlip: PRSalarySlip,
   PRTaxCertificate: PRTaxCertificate,
-  // RequestForRegistration: RequestForRegistration,
   EntitlementBalance: EntitlementBalance,
   GenericAdvanceListScreen: GenericAdvanceListScreen,
   GenericAdvanceSaveScreen: GenericAdvanceSaveScreen,
   CreateAttendanceScreen: CreateAttendanceScreen,
   AttendanceDetailsScreen: AttendanceDetailsScreen,
+  AttendanceCalendarScreen: AttendanceCalendarScreen,
   EmployeeAdjustmentScreen: EmployeeAdjustmentScreen,
   EmploymentCertificate: EmploymentCertificate,
   RosterDetailsScreen: RosterDetailsScreen,
   PurchaseRequisitionListPage: PurchaseRequisitionListPage,
   PurchaseRequisitionSaveRecord: PurchaseRequisitionSaveRecord,
   ExpenseManagmentListPage: ExpenseManagmentListPage,
-  ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
   ExpenseManagmentLinesListPage: ExpenseManagmentLinesListPage,
-  ExpenseManagmentLinesSaveRecord: ExpenseManagmentLinesSaveRecord,
   PurchaseRequisitionLinesListPage: PurchaseRequisitionLinesListPage,
   PurchaseRequisitionLinesSaveRecord: PurchaseRequisitionLinesSaveRecord,
+  ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
+  ExpenseManagmentLinesSaveRecord: ExpenseManagmentLinesSaveRecord,
+  BiometricSettings: BiometricSettings,
+  DisplayPersonalInfo: DisplayPersonalInfo,
+  ContactDetailsListPage: ContactDetailsListPage,
+  ContactDetailsSaveRecord: ContactDetailsSaveRecord,
+  FamilyContact_ListPage: FamilyContact_ListPage,
+  FamilyContact_SaveRecord: FamilyContact_SaveRecord,
+  IdentificationNumberListPage: IdentificationNumberListPage,
+  IdentificationNumberSaveRecord: IdentificationNumberSaveRecord,
+  PersonalEducationListPage: PersonalEducationListPage,
+  PersonalEducationSaveRecord: PersonalEducationSaveRecord,
+  BankAccountListPage: BankAccountListPage,
+  BankAccountSaveRecord: BankAccountSaveRecord,
+  DateFormatSettingsScreen: DateFormatSettingsScreen,
+  // OutstandingAdvancesScreen: OutstandingAdvancesScreen,
+  // TimeClockListPage: TimeClockListPage,
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
   ESSEmployeeTask_ListPage: ESSEmployeeTask_ListPage,
   ESSEmployeeTaskDetail: ESSEmployeeTaskDetail,
@@ -56,6 +103,7 @@ export const screenMapping = {
 
 // Map Images → Screen component
 export const iconMapping = {
+  MainDashboard: require('../assets/Maindashboard/dashboard.png'),
   LeavesListPage: require('../assets/Maindashboard/calendar.png'),
   LeaveSaveRecord: require('../assets/Maindashboard/calendar.png'),
   PRSalarySlip: require('../assets/Maindashboard/payment.png'),

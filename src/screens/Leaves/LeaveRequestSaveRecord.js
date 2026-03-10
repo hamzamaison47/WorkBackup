@@ -44,8 +44,9 @@ import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
-import {BUTTON_TYPES} from '../../components/DynamicRequestCard';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../components/Buttons/SaveRecordButtons';
 import styles from '../../styles/styles';
 
 const LeaveRequestSaveRecord = () => {
@@ -111,7 +112,6 @@ const LeaveRequestSaveRecord = () => {
     ATTENDANCE_DETAILS: 'AttendanceDetailsScreen',
     MAIN_DASHBOARD: 'MainDashboard',
     LEAVES_LIST: 'LeavesListPage',
-    TAB_NAVIGATOR: 'TabNavigator',
     DISPLAY_LIST: 'DisplayListPage',
   };
 
@@ -190,12 +190,7 @@ const LeaveRequestSaveRecord = () => {
         case NAVIGATION_SCREENS.MAIN_DASHBOARD:
           navigation.reset({
             index: 0,
-            routes: [
-              {
-                name: NAVIGATION_SCREENS.TAB_NAVIGATOR,
-                params: {screen: NAVIGATION_SCREENS.MAIN_DASHBOARD},
-              },
-            ],
+            routes: [{name: NAVIGATION_SCREENS.MAIN_DASHBOARD}],
           });
           break;
 
@@ -1118,6 +1113,7 @@ const LeaveRequestSaveRecord = () => {
               isDisabled={
                 processingButton === 'create' || processingButton === 'submit'
               }
+              // No showButtons needed — default already includes all 3
             />
           ) : (
             <SaveRecordButtons
@@ -1128,7 +1124,7 @@ const LeaveRequestSaveRecord = () => {
               isDisabled={
                 processingButton === 'create' || processingButton === 'submit'
               }
-              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]} // ✅ hides SUBMIT only
             />
           )}
           {/* </KeyboardAvoidingView> */}

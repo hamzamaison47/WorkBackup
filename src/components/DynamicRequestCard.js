@@ -486,6 +486,13 @@ import {
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import styles from '../styles/styles';
+import {useSelector} from 'react-redux';
+import {
+  selectDateFormat,
+  selectTimeFormat,
+  selectTimezone,
+} from '../store/selectors';
+import {formatDateValue} from '../store/utils/dateUtils';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -555,12 +562,17 @@ const DynamicRequestCard = ({
   isMultiSelectMode = false,
   isSelected = false,
   onSelectToggle = null, // (data) => void — called when card tapped in multiselect mode
+  searchQuery = '', // 👈 add this
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [approvalDropdownVisible, setApprovalDropdownVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({top: 0, right: 0});
   const [approvalPosition, setApprovalPosition] = useState({top: 0, left: 0});
+  const selectedFormat = useSelector(selectDateFormat);
+  const selectedTimeFormat = useSelector(selectTimeFormat);
+  // Add inside component alongside your other selectors
+  const selectedTimezone = useSelector(selectTimezone);
 
   const arrowAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -727,52 +739,23 @@ const DynamicRequestCard = ({
   const formatValue = (value, fieldType) => {
     if (value === null || value === undefined) return '—';
     switch (fieldType) {
-      case 'date': {
-        const d = new Date(value);
-        if (isNaN(d.getTime())) return value;
-        const months = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
-        ];
-        return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-      }
-      case 'datetime': {
-        const d = new Date(value);
-        if (isNaN(d.getTime())) return value;
-        const months = [
-          'Jan',
-          'Feb',
-          'Mar',
-          'Apr',
-          'May',
-          'Jun',
-          'Jul',
-          'Aug',
-          'Sep',
-          'Oct',
-          'Nov',
-          'Dec',
-        ];
-        let hours = d.getUTCHours();
-        const minutes = d.getUTCMinutes().toString().padStart(2, '0');
-        const seconds = d.getUTCSeconds().toString().padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours === 0 ? 12 : hours;
-        return `${
-          months[d.getUTCMonth()]
-        } ${d.getUTCDate()}, ${d.getUTCFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
-      }
+      case 'date':
+        return formatDateValue(
+          value,
+          selectedFormat,
+          'date',
+          selectedTimeFormat,
+          selectedTimezone,
+        );
+
+      case 'datetime':
+        return formatDateValue(
+          value,
+          selectedFormat,
+          'datetime',
+          selectedTimeFormat,
+          selectedTimezone,
+        );
       case 'link':
         return (
           <Text
@@ -937,13 +920,14 @@ const DynamicRequestCard = ({
     if (!hasLabel) {
       return (
         <View key={index} style={styles.DRC_fieldRowNoLabel}>
-          <Text
+          <HighlightText // 👈 was plain <Text>
+            text={String(formattedValue)}
+            query={searchQuery}
             style={[
               styles.DRC_fieldValueNoLabel,
               showNavigationArrow && styles.DRC_fieldValueNoLabelWithArrow,
-            ]}>
-            {formattedValue}
-          </Text>
+            ]}
+          />
         </View>
       );
     }
@@ -972,17 +956,19 @@ const DynamicRequestCard = ({
       );
     }
 
+    // Replace the last return in renderField (the default text row):
     return (
       <View key={index} style={styles.DRC_fieldRow}>
         <Text style={styles.DRC_fieldLabel}>{field.label}</Text>
         <View style={styles.DRC_fieldValueWrapper}>
-          <Text
+          <HighlightText
+            text={String(formattedValue)}
+            query={searchQuery}
             style={[
               styles.DRC_fieldValue,
               showNavigationArrow && styles.DRC_fieldValueWithArrow,
-            ]}>
-            {formattedValue}
-          </Text>
+            ]}
+          />
         </View>
       </View>
     );
@@ -1362,6 +1348,32 @@ const DynamicRequestCard = ({
     outputRange: ['#ffffff', '#eef2ff'],
   });
 
+  // Add this helper inside DynamicRequestCard
+  const HighlightText = ({text, query, style}) => {
+    if (!query?.trim()) return <Text style={style}>{text}</Text>;
+
+    const parts = String(text).split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <Text style={style}>
+        {parts.map((part, i) =>
+          part.toLowerCase() === query.toLowerCase() ? (
+            <Text
+              key={i}
+              style={{
+                backgroundColor: '#FFF176',
+                color: '#000',
+                fontWeight: '700',
+              }}>
+              {part}
+            </Text>
+          ) : (
+            part
+          ),
+        )}
+      </Text>
+    );
+  };
+
   return (
     <View style={styles.DRC_cardContainer}>
       <Animated.View
@@ -1407,7 +1419,7 @@ const DynamicRequestCard = ({
                   styles.DRC_headerContent,
                   showNavigationArrow && styles.DRC_headerContentWithArrow,
                 ]}>
-                {headerConfig.title && (
+                {/* {headerConfig.title && (
                   <Text style={styles.DRC_headerTitle} numberOfLines={1}>
                     {data[headerConfig.title.key] ||
                       headerConfig.title.defaultValue}
@@ -1418,6 +1430,28 @@ const DynamicRequestCard = ({
                     {data[headerConfig.subtitle.key] ||
                       headerConfig.subtitle.defaultValue}
                   </Text>
+                )} */}
+                {headerConfig.title && (
+                  <HighlightText
+                    text={
+                      data[headerConfig.title.key] ||
+                      headerConfig.title.defaultValue ||
+                      ''
+                    }
+                    query={searchQuery}
+                    style={styles.DRC_headerTitle}
+                  />
+                )}
+                {headerConfig.subtitle && (
+                  <HighlightText
+                    text={
+                      data[headerConfig.subtitle.key] ||
+                      headerConfig.subtitle.defaultValue ||
+                      ''
+                    }
+                    query={searchQuery}
+                    style={styles.DRC_headerSubtitle}
+                  />
                 )}
               </View>
 

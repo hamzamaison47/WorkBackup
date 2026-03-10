@@ -386,10 +386,21 @@ const PurchaseRequisitionLinesListPage = () => {
           }
           ListEmptyComponent={
             <View style={{paddingTop: 250, alignItems: 'center'}}>
-              <Text style={styles.DLP_NoDataText}>Get started</Text>
-              <Text style={styles.DLP_NoDataSubText}>
-                Tap + to add a new record
-              </Text>
+              {searchQuery.trim() ? (
+                <>
+                  {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+                  <Text style={styles.DLP_NoDataSubText}>
+                    No records match "{searchQuery}"
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.DLP_NoDataText}>Get started</Text>
+                  <Text style={styles.DLP_NoDataSubText}>
+                    Tap + to add a new record
+                  </Text>
+                </>
+              )}
             </View>
           }
         />

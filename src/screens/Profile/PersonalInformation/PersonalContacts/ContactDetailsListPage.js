@@ -9,6 +9,7 @@ import {
   BackHandler,
   RefreshControl,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import {
   useNavigation,
@@ -23,6 +24,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
+import {translate as t} from '../../../../store/utils/translate';
 
 // API
 import {ContactDetails} from '../../../../API/PersonalInformation/ContactDetails/ContactDetails';
@@ -53,6 +55,7 @@ const ContactDetailsListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // 🔹 Processing states
   const [processingButtons, setProcessingButtons] = useState({});
@@ -120,11 +123,11 @@ const ContactDetailsListPage = () => {
     });
   };
 
-  // 🔹 Track processing state for button actions
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
+  // Fix: rename param to avoid shadowing isProcessing state
+  const setButtonProcessing = (recId, buttonType, isProcessingState) => {
     setProcessingButtons(prev => ({
       ...prev,
-      [recId]: isProcessing
+      [recId]: isProcessingState
         ? [...(prev[recId] || []), buttonType]
         : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
@@ -138,34 +141,43 @@ const ContactDetailsListPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    setButtonProcessing(itemToDelete.RecId, 'delete', true);
+    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
-    try {
-      const response = await DeleteContactDetails({
-        recordsRecId: [itemToDelete.RecId],
-      });
+    setDeleteModal(false);
 
-      if (response[0].IsSuccess) {
-        setAlertMessage('Record deleted successfully');
-        setContactsData(prev =>
-          prev.filter(contact => contact.RecId !== itemToDelete.RecId),
-        );
-      } else {
-        setAlertMessage('Unable to delete contact.');
+    setTimeout(async () => {
+      setIsProcessing(true);
+      setButtonProcessing(itemToDelete.RecId, 'delete', true);
+
+      try {
+        const response = await DeleteContactDetails({
+          recordsRecId: [itemToDelete.RecId],
+        });
+
+        if (response[0].IsSuccess) {
+          setAlertMessage('Record deleted successfully');
+          setContactsData(prev =>
+            prev.filter(contact => contact.RecId !== itemToDelete.RecId),
+          );
+        } else {
+          setAlertMessage('Unable to delete contact.');
+        }
+      } catch (error) {
+        console.log('Failed to delete contact:', error);
+        setAlertMessage('Failed to delete contact.');
+      } finally {
+        setIsProcessing(false);
+        setButtonProcessing(itemToDelete.RecId, 'delete', false);
+        setItemToDelete(null);
+        setAlertModal(true);
+
+        setTimeout(() => {
+          fetchContactsData();
+        }, 800);
       }
-    } catch (error) {
-      console.log('Failed to delete contact:', error);
-      setAlertMessage('Failed to delete contact.');
-    } finally {
-      setButtonProcessing(itemToDelete.RecId, 'delete', false);
-      setDeleteModal(false);
-      setItemToDelete(null);
-      setAlertModal(true);
-      setTimeout(() => {
-        fetchContactsData();
-      }, 1000);
-    }
+    }, 100);
   };
+
   // Handle back navigation
   const handleGoBack = () => {
     navigation.navigate('DisplayPersonalInfo');
@@ -193,24 +205,24 @@ const ContactDetailsListPage = () => {
 
   // 🔹 Button Config
   const getButtonConfig = () => ({
-    // edit: {
-    //   show: true,
-    //   position: 'header',
-    //   style: 'icon',
-    //   icon: 'edit',
-    //   iconSize: 20,
-    //   iconColor: '#fff',
-    //   backgroundColor: '#0A66C2', // Add this line
-    // },
-    // delete: {
-    //   show: true,
-    //   position: 'header',
-    //   style: 'icon',
-    //   icon: 'trash',
-    //   iconSize: 20,
-    //   iconColor: '#fff',
-    //   backgroundColor: '#0A66C2', // Add this line
-    // },
+    edit: {
+      show: true,
+      position: 'header',
+      style: 'icon',
+      icon: 'edit',
+      iconSize: 20,
+      iconColor: '#fff',
+      backgroundColor: '#0A66C2', // Add this line
+    },
+    delete: {
+      show: true,
+      position: 'header',
+      style: 'icon',
+      icon: 'trash',
+      iconSize: 20,
+      iconColor: '#fff',
+      backgroundColor: '#0A66C2', // Add this line
+    },
   });
 
   // ✅ 🔹 EDIT LOGIC (taken from LeaveRequestListPage)
@@ -295,8 +307,7 @@ const ContactDetailsListPage = () => {
   };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : rawData;
-    return base;
+    return searchQuery.trim() ? displayData : rawData;
   };
 
   // 🔹 Render Each Contact Card
@@ -316,6 +327,7 @@ const ContactDetailsListPage = () => {
         isExpandable
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -325,7 +337,7 @@ const ContactDetailsListPage = () => {
       pageTitle="Contact Details"
       isBackButton={false}
       showFooter={false}
-      showFloatingButton={false}
+      showFloatingButton={true}
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateContact}
@@ -336,6 +348,16 @@ const ContactDetailsListPage = () => {
       onSearchChange={handleSearch}
       onSortChange={handleSort}
       activeSortOrder={sortOrder}>
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
@@ -359,10 +381,21 @@ const ContactDetailsListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.DLP_NoDataText}>Get started</Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            Tap + to add a new record
-          </Text>
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
+            </>
+          )}
         </ScrollView>
       )}
 

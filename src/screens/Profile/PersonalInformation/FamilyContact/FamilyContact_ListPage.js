@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   Text,
   FlatList,
@@ -30,7 +30,7 @@ import {translate as t} from '../../../../store/utils/translate';
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
 
-const FamilyContacts_ListPageScreen = () => {
+const FamilyContact_ListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
@@ -76,6 +76,7 @@ const FamilyContacts_ListPageScreen = () => {
       const FamilyContactData = await retrieveAllFamilyContacts({
         employeeId: effectiveEmployeeId,
       });
+      console.log('here is the data', FamilyContactData);
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       setfamilycontactsdata(FamilyContactData);
       setRawData(FamilyContactData); // ← here
@@ -150,17 +151,13 @@ const FamilyContacts_ListPageScreen = () => {
   };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : familycontactsdata;
+    const base = searchQuery.trim() ? displayData : familycontactsdata;
 
     if (activeFilter === 'All') return base;
 
     return base.filter(item => {
       const status = getStatusLabel(item.WFStatus);
-
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending');
-      }
-
+      if (activeFilter === 'Pending') return status.includes('Pending');
       return status === activeFilter;
     });
   };
@@ -183,6 +180,38 @@ const FamilyContacts_ListPageScreen = () => {
     return counts;
   };
 
+  // Add this after your existing state declarations
+  const visiblePills = useMemo(() => {
+    if (!familycontactsdata.length) return ['All'];
+
+    const presentStatuses = new Set(
+      familycontactsdata.map(item => getStatusLabel(item.WFStatus)),
+    );
+
+    return [
+      'All',
+      'Draft',
+      'Pending',
+      'Approved',
+      'Rejected',
+      'Completed',
+    ].filter(pill => {
+      if (pill === 'All') return true;
+      if (pill === 'Pending') {
+        // match any status containing "Pending"
+        return [...presentStatuses].some(s => s.includes('Pending'));
+      }
+      return presentStatuses.has(pill);
+    });
+  }, [familycontactsdata]);
+
+  // Auto-reset filter if active pill disappears
+  useEffect(() => {
+    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [visiblePills, activeFilter]);
+
   const handleReceiptAttachmentPress = async itemData => {
     try {
       setSelectedContactItem(itemData);
@@ -204,7 +233,7 @@ const FamilyContacts_ListPageScreen = () => {
         type: 'text',
       },
       {
-        key: 'RelationShipTypeId',
+        key: 'formattedRelationship', // Use the formatted version
         label: familycontactsdata[0]?.RelationShipTypeIdlbl || 'Relationship',
         type: 'text',
       },
@@ -441,10 +470,17 @@ const FamilyContacts_ListPageScreen = () => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
 
+    // Format the relationship type
+    const formatRelationshipType = value => {
+      if (!value) return value;
+      return value.replace(/([A-Z])/g, ' $1').trim();
+    };
+
     const processedItem = {
       ...item,
       employeeId: item.employeeId || effectiveEmployeeId,
       employeeName: item.employeeName || effectiveEmployeeName,
+      formattedRelationship: formatRelationshipType(item.RelationShipTypeId),
     };
 
     return (
@@ -461,6 +497,7 @@ const FamilyContacts_ListPageScreen = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -476,6 +513,7 @@ const FamilyContacts_ListPageScreen = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleFamilyContactRecordCreate}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -517,9 +555,14 @@ const FamilyContacts_ListPageScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -527,13 +570,9 @@ const FamilyContacts_ListPageScreen = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}
@@ -591,4 +630,4 @@ const FamilyContacts_ListPageScreen = () => {
   );
 };
 
-export {FamilyContacts_ListPageScreen};
+export {FamilyContact_ListPage};

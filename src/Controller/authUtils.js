@@ -419,6 +419,10 @@ export const fetchEmployeeMenuItems = async person => {
       Sequence: entity.Sequence?.toString() ?? '',
       Type: entity.Type?.toString() ?? '',
       Visible: entity.Visible?.toString() ?? '',
+      DisplayOnFooter: entity.DisplayOnFooter?.toString() ?? '',
+      DisplayOnHeader: entity.DisplayOnHeader?.toString() ?? '',
+      DisplayOnMainScreen: entity.DisplayOnMainScreen?.toString() ?? '',
+      DisplayOnSideNavigation: entity.DisplayOnSideNavigation?.toString() ?? '',
     }));
   } catch (error) {
     console.error('Error in fetchEmployeeMenuItems:', error);
@@ -457,6 +461,10 @@ export const fetchEmployeeMenuItemsByCompany = async (person, legalEntity) => {
       Sequence: entity.Sequence?.toString() ?? '',
       Type: entity.Type?.toString() ?? '',
       Visible: entity.Visible?.toString() ?? '',
+      DisplayOnFooter: entity.DisplayOnFooter?.toString() ?? '',
+      DisplayOnHeader: entity.DisplayOnHeader?.toString() ?? '',
+      DisplayOnMainScreen: entity.DisplayOnMainScreen?.toString() ?? '',
+      DisplayOnSideNavigation: entity.DisplayOnSideNavigation?.toString() ?? '',
     }));
   } catch (error) {
     console.error('Error in fetchEmployeeMenuItemsByCompany:', error);
