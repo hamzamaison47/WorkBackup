@@ -43,6 +43,8 @@ import PersonalEducationSaveRecord from '../screens/Profile/PersonalInformation/
 import {BankAccountListPage} from '../screens/Profile/PersonalInformation/BankAccount/BankAccountListPage';
 import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAccount/BankAccountSaveRecord';
 import DateFormatSettingsScreen from '../screens/Profile/Preferences/DateSettings/DateFormatSettingsScreen';
+import ESSEmployeeTask_ListPage from '../screens/ESSEmployeeTask/ESSEmployeeTask_ListPage';
+import ESSEmployeeTaskDetail from '../screens/ESSEmployeeTask/ESSEmployeeTaskDetail';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -93,6 +95,10 @@ export const screenMapping = {
   DateFormatSettingsScreen: DateFormatSettingsScreen,
   // OutstandingAdvancesScreen: OutstandingAdvancesScreen,
   // TimeClockListPage: TimeClockListPage,
+  EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
+  ESSEmployeeTask_ListPage: ESSEmployeeTask_ListPage,
+  ESSEmployeeTaskDetail: ESSEmployeeTaskDetail,
+  // WorkflowHistoryScreen: WorkflowHistoryScreen,
 };
 
 // Map Images → Screen component
