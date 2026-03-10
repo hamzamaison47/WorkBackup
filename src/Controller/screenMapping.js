@@ -22,6 +22,8 @@ import PurchaseRequisitionLinesListPage from '../screens/PurchaseRequisitionLine
 import PurchaseRequisitionLinesSaveRecord from '../screens/PurchaseRequisitionLines/PurchaseRequisitionLinesSaveRecord';
 import EmployeeEOSRequestListPage from '../screens/EmployeeEOSRequest/EmployeeEOSRequest_ListPage';
 import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
+import ESSEmployeeTask_ListPage from '../screens/ESSEmployeeTask/ESSEmployeeTask_ListPage';
+import ESSEmployeeTaskDetail from '../screens/ESSEmployeeTask/ESSEmployeeTaskDetail';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -47,6 +49,8 @@ export const screenMapping = {
   PurchaseRequisitionLinesListPage: PurchaseRequisitionLinesListPage,
   PurchaseRequisitionLinesSaveRecord: PurchaseRequisitionLinesSaveRecord,
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
+  ESSEmployeeTask_ListPage: ESSEmployeeTask_ListPage,
+  ESSEmployeeTaskDetail: ESSEmployeeTaskDetail,
   // WorkflowHistoryScreen: WorkflowHistoryScreen,
 };
 
