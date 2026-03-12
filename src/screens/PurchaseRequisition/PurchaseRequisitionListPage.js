@@ -911,94 +911,39 @@ const PurchaseRequisitionListPage = () => {
 
   const getFilteredData = () => {
     const base = searchQuery.trim() ? displayData : purchaseRequisitiondata;
-
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const rawStatus = item.RequisitionStatus?.toLowerCase();
-
-      if (activeFilter === 'Pending') {
-        return (
-          rawStatus === 'submitted' ||
-          rawStatus === 'in review' ||
-          rawStatus === 'inreview'
-        );
-      }
-
-      if (activeFilter === 'Completed') {
-        return rawStatus === 'closed';
-      }
-
-      return rawStatus === activeFilter.toLowerCase();
-    });
+    return base.filter(
+      item => getStatusLabel(item.RequisitionStatus) === activeFilter,
+    );
   };
 
   const getFilterCounts = () => {
     const counts = {All: purchaseRequisitiondata.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = purchaseRequisitiondata.filter(item => {
-          const status = item.RequisitionStatus?.toLowerCase();
-          return (
-            status === 'submitted' ||
-            status === 'in review' ||
-            status === 'inreview'
-          );
-        }).length;
-      } else {
-        counts[pill] = purchaseRequisitiondata.filter(
-          item => getStatusLabel(item.RequisitionStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(
+        purchaseRequisitiondata.map(item =>
+          getStatusLabel(item.RequisitionStatus),
+        ),
+      ),
+    ].forEach(status => {
+      counts[status] = purchaseRequisitiondata.filter(
+        item => getStatusLabel(item.RequisitionStatus) === status,
+      ).length;
     });
-
     return counts;
   };
 
   const visiblePills = useMemo(() => {
     if (!purchaseRequisitiondata.length) return ['All'];
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => {
-      if (pill === 'All') return true;
-
-      if (pill === 'Pending') {
-        // Match same logic as getFilteredData
-        return purchaseRequisitiondata.some(item => {
-          const rawStatus = item.RequisitionStatus?.toLowerCase();
-          return (
-            rawStatus === 'submitted' ||
-            rawStatus === 'in review' ||
-            rawStatus === 'inreview'
-          );
-        });
-      }
-
-      if (pill === 'Completed') {
-        return purchaseRequisitiondata.some(
-          item => item.RequisitionStatus?.toLowerCase() === 'closed',
-        );
-      }
-
-      return purchaseRequisitiondata.some(
-        item => item.RequisitionStatus?.toLowerCase() === pill.toLowerCase(),
-      );
-    });
+    const unique = [
+      ...new Set(
+        purchaseRequisitiondata.map(item =>
+          getStatusLabel(item.RequisitionStatus),
+        ),
+      ),
+    ];
+    return ['All', ...unique];
   }, [purchaseRequisitiondata]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   const handleGoBack = () => {
     let targetRoute = 'MainDashboard';

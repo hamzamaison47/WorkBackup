@@ -180,12 +180,12 @@ const IdentificationNumberListPage = () => {
   };
 
   const getStatusLabel = status => {
-    if (!status) return '';
+    if (!status) return 'Approved'; // ← empty = Approved
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
 
     const statusMap = {
       draft: 'Draft',
-      inreview: 'IN REVIEW',
+      inreview: 'In Review',
       approved: 'Approved Waiting',
       waiting: 'Waiting',
       cancelled: 'Canceled',
@@ -207,70 +207,36 @@ const IdentificationNumberListPage = () => {
   };
 
   const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : identificationsData;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.ApprovalStatus);
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending') || status === 'IN REVIEW';
-      }
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => getStatusLabel(item.ApprovalStatus) === activeFilter,
+    );
   };
+
   const getFilterCounts = () => {
     const counts = {All: identificationsData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = identificationsData.filter(item => {
-          const status = getStatusLabel(item.ApprovalStatus);
-          return status.includes('Pending') || status === 'IN REVIEW';
-        }).length;
-      } else {
-        counts[pill] = identificationsData.filter(
-          item => getStatusLabel(item.ApprovalStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(
+        identificationsData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ),
+    ].forEach(status => {
+      counts[status] = identificationsData.filter(
+        item => getStatusLabel(item.ApprovalStatus) === status,
+      ).length;
     });
-
     return counts;
   };
 
   const visiblePills = useMemo(() => {
     if (!identificationsData.length) return ['All'];
-
-    const normalizeStatus = status => {
-      if (!status) return 'Draft'; // empty ApprovalStatus → Draft
-      const lower = status.toLowerCase();
-
-      if (lower.includes('in review')) return 'Pending';
-      if (lower.includes('pending')) return 'Pending';
-
-      return status;
-    };
-
-    const presentStatuses = new Set(
-      identificationsData.map(item => normalizeStatus(item.ApprovalStatus)),
-    );
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => pill === 'All' || presentStatuses.has(pill));
+    const unique = [
+      ...new Set(
+        identificationsData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ),
+    ];
+    return ['All', ...unique.filter(s => s !== '')];
   }, [identificationsData]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   // Card Configuration
   const cardConfig = {

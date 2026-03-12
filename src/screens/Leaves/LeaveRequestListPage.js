@@ -369,94 +369,31 @@ const LeaveRequestListPage = () => {
     isRTL: isRTL,
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return leavesData;
-
-  //   return leavesData.filter(item => {
-  //     const status = getStatusLabel(item.WFStatus);
-
-  //     // Special handling for Pending filter - include any status that contains "Pending"
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
-  // Replace getFilteredData() with this
-  // const getFilteredData = () => {
-  //   const base = displayData.length > 0 ? displayData : rawData;
-  //   if (activeFilter === 'All') return base;
-  //   return base.filter(item => {
-  //     const status = getStatusLabel(item.WFStatus);
-  //     if (activeFilter === 'Pending') return status.includes('Pending');
-  //     return status === activeFilter;
-  //   });
-  // };
-
   const getFilteredData = () => {
-    // Use displayData when a search is active, otherwise use rawData
     const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-    return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-      if (activeFilter === 'Pending') return status.includes('Pending');
-      return status === activeFilter;
-    });
+    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter);
   };
 
   const getFilterCounts = () => {
     const counts = {All: leavesData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        // Count any status that includes "Pending"
-        counts[pill] = leavesData.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
+    [...new Set(leavesData.map(item => getStatusLabel(item.WFStatus)))].forEach(
+      status => {
+        counts[status] = leavesData.filter(
+          item => getStatusLabel(item.WFStatus) === status,
         ).length;
-      } else {
-        counts[pill] = leavesData.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
-    });
-
-    console.log('Filter counts:', counts); // Debug
+      },
+    );
     return counts;
   };
 
-  // Add this after your existing state declarations
   const visiblePills = useMemo(() => {
     if (!leavesData.length) return ['All'];
-
-    const presentStatuses = new Set(
-      leavesData.map(item => getStatusLabel(item.WFStatus)),
-    );
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => {
-      if (pill === 'All') return true;
-      if (pill === 'Pending') {
-        // match any status containing "Pending"
-        return [...presentStatuses].some(s => s.includes('Pending'));
-      }
-      return presentStatuses.has(pill);
-    });
+    const unique = [
+      ...new Set(leavesData.map(item => getStatusLabel(item.WFStatus))),
+    ];
+    return ['All', ...unique];
   }, [leavesData]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   // Define button configuration
   const getButtonConfig = item => {

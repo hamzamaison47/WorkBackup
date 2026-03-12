@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useLayoutEffect} from 'react';
 import {useSelector, useDispatch} from 'react-redux';
 import {
   View,
@@ -44,6 +44,24 @@ const PILL_COLORS = {
   All: {active: '#0A66C2', bg: '#E8F1FB', text: '#0A66C2', dot: null},
   Draft: {active: '#6B7280', bg: '#F3F4F6', text: '#374151', dot: '#9CA3AF'},
   Pending: {active: '#D97706', bg: '#FEF3C7', text: '#92400E', dot: '#F59E0B'},
+  'In review': {
+    active: '#D97706',
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#F59E0B',
+  }, // ← add this
+  'In Review': {
+    active: '#D97706',
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#F59E0B',
+  },
+  'Pending Approval': {
+    active: '#D97706',
+    bg: '#FEF3C7',
+    text: '#92400E',
+    dot: '#F59E0B',
+  },
   Approved: {active: '#059669', bg: '#D1FAE5', text: '#065F46', dot: '#10B981'},
   Rejected: {active: '#DC2626', bg: '#FEE2E2', text: '#991B1B', dot: '#EF4444'},
   Completed: {
@@ -80,7 +98,10 @@ export const FilterPills = ({
         contentContainerStyle={pillStyles.scrollContent}>
         {pills.map(pill => {
           const isActive = activeFilter === pill;
-          const color = PILL_COLORS[pill] || PILL_COLORS.All;
+          const color =
+            PILL_COLORS[pill] ??
+            PILL_COLORS[pill.toLowerCase()] ??
+            PILL_COLORS.All;
           const count = counts[pill];
 
           return (
@@ -204,6 +225,10 @@ const ActionPaneContainer = ({
   onSortChange = () => {},
   activeSortOrder = null,
   searchPlaceholder = 'Search...',
+  showDocumentTypeFilter = false,
+  documentTypes = [],
+  selectedDocumentType = null,
+  onDocumentTypeChange = () => {},
 
   // ── Filter pills props (all optional) ──
   showFilterPills = false, // set true to show the pill bar
@@ -301,8 +326,35 @@ const ActionPaneContainer = ({
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  // Header config
-  useEffect(() => {
+  // // Header config
+  // useEffect(() => {
+  //   if (isHeaderActive) {
+  //     const headerOptions = MainPageHeader({
+  //       onToggleDrawer: toggleDrawer,
+  //       onTitle: pageTitle,
+  //       onShowNotify: toggleNotification,
+  //       onCount: notificationCount,
+  //       onHeaderMenuPress: () => setHeaderMenuVisible(true),
+  //       isBack: false,
+  //       // onDatPress: toggleCompanyDropdown,
+  //       selectedDat:
+  //         selectedLegalEntity ||
+  //         defaultLegalEntity ||
+  //         t('actionPane.selectCompany'),
+  //       defaultDat: defaultLegalEntity,
+  //     });
+  //     navigation.setOptions(headerOptions);
+  //   }
+  // }, [
+  //   navigation,
+  //   pageTitle,
+  //   notificationCount,
+  //   selectedLegalEntity,
+  //   defaultLegalEntity,
+  //   isHeaderActive,
+  // ]);
+
+  useLayoutEffect(() => {
     if (isHeaderActive) {
       const headerOptions = MainPageHeader({
         onToggleDrawer: toggleDrawer,
@@ -311,7 +363,6 @@ const ActionPaneContainer = ({
         onCount: notificationCount,
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
         isBack: false,
-        // onDatPress: toggleCompanyDropdown,
         selectedDat:
           selectedLegalEntity ||
           defaultLegalEntity ||
@@ -401,6 +452,10 @@ const ActionPaneContainer = ({
                 onSortChange={onSortChange}
                 activeSortOrder={activeSortOrder}
                 placeholder={searchPlaceholder}
+                showDocumentTypeFilter={showDocumentTypeFilter} // ← must be here
+                documentTypes={documentTypes} // ← must be here
+                selectedDocumentType={selectedDocumentType} // ← must be here
+                onDocumentTypeChange={onDocumentTypeChange} // ← must be here
               />
             ) : (
               <View style={styles.APCont_pageTitleCenteredContainer}>

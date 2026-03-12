@@ -202,76 +202,34 @@ const ExpenseManagmentListPage = () => {
     });
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return expenseData;
-  //   return expenseData.filter(
-  //     item => getStatusLabel(item.WFStatus) === activeFilter,
-  //   );
-  // };
-
   const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : expenseData;
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-    return base.filter(item => {
-      const status = getStatusLabel(item.DocumentStatus); // 👈 DocumentStatus not WFStatus
-      if (activeFilter === 'Pending') return status.includes('Pending');
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => getStatusLabel(item.DocumentStatus) === activeFilter,
+    ); // ← fix
   };
 
   const getFilterCounts = () => {
     const counts = {All: expenseData.length};
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = expenseData.filter(item =>
-          getStatusLabel(item.DocumentStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = expenseData.filter(
-          item => getStatusLabel(item.DocumentStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(expenseData.map(item => getStatusLabel(item.DocumentStatus))),
+    ].forEach(status => {
+      // ← fix
+      counts[status] = expenseData.filter(
+        item => getStatusLabel(item.DocumentStatus) === status,
+      ).length;
     });
     return counts;
   };
 
   const visiblePills = useMemo(() => {
     if (!expenseData.length) return ['All'];
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => {
-      if (pill === 'All') return true;
-      if (pill === 'Pending') {
-        return expenseData.some(item =>
-          getStatusLabel(item.DocumentStatus).includes('Pending'),
-        );
-      }
-      if (pill === 'Approved') {
-        // match both Approved and Matched
-        return expenseData.some(
-          item =>
-            item.DocumentStatus === 'Approved' ||
-            item.DocumentStatus === 'Matched',
-        );
-      }
-      return expenseData.some(
-        item => getStatusLabel(item.DocumentStatus) === pill,
-      );
-    });
+    const unique = [
+      ...new Set(expenseData.map(item => getStatusLabel(item.DocumentStatus))), // ← fix
+    ];
+    return ['All', ...unique];
   }, [expenseData]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   // Card click - Navigate to Lines List
   const handleCardPress = itemData => {

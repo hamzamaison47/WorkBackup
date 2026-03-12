@@ -134,10 +134,10 @@ const styles = StyleSheet.create({
 
   Login_FingerprintButton: {
     position: 'absolute',
-    bottom: conditionalVerticalScale(100, 110, 120, 140),
-    width: conditionalScale(64, 70, 76, 90),
-    height: conditionalScale(64, 70, 76, 90),
-    borderRadius: conditionalScale(32, 35, 38, 45),
+    bottom: conditionalVerticalScale(90, 95, 100, 100),
+    width: conditionalScale(64, 70, 76, 76), // was 90
+    height: conditionalScale(64, 70, 76, 76), // was 90
+    borderRadius: conditionalScale(32, 35, 38, 38), // was 45
     backgroundColor: '#fff',
     borderWidth: moderateScale(2),
     borderColor: '#0A66C2',
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
 
   Login_Title: {
-    fontSize: conditionalFontScale(22, 24, 26, 32),
+    fontSize: conditionalFontScale(22, 24, 26, 26),
     fontWeight: 'bold',
     marginBottom: conditionalVerticalScale(6, 8, 10, 12),
     color: '#333333',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
 
   Login_Subtitle: {
-    fontSize: conditionalFontScale(13, 14, 15, 18),
+    fontSize: conditionalFontScale(13, 14, 15, 15),
     color: '#666666',
     textAlign: 'center',
     paddingHorizontal: spacing.md,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: isTablet ? '70%' : '85%',
-    maxWidth: conditionalScale(300, 320, 340, 450),
+    maxWidth: conditionalScale(300, 320, 340, 340),
     height: conditionalVerticalScale(48, 52, 56, 64),
     borderRadius: borderRadius.xxl,
     borderWidth: moderateScale(2),
@@ -1120,8 +1120,8 @@ const styles = StyleSheet.create({
   },
 
   MainDash_AvatarContainer: {
-    width: conditionalScale(80, 90, 100, 110),
-    height: conditionalScale(80, 90, 100, 110),
+    width: conditionalScale(80, 90, 100, 100), // was 110
+    height: conditionalScale(80, 90, 100, 100), // was 110
     borderRadius: conditionalScale(40, 45, 50, 55),
     borderWidth: moderateScale(3),
     borderColor: '#fff',
@@ -1161,7 +1161,7 @@ const styles = StyleSheet.create({
   },
 
   MainDash_NameText: {
-    fontSize: conditionalFontScale(14, 16, 18, 20),
+    fontSize: conditionalFontScale(14, 16, 18, 18),
     fontWeight: '700',
     color: '#fff',
     marginBottom: conditionalVerticalScale(0, 1, 1, 2),
@@ -1202,7 +1202,7 @@ const styles = StyleSheet.create({
   },
 
   MainDash_SectionTitle: {
-    fontSize: conditionalFontScale(16, 18, 20, 24),
+    fontSize: conditionalFontScale(16, 18, 20, 20),
     fontWeight: '700',
     color: '#2C3E50',
     marginBottom: conditionalVerticalScale(14, 18, 20, 24),
@@ -1223,7 +1223,7 @@ const styles = StyleSheet.create({
   },
 
   MainDash_CardTitle: {
-    fontSize: conditionalFontScale(11, 12, 13, 15),
+    fontSize: conditionalFontScale(11, 12, 13, 13),
     fontWeight: '700',
     color: '#2C3E50',
     textAlign: 'center',
@@ -1723,14 +1723,14 @@ const styles = StyleSheet.create({
   },
 
   Profile_settingTitle: {
-    fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
+    fontSize: conditionalFontScale(15, 15.5, 16, 16),
     fontWeight: '500',
     color: '#1A1A1A',
     marginBottom: conditionalVerticalScale(2, 2.5, 3, 3.5),
   },
 
   Profile_settingSubtitle: {
-    fontSize: conditionalFontScale(12, 12.5, 13, 13.5),
+    fontSize: conditionalFontScale(12, 12.5, 13, 13),
     color: '#757575',
     lineHeight: conditionalFontScale(16, 17, 18, 19),
   },
@@ -2500,7 +2500,7 @@ const styles = StyleSheet.create({
   },
 
   DLP_SummaryText: {
-    fontSize: conditionalFontScale(14, 15, 16, 18),
+    fontSize: conditionalFontScale(14, 15, 16, 16),
     fontWeight: '600',
     color: '#0A66C2',
     textAlign: 'center',
@@ -2514,7 +2514,7 @@ const styles = StyleSheet.create({
   },
 
   DLP_NoDataText: {
-    fontSize: conditionalFontScale(16, 17, 18, 20),
+    fontSize: conditionalFontScale(16, 17, 18, 18),
     fontWeight: '600',
     color: '#0A66C2',
     textAlign: 'center',
@@ -2556,7 +2556,7 @@ const styles = StyleSheet.create({
 
   DLP_ProcessingText: {
     marginTop: conditionalVerticalScale(12, 14, 16, 18),
-    fontSize: conditionalFontScale(16, 17, 18, 19),
+    fontSize: conditionalFontScale(16, 17, 18, 18),
     fontWeight: '600',
     color: '#1A1A1A',
     letterSpacing: 0.3,
@@ -2586,7 +2586,7 @@ const styles = StyleSheet.create({
   },
 
   DSR_Label: {
-    fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    fontSize: conditionalFontScale(13, 13.5, 14, 14),
     marginTop: conditionalVerticalScale(14, 16, 18, 20),
     fontWeight: '600',
     color: '#1A1A1A',
@@ -2599,7 +2599,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: conditionalScale(11, 12, 13, 14),
     marginTop: conditionalVerticalScale(5, 6, 7, 8),
-    fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    fontSize: conditionalFontScale(14, 14.5, 15, 15),
     color: '#1A1A1A',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -2755,7 +2755,7 @@ const styles = StyleSheet.create({
   },
 
   DSR_FormHeaderText: {
-    fontSize: conditionalFontScale(16, 17, 18, 19),
+    fontSize: conditionalFontScale(16, 17, 18, 18),
     fontWeight: '600',
     color: '#6366F1',
     marginBottom: conditionalVerticalScale(3, 4, 5, 6),
@@ -3359,8 +3359,9 @@ const styles = StyleSheet.create({
   DRC_approvalDropdownMenu: {
     position: 'absolute',
     backgroundColor: '#ffffff',
-    borderRadius: conditionalScale(10, 11, 12, 14),
-    paddingVertical: conditionalVerticalScale(3, 3.5, 4, 5),
+    borderRadius: conditionalScale(10, 11, 12, 12), // was (10,11,12,14) — cap xlarge
+    paddingVertical: conditionalVerticalScale(3, 3.5, 4, 4), // was (3,3.5,4,5)
+    minWidth: 180,
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
@@ -3375,7 +3376,7 @@ const styles = StyleSheet.create({
     borderWidth: moderateScale(1),
     borderColor: '#f3f4f6',
     overflow: 'hidden',
-    minWidth: conditionalScale(140, 150, 160, 180),
+    // minWidth: conditionalScale(140, 150, 160, 180),
   },
 
   DRC_approvalDropdownItem: {
@@ -3705,7 +3706,7 @@ const styles = StyleSheet.create({
   },
 
   notif_Panel: {
-    width: conditionalScale(280, 350, 380, 450),
+    width: conditionalScale(280, 320, 350, 350),
     height: '100%',
     backgroundColor: '#fff',
     shadowColor: '#000',
@@ -3738,7 +3739,7 @@ const styles = StyleSheet.create({
   },
 
   notif_HeaderTitle: {
-    fontSize: conditionalFontScale(16, 18, 19, 22),
+    fontSize: conditionalFontScale(16, 18, 19, 19),
     fontWeight: '700',
     color: '#ffffff',
   },
@@ -3928,7 +3929,7 @@ const styles = StyleSheet.create({
   },
 
   notif_NotificationTitle: {
-    fontSize: conditionalFontScale(14, 15, 16, 17),
+    fontSize: conditionalFontScale(14, 15, 16, 16),
     fontWeight: '600',
     color: '#1e293b',
     marginBottom: conditionalVerticalScale(3, 4, 5, 6),
@@ -5485,7 +5486,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
     backgroundColor: '#FFF',
-    minHeight: conditionalVerticalScale(60, 65, 70, 75),
+    minHeight: conditionalVerticalScale(60, 65, 70, 70),
     gap: conditionalScale(6, 8, 10, 12),
     zIndex: 10, // ✅ Ensure it's above ScrollView
   },
@@ -5529,7 +5530,7 @@ const styles = StyleSheet.create({
 
   SRBtn_ButtonText: {
     fontWeight: '600',
-    fontSize: conditionalFontScale(12, 13, 14, 15),
+    fontSize: conditionalFontScale(12, 13, 14, 14),
     color: '#0A66C2',
     textAlign: 'center',
     includeFontPadding: false,

@@ -932,7 +932,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -985,6 +985,18 @@ const WorkItemsAssignedToMePage = () => {
   // Per-card processing buttons
   const [processingButtons, setProcessingButtons] = useState({});
 
+  const [selectedDocumentType, setSelectedDocumentType] = useState(null);
+
+  const documentTypes = useMemo(
+    () => [
+      ...new Set(tableData.map(item => item.documentType).filter(Boolean)),
+    ],
+    [tableData],
+  );
+  const [rawData, setRawData] = useState([]);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
   /* ==============================
      Fetch Data
   ============================== */
@@ -1030,6 +1042,7 @@ const WorkItemsAssignedToMePage = () => {
       });
 
       setTableData(formattedData);
+      setRawData(formattedData); // ← add this
     } catch (error) {
       setAlertMessage('Failed to fetch work items.');
       setAlertModal(true);
@@ -1100,36 +1113,58 @@ const WorkItemsAssignedToMePage = () => {
      Filter Logic
   ============================== */
 
+  // const getFilteredData = () => {
+  //   if (activeFilter === 'All') return tableData;
+
+  //   if (activeFilter === 'Pending') {
+  //     return tableData.filter(
+  //       item => (item.workflowWorkItemType || '') === 'WorkItem',
+  //     );
+  //   }
+
+  //   if (activeFilter === 'Returned') {
+  //     return tableData.filter(
+  //       item => (item.workflowWorkItemType || '') === 'Return',
+  //     );
+  //   }
+
+  //   return tableData;
+  // };
+
+  // // Count badges per pill
+  // const getFilterCounts = () => {
+  //   return {
+  //     All: tableData.length,
+  //     Pending: tableData.filter(
+  //       item => (item.workflowWorkItemType || '') === 'WorkItem',
+  //     ).length,
+  //     Returned: tableData.filter(
+  //       item => (item.workflowWorkItemType || '') === 'Return',
+  //     ).length,
+  //   };
+  // };
+
   const getFilteredData = () => {
-    if (activeFilter === 'All') return tableData;
+    let base = tableData;
 
-    if (activeFilter === 'Pending') {
-      return tableData.filter(
-        item => (item.workflowWorkItemType || '') === 'WorkItem',
-      );
-    }
+    if (activeFilter === 'Pending')
+      base = base.filter(item => item.workflowWorkItemType === 'WorkItem');
+    else if (activeFilter === 'Returned')
+      base = base.filter(item => item.workflowWorkItemType === 'Return');
 
-    if (activeFilter === 'Returned') {
-      return tableData.filter(
-        item => (item.workflowWorkItemType || '') === 'Return',
-      );
-    }
+    if (selectedDocumentType)
+      base = base.filter(item => item.documentType === selectedDocumentType);
 
-    return tableData;
+    return base;
   };
 
-  // Count badges per pill
-  const getFilterCounts = () => {
-    return {
-      All: tableData.length,
-      Pending: tableData.filter(
-        item => (item.workflowWorkItemType || '') === 'WorkItem',
-      ).length,
-      Returned: tableData.filter(
-        item => (item.workflowWorkItemType || '') === 'Return',
-      ).length,
-    };
-  };
+  const getFilterCounts = () => ({
+    All: tableData.length,
+    Pending: tableData.filter(item => item.workflowWorkItemType === 'WorkItem')
+      .length,
+    Returned: tableData.filter(item => item.workflowWorkItemType === 'Return')
+      .length,
+  });
 
   /* ==============================
      Per-card button processing
@@ -1338,6 +1373,44 @@ const WorkItemsAssignedToMePage = () => {
   const selectedItems = tableData.filter(t => selectedRecIds.includes(t.recId));
 
   const firstSelectedType = selectedItems[0]?.workflowWorkItemType;
+
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(
+        item =>
+          item.documentType?.toLowerCase().includes(q) ||
+          item.documentId?.toLowerCase().includes(q) ||
+          item.requester?.toLowerCase().includes(q) ||
+          item.Subject?.toLowerCase().includes(q) ||
+          item.From?.toLowerCase().includes(q) ||
+          item.Document?.toLowerCase().includes(q),
+      );
+    }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const dateA = new Date(a.createdDateTime || 0);
+        const dateB = new Date(b.createdDateTime || 0);
+        return sort === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+    }
+
+    setTableData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
+  };
+
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
+  };
+
   return (
     <ActionPaneContainer
       pageTitle={
@@ -1356,7 +1429,16 @@ const WorkItemsAssignedToMePage = () => {
         setActiveFilter(filter);
         exitSelectionMode();
       }}
-      filterCounts={getFilterCounts()}>
+      filterCounts={getFilterCounts()}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}
+      showDocumentTypeFilter={true}
+      documentTypes={documentTypes}
+      selectedDocumentType={selectedDocumentType}
+      onDocumentTypeChange={setSelectedDocumentType}>
       {/* Processing overlay */}
       {isActionLoading && (
         <View style={styles.DSR_ProcessingOverlay}>
@@ -1478,11 +1560,17 @@ const WorkItemsAssignedToMePage = () => {
       ) : (
         <ScrollView
           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
-          <Text style={styles.LReqLP_NoDataText}>
-            {activeFilter === 'All'
-              ? 'No work items found'
-              : `No ${activeFilter.toLowerCase()} items found`}
-          </Text>
+          {searchQuery.trim() ? (
+            <Text style={styles.LReqLP_NoDataText}>
+              No records match "{searchQuery}"
+            </Text>
+          ) : (
+            <Text style={styles.LReqLP_NoDataText}>
+              {activeFilter === 'All'
+                ? 'No work items found'
+                : `No ${activeFilter.toLowerCase()} items found`}
+            </Text>
+          )}
         </ScrollView>
       )}
 

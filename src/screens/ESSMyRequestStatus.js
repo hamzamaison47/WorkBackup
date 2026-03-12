@@ -594,66 +594,33 @@ const ESSMyRequestStatusListPage = () => {
     return 'Draft';
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return requestData;
-  //   return requestData.filter(
-  //     item => normaliseStatus(item.PRWFStatus) === activeFilter,
-  //   );
-  // };
-
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : requestData;
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = normaliseStatus(item.PRWFStatus);
-      if (activeFilter === 'Pending') return status.includes('Pending');
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => normaliseStatus(item.PRWFStatus) === activeFilter,
+    );
   };
 
-  // Count per pill
   const getFilterCounts = () => {
     const counts = {All: requestData.length};
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      counts[pill] = requestData.filter(
-        item => normaliseStatus(item.PRWFStatus) === pill,
+    [
+      ...new Set(requestData.map(item => normaliseStatus(item.PRWFStatus))),
+    ].forEach(status => {
+      counts[status] = requestData.filter(
+        item => normaliseStatus(item.PRWFStatus) === status,
       ).length;
     });
     return counts;
   };
 
-  // Add this after your existing state declarations
   const visiblePills = useMemo(() => {
     if (!requestData.length) return ['All'];
-
-    const presentStatuses = new Set(
-      requestData.map(item => normaliseStatus(item.PRWFStatus)),
-    );
-
-    return [
-      'All',
-      'Draft',
-      'Pending',
-      'Approved',
-      'Rejected',
-      'Completed',
-    ].filter(pill => {
-      if (pill === 'All') return true;
-      if (pill === 'Pending') {
-        // match any status containing "Pending"
-        return [...presentStatuses].some(s => s.includes('Pending'));
-      }
-      return presentStatuses.has(pill);
-    });
+    const unique = [
+      ...new Set(requestData.map(item => normaliseStatus(item.PRWFStatus))),
+    ];
+    return ['All', ...unique];
   }, [requestData]);
-
-  // Auto-reset filter if active pill disappears
-  useEffect(() => {
-    if (activeFilter !== 'All' && !visiblePills.includes(activeFilter)) {
-      setActiveFilter('All');
-    }
-  }, [visiblePills, activeFilter]);
 
   /* ==============================
      Format helpers

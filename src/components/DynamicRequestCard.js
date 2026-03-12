@@ -638,22 +638,31 @@ const DynamicRequestCard = ({
     setExpanded(prev => !prev);
   };
 
-  // ── Approval dropdown ──
   const openApprovalDropdown = () => {
     approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
       const approvalConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
-      const estimatedHeight = (approvalConfig.actions?.length || 1) * 48;
-      const spaceBelow = SCREEN_HEIGHT - (py + h);
+      const estimatedHeight = (approvalConfig.actions?.length || 1) * 48 + 16;
+      const spaceBelow = SCREEN_HEIGHT - (py + h) - 20;
       const opensUpward = spaceBelow < estimatedHeight;
 
-      const dropdownWidth = 160;
-      const PADDING = 8;
-      const clampedLeft = Math.min(px, SCREEN_WIDTH - dropdownWidth - PADDING);
+      const dropdownWidth = 180;
+      const PADDING = 12;
+
+      // Clamp left so dropdown never goes off right edge
+      const clampedLeft = Math.min(
+        Math.max(px, PADDING),
+        SCREEN_WIDTH - dropdownWidth - PADDING,
+      );
+
+      // Clamp vertical so dropdown never goes off bottom or top
+      const topPosition = opensUpward
+        ? Math.max(py - estimatedHeight - 4, PADDING)
+        : Math.min(py + h + 4, SCREEN_HEIGHT - estimatedHeight - PADDING);
 
       setApprovalPosition({
-        top: opensUpward ? py - estimatedHeight : py + h + 4,
+        top: topPosition,
         left: clampedLeft,
-        width: w,
+        width: Math.max(w, dropdownWidth),
       });
 
       setApprovalDropdownVisible(true);
