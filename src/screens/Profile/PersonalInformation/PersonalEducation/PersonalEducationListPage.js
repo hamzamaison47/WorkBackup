@@ -33,6 +33,7 @@ import {EmployeePersonalEducation} from '../../../../API/PersonalInformation/Edu
 import {DeleteEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationDelete';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
+import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
 
 import styles from '../../../../styles/styles';
 
@@ -441,14 +442,34 @@ const PersonalEducationListPage = () => {
   const cardConfig = {
     headerConfig: {title: {key: 'EducationDisciplineId', label: 'Education'}},
     fields: [
-      {key: 'Description', label: 'Description', type: 'text'},
-      {key: 'DurationUnit', label: 'Duration Unit', type: 'text'},
-      {key: 'Duration', label: 'Duration', type: 'number'},
+      {
+        key: 'Description',
+        label: educationData[0]?.Descriptionlbl || 'Description',
+        type: 'text',
+      },
+      {
+        key: 'DurationUnit',
+        label: educationData[0]?.DurationUnitlbl || 'Duration Unit',
+        type: 'text',
+      },
+      {
+        key: 'Duration',
+        label: educationData[0]?.Durationlbl || 'Duration',
+        type: 'number',
+      },
       {key: 'ApprovalStatus', label: '', type: 'status'},
     ],
     expandableFields: [
-      {key: 'StartDate', label: 'Start Date', type: 'date'},
-      {key: 'EndDate', label: 'End Date', type: 'date'},
+      {
+        key: 'StartDate',
+        label: educationData[0]?.StartDatelbl || 'Start Date',
+        type: 'date',
+      },
+      {
+        key: 'EndDate',
+        label: educationData[0]?.EndDatelbl || 'End Date',
+        type: 'date',
+      },
       {key: 'Notes', label: 'Notes', type: 'text'},
     ],
     isRTL: isRTL,

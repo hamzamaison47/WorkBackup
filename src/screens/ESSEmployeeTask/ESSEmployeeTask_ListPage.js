@@ -15,6 +15,7 @@ import {
 import {useSelector} from 'react-redux';
 
 import {retrieveAllESSEmployeeTask} from '../../API/ESSEmployeeTask/retrieveAllESSEmployeeTask';
+
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
@@ -68,15 +69,39 @@ const ESSEmployeeTask_ListPage = () => {
   const cardConfig = {
     headerConfig: {title: {key: 'name'}, subtitle: {key: 'displayRegarding'}},
     fields: [
-      {key: 'description', label: 'Description', type: 'text'},
-      {key: 'displayProcessType', label: 'Process Type', type: 'text'},
-      {key: 'status', label: 'Status', type: 'text'},
+      {
+        key: 'description',
+        label: taskData[0]?.descriptionlbl || 'Description',
+        type: 'text',
+      },
+      {
+        key: 'displayProcessType',
+        label: taskData[0]?.displayProcessTypelbl || 'Process Type',
+        type: 'text',
+      },
+      {key: 'status', label: taskData[0]?.Statuslbl || 'Status', type: 'text'},
     ],
     expandableFields: [
-      {key: 'displayRegarding', label: 'Regarding', type: 'text'},
-      {key: 'dueDate', label: 'Due Date', type: 'date'},
-      {key: 'IsOptional', label: 'Optional', type: 'text'},
-      {key: 'displayActionLinkLabelValue', label: 'Task Link', type: 'text'},
+      {
+        key: 'displayRegarding',
+        label: taskData[0]?.displayRegardinglbl || 'Regarding',
+        type: 'text',
+      },
+      {
+        key: 'dueDate',
+        label: taskData[0]?.dueDatelbl || 'Due Date',
+        type: 'date',
+      },
+      {
+        key: 'IsOptional',
+        label: taskData[0]?.IsOptional || 'Optional',
+        type: 'text',
+      },
+      {
+        key: 'displayActionLinkLabelValue',
+        label: taskData[0]?.displayActionLinkLabelValue || 'Task Link',
+        type: 'text',
+      },
     ],
     gradientColors: ['#6ee0ff', '#bddeff', '#cce6ff'],
     isRTL: isRTL,
