@@ -7,8 +7,12 @@ import {useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {translate as t} from '../store/utils/translate';
+import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
 
 export default function CustomTabBar(props) {
+  // ✅ reactive theme tokens
+  const T = useAppTokens();
+
   const tabBarState = props?.state;
   const tabBarNavigation = props?.navigation;
   const navigation = useNavigation();
@@ -62,7 +66,6 @@ export default function CustomTabBar(props) {
     if (tabBarState && typeof tabBarState.index === 'number') {
       return tabBarState.routes[tabBarState.index]?.name;
     }
-
     try {
       const rs = nav.getState?.();
       return rs?.routes?.[rs.index]?.name ?? null;
@@ -81,54 +84,52 @@ export default function CustomTabBar(props) {
     nav.navigate(tabName);
   };
 
-  // Calculate responsive sizing based on number of tabs
   const getResponsiveStyles = () => {
     const tabCount = tabs.length;
-
-    if (tabCount <= 4) {
-      return {
-        iconSize: 24,
-        fontSize: 11,
-        showLabel: true,
-      };
-    } else if (tabCount === 5) {
-      return {
-        iconSize: 22,
-        fontSize: 10,
-        showLabel: true,
-      };
-    } else {
-      // 6+ tabs - compact mode
-      return {
-        iconSize: 21,
-        fontSize: 9,
-        showLabel: true,
-      };
-    }
+    if (tabCount <= 4) return {iconSize: 24, fontSize: 11, showLabel: true};
+    if (tabCount === 5) return {iconSize: 22, fontSize: 10, showLabel: true};
+    return {iconSize: 21, fontSize: 9, showLabel: true};
   };
 
   const responsiveStyles = getResponsiveStyles();
 
-  // Helper to lighten color for background
-  const getLightColor = color => {
-    const colors = {
-      '#1a73e8': ['#e3f2fd', '#bbdefb'],
-      '#8b5cf6': ['#f3e8ff', '#e9d5ff'],
-      '#10b981': ['#d1fae5', '#a7f3d0'],
-      '#f59e0b': ['#fef3c7', '#fde68a'],
-      '#ef4444': ['#fee2e2', '#fecaca'],
-      '#06b6d4': ['#cffafe', '#a5f3fc'],
-    };
-    return colors[color] || ['#f3f4f6', '#e5e7eb'];
-  };
+  // ✅ In dark mode: deep dark surface for tab bar
+  // In light mode: brand blue (unchanged from original)
+  const tabBarBg =
+    T.pageBg === '#0F172A'
+      ? '#1E293B' // dark mode — elevated surface
+      : '#0A66C2'; // light mode — brand blue
+
+  // ✅ Active icon bg — white pill in light, subtle blue in dark
+  const activeIconGradient =
+    T.pageBg === '#0F172A'
+      ? ['#334155', '#1E293B'] // dark mode
+      : ['#ffffff', '#f0f0f0']; // light mode
+
+  // ✅ Active icon color — brand blue in light, bright white in dark
+  const activeIconColor = T.pageBg === '#0F172A' ? '#93C5FD' : '#0A66C2';
+
+  // ✅ Inactive icon color — white in light, muted in dark
+  const inactiveIconColor =
+    T.pageBg === '#0F172A' ? 'rgba(148, 163, 184, 0.9)' : '#ffffff';
+
+  // ✅ Label colors
+  const activeLabelColor = T.pageBg === '#0F172A' ? '#93C5FD' : '#ffffff';
+  const inactiveLabelColor =
+    T.pageBg === '#0F172A'
+      ? 'rgba(148, 163, 184, 0.7)'
+      : 'rgba(255, 255, 255, 0.7)';
 
   return (
-    <View style={[styles.container, props.style]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: tabBarBg, borderTopColor: T.divider},
+        props.style,
+      ]}>
       <View style={styles.tabBarWrapper}>
         {tabs.map((tab, index) => {
           const isActive = activeTab === tab.name;
-          const tabColor = tab.color || '#0A66C2';
-          const lightColors = getLightColor(tabColor);
 
           return (
             <TouchableOpacity
@@ -139,10 +140,10 @@ export default function CustomTabBar(props) {
               accessibilityLabel={tab.label}
               accessibilityRole="button"
               accessibilityState={{selected: isActive}}>
-              {/* Icon with gradient background when active */}
+              {/* Icon */}
               {isActive ? (
                 <LinearGradient
-                  colors={['#ffffff', '#f0f0f0']}
+                  colors={activeIconGradient}
                   start={{x: 0, y: 0}}
                   end={{x: 1, y: 1}}
                   style={styles.iconWrapper}>
@@ -154,7 +155,7 @@ export default function CustomTabBar(props) {
                     <Ionicons
                       name={tab.iconFocused}
                       size={responsiveStyles.iconSize}
-                      color="#0A66C2"
+                      color={activeIconColor}
                     />
                   </View>
                 </LinearGradient>
@@ -163,19 +164,20 @@ export default function CustomTabBar(props) {
                   <Ionicons
                     name={tab.iconUnfocused}
                     size={responsiveStyles.iconSize}
-                    color="#ffffff"
+                    color={inactiveIconColor}
                   />
                 </View>
               )}
 
-              {/* Label with gradient underline when active */}
+              {/* Label */}
               {responsiveStyles.showLabel && (
                 <View style={styles.labelContainer}>
                   <Text
                     style={[
                       styles.label,
-                      isActive && [styles.labelActive, {color: '#ffffff'}],
-                      !isActive && {color: 'rgba(255, 255, 255, 0.7)'},
+                      isActive
+                        ? {color: activeLabelColor, fontWeight: '700'}
+                        : {color: inactiveLabelColor},
                       {fontSize: responsiveStyles.fontSize},
                     ]}
                     numberOfLines={2}
@@ -185,7 +187,7 @@ export default function CustomTabBar(props) {
                   {isActive && (
                     <View style={styles.activeUnderline}>
                       <LinearGradient
-                        colors={['#ffffff', '#ffffff']}
+                        colors={[activeLabelColor, activeLabelColor]}
                         start={{x: 0, y: 0}}
                         end={{x: 1, y: 0}}
                         style={styles.underlineGradient}
@@ -202,17 +204,15 @@ export default function CustomTabBar(props) {
   );
 }
 
+// ✅ No colors in StyleSheet — all applied inline
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0A66C2',
-    // paddingBottom: Platform.OS === 'ios' ? 24 : 8,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: -8},
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 20,
     borderTopWidth: 1,
-    borderTopColor: '#0A66C2',
   },
   tabBarWrapper: {
     flexDirection: 'row',
@@ -258,15 +258,11 @@ const styles = StyleSheet.create({
     maxHeight: 30,
   },
   label: {
-    color: '#ffffff',
     fontWeight: '500',
     textAlign: 'center',
     letterSpacing: 0.3,
     paddingHorizontal: 2,
     lineHeight: 12,
-  },
-  labelActive: {
-    fontWeight: '700',
   },
   activeUnderline: {
     position: 'absolute',

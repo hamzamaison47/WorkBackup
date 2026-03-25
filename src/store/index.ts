@@ -12,6 +12,7 @@ import firebaseReducer from './slices/firebaseSlice';
 import authReducer from './slices/authSlice';
 import chatbotReducer from './slices/chatbotSlice';
 import dateFormatReducer from './slices/dateFormatSlice';
+import themeReducer from './slices/themeSlice';
 
 // Redux Persist configuration
 const persistConfig = {
@@ -49,6 +50,7 @@ const persistConfig = {
     'menuItem',
     'chatbot',
     'dateFormat', // ← add this
+    'theme',
   ], // Persist these reducers
   blacklist: [], // Don't persist these reducers
 };
@@ -64,6 +66,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   chatbot: chatbotReducer, // ✅ ADD THIS
   dateFormat: dateFormatReducer, // ← add this
+  theme: themeReducer,
 });
 
 // Create persisted reducer

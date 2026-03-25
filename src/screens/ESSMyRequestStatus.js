@@ -651,7 +651,7 @@ const ESSMyRequestStatusListPage = () => {
       title: {key: 'documentType'},
     },
     fields: [
-      {key: 'Document', label: '', type: 'link'},
+      // {key: 'Document', label: '', type: 'link'},
       {key: 'Subject', label: 'Subject', type: 'text'},
       {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
       {key: 'From', label: 'From', type: 'text'},
@@ -709,9 +709,7 @@ const ESSMyRequestStatusListPage = () => {
   const renderRequestCard = ({item}) => {
     const processedItem = {
       ...item,
-      // Format date for display
       ModifiedDateTime: formatDateTime(item.ModifiedDateTime),
-      // PRWFStatus drives the status badge inside DynamicRequestCard
       PRWFStatus: item.PRWFStatus || 'Unknown',
     };
 
@@ -733,6 +731,7 @@ const ESSMyRequestStatusListPage = () => {
           processingButtons={[]}
           showNavigationArrow={false}
           isClickable={true}
+          searchQuery={searchQuery}
         />
       </Pressable>
     );
@@ -789,16 +788,22 @@ const ESSMyRequestStatusListPage = () => {
               onRefresh={fetchRequestStatus}
             />
           }>
-          <Text style={styles.DLP_NoDataText}>
-            {activeFilter === 'All'
-              ? 'No requests found'
-              : `No ${activeFilter.toLowerCase()} requests`}
-          </Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            {activeFilter === 'All'
-              ? 'You have not submitted any requests yet'
-              : `You have no ${activeFilter.toLowerCase()} requests at the moment`}
-          </Text>
+          {searchQuery.trim() ? (
+            <Text style={styles.DLP_NoDataSubText}>
+              No records match "{searchQuery}"
+            </Text>
+          ) : rawData.length === 0 ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No requests found</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                You have not submitted any requests yet
+              </Text> */}
+            </>
+          ) : (
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
+          )}
         </ScrollView>
       )}
 

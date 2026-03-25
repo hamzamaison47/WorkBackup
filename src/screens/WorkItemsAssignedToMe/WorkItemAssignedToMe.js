@@ -1262,7 +1262,7 @@ const WorkItemsAssignedToMePage = () => {
       title: {key: 'documentType'},
     },
     fields: [
-      {key: 'Document', label: '', type: 'link'},
+      // {key: 'Document', label: '', type: 'link'},
       {key: 'Subject', label: 'Subject', type: 'text'},
       {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
       {key: 'From', label: 'From', type: 'text'},
@@ -1346,6 +1346,7 @@ const WorkItemsAssignedToMePage = () => {
           processingButtons={processingButtons[item.recId] || []}
           showNavigationArrow={false}
           isHighlighted={isSelected}
+          searchQuery={searchQuery}
         />
       </Pressable>
     );

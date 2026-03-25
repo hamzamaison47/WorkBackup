@@ -16,12 +16,10 @@ import {useSelector, useDispatch} from 'react-redux';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
-import AttendanceCalendar from '../components/Attendance/AttendanceCalender';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
 import AIChatbot from '../components/AIChatbot/AIChatbot';
 import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
-import LeaveEntitlementProgress from '../components/MainDashboard/LeaveEntitlementProgress';
 import QuickAccessSheet, {
   QuickAccessButton,
 } from '../components/MainDashboard/QuickAccessSheet';
@@ -31,6 +29,7 @@ import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {useDashboardDimensions} from '../hooks/useDashboardDimensions';
 import {useDashboardData} from '../hooks/useDashboardData';
 import {useMenuBuilder} from '../hooks/useMenuBuilder';
+import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
 
 import styles from '../styles/styles';
 
@@ -39,6 +38,7 @@ const MainDashboard = () => {
   const navigation = useNavigation();
   const scrollY = useRef(new Animated.Value(0)).current;
   const calendarRef = useRef();
+  const T = useAppTokens(); // ← add this at top
 
   // Allow AttendanceCalendar to set its ref in navigation
   navigation.setCalendarRef = ref => {
@@ -67,8 +67,6 @@ const MainDashboard = () => {
     navigation,
   );
 
-  // State to track if leave data is available
-  const [hasLeaveData, setHasLeaveData] = useState(true);
   const [quickAccessVisible, setQuickAccessVisible] = useState(false);
 
   // Initialize Leave Service
@@ -130,102 +128,74 @@ const MainDashboard = () => {
 
   const [chatVisible, setChatVisible] = useState(false);
 
-  // Callback to handle when leave data is empty
-  const handleLeaveDataStatus = useCallback(isEmpty => {
-    setHasLeaveData(!isEmpty);
-  }, []);
-
   return (
-    <ActionPaneContainer
-      pageTitle="Dynaface"
-      showPageTitleRow={false}
-      isBackButton={false}
-      showFooter={false}
-      showFloatingButton={false}
-      isHeaderActive={true}
-      showTabNavigator={!quickAccessVisible}
-      onRefresh={handleRefresh}>
-      {isLoading ? (
-        <CustomIndicator />
-      ) : (
-        <SafeAreaView style={styles.MainDash_Container}>
-          <Animated.ScrollView
-            style={styles.MainDash_ScrollView}
-            showsVerticalScrollIndicator={false}
-            onScroll={Animated.event(
-              [{nativeEvent: {contentOffset: {y: scrollY}}}],
-              {useNativeDriver: false},
-            )}
-            scrollEventThrottle={16}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-              />
-            }>
-            <DashboardHeader
-              userData={userData}
-              profilePictureUrl={profilePictureUrl}
-              isLoading={isLoading}
-              isSmallScreen={dimensions.isSmallScreen}
-              onProfilePress={() => navigation.navigate('Profile')}
-            />
-
-            {/* <AttendanceCalendar
-              userData={userData}
-              navigation={navigation}
-              screenWidth={dimensions.screenWidth}
-              H_PADDING={dimensions.H_PADDING}
-              ref={calendarRef}
-            /> */}
-
-            {/* Only render LeaveEntitlementProgress if there's data */}
-            {hasLeaveData && (
-              <LeaveEntitlementProgress
+    <>
+      <ActionPaneContainer
+        pageTitle="Dynaface"
+        showPageTitleRow={false}
+        isBackButton={false}
+        showFooter={false}
+        showFloatingButton={false}
+        isHeaderActive={true}
+        showTabNavigator={true}
+        onRefresh={handleRefresh}>
+        {isLoading ? (
+          <CustomIndicator />
+        ) : (
+          <SafeAreaView
+            style={[styles.MainDash_Container, {backgroundColor: T.pageBg}]}>
+            <Animated.ScrollView
+              style={[styles.MainDash_ScrollView, {backgroundColor: T.pageBg}]}
+              showsVerticalScrollIndicator={false}
+              onScroll={Animated.event(
+                [{nativeEvent: {contentOffset: {y: scrollY}}}],
+                {useNativeDriver: false},
+              )}
+              scrollEventThrottle={16}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                />
+              }>
+              <DashboardHeader
                 userData={userData}
-                screenWidth={dimensions.screenWidth}
-                onDataStatus={handleLeaveDataStatus}
+                profilePictureUrl={profilePictureUrl}
+                isLoading={isLoading}
+                isSmallScreen={dimensions.isSmallScreen}
+                onProfilePress={() => navigation.navigate('Profile')}
               />
-            )}
 
-            <MenuGrid
-              dynamicMenus={dynamicMenus}
-              dimensions={dimensions}
-              onCardPress={handleCardPress}
-            />
+              <MenuGrid
+                dynamicMenus={dynamicMenus}
+                dimensions={dimensions}
+                onCardPress={handleCardPress}
+                userData={userData}
+              />
 
-            <View style={{height: 100}} />
-          </Animated.ScrollView>
-        </SafeAreaView>
-      )}
-      <LogoutAlertModal
-        visible={modalVisible}
-        heading="Are you sure you want to logout?"
-        text="Are you sure you want to logout?"
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
-      />
-      {/* 
-      <AIFloatingButton
-        scrollY={scrollY}
-        onPress={() => setChatVisible(true)}
-        hasLeaveData={hasLeaveData} // Pass the leave data status
-      /> */}
-      {/* GENERIC: Pass service instance */}
-      {/* <AIChatbot
-        visible={chatVisible}
-        onClose={() => setChatVisible(false)}
-        serviceInstance={masterService}
-      />*/}
-      {/* Sticky Quick Access Button */}
-      <QuickAccessButton onPress={() => setQuickAccessVisible(true)} />
+              <View style={{height: 100}} />
+            </Animated.ScrollView>
+          </SafeAreaView>
+        )}
+
+        <LogoutAlertModal
+          visible={modalVisible}
+          heading="Are you sure you want to logout?"
+          text="Are you sure you want to logout?"
+          onConfirm={confirmLogout}
+          onCancel={cancelLogout}
+        />
+
+        <QuickAccessButton onPress={() => setQuickAccessVisible(true)} />
+      </ActionPaneContainer>
+
       <QuickAccessSheet
         visible={quickAccessVisible}
         onClose={() => setQuickAccessVisible(false)}
         menus={dynamicMenus}
         onCardPress={handleCardPress}
       />
-    </ActionPaneContainer>
+    </>
   );
 };
 
