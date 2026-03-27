@@ -1285,7 +1285,7 @@ const WorkItemsAssignedToMePage = () => {
               // {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
               // {key: 'delegate', label: 'Delegate', icon: 'user'},
               // {key: 'recall', label: 'Recall', icon: 'undo'},
-              {key: 'viewHistory', label: 'View History', icon: 'history'},
+              {key: 'viewHistory', label: 'View History', icon: 'clock'},
             ]
           : [{key: 'viewHistory', label: 'View History', icon: 'history'}],
     },
@@ -1335,7 +1335,9 @@ const WorkItemsAssignedToMePage = () => {
           fields={CARD_CONFIG.fields}
           buttons={getButtonConfig(item)}
           onButtonPress={handleButtonPress}
-          onPress={() => handleWorkflowDetail(item.recId, item.ContextTableId)}
+          onPress={() =>
+            handleWorkflowDetail(item.ContextRecId, item.ContextTableId)
+          }
           onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
           gradientColors={

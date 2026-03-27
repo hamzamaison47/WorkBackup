@@ -20,6 +20,7 @@ import {
 } from '../../store/utils/scaling';
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/RetrieveEntitlementBalanceRequest';
 import styles from '../../styles/styles';
 
 // ✅ Brand-only tokens — never change between themes
@@ -61,7 +62,7 @@ const formatRelativeTime = raw => {
 
 const getTypeAccent = type => {
   const t = (type || '').toLowerCase();
-  if (t.includes('leave')) return {color: BRAND.purple, bg: BRAND.purpleSoft};
+  if (t.includes('leave')) return {color: BRAND.blue, bg: BRAND.blueSoft};
   if (t.includes('purchase') || t.includes('requisition'))
     return {color: BRAND.amber, bg: BRAND.amberSoft};
   if (t.includes('expense')) return {color: BRAND.green, bg: BRAND.greenSoft};
@@ -469,23 +470,92 @@ const LeaveStatCard = ({item, index}) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // LeavesAvailableSection
 // ─────────────────────────────────────────────────────────────────────────────
-const LeavesAvailableSection = ({navigation}) => (
-  <View style={styles.MG_section}>
-    <SectionHeader
-      title="Leave Balance"
-      actionLabel="Details"
-      onAction={() => navigation.navigate('EntitlementBalance')}
-    />
-    <TouchableOpacity
-      activeOpacity={0.97}
-      onPress={() => navigation.navigate('EntitlementBalance')}
-      style={styles.MG_leaveGrid}>
-      {LEAVE_TYPES.map((item, index) => (
-        <LeaveStatCard key={item.key} item={item} index={index} />
-      ))}
-    </TouchableOpacity>
-  </View>
-);
+const LeavesAvailableSection = ({navigation, userData}) => {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const fetchLeaves = useCallback(async () => {
+    if (!userData?.employeeId) return;
+
+    setLoading(true);
+    try {
+      const data = await RetrieveEntitlementBalanceRequest({
+        employeeId: userData.employeeId,
+      });
+
+      const filtered = (data || []).filter(
+        e => e.EmployeeId === userData.employeeId,
+      );
+
+      const formatted = filtered.map(item => {
+        const total = Number(item.Accrued ?? 0);
+        const available = Number(item.Balance ?? 0);
+
+        const accent = getTypeAccent(item.EntitlementCode);
+
+        return {
+          key: item.RecId ?? item.EntitlementCode,
+          label: item.EntitlementCode,
+          available: Number(item.Balance ?? 0),
+          total: Number(item.Accrued ?? 1), // prevent divide by zero
+          color: accent.color,
+          bg: accent.bg,
+        };
+      });
+
+      setItems(formatted);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [userData?.employeeId]);
+
+  useEffect(() => {
+    fetchLeaves();
+  }, [fetchLeaves]);
+
+  useEffect(() => {
+    if (!loading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading, fadeAnim]);
+
+  // ✅ Same behavior as ApprovalsSection
+  if (!loading && items.length === 0) return null;
+
+  return (
+    <Animated.View style={[styles.MG_section, {opacity: fadeAnim}]}>
+      <SectionHeader
+        title="Leave Balance"
+        actionLabel="Details"
+        onAction={() => navigation.navigate('EntitlementBalance')}
+      />
+
+      {loading ? (
+        <View style={styles.MG_aSkeletonRow}>
+          {[1, 0.5].map((op, i) => (
+            <View key={i} style={[styles.MG_leaveCard, {opacity: op}]} />
+          ))}
+        </View>
+      ) : (
+        <TouchableOpacity
+          activeOpacity={0.97}
+          onPress={() => navigation.navigate('EntitlementBalance')}
+          style={styles.MG_leaveGrid}>
+          {items.map((item, index) => (
+            <LeaveStatCard key={item.key} item={item} index={index} />
+          ))}
+        </TouchableOpacity>
+      )}
+    </Animated.View>
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MenuGrid
@@ -554,7 +624,7 @@ const MenuGrid = ({dynamicMenus, dimensions, onCardPress, userData}) => {
 
   return (
     <View style={styles.MG_container}>
-      <LeavesAvailableSection navigation={navigation} />
+      <LeavesAvailableSection navigation={navigation} userData={userData} />
 
       {/* <ApprovalsSection userData={userData} navigation={navigation} /> */}
 

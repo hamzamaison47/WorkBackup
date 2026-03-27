@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback, useEffect, useMemo} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -357,7 +357,7 @@ const BankAccountListPage = () => {
       originalCameFrom: cameFrom,
       bankaccountdata: {
         // Fix: use RecId (uppercase) consistently
-        RecId: itemData.RecId,
+        RecId: itemData.recId,
         employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
         WorkerRecId: itemData.WorkerRecId || WorkerRecId,

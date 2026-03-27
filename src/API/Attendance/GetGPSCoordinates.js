@@ -20,9 +20,9 @@ const GetGPSCoordinates = async () => {
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     // Adjust group/action if your service name differs
-    const endpoint = `${config.resource}soap/services/DFgpsCoordinatesSVCGroup`;
+    const endpoint = `${config.resource}soap/services/DFgpsCoordinateSVCGroup`;
     const soapAction =
-      'http://tempuri.org/DFgpsCoordinatesSVC/getGPSCoordinates';
+      'http://tempuri.org/DFGpsCoordinateSvc/getGPSCoordinates';
 
     const {data: xml} = await axios.post(endpoint, soapEnvelope, {
       headers: {
@@ -75,10 +75,10 @@ const GetGPSCoordinates = async () => {
       console.log('No return/result found in response');
       return [];
     }
-
+    console.log('Returned Data :', returnData);
     // Check if we have the contract data
-    let contractData = returnData['a:DFgpsCoordinatesSvcContract'];
-
+    let contractData = returnData['a:DFGpsCoordinateSvcContract'];
+    console.log('Contract Data :', contractData);
     if (!contractData) {
       console.log('No DFgpsCoordinatesSvcContract found');
       return [];

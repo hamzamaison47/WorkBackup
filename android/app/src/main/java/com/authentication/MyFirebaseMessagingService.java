@@ -41,28 +41,25 @@ public class MyFirebaseMessagingService extends ReactNativeFirebaseMessagingServ
     }
 
     @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
-        // MUST call super first — this dispatches the message to the RNFirebase JS layer.
-        // Without this, setBackgroundMessageHandler / onMessage in JS will never fire.
-        super.onMessageReceived(remoteMessage);
-
-        Log.d(TAG, "onMessageReceived from: " + remoteMessage.getFrom());
-
-        Map<String, String> data = remoteMessage.getData();
-
-        // Only manually post a notification for DATA-ONLY messages.
-        // For messages that include a "notification" payload while app is killed/background,
-        // the FCM SDK posts the system tray notification automatically — do NOT double-post.
-        // When app is in foreground, "notification" payload msgs still arrive here; RNFirebase's
-        // onMessage JS listener in FirebaseService.js handles the foreground Alert.
-        if (remoteMessage.getNotification() == null && data != null && !data.isEmpty()) {
-            // Data-only message: we are responsible for displaying it in all app states.
-            String title = data.containsKey("title") ? data.get("title") : "Dynaface";
-            String body  = data.containsKey("body")  ? data.get("body")  :
-                           data.containsKey("message") ? data.get("message") : "New notification";
-
-            postNotification(title, body);
-        }
+    public void onMessageReceived(RemoteMessage remoteMessage) 
+    {    
+        super.onMessageReceived(remoteMessage);    
+        Log.d(TAG, "onMessageReceived from: " + remoteMessage.getFrom());    
+        Map<String, String> data = remoteMessage.getData();    
+        
+        // Get title/body from notification payload OR data payload    
+        String title = "Dynaface";    
+        String body = "New notification";    
+        if (remoteMessage.getNotification() != null) {        
+            // Notification payload        
+            title = remoteMessage.getNotification().getTitle() != null ? remoteMessage.getNotification().getTitle() : title;        
+            body = remoteMessage.getNotification().getBody() != null ? remoteMessage.getNotification().getBody() : body;    
+        } else if (data != null && !data.isEmpty()) {        
+            // Data-only payload      
+            title = data.containsKey("title") ? data.get("title") : title;        
+            body = data.containsKey("body") ? data.get("body") : data.containsKey("message") ? data.get("message") : body;    
+        }    
+        postNotification(title, body);
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
@@ -85,9 +82,12 @@ public class MyFirebaseMessagingService extends ReactNativeFirebaseMessagingServ
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, CHANNEL_ID)
-                        .setSmallIcon(R.drawable.notification_icon) // white/transparent silhouette icon
+                        .setSmallIcon(R.drawable.notification_icon)
                         .setContentTitle(title)
                         .setContentText(body)
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(body)
+                                .setBigContentTitle(title))
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true)
                         .setContentIntent(pendingIntent);
