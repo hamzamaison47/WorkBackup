@@ -53,6 +53,8 @@ import EmployeeAdvancesList from '../screens/EmployeeAdvances/EmployeeAdvancesLi
 import HrPoliciesScreen from '../screens/HrPolicies/HrPoliciesScreen';
 import HrNewsUpdatesScreen from '../screens/HrNewsUpdates/HrNewsUpdatesScreen';
 import OutstandingAdvancesScreen from '../screens/OutstandingAdvances/OutstandingAdvancesScreen';
+import ESSEmployeeCourse_ListPage from '../screens/EmployeeOpenCourse/ESSEmployeeCourse_ListPage';
+
 // Map MenuId from API → Screen component
 export const screenMapping = {
   // Tab Navigator Screens
@@ -105,6 +107,7 @@ export const screenMapping = {
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
   ESSEmployeeTask_ListPage: ESSEmployeeTask_ListPage,
   ESSEmployeeTaskDetail: ESSEmployeeTaskDetail,
+  ESSEmployeeCourse_ListPage: ESSEmployeeCourse_ListPage,
   // WorkflowHistoryScreen: WorkflowHistoryScreen,
   ChangeProfileImage: ChangeProfileImage,
   WorkflowDetailScreen: WorkflowDetailScreen,
