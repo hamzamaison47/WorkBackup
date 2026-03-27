@@ -45,6 +45,7 @@ import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAc
 import DateFormatSettingsScreen from '../screens/Profile/Preferences/DateSettings/DateFormatSettingsScreen';
 import ESSEmployeeTask_ListPage from '../screens/ESSEmployeeTask/ESSEmployeeTask_ListPage';
 import ESSEmployeeTaskDetail from '../screens/ESSEmployeeTask/ESSEmployeeTaskDetail';
+import ESSEmployeeCourse_ListPage from '../screens/EmployeeOpenCourse/ESSEmployeeCourse_ListPage';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -98,6 +99,7 @@ export const screenMapping = {
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
   ESSEmployeeTask_ListPage: ESSEmployeeTask_ListPage,
   ESSEmployeeTaskDetail: ESSEmployeeTaskDetail,
+  ESSEmployeeCourse_ListPage: ESSEmployeeCourse_ListPage,
   // WorkflowHistoryScreen: WorkflowHistoryScreen,
 };
 
