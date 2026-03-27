@@ -45,7 +45,14 @@ import BankAccountSaveRecord from '../screens/Profile/PersonalInformation/BankAc
 import DateFormatSettingsScreen from '../screens/Profile/Preferences/DateSettings/DateFormatSettingsScreen';
 import ESSEmployeeTask_ListPage from '../screens/ESSEmployeeTask/ESSEmployeeTask_ListPage';
 import ESSEmployeeTaskDetail from '../screens/ESSEmployeeTask/ESSEmployeeTaskDetail';
-
+import ChangeProfileImage from '../screens/Profile/PersonalInformation/ChangeProfileImage/ChangeProfileImage';
+import WorkflowDetailScreen from '../screens/WorkflowDetailScreen';
+import HRHelpDeskListScreen from '../screens/HRHelpDeskRequest/HRHelpDeskList_Screen';
+import HRHelpDeskSaveScreen from '../screens/HRHelpDeskRequest/HRHelpDeskSave_Screen';
+import EmployeeAdvancesList from '../screens/EmployeeAdvances/EmployeeAdvancesList';
+import HrPoliciesScreen from '../screens/HrPolicies/HrPoliciesScreen';
+import HrNewsUpdatesScreen from '../screens/HrNewsUpdates/HrNewsUpdatesScreen';
+import OutstandingAdvancesScreen from '../screens/OutstandingAdvances/OutstandingAdvancesScreen';
 // Map MenuId from API → Screen component
 export const screenMapping = {
   // Tab Navigator Screens
@@ -99,6 +106,14 @@ export const screenMapping = {
   ESSEmployeeTask_ListPage: ESSEmployeeTask_ListPage,
   ESSEmployeeTaskDetail: ESSEmployeeTaskDetail,
   // WorkflowHistoryScreen: WorkflowHistoryScreen,
+  ChangeProfileImage: ChangeProfileImage,
+  WorkflowDetailScreen: WorkflowDetailScreen,
+  HRHelpDeskListScreen: HRHelpDeskListScreen,
+  HRHelpDeskSaveScreen: HRHelpDeskSaveScreen,
+  EmployeeAdvancesList: EmployeeAdvancesList,
+  HrPoliciesScreen: HrPoliciesScreen,
+  HrNewsUpdatesScreen: HrNewsUpdatesScreen,
+  OutstandingAdvancesScreen: OutstandingAdvancesScreen,
 };
 
 // Map Images → Screen component
@@ -120,4 +135,8 @@ export const iconMapping = {
   PurchaseRequisitionListPage: require('..//assets//Maindashboard/PurchaseRequisition.png'),
   ExpenseManagmentListPage: require('../assets/Maindashboard/Expense.png'),
   EmployeeEOSRequestListPage: require('../assets/Maindashboard/EOSRequestNew.png'),
+  HRHelpDeskListScreen: require('../assets/Maindashboard/helpDesk.png'),
+  HrPoliciesScreen: require('../assets/Maindashboard/policies.png'),
+  HrNewsUpdatesScreen: require('../assets/Maindashboard/news.png'),
+  OutstandingAdvancesScreen: require('../assets/Maindashboard/Loan.png'),
 };

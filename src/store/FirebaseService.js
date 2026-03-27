@@ -101,7 +101,7 @@ class FirebaseService {
       this.messaging,
       async remoteMessage => {
         console.log('Foreground notification received:', remoteMessage);
-        this.showForegroundNotification(remoteMessage, navigation);
+        // this.showForegroundNotification(remoteMessage, navigation);
       },
     );
 

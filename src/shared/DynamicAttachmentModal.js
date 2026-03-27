@@ -667,33 +667,35 @@ const DynamicAttachmentModal = ({
           </View>
 
           {/* Action Buttons */}
-          <View style={styles.DAM_buttonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.DAM_cancelButton,
-                isAnyProcessing && styles.DAM_disabledButton,
-              ]}
-              onPress={onClose}
-              disabled={isAnyProcessing}>
-              <Text style={styles.DAM_cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+          {(showChooseFile || showTakePhoto) && (
+            <View style={styles.DAM_buttonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.DAM_cancelButton,
+                  isAnyProcessing && styles.DAM_disabledButton,
+                ]}
+                onPress={onClose}
+                disabled={isAnyProcessing}>
+                <Text style={styles.DAM_cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.DAM_saveButton,
-                isSaveDisabled && styles.DAM_saveButtonDisabled,
-              ]}
-              onPress={handleSave}
-              disabled={isSaveDisabled}>
-              {processingAction === 'save' ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.DAM_saveButtonText}>
-                  Save ({attachments.filter(a => a.isNew).length})
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.DAM_saveButton,
+                  isSaveDisabled && styles.DAM_saveButtonDisabled,
+                ]}
+                onPress={handleSave}
+                disabled={isSaveDisabled}>
+                {processingAction === 'save' ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.DAM_saveButtonText}>
+                    Save ({attachments.filter(a => a.isNew).length})
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 

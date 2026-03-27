@@ -6,7 +6,7 @@ import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
 
-const WorkflowItemAction = async ({recId, action}) => {
+const WorkflowItemAction = async ({recId, action, memo}) => {
   try {
     if (!recId || (Array.isArray(recId) && recId.length === 0)) {
       throw new Error('recId is required and cannot be empty.');
@@ -31,7 +31,7 @@ const WorkflowItemAction = async ({recId, action}) => {
     // 🔵 Build SOAP body for bulk processing
     const soapBody = `
       <workflowBulkActionProcess xmlns="http://tempuri.org">
-        <_comments>Mobile</_comments>
+        <_comments>${memo}</_comments>
         <_userId></_userId>
         <_workflowAction>${action}</_workflowAction>
         <_workflowWorkItemRecId xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">

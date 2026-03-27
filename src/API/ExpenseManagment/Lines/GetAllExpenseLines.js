@@ -31,7 +31,7 @@ const GetAllExpenseLines = async ({
     const soapEnvelope = createSoapEnvelope(soapBody);
 
     const response = await axios.post(
-      `${config.resource}soap/services/ExpenseManagmentSvcGroup/ExpenseLinesServiceSvc`,
+      `${config.resource}soap/services/ExpenseManagmentSvcGroup`,
       soapEnvelope,
       {
         headers: {
