@@ -307,6 +307,7 @@ const HRHelpDeskSaveScreen = () => {
         RecId: data.RecId === '' ? '0' : data.RecId,
         RequestId: data.RequestId || '',
         WFStatus: data.WFStatus || '',
+        EmpId: WorkerRecId,
       };
 
       let result;
@@ -321,7 +322,7 @@ const HRHelpDeskSaveScreen = () => {
         });
       }
 
-      if (result) {
+      if (result?.IsSuccess === 'true') {
         const recId = result.RecId || result.recId || data.RecId;
         const successMessage =
           modalMode === 'create'
@@ -333,7 +334,7 @@ const HRHelpDeskSaveScreen = () => {
 
         return {success: true, recId};
       } else {
-        setAlertMessage('Operation failed. Please try again.');
+        setAlertMessage(result.Message);
         setAlertModal(true);
         return {success: false};
       }
@@ -373,7 +374,7 @@ const HRHelpDeskSaveScreen = () => {
           setAlertModal(false);
           clearFormData();
 
-          navigation.navigate('HRHelpDeskList_Screen', {
+          navigation.navigate('HRHelpDeskListScreen', {
             employeeId: employeeId,
             employeeName: employeeName,
             WorkerRecId: WorkerRecId,

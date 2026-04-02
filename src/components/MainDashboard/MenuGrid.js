@@ -490,15 +490,15 @@ const LeavesAvailableSection = ({navigation, userData}) => {
 
       const formatted = filtered.map(item => {
         const total = Number(item.Accrued ?? 0);
-        const available = Number(item.Balance ?? 0);
+        const available = Number(item.Taken ?? 0);
 
         const accent = getTypeAccent(item.EntitlementCode);
 
         return {
           key: item.RecId ?? item.EntitlementCode,
           label: item.EntitlementCode,
-          available: Number(item.Balance ?? 0),
-          total: Number(item.Accrued ?? 1), // prevent divide by zero
+          available: available,
+          total: total,
           color: accent.color,
           bg: accent.bg,
         };
@@ -525,8 +525,6 @@ const LeavesAvailableSection = ({navigation, userData}) => {
       }).start();
     }
   }, [loading, fadeAnim]);
-
-  // ✅ Same behavior as ApprovalsSection
   if (!loading && items.length === 0) return null;
 
   return (
