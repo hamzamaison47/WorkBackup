@@ -31,6 +31,7 @@ import ESSMyRequestStatusListPage from '../screens/ESSMyRequestStatus';
 import AttendanceCalendarScreen from '../screens/Attendance/AttendanceCalendarScreen';
 import WorkItemsAssignedToMePage from '../screens/WorkItemsAssignedToMe/WorkItemAssignedToMe';
 import BiometricSettings from '../screens/Profile/Preferences/BiometricSettings/BiometricSettings';
+import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -67,6 +68,7 @@ export const screenMapping = {
   ExpenseManagementHeaderSaveRecord: ExpenseManagementHeaderSaveRecord,
   ExpenseManagmentLinesSaveRecord: ExpenseManagmentLinesSaveRecord,
   BiometricSettings: BiometricSettings,
+  AttendanceManagement: AttendanceManagement,
   // OutstandingAdvancesScreen: OutstandingAdvancesScreen,
   // TimeClockListPage: TimeClockListPage,
 };

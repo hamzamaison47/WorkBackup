@@ -7,6 +7,7 @@ import {useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {translate as t} from '../store/utils/translate';
+import {screenMapping} from './screenMapping';
 
 export default function CustomTabBar(props) {
   const tabBarState = props?.state;
@@ -17,7 +18,10 @@ export default function CustomTabBar(props) {
   const {menuItems} = useSelector(state => state.menuItem);
 
   const footerTabs = menuItems.filter(
-    item => item.Visible === '1' && item.DisplayOnFooter === 'Yes',
+    item =>
+      item.Visible === '1' &&
+      item.DisplayOnFooter === 'Yes' &&
+      screenMapping[item.MenuId],
   );
 
   const iconMap = {
@@ -31,6 +35,7 @@ export default function CustomTabBar(props) {
       unfocused: 'document-text-outline',
     },
     WorkItemsAssignedToMePage: {focused: 'list', unfocused: 'list-outline'},
+    AttendanceManagement: {focused: 'calendar', unfocused: 'calendar-outline'},
   };
 
   const uniqueFooterTabs = footerTabs

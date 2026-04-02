@@ -131,16 +131,20 @@ const CustomDrawerContent = props => {
   const filteredMenuItems = menuItems.filter(item => {
     return (
       screenMapping[item.MenuId] &&
-      [0, 2, 3].includes(Number(item.Type)) &&
+      // [0, 2, 3].includes(Number(item.Type)) &&
       item.Visible === '1' &&
       item.DisplayOnSideNavigation === 'Yes'
     );
   });
 
+  // console.log('filteredMenuItems', filteredMenuItems);
+
   const uniqueMenuItems = filteredMenuItems.filter(
     (it, idx, arr) =>
       !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
   );
+
+  // console.log('uniqueMenuItems', uniqueMenuItems);
 
   return (
     <View style={{flex: 1, backgroundColor: '#FAFAFA'}}>

@@ -14,13 +14,13 @@ def jscFlavor = 'org.webkit:android-jsc:+'
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
-    compileSdk 34
+    compileSdk rootProject.ext.compileSdkVersion
 
     namespace "com.authentication"
     
     defaultConfig {
         applicationId "com.authentication"
-        minSdkVersion 23
+        minSdkVersion 26
         targetSdkVersion 34
         versionCode 1
         versionName "1.0"
@@ -29,7 +29,6 @@ android {
             appAuthRedirectScheme: 'com.googleusercontent.apps.127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl'
         ]
         
-        missingDimensionStrategy 'react-native-camera', 'general'
         multiDexEnabled true
     }
     

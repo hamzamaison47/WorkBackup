@@ -29,6 +29,7 @@ import {
   getMessaging,
   setBackgroundMessageHandler,
 } from '@react-native-firebase/messaging';
+import AttendanceHeadlessTask from './src/services/AttendanceManagement/AttendanceHeadlessTask';
 
 /**
  * Background / killed-state message handler.
@@ -44,4 +45,18 @@ setBackgroundMessageHandler(getMessaging(), async remoteMessage => {
   console.log('📩 BG data-only message received in JS:', remoteMessage?.data);
 });
 
+// ── Main app ──────────────────────────────────────────────────────────────────
 AppRegistry.registerComponent(appName, () => App);
+
+// ── Attendance notification action headless task ──────────────────────────────
+//
+// Fires when the user taps "Start Break", "End Break", or "Clock Out"
+// on the persistent attendance notification — even when the app is killed.
+//
+// The task name 'AttendanceAction' must match the `taskName` field set in
+// AttendanceForegroundService.js → buildNotifConfig() → actions[].taskName
+//
+AppRegistry.registerHeadlessTask(
+  'AttendanceAction',
+  () => AttendanceHeadlessTask,
+);

@@ -11,6 +11,7 @@ import {store, persistor} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
 import firebaseService from './src/store/FirebaseService';
 import {selectIsRTL, selectCurrentLanguage} from './src/store/selectors';
+import Geolocation from '@react-native-community/geolocation';
 
 // Disable font scaling globally
 if (Text.defaultProps == null) Text.defaultProps = {};
@@ -59,6 +60,12 @@ const AppContent = () => {
     </NavigationContainer>
   );
 };
+
+Geolocation.setRNConfiguration({
+  skipPermissionRequests: false,
+  authorizationLevel: 'whenInUse',
+  locationProvider: 'auto',
+});
 
 const App = () => (
   <Provider store={store}>
