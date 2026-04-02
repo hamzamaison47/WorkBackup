@@ -11,6 +11,7 @@ import {store, persistor} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
 import firebaseService from './src/store/FirebaseService';
 import {selectIsRTL, selectCurrentLanguage} from './src/store/selectors';
+import useTheme from './src/theme/useTheme';
 import Geolocation from '@react-native-community/geolocation';
 
 // Disable font scaling globally
@@ -40,6 +41,7 @@ const AppContent = () => {
       console.error('Error checking RTL:', error);
     }
   }, [isRTL, currentLanguage]);
+  const {colors, isDark} = useTheme(); // ← ADD THIS
 
   useEffect(() => {
     // Pass the navigation ref so notification taps can navigate correctly.
@@ -55,7 +57,20 @@ const AppContent = () => {
   }, [checkRTL]);
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={{
+        // ← ADD THIS
+        dark: isDark,
+        colors: {
+          background: colors.background,
+          card: colors.card,
+          text: colors.text,
+          border: colors.border,
+          primary: colors.primary,
+          notification: colors.primary,
+        },
+      }}>
       <AppNavigator />
     </NavigationContainer>
   );

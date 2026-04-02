@@ -36,6 +36,7 @@ import {CreateEducationDetails} from '../../../../API/PersonalInformation/Educat
 import {UpdateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonEducationIUpdate';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
+import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
 
 import styles from '../../../../styles/styles';
 import {conditionalVerticalScale} from '../../../../store/utils/scaling';
@@ -111,6 +112,7 @@ const PersonalEducationSaveRecord = () => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
   const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
+  const [educationLabels, setEducationLabels] = useState({});
 
   /* ---------- helpers ---------- */
   const formatDate = date => {
@@ -120,6 +122,17 @@ const PersonalEducationSaveRecord = () => {
       d.getDate(),
     ).padStart(2, '0')}/${d.getFullYear()}`;
   };
+
+  const fetchEducationLabels = useCallback(async () => {
+    try {
+      const labels = await GetPersonalEducationLabel();
+      console.log('Labels received in screen:', labels);
+      return labels || {};
+    } catch (error) {
+      console.error('Error fetching Education labels:', error);
+      return {};
+    }
+  }, []);
 
   const checkWorkflowConfig = useCallback(async () => {
     try {
@@ -165,17 +178,17 @@ const PersonalEducationSaveRecord = () => {
 
   /* ---------- back ---------- */
   const goBack = useCallback(() => {
-    if (cameFrom === 'PersonalEducation') {
+    if (cameFrom === 'PersonalEducationListPage') {
       navigation.reset({
         index: 0,
         routes: [
           {
-            name: 'PersonalEducation',
+            name: 'PersonalEducationListPage',
             params: {
               employeeId,
               employeeName,
               WorkerRecId,
-              cameFrom: originalCameFrom || 'PersonalEducation',
+              cameFrom: originalCameFrom || 'PersonalEducationListPage',
             },
           },
         ],
@@ -266,11 +279,42 @@ const PersonalEducationSaveRecord = () => {
     }
   }, [educationData]); // ← only changes if initial data changes
 
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     fetchDisciplines();
+  //     setProcessingButton('');
+  //   }, [fetchDisciplines]),
+  // );
+
   useFocusEffect(
     useCallback(() => {
-      fetchDisciplines();
+      let isActive = true;
+
+      const initializeScreen = async () => {
+        setIsLoading(true);
+        try {
+          const [labels] = await Promise.all([
+            fetchEducationLabels(),
+            fetchDisciplines(),
+          ]);
+
+          if (!isActive) return;
+
+          setEducationLabels(labels);
+        } catch (err) {
+          console.error('Error loading education screen:', err);
+        } finally {
+          if (isActive) setIsLoading(false);
+        }
+      };
+
+      initializeScreen();
       setProcessingButton('');
-    }, [fetchDisciplines]),
+
+      return () => {
+        isActive = false;
+      };
+    }, [fetchDisciplines, fetchEducationLabels]),
   );
 
   /* ---------- input ---------- */
@@ -356,26 +400,26 @@ const PersonalEducationSaveRecord = () => {
       setTimeout(() => {
         setAlertModal(false);
         /* ── same reset logic used by Cancel ── */
-        if (cameFrom === 'PersonalEducation') {
+        if (cameFrom === 'PersonalEducationListPage') {
           navigation.reset({
             index: 0,
             routes: [
               {
-                name: 'PersonalEducation',
+                name: 'PersonalEducationListPage',
                 params: {
                   employeeId,
                   employeeName,
                   WorkerRecId: WorkerRecId,
-                  cameFrom: originalCameFrom || 'PersonalEducation',
+                  cameFrom: originalCameFrom || 'PersonalEducationListPage',
                   highlightRecId: recId, // optional – scroll to the row
                 },
               },
             ],
           });
         } else {
-          navigation.navigate('PersonalEducation', {
+          navigation.navigate('PersonalEducationListPage', {
             highlightRecId: recId,
-            cameFrom: originalCameFrom || 'PersonalEducation',
+            cameFrom: originalCameFrom || 'PersonalEducationListPage',
           });
         }
       }, 1200);
@@ -430,7 +474,9 @@ const PersonalEducationSaveRecord = () => {
             contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled">
-            <Text style={styles.DSR_Label}>Education *</Text>
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.EducationDisciplinelbl || 'Education *'}
+            </Text>
             {mode === 'edit' ? (
               <Text
                 style={[
@@ -467,7 +513,9 @@ const PersonalEducationSaveRecord = () => {
               />
             )}
 
-            <Text style={styles.DSR_Label}>Description *</Text>
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.Descriptionlbl || 'Description'}
+            </Text>
             <TextInput
               style={styles.DSR_Input}
               value={formData.Description}
@@ -476,7 +524,9 @@ const PersonalEducationSaveRecord = () => {
               placeholderTextColor="#888"
             />
 
-            <Text style={styles.DSR_Label}>Duration Unit *</Text>
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.DurationUnitlbl || 'Duration Unit *'}
+            </Text>
             <Dropdown
               style={styles.DSR_Input}
               data={durationOptions}
@@ -498,7 +548,9 @@ const PersonalEducationSaveRecord = () => {
               itemContainerStyle={styles.DSR_DropdownItemContainer}
             />
 
-            <Text style={styles.DSR_Label}>Duration *</Text>
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.Durationlbl || 'Duration *'}
+            </Text>
             <TextInput
               style={styles.DSR_Input}
               value={formData.Duration}
@@ -510,7 +562,11 @@ const PersonalEducationSaveRecord = () => {
               keyboardType="numeric"
             />
 
-            <Text style={styles.DSR_Label}>Start Date</Text>
+            {/* <Text style={styles.DSR_Label}>Start Date</Text> */}
+
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.StartDatelbl || 'Start Date*'}
+            </Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => setShowStartDateCalendar(true)}>
@@ -524,7 +580,9 @@ const PersonalEducationSaveRecord = () => {
               <Icon name="calendar" size={20} color="#0A66C2" />
             </TouchableOpacity>
 
-            <Text style={styles.DSR_Label}>End Date</Text>
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.EndDatelbl || 'End Date'}
+            </Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => setShowEndDateCalendar(true)}>
@@ -538,7 +596,9 @@ const PersonalEducationSaveRecord = () => {
               <Icon name="calendar" size={20} color="#0A66C2" />
             </TouchableOpacity>
 
-            <Text style={styles.DSR_Label}>Notes</Text>
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.Noteslbl || 'Notes'}
+            </Text>
             <TextInput
               style={[styles.DSR_Input, styles.DSR_TextArea]}
               value={formData.Notes}

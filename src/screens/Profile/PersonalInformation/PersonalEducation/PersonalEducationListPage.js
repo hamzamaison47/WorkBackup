@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -33,10 +33,11 @@ import {EmployeePersonalEducation} from '../../../../API/PersonalInformation/Edu
 import {DeleteEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationDelete';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
+import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
 
 import styles from '../../../../styles/styles';
 
-const PersonalEducation = () => {
+const PersonalEducationListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
@@ -165,9 +166,8 @@ const PersonalEducation = () => {
 
   /* ---------- status ---------- */
   const getStatusLabel = status => {
-    if (!status) return '';
+    if (!status) return 'Approved'; // ← empty = Approved
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
-
     const map = {
       draft: 'Draft',
       inreview: 'In review',
@@ -191,54 +191,38 @@ const PersonalEducation = () => {
     return map[normalizedStatus] ?? '';
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return educationData;
-
-  //   return educationData.filter(item => {
-  //     const status = getStatusLabel(item.ApprovalStatus);
-
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending');
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : educationData;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.ApprovalStatus);
-
-      if (activeFilter === 'Pending') {
-        return status === 'In review' || status.includes('Pending');
-      }
-
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => getStatusLabel(item.ApprovalStatus) === activeFilter,
+    ); // ← fix
   };
 
   const getFilterCounts = () => {
     const counts = {All: educationData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = educationData.filter(item => {
-          const status = getStatusLabel(item.ApprovalStatus);
-          return status === 'In review' || status.includes('Pending');
-        }).length;
-      } else {
-        counts[pill] = educationData.filter(
-          item => getStatusLabel(item.ApprovalStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(
+        educationData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ),
+    ].forEach(status => {
+      // ← fix
+      counts[status] = educationData.filter(
+        item => getStatusLabel(item.ApprovalStatus) === status,
+      ).length;
     });
-
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!educationData.length) return ['All'];
+    const unique = [
+      ...new Set(
+        educationData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ), // ← fix
+    ];
+    return ['All', ...unique.filter(s => s !== '')];
+  }, [educationData]);
 
   /* ---------- buttons ---------- */
   // Fix: rename param to avoid shadowing isProcessing state
@@ -326,8 +310,8 @@ const PersonalEducation = () => {
           employeeName: effectiveEmployeeName,
           WorkerRecId: effectiveWorkerRecId,
           userData: effectiveUserData,
-          cameFrom: 'PersonalEducation',
-          originalCameFrom: 'PersonalEducation',
+          cameFrom: 'PersonalEducationListPage',
+          originalCameFrom: 'PersonalEducationListPage',
           educationData: itemData,
         });
         break;
@@ -354,8 +338,8 @@ const PersonalEducation = () => {
       employeeName: effectiveEmployeeName,
       WorkerRecId: effectiveWorkerRecId,
       userData: effectiveUserData,
-      cameFrom: 'PersonalEducation',
-      originalCameFrom: 'PersonalEducation',
+      cameFrom: 'PersonalEducationListPage',
+      originalCameFrom: 'PersonalEducationListPage',
       educationData: {
         Education: '',
         Description: '',
@@ -458,14 +442,34 @@ const PersonalEducation = () => {
   const cardConfig = {
     headerConfig: {title: {key: 'EducationDisciplineId', label: 'Education'}},
     fields: [
-      {key: 'Description', label: 'Description', type: 'text'},
-      {key: 'DurationUnit', label: 'Duration Unit', type: 'text'},
-      {key: 'Duration', label: 'Duration', type: 'number'},
+      {
+        key: 'Description',
+        label: educationData[0]?.Descriptionlbl || 'Description',
+        type: 'text',
+      },
+      {
+        key: 'DurationUnit',
+        label: educationData[0]?.DurationUnitlbl || 'Duration Unit',
+        type: 'text',
+      },
+      {
+        key: 'Duration',
+        label: educationData[0]?.Durationlbl || 'Duration',
+        type: 'number',
+      },
       {key: 'ApprovalStatus', label: '', type: 'status'},
     ],
     expandableFields: [
-      {key: 'StartDate', label: 'Start Date', type: 'date'},
-      {key: 'EndDate', label: 'End Date', type: 'date'},
+      {
+        key: 'StartDate',
+        label: educationData[0]?.StartDatelbl || 'Start Date',
+        type: 'date',
+      },
+      {
+        key: 'EndDate',
+        label: educationData[0]?.EndDatelbl || 'End Date',
+        type: 'date',
+      },
       {key: 'Notes', label: 'Notes', type: 'text'},
     ],
     isRTL: isRTL,
@@ -528,6 +532,7 @@ const PersonalEducation = () => {
         isHighlighted={highlightedRecId === item.RecId}
         processingButtons={processingButtons[item.RecId] || []}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -544,6 +549,7 @@ const PersonalEducation = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -585,9 +591,14 @@ const PersonalEducation = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -595,13 +606,9 @@ const PersonalEducation = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}
@@ -665,4 +672,4 @@ const PersonalEducation = () => {
   );
 };
 
-export default PersonalEducation;
+export default PersonalEducationListPage;

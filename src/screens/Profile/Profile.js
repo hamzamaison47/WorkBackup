@@ -1,62 +1,59 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 import React, {useState, useEffect, useCallback} from 'react';
-import {
-  View,
-  Text,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-  RefreshControl,
-  TouchableOpacity,
-  I18nManager,
-} from 'react-native';
+import {View, Text, RefreshControl, Image} from 'react-native';
 import {useSelector} from 'react-redux';
-import Icon from 'react-native-vector-icons/Feather';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 
 // Components
 import AlertModal from '../../components/Alert/AlertModal';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import LogoutAlertModal from '../../components/Alert/LogoutAlertModal';
-import LanguageModal from '../../components/Alert/LanguageModal';
-import ProfilePictureEditor from '../../components/PersonalInformation/ProfilePictureEditor';
 
-// API imports
+// API
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
 
-// Translation utility
-import {translate as t} from '../../store/utils/translate';
+// Utils
+import {conditionalFontScale} from '../../store/utils/scaling';
 
-// Styles imports
+// Design system
+import {
+  PageBackground,
+  AnimatedCard,
+  CardHeading,
+  SettingRow,
+  AppTokens,
+  CARD_STAGGER,
+} from '../../components/AppComponentsDesign/Appcomponents';
+import useAppTokens from '../../components/AppComponentsDesign/useAppTokens';
+
 import styles from '../../styles/styles';
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 const Profile = ({navigation}) => {
+  const T = useAppTokens(); // ✅ reactive theme tokens
+
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState(null);
-  const [isImageChanged, setIsImageChanged] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
-  // Select data from Redux store
   const userData = useSelector(state => state.user.userData);
-  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   const fetchProfilePicture = useCallback(async () => {
     try {
       if (!userData?.employeeId) return;
-
       const data = await ProfilePicture({employeeId: userData.employeeId});
-      let imageData = Array.isArray(data) && data.length > 0 ? data[0] : data;
-
+      const imageData = Array.isArray(data) && data.length > 0 ? data[0] : data;
       if (imageData?.StringImage) {
-        const cleanBase64 = imageData.StringImage.replace(/\s/g, '');
-        setProfilePictureUrl(`data:image/png;base64,${cleanBase64}`);
+        const clean = imageData.StringImage.replace(/\s/g, '');
+        setProfilePictureUrl(`data:image/png;base64,${clean}`);
       }
-    } catch (e) {
+    } catch {
       setProfilePictureUrl(null);
     } finally {
       setIsLoading(false);
@@ -69,13 +66,8 @@ const Profile = ({navigation}) => {
   }, [fetchProfilePicture]);
 
   const handleRefresh = async () => {
-    setIsImageChanged(false);
     setRefreshing(true);
     await fetchProfilePicture();
-  };
-
-  const handleLogout = () => {
-    setModalVisible(true);
   };
 
   const confirmLogout = () => {
@@ -83,158 +75,178 @@ const Profile = ({navigation}) => {
     navigation.navigate('Login');
   };
 
-  const cancelLogout = () => {
-    setModalVisible(false);
-  };
-
   const getUserInitials = () => {
-    const name = userData?.name || userData?.employeeName || 'Username';
+    const name = userData?.name || userData?.employeeName || '?';
     return name
       .split(' ')
+      .slice(0, 2)
       .map(n => n[0])
       .join('')
       .toUpperCase();
   };
 
-  const getSettingsItems = () => {
-    return [
-      {
-        id: 'account',
-        icon: 'user',
-        title: t('profile.personalInfo'),
-        subtitle: t('profile.personalInfoSubtitle'),
-        screen: 'DisplayPersonalInfo',
-      },
-      {
-        id: 'BiometricSettings',
-        icon: 'shield',
-        title: t('profile.biometricSettings'),
-        subtitle: t('profile.biometricSubtitle'),
-        screen: 'BiometricSettings',
-      },
-      {
-        id: 'language',
-        icon: 'globe',
-        title: t('profile.language'),
-        subtitle: t('profile.languageSubtitle'),
-        onPress: () => setLanguageModalVisible(true),
-      },
-    ];
-  };
-
   const getPoweredByText = () => {
     const currentYear = new Date().getFullYear();
-    const nextYear = currentYear + 1;
-    const nextYearShort = nextYear.toString().slice(-2);
-
-    return t('profile.poweredBy')
-      .replace('{currentYear}', currentYear)
-      .replace('{nextYearShort}', nextYearShort);
+    const nextYearShort = String(currentYear + 1).slice(-2);
+    return `Powered by Dynaface © ${currentYear}/${nextYearShort}`;
   };
-
-  const renderSettingItem = item => {
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={styles.Profile_settingItem}
-        onPress={() => {
-          if (item.onPress) {
-            item.onPress();
-          } else if (item.screen && item.screen.trim() !== '') {
-            navigation.navigate(item.screen);
-          }
-        }}>
-        <View style={styles.Profile_settingContent}>
-          <View style={styles.Profile_settingIconWrapper}>
-            <Icon name={item.icon} size={18} color="#0A66C2" />
-          </View>
-          <View style={styles.Profile_settingTextContainer}>
-            <Text style={styles.Profile_settingTitle}>{item.title}</Text>
-            <Text style={styles.Profile_settingSubtitle}>{item.subtitle}</Text>
-          </View>
-          <Icon
-            name={I18nManager.isRTL ? 'chevron-left' : 'chevron-right'}
-            size={20}
-            color="#999"
-          />
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const settingsItems = getSettingsItems();
 
   return (
     <ActionPaneContainer
-      pageTitle={t('profile.title')}
+      pageTitle="Profile"
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
       showTabNavigator={true}
-      onRefresh={() => handleRefresh()}>
+      showPageTitleRow={true}
+      onRefresh={handleRefresh}>
       {isLoading ? (
-        <View style={styles.DLP_LoadingContainer}>
+        <View style={styles.Prf_loadingWrap}>
           <CustomIndicator />
         </View>
       ) : (
-        <View style={styles.Profile_container}>
-          <ScrollView
-            contentContainerStyle={styles.Profile_scrollContainer}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-              />
-            }>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}>
-              {/* Profile Header */}
-              <View style={styles.Profile_profileHeader}>
-                <View style={styles.Profile_avatarContainer}>
-                  {profilePictureUrl ? (
-                    <ProfilePictureEditor
-                      isLoading={isLoading}
-                      profilePictureUrl={profilePictureUrl}
-                      onEdit={() => {}}
-                      userData={userData}
-                    />
-                  ) : (
-                    <View style={styles.Profile_avatarFallback}>
-                      <Text style={styles.Profile_avatarText}>
-                        {getUserInitials()}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+        <PageBackground
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }>
+          {/* ── Avatar strip ─────────────────────────────────────────────── */}
+          <AnimatedCard delay={0} style={styles.Prf_avatarCard}>
+            <View style={styles.Prf_avatarRow}>
+              <View style={styles.Prf_avatarCircle}>
+                {profilePictureUrl ? (
+                  <Image
+                    source={{uri: profilePictureUrl}}
+                    style={styles.Prf_avatarImage}
+                  />
+                ) : (
+                  // ✅ surface bg instead of hardcoded #E8E3F3
+                  <View
+                    style={[
+                      styles.Prf_avatarFallback,
+                      {backgroundColor: T.surface},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.Prf_avatarInitials,
+                        {color: AppTokens.indigo},
+                      ]}>
+                      {getUserInitials()}
+                    </Text>
+                  </View>
+                )}
               </View>
 
-              {/* Settings Card */}
-              <View style={styles.Profile_card}>
-                {settingsItems.map(renderSettingItem)}
+              <View style={styles.Prf_avatarTextBlock}>
+                {/* ✅ titleText instead of hardcoded */}
+                <Text
+                  style={[styles.Prf_avatarName, {color: T.titleText}]}
+                  numberOfLines={1}>
+                  {userData?.name || userData?.employeeName || 'User'}
+                </Text>
+                {/* ✅ subtitleText instead of hardcoded */}
+                <Text
+                  style={[styles.Prf_avatarRole, {color: T.subtitleText}]}
+                  numberOfLines={1}>
+                  {userData?.jobTitle
+                    ? userData.jobTitle
+                    : userData?.employeeId
+                    ? `Employee ID · ${userData.employeeId}`
+                    : 'Employee'}
+                </Text>
               </View>
-            </KeyboardAvoidingView>
-          </ScrollView>
-        </View>
+            </View>
+          </AnimatedCard>
+
+          {/* ── Contact card ─────────────────────────────────────────────── */}
+          <AnimatedCard delay={CARD_STAGGER}>
+            <CardHeading label="CONTACT DETAILS" />
+            <View style={styles.Prf_emailRow}>
+              {/* ✅ blueBg instead of hardcoded */}
+              <View
+                style={[
+                  styles.Prf_emailIconBadge,
+                  {backgroundColor: AppTokens.blueBg},
+                ]}>
+                <FeatherIcon
+                  name="mail"
+                  size={conditionalFontScale(15, 15, 16, 16)}
+                  color={AppTokens.blue}
+                />
+              </View>
+              {/* ✅ titleText instead of hardcoded */}
+              <Text
+                style={[styles.Prf_emailValue, {color: T.titleText}]}
+                numberOfLines={1}>
+                {userData?.email ?? '—'}
+              </Text>
+            </View>
+          </AnimatedCard>
+
+          {/* ── General card ─────────────────────────────────────────────── */}
+          <AnimatedCard delay={CARD_STAGGER * 2}>
+            <CardHeading label="GENERAL" />
+            <SettingRow
+              icon="user"
+              iconColor={AppTokens.blue}
+              iconBg={AppTokens.blueBg}
+              title="Personal Information"
+              subtitle="Manage your personal details"
+              onPress={() => navigation.navigate('DisplayPersonalInfo')}
+            />
+            <SettingRow
+              icon="settings"
+              iconColor={AppTokens.slate}
+              iconBg={AppTokens.slateBg}
+              title="Settings"
+              subtitle="App preferences and configuration"
+              onPress={() => navigation.navigate('SettingsScreen')}
+              isLast
+            />
+          </AnimatedCard>
+
+          {/* ── Legal card ───────────────────────────────────────────────── */}
+          <AnimatedCard delay={CARD_STAGGER * 3}>
+            <CardHeading label="LEGAL" />
+            <SettingRow
+              icon="file-text"
+              iconColor={AppTokens.indigo}
+              iconBg={AppTokens.indigoBg}
+              title="Privacy Policy"
+              subtitle="How we handle your data"
+              onPress={() => navigation.navigate('PrivacyPolicy')}
+            />
+            <SettingRow
+              icon="book-open"
+              iconColor={AppTokens.teal}
+              iconBg={AppTokens.tealBg}
+              title="Terms of Service"
+              subtitle="Rules governing use of the app"
+              onPress={() => navigation.navigate('TermsOfService')}
+            />
+            <SettingRow
+              icon="shield"
+              iconColor={AppTokens.green}
+              iconBg={AppTokens.greenBg}
+              title="Cookie Policy"
+              subtitle="How we use cookies and tracking"
+              onPress={() => navigation.navigate('CookiePolicy')}
+              isLast
+            />
+          </AnimatedCard>
+        </PageBackground>
       )}
-
-      <LanguageModal
-        visible={languageModalVisible}
-        onClose={() => setLanguageModalVisible(false)}
-      />
 
       <LogoutAlertModal
         visible={modalVisible}
-        heading={t('profile.logoutConfirm')}
-        text={t('profile.logoutConfirm')}
+        heading="Logout"
+        text="Are you sure you want to logout?"
         onConfirm={confirmLogout}
-        onCancel={cancelLogout}
+        onCancel={() => setModalVisible(false)}
       />
-
       <AlertModal
         visible={alertModal}
-        heading={t('common.alert')}
+        heading="Alert"
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />

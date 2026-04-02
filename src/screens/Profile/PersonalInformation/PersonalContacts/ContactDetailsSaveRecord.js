@@ -106,26 +106,18 @@ const ContactDetailsSaveRecord = () => {
   console.log('Contract Data', contactData);
 
   /* -------  FORM INITIALISER  ------- */
-  const createInitialFormData = () => ({
-    RecId: contactData?.RecId || '',
+  const createInitialFormData = data => ({
+    RecId: data?.RecId || '',
     EmployeeId: employeeId,
     WorkerRecId: WorkerRecId,
-    Type: contactData?.Type || 'Phone',
-    Locator: contactData?.Locator || '',
-    LocatorExtension: contactData?.LocatorExtension || '',
-    Description: contactData?.Description || '',
-    IsPrimary:
-      contactData?.IsPrimary === 'true' ||
-      contactData?.IsPrimary === true ||
-      false,
-    IsPrivate:
-      contactData?.IsPrivate === 'true' ||
-      contactData?.IsPrivate === true ||
-      false,
+    Type: data?.Type || 'Phone',
+    Locator: data?.Locator || '',
+    LocatorExtension: data?.LocatorExtension || '',
+    Description: data?.Description || '',
+    IsPrimary: data?.IsPrimary === 'Yes' || data?.IsPrimary === true || false,
+    IsPrivate: data?.IsPrivate === 'Yes' || data?.IsPrivate === true || false,
     IsMobilePhone:
-      contactData?.IsMobilePhone === 'true' ||
-      contactData?.IsMobilePhone === true ||
-      false,
+      data?.IsMobilePhone === 'Yes' || data?.IsMobilePhone === true || false,
   });
 
   /* -------  STATE  ------- */
@@ -279,11 +271,11 @@ const ContactDetailsSaveRecord = () => {
   useFocusEffect(
     useCallback(() => {
       if (mode === 'create') {
-        setFormData(createInitialFormData());
-      } else if (mode === 'edit' && contactData?.RecId) {
-        setFormData(createInitialFormData());
+        setFormData(createInitialFormData({}));
+      } else if (mode === 'edit') {
+        setFormData(createInitialFormData(contactData));
       }
-    }, [mode, contactData?.RecId]),
+    }, [mode, contactData]),
   );
 
   /* -------  HELPERS  ------- */
@@ -348,7 +340,7 @@ const ContactDetailsSaveRecord = () => {
         Type: formData.Type,
         Locator: formData.Locator,
         Location: formData.Location || '0',
-        LocatorExtension: formData.LocatorExtension || '0',
+        LocatorExtension: formData.LocatorExtension || '',
         Description: formData.Description || '',
         IsPrimary: formData.IsPrimary ? 'Yes' : 'No',
         IsPrivate: formData.IsPrivate ? 'Yes' : 'No',
@@ -480,7 +472,7 @@ const ContactDetailsSaveRecord = () => {
             />
 
             {/* ── Extension – only for phone-type contacts ── */}
-            {isPhoneType && (
+            {/* {isPhoneType && (
               <>
                 <Text style={styles.DSR_Label}>Extension</Text>
                 <TextInput
@@ -494,7 +486,7 @@ const ContactDetailsSaveRecord = () => {
                   keyboardType="phone-pad"
                 />
               </>
-            )}
+            )} */}
 
             {/* ── Description ── */}
             <Text style={styles.DSR_Label}>Description</Text>
@@ -538,11 +530,12 @@ const ContactDetailsSaveRecord = () => {
             isDisabled={
               processingButton === 'create' || processingButton === 'submit'
             }
-            showButtons={
-              mode === 'edit'
-                ? [BUTTON_TYPES.UPDATE, BUTTON_TYPES.CANCEL]
-                : [BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]
-            }
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+            // showButtons={
+            //   mode === 'edit'
+            //     ? [BUTTON_TYPES.UPDATE, BUTTON_TYPES.CANCEL]
+            //     : [BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]
+            // }
           />
         </SafeAreaView>
       )}

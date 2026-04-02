@@ -1,4 +1,4 @@
-/* eslint-disable no-unused-vars */
+// /* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 // store/utils/scaling.js
 // IMPROVED PRODUCTION-READY RESPONSIVE SCALING FOR ANDROID
@@ -8,19 +8,19 @@ import {Dimensions, Platform, PixelRatio} from 'react-native';
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 // Design baseline - Pixel 7 (most common Android size in 2024)
-const GUIDELINE_WIDTH = 393; // Changed from 375 to better match modern Android
-const GUIDELINE_HEIGHT = 851; // Changed from 812
+const GUIDELINE_WIDTH = 393;
+const GUIDELINE_HEIGHT = 851;
 
 // Calculate aspect ratio
 const ASPECT_RATIO = SCREEN_HEIGHT / SCREEN_WIDTH;
 
-// Device categorization with more granular breakpoints
-const EXTRA_SMALL_WIDTH = 360; // Small budget phones
-const SMALL_SCREEN_WIDTH = 375; // iPhone SE, small Android
-const MEDIUM_SCREEN_WIDTH = 393; // Pixel 7, most modern phones
-const LARGE_SCREEN_WIDTH = 412; // Galaxy S23, Pixel 7 Pro
-const EXTRA_LARGE_WIDTH = 428; // iPhone Pro Max size
-const TABLET_WIDTH = 600; // 7" tablets and up
+// Device categorization
+const EXTRA_SMALL_WIDTH = 360;
+const SMALL_SCREEN_WIDTH = 375;
+const MEDIUM_SCREEN_WIDTH = 393;
+const LARGE_SCREEN_WIDTH = 412;
+const EXTRA_LARGE_WIDTH = 428;
+const TABLET_WIDTH = 600;
 
 // Screen size detection
 export const isExtraSmallScreen = SCREEN_WIDTH < EXTRA_SMALL_WIDTH;
@@ -55,14 +55,11 @@ export const aspectRatio = ASPECT_RATIO;
 
 /**
  * Horizontal scale with improved clamping
- * Prevents extreme scaling on very small or very large devices
  */
 export const scale = size => {
   const scaleFactor = SCREEN_WIDTH / GUIDELINE_WIDTH;
-
-  // More conservative clamping
-  const MIN_SCALE = 0.8; // Allows 80% of original size
-  const MAX_SCALE = 1.35; // Allows 135% of original size
+  const MIN_SCALE = 0.8;
+  const MAX_SCALE = 1.15; // REDUCED from 1.35 — prevents oversizing on large phones
 
   const clampedFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scaleFactor));
   const finalFactor = isMediumScreen ? clampedFactor * 0.95 : clampedFactor;
@@ -71,16 +68,13 @@ export const scale = size => {
 
 /**
  * Vertical scale with aspect ratio awareness
- * Prevents excessive vertical spacing on tall phones
  */
 export const verticalScale = size => {
   const scaleFactor = SCREEN_HEIGHT / GUIDELINE_HEIGHT;
-
-  // Apply aspect ratio correction for ultra-tall screens (21:9, 20:9, etc.)
   const aspectRatioCorrection = ASPECT_RATIO > 2.2 ? 0.92 : 1.0;
 
   const MIN_SCALE = 0.8;
-  const MAX_SCALE = 1.35;
+  const MAX_SCALE = 1.15; // REDUCED from 1.35
 
   const clampedFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scaleFactor));
   const finalFactor = isMediumScreen ? clampedFactor * 0.95 : clampedFactor;
@@ -89,7 +83,6 @@ export const verticalScale = size => {
 
 /**
  * Moderate scale - less aggressive scaling for fonts and icons
- * factor: 0 = no scaling, 0.5 = moderate, 1 = full scaling
  */
 export const moderateScale = (size, factor = 0.4) => {
   const scaledSize = scale(size);
@@ -97,45 +90,36 @@ export const moderateScale = (size, factor = 0.4) => {
 };
 
 /**
- * Font scaling with platform-specific adjustments
- * More conservative min/max to prevent readability issues
+ * Font scaling — RAW size only, no device-relative multiplier.
+ * conditionalFontScale already picks the right size per device,
+ * so fontScale must NOT re-scale on top of that.
  */
 export const fontScale = size => {
-  const rawScaleFactor = SCREEN_WIDTH / GUIDELINE_WIDTH;
-
-  // Tighter clamping for fonts to ensure readability
-  const MIN_SCALE = 0.85;
-  const MAX_SCALE = 1.25;
-
-  const scaleFactor = Math.max(MIN_SCALE, Math.min(MAX_SCALE, rawScaleFactor));
-  const finalFactor = isMediumScreen ? scaleFactor * 0.95 : scaleFactor;
-  const newSize = size * finalFactor;
-
+  // Just round to nearest pixel — no multiplier.
+  // The device-appropriate size is already chosen by conditionalFontScale.
   if (Platform.OS === 'ios') {
-    return Math.round(PixelRatio.roundToNearestPixel(newSize));
+    return Math.round(PixelRatio.roundToNearestPixel(size));
   }
-  // Android optimization
-  return Math.round(PixelRatio.roundToNearestPixel(newSize));
+  return Math.round(PixelRatio.roundToNearestPixel(size));
 };
 
 // ============================================
-// CONDITIONAL SCALING (IMPROVED)
+// CONDITIONAL SCALING (FIXED — no double-scaling)
 // ============================================
 
 /**
- * Conditional scale with 6 size options for fine-grained control
- * Provides better support for wide range of devices
+ * Conditional scale — picks raw size per breakpoint, then scales once.
  */
 export const conditionalScale = (
-  xSmallSize, // < 360dp
-  smallSize, // 360-374dp
-  mediumSize, // 375-411dp
-  largeSize, // 412-427dp
-  xLargeSize = null, // 428-599dp
-  tabletSize = null, // 600dp+
+  xSmallSize,
+  smallSize,
+  mediumSize,
+  largeSize,
+  xLargeSize = null,
+  tabletSize = null,
 ) => {
-  if (isTablet) return scale(tabletSize || xLargeSize || largeSize * 1.3);
-  if (isExtraLargeScreen) return scale(xLargeSize || largeSize * 1.15);
+  if (isTablet) return scale(tabletSize || xLargeSize || largeSize * 1.15);
+  if (isExtraLargeScreen) return scale(xLargeSize || largeSize * 1.05);
   if (isLargeScreen) return scale(largeSize);
   if (isMediumScreen) return scale(mediumSize);
   if (isSmallScreen) return scale(smallSize);
@@ -143,7 +127,7 @@ export const conditionalScale = (
 };
 
 /**
- * Conditional vertical scale with aspect ratio awareness
+ * Conditional vertical scale
  */
 export const conditionalVerticalScale = (
   xSmallSize,
@@ -154,8 +138,8 @@ export const conditionalVerticalScale = (
   tabletSize = null,
 ) => {
   if (isTablet)
-    return verticalScale(tabletSize || xLargeSize || largeSize * 1.3);
-  if (isExtraLargeScreen) return verticalScale(xLargeSize || largeSize * 1.15);
+    return verticalScale(tabletSize || xLargeSize || largeSize * 1.15);
+  if (isExtraLargeScreen) return verticalScale(xLargeSize || largeSize * 1.05);
   if (isLargeScreen) return verticalScale(largeSize);
   if (isMediumScreen) return verticalScale(mediumSize);
   if (isSmallScreen) return verticalScale(smallSize);
@@ -163,7 +147,12 @@ export const conditionalVerticalScale = (
 };
 
 /**
- * Conditional font scale with readability preservation
+ * Conditional font scale — FIXED.
+ * Picks the right size for the device, then calls fontScale() which is now
+ * just a pixel-rounding passthrough (no multiplier applied twice).
+ *
+ * Also caps the final font size so it never exceeds the medium value by more
+ * than 15% — prevents ballooning on large phones.
  */
 export const conditionalFontScale = (
   xSmallSize,
@@ -173,12 +162,26 @@ export const conditionalFontScale = (
   xLargeSize = null,
   tabletSize = null,
 ) => {
-  if (isTablet) return fontScale(tabletSize || xLargeSize || largeSize * 1.2);
-  if (isExtraLargeScreen) return fontScale(xLargeSize || largeSize * 1.1);
-  if (isLargeScreen) return fontScale(largeSize);
-  if (isMediumScreen) return fontScale(mediumSize);
-  if (isSmallScreen) return fontScale(smallSize);
-  return fontScale(xSmallSize);
+  let selectedSize;
+
+  if (isTablet) {
+    selectedSize = tabletSize || xLargeSize || largeSize * 1.15;
+  } else if (isExtraLargeScreen) {
+    selectedSize = xLargeSize || largeSize * 1.05;
+  } else if (isLargeScreen) {
+    // KEY FIX: cap large-phone font size to at most mediumSize + 15%
+    const rawLarge = largeSize;
+    const cap = mediumSize * 1.15;
+    selectedSize = Math.min(rawLarge, cap);
+  } else if (isMediumScreen) {
+    selectedSize = mediumSize;
+  } else if (isSmallScreen) {
+    selectedSize = smallSize;
+  } else {
+    selectedSize = xSmallSize;
+  }
+
+  return fontScale(selectedSize);
 };
 
 /**
@@ -192,8 +195,8 @@ export const conditionalValue = (
   xLargeValue = null,
   tabletValue = null,
 ) => {
-  if (isTablet) return tabletValue || xLargeValue || largeValue * 1.3;
-  if (isExtraLargeScreen) return xLargeValue || largeValue * 1.15;
+  if (isTablet) return tabletValue || xLargeValue || largeValue * 1.15;
+  if (isExtraLargeScreen) return xLargeValue || largeValue * 1.05;
   if (isLargeScreen) return largeValue;
   if (isMediumScreen) return mediumValue;
   if (isSmallScreen) return smallValue;
@@ -204,7 +207,6 @@ export const conditionalValue = (
 // RESPONSIVE DESIGN TOKENS
 // ============================================
 
-// Spacing system (4dp grid)
 export const spacing = {
   xs: scale(4),
   sm: scale(8),
@@ -215,7 +217,6 @@ export const spacing = {
   xxxl: scale(32),
 };
 
-// Border radius
 export const borderRadius = {
   xs: moderateScale(2),
   sm: moderateScale(4),
@@ -223,10 +224,9 @@ export const borderRadius = {
   lg: moderateScale(12),
   xl: moderateScale(16),
   xxl: moderateScale(24),
-  round: moderateScale(999), // Fully rounded
+  round: moderateScale(999),
 };
 
-// Icon sizes with font scaling
 export const iconSize = {
   xxs: fontScale(12),
   xs: fontScale(16),
@@ -241,37 +241,22 @@ export const iconSize = {
 // UTILITY FUNCTIONS
 // ============================================
 
-/**
- * Get percentage of screen width
- */
 export const wp = percentage => {
   return Math.round((SCREEN_WIDTH * percentage) / 100);
 };
 
-/**
- * Get percentage of screen height
- */
 export const hp = percentage => {
   return Math.round((SCREEN_HEIGHT * percentage) / 100);
 };
 
-/**
- * Calculate grid item width for N columns with gutter
- */
 export const gridItemWidth = (columns, gutter = spacing.md) => {
   const totalGutter = gutter * (columns + 1);
   const availableWidth = SCREEN_WIDTH - totalGutter;
   return Math.floor(availableWidth / columns);
 };
 
-/**
- * Hairline border (1 physical pixel)
- */
 export const hairlineWidth = 1 / PixelRatio.get();
 
-/**
- * Shadow elevation for Android
- */
 export const elevation = level => {
   return {
     elevation: level,
@@ -285,7 +270,6 @@ export const elevation = level => {
   };
 };
 
-// Export all for easy access
 export default {
   scale,
   verticalScale,

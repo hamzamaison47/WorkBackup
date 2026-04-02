@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -182,54 +182,32 @@ const BankAccountListPage = () => {
     return statusMap[status] || 'Draft';
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return banksaccountdata;
-
-  //   return banksaccountdata.filter(item => {
-  //     const status = getStatusLabel(item.WFStatus);
-
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending');
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : banksaccountdata;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending');
-      }
-
-      return status === activeFilter;
-    });
+    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter); // ← fix
   };
 
   const getFilterCounts = () => {
     const counts = {All: banksaccountdata.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = banksaccountdata.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = banksaccountdata.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(banksaccountdata.map(item => getStatusLabel(item.WFStatus))),
+    ].forEach(status => {
+      // ← fix
+      counts[status] = banksaccountdata.filter(
+        item => getStatusLabel(item.WFStatus) === status,
+      ).length;
     });
-
     return counts;
   };
 
+  const visiblePills = useMemo(() => {
+    if (!banksaccountdata.length) return ['All'];
+    const unique = [
+      ...new Set(banksaccountdata.map(item => getStatusLabel(item.WFStatus))), // ← fix
+    ];
+    return ['All', ...unique];
+  }, [banksaccountdata]);
   // Card Configuration
   const cardConfig = {
     headerConfig: {
@@ -379,7 +357,7 @@ const BankAccountListPage = () => {
       originalCameFrom: cameFrom,
       bankaccountdata: {
         // Fix: use RecId (uppercase) consistently
-        RecId: itemData.RecId,
+        RecId: itemData.recId,
         employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
         WorkerRecId: itemData.WorkerRecId || WorkerRecId,
@@ -565,6 +543,7 @@ const BankAccountListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -580,6 +559,7 @@ const BankAccountListPage = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleBankAccountRecordCreation}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -622,9 +602,14 @@ const BankAccountListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -632,13 +617,9 @@ const BankAccountListPage = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}

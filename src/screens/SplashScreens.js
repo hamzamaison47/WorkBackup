@@ -352,7 +352,7 @@ const SplashScreens = ({navigation}) => {
 
       {/* Text with fade animations */}
       <Animated.Text style={[styles.splash_Text, {opacity: textOpacity}]}>
-        Dynaface ESS By Maison
+        Dynaface By Maison
       </Animated.Text>
 
       <Animated.Text style={[styles.splash_Tagline, {opacity: taglineOpacity}]}>

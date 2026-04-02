@@ -8,6 +8,7 @@ import QRSetupScreen from '../screens/Setup/QRSetupScreen';
 import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
 import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
+import SettingsScreen from '../screens/Settings/Settingsscreen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -90,21 +91,15 @@ const AppNavigator = () => {
         options={{headerShown: false}}
       />
 
-      {/* <Stack.Screen name="ConfigSelectionScreen" options={{headerShown: false}}>
+      {/* SettingsScreen — must NOT hide the header so ActionPaneContainer
+          can inject its custom header via navigation.setOptions            */}
+      <Stack.Screen name="SettingsScreen" options={{headerShown: true}}>
         {() => (
           <ScreenWithSessionTimeout>
-            <ConfigSelectionScreen />
+            <SettingsScreen />
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
-      <Stack.Screen name="QRSetupScreen" options={{headerShown: false}}>
-        {() => (
-          <ScreenWithSessionTimeout>
-            <QRSetupScreen />
-          </ScreenWithSessionTimeout>
-        )}
-      </Stack.Screen> */}
     </Stack.Navigator>
   );
 };

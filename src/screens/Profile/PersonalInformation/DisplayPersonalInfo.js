@@ -1,50 +1,52 @@
-/* eslint-disable no-unused-vars */
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  I18nManager,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
-import LinearGradient from 'react-native-linear-gradient';
+import {StyleSheet} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
-import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import {translate as t} from '../../../store/utils/translate';
-import styles from '../../../styles/styles';
+import {conditionalVerticalScale} from '../../../store/utils/scaling';
+import {
+  PageBackground,
+  AnimatedCard,
+  CardHeading,
+  SettingRow,
+  RowSkeleton,
+  FooterNote,
+  AppTokens,
+  CARD_STAGGER,
+} from '../../../components/AppComponentsDesign/Appcomponents';
 
 const DisplayPersonalInfo = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation();
-  const currentLanguage = useSelector(state => state.language.currentLanguage);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  const destinations = [
-    // {
-    //   id: 'addresses',
-    //   icon: 'map-pin',
-    //   title: t('personalInfo.addresses'),
-    //   subtitle: t('personalInfo.addressesSubtitle'),
-    //   screen: '',
-    // },
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainDashboard');
+    }
+  };
+
+  const personalItems = [
     {
       id: 'contactDetails',
       icon: 'phone',
+      iconColor: AppTokens.blue,
+      iconBg: AppTokens.blueBg,
       title: t('personalInfo.contactDetails'),
       subtitle: t('personalInfo.contactDetailsSubtitle'),
       screen: 'ContactDetailsListPage',
     },
-
     {
       id: 'personalContacts',
       icon: 'layers',
+      iconColor: AppTokens.teal,
+      iconBg: AppTokens.tealBg,
       title: t('personalInfo.personalContacts'),
       subtitle: t('personalInfo.personalContactsSubtitle'),
       screen: 'FamilyContact_ListPage',
@@ -52,95 +54,126 @@ const DisplayPersonalInfo = () => {
     {
       id: 'identification',
       icon: 'user-check',
+      iconColor: AppTokens.indigo,
+      iconBg: AppTokens.indigoBg,
       title: t('personalInfo.identification'),
       subtitle: t('personalInfo.identificationSubtitle'),
       screen: 'IdentificationNumberListPage',
     },
     {
-      id: 'personalEducation',
-      icon: 'pen-tool',
-      title: t('personalInfo.education'),
-      subtitle: t('personalInfo.educationSubtitle'),
-      screen: 'PersonalEducation',
-    },
-    {
-      id: 'bankaccounts',
-      icon: 'credit-card',
-      title: t('personalInfo.bankAccount'),
-      subtitle: t('personalInfo.bankAccountSubtitle'),
-      screen: 'BankAccountListPage',
-    },
-    {
       id: 'profileImage',
       icon: 'image',
+      iconColor: AppTokens.amber,
+      iconBg: AppTokens.amberBg,
       title: t('personalInfo.profileImage'),
       subtitle: t('personalInfo.profileImageSubtitle'),
       screen: 'ChangeProfileImage',
     },
   ];
 
-  const renderItem = ({item}) => (
-    <TouchableOpacity
-      style={styles.DPI_card}
-      onPress={() => {
-        if (item.screen && item.screen.trim() !== '') {
-          navigation.navigate(item.screen);
-        }
-      }}>
-      <View style={styles.DPI_iconContainer}>
-        <Icon name={item.icon} size={22} color="#0A66C2" />
-      </View>
-      <View style={styles.DPI_textContainer}>
-        <Text style={styles.DPI_title}>{item.title}</Text>
-        <Text style={styles.DPI_subtitle}>{item.subtitle}</Text>
-      </View>
-      <Icon
-        name={I18nManager.isRTL ? 'chevron-left' : 'chevron-right'}
-        size={20}
-        color="#9CA3AF"
-      />
-    </TouchableOpacity>
-  );
+  const educationItems = [
+    {
+      id: 'personalEducation',
+      icon: 'pen-tool',
+      iconColor: AppTokens.purple,
+      iconBg: AppTokens.purpleBg,
+      title: t('personalInfo.education'),
+      subtitle: t('personalInfo.educationSubtitle'),
+      screen: 'PersonalEducationListPage',
+    },
+  ];
+
+  const financialItems = [
+    {
+      id: 'bankaccounts',
+      icon: 'credit-card',
+      iconColor: AppTokens.green,
+      iconBg: AppTokens.greenBg,
+      title: t('personalInfo.bankAccount'),
+      subtitle: t('personalInfo.bankAccountSubtitle'),
+      screen: 'BankAccountListPage',
+    },
+  ];
 
   return (
     <ActionPaneContainer
-      pageTitle={t('personalInfo.pageTitle')}
+      pageTitle={t('profile.personalInfo')}
       isBackButton={false}
       showFooter={false}
       showFloatingButton={false}
       isHeaderActive={true}
-      showTabNavigator={true}>
-      {isLoading ? (
-        <View style={styles.DLP_LoadingContainer}>
-          <CustomIndicator />
-        </View>
-      ) : (
-        <View style={styles.DPI_container}>
-          {/* Modern Header */}
-          <LinearGradient
-            colors={['#0A66C2', '#0A66C2']}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
-            style={styles.DPI_headerContainer}>
-            <Text style={styles.DPI_headerTitle}>
-              {t('personalInfo.headerTitle')}
-            </Text>
-            <Text style={styles.DPI_headerSubtitle}>
-              {t('personalInfo.headerSubtitle')}
-            </Text>
-          </LinearGradient>
+      showTabNavigator={true}
+      showPageTitleRow={true}
+      onBackPress={handleGoBack}>
+      <PageBackground>
+        {isLoading ? (
+          <RowSkeleton count={6} />
+        ) : (
+          <>
+            {/* ── Personal Information ── */}
+            <AnimatedCard delay={0}>
+              <CardHeading label="PERSONAL INFORMATION" />
+              {personalItems.map((item, index) => (
+                <SettingRow
+                  key={item.id}
+                  icon={item.icon}
+                  iconColor={item.iconColor}
+                  iconBg={item.iconBg}
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  onPress={() => navigation.navigate(item.screen)}
+                  isLast={index === personalItems.length - 1}
+                  style={S.bigRow}
+                />
+              ))}
+            </AnimatedCard>
 
-          {/* List */}
-          <FlatList
-            data={destinations}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.DPI_listContent}
-          />
-        </View>
-      )}
+            {/* ── Education ── */}
+            <AnimatedCard delay={CARD_STAGGER}>
+              <CardHeading label="COMPETENCY" />
+              {educationItems.map((item, index) => (
+                <SettingRow
+                  key={item.id}
+                  icon={item.icon}
+                  iconColor={item.iconColor}
+                  iconBg={item.iconBg}
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  onPress={() => navigation.navigate(item.screen)}
+                  isLast={index === educationItems.length - 1}
+                  style={S.bigRow}
+                />
+              ))}
+            </AnimatedCard>
+
+            {/* ── Financial ── */}
+            <AnimatedCard delay={CARD_STAGGER * 2}>
+              <CardHeading label="FINANCIAL" />
+              {financialItems.map((item, index) => (
+                <SettingRow
+                  key={item.id}
+                  icon={item.icon}
+                  iconColor={item.iconColor}
+                  iconBg={item.iconBg}
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  onPress={() => navigation.navigate(item.screen)}
+                  isLast={index === financialItems.length - 1}
+                  style={S.bigRow}
+                />
+              ))}
+            </AnimatedCard>
+          </>
+        )}
+      </PageBackground>
     </ActionPaneContainer>
   );
 };
 
 export default DisplayPersonalInfo;
+
+const S = StyleSheet.create({
+  bigRow: {
+    paddingVertical: conditionalVerticalScale(18, 20, 22, 22),
+  },
+});

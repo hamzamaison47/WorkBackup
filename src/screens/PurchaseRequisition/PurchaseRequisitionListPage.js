@@ -478,7 +478,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -874,11 +874,6 @@ const PurchaseRequisitionListPage = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        // If multi-select is active, cancel it instead of going back
-        if (isMultiSelectMode) {
-          handleMultiSelectCancel();
-          return true;
-        }
         handleGoBack();
         return true;
       };
@@ -887,55 +882,68 @@ const PurchaseRequisitionListPage = () => {
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [navigation, isMultiSelectMode, handleMultiSelectCancel]),
+    }, [navigation]),
   );
 
+  // const getFilteredData = () => {
+  //   const base = displayData.length > 0 ? displayData : purchaseRequisitiondata;
+
+  //   if (activeFilter === 'All') return base;
+
+  //   return base.filter(item => {
+  //     const rawStatus = item.RequisitionStatus?.toLowerCase();
+
+  //     if (activeFilter === 'Pending') {
+  //       return (
+  //         rawStatus === 'submitted' ||
+  //         rawStatus === 'in review' ||
+  //         rawStatus === 'inreview'
+  //       );
+  //     }
+
+  //     if (activeFilter === 'Completed') {
+  //       return rawStatus === 'closed';
+  //     }
+
+  //     return rawStatus === activeFilter.toLowerCase();
+  //   });
+  // };
+
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : purchaseRequisitiondata;
-
+    const base = searchQuery.trim() ? displayData : purchaseRequisitiondata;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const rawStatus = item.RequisitionStatus?.toLowerCase();
-
-      if (activeFilter === 'Pending') {
-        return (
-          rawStatus === 'submitted' ||
-          rawStatus === 'in review' ||
-          rawStatus === 'inreview'
-        );
-      }
-
-      if (activeFilter === 'Completed') {
-        return rawStatus === 'closed';
-      }
-
-      return rawStatus === activeFilter.toLowerCase();
-    });
+    return base.filter(
+      item => getStatusLabel(item.RequisitionStatus) === activeFilter,
+    );
   };
 
   const getFilterCounts = () => {
     const counts = {All: purchaseRequisitiondata.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = purchaseRequisitiondata.filter(item => {
-          const status = item.RequisitionStatus?.toLowerCase();
-          return (
-            status === 'submitted' ||
-            status === 'in review' ||
-            status === 'inreview'
-          );
-        }).length;
-      } else {
-        counts[pill] = purchaseRequisitiondata.filter(
-          item => getStatusLabel(item.RequisitionStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(
+        purchaseRequisitiondata.map(item =>
+          getStatusLabel(item.RequisitionStatus),
+        ),
+      ),
+    ].forEach(status => {
+      counts[status] = purchaseRequisitiondata.filter(
+        item => getStatusLabel(item.RequisitionStatus) === status,
+      ).length;
     });
-
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!purchaseRequisitiondata.length) return ['All'];
+    const unique = [
+      ...new Set(
+        purchaseRequisitiondata.map(item =>
+          getStatusLabel(item.RequisitionStatus),
+        ),
+      ),
+    ];
+    return ['All', ...unique];
+  }, [purchaseRequisitiondata]);
 
   const handleGoBack = () => {
     let targetRoute = 'MainDashboard';
@@ -1100,11 +1108,12 @@ const PurchaseRequisitionListPage = () => {
         gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
-        // ── Multi-select wiring ──
-        isMultiSelectMode={isMultiSelectMode}
-        isSelected={selectedIds.has(item.RecId)}
-        onLongPress={handleLongPress}
-        onSelectToggle={handleSelectToggle}
+        searchQuery={searchQuery}
+        // // ── Multi-select wiring ──
+        // isMultiSelectMode={isMultiSelectMode}
+        // isSelected={selectedIds.has(item.RecId)}
+        // onLongPress={handleLongPress}
+        // onSelectToggle={handleSelectToggle}
       />
     );
   };
@@ -1120,6 +1129,7 @@ const PurchaseRequisitionListPage = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRecord}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -1167,7 +1177,14 @@ const PurchaseRequisitionListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              {rawData.length === 0 && activeFilter === 'All' ? (
+              {searchQuery.trim() ? (
+                // Search returned no results
+                <>
+                  <Text style={styles.DLP_NoDataSubText}>
+                    No records match "{searchQuery}"
+                  </Text>
+                </>
+              ) : rawData.length === 0 && activeFilter === 'All' ? (
                 <>
                   <Text style={styles.DLP_NoDataText}>Get started</Text>
                   <Text style={styles.DLP_NoDataSubText}>
@@ -1175,16 +1192,18 @@ const PurchaseRequisitionListPage = () => {
                   </Text>
                 </>
               ) : (
-                <Text style={styles.DLP_NoDataText}>
-                  {`${activeFilter} record not found.`}
-                </Text>
+                <>
+                  <Text style={styles.DLP_NoDataText}>
+                    {`${activeFilter} record not found.`}
+                  </Text>
+                </>
               )}
             </ScrollView>
           )}
         </Animated.View>
       )}
 
-      {/* ── Floating multi-select action bar ── */}
+      {/* ── Floating multi-select action bar ──
       <MultiSelectActionBar
         visible={isMultiSelectMode}
         selectedCount={selectedIds.size}
@@ -1194,7 +1213,7 @@ const PurchaseRequisitionListPage = () => {
         isSubmitting={isBulkSubmitting}
         isDeleting={isBulkDeleting}
         topOffset={8}
-      />
+      /> */}
 
       <DynamicAttachmentModal
         visible={attachmentModal}

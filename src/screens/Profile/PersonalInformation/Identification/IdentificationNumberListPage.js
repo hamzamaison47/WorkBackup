@@ -1,6 +1,6 @@
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -88,6 +88,8 @@ const IdentificationNumberListPage = () => {
       const data = await IdentificationFindRequest({
         employeeId: effectiveEmployeeId,
       });
+
+      console.log('here is the data for identification', data);
 
       // Sort newest record on top
       data.sort(
@@ -178,12 +180,12 @@ const IdentificationNumberListPage = () => {
   };
 
   const getStatusLabel = status => {
-    if (!status) return '';
+    if (!status) return 'Approved'; // ← empty = Approved
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
 
     const statusMap = {
       draft: 'Draft',
-      inreview: 'IN REVIEW',
+      inreview: 'In Review',
       approved: 'Approved Waiting',
       waiting: 'Waiting',
       cancelled: 'Canceled',
@@ -205,39 +207,36 @@ const IdentificationNumberListPage = () => {
   };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : identificationsData;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.ApprovalStatus);
-
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending') || status === 'IN REVIEW';
-      }
-
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => getStatusLabel(item.ApprovalStatus) === activeFilter,
+    );
   };
 
   const getFilterCounts = () => {
     const counts = {All: identificationsData.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = identificationsData.filter(item => {
-          const status = getStatusLabel(item.ApprovalStatus);
-          return status.includes('Pending') || status === 'IN REVIEW';
-        }).length;
-      } else {
-        counts[pill] = identificationsData.filter(
-          item => getStatusLabel(item.ApprovalStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(
+        identificationsData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ),
+    ].forEach(status => {
+      counts[status] = identificationsData.filter(
+        item => getStatusLabel(item.ApprovalStatus) === status,
+      ).length;
     });
-
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!identificationsData.length) return ['All'];
+    const unique = [
+      ...new Set(
+        identificationsData.map(item => getStatusLabel(item.ApprovalStatus)),
+      ),
+    ];
+    return ['All', ...unique.filter(s => s !== '')];
+  }, [identificationsData]);
 
   // Card Configuration
   const cardConfig = {
@@ -572,6 +571,7 @@ const IdentificationNumberListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -615,6 +615,7 @@ const IdentificationNumberListPage = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -656,9 +657,14 @@ const IdentificationNumberListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -666,13 +672,9 @@ const IdentificationNumberListPage = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}

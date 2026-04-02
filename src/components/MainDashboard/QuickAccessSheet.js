@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 import React, {useRef, useEffect} from 'react';
 import {
   View,
@@ -12,6 +11,8 @@ import {
   StatusBar,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import useAppTokens from '../AppComponentsDesign/useAppTokens';
+import {AppTokens} from '../AppComponentsDesign/Appcomponents';
 
 const {height: SCREEN_HEIGHT, width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -52,8 +53,8 @@ export const QuickAccessButton = ({onPress}) => {
 
 const btnStyles = StyleSheet.create({
   wrapper: {
-    position: 'absolute', // ← sticky
-    bottom: 10, // ← sits above the tab bar
+    position: 'absolute',
+    bottom: 10,
     alignSelf: 'center',
     left: 0,
     right: 0,
@@ -78,6 +79,9 @@ const btnStyles = StyleSheet.create({
 
 // ─── Full Screen Sheet ────────────────────────────────────────────────────────
 const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
+  // ✅ useAppTokens — reactive
+  const T = useAppTokens();
+
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isRendered = useRef(false);
 
@@ -112,20 +116,30 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
 
   const renderItem = ({item}) => (
     <TouchableOpacity
-      style={[sheet.card, {width: cardSize, height: cardSize * 0.9}]}
+      style={[
+        sheet.card,
+        {
+          width: cardSize,
+          height: cardSize * 0.9,
+          // ✅ card colors react to theme
+          backgroundColor: T.cardBg,
+          borderColor: T.cardDivider,
+          shadowColor: T.shadowColor,
+        },
+      ]}
       activeOpacity={0.75}
       onPress={() => {
         handleClose();
         onCardPress(item);
       }}>
-      <View style={sheet.iconBox}>
+      <View style={[sheet.iconBox, {backgroundColor: AppTokens.blueBg}]}>
         <Image
           source={typeof item.icon === 'string' ? {uri: item.icon} : item.icon}
           style={sheet.icon}
           resizeMode="contain"
         />
       </View>
-      <Text style={sheet.cardTitle} numberOfLines={2}>
+      <Text style={[sheet.cardTitle, {color: T.titleText}]} numberOfLines={2}>
         {item.title}
       </Text>
     </TouchableOpacity>
@@ -134,10 +148,16 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
   if (!visible && !isRendered.current) return null;
 
   return (
-    <Animated.View style={[sheet.container, {transform: [{translateY}]}]}>
+    <Animated.View
+      renderToHardwareTextureAndroid
+      style={[
+        sheet.container,
+        // ✅ sheet bg reacts to theme
+        {backgroundColor: T.pageBg, transform: [{translateY}]},
+      ]}>
       <StatusBar backgroundColor="#0A66C2" barStyle="light-content" />
 
-      {/* Blue Header */}
+      {/* Blue Header — intentionally brand blue, unchanged */}
       <View style={sheet.header}>
         <TouchableOpacity onPress={handleClose} style={sheet.backBtn}>
           <Ionicons name="chevron-down" size={24} color="#fff" />
@@ -160,6 +180,7 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
   );
 };
 
+// ✅ Only layout/spacing — zero colors
 const sheet = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -167,15 +188,14 @@ const sheet = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#F8FAFF',
-    zIndex: 9999, // higher than floating button
-    elevation: 99, // higher than floating button
+    zIndex: 9999,
+    elevation: 99,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#0A66C2',
+    backgroundColor: '#0A66C2', // brand blue — intentionally static
     paddingHorizontal: 12,
     paddingTop: StatusBar.currentHeight || 44,
     paddingBottom: 14,
@@ -204,16 +224,13 @@ const sheet = StyleSheet.create({
   },
   card: {
     margin: 6,
-    backgroundColor: '#fff',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderWidth: 1,
-    borderColor: '#E8EFF8',
     elevation: 2,
-    shadowColor: '#0A66C2',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -222,7 +239,6 @@ const sheet = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#EBF3FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -233,7 +249,6 @@ const sheet = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 11,
-    color: '#374151',
     fontWeight: '600',
     textAlign: 'center',
     lineHeight: 15,

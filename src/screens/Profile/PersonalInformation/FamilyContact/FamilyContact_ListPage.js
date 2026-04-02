@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   Text,
   FlatList,
@@ -30,7 +30,7 @@ import {translate as t} from '../../../../store/utils/translate';
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
 
-const FamilyContacts_ListPageScreen = () => {
+const FamilyContact_ListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
@@ -151,38 +151,30 @@ const FamilyContacts_ListPageScreen = () => {
   };
 
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : familycontactsdata;
-
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = getStatusLabel(item.WFStatus);
-
-      if (activeFilter === 'Pending') {
-        return status.includes('Pending');
-      }
-
-      return status === activeFilter;
-    });
+    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter);
   };
 
   const getFilterCounts = () => {
     const counts = {All: familycontactsdata.length};
-
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      if (pill === 'Pending') {
-        counts[pill] = familycontactsdata.filter(item =>
-          getStatusLabel(item.WFStatus).includes('Pending'),
-        ).length;
-      } else {
-        counts[pill] = familycontactsdata.filter(
-          item => getStatusLabel(item.WFStatus) === pill,
-        ).length;
-      }
+    [
+      ...new Set(familycontactsdata.map(item => getStatusLabel(item.WFStatus))),
+    ].forEach(status => {
+      counts[status] = familycontactsdata.filter(
+        item => getStatusLabel(item.WFStatus) === status,
+      ).length;
     });
-
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!familycontactsdata.length) return ['All'];
+    const unique = [
+      ...new Set(familycontactsdata.map(item => getStatusLabel(item.WFStatus))),
+    ];
+    return ['All', ...unique];
+  }, [familycontactsdata]);
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
@@ -469,6 +461,7 @@ const FamilyContacts_ListPageScreen = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
+        searchQuery={searchQuery}
       />
     );
   };
@@ -484,6 +477,7 @@ const FamilyContacts_ListPageScreen = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleFamilyContactRecordCreate}
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -525,9 +519,14 @@ const FamilyContacts_ListPageScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {/* Show different messages based on filter and data availability */}
-          {rawData.length === 0 && activeFilter === 'All' ? (
-            // No data at all AND "All" filter is active - show "Get started" message
+          {searchQuery.trim() ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
+              <Text style={styles.DLP_NoDataSubText}>
+                No records match "{searchQuery}"
+              </Text>
+            </>
+          ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -535,13 +534,9 @@ const FamilyContacts_ListPageScreen = () => {
               </Text>
             </>
           ) : (
-            // Either data exists but filtered out, or "All" filter shows no data (shouldn't happen)
-            // Show filter-specific message
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}
@@ -599,4 +594,4 @@ const FamilyContacts_ListPageScreen = () => {
   );
 };
 
-export {FamilyContacts_ListPageScreen};
+export {FamilyContact_ListPage};

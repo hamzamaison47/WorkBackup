@@ -430,7 +430,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -594,34 +594,33 @@ const ESSMyRequestStatusListPage = () => {
     return 'Draft';
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return requestData;
-  //   return requestData.filter(
-  //     item => normaliseStatus(item.PRWFStatus) === activeFilter,
-  //   );
-  // };
-
   const getFilteredData = () => {
-    const base = displayData.length > 0 ? displayData : requestData;
+    const base = searchQuery.trim() ? displayData : rawData;
     if (activeFilter === 'All') return base;
-
-    return base.filter(item => {
-      const status = normaliseStatus(item.PRWFStatus);
-      if (activeFilter === 'Pending') return status.includes('Pending');
-      return status === activeFilter;
-    });
+    return base.filter(
+      item => normaliseStatus(item.PRWFStatus) === activeFilter,
+    );
   };
 
-  // Count per pill
   const getFilterCounts = () => {
     const counts = {All: requestData.length};
-    ['Draft', 'Pending', 'Approved', 'Rejected', 'Completed'].forEach(pill => {
-      counts[pill] = requestData.filter(
-        item => normaliseStatus(item.PRWFStatus) === pill,
+    [
+      ...new Set(requestData.map(item => normaliseStatus(item.PRWFStatus))),
+    ].forEach(status => {
+      counts[status] = requestData.filter(
+        item => normaliseStatus(item.PRWFStatus) === status,
       ).length;
     });
     return counts;
   };
+
+  const visiblePills = useMemo(() => {
+    if (!requestData.length) return ['All'];
+    const unique = [
+      ...new Set(requestData.map(item => normaliseStatus(item.PRWFStatus))),
+    ];
+    return ['All', ...unique];
+  }, [requestData]);
 
   /* ==============================
      Format helpers
@@ -652,7 +651,7 @@ const ESSMyRequestStatusListPage = () => {
       title: {key: 'documentType'},
     },
     fields: [
-      {key: 'Document', label: '', type: 'link'},
+      // {key: 'Document', label: '', type: 'link'},
       {key: 'Subject', label: 'Subject', type: 'text'},
       {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
       {key: 'From', label: 'From', type: 'text'},
@@ -710,9 +709,7 @@ const ESSMyRequestStatusListPage = () => {
   const renderRequestCard = ({item}) => {
     const processedItem = {
       ...item,
-      // Format date for display
       ModifiedDateTime: formatDateTime(item.ModifiedDateTime),
-      // PRWFStatus drives the status badge inside DynamicRequestCard
       PRWFStatus: item.PRWFStatus || 'Unknown',
     };
 
@@ -734,6 +731,7 @@ const ESSMyRequestStatusListPage = () => {
           processingButtons={[]}
           showNavigationArrow={false}
           isClickable={true}
+          searchQuery={searchQuery}
         />
       </Pressable>
     );
@@ -756,6 +754,7 @@ const ESSMyRequestStatusListPage = () => {
       onRefresh={fetchRequestStatus}
       // ── Filter pills ──
       showFilterPills={true}
+      filterPills={visiblePills} // ← add this
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -789,16 +788,22 @@ const ESSMyRequestStatusListPage = () => {
               onRefresh={fetchRequestStatus}
             />
           }>
-          <Text style={styles.DLP_NoDataText}>
-            {activeFilter === 'All'
-              ? 'No requests found'
-              : `No ${activeFilter.toLowerCase()} requests`}
-          </Text>
-          <Text style={styles.DLP_NoDataSubText}>
-            {activeFilter === 'All'
-              ? 'You have not submitted any requests yet'
-              : `You have no ${activeFilter.toLowerCase()} requests at the moment`}
-          </Text>
+          {searchQuery.trim() ? (
+            <Text style={styles.DLP_NoDataSubText}>
+              No records match "{searchQuery}"
+            </Text>
+          ) : rawData.length === 0 ? (
+            <>
+              {/* <Text style={styles.DLP_NoDataText}>No requests found</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                You have not submitted any requests yet
+              </Text> */}
+            </>
+          ) : (
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
+          )}
         </ScrollView>
       )}
 

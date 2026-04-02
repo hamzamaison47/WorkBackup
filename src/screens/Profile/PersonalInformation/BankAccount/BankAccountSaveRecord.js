@@ -232,7 +232,7 @@ const BankAccountSaveRecord = () => {
           }
 
           // 🔹 EDIT MODE
-          else if (mode === 'edit' && bankaccountdata?.recId) {
+          else if (mode === 'edit' && bankaccountdata?.RecId) {
             setFormData({
               ...createInitialFormData(),
               ...bankaccountdata,
