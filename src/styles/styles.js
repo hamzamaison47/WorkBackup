@@ -8796,6 +8796,142 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: AppTokens.titleText,
   },
+  headerRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f3f6',
+    padding: 12,
+  },
+
+  headerText: {fontWeight: 'bold'},
+
+  touchable: {margin: 8},
+
+  row: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    elevation: 2,
+  },
+
+  typeContainer: {flex: 1},
+  questionContainer: {flex: 2},
+
+  typeText: {color: '#555'},
+  questionText: {color: '#222'},
+
+  card: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    elevation: 10,
+  },
+
+  title: {fontSize: 16, fontWeight: 'bold', marginBottom: 10},
+  question: {marginBottom: 10},
+
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    borderRadius: 8,
+    minHeight: 100,
+  },
+
+  saveBtn: {
+    marginTop: 15,
+    backgroundColor: '#007bff',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
+  btnText: {color: '#fff', fontWeight: 'bold'},
+
+  optionRow: {
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginTop: 8,
+  },
+
+  selectedOption: {
+    backgroundColor: '#d0ebff',
+    borderColor: '#007bff',
+  },
+
+  checkboxContainer: {flexDirection: 'row', alignItems: 'center'},
+
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 2,
+    borderColor: '#999',
+    marginRight: 10,
+  },
+
+  checkedBox: {
+    backgroundColor: '#007bff',
+    borderColor: '#007bff',
+  },
+
+  optionText: {fontSize: 14},
+
+  // 🔹 Status message
+  statusMessage: {
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    margin: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ffeeba',
+  },
+  statusMessageText: {
+    color: '#856404',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  loadingContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+  scrollContainer: {paddingVertical: 16, paddingHorizontal: 0},
+  instructionContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginHorizontal: 8,
+  },
+  instructionHeading: {fontSize: 16, fontWeight: 'bold', marginBottom: 6},
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    elevation: 10,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 10,
+    borderRadius: 6,
+    marginTop: 5,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
 });
 
 export default styles;

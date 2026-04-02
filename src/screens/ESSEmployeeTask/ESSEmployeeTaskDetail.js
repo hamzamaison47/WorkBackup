@@ -25,6 +25,7 @@ import DynamicRequestCard from '../../components/DynamicRequestCard';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
+import styles from '../../styles/styles';
 import {max} from 'moment';
 
 const ESSEmployeeTaskDetail = () => {
@@ -268,42 +269,42 @@ const ESSEmployeeTaskDetail = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  loadingContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
-  scrollContainer: {paddingVertical: 16, paddingHorizontal: 0},
-  instructionContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginHorizontal: 8,
-  },
-  instructionHeading: {fontSize: 16, fontWeight: 'bold', marginBottom: 6},
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '85%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    elevation: 10,
-  },
-  dateInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    borderRadius: 6,
-    marginTop: 5,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 15,
-  },
-});
+// const styles = StyleSheet.create({
+//   loadingContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
+//   scrollContainer: {paddingVertical: 16, paddingHorizontal: 0},
+//   instructionContainer: {
+//     marginTop: 16,
+//     padding: 12,
+//     backgroundColor: '#fff',
+//     borderRadius: 8,
+//     marginHorizontal: 8,
+//   },
+//   instructionHeading: {fontSize: 16, fontWeight: 'bold', marginBottom: 6},
+//   modalOverlay: {
+//     flex: 1,
+//     backgroundColor: 'rgba(0,0,0,0.5)',
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//   },
+//   modalContainer: {
+//     width: '85%',
+//     backgroundColor: '#fff',
+//     padding: 20,
+//     borderRadius: 10,
+//     elevation: 10,
+//   },
+//   dateInput: {
+//     borderWidth: 1,
+//     borderColor: '#ccc',
+//     padding: 10,
+//     borderRadius: 6,
+//     marginTop: 5,
+//   },
+//   modalButtons: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     marginTop: 15,
+//   },
+// });
 
 export default ESSEmployeeTaskDetail;

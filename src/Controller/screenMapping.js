@@ -54,6 +54,7 @@ import HrPoliciesScreen from '../screens/HrPolicies/HrPoliciesScreen';
 import HrNewsUpdatesScreen from '../screens/HrNewsUpdates/HrNewsUpdatesScreen';
 import OutstandingAdvancesScreen from '../screens/OutstandingAdvances/OutstandingAdvancesScreen';
 import ESSEmployeeCourse_ListPage from '../screens/EmployeeOpenCourse/ESSEmployeeCourse_ListPage';
+import HRExitInterviewListPage from '../screens/ExitInterview/HRExitInterview_ListPage';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -117,6 +118,7 @@ export const screenMapping = {
   HrPoliciesScreen: HrPoliciesScreen,
   HrNewsUpdatesScreen: HrNewsUpdatesScreen,
   OutstandingAdvancesScreen: OutstandingAdvancesScreen,
+  HRExitInterviewListPage: HRExitInterviewListPage,
 };
 
 // Map Images → Screen component
