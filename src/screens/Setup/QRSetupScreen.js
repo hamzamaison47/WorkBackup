@@ -13,7 +13,7 @@ import {
   Platform,
 } from 'react-native';
 import RNQRGenerator from 'rn-qr-generator';
-import QRCodeScanner from 'react-native-qrcode-scanner';
+import { Camera, useCameraDevice, useCodeScanner } from 'react-native-vision-camera';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -49,6 +49,16 @@ const QRSetupScreen = () => {
 
   const isFromConfigSelection = route.params?.isFromConfigSelection || false;
   const returnScreen = route.params?.returnScreen || 'Login';
+
+  const device = useCameraDevice('back');
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr'],
+    onCodeScanned: codes => {
+      if (isScanning && !isProcessingGalleryImage && codes.length > 0) {
+        handleQRCodeRead({ data: codes[0].value });
+      }
+    },
+  });
 
   // Scanning animation
   useEffect(() => {
@@ -347,13 +357,13 @@ const QRSetupScreen = () => {
       <View style={styles.QRSetup_ScannerWrapper}>
         <View style={styles.QRSetup_ScannerContainer}>
           {hasPermission ? (
-            isScanning && !isProcessingGalleryImage ? (
+              isScanning && !isProcessingGalleryImage && device ? (
               <>
-                <QRCodeScanner
-                  onRead={handleQRCodeRead}
-                  reactivate={false}
-                  showMarker={false}
-                  cameraStyle={styles.QRSetup_Camera}
+                <Camera
+                  style={styles.QRSetup_Camera || StyleSheet.absoluteFill}
+                  device={device}
+                  isActive={true}
+                  codeScanner={codeScanner}
                 />
 
                 {/* Custom Scanner Overlay */}

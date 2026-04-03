@@ -55,6 +55,7 @@ import HrNewsUpdatesScreen from '../screens/HrNewsUpdates/HrNewsUpdatesScreen';
 import OutstandingAdvancesScreen from '../screens/OutstandingAdvances/OutstandingAdvancesScreen';
 import ESSEmployeeCourse_ListPage from '../screens/EmployeeOpenCourse/ESSEmployeeCourse_ListPage';
 import HRExitInterviewListPage from '../screens/ExitInterview/HRExitInterview_ListPage';
+import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
 
 // Map MenuId from API → Screen component
 export const screenMapping = {
@@ -103,6 +104,7 @@ export const screenMapping = {
   BankAccountListPage: BankAccountListPage,
   BankAccountSaveRecord: BankAccountSaveRecord,
   DateFormatSettingsScreen: DateFormatSettingsScreen,
+  AttendanceManagement: AttendanceManagement,
   // OutstandingAdvancesScreen: OutstandingAdvancesScreen,
   // TimeClockListPage: TimeClockListPage,
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,

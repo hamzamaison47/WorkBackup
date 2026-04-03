@@ -28,6 +28,7 @@
     <!-- ============================================ -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <!-- ============================================ -->
     <!-- BIOMETRIC PERMISSIONS -->
@@ -87,6 +88,12 @@
             <data android:scheme="market" />
         </intent>
     </queries>
+
+    <!-- ============================================ -->
+    <!-- FOREGROUND SERVICES -->
+    <!-- ============================================ -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <!-- ============================================ -->
     <!-- APPLICATION CONFIGURATION -->
@@ -183,5 +190,32 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- ============================================ -->
+        <!-- FOREGROUND SERVICES -->
+        <!-- ============================================ -->
+        <!-- Main foreground service — runs the persistent timer notification -->
+        <service
+            android:name="com.authentication.attendance.AttendanceForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"
+            android:stopWithTask="false" />
+
+        <!-- Headless task service — executes JS when app is killed and button is tapped -->
+        <service
+            android:name="com.authentication.attendance.AttendanceHeadlessTaskService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <!-- Broadcast receiver — catches notification button taps -->
+        <!-- <receiver
+            android:name="com.authentication.attendance.AttendanceActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.authentication.ATTENDANCE_CLOCK_OUT" />
+                <action android:name="com.authentication.ATTENDANCE_START_BREAK" />
+                <action android:name="com.authentication.ATTENDANCE_END_BREAK" />
+            </intent-filter>
+        </receiver> -->
     </application>
 </manifest>

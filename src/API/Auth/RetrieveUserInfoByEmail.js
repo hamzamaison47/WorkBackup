@@ -64,7 +64,12 @@ const RetrieveUserInfoByEmail = async ({email}) => {
         'result'
       ];
 
-    if (!rawData) {
+    let userInfoContract =
+      rawData?.['a:DFUserInfoSvcContract'] ||
+      rawData?.['DFUserInfoSvcContract'] ||
+      rawData;
+
+    if (!userInfoContract || Object.keys(userInfoContract).length === 0) {
       console.warn('No Employee User data found');
       return [];
     }
@@ -77,7 +82,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
         ]),
       );
 
-    const cleanedData = [cleanObject(rawData)];
+    const cleanedData = [cleanObject(userInfoContract)];
 
     // console.log({cleanedData});
 
