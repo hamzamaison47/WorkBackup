@@ -21,7 +21,6 @@ import styles from '../../styles/styles';
 const HRExitInterviewListPage = () => {
   const route = useRoute();
 
-  // 🔹 Get employeeId from route OR Redux (same as Leave page)
   const {employeeId, userData: routeUserData} = route.params || {};
   const reduxUserData = useSelector(state => state.user.userData);
 
@@ -47,7 +46,7 @@ const HRExitInterviewListPage = () => {
     setLoading(true);
     try {
       const res = await retrieveEmployeeQuestionsWithMCQs({
-        employeeId: effectiveEmployeeId, // ✅ dynamic
+        employeeId: effectiveEmployeeId,
       });
 
       setRawData(res || []);
@@ -73,8 +72,9 @@ const HRExitInterviewListPage = () => {
 
         setData(filteredData);
       } else {
+        // ✅ No data → no status, no message
         setData([]);
-        setStatus('closed');
+        setStatus('');
       }
     } catch (err) {
       console.log('Fetch ERROR:', err);
@@ -104,6 +104,7 @@ const HRExitInterviewListPage = () => {
           x.question === item.question &&
           x.QuestionType?.toLowerCase() === 'simple',
       );
+
       setAnswer(existing?.answer || '');
     } else {
       setSelectedMCQ(item);
@@ -123,6 +124,7 @@ const HRExitInterviewListPage = () => {
   // 🔹 RENDER ROW
   const renderItem = ({item}) => {
     const isClickable = status === 'open';
+
     return (
       <TouchableOpacity
         style={[styles.touchable, !isClickable && {opacity: 0.5}]}
@@ -150,7 +152,7 @@ const HRExitInterviewListPage = () => {
       )
     : [];
 
-  // 🔥 SAVE SIMPLE
+  // 🔹 SAVE SIMPLE
   const handleSaveSimple = async () => {
     if (!answer.trim()) {
       Alert.alert('Validation', 'Please enter answer');
@@ -172,7 +174,7 @@ const HRExitInterviewListPage = () => {
     }
   };
 
-  // 🔥 SAVE MCQ
+  // 🔹 SAVE MCQ
   const handleSaveMCQ = async () => {
     if (selectedOption.length === 0) {
       Alert.alert('Validation', 'Please select option');
@@ -196,7 +198,8 @@ const HRExitInterviewListPage = () => {
 
   return (
     <ActionPaneContainer pageTitle="Exit Interview">
-      {status !== 'open' && (
+      {/* ✅ SHOW ONLY WHEN CLOSED + DATA EXISTS */}
+      {!loading && status !== 'open' && data.length > 0 && (
         <View style={styles.statusMessage}>
           <Text style={styles.statusMessageText}>
             The questions are in review.
@@ -204,15 +207,19 @@ const HRExitInterviewListPage = () => {
         </View>
       )}
 
-      <View style={styles.headerRow}>
-        <View style={styles.typeContainer}>
-          <Text style={styles.headerText}>Type</Text>
+      {/* ✅ SHOW HEADER ONLY IF DATA EXISTS */}
+      {data.length > 0 && (
+        <View style={styles.headerRow}>
+          <View style={styles.typeContainer}>
+            <Text style={styles.headerText}>Type</Text>
+          </View>
+          <View style={styles.questionContainer}>
+            <Text style={styles.headerText}>Question</Text>
+          </View>
         </View>
-        <View style={styles.questionContainer}>
-          <Text style={styles.headerText}>Question</Text>
-        </View>
-      </View>
+      )}
 
+      {/* LIST */}
       {loading ? (
         <CustomIndicator />
       ) : (
@@ -230,7 +237,7 @@ const HRExitInterviewListPage = () => {
       )}
 
       {/* SIMPLE */}
-      {selectedQuestion && (
+      {selectedQuestion && status === 'open' && (
         <View style={styles.card}>
           <Text style={styles.title}>Answer</Text>
 
@@ -252,7 +259,7 @@ const HRExitInterviewListPage = () => {
       )}
 
       {/* MCQ */}
-      {selectedMCQ && (
+      {selectedMCQ && status === 'open' && (
         <View style={styles.card}>
           <Text style={styles.title}>Multiple Choice</Text>
 
