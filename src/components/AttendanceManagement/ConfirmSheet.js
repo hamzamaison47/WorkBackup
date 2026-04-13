@@ -32,7 +32,6 @@ const ConfirmSheet = ({
   disableActions = false,
   onRefresh,
   refreshing = false,
-  userName = 'Employee',
   children,
 }) => {
   const now = new Date();
@@ -67,17 +66,6 @@ const ConfirmSheet = ({
           ) : undefined
         }
         showsVerticalScrollIndicator={false}>
-        {/* User card */}
-        <View style={S.userCard}>
-          <View style={S.avatar}>
-            <Text style={S.avatarTxt}>{(userName || 'E').charAt(0)}</Text>
-          </View>
-          <View>
-            <Text style={S.userName}>{userName}</Text>
-            <Text style={S.userMeta}>via Android · {status}</Text>
-          </View>
-        </View>
-
         {/* Date / time strip */}
         <View style={S.dtRow}>
           <View style={S.dtCell}>

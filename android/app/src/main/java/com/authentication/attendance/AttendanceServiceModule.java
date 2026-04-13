@@ -72,14 +72,12 @@ public class AttendanceServiceModule extends ReactContextBaseJavaModule {
      * @param breakStartEpoch Unix epoch ms when the break started (0 if not on break)
      */
     @ReactMethod
-    public void updateBreakState(boolean isOnBreak, double breakStartEpoch) {
+    public void updateBreakState(boolean isOnBreak, double breakStartEpoch, double totalBreakMs) {
         Intent intent = new Intent(reactContext, AttendanceForegroundService.class);
         intent.putExtra(AttendanceForegroundService.EXTRA_IS_ON_BREAK,       isOnBreak);
         intent.putExtra(AttendanceForegroundService.EXTRA_BREAK_START_EPOCH, (long) breakStartEpoch);
+        intent.putExtra(AttendanceForegroundService.EXTRA_TOTAL_BREAK_MS,    (long) totalBreakMs);
 
-        // Re-sending the start intent re-calls onStartCommand with updated extras.
-        // The service is already running so Android will NOT create a new instance —
-        // it just calls onStartCommand again, which updates our state and ticks.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             reactContext.startForegroundService(intent);
         } else {

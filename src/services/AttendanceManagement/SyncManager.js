@@ -1,3 +1,13 @@
+// ─────────────────────────────────────────────
+// services/AttendanceManagement/SyncManager.js
+//
+// P1.4 OPTIMIZATION: Added submitAttendanceDirect() for online-first flow.
+// In the fully online system, the confirm screens call submitAttendanceDirect
+// instead of enqueueAttendance. This eliminates the EncryptedStorage
+// round-trip from the critical path (reduces ~100ms + I/O).
+//
+// enqueueAttendance is preserved for genuine offline / retry scenarios.
+// ─────────────────────────────────────────────
 import EncryptedStorage from 'react-native-encrypted-storage';
 import NetInfo from '@react-native-community/netinfo';
 import {CreateUserAttendance} from '../../API/AttendanceManagement/CreateUserAttendance';
@@ -31,6 +41,24 @@ const saveSyncQueue = async queue => {
   }
 };
 
+// ─────────────────────────────────────────────
+// P1.4 — submitAttendanceDirect
+//
+// PRIMARY path for the online-first system.
+// Calls CreateUserAttendance directly without EncryptedStorage queue.
+// Throws on failure — callers must handle errors.
+// ─────────────────────────────────────────────
+export const submitAttendanceDirect = async attendanceData => {
+  const result = await CreateUserAttendance({attendanceData});
+  return result;
+};
+
+// ─────────────────────────────────────────────
+// enqueueAttendance
+//
+// FALLBACK path for genuine offline scenarios and retry logic.
+// Not called in the normal online flow — kept for future offline support.
+// ─────────────────────────────────────────────
 export const enqueueAttendance = async payload => {
   const queue = await getSyncQueue();
   const newRecord = {
@@ -47,11 +75,6 @@ export const enqueueAttendance = async payload => {
   drainSyncQueue();
 };
 
-// services/AttendanceManagement/SyncManager.js
-
-// Change mergeQueuedPunches filter in helpers.js to match this intent.
-// Also: reset failed items to pending on next drain attempt (retry logic).
-
 export const drainSyncQueue = async () => {
   if (syncing) return;
 
@@ -67,12 +90,24 @@ export const drainSyncQueue = async () => {
     const newQueue = [...queue];
     let didChange = false;
 
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
     for (let i = 0; i < newQueue.length; i++) {
       const item = newQueue[i];
-      if (item.status === 'synced') continue;
+      if (item.status === 'synced' || item.status === 'permanent_failure')
+        continue;
 
-      // Reset failed items for retry on next connectivity restore
+      // Prune ancient items
+      if (now - item.timestamp > SEVEN_DAYS_MS) {
+        item.status = 'permanent_failure';
+        didChange = true;
+        continue;
+      }
+
+      // Exponential backoff
       if (item.status === 'failed') {
+        if (item.nextRetryAt && now < item.nextRetryAt) continue;
         item.status = 'pending';
         didChange = true;
       }
@@ -92,16 +127,25 @@ export const drainSyncQueue = async () => {
         console.warn(`Failed to sync record ${item.id}:`, error.message);
         item.retryCount = (item.retryCount || 0) + 1;
         item.lastError = error.message;
-        item.status = 'failed';
+
+        // Exponential backoff: 2^retryCount seconds, max 60s
+        item.nextRetryAt =
+          now + Math.min(Math.pow(2, item.retryCount) * 1000, 60_000);
+
+        if (item.retryCount > 10) {
+          item.status = 'permanent_failure';
+        } else {
+          item.status = 'failed';
+        }
         didChange = true;
         break;
       }
     }
 
     if (didChange) {
-      // Keep failed items in queue (for retry) but mark them so UI can
-      // distinguish. Synced items are pruned.
-      const remainingQueue = newQueue.filter(q => q.status !== 'synced');
+      const remainingQueue = newQueue.filter(
+        q => q.status !== 'synced' && q.status !== 'permanent_failure',
+      );
       await saveSyncQueue(remainingQueue);
     }
   } finally {
@@ -109,7 +153,7 @@ export const drainSyncQueue = async () => {
   }
 };
 
-// Global network listener to auto-drain. Only call this once in the app lifetime (e.g. from TimeClockScreen mount)
+// Global network listener — call once from TimeClockScreen mount
 let networkListenerActive = false;
 export const initSyncListener = () => {
   if (networkListenerActive) return;

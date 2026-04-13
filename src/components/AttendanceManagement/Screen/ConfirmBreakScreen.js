@@ -1,33 +1,44 @@
+/* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
+// ─────────────────────────────────────────────
+// components/AttendanceManagement/screens/ConfirmBreakScreen.js
+//
+// P2.4 OPTIMIZATION: Uses AttendanceOrchestrator token pattern.
+// Confirm press delegates entirely to Orchestrator.confirm().
+// Session context built from token's embedded punch data.
+// ─────────────────────────────────────────────
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import ConfirmSheet from '../ConfirmSheet';
 import {NoteRow} from '../FormRow';
 import LocationPickerModal from '../LocationPickerModal';
-import QRScannerModal, {isQRCodeActive} from '../QRScannerModal';
 import ProcessingOverlay from '../ProcessingOverlay';
 import {useGeofence} from '../GeofenceContext';
-import useNetworkCheck, {checkIsOnline} from '../../../hooks/useNetworkCheck';
 import useLocation from '../../../hooks/useLocation';
 import DeviceInfo from 'react-native-device-info';
-import {loadRecords} from '../../../screens/AttendanceManagement/helpers';
-import {enqueueAttendance} from '../../../services/AttendanceManagement/SyncManager';
 import {
-  ACTION_TYPES,
-  ATTENDANCE_MODE,
-  buildAttendancePayload,
-  getActionFence,
-  getValidationMessage,
-} from './attendanceActionHelpers';
+  aggregateServerPunches,
+  formatTime,
+  formatDuration,
+  formatDurationShort,
+  getSessionStats,
+} from '../../../screens/AttendanceManagement/helpers';
+import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
+import {ACTION_TYPES} from './attendanceActionHelpers';
 import {C, R} from '../theme';
+
+const GENERATION_TYPE_MAP = {
+  BREAK_START: 'StartBreak',
+  BREAK_END: 'EndBreak',
+};
 
 const SPOOF_LABELS = {
   mock_flag: 'Mock location app detected',
@@ -38,211 +49,75 @@ const SPOOF_LABELS = {
   rooted_device: 'Device appears to be rooted or jailbroken',
 };
 
-const GENERATION_TYPE_MAP = {
-  BREAK_START: 'StartBreak',
-  BREAK_END: 'EndBreak',
-};
-
 const ConfirmBreakScreen = ({
+  validationToken, // P2: ValidationToken from AttendanceOrchestrator.prepare()
   onConfirm,
   onBack,
   breakType = 'BREAK_START',
-  initialQrValue = null,
-  initialFaceResult = null,
 }) => {
   const [note, setNote] = useState('');
   const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const [qrModalVisible, setQrModalVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState('Processing...');
-  const [refreshing, setRefreshing] = useState(false);
-  const [actionFence, setActionFence] = useState(null);
-  const [requiresQR, setRequiresQR] = useState(false);
-  const [qrValue, setQrValue] = useState(initialQrValue);
+  const [sessionSummary, setSessionSummary] = useState(null);
 
-  const {
-    matchedFence,
-    clockInFence,
-    locationLoading,
-    locationError,
-    coords,
-    refresh,
-  } = useGeofence();
+  const {matchedFence, clockInFence, locationLoading, locationError} = useGeofence();
   const {spoofingDetected, spoofingReason} = useLocation();
-  const {runNetworkCheck} = useNetworkCheck();
   const {userData} = useSelector(s => s.user);
 
   const isBreakEnd = breakType === 'BREAK_END';
-  const actionType = isBreakEnd
-    ? ACTION_TYPES.BREAK_END
-    : ACTION_TYPES.BREAK_START;
-  const eventLabel = isBreakEnd ? 'BREAK_END' : 'BREAK_START';
-  const generationType = GENERATION_TYPE_MAP[breakType] ?? 'BreakStart';
-
+  const generationType = GENERATION_TYPE_MAP[breakType] ?? 'StartBreak';
   const title = isBreakEnd ? 'End Break' : 'Start Break';
   const subtitle = isBreakEnd
     ? 'Resume the timer and return to work'
     : 'Pause the timer for your break';
-  const confirmColor = isBreakEnd ? C.amber : C.purple;
+  const confirmColor = isBreakEnd ? C.amber : '#7C3AED';
 
-  const applyLatestState = useCallback(
-    (latestState, autoPromptQr = true) => {
-      const nextFence = getActionFence({
-        actionType,
-        matchedFence: latestState?.matchedFence ?? matchedFence,
-        clockInFence,
-      });
-      const nextRequiresQR = isQRCodeActive(nextFence);
-      const fenceChanged =
-        String(actionFence?.GeoFenceID ?? '') !==
-        String(nextFence?.GeoFenceID ?? '');
-      const nextQrValue = nextRequiresQR
-        ? fenceChanged
-          ? null
-          : qrValue
-        : null;
-
-      setActionFence(nextFence);
-      setRequiresQR(nextRequiresQR);
-      setQrValue(nextQrValue);
-
-      if (!nextRequiresQR) {
-        setQrModalVisible(false);
-      } else if (autoPromptQr && !nextQrValue) {
-        setQrModalVisible(true);
-      }
-
-      return {
-        fence: nextFence,
-        qrRequired: nextRequiresQR,
-        qrValue: nextQrValue,
-        coords: latestState?.coords ?? coords,
-        locationError: latestState?.locationError ?? locationError,
-      };
-    },
-    [
-      actionFence,
-      actionType,
-      clockInFence,
-      coords,
-      locationError,
-      matchedFence,
-      qrValue,
-    ],
-  );
-
-  const loadLatestState = useCallback(
-    async ({label, asRefresh = false, autoPromptQr = true} = {}) => {
-      if (asRefresh) {
-        setRefreshing(true);
-      }
-      setProcessingLabel(label ?? 'Processing...');
-      setIsProcessing(true);
-
-      try {
-        const latestState = await refresh();
-        return applyLatestState(latestState, autoPromptQr);
-      } catch (error) {
-        Alert.alert(
-          'Retrieve Failed',
-          error.message || 'Unable to retrieve the latest attendance state.',
-        );
-        return null;
-      } finally {
-        if (asRefresh) {
-          setRefreshing(false);
-        }
-        setIsProcessing(false);
-      }
-    },
-    [applyLatestState, refresh],
-  );
-
+  // Build session context from embedded token data — no extra SOAP call
   useEffect(() => {
-    // autoPromptQr=false: QR was already scanned before this screen opened.
-    loadLatestState({label: 'Processing...', autoPromptQr: false});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleQRSuccess = useCallback(rawValue => {
-    setQrModalVisible(false);
-    setQrValue(rawValue);
-  }, []);
+    if (!validationToken?.serverPunches?.length) return;
+    try {
+      const records = aggregateServerPunches(validationToken.serverPunches);
+      if (!records.length) return;
+      const last = records[records.length - 1];
+      if (!last.clockOut && last.clockIn) {
+        const stats = getSessionStats(last);
+        if (stats) {
+          setSessionSummary({
+            clockIn: last.clockIn,
+            netMs: stats.netMs,
+            breakCount: stats.completedBreaks,
+            breakMs: stats.breakMs,
+            ongoingBreakStart:
+              isBreakEnd && last.breaks?.length
+                ? (() => {
+                    const lb = last.breaks[last.breaks.length - 1];
+                    return lb && !lb.breakEnd ? lb.breakStart : null;
+                  })()
+                : null,
+          });
+        }
+      }
+    } catch {}
+  }, [validationToken, isBreakEnd]);
 
   const handleConfirmPress = useCallback(async () => {
     if (isProcessing) return;
-
-    setProcessingLabel('Processing...');
+    setProcessingLabel(isBreakEnd ? 'Ending break…' : 'Starting break…');
     setIsProcessing(true);
-
     try {
-      const isOnline = await checkIsOnline();
-      const mode = isOnline ? ATTENDANCE_MODE.ONLINE : ATTENDANCE_MODE.OFFLINE;
-
-      const latestState = await refresh();
-      const resolvedState = applyLatestState(latestState, false);
-      const records = await loadRecords({person: userData?.Person});
-
-      if (spoofingDetected) {
-        Alert.alert(
-          'GPS Integrity Issue',
-          'Suspicious GPS activity detected. Cannot record attendance.',
-        );
-        return;
-      }
-
-      if (isOnline) {
-        const validationMessage = getValidationMessage({
-          actionType,
-          records,
-          matchedFence: resolvedState?.fence,
-          locationError: resolvedState?.locationError,
-        });
-        if (validationMessage) {
-          Alert.alert('Validation Failed', validationMessage);
-          return;
-        }
-
-        if (resolvedState?.qrRequired && !resolvedState.qrValue) {
-          setQrModalVisible(true);
-          Alert.alert(
-            'QR Verification Required',
-            `Scan the attendance QR code before ${
-              isBreakEnd ? 'ending' : 'starting'
-            } your break.`,
-          );
-          return;
-        }
-      }
-
-      let networkResult = {
-        passed: true,
-        networkContext: {networkId: null, networkName: null, bssid: null},
-      };
-      if (isOnline) {
-        networkResult = await runNetworkCheck(resolvedState?.fence);
-        if (!networkResult.passed) {
-          Alert.alert(networkResult.errorTitle, networkResult.errorMessage);
-          return;
-        }
-      }
-
       const deviceId = await DeviceInfo.getUniqueId();
 
-      const attendanceData = await buildAttendancePayload({
-        fence: resolvedState?.fence,
-        coords: resolvedState?.coords,
+      await AttendanceOrchestrator.confirm({
+        token: validationToken,
         generationType,
-        networkContext: networkResult.networkContext,
         personRecId: userData?.Person,
-        qrValue: isOnline ? resolvedState?.qrValue : null,
-        faceResult: initialFaceResult, // Always pass, since liveness is on-device
-        deviceContext: {id: deviceId},
-        mode,
+        deviceId,
+        clockInFence,
+        spoofingDetected,
       });
 
-      await enqueueAttendance(attendanceData);
-      await onConfirm(note, isOnline ? resolvedState?.qrValue ?? null : null);
+      await onConfirm(note);
     } catch (error) {
       Alert.alert(
         isBreakEnd ? 'End Break Failed' : 'Start Break Failed',
@@ -252,22 +127,20 @@ const ConfirmBreakScreen = ({
       setIsProcessing(false);
     }
   }, [
-    actionType,
-    applyLatestState,
-    generationType,
-    isBreakEnd,
     isProcessing,
+    isBreakEnd,
+    validationToken,
+    generationType,
+    userData?.Person,
+    clockInFence,
+    spoofingDetected,
     note,
     onConfirm,
-    refresh,
-    runNetworkCheck,
-    spoofingDetected,
-    userData?.Person,
   ]);
 
   const displayFence = useMemo(
-    () => actionFence ?? clockInFence ?? matchedFence,
-    [actionFence, clockInFence, matchedFence],
+    () => validationToken?.matchedFence ?? clockInFence ?? matchedFence,
+    [validationToken, clockInFence, matchedFence],
   );
   const matched = !!matchedFence;
 
@@ -276,48 +149,93 @@ const ConfirmBreakScreen = ({
       <ConfirmSheet
         title={title}
         subtitle={subtitle}
-        userName={userData?.employeeName || userData?.Name || 'Employee'}
         status="Active now"
         onBack={onBack}
         onConfirm={handleConfirmPress}
-        onRefresh={() =>
-          loadLatestState({label: 'Refreshing...', asRefresh: true})
-        }
-        refreshing={refreshing}
-        confirmDisabled={requiresQR && (!qrValue || !qrValue.value)}
+        confirmDisabled={!validationToken}
         disableActions={isProcessing}
         confirmLabel={isBreakEnd ? 'End Break' : 'Start Break'}
         confirmColor={confirmColor}>
         {isProcessing && <ProcessingOverlay label={processingLabel} />}
 
-        {requiresQR && (
-          <View style={S.qrBadge}>
-            <Text style={S.qrBadgeTxt}>
-              {qrValue?.value
-                ? `QR verified (${qrValue.value.slice(0, 10)}...)`
-                : `QR scan required before ${eventLabel.toLowerCase()}`}
+        {/* Validation status badge */}
+        {validationToken ? (
+          <View style={S.validBadge}>
+            <Text style={S.validBadgeText}>
+              ✓ All checks passed — ready to {isBreakEnd ? 'end break' : 'start break'}
             </Text>
-            <TouchableOpacity
-              style={S.qrAction}
-              onPress={() => setQrModalVisible(true)}
-              disabled={isProcessing}>
-              <Text style={S.qrActionText}>
-                {qrValue?.value ? 'Scan Again' : 'Open Scanner'}
-              </Text>
-            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={S.pendingBadge}>
+            <Text style={S.pendingBadgeText}>Validation pending…</Text>
           </View>
         )}
 
+        {/* Session context card */}
+        {sessionSummary && (
+          <View
+            style={[
+              S.contextCard,
+              isBreakEnd
+                ? {backgroundColor: '#FFFBEB', borderColor: '#FCD34D'}
+                : {},
+            ]}>
+            <Text style={[S.contextTitle, isBreakEnd && {color: '#92400E'}]}>
+              {isBreakEnd ? 'Break in Progress' : 'Session So Far'}
+            </Text>
+            <View style={S.divider} />
+            <View style={S.contextRow}>
+              <Text style={[S.contextKey, isBreakEnd && {color: '#92400E'}]}>
+                Clocked in at
+              </Text>
+              <Text style={[S.contextVal, isBreakEnd && {color: '#92400E'}]}>
+                {formatTime(sessionSummary.clockIn)}
+              </Text>
+            </View>
+            {isBreakEnd && sessionSummary.ongoingBreakStart ? (
+              <View style={S.contextRow}>
+                <Text style={[S.contextKey, {color: '#92400E'}]}>Break started</Text>
+                <Text style={[S.contextVal, {color: '#92400E', fontWeight: '700'}]}>
+                  {formatTime(sessionSummary.ongoingBreakStart)}
+                  {' · '}
+                  {formatDurationShort(
+                    Date.now() -
+                      new Date(sessionSummary.ongoingBreakStart).getTime(),
+                  )}{' '}
+                  ago
+                </Text>
+              </View>
+            ) : (
+              <View style={S.contextRow}>
+                <Text style={S.contextKey}>Time worked</Text>
+                <Text style={[S.contextVal, {fontWeight: '700'}]}>
+                  {formatDuration(sessionSummary.netMs)}
+                </Text>
+              </View>
+            )}
+            {sessionSummary.breakCount > 0 && !isBreakEnd && (
+              <View style={S.contextRow}>
+                <Text style={S.contextKey}>Breaks taken</Text>
+                <Text style={S.contextVal}>
+                  {sessionSummary.breakCount} ·{' '}
+                  {formatDurationShort(sessionSummary.breakMs)}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* GPS spoofing warning */}
         {spoofingDetected && (
           <View style={S.spoofBanner}>
             <Text style={S.spoofTitle}>GPS Integrity Warning</Text>
             <Text style={S.spoofSub}>
-              {SPOOF_LABELS[spoofingReason] ??
-                'Suspicious GPS activity detected'}
+              {SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS activity detected'}
             </Text>
           </View>
         )}
 
+        {/* Location row */}
         <TouchableOpacity
           style={[
             S.locationRow,
@@ -331,25 +249,16 @@ const ConfirmBreakScreen = ({
           activeOpacity={0.75}
           disabled={isProcessing}>
           {locationLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={C.blue}
-              style={{marginRight: 4}}
-            />
+            <ActivityIndicator size="small" color={C.blue} style={{marginRight: 4}} />
           ) : (
             <View
-              style={[
-                S.locDot,
-                {backgroundColor: matched ? C.greenMid : C.inkFaint},
-              ]}
+              style={[S.locDot, {backgroundColor: matched ? C.greenMid : C.inkFaint}]}
             />
           )}
           <View style={S.locBody}>
             <Text style={S.locLabel}>CURRENT LOCATION</Text>
             {locationLoading ? (
-              <Text style={[S.locValue, {color: C.inkMuted}]}>
-                Verifying location...
-              </Text>
+              <Text style={[S.locValue, {color: C.inkMuted}]}>Verifying location…</Text>
             ) : (
               <Text
                 style={[S.locValue, !matched && {color: C.inkMuted}]}
@@ -360,23 +269,22 @@ const ConfirmBreakScreen = ({
               </Text>
             )}
           </View>
-          <Text
-            style={[S.locArrow, {color: matched ? C.greenDark : C.inkFaint}]}>
+          <Text style={[S.locArrow, {color: matched ? C.greenDark : C.inkFaint}]}>
             ›
           </Text>
         </TouchableOpacity>
 
-        <View style={S.flexibleNote}>
-          <Text style={S.flexibleNoteTxt}>
-            Validation uses the active clock-in fence:
-            {displayFence?.FenceName ? ` ${displayFence.FenceName}` : ' N/A'}
+        {displayFence && (
+          <Text style={S.fenceNote}>
+            {isBreakEnd ? 'Returning to' : 'Using'} clock-in fence:{' '}
+            {displayFence.FenceName ?? 'N/A'}
           </Text>
-        </View>
+        )}
 
         {!matched && !locationLoading && (
-          <View style={S.flexibleNote}>
-            <Text style={S.flexibleNoteTxt}>
-              Breaks can be taken outside the office zone.
+          <View style={S.allowedNote}>
+            <Text style={S.allowedNoteTxt}>
+              Breaks may be taken outside the office zone.
             </Text>
           </View>
         )}
@@ -389,14 +297,6 @@ const ConfirmBreakScreen = ({
         visible={locationModalVisible}
         onClose={() => setLocationModalVisible(false)}
       />
-
-      <QRScannerModal
-        visible={qrModalVisible}
-        eventLabel={eventLabel}
-        fenceName={displayFence?.FenceName}
-        onScanSuccess={handleQRSuccess}
-        onCancel={() => setQrModalVisible(false)}
-      />
     </>
   );
 };
@@ -404,24 +304,49 @@ const ConfirmBreakScreen = ({
 export default ConfirmBreakScreen;
 
 const S = StyleSheet.create({
-  qrBadge: {
-    backgroundColor: C.blueLight,
+  validBadge: {
+    backgroundColor: '#D1FAE5',
     borderWidth: 1,
-    borderColor: C.blueMid,
+    borderColor: '#6EE7B7',
     borderRadius: R.sm,
-    padding: 12,
+    padding: 10,
     marginBottom: 10,
-    gap: 10,
   },
-  qrBadgeTxt: {fontSize: 12, color: C.blueDark, fontWeight: '500'},
-  qrAction: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: R.full,
-    backgroundColor: C.blue,
+  validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
+  pendingBadge: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    borderRadius: R.sm,
+    padding: 10,
+    marginBottom: 10,
   },
-  qrActionText: {fontSize: 12, color: C.white, fontWeight: '700'},
+  pendingBadgeText: {fontSize: 12, color: '#92400E'},
+
+  contextCard: {
+    backgroundColor: C.surfaceAlt,
+    borderRadius: R.md,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 14,
+    marginBottom: 10,
+  },
+  contextTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.inkSub,
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
+  contextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 3,
+  },
+  contextKey: {fontSize: 12, color: C.inkMuted},
+  contextVal: {fontSize: 12, fontWeight: '600', color: C.ink},
+
   spoofBanner: {
     backgroundColor: '#FFF3CD',
     borderWidth: 1,
@@ -432,6 +357,7 @@ const S = StyleSheet.create({
   },
   spoofTitle: {fontSize: 13, fontWeight: '700', color: '#856404'},
   spoofSub: {fontSize: 12, color: '#856404', marginTop: 2},
+
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,7 +371,7 @@ const S = StyleSheet.create({
   locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
   locationRowNeutral: {backgroundColor: C.surfaceAlt, borderColor: C.border},
   locationRowLoading: {backgroundColor: C.blueLight, borderColor: C.blueMid},
-  locDot: {width: 8, height: 8, borderRadius: 4},
+  locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
   locBody: {flex: 1},
   locLabel: {
     fontSize: 9,
@@ -457,7 +383,8 @@ const S = StyleSheet.create({
   },
   locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
   locArrow: {fontSize: 18},
-  flexibleNote: {paddingBottom: 8},
-  flexibleNoteTxt: {fontSize: 12, color: C.inkMuted},
-  divider: {height: 1, backgroundColor: C.border, marginBottom: 4},
+  fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
+  allowedNote: {marginBottom: 8},
+  allowedNoteTxt: {fontSize: 11, color: C.inkMuted, fontStyle: 'italic'},
+  divider: {height: 1, backgroundColor: C.border, marginBottom: 4, marginTop: 4},
 });

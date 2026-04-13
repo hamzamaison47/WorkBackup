@@ -1,10 +1,22 @@
+// ─────────────────────────────────────────────
+// components/AttendanceManagement/Screen/attendanceActionHelpers.js
+//
+// OPTIMIZATIONS:
+//   P1.1 — prewarmToken(): fires getToken() early on screen mount so the
+//           token is already in-flight or cached when SOAP calls are needed.
+//   P3.1 — TokenManager singleton: centralizes token lifecycle.
+//           Shares in-flight token refresh across concurrent callers.
+//           Proactively refreshes token 60s before expiry to eliminate
+//           cold-path token delays during confirm press.
+// ─────────────────────────────────────────────
 import {
   canClockIn,
   canClockOut,
   canEndBreak,
   canStartBreak,
 } from '../../../screens/AttendanceManagement/helpers';
-import {checkIsOnline} from '../../../hooks/useNetworkCheck';
+import {getToken} from '../../../API/Token/getToken';
+import ntpClient from 'react-native-ntp-client';
 
 export const ACTION_TYPES = {
   CLOCK_IN: 'CLOCK_IN',
@@ -19,11 +31,59 @@ export const ATTENDANCE_MODE = {
   OFFLINE: 'Offline',
 };
 
+// ─────────────────────────────────────────────
+// P3.1 — TokenManager
+// Centralizes OAuth token lifecycle. All callers share one in-flight
+// promise. Proactive refresh fires 60s before expiry.
+// ─────────────────────────────────────────────
+const _tokenManager = (() => {
+  let _token = null;
+  let _expiresAt = 0;           // epoch ms
+  let _inflightPromise = null;
+  const EXPIRE_BUFFER_MS = 60_000; // refresh 60s before actual expiry
+
+  // Estimate expiry: most Azure tokens are 3600s; we assume 3500s to be safe.
+  const TOKEN_LIFETIME_MS = 3_500_000;
+
+  const _fetchToken = async () => {
+    const t = await getToken();
+    _token = t;
+    _expiresAt = Date.now() + TOKEN_LIFETIME_MS;
+    return t;
+  };
+
+  const get = async () => {
+    const now = Date.now();
+    const needsRefresh = !_token || now >= _expiresAt - EXPIRE_BUFFER_MS;
+    if (!needsRefresh) return _token;
+
+    if (_inflightPromise) return _inflightPromise;
+
+    _inflightPromise = _fetchToken().finally(() => {
+      _inflightPromise = null;
+    });
+    return _inflightPromise;
+  };
+
+  // P1.1 — prewarmToken: call on screen mount so token is ready
+  const prewarm = () => {
+    // Fire and forget — errors intentionally swallowed here
+    get().catch(() => {});
+  };
+
+  return {get, prewarm};
+})();
+
+export const TokenManager = _tokenManager;
+
+// Convenience export for screen-mount pre-warming
+export const prewarmToken = () => _tokenManager.prewarm();
+
+// ─────────────────────────────────────────────
 export const getActionFence = ({actionType, matchedFence, clockInFence}) => {
   if (actionType === ACTION_TYPES.CLOCK_IN) {
     return matchedFence ?? null;
   }
-
   return clockInFence ?? matchedFence ?? null;
 };
 
@@ -51,6 +111,8 @@ export const getValidationMessage = ({
       if (!canClockOut(records)) {
         return records.length === 0
           ? 'No active session found. Please clock in first.'
+          : canEndBreak(records)
+          ? 'You are on a break. End your break before clocking out.'
           : 'You are not currently clocked in.';
       }
       return null;
@@ -74,11 +136,11 @@ export const getValidationMessage = ({
   }
 };
 
-import ntpClient from 'react-native-ntp-client';
-
+// ─────────────────────────────────────────────
+// getTrueTime — NTP-synced timestamp with device-time fallback
+// ─────────────────────────────────────────────
 export const getTrueTime = () => {
   return new Promise(resolve => {
-    // using a timeout approach to not block forever if port 123 is blocked
     const timeout = setTimeout(() => {
       console.warn('NTP sync timed out, using device time.');
       resolve({time: new Date().toISOString(), isOfflineTime: true});
@@ -102,6 +164,9 @@ export const getTrueTime = () => {
   });
 };
 
+// ─────────────────────────────────────────────
+// buildAttendancePayload
+// ─────────────────────────────────────────────
 export const buildAttendancePayload = async ({
   fence,
   coords,
@@ -109,7 +174,7 @@ export const buildAttendancePayload = async ({
   networkContext,
   personRecId,
   qrValue,
-  faceResult,   // NEW: { verified: boolean } | null — from FaceVerificationModal
+  faceResult,
   deviceContext,
   mode,
 }) => {
@@ -132,17 +197,19 @@ export const buildAttendancePayload = async ({
     PersonRecId: personRecId ? Number(personRecId) : undefined,
     PunchDateTime: punchTime,
     IsOfflineTime: isOfflineTime,
-    DeviceId: deviceContext?.id || undefined,
+    DeviceId: deviceContext?.id || null,
     QRImage: qrString,
-    // Face verification — true when the user passed the liveness gate
     VerifyFaceId: faceResult?.verified === true,
   };
 
-  return Object.fromEntries(
-    Object.entries(payload).filter(([, value]) => {
+  const filtered = Object.fromEntries(
+    Object.entries(payload).filter(([key, value]) => {
+      if (key === 'DeviceId') return true; // always send, SOAP builder handles nil
       if (value === null || value === undefined) return false;
       if (typeof value === 'string') return value.trim().length > 0;
       return true;
     }),
   );
+
+  return filtered;
 };

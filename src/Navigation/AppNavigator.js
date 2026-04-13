@@ -12,6 +12,7 @@ import SettingsScreen from '../screens/Settings/Settingsscreen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
+import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
 
 const Stack = createStackNavigator();
 
@@ -46,7 +47,6 @@ const AppNavigator = () => {
         component={LoginScreen}
         options={{headerShown: false}}
       />
-
       {/* Screens WITH session timeout */}
       <Stack.Screen name="DrawerNavigator" options={{headerShown: false}}>
         {() => (
@@ -55,7 +55,6 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
       <Stack.Screen
         name="RequestForRegistration"
         options={{headerShown: false}}>
@@ -65,7 +64,6 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
       <Stack.Screen
         name="CreateAttendanceScreen"
         options={{
@@ -78,17 +76,20 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
       <Stack.Screen
         name="ConfigSelectionScreen"
         component={ConfigSelectionScreen}
         options={{headerShown: false}}
       />
-
       <Stack.Screen
         name="QRSetupScreen"
         component={QRSetupScreen}
         options={{headerShown: false}}
+      />
+
+      <Stack.Screen
+        name="AttendanceManagement"
+        component={AttendanceManagement}
       />
 
       {/* SettingsScreen — must NOT hide the header so ActionPaneContainer

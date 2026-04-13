@@ -1,10 +1,19 @@
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/GeofenceContext.js
 //
-// FLOW CHANGE:
-//   Location verification = GPS + coordinates ONLY.
-//   Network (WiFi/IP) check is NOT done here anymore.
-//   It is done at confirm-time in each ConfirmScreen.
+// OPTIMIZATIONS:
+//   P0.2 — Added inflight deduplication: concurrent refresh() calls share
+//           the same in-flight promise instead of spawning parallel SOAP calls.
+//   P0.2 — Removed AsyncStorage geofence cache (online-first; cache caused
+//           stale-data confusion with QA workflow).
+//   P1.2 — Removed fetchPublicIP / api.ipify.org dependency entirely.
+//           Network validation is now SSID + BSSID only (more reliable,
+//           no external HTTP call in the critical path).
+//   P3.2 — Unknown SSID detection: warns when Android 9+ returns
+//           '<unknown ssid>' due to location permission not being granted.
+//
+// Location verification = GPS + coordinates ONLY.
+// Network (WiFi SSID + BSSID) check is done at confirm-time in Orchestrator.
 // ─────────────────────────────────────────────
 /* eslint-disable curly */
 import React, {
@@ -23,6 +32,7 @@ import {RetrieveByPerson} from '../../API/AttendanceManagement/RetrieveByPerson'
 import {haversineDistance} from '../../hooks/useLocation';
 
 const SOFT_BUFFER_METRES = 15;
+const CLOCK_IN_FENCE_KEY = '@attendance_clock_in_fence';
 
 const isActiveFlag = val => {
   const s = String(val).trim().toLowerCase();
@@ -67,44 +77,36 @@ const fetchFreshCoords = async () => {
 };
 
 // ─────────────────────────────────────────────
-// Network helpers — exported so ConfirmScreens
-// can call them at confirm-time.
-// ─────────────────────────────────────────────
+// Network helpers — exported so the Orchestrator
+// can call them at validation time.
 //
 // API Networks entry:
-//   { NetworkID: "58.27.244.226", NetworkName: "MAISON" }
+//   { NetworkID: "xx:xx:xx:xx", NetworkName: "MAISON", BSSID: "aa:bb:cc:dd" }
 //   NetworkName = WiFi SSID
-//   NetworkID   = Public IP address of that network
+//   BSSID       = Access point hardware address
 //
-// Rule: BOTH must match on the SAME entry (AND logic).
+// Rule: SSID must match. BSSID must match if configured.
+// fetchPublicIP REMOVED — external HTTP call in critical path eliminated.
+// ─────────────────────────────────────────────
 
 const normalizeNet = s =>
   String(s ?? '')
     .trim()
     .toLowerCase();
 
-export const fetchPublicIP = async () => {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch('https://api.ipify.org?format=text', {
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const ip = (await res.text()).trim();
-    return ip.length > 0 ? ip : null;
-  } catch {
-    return null;
-  }
-};
+// P3.2 — Detect Android 9+ returning placeholder instead of real SSID
+export const isUnknownSsid = ssid =>
+  !ssid ||
+  ssid === '<unknown ssid>' ||
+  ssid === '0x' ||
+  ssid === '"<unknown ssid>"';
 
-// checkNetworkMatch — called at confirm-time, not at location-match time.
+// checkNetworkMatch — called at validation time by the Orchestrator.
 //
 //   fenceNetworks  Networks[] from the matched fence
 //   wifiSsid       device WiFi SSID (from NetInfo)
+//   wifiBssid      device WiFi BSSID (from NetInfo)
 //   isWifi         device is on WiFi
-//   publicIP       device public IP (from fetchPublicIP)
 //
 // Returns { networkRequired, networkMatched, networkFailReason }
 export const checkNetworkMatch = (
@@ -112,8 +114,6 @@ export const checkNetworkMatch = (
   wifiSsid,
   wifiBssid,
   isWifi,
-  publicIP,
-  isInternetReachable = true,
 ) => {
   if (!fenceNetworks || fenceNetworks.length === 0)
     return {
@@ -129,27 +129,27 @@ export const checkNetworkMatch = (
       networkFailReason: 'NOT_ON_WIFI',
     };
 
-  if (!publicIP && isInternetReachable)
+  // P3.2 — Unknown SSID: Android 9+ requires location services for SSID
+  if (isUnknownSsid(wifiSsid))
     return {
       networkRequired: true,
       networkMatched: false,
-      networkFailReason: 'PUBLIC_IP_UNAVAILABLE',
+      networkFailReason: 'SSID_UNAVAILABLE',
     };
 
   const deviceSsid = normalizeNet(wifiSsid);
-  const deviceIp = normalizeNet(publicIP);
   const deviceBssid = normalizeNet(wifiBssid);
 
-  // Both NetworkName AND NetworkID AND BSSID must match on the same entry
-  const matched = fenceNetworks.some(
-    net =>
-      net.NetworkName &&
-      net.NetworkID &&
-      net.BSSID &&
-      normalizeNet(net.NetworkName) === deviceSsid &&
-      (!isInternetReachable || normalizeNet(net.NetworkID) === deviceIp) &&
-      normalizeNet(net.BSSID) === deviceBssid,
-  );
+  // SSID must match. BSSID must match if it is configured on the entry.
+  const matched = fenceNetworks.some(net => {
+    const ssidMatch =
+      net.NetworkName && normalizeNet(net.NetworkName) === deviceSsid;
+    // If BSSID is configured on the fence entry, it must match too.
+    const bssidMatch =
+      !net.BSSID ||
+      (deviceBssid && normalizeNet(net.BSSID) === deviceBssid);
+    return ssidMatch && bssidMatch;
+  });
 
   return {
     networkRequired: true,
@@ -168,8 +168,8 @@ export const buildNetworkErrorMessage = (fence, failReason) => {
     return `This location requires office WiFi.\nRequired network: ${
       names || 'office WiFi'
     }`;
-  if (failReason === 'PUBLIC_IP_UNAVAILABLE')
-    return 'Unable to verify your network. Check your internet connection.';
+  if (failReason === 'SSID_UNAVAILABLE')
+    return 'Unable to read WiFi network name. Ensure Location permission is granted and Location Services are enabled on your device.';
   return `Wrong WiFi network.\nPlease connect to: ${
     names || 'required office network'
   }`;
@@ -194,12 +194,20 @@ export const GeofenceProvider = ({children, person}) => {
   const [locationError, setLocationError] = useState(null);
   const [clockInFence, setClockInFence] = useState(null);
 
-  // wifiInfo exposed so ConfirmScreens can read current SSID
-  const [wifiInfo, setWifiInfo] = useState({ssid: null, isWifi: false});
+  // wifiInfo exposed so Orchestrator can read current SSID/BSSID
+  const [wifiInfo, setWifiInfo] = useState({
+    ssid: null,
+    bssid: null,
+    isWifi: false,
+    isUnknown: false,
+  });
 
   const watchId = useRef(null);
   const latestCoordsRef = useRef(null);
   const wifiInfoRef = useRef(wifiInfo);
+
+  // P0.2 — Inflight deduplication: share one promise across concurrent callers
+  const inflightRefreshRef = useRef(null);
 
   useEffect(() => {
     wifiInfoRef.current = wifiInfo;
@@ -208,17 +216,43 @@ export const GeofenceProvider = ({children, person}) => {
   // ── Subscribe to NetInfo ──────────────────────────────────
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-      const next =
-        state.type === 'wifi' && state.details
-          ? {ssid: state.details.ssid ?? null, isWifi: true}
-          : {ssid: null, isWifi: false};
-
-      setWifiInfo(prev => {
-        if (prev.isWifi === next.isWifi && prev.ssid === next.ssid) return prev;
-        wifiInfoRef.current = next;
-        return next;
-      });
+      if (state.type === 'wifi' && state.details) {
+        const ssid = state.details.ssid ?? null;
+        const bssid = state.details.bssid ?? null;
+        const unknown = isUnknownSsid(ssid);
+        const next = {ssid, bssid, isWifi: true, isUnknown: unknown};
+        setWifiInfo(prev => {
+          if (
+            prev.isWifi === next.isWifi &&
+            prev.ssid === next.ssid &&
+            prev.bssid === next.bssid
+          )
+            return prev;
+          wifiInfoRef.current = next;
+          return next;
+        });
+      } else {
+        const next = {ssid: null, bssid: null, isWifi: false, isUnknown: false};
+        setWifiInfo(prev => {
+          if (!prev.isWifi) return prev;
+          wifiInfoRef.current = next;
+          return next;
+        });
+      }
     });
+    
+    // P1.3 — Initial snapshot fetch because event listener may take a few seconds
+    NetInfo.fetch().then(state => {
+      if (state.type === 'wifi' && state.details) {
+        const ssid = state.details.ssid ?? null;
+        const bssid = state.details.bssid ?? null;
+        const unknown = isUnknownSsid(ssid);
+        const next = {ssid, bssid, isWifi: true, isUnknown: unknown};
+        setWifiInfo(next);
+        wifiInfoRef.current = next;
+      }
+    });
+
     return () => unsubscribe();
   }, []);
 
@@ -243,7 +277,7 @@ export const GeofenceProvider = ({children, person}) => {
 
   // ── enrichFences ──────────────────────────────────────────
   // GPS + coordinates ONLY. No network check here.
-  // Networks array is stored on each fence for use at confirm-time.
+  // Networks array is stored on each fence for Orchestrator use.
   const enrichFences = useCallback((raw, cur) => {
     const now = new Date();
 
@@ -276,7 +310,7 @@ export const GeofenceProvider = ({children, person}) => {
         dateValid,
         distanceMetres,
         withinRadius,
-        // Store networks for confirm-time validation — not used for matching here
+        // Store networks for Orchestrator validation at confirm-time
         networks: Array.isArray(f.Networks)
           ? f.Networks.flatMap(n =>
               Array.isArray(n.DFGeoFencesNetworksSvcContract)
@@ -289,8 +323,6 @@ export const GeofenceProvider = ({children, person}) => {
   }, []);
 
   // ── selectBestFence ───────────────────────────────────────
-  // GPS-only: active + valid dates + within radius.
-  // Closest wins when multiple qualify.
   const selectBestFence = fences => {
     const candidates = fences.filter(
       f => f.active && f.dateValid && f.withinRadius,
@@ -301,7 +333,7 @@ export const GeofenceProvider = ({children, person}) => {
     );
   };
 
-  // ── reEnrichWithCoords (G5) ───────────────────────────────
+  // ── reEnrichWithCoords ────────────────────────────────────
   const reEnrichWithCoords = useCallback(
     newCoords => {
       setAllFences(prev => {
@@ -328,8 +360,6 @@ export const GeofenceProvider = ({children, person}) => {
           matched ? null : 'You are outside all authorised zones.',
         );
 
-        // M1 — clear manual selection if no longer in radius
-        // (multi-select feature commented out — see LocationPickerModal)
         setManualSelectedFence(prev2 => {
           if (!prev2) return null;
           const stillValid = enriched.find(
@@ -355,8 +385,10 @@ export const GeofenceProvider = ({children, person}) => {
     setLocationError(errorMessage);
   }, []);
 
-  // ── Main refresh ──────────────────────────────────────────
-  const refresh = useCallback(async () => {
+  // ── Core refresh ──────────────────────────────────────────
+  // P0.2 — _doRefresh is the actual implementation.
+  // refresh() deduplicates concurrent callers.
+  const _doRefresh = useCallback(async () => {
     setLocationLoading(true);
     setLocationError(null);
 
@@ -371,30 +403,8 @@ export const GeofenceProvider = ({children, person}) => {
       setCoords(fresh);
       latestCoordsRef.current = fresh;
 
-      let raw = null;
-      try {
-        raw = await RetrieveByPerson({person});
-        if (raw && raw.length > 0) {
-          await AsyncStorage.setItem('@cached_geofences', JSON.stringify({
-            fetchedAt: Date.now(),
-            fences: raw,
-          }));
-        }
-      } catch (apiError) {
-        console.warn('RetrieveByPerson failed, attempting to use cache', apiError.message);
-        const cachedStr = await AsyncStorage.getItem('@cached_geofences');
-        if (cachedStr) {
-          const cachedData = JSON.parse(cachedStr);
-          const ageHours = (Date.now() - cachedData.fetchedAt) / (1000 * 60 * 60);
-          if (ageHours > 24) {
-            throw new Error('Offline geofence data is older than 24 hours. Please connect to the internet to update security policies.');
-          }
-          raw = cachedData.fences;
-          console.log('Using cached geofences from', new Date(cachedData.fetchedAt).toISOString());
-        } else {
-          throw new Error('Network error and no offline geofence data available.');
-        }
-      }
+      // Always fetch fresh from server — no AsyncStorage cache (online-first)
+      const raw = await RetrieveByPerson({person});
 
       if (!raw || raw.length === 0) {
         const errorMessage =
@@ -429,7 +439,20 @@ export const GeofenceProvider = ({children, person}) => {
     } finally {
       setLocationLoading(false);
     }
-  }, [person, enrichFences, resetFenceState]);
+  }, [person, enrichFences, resetFenceState]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // P0.2 — Deduplicated refresh: concurrent callers receive the same promise
+  const refresh = useCallback(async () => {
+    if (inflightRefreshRef.current) {
+      return inflightRefreshRef.current;
+    }
+    inflightRefreshRef.current = _doRefresh();
+    try {
+      return await inflightRefreshRef.current;
+    } finally {
+      inflightRefreshRef.current = null;
+    }
+  }, [_doRefresh]);
 
   // ── Mount ─────────────────────────────────────────────────
   useEffect(() => {
@@ -476,6 +499,11 @@ export const GeofenceProvider = ({children, person}) => {
       } catch {}
     })();
 
+    // Restore persisted clock in fence
+    AsyncStorage.getItem(CLOCK_IN_FENCE_KEY).then(raw => {
+      if (raw) setClockInFence(JSON.parse(raw));
+    });
+
     return () => {
       mounted = false;
       if (watchId.current !== null) {
@@ -485,7 +513,14 @@ export const GeofenceProvider = ({children, person}) => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const recordClockInFence = useCallback(fence => setClockInFence(fence), []);
+  const recordClockInFence = useCallback(async fence => {
+    setClockInFence(fence);
+    if (fence) {
+      await AsyncStorage.setItem(CLOCK_IN_FENCE_KEY, JSON.stringify(fence));
+    } else {
+      await AsyncStorage.removeItem(CLOCK_IN_FENCE_KEY);
+    }
+  }, []);
 
   const effectiveMatchedFence = manualSelectedFence ?? matchedFence;
 
@@ -502,7 +537,7 @@ export const GeofenceProvider = ({children, person}) => {
         setManualSelectedFence,
         clockInFence,
         recordClockInFence,
-        wifiInfo, // current WiFi state for ConfirmScreens
+        wifiInfo, // current WiFi state for Orchestrator (includes bssid now)
       }}>
       {children}
     </GeofenceContext.Provider>

@@ -12,7 +12,7 @@ import {
 } from '../../screens/AttendanceManagement/helpers';
 import {C, R, Sh} from './theme';
 
-const RecordCard = ({item, onDelete, isDeleting = false}) => {
+const RecordCard = ({item, isDeleting = false}) => {
   const getWorkedMs = () => {
     if (!item.clockIn || !item.clockOut) return null;
     let worked = new Date(item.clockOut) - new Date(item.clockIn);
@@ -49,13 +49,13 @@ const RecordCard = ({item, onDelete, isDeleting = false}) => {
             </Text>
           </View>
         </View>
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={() => onDelete(item.RecId ?? item.id)}
           style={S.deleteBtn}
           disabled={isDeleting}
           hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
           <Text style={S.deleteTxt}>{isDeleting ? '⏳' : '🗑'}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Stats row */}

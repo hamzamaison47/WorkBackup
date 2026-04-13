@@ -1,5 +1,4 @@
 import {getActiveConfigData} from '../Controller/secureConfig';
-
 const GOOGLE_OAUTH_APP_GUID = '127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl';
 const Googleconfig = {
   issuer: 'https://accounts.google.com',

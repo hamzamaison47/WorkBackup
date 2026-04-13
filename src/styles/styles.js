@@ -386,6 +386,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  Login_AttendanceButton: {
+    position: 'absolute',
+    top: 50, // match Login_QRButton top value
+    left: 20, // left side instead of right
+    padding: 8,
+    zIndex: 10,
+  },
+
   // ============================================
   // CONFIG SELECTION SCREEN - RESPONSIVE STYLES
   // ============================================

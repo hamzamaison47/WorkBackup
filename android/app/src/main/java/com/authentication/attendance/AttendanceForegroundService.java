@@ -7,9 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -30,6 +28,7 @@ public class AttendanceForegroundService extends Service {
     public static final String EXTRA_BREAK_START_EPOCH = "breakStartEpoch";
     public static final String EXTRA_IS_ON_BREAK = "isOnBreak";
 
+    public static final String EXTRA_TOTAL_BREAK_MS = "totalBreakMs";
     public static final String EXTRA_ATTENDANCE_ACTION = "attendance_action";
 
     // ─────────────────────────────────────────────────────────
@@ -37,10 +36,8 @@ public class AttendanceForegroundService extends Service {
     // ─────────────────────────────────────────────────────────
     private long clockInEpoch = 0;
     private long breakStartEpoch = 0;
+    private long totalBreakMs = 0;
     private boolean isOnBreak = false;
-
-    private Handler tickHandler;
-    private Runnable tickRunnable;
 
     // ─────────────────────────────────────────────────────────
     // Lifecycle
@@ -49,27 +46,28 @@ public class AttendanceForegroundService extends Service {
     public void onCreate() {
         super.onCreate();
         createNotificationChannel();
-        tickHandler = new Handler(Looper.getMainLooper());
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         if (intent != null) {
-            clockInEpoch = intent.getLongExtra(EXTRA_CLOCK_IN_EPOCH, System.currentTimeMillis());
+            long initialClockIn = intent.getLongExtra(EXTRA_CLOCK_IN_EPOCH, 0);
+            if (initialClockIn > 0) {
+                clockInEpoch = initialClockIn;
+            }
             breakStartEpoch = intent.getLongExtra(EXTRA_BREAK_START_EPOCH, 0);
+            totalBreakMs = intent.getLongExtra(EXTRA_TOTAL_BREAK_MS, 0);
             isOnBreak = intent.getBooleanExtra(EXTRA_IS_ON_BREAK, false);
         }
 
         startForeground(NOTIFICATION_ID, buildNotification());
-        startTick();
 
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        stopTick();
         super.onDestroy();
     }
 
@@ -77,33 +75,6 @@ public class AttendanceForegroundService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // Timer Tick
-    // ─────────────────────────────────────────────────────────
-    private void startTick() {
-
-        stopTick();
-
-        tickRunnable = new Runnable() {
-            @Override
-            public void run() {
-
-                updateNotification();
-
-                tickHandler.postDelayed(this, 1000);
-            }
-        };
-
-        tickHandler.post(tickRunnable);
-    }
-
-    private void stopTick() {
-
-        if (tickHandler != null && tickRunnable != null) {
-            tickHandler.removeCallbacks(tickRunnable);
-        }
     }
 
     // ─────────────────────────────────────────────────────────
@@ -121,61 +92,54 @@ public class AttendanceForegroundService extends Service {
 
     private Notification buildNotification() {
 
-        long now = System.currentTimeMillis();
+        String title;
+        String timerText = null;
+        long chronometerBase;
 
-        long workElapsed = now - clockInEpoch;
-        long breakElapsed = isOnBreak ? now - breakStartEpoch : 0;
-
-        String title = isOnBreak ? "☕ On Break" : "⏱ Clocked In";
-
-        String timerText = isOnBreak
-                ? "Break: " + formatElapsed(breakElapsed) + " | Work: " + formatElapsed(workElapsed)
-                : formatElapsed(workElapsed);
+        if (isOnBreak) {
+            title = "☕ On Break";
+            chronometerBase = breakStartEpoch; // Chronometer shows: now - breakStartEpoch
+            
+            long workMsBeforeBreak = breakStartEpoch - clockInEpoch - totalBreakMs;
+            if (workMsBeforeBreak > 0) {
+                timerText = "Total work so far: " + formatElapsed(workMsBeforeBreak);
+            }
+        } else {
+            title = "⏱ Clocked In";
+            // Clocked in minus all previous breaks
+            chronometerBase = clockInEpoch + totalBreakMs; // Chronometer shows: now - (clockInEpoch + totalBreakMs)
+            
+            if (totalBreakMs > 0) {
+                timerText = "Total breaks taken: " + formatElapsed(totalBreakMs);
+            }
+        }
 
         PendingIntent openApp = buildActivityPendingIntent("OPEN_TIMECLOCK", 0);
 
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, CHANNEL_ID)
                         .setSmallIcon(R.drawable.notification_icon)
+                        .setColor(0xFF0A66C2)         // Brand primary color (Dynaface blue)
+                        .setColorized(true)
                         .setContentTitle(title)
-                        .setContentText(timerText)
-                        .setSubText("Tap to open attendance")
+                        .setSubText("Dynaface Attendance")
                         .setContentIntent(openApp)
                         .setOngoing(true)
                         .setAutoCancel(false)
                         .setOnlyAlertOnce(true)
+                        .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
                         .setPriority(NotificationCompat.PRIORITY_LOW)
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                        .setCategory(NotificationCompat.CATEGORY_SERVICE);
+                        .setUsesChronometer(true)
+                        .setShowWhen(true)
+                        .setWhen(chronometerBase);
 
-        if (isOnBreak) {
-
-            builder.addAction(
-                    0,
-                    "End Break",
-                    buildActivityPendingIntent("END_BREAK", 10)
-            );
-
-            builder.addAction(
-                    0,
-                    "Clock Out",
-                    buildActivityPendingIntent("CLOCK_OUT", 11)
-            );
-
-        } else {
-
-            builder.addAction(
-                    0,
-                    "Start Break",
-                    buildActivityPendingIntent("START_BREAK", 12)
-            );
-
-            builder.addAction(
-                    0,
-                    "Clock Out",
-                    buildActivityPendingIntent("CLOCK_OUT", 11)
-            );
+        if (timerText != null) {
+            builder.setContentText(timerText)
+                   .setStyle(new NotificationCompat.BigTextStyle().bigText(timerText));
         }
+
+
 
         return builder.build();
     }
@@ -230,10 +194,11 @@ public class AttendanceForegroundService extends Service {
                             NotificationManager.IMPORTANCE_LOW
                     );
 
-            channel.setDescription("Live attendance timer");
+            channel.setDescription("Shows your live attendance timer and work duration");
             channel.enableVibration(false);
             channel.enableLights(false);
             channel.setShowBadge(false);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
             NotificationManager manager =
                     (NotificationManager) getSystemService(NOTIFICATION_SERVICE);

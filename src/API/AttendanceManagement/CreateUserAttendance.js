@@ -8,6 +8,7 @@ import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const FIELDS = [
   'BSSID',
+  'DeviceId',
   'FenceName',
   'GenerationType',
   'GeoFenceID',
@@ -42,8 +43,12 @@ const CreateUserAttendance = async ({attendanceData}) => {
 
     if (typeof normalizedData.VerifyFaceId === 'boolean') {
       normalizedData.VerifyFaceId = normalizedData.VerifyFaceId ? 'Yes' : 'No';
-    } else if (normalizedData.VerifyFaceId === 1 || normalizedData.VerifyFaceId === 0) {
-      normalizedData.VerifyFaceId = normalizedData.VerifyFaceId === 1 ? 'Yes' : 'No';
+    } else if (
+      normalizedData.VerifyFaceId === 1 ||
+      normalizedData.VerifyFaceId === 0
+    ) {
+      normalizedData.VerifyFaceId =
+        normalizedData.VerifyFaceId === 1 ? 'Yes' : 'No';
     }
 
     const soapBody = `

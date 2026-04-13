@@ -1,8 +1,8 @@
+/* eslint-disable curly */
+/* eslint-disable react-native/no-inline-styles */
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/screens/HomeScreen.js
 // ─────────────────────────────────────────────
-/* eslint-disable curly */
-/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -16,17 +16,23 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import {useSelector} from 'react-redux';
 import {useGeofence} from '../GeofenceContext';
 import LocationPickerModal from '../LocationPickerModal';
 import NavigationFAB from '../NavigationFAB';
 import {
   loadRecords,
   formatTime,
+  formatDateShort,
+  formatDuration,
+  formatDurationShort,
+  isToday,
+  getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import {C, R, Sh} from '../theme';
 
 // ─────────────────────────────────────────────
-// Full-screen: P1 — Permission denied
+// Permission denied
 // ─────────────────────────────────────────────
 const PermissionDeniedView = ({onNavigate}) => (
   <View style={S.stateWrap}>
@@ -35,8 +41,8 @@ const PermissionDeniedView = ({onNavigate}) => (
     </View>
     <Text style={S.stateTitle}>Location Access Required</Text>
     <Text style={S.stateSub}>
-      Attendance tracking needs your location to confirm you're at an authorised
-      office zone before clocking in or out.
+      Attendance tracking needs your location to confirm you are at an
+      authorised office zone before clocking in or out.
     </Text>
     <TouchableOpacity
       style={S.stateBtn}
@@ -52,7 +58,7 @@ const PermissionDeniedView = ({onNavigate}) => (
 );
 
 // ─────────────────────────────────────────────
-// Full-screen: P3 — GPS loading
+// GPS loading
 // ─────────────────────────────────────────────
 const LoadingView = ({onNavigate}) => (
   <View style={S.stateWrap}>
@@ -68,7 +74,7 @@ const LoadingView = ({onNavigate}) => (
 );
 
 // ─────────────────────────────────────────────
-// Full-screen: P2 — GPS off / no fix
+// GPS unavailable
 // ─────────────────────────────────────────────
 const GPSUnavailableView = ({onNavigate, onRetry}) => (
   <View style={S.stateWrap}>
@@ -147,7 +153,7 @@ const LocationCard = ({
             </Text>
             {matched && matchedFence.distanceMetres != null && (
               <Text style={S.locationCardMeta}>
-                ✓ Within zone · {matchedFence.distanceMetres} m away
+                Within zone · {matchedFence.distanceMetres} m away
               </Text>
             )}
             {matched && coords && (
@@ -173,12 +179,76 @@ const LocationCard = ({
 };
 
 // ─────────────────────────────────────────────
+// Today's activity timeline
+// ─────────────────────────────────────────────
+const ActivityTimeline = ({events}) => {
+  if (!events.length) return null;
+
+  const DOT_COLORS = {
+    ClockIn: C.greenMid,
+    BreakStart: C.amber,
+    ClockOut: C.redMid,
+  };
+
+  const LABELS = {
+    ClockIn: 'Clock In',
+    BreakStart: 'Break',
+    ClockOut: 'Clock Out',
+  };
+
+  return (
+    <View style={S.card}>
+      <Text style={S.cardTitle}>Today's Activity</Text>
+      <View style={S.cardDivider} />
+      {events.map((ev, i) => (
+        <View key={i} style={S.activityRow}>
+          <View style={S.activityLeft}>
+            <View
+              style={[
+                S.activityDot,
+                {backgroundColor: DOT_COLORS[ev.type] ?? C.inkFaint},
+              ]}
+            />
+            <Text style={S.activityLabel}>
+              {LABELS[ev.type] ?? ev.type}
+              {ev.durationMs ? ` (${formatDurationShort(ev.durationMs)})` : ''}
+            </Text>
+          </View>
+          <Text style={S.activityTime}>{formatTime(ev.time)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Skeleton Loader 
+// ─────────────────────────────────────────────
+const SkeletonBox = ({width, height, style}) => (
+  <View
+    style={[
+      {
+        width,
+        height,
+        borderRadius: 6,
+        backgroundColor: '#E5E7EB',
+        overflow: 'hidden',
+      },
+      style,
+    ]}
+  />
+);
+
+// ─────────────────────────────────────────────
 // Main HomeScreen
 // ─────────────────────────────────────────────
 const HomeScreen = ({onNavigate}) => {
   const [lastOut, setLastOut] = useState(null);
   const [isActive, setIsActive] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [todayEvents, setTodayEvents] = useState([]);
+  const [todayStats, setTodayStats] = useState({sessions: 0, worked: 0});
+  const [recordsLoading, setRecordsLoading] = useState(true);
 
   const {
     permissionStatus,
@@ -189,17 +259,62 @@ const HomeScreen = ({onNavigate}) => {
     refresh,
   } = useGeofence();
 
+  const {userData} = useSelector(s => s.user);
+  const person = userData?.Person;
+
   useEffect(() => {
     (async () => {
-      const records = await loadRecords();
-      if (!records.length) return;
+      if (!person) {
+        setRecordsLoading(false);
+        return;
+      }
+      setRecordsLoading(true);
+      const records = await loadRecords({person});
+      if (!records.length) {
+        setRecordsLoading(false);
+        return;
+      }
+
+      // Last session status
       const last = records[records.length - 1];
       if (last.clockOut) setLastOut(last.clockOut);
       setIsActive(!last.clockOut);
-    })();
-  }, []);
 
-  // ── P1 — Permission denied ─────────────────────────────
+      // Build today's events
+      const todayRecords = records.filter(r => r.clockIn && isToday(r.clockIn));
+      const events = [];
+      let totalWorkedMs = 0;
+
+      todayRecords.forEach(r => {
+        if (r.clockIn) {
+          events.push({type: 'ClockIn', time: r.clockIn});
+        }
+        (r.breaks || []).forEach(b => {
+          if (b.breakStart) {
+            const durationMs = b.breakEnd
+              ? new Date(b.breakEnd) - new Date(b.breakStart)
+              : null;
+            events.push({type: 'BreakStart', time: b.breakStart, durationMs});
+          }
+        });
+        if (r.clockOut) {
+          events.push({type: 'ClockOut', time: r.clockOut});
+        }
+        const stats = getSessionStats(r);
+        if (stats) totalWorkedMs += stats.netMs;
+      });
+
+      events.sort((a, b) => new Date(a.time) - new Date(b.time));
+      setTodayEvents(events);
+      setTodayStats({
+        sessions: todayRecords.length,
+        worked: totalWorkedMs,
+      });
+      setRecordsLoading(false);
+    })();
+  }, [person]);
+
+  // ── Permission denied ─────────────────────────────────────
   if (permissionStatus === 'denied') {
     return (
       <SafeAreaView style={S.screen}>
@@ -209,7 +324,7 @@ const HomeScreen = ({onNavigate}) => {
     );
   }
 
-  // ── P3 — Still loading initial GPS ─────────────────────
+  // ── Loading GPS ──────────────────────────────────────────
   if (permissionStatus === 'unknown' || (locationLoading && !coords)) {
     return (
       <SafeAreaView style={S.screen}>
@@ -219,8 +334,7 @@ const HomeScreen = ({onNavigate}) => {
     );
   }
 
-  // ── P2 — GPS granted but no fix and not loading ─────────
-  // coords is null after loading finishes = GPS off or unavailable
+  // ── No GPS fix ───────────────────────────────────────────
   if (!locationLoading && !coords && permissionStatus === 'granted') {
     return (
       <SafeAreaView style={S.screen}>
@@ -230,9 +344,14 @@ const HomeScreen = ({onNavigate}) => {
     );
   }
 
-  // ── Normal home ─────────────────────────────────────────
-  // G3, N1 — Warning banner when outside or API error
   const showWarning = !locationLoading && !!locationError && !matchedFence;
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
+  const employeeName = userData?.employeeName || userData?.Name || 'there';
 
   return (
     <SafeAreaView style={S.screen}>
@@ -241,7 +360,7 @@ const HomeScreen = ({onNavigate}) => {
       <ScrollView
         contentContainerStyle={S.scroll}
         showsVerticalScrollIndicator={false}>
-        {/* G3, N1 — Warning banner with retry */}
+        {/* ── Warning banner ── */}
         {showWarning && (
           <TouchableOpacity
             style={S.warningBanner}
@@ -257,7 +376,7 @@ const HomeScreen = ({onNavigate}) => {
           </TouchableOpacity>
         )}
 
-        {/* Location card */}
+        {/* ── Location card ── */}
         <LocationCard
           matchedFence={matchedFence}
           locationLoading={locationLoading}
@@ -266,83 +385,104 @@ const HomeScreen = ({onNavigate}) => {
           onPress={() => setModalVisible(true)}
         />
 
-        {/* Stats */}
-        <View style={S.statsRow}>
-          <View style={[S.statCard, {backgroundColor: C.greenLight}]}>
-            <Text style={[S.statNum, {color: C.greenDark}]}>
-              {isActive ? 1 : 0}
-            </Text>
-            <Text style={S.statLabel}>In</Text>
+        {/* ── Stats row ── */}
+        {recordsLoading ? (
+          <View style={S.statsRow}>
+            <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+            <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+            <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
           </View>
-          <View style={[S.statCard, {backgroundColor: C.purpleLight}]}>
-            <Text style={[S.statNum, {color: C.purpleDark}]}>0</Text>
-            <Text style={S.statLabel}>On Break</Text>
+        ) : (
+          <View style={S.statsRow}>
+            <View style={[S.statCard, {backgroundColor: C.greenLight}]}>
+              <Text style={[S.statNum, {color: C.greenDark}]}>
+                {todayStats.sessions}
+              </Text>
+              <Text style={S.statLabel}>Sessions</Text>
+            </View>
+            <View style={[S.statCard, {backgroundColor: C.blueLight}]}>
+              <Text style={[S.statNum, {color: C.blueDark, fontSize: 18}]}>
+                {formatDuration(todayStats.worked)}
+              </Text>
+              <Text style={S.statLabel}>Worked</Text>
+            </View>
+            <View
+              style={[
+                S.statCard,
+                {
+                  backgroundColor: C.surfaceAlt,
+                  borderWidth: 1,
+                  borderColor: C.border,
+                },
+              ]}>
+              <Text
+                style={[S.statNum, {color: isActive ? C.greenDark : C.inkSub}]}>
+                {isActive ? 'In' : 'Out'}
+              </Text>
+              <Text style={S.statLabel}>Status</Text>
+            </View>
           </View>
-          <View
-            style={[
-              S.statCard,
-              {
-                backgroundColor: C.surfaceAlt,
-                borderWidth: 1,
-                borderColor: C.border,
-              },
-            ]}>
-            <Text style={[S.statNum, {color: C.inkSub}]}>
-              {isActive ? 0 : 1}
-            </Text>
-            <Text style={S.statLabel}>Out</Text>
-          </View>
-        </View>
+        )}
 
-        {/* Time Clock card */}
-        <View style={S.card}>
-          <View style={S.cardTitleRow}>
-            <Text style={S.cardTitle}>Time Clock</Text>
-            {isActive && (
-              <View style={S.activePill}>
-                <View style={S.activePillDot} />
-                <Text style={S.activePillTxt}>Active</Text>
+        {/* ── Time Clock card ── */}
+        {recordsLoading ? (
+          <View style={[S.card, {gap: 10}]}>
+            <SkeletonBox width="40%" height={16} />
+            <SkeletonBox width="70%" height={12} />
+            <View style={S.cardDivider} />
+            <SkeletonBox width="50%" height={14} />
+          </View>
+        ) : (
+          <View style={S.card}>
+            <View style={S.cardTitleRow}>
+              <Text style={S.cardTitle}>Time Clock</Text>
+              {isActive && (
+                <View style={S.activePill}>
+                  <View style={S.activePillDot} />
+                  <Text style={S.activePillTxt}>Active</Text>
+                </View>
+              )}
+            </View>
+            <Text style={S.cardSub}>
+              {lastOut
+                ? `Last clocked out at ${formatTime(lastOut)} · ${formatDateShort(
+                    lastOut,
+                  )}`
+                : "You haven't clocked in yet today"}
+            </Text>
+            <View style={S.cardDivider} />
+            <TouchableOpacity
+              style={S.cardAction}
+              onPress={() => onNavigate('TimeClock')}>
+              <Text style={S.cardActionTxt}>
+                {isActive ? 'View Time Clock' : 'Clock In Now'}
+              </Text>
+              <Text style={S.cardActionArrow}>→</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* ── Today's activity timeline ── */}
+        {recordsLoading ? (
+          <View style={S.card}>
+            <SkeletonBox width="35%" height={14} style={{marginBottom: 12}} />
+            <View style={S.cardDivider} />
+            {[1, 2, 3].map(i => (
+              <View
+                key={i}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  paddingVertical: 6,
+                }}>
+                <SkeletonBox width="45%" height={12} />
+                <SkeletonBox width="20%" height={12} />
               </View>
-            )}
+            ))}
           </View>
-          <Text style={S.cardSub}>
-            {lastOut
-              ? `Last clocked out at ${formatTime(lastOut)}`
-              : "You haven't clocked in yet today"}
-          </Text>
-          <View style={S.cardDivider} />
-          <TouchableOpacity
-            style={S.cardAction}
-            onPress={() => onNavigate('TimeClock')}>
-            <Text style={S.cardActionTxt}>
-              {isActive ? 'View Time Clock' : 'Clock In Now'}
-            </Text>
-            <Text style={S.cardActionArrow}>→</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick actions */}
-        {/* <View style={S.quickRow}>
-          <TouchableOpacity
-            style={[S.quickBtn, {backgroundColor: C.blue}]}
-            onPress={() => onNavigate('TimeClock')}>
-            <Text style={S.quickIcon}>⏱</Text>
-            <Text style={[S.quickTxt, {color: C.white}]}>Time Clock</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              S.quickBtn,
-              {
-                backgroundColor: C.surface,
-                borderWidth: 1,
-                borderColor: C.border,
-              },
-            ]}
-            onPress={() => onNavigate('Records')}>
-            <Text style={S.quickIcon}>📋</Text>
-            <Text style={[S.quickTxt, {color: C.blue}]}>Timesheets</Text>
-          </TouchableOpacity>
-        </View> */}
+        ) : (
+          <ActivityTimeline events={todayEvents} />
+        )}
       </ScrollView>
 
       <NavigationFAB activeScreen="Home" onNavigate={onNavigate} />
@@ -396,29 +536,39 @@ const S = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: R.full,
+    marginBottom: 12,
     ...Sh.sm,
   },
   stateBtnTxt: {color: C.white, fontWeight: '700', fontSize: 15},
 
-  greeting: {
+  // ── Welcome banner ────────────────────────────────────────
+  welcomeBanner: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  greetSub: {fontSize: 13, color: C.inkMuted},
-  greetName: {fontSize: 22, fontWeight: '800', color: C.ink, marginTop: 2},
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
     backgroundColor: C.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: R.lg,
+    padding: 16,
+    marginBottom: 12,
     ...Sh.sm,
   },
-  avatarLetter: {fontSize: 18, color: C.white, fontWeight: '700'},
+  welcomeGreeting: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: 2,
+  },
+  welcomeName: {fontSize: 18, fontWeight: '700', color: C.white},
+  welcomeAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  welcomeAvatarTxt: {fontSize: 18, fontWeight: '700', color: C.white},
 
+  // ── Warning ──────────────────────────────────────────────
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -435,6 +585,7 @@ const S = StyleSheet.create({
   warningTitle: {fontSize: 13, fontWeight: '600', color: C.ink},
   warningText: {fontSize: 12, color: C.inkSub, marginTop: 2},
 
+  // ── Location card ─────────────────────────────────────────
   locationCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -468,6 +619,7 @@ const S = StyleSheet.create({
   locationCardCoords: {fontSize: 11, color: C.inkFaint, marginTop: 3},
   locationCardArrow: {fontSize: 20, paddingRight: 14},
 
+  // ── Stats ─────────────────────────────────────────────────
   statsRow: {flexDirection: 'row', gap: 10, marginBottom: 12},
   statCard: {
     flex: 1,
@@ -476,9 +628,10 @@ const S = StyleSheet.create({
     alignItems: 'center',
     ...Sh.xs,
   },
-  statNum: {fontSize: 28, fontWeight: '800'},
+  statNum: {fontSize: 22, fontWeight: '800', textAlign: 'center'},
   statLabel: {fontSize: 11, color: C.inkMuted, marginTop: 2, fontWeight: '500'},
 
+  // ── Card ──────────────────────────────────────────────────
   card: {
     backgroundColor: C.surface,
     borderRadius: R.md,
@@ -494,7 +647,7 @@ const S = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
   },
-  cardTitle: {fontSize: 16, fontWeight: '700', color: C.ink},
+  cardTitle: {fontSize: 15, fontWeight: '700', color: C.ink},
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -521,15 +674,15 @@ const S = StyleSheet.create({
   cardActionTxt: {fontSize: 14, fontWeight: '600', color: C.blue},
   cardActionArrow: {fontSize: 16, color: C.blue},
 
-  quickRow: {flexDirection: 'row', gap: 10},
-  quickBtn: {
-    flex: 1,
-    borderRadius: R.md,
-    padding: 16,
+  // ── Activity timeline ─────────────────────────────────────
+  activityRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    ...Sh.xs,
+    justifyContent: 'space-between',
+    paddingVertical: 6,
   },
-  quickIcon: {fontSize: 22},
-  quickTxt: {fontSize: 14, fontWeight: '600'},
+  activityLeft: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  activityDot: {width: 8, height: 8, borderRadius: 4},
+  activityLabel: {fontSize: 13, color: C.inkSub},
+  activityTime: {fontSize: 13, fontWeight: '600', color: C.ink},
 });

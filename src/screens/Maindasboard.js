@@ -121,7 +121,7 @@ const MainDashboard = () => {
 
   const confirmLogout = () => {
     setModalVisible(false);
-    navigation.navigate('Login');
+    navigation.reset({index: 0, routes: [{name: 'Login'}]});
   };
 
   const cancelLogout = () => setModalVisible(false);
@@ -195,6 +195,13 @@ const MainDashboard = () => {
         menus={dynamicMenus}
         onCardPress={handleCardPress}
       />
+
+      {/* <AIFloatingButton onPress={() => setChatVisible(true)} scrollY={scrollY} />
+      <AIChatbot
+        visible={chatVisible}
+        onClose={() => setChatVisible(false)}
+        serviceInstance={masterService}
+      /> */}
     </>
   );
 };

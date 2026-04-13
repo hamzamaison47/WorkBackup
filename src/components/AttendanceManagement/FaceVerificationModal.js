@@ -1,36 +1,14 @@
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
 // ─────────────────────────────────────────────────────────────────────────────
-// components/AttendanceManagement/FaceVerificationModal.js  (v3 — Passive Anti-Spoofing)
+// components/AttendanceManagement/FaceVerificationModal.js  (v4 — Screen Flash / Reflection)
 //
-// ARCHITECTURE: Ref-based state machine + passive liveness
+// ARCHITECTURE: Ref-based state machine + passive liveness + Custom Screen Flash
 //
-// CHANGES FROM v2:
-//   • Removed all active liveness challenges (blink, smile, head-turn, nod)
-//   • Single-capture flow: detect face → auto-capture → passive analysis → result
-//   • Passive anti-spoofing via MLKit face metadata heuristics (no new deps)
-//   • Frame throttling (300ms) to prevent GC pressure and ANR
-//   • Simplified to 5 phases: checking → capturing → analyzing → success/failed
-//   • CameraErrorBoundary retained
-//   • Ref-based state machine retained (zero stale closures)
-//
-// FLOW:
-//   open → checking (permission)
-//        → capturing (camera live, 300ms-throttled, detect face → auto-capture)
-//        → analyzing (1.2 s passive heuristic score)
-//        → success → onSuccess({ verified: true })
-//          failed  → onFailure(reason)
-//
-//   no_face (5 s guard)  → guidance UI → retry
-//   denied / unavailable → static error UI
-//   Camera crash         → CameraErrorBoundary fallback
-//
-// PASSIVE ANTI-SPOOFING SCORING (out of 100):
-//   +25  Natural eye openness  (0.15–0.95 — rejects pinned-open photos)
-//   +25  Frontal head pose     (|yaw| < 25°, |pitch| < 20°)
-//   +25  Reasonable face size  (5 % – 80 % of frame area)
-//   +25  Classifications present (MLKit computed depth data)
-//   Pass threshold: ≥ 75
+// CHANGES FROM v3:
+//   • Added 2 new active phases: `flash_white` and `flash_black`.
+//   • Worklet now reads raw Y-channel (luminance) from the YUV frame buffer.
+//   • Analyzes the reflection brightness diff to prevent laptop/screen spoofing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, {useState, useEffect, useRef, useCallback} from 'react';
@@ -56,10 +34,11 @@ import {Worklets, useSharedValue} from 'react-native-worklets-core';
 import {C, R, Sh} from './theme';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const ANALYZE_MS       = 1200;  // Passive analysis spinner duration
 const NO_FACE_GUARD_MS = 5000;  // Bail to 'no_face' if nothing detected
 const THROTTLE_MS      = 300;   // Frame processor throttle interval
-const SPOOF_THRESHOLD  = 75;    // Minimum score to pass (out of 100)
+const FLASH_WAIT_MS    = 300;   // Wait for screen to emit light before sampling
+const SPOOF_THRESHOLD  = 75;    // Minimum score to pass passive check (out of 100)
+const REFLECTION_DIFF  = 3;     // Minimum Luma differnce between White & Black Flash
 
 const ACTION_LABEL = {
   CLOCK_IN:    'Clock In',
@@ -69,14 +48,10 @@ const ACTION_LABEL = {
 };
 
 // ── Passive anti-spoofing scorer ───────────────────────────────────────────────
-// Pure function — runs on the JS thread after a face is captured.
-// Takes the face metadata object returned by react-native-vision-camera-face-detector.
 const analyzePassiveLiveness = face => {
   let score = 0;
   const checks = [];
 
-  // 1. Eye openness in natural range — static photos have eyes pinned open (probability = 1.0)
-  //    or fully closed (probability = 0.0). A live face fluctuates in 0.15 – 0.95.
   const leftEye  = face.leftEyeOpenProbability  ?? -1;
   const rightEye = face.rightEyeOpenProbability ?? -1;
   if (
@@ -87,7 +62,6 @@ const analyzePassiveLiveness = face => {
     checks.push('eyes_natural');
   }
 
-  // 2. Frontal head pose — screens / photos held at extreme angles fail this.
   const yaw   = Math.abs(face.yawAngle   ?? 0);
   const pitch = Math.abs(face.pitchAngle ?? 0);
   if (yaw < 25 && pitch < 20) {
@@ -95,13 +69,8 @@ const analyzePassiveLiveness = face => {
     checks.push('pose_frontal');
   }
 
-  // 3. Reasonable face size — face occupies 5 % – 80 % of frame dimensions.
-  //    VisionCamera returns bounds as { x, y, width, height } in pixels.
   const bounds = face.bounds ?? null;
   if (bounds) {
-    // Use the ratio of face width to detect abnormally tiny or full-frame faces.
-    // frame dims are not directly available in the worklet payload, so we use
-    // a heuristic: width in range 80–900 px covers most phone resolutions.
     const w = bounds.width ?? 0;
     if (w >= 80 && w <= 900) {
       score += 25;
@@ -109,16 +78,12 @@ const analyzePassiveLiveness = face => {
     }
   }
 
-  // 4. Classification data present — MLKit only emits smilingProbability and
-  //    eye probabilities when it has sufficient tracking confidence.  A face
-  //    without classification data is likely low-quality or spoofed.
   if ((face.smilingProbability ?? -1) >= 0) {
     score += 25;
     checks.push('classifications_available');
   }
 
   const isReal = score >= SPOOF_THRESHOLD;
-  console.log(`[FaceVerification] Passive score: ${score}/100 | ${checks.join(', ')} | isReal: ${isReal}`);
   return {score, isReal, checks};
 };
 
@@ -186,7 +151,7 @@ const FaceVerificationModal = ({
   const phaseRef     = useRef('checking');
   const mountedRef   = useRef(false);
   const timerIds     = useRef([]);
-  const capturedRef  = useRef(false);  // one-shot: prevent multiple captures
+  const capturedRef  = useRef(false);  
 
   // ── Camera ────────────────────────────────────────────────────────────────
   const device = useCameraDevice('front');
@@ -196,17 +161,18 @@ const FaceVerificationModal = ({
   });
 
   // ── SharedValues (worklet ↔ JS) ───────────────────────────────────────────
-  const svPhase      = useSharedValue('checking'); // mirrors phaseRef
-  const svLock       = useSharedValue(false);       // true after first face captured
-  const svLastMs     = useSharedValue(0);           // last processed frame timestamp (throttle)
+  const svPhase      = useSharedValue('checking');
+  const svLock       = useSharedValue(false);       
+  const svLastMs     = useSharedValue(0);           
 
-  // ── Captured face data (JS-side) ─────────────────────────────────────────
-  const capturedFaceRef = useRef(null);
+  // Flash data
+  const svFaceBounds = useSharedValue(null);
+  const svWhiteLuma  = useSharedValue(0);
+  const svBlackLuma  = useSharedValue(0);
 
   // ── Atomic phase setter ───────────────────────────────────────────────────
   const setPhase = useCallback(p => {
     phaseRef.current = p;
-    svPhase.value = p;
     if (mountedRef.current) setPhaseState(p);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -217,71 +183,144 @@ const FaceVerificationModal = ({
     timerIds.current = [];
   }, []);
 
-  // ── runPassiveAnalysis — JS thread, called after face auto-capture ────────
-  const runPassiveAnalysis = useCallback(faceData => {
+  // ── onLumaCaptured — Triggered via Worklet when Y channel is computed ────
+  const onLumaCaptured = Worklets.createRunOnJS(color => {
     if (!mountedRef.current) return;
-    setPhase('analyzing');
+    
+    if (color === 'white') {
+      console.log(`[FaceVerification] White Luma: ${svWhiteLuma.value.toFixed(2)}`);
+      // Start Black Flash
+      setPhase('flash_black');
+      svPhase.value = 'flash_black_prepare';
+      pushTimer(setTimeout(() => {
+        if (!mountedRef.current) return;
+        svPhase.value = 'flash_black_capture';
+      }, FLASH_WAIT_MS));
+    } else if (color === 'black') {
+      console.log(`[FaceVerification] Black Luma: ${svBlackLuma.value.toFixed(2)}`);
+      
+      const diff = Math.abs(svWhiteLuma.value - svBlackLuma.value);
+      console.log(`[FaceVerification] Reflection Diff: ${diff.toFixed(2)}`);
+      
+      setPhase('analyzing');
+      
+      // Delay before reporting
+      pushTimer(setTimeout(() => {
+        if (!mountedRef.current) return;
+        
+        if (diff > REFLECTION_DIFF) {
+          setPhase('success');
+          Vibration.vibrate(200);
+          pushTimer(setTimeout(() => {
+            if (mountedRef.current) onSuccess({verified: true});
+          }, 900));
+        } else {
+          console.warn(`[FaceVerification] Screen spoof detected! Reflection (${diff.toFixed(2)}) is beneath threshold (${REFLECTION_DIFF}).`);
+          setPhase('failed');
+        }
+      }, 500));
+    }
+  });
 
-    pushTimer(setTimeout(() => {
-      if (!mountedRef.current) return;
 
-      const result = analyzePassiveLiveness(faceData);
-
-      if (result.isReal) {
-        setPhase('success');
-        Vibration.vibrate(200);
-        pushTimer(setTimeout(() => {
-          if (mountedRef.current) onSuccess({verified: true});
-        }, 900));
-      } else {
-        console.warn(`[FaceVerification] Spoof detected. Score: ${result.score}/100. Checks failed: ${
-          ['eyes_natural','pose_frontal','size_ok','classifications_available']
-            .filter(c => !result.checks.includes(c))
-            .join(', ')
-        }`);
-        setPhase('failed');
-      }
-    }, ANALYZE_MS));
-  }, [onSuccess, setPhase]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── onFaceCaptured — Worklets.createRunOnJS bridge ───────────────────────
-  // Called once by the frame processor when a valid face is detected.
-  // Receives the face data object serialised from the worklet.
+  // ── onFaceCaptured — Triggered via Worklet when face passes heuristic ────
   const onFaceCaptured = Worklets.createRunOnJS(faceData => {
     if (!mountedRef.current || capturedRef.current) return;
     capturedRef.current = true;
-    capturedFaceRef.current = faceData;
-    runPassiveAnalysis(faceData);
+    
+    const result = analyzePassiveLiveness(faceData);
+    if (!result.isReal) {
+      console.warn(`[FaceVerification] Passive checks failed: ${result.score}/100.`);
+      setPhase('failed');
+      return;
+    }
+
+    console.log('[FaceVerification] Passive checks passed. Initiating Flash Reflection...');
+    
+    // Start White Flash
+    setPhase('flash_white');
+    svPhase.value = 'flash_white_prepare';
+    pushTimer(setTimeout(() => {
+      // Allow physical camera to adapt to flash
+      if (!mountedRef.current) return;
+      svPhase.value = 'flash_white_capture';
+    }, FLASH_WAIT_MS));
   });
 
   // ── Frame Processor ───────────────────────────────────────────────────────
-  // Runs on a native background thread.
-  // • Only active during 'capturing' phase
-  // • Throttled to once per THROTTLE_MS (prevents GC/ANR on mid-range devices)
-  // • Fires onFaceCaptured exactly once (svLock guard)
   const frameProcessor = useFrameProcessor(
     frame => {
       'worklet';
 
+      // 1) Luminance sampling for Reflection Flash
+      if (svPhase.value === 'flash_white_capture' || svPhase.value === 'flash_black_capture') {
+        const bounds = svFaceBounds.value;
+        if (!bounds) return; // safety
+        
+        const buffer = frame.toArrayBuffer();
+        const data = new Uint8Array(buffer);
+        
+        // Safety check — Ensure we don't read out of bounds. Y channel takes up W*H array length
+        if (data.length < frame.width * frame.height) return;
+        
+        let totalY = 0;
+        let validSamples = 0;
+        const stepX = Math.floor(bounds.width / 10) || 1;
+        const stepY = Math.floor(bounds.height / 10) || 1;
+
+        // Sample 100 scattered points inside face box
+        for (let i = 0; i < 10; i++) {
+          for (let j = 0; j < 10; j++) {
+            const x = Math.floor(bounds.x + (i * stepX));
+            const y = Math.floor(bounds.y + (j * stepY));
+            
+            if (x >= 0 && x < frame.width && y >= 0 && y < frame.height) {
+                const index = (y * frame.width) + x;
+                totalY += data[index];
+                validSamples++;
+            }
+          }
+        }
+        
+        const avg = validSamples > 0 ? (totalY / validSamples) : 0;
+        
+        if (svPhase.value === 'flash_white_capture') {
+          svPhase.value = 'idle'; // consume exactly 1 frame
+          svWhiteLuma.value = avg;
+          onLumaCaptured('white');
+        } else {
+          svPhase.value = 'idle'; // consume exactly 1 frame
+          svBlackLuma.value = avg;
+          onLumaCaptured('black');
+        }
+        return;
+      }
+
+      // 2) Normal Face tracking logic
       if (svPhase.value !== 'capturing') return;
       if (svLock.value) return;
 
-      // ── 300ms throttle — skip frames that arrive too fast ──────────────
       const now = Date.now();
       if (now - svLastMs.value < THROTTLE_MS) return;
       svLastMs.value = now;
 
-      // ── Detect faces ──────────────────────────────────────────────────
       const faces = detectFaces(frame);
       if (!faces || faces.length === 0) return;
 
       const face = faces[0];
 
-      // ── Lock immediately before JS call to prevent double-fire ─────────
       svLock.value = true;
+      
+      // Store coordinate bounds globally for Native thread reading during flash
+      if (face.bounds) {
+        svFaceBounds.value = {
+          x: face.bounds.x,
+          y: face.bounds.y,
+          width: face.bounds.width,
+          height: face.bounds.height,
+        };
+      }
 
-      // Bridge the face data to the JS thread for analysis
-      // We pass a plain object — worklets can only serialise primitives/plain objects
       onFaceCaptured({
         leftEyeOpenProbability:  face.leftEyeOpenProbability  ?? -1,
         rightEyeOpenProbability: face.rightEyeOpenProbability ?? -1,
@@ -291,7 +330,7 @@ const FaceVerificationModal = ({
         bounds: face.bounds ?? null,
       });
     },
-    [detectFaces, onFaceCaptured],
+    [detectFaces, onFaceCaptured, onLumaCaptured],
   );
 
   // ── startCapturing ────────────────────────────────────────────────────────
@@ -301,9 +340,9 @@ const FaceVerificationModal = ({
     clearAllTimers();
 
     capturedRef.current   = false;
-    capturedFaceRef.current = null;
     svLock.value          = false;
     svLastMs.value        = 0;
+    svPhase.value         = 'capturing';
 
     setPhase('capturing');
 
@@ -320,21 +359,17 @@ const FaceVerificationModal = ({
   // ── Modal lifecycle ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!visible) {
-      // ── Teardown ─────────────────────────────────────────────────────────
       mountedRef.current  = false;
       capturedRef.current = false;
       clearAllTimers();
       svLock.value   = true;
       svPhase.value  = 'checking';
-      svLastMs.value = 0;
       return;
     }
 
-    // ── Setup ─────────────────────────────────────────────────────────────
     mountedRef.current   = true;
     capturedRef.current  = false;
     phaseRef.current     = 'checking';
-
     setPhaseState('checking');
 
     const init = async () => {
@@ -362,7 +397,6 @@ const FaceVerificationModal = ({
         return;
       }
 
-      // 'not-determined' — request permission
       try {
         const result = await Camera.requestCameraPermission();
         if (!mountedRef.current) return;
@@ -383,7 +417,8 @@ const FaceVerificationModal = ({
 
   // ── Derived display values ─────────────────────────────────────────────────
   const displayLabel  = ACTION_LABEL[eventLabel] ?? eventLabel;
-  const cameraActive  = visible && phase === 'capturing';
+  // Keep camera live during capturing & flashing to maintain physical data stream
+  const cameraActive  = visible && ['capturing', 'flash_white', 'flash_black'].includes(phase);
 
   // ── Render body ────────────────────────────────────────────────────────────
   const renderBody = () => {
@@ -456,7 +491,7 @@ const FaceVerificationModal = ({
         <View style={S.spinnerWrap}>
           <ActivityIndicator size="large" color={C.blue} />
         </View>
-        <Text style={S.stateTitle}>Analyzing…</Text>
+        <Text style={S.stateTitle}>Analyzing Security Data…</Text>
         <Text style={S.stateSub}>Verifying your identity. Please hold still.</Text>
       </View>
     );
@@ -492,7 +527,7 @@ const FaceVerificationModal = ({
       </View>
     );
 
-    // ── 'capturing' — live camera view ──────────────────────────────────────
+    // ── capturing + flashes ──────────────────────────────────────
     return (
       <View style={{flex: 1}}>
         <CameraErrorBoundary
@@ -507,29 +542,37 @@ const FaceVerificationModal = ({
           />
         </CameraErrorBoundary>
 
-        {/* Dimmed overlay */}
-        <View style={S.overlay} pointerEvents="none">
-          {/* Face oval guide */}
-          <View style={S.ovalWrap}>
-            <View style={S.oval} />
-          </View>
+        {/* Normal Camera Guidance */}
+        {phase === 'capturing' && (
+          <View style={S.overlay} pointerEvents="none">
+            <View style={S.ovalWrap}>
+              <View style={S.oval} />
+            </View>
 
-          {/* Instruction card */}
-          <View style={S.card}>
-            <Text style={S.cardEmoji}>👤</Text>
-            <Text style={S.cardTitle}>Look at the Camera</Text>
-            <Text style={S.cardSub}>
-              Centre your face in the oval.{'\n'}
-              Keep still — capturing automatically…
-            </Text>
-            <View style={S.scanBar} />
+            <View style={S.card}>
+              <Text style={S.cardEmoji}>👤</Text>
+              <Text style={S.cardTitle}>Look at the Camera</Text>
+              <Text style={S.cardSub}>
+                Centre your face in the oval.{'\n'}
+                Keep still — capturing automatically…
+              </Text>
+              <View style={S.scanBar} />
+            </View>
           </View>
-        </View>
+        )}
+
+        {/* Screen Flash Overlays */}
+        {phase === 'flash_white' && (
+           <View style={{...StyleSheet.absoluteFillObject, backgroundColor: '#FFFFFF', opacity: 0.95}} />
+        )}
+
+        {phase === 'flash_black' && (
+           <View style={{...StyleSheet.absoluteFillObject, backgroundColor: '#000000', opacity: 0.95}} />
+        )}
       </View>
     );
   };
 
-  // ── Modal shell ────────────────────────────────────────────────────────────
   return (
     <Modal
       visible={visible}
@@ -537,7 +580,6 @@ const FaceVerificationModal = ({
       presentationStyle="fullScreen"
       onRequestClose={onCancel}>
       <SafeAreaView style={S.sheet}>
-        {/* Header */}
         <View style={S.header}>
           <View>
             <Text style={S.headerTitle}>Face Verification</Text>
@@ -548,7 +590,6 @@ const FaceVerificationModal = ({
           </TouchableOpacity>
         </View>
 
-        {/* Instruction strip — only during capturing */}
         {phase === 'capturing' && (
           <View style={S.strip}>
             <Text style={S.stripTxt}>
@@ -619,14 +660,9 @@ const S = StyleSheet.create({
   cardTitle: {fontSize: 18, fontWeight: '700', color: '#fff', textAlign: 'center'},
   cardSub:   {fontSize: 13, color: 'rgba(255,255,255,0.65)', textAlign: 'center', lineHeight: 20},
 
-  // Animated scan bar (CSS-only shimmer — no Animated needed)
   scanBar: {
-    marginTop: 8,
-    width: '60%',
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: C.blue,
-    opacity: 0.7,
+    marginTop: 8, width: '60%', height: 3, borderRadius: 2,
+    backgroundColor: C.blue, opacity: 0.7,
   },
 
   center: {

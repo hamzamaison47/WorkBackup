@@ -1,16 +1,18 @@
 /* eslint-disable no-unused-vars */
-// ─────────────────────────────────────────────────────────────────────────────
-// components/AttendanceManagement/screens/TimeClockScreen.js
-//
-// FLOW CHANGE:
-//   • checkClockInGeofence() checks GPS + coordinates ONLY.
-//   • Network (WiFi/IP) check moved to confirm-time in each ConfirmScreen.
-//   • NetworkWarningBanner removed from main screen (no pre-flight network UI).
-// ─────────────────────────────────────────────────────────────────────────────
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+// ─────────────────────────────────────────────────────────────────────────────
+// components/AttendanceManagement/screens/TimeClockScreen.js
+//
+// P0.3 — Reordered validation pipeline: local checks → Face → QR → SOAP.
+//         If Face/QR fail, zero SOAP calls are wasted.
+// P2.5 — AttendanceOrchestrator wired in. prepare() fires 2 parallel SOAP
+//         calls and returns a ValidationToken passed to confirm screens.
+// P3.2 — prewarmToken() + NetInfo.fetch() called on mount so token and
+//         network info are ready before the first action press.
+// ─────────────────────────────────────────────────────────────────────────────
+import React, {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {useSelector} from 'react-redux';
 import {
   View,
@@ -25,7 +27,12 @@ import {
   DeviceEventEmitter,
   ScrollView,
   RefreshControl,
+  Animated,
+  Dimensions,
+  BackHandler,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import NetInfo from '@react-native-community/netinfo';
 import {useGeofence} from '../GeofenceContext';
 import useLocation from '../../../hooks/useLocation';
 import LocationPickerModal from '../LocationPickerModal';
@@ -38,16 +45,19 @@ import QRScannerModal, {
   isFaceRecognitionActive,
 } from '../QRScannerModal';
 import FaceVerificationModal from '../FaceVerificationModal';
-import {getActionFence, ACTION_TYPES} from './attendanceActionHelpers';
+import {getActionFence, ACTION_TYPES, prewarmToken} from './attendanceActionHelpers';
 import {
   loadRecords,
   formatElapsed,
   formatTime,
   formatDateShort,
+  formatDuration,
+  formatDurationShort,
   canClockIn,
   canStartBreak,
   canEndBreak,
   canClockOut,
+  getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import {
   startAttendanceService,
@@ -66,91 +76,347 @@ import {C, R, Sh} from '../theme';
 import useAttendanceNotificationAction from '../../../hooks/useAttendanceNotificationAction';
 import {ValidateQRCode} from '../../../API/AttendanceManagement/ValidateQRCode';
 import {initSyncListener} from '../../../services/AttendanceManagement/SyncManager';
+import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
 import DeviceInfo from 'react-native-device-info';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Status card
-// ─────────────────────────────────────────────────────────────────────────────
-const STATUS_CFG = {
-  out: {
-    label: 'Not Clocked In',
-    color: C.inkMuted,
-    pillBg: C.surfaceAlt,
-    dot: C.inkFaint,
-  },
-  in: {
-    label: 'Clocked In',
-    color: C.greenDark,
-    pillBg: C.greenLight,
-    dot: C.greenMid,
-  },
-  break: {
-    label: 'On Break',
-    color: C.purpleDark,
-    pillBg: C.purpleLight,
-    dot: C.purple,
-  },
+const {width: SCREEN_W} = Dimensions.get('window');
+
+const DK = {
+  bg: '#F5F7FA',
+  card: '#FFFFFF',
+  cardBorder: '#E2E8F0',
+  surface: '#EEF2F7',
+  accent: '#1B4FD8',
+  accentGreen: '#059669',
+  accentAmber: '#D97706',
+  accentRed: '#DC2626',
+  textPrimary: '#0F172A',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  ring: '#CBD5E1',
 };
 
-const StatusCard = ({status, elapsed, clockInTime, lastOut}) => {
-  const cfg = STATUS_CFG[status] ?? STATUS_CFG.out;
+// ─────────────────────────────────────────────
+// Skeleton
+// ─────────────────────────────────────────────
+const SkeletonBlock = ({width: w, height: h, borderRadius: br = 6, style}) => {
+  const shimmer = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmer, {
+          toValue: 0,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [shimmer]);
+  const opacity = shimmer.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.25, 0.5],
+  });
   return (
-    <View style={CS.card}>
-      <View style={[CS.pill, {backgroundColor: cfg.pillBg}]}>
-        <View style={[CS.pillDot, {backgroundColor: cfg.dot}]} />
-        <Text style={[CS.pillTxt, {color: cfg.color}]}>{cfg.label}</Text>
+    <Animated.View
+      style={[
+        {
+          width: w,
+          height: h,
+          borderRadius: br,
+          backgroundColor: DK.textMuted,
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+const SkeletonScreen = () => (
+  <View style={{flex: 1, backgroundColor: DK.bg, paddingTop: 20}}>
+    <View style={{alignItems: 'center', marginBottom: 24}}>
+      <SkeletonBlock width={120} height={14} borderRadius={7} />
+    </View>
+    <View style={{alignItems: 'center', marginBottom: 20}}>
+      <SkeletonBlock width={160} height={160} borderRadius={80} />
+    </View>
+    <View style={{alignItems: 'center', marginBottom: 30}}>
+      <SkeletonBlock
+        width={180}
+        height={40}
+        borderRadius={8}
+        style={{marginBottom: 8}}
+      />
+      <SkeletonBlock width={100} height={12} borderRadius={6} />
+    </View>
+    <View
+      style={{
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        gap: 10,
+        marginBottom: 14,
+      }}>
+      <SkeletonBlock
+        width={(SCREEN_W - 42) / 2}
+        height={60}
+        borderRadius={12}
+      />
+      <SkeletonBlock
+        width={(SCREEN_W - 42) / 2}
+        height={60}
+        borderRadius={12}
+      />
+    </View>
+    <View style={{paddingHorizontal: 16}}>
+      <SkeletonBlock width={SCREEN_W - 32} height={48} borderRadius={12} />
+    </View>
+    <View style={{paddingHorizontal: 16, marginTop: 14}}>
+      <SkeletonBlock width={SCREEN_W - 32} height={44} borderRadius={22} />
+    </View>
+  </View>
+);
+
+// ─────────────────────────────────────────────
+// Clock Ring
+// ─────────────────────────────────────────────
+const RING_SIZE = 155;
+const RING_STROKE = 5;
+
+const ClockRing = ({status}) => {
+  const pulse = useRef(new Animated.Value(1)).current;
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setTick(v => v + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    if (status === 'in' || status === 'break') {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1.06,
+            duration: 1400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 1400,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+    pulse.setValue(1);
+  }, [status, pulse]);
+
+  const ringColor =
+    status === 'in'
+      ? DK.accentGreen
+      : status === 'break'
+      ? DK.accentAmber
+      : DK.ring;
+
+  const now = new Date();
+  const hh = now.getHours();
+  const mm = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 || 12;
+
+  return (
+    <View style={CL.wrap}>
+      <Animated.View
+        style={[
+          CL.outerGlow,
+          {borderColor: ringColor, transform: [{scale: pulse}]},
+        ]}
+      />
+      <View style={[CL.ring, {borderColor: ringColor}]}>
+        <View style={CL.inner}>
+          <Text style={CL.time}>{`${h12}:${mm}`}</Text>
+          <Text style={CL.ampm}>{ampm}</Text>
+        </View>
       </View>
-      {status === 'in' && (
-        <Text style={CS.elapsed}>{formatElapsed(elapsed)}</Text>
-      )}
-      {status === 'break' && (
-        <Text style={[CS.elapsed, {color: C.purple}]}>On Break ☕</Text>
-      )}
-      {status === 'out' && (
-        <Text style={CS.idleMsg}>
-          {lastOut ? `Last out  ${formatTime(lastOut)}` : 'Ready to clock in'}
-        </Text>
-      )}
-      {status === 'in' && clockInTime && (
-        <Text style={CS.since}>
-          Since {formatTime(clockInTime)} · {formatDateShort(clockInTime)}
-        </Text>
-      )}
     </View>
   );
 };
 
-const CS = StyleSheet.create({
-  card: {
-    backgroundColor: C.surface,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    borderRadius: R.lg,
-    padding: 22,
-    ...Sh.sm,
-    borderWidth: 1,
-    borderColor: C.border,
+const CL = StyleSheet.create({
+  wrap: {alignItems: 'center', justifyContent: 'center', marginBottom: 18},
+  outerGlow: {
+    position: 'absolute',
+    width: RING_SIZE + 18,
+    height: RING_SIZE + 18,
+    borderRadius: (RING_SIZE + 18) / 2,
+    borderWidth: 1.5,
+    opacity: 0.3,
   },
-  pill: {
-    flexDirection: 'row',
+  ring: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    borderWidth: RING_STROKE,
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: R.full,
-    gap: 6,
-    marginBottom: 14,
+    justifyContent: 'center',
+    backgroundColor: DK.card,
   },
-  pillDot: {width: 7, height: 7, borderRadius: 4},
-  pillTxt: {fontSize: 12, fontWeight: '600'},
-  elapsed: {fontSize: 44, fontWeight: '800', color: C.ink, letterSpacing: -1.5},
-  idleMsg: {fontSize: 20, fontWeight: '600', color: C.inkMuted},
-  since: {fontSize: 13, color: C.inkMuted, marginTop: 6},
+  inner: {alignItems: 'center'},
+  time: {
+    fontSize: 38,
+    fontWeight: '800',
+    color: DK.textPrimary,
+    letterSpacing: -1,
+  },
+  ampm: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: DK.textSecondary,
+    letterSpacing: 1.5,
+    marginTop: -2,
+  },
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Status pill
+// ─────────────────────────────────────────────
+const STATUS_CFG = {
+  out: {
+    label: 'Not Clocked In',
+    color: DK.textSecondary,
+    dotColor: DK.textMuted,
+  },
+  in: {label: 'Clocked In', color: DK.accentGreen, dotColor: DK.accentGreen},
+  break: {label: 'On Break', color: DK.accentAmber, dotColor: DK.accentAmber},
+};
+
+const StatusPill = ({status}) => {
+  const cfg = STATUS_CFG[status] ?? STATUS_CFG.out;
+  return (
+    <View style={SP.wrap}>
+      <View style={[SP.dot, {backgroundColor: cfg.dotColor}]} />
+      <Text style={[SP.text, {color: cfg.color}]}>{cfg.label}</Text>
+    </View>
+  );
+};
+
+const SP = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    backgroundColor: DK.surface,
+    borderWidth: 1,
+    borderColor: DK.cardBorder,
+    marginBottom: 14,
+  },
+  dot: {width: 6, height: 6, borderRadius: 3},
+  text: {fontSize: 11, fontWeight: '700', letterSpacing: 0.4},
+});
+
+// ─────────────────────────────────────────────
+// Time summary — shows elapsed, clock-in time, breaks
+// ─────────────────────────────────────────────
+const TimeSummary = ({
+  status,
+  elapsed,
+  clockInTime,
+  breakCount,
+  totalBreakMs,
+}) => {
+  const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
+  const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
+  const breakStr =
+    totalBreakMs > 0
+      ? formatDurationShort(totalBreakMs)
+      : breakCount > 0
+      ? `${breakCount} break${breakCount > 1 ? 's' : ''}`
+      : '--';
+
+  return (
+    <View style={TS.container}>
+      <View style={TS.heroCard}>
+        <Text style={TS.heroLabel}>TOTAL TIME</Text>
+        <Text style={[TS.heroValue, status === 'out' && {color: DK.textMuted}]}>
+          {totalTimeStr}
+        </Text>
+      </View>
+      <View style={TS.row}>
+        <View style={TS.miniCard}>
+          <Text style={TS.miniLabel}>CLOCK IN</Text>
+          <Text style={TS.miniValue}>{clockInStr}</Text>
+        </View>
+        <View style={TS.miniCard}>
+          <Text style={TS.miniLabel}>BREAKS</Text>
+          <Text style={TS.miniValue}>{breakStr}</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const TS = StyleSheet.create({
+  container: {paddingHorizontal: 16, marginBottom: 12},
+  heroCard: {
+    backgroundColor: DK.card,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: DK.cardBorder,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  heroLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: DK.textMuted,
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  heroValue: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: DK.textPrimary,
+    letterSpacing: -1,
+  },
+  row: {flexDirection: 'row', gap: 8},
+  miniCard: {
+    flex: 1,
+    backgroundColor: DK.card,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: DK.cardBorder,
+    alignItems: 'center',
+  },
+  miniLabel: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: DK.textMuted,
+    letterSpacing: 1,
+    marginBottom: 3,
+  },
+  miniValue: {fontSize: 15, fontWeight: '700', color: DK.textPrimary},
+});
+
+// ─────────────────────────────────────────────
 // Location strip
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 const LocationStrip = ({
   matchedFence,
   locationLoading,
@@ -160,7 +426,7 @@ const LocationStrip = ({
   if (locationLoading) {
     return (
       <View style={[LS.strip, LS.stripLoading]}>
-        <ActivityIndicator size="small" color={C.blue} />
+        <ActivityIndicator size="small" color={DK.accent} />
         <Text style={LS.loadingTxt}>Verifying location…</Text>
       </View>
     );
@@ -171,20 +437,27 @@ const LocationStrip = ({
       style={[LS.strip, ok ? LS.stripOk : LS.stripBad]}
       onPress={onPress}
       activeOpacity={0.8}>
-      <View style={[LS.dot, {backgroundColor: ok ? C.greenMid : C.redMid}]} />
+      <View
+        style={[LS.dot, {backgroundColor: ok ? DK.accentGreen : DK.accentRed}]}
+      />
       <View style={LS.body}>
-        <Text style={[LS.label, {color: ok ? C.greenDark : C.redDark}]}>
-          AUTHORISED LOCATION
-        </Text>
+        <Text style={LS.label}>CURRENT LOCATION</Text>
         <Text
-          style={[LS.value, {color: ok ? C.greenDark : C.redDark}]}
+          style={[LS.value, {color: ok ? DK.accentGreen : DK.accentRed}]}
           numberOfLines={1}>
           {ok
             ? matchedFence.FenceName
-            : locationError ?? 'Outside all authorised zones'}
+            : locationError ?? 'Outside authorised zone'}
         </Text>
+        {ok && matchedFence.distanceMetres != null && (
+          <Text style={[LS.sub, {color: DK.accentGreen}]}>
+            {matchedFence.distanceMetres} m away
+          </Text>
+        )}
       </View>
-      <Text style={[LS.arrow, {color: ok ? C.greenDark : C.redDark}]}>›</Text>
+      <Text style={[LS.arrow, {color: ok ? DK.accentGreen : DK.accentRed}]}>
+        ›
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -196,30 +469,41 @@ const LS = StyleSheet.create({
     gap: 10,
     marginHorizontal: 16,
     marginBottom: 10,
-    padding: 12,
-    borderRadius: R.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
     borderWidth: 1,
   },
-  stripLoading: {backgroundColor: C.blueLight, borderColor: C.blueLight},
-  stripOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
-  stripBad: {backgroundColor: C.redLight, borderColor: C.redMid},
-  loadingTxt: {fontSize: 13, color: C.blue, fontWeight: '500'},
-  dot: {width: 8, height: 8, borderRadius: 4},
+  stripLoading: {
+    backgroundColor: 'rgba(27,79,216,0.06)',
+    borderColor: 'rgba(27,79,216,0.2)',
+  },
+  stripOk: {
+    backgroundColor: 'rgba(5,150,105,0.06)',
+    borderColor: 'rgba(5,150,105,0.2)',
+  },
+  stripBad: {
+    backgroundColor: 'rgba(220,38,38,0.06)',
+    borderColor: 'rgba(220,38,38,0.2)',
+  },
+  loadingTxt: {fontSize: 12, color: DK.accent, fontWeight: '500'},
+  dot: {width: 7, height: 7, borderRadius: 3.5, flexShrink: 0},
   body: {flex: 1},
   label: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    color: DK.textMuted,
+    letterSpacing: 0.6,
     marginBottom: 1,
   },
-  value: {fontSize: 13, fontWeight: '600'},
-  arrow: {fontSize: 18},
+  value: {fontSize: 12, fontWeight: '600'},
+  sub: {fontSize: 10, marginTop: 1},
+  arrow: {fontSize: 16},
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Spoofing banner
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 const SPOOF_LABELS = {
   mock_flag: 'Mock location app detected',
   accuracy_too_perfect: 'Suspiciously perfect GPS accuracy',
@@ -231,46 +515,43 @@ const SPOOF_LABELS = {
 };
 
 const SpoofingBanner = ({reason}) => (
-  <View style={SB.wrap}>
-    <Text style={SB.icon}>⚠️</Text>
+  <View style={SBN.wrap}>
+    <Text style={SBN.icon}>⚠️</Text>
     <View style={{flex: 1}}>
-      <Text style={SB.title}>GPS Integrity Warning</Text>
-      <Text style={SB.sub}>
+      <Text style={SBN.title}>GPS Integrity Warning</Text>
+      <Text style={SBN.sub}>
         {SPOOF_LABELS[reason] ?? 'Suspicious GPS activity detected'}
       </Text>
     </View>
   </View>
 );
 
-const SB = StyleSheet.create({
+const SBN = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     marginHorizontal: 16,
-    marginBottom: 10,
-    padding: 12,
-    borderRadius: R.sm,
-    backgroundColor: '#FFF3CD',
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(217,119,6,0.08)',
     borderWidth: 1,
-    borderColor: '#FFC107',
+    borderColor: 'rgba(217,119,6,0.25)',
   },
-  icon: {fontSize: 18},
-  title: {fontSize: 13, fontWeight: '700', color: '#856404'},
-  sub: {fontSize: 12, color: '#856404', marginTop: 2},
+  icon: {fontSize: 16},
+  title: {fontSize: 12, fontWeight: '700', color: DK.accentAmber},
+  sub: {fontSize: 11, color: DK.accentAmber, marginTop: 1, opacity: 0.85},
 });
 
-// NetworkWarningBanner removed — network check now happens at confirm-time
-// in ConfirmClockInScreen / ConfirmClockOutScreen / ConfirmBreakScreen.
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Notification source banner
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// Notification banner
+// ─────────────────────────────────────────────
 const NotificationActionBanner = ({action, onDismiss}) => {
   const messages = {
-    break_start: '☕  Break started from notification',
-    break_end: '▶  Break ended from notification',
-    clock_out: '■  Clocked out from notification',
+    break_start: 'Break started from notification',
+    break_end: 'Break ended from notification',
+    clock_out: 'Clocked out from notification',
   };
   return (
     <View style={NB.wrap}>
@@ -292,20 +573,20 @@ const NB = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginBottom: 10,
-    padding: 12,
-    borderRadius: R.sm,
-    backgroundColor: C.blueLight,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(27,79,216,0.08)',
     borderWidth: 1,
-    borderColor: C.blueMid,
+    borderColor: 'rgba(27,79,216,0.2)',
   },
-  txt: {fontSize: 13, color: C.blueDark, fontWeight: '500', flex: 1},
-  dismiss: {fontSize: 14, color: C.blueDark, fontWeight: '700'},
+  txt: {fontSize: 12, color: DK.accent, fontWeight: '500', flex: 1},
+  dismiss: {fontSize: 13, color: DK.accent, fontWeight: '700'},
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Action buttons
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 const ActionButtons = ({
   status,
   locationLoading,
@@ -319,8 +600,6 @@ const ActionButtons = ({
   onBreakEnd,
   onClockOut,
 }) => {
-  // Clock-in disabled if: loading, no fence, or spoofing detected
-  // Network check happens at confirm-time — not here
   const clockInDisabled = locationLoading || !matchedFence || spoofingDetected;
   const clockOutDisabled = spoofingDetected || !canOut;
   const breakDisabled = spoofingDetected || !canBreak;
@@ -332,7 +611,7 @@ const ActionButtons = ({
         <TouchableOpacity
           style={[
             AB.btn,
-            {backgroundColor: C.greenMid},
+            {backgroundColor: DK.accentGreen},
             clockInDisabled && AB.disabled,
           ]}
           onPress={onClockIn}
@@ -345,7 +624,7 @@ const ActionButtons = ({
           <TouchableOpacity
             style={[
               AB.btn,
-              {backgroundColor: C.purple},
+              {backgroundColor: DK.accentAmber},
               breakDisabled && AB.disabled,
             ]}
             onPress={onBreakStart}
@@ -355,7 +634,7 @@ const ActionButtons = ({
           <TouchableOpacity
             style={[
               AB.btn,
-              {backgroundColor: C.redMid},
+              {backgroundColor: DK.accentRed},
               clockOutDisabled && AB.disabled,
             ]}
             onPress={onClockOut}
@@ -365,39 +644,47 @@ const ActionButtons = ({
         </>
       )}
       {status === 'break' && (
-        <TouchableOpacity
-          style={[
-            AB.btn,
-            {backgroundColor: C.amber},
-            breakEndDisabled && AB.disabled,
-          ]}
-          onPress={onBreakEnd}
-          disabled={breakEndDisabled}>
-          <Text style={AB.txt}>▶ End Break</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={[
+              AB.btn,
+              {backgroundColor: DK.accent},
+              breakEndDisabled && AB.disabled,
+            ]}
+            onPress={onBreakEnd}
+            disabled={breakEndDisabled}>
+            <Text style={AB.txt}>▶ End Break</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              AB.btn,
+              {backgroundColor: DK.accentRed},
+              clockOutDisabled && AB.disabled,
+            ]}
+            onPress={onClockOut}
+            disabled={clockOutDisabled}>
+            <Text style={AB.txt}>■ Clock Out</Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
 };
 
 const AB = StyleSheet.create({
-  wrap: {paddingHorizontal: 16, paddingBottom: 8, gap: 10},
-  btn: {
-    borderRadius: R.full,
-    paddingVertical: 17,
-    alignItems: 'center',
-    ...Sh.md,
-  },
-  disabled: {opacity: 0.45},
-  txt: {color: C.white, fontSize: 16, fontWeight: '700'},
+  wrap: {paddingHorizontal: 16, paddingBottom: 6, gap: 8},
+  btn: {borderRadius: 26, paddingVertical: 15, alignItems: 'center'},
+  disabled: {opacity: 0.35},
+  txt: {color: '#FFFFFF', fontSize: 14, fontWeight: '700', letterSpacing: 0.3},
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Main screen
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 const TimeClockScreen = ({onNavigate}) => {
   const {userData} = useSelector(s => s.user);
   const person = userData?.Person;
+
   const [subScreen, setSubScreen] = useState('main');
   const [status, setStatus] = useState('out');
   const [clockInTime, setClockInTime] = useState(null);
@@ -407,6 +694,9 @@ const TimeClockScreen = ({onNavigate}) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notifAction, setNotifAction] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [breakCount, setBreakCount] = useState(0);
+  const [totalBreakMs, setTotalBreakMs] = useState(0);
   const [workflowFlags, setWorkflowFlags] = useState({
     canIn: true,
     canBreak: false,
@@ -414,14 +704,14 @@ const TimeClockScreen = ({onNavigate}) => {
     canOut: false,
   });
 
-  // ── Pre-action Face & QR state ─────────────────────────────────────────────
-  // Face / QR is scanned BEFORE the confirm screen opens.
-  const [pendingAction, setPendingAction] = useState(null); // 'confirmIn' | 'confirmOut' | 'confirmBreak' | 'confirmBreakEnd'
+  const [pendingAction, setPendingAction] = useState(null);
   const [preFaceModalVisible, setPreFaceModalVisible] = useState(false);
-  const [preFaceResult, setPreFaceResult] = useState(null); // { verified: boolean }
+  const [preFaceResult, setPreFaceResult] = useState(null);
   const [preQrModalVisible, setPreQrModalVisible] = useState(false);
   const [preQrFence, setPreQrFence] = useState(null);
-  const [preQrValue, setPreQrValue] = useState(null); // the scanned value carried into the confirm screen
+  const [preQrValue, setPreQrValue] = useState(null);
+  // P2.5 — Validation token from AttendanceOrchestrator.prepare()
+  const [validationToken, setValidationToken] = useState(null);
 
   const actionInProgress = useRef(false);
   const preQrFenceRef = useRef(null);
@@ -438,7 +728,6 @@ const TimeClockScreen = ({onNavigate}) => {
       case 'CLOCK_OUT':
         setSubScreen('confirmOut');
         break;
-      case 'OPEN_TIMECLOCK':
       default:
         setSubScreen('main');
         break;
@@ -457,8 +746,7 @@ const TimeClockScreen = ({onNavigate}) => {
     wifiInfo,
   } = useGeofence();
 
-  const {collectAttendanceData, spoofingDetected, spoofingReason} =
-    useLocation();
+  const {spoofingDetected, spoofingReason} = useLocation();
 
   const syncStateFromStorage = useCallback(async () => {
     const records = await loadRecords({person});
@@ -468,11 +756,26 @@ const TimeClockScreen = ({onNavigate}) => {
       canBreakEnd: canEndBreak(records),
       canOut: canClockOut(records),
     });
+
+    if (records.length) {
+      const last = records[records.length - 1];
+      const breaks = last.breaks || [];
+      setBreakCount(breaks.filter(b => b.breakEnd).length);
+      let bMs = 0;
+      breaks.forEach(b => {
+        if (b.breakStart && b.breakEnd) {
+          bMs += new Date(b.breakEnd) - new Date(b.breakStart);
+        }
+      });
+      setTotalBreakMs(bMs);
+    }
+
     if (!records.length) return;
     const last = records[records.length - 1];
     if (last.clockOut) {
       setLastOut(last.clockOut);
       setStatus('out');
+      setClockInTime(null);
     } else if (last.breaks?.length) {
       const lastBreak = last.breaks[last.breaks.length - 1];
       if (lastBreak.breakStart && !lastBreak.breakEnd) {
@@ -491,6 +794,8 @@ const TimeClockScreen = ({onNavigate}) => {
       setElapsed(
         Math.floor((Date.now() - new Date(last.clockIn).getTime()) / 1000),
       );
+    } else {
+      setStatus('out');
     }
   }, [person]);
 
@@ -506,21 +811,25 @@ const TimeClockScreen = ({onNavigate}) => {
     }
   }, [refresh, syncStateFromStorage]);
 
-  // ── Mount ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const init = async () => {
+      setIsLoading(true);
       initSyncListener();
+      // P1.1 + P3.2 — Pre-warm OAuth token + NetInfo cache on mount.
+      // Both fire concurrently with data sync, so they're ready before
+      // the first action press.
+      prewarmToken();
+      NetInfo.fetch().catch(() => {});
       await syncStateFromStorage();
       const savedFS = await loadPersistedFSState();
       if (savedFS?.isRunning) {
         await resumeAttendanceService(savedFS);
-        console.log('[TimeClockScreen] Foreground service resumed');
       }
+      setIsLoading(false);
     };
     init();
   }, [syncStateFromStorage]);
 
-  // ── Elapsed timer ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (status === 'in' && clockInTime) {
       timerRef.current = setInterval(
@@ -536,7 +845,6 @@ const TimeClockScreen = ({onNavigate}) => {
     return () => clearInterval(timerRef.current);
   }, [status, clockInTime]);
 
-  // ── DeviceEventEmitter: notification button actions ───────────────────────
   useEffect(() => {
     const onBreakStart = () => {
       setStatus('break');
@@ -576,33 +884,68 @@ const TimeClockScreen = ({onNavigate}) => {
     };
   }, []);
 
-  // ── Guards ─────────────────────────────────────────────────────────────────
-  // Shared spoof + permission check for any action.
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (modalVisible) {
+          setModalVisible(false);
+          return true; // Swallowed by TimeClockScreen
+        }
+        if (preFaceModalVisible) {
+          handlePreFaceCancel();
+          return true;
+        }
+        if (preQrModalVisible) {
+          handlePreQrCancel();
+          return true;
+        }
+        if (subScreen !== 'main') {
+          setSubScreen('main');
+          setValidationToken(null);
+          return true; // Swallowed by TimeClockScreen
+        }
+        // Let it bubble up to AttendanceManagement
+        return false;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [
+      subScreen,
+      modalVisible,
+      preFaceModalVisible,
+      preQrModalVisible,
+      handlePreFaceCancel,
+      handlePreQrCancel,
+    ]),
+  );
+
   const checkCommonIntegrity = (requireFence = false) => {
     if (locationLoading) {
       Alert.alert(
-        '⏳ Please Wait',
+        'Please Wait',
         'Location is still being verified. Try again in a moment.',
       );
       return false;
     }
     if (permissionStatus === 'denied') {
       Alert.alert(
-        '📍 Permission Required',
+        'Permission Required',
         'Please enable location access in your device Settings.',
       );
       return false;
     }
     if (spoofingDetected) {
       Alert.alert(
-        '🔍 GPS Integrity Issue',
+        'GPS Integrity Issue',
         SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS detected.',
       );
       return false;
     }
     if (requireFence && !matchedFence) {
       Alert.alert(
-        '📍 Location Check Failed',
+        'Location Check Failed',
         locationError ?? 'You are outside all authorised zones.',
       );
       return false;
@@ -620,75 +963,84 @@ const TimeClockScreen = ({onNavigate}) => {
     }
   }, []);
 
-  // ── Face-first / QR-first action handler ───────────────────────────────────
-  // Called by every action button. Checks integrity, refreshes fence data,
-  // then opens Face/QR gates sequentially or goes straight to the confirm screen.
   const handleActionPress = useCallback(
     async actionKey => {
       if (actionInProgress.current) return;
 
-      // Require fence only for Clock In
+      // ── Phase 1: Instant local checks (zero network cost) ──
       const needsFence = actionKey === 'confirmIn';
       if (!checkCommonIntegrity(needsFence)) return;
 
       actionInProgress.current = true;
       setIsProcessing(true);
       try {
-        // ── Emulator hard-block ──────────────────────────────────────────
-        // Runs before any face modal or confirm screen can open.
-        // DeviceInfo.isEmulator() is async — we await it here so the user
-        // sees an immediate, blocking alert instead of a passive banner.
+        // Emulator check (fast local, ~50ms)
         const runningOnEmulator = await DeviceInfo.isEmulator();
         if (runningOnEmulator) {
           Alert.alert(
-            '⛔ Device Not Supported',
-            'Attendance actions cannot be performed from an emulator or ' +
-              'virtual device. Please use a physical Android/iOS device.',
+            'Device Not Supported',
+            'Attendance actions cannot be performed from an emulator. Please use a physical device.',
             [{text: 'OK', style: 'default'}],
           );
           return;
         }
 
-        // Always get fresh fence + flags from server
-        const latestState = await refresh();
+        // ── Phase 2: User-gated checks BEFORE any SOAP call ──
+        // P0.3: If Face or QR fail here, zero SOAP calls are wasted.
         const actionTypeMap = {
-          confirmIn:       ACTION_TYPES.CLOCK_IN,
-          confirmOut:      ACTION_TYPES.CLOCK_OUT,
-          confirmBreak:    ACTION_TYPES.BREAK_START,
+          confirmIn: ACTION_TYPES.CLOCK_IN,
+          confirmOut: ACTION_TYPES.CLOCK_OUT,
+          confirmBreak: ACTION_TYPES.BREAK_START,
           confirmBreakEnd: ACTION_TYPES.BREAK_END,
         };
-        const fence = getActionFence({
+        const fenceForGating = getActionFence({
           actionType: actionTypeMap[actionKey],
-          matchedFence: latestState?.matchedFence ?? matchedFence,
+          matchedFence,
           clockInFence,
         });
-
-        preQrFenceRef.current = fence;
-        console.log('🔍 preQrFenceRef set to:', JSON.stringify(fence, null, 2));
+        preQrFenceRef.current = fenceForGating;
         setPendingAction(actionKey);
-        setPreQrFence(fence);
+        setPreQrFence(fenceForGating);
         setPreQrValue(null);
         setPreFaceResult(null);
+        setValidationToken(null);
 
-        // Sequence: Face → QR → Confirm Screen
-        if (isFaceRecognitionActive(fence)) {
+        // Face gate: open modal and STOP here — handlePreFaceSuccess
+        // will continue the flow once the user passes.
+        if (isFaceRecognitionActive(fenceForGating)) {
           setPreFaceModalVisible(true);
-        } else if (isQRCodeActive(fence)) {
-          setPreQrModalVisible(true);
-        } else {
-          setSubScreen(actionKey);
+          // Release the processing lock — the modal is now in control
+          setIsProcessing(false);
+          actionInProgress.current = false;
+          return;
         }
+
+        // QR gate: open scanner and STOP here — handlePreQrSuccess continues.
+        if (isQRCodeActive(fenceForGating)) {
+          setPreQrModalVisible(true);
+          setIsProcessing(false);
+          actionInProgress.current = false;
+          return;
+        }
+
+        // ── Phase 3: Single parallel SOAP validation ──
+        // No Face/QR gate → go straight to orchestrator.
+        await _runOrchestratorPrepare({
+          actionKey,
+          actionType: actionTypeMap[actionKey],
+          qrRawValue: null,
+          faceVerified: false,
+        });
       } catch (err) {
         Alert.alert(
-          'Refresh Failed',
-          err.message || 'Unable to verify location. Please try again.',
+          'Error',
+          err.message || 'Unable to complete action. Please try again.',
         );
       } finally {
         setIsProcessing(false);
         actionInProgress.current = false;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       matchedFence,
       clockInFence,
@@ -699,22 +1051,63 @@ const TimeClockScreen = ({onNavigate}) => {
     ],
   );
 
-  // ── Face Verification Gate ─────────────────────────────────────────────────
+  // ── _runOrchestratorPrepare ──────────────────────────────────────────────
+  // Fires the parallel SOAP validation, stores the token, and navigates
+  // to the confirm screen. Called after all user-gated checks pass.
+  const _runOrchestratorPrepare = useCallback(
+    async ({actionKey, actionType, qrRawValue, faceVerified}) => {
+      setIsProcessing(true);
+      try {
+        const result = await AttendanceOrchestrator.prepare({
+          person,
+          actionType,
+          coords,
+          clockInFence,
+          qrRawValue,
+          faceVerified,
+          spoofingDetected,
+        });
+
+        if (!result.ok) {
+          Alert.alert('Validation Failed', result.error);
+          return;
+        }
+
+        setValidationToken(result.token);
+        setSubScreen(actionKey);
+      } finally {
+        setIsProcessing(false);
+        actionInProgress.current = false;
+      }
+    },
+    [person, coords, clockInFence, spoofingDetected],
+  );
+
   const handlePreFaceSuccess = useCallback(
     result => {
       setPreFaceModalVisible(false);
       setPreFaceResult(result);
-
-      // Check if we also need QR
       const fence = preQrFenceRef.current;
+      // If QR gate also required, open scanner next
       if (isQRCodeActive(fence)) {
-        // slight delay to let the modal fully close before opening next
         setTimeout(() => setPreQrModalVisible(true), 300);
-      } else {
-        setSubScreen(pendingAction);
+        return;
       }
+      // No QR gate — go straight to SOAP validation
+      const actionTypeMap = {
+        confirmIn: ACTION_TYPES.CLOCK_IN,
+        confirmOut: ACTION_TYPES.CLOCK_OUT,
+        confirmBreak: ACTION_TYPES.BREAK_START,
+        confirmBreakEnd: ACTION_TYPES.BREAK_END,
+      };
+      _runOrchestratorPrepare({
+        actionKey: pendingAction,
+        actionType: actionTypeMap[pendingAction],
+        qrRawValue: null,
+        faceVerified: result?.verified === true,
+      }).catch(() => {});
     },
-    [pendingAction],
+    [pendingAction, _runOrchestratorPrepare],
   );
 
   const handlePreFaceCancel = useCallback(() => {
@@ -723,50 +1116,30 @@ const TimeClockScreen = ({onNavigate}) => {
     setPreQrFence(null);
     setPreQrValue(null);
     setPreFaceResult(null);
+    setValidationToken(null);
+    actionInProgress.current = false;
   }, []);
 
-  // ── QR Code Gate ───────────────────────────────────────────────────────────
-  // Called when the pre-action QR scanner successfully scans a code.
+  // QR scanned — pass the raw value into the orchestrator prepare call.
+  // The orchestrator calls ValidateQRCode internally (no double-call).
   const handlePreQrSuccess = useCallback(
     async rawValue => {
       setPreQrModalVisible(false);
-      setIsProcessing(true);
-
-      try {
-        const fence = preQrFenceRef.current;
-        console.log('🔍 fence from ref:', JSON.stringify(fence, null, 2));
-        const geoFenceID = String(fence?.GeoFenceID ?? '');
-        console.log('🔍 geoFenceID:', geoFenceID);
-        const qrString =
-          rawValue && typeof rawValue === 'object' ? rawValue.value : rawValue;
-
-        const validationResult = await ValidateQRCode({
-          qrImage: qrString,
-          geoFenceID,
-        });
-
-        // API returns 1 for valid, 0 for invalid
-        if (!validationResult || validationResult === 0) {
-          Alert.alert(
-            '❌ Invalid QR Code',
-            'This QR code is not valid for this location. Please scan the correct attendance QR code.',
-          );
-          return; // Stay on main screen, do not navigate
-        }
-
-        // QR is valid — proceed to confirm screen
-        setPreQrValue(rawValue);
-        setSubScreen(pendingAction);
-      } catch (err) {
-        Alert.alert(
-          'QR Validation Failed',
-          err.message || 'Unable to validate QR code. Please try again.',
-        );
-      } finally {
-        setIsProcessing(false);
-      }
+      setPreQrValue(rawValue);
+      const actionTypeMap = {
+        confirmIn: ACTION_TYPES.CLOCK_IN,
+        confirmOut: ACTION_TYPES.CLOCK_OUT,
+        confirmBreak: ACTION_TYPES.BREAK_START,
+        confirmBreakEnd: ACTION_TYPES.BREAK_END,
+      };
+      await _runOrchestratorPrepare({
+        actionKey: pendingAction,
+        actionType: actionTypeMap[pendingAction],
+        qrRawValue: rawValue,
+        faceVerified: preFaceResult?.verified === true,
+      }).catch(() => {});
     },
-    [pendingAction],
+    [pendingAction, preFaceResult, _runOrchestratorPrepare],
   );
 
   const handlePreQrCancel = useCallback(() => {
@@ -774,61 +1147,71 @@ const TimeClockScreen = ({onNavigate}) => {
     setPendingAction(null);
     setPreQrFence(null);
     setPreQrValue(null);
+    setValidationToken(null);
+    actionInProgress.current = false;
   }, []);
 
-  // ── Clock In ────────────────────────────────────────────────────────────────
   const handleClockIn = useCallback(
-    async (note, qrValue = null) => {
+    async note => {
       await guardedAction(async () => {
-        if (qrValue) console.log('🔐 Clock In QR payload:', qrValue);
         const now = new Date().toISOString();
-
-        // Record the fence for subsequent break/clock-out actions
         recordClockInFence(matchedFence);
         setClockInTime(now);
         setElapsed(0);
         setStatus('in');
         setSubScreen('main');
-
+        setBreakCount(0);
+        setTotalBreakMs(0);
+        setValidationToken(null);
         await startAttendanceService(now);
-        // Re-sync from server/queue to get the latest authoritative state
-        await syncStateFromStorage();
+        setWorkflowFlags({
+          canIn: false,
+          canBreak: true,
+          canBreakEnd: false,
+          canOut: true,
+        });
+        setTimeout(() => syncStateFromStorage().catch(() => {}), 3000);
       });
     },
     [matchedFence, recordClockInFence, syncStateFromStorage, guardedAction],
   );
 
-  // ── Break Start ─────────────────────────────────────────────────────────────
-  // G7 policy: no WiFi check for breaks
   const handleBreakStart = useCallback(
-    async (note, qrValue = null) => {
+    async note => {
       await guardedAction(async () => {
-        if (qrValue) console.log('🔐 Break Start QR payload:', qrValue);
         const now = new Date().toISOString();
-
         setStatus('break');
         setSubScreen('main');
-
+        setValidationToken(null);
         await markBreakStarted(now);
-        await syncStateFromStorage();
+        setWorkflowFlags({
+          canIn: false,
+          canBreak: false,
+          canBreakEnd: true,
+          canOut: false,
+        });
+        setTimeout(() => syncStateFromStorage().catch(() => {}), 3000);
       });
     },
     [syncStateFromStorage, guardedAction],
   );
 
-  // ── Break End ───────────────────────────────────────────────────────────────
   const handleBreakEnd = useCallback(
-    async (note = '', qrValue = null) => {
+    async (note = '') => {
       await guardedAction(async () => {
         setIsProcessing(true);
         try {
-          if (qrValue) console.log('🔐 Break End QR payload:', qrValue);
-
           setStatus('in');
           setSubScreen('main');
-
+          setValidationToken(null);
           await markBreakEnded();
-          await syncStateFromStorage();
+          setWorkflowFlags({
+            canIn: false,
+            canBreak: true,
+            canBreakEnd: false,
+            canOut: true,
+          });
+          setTimeout(() => syncStateFromStorage().catch(() => {}), 3000);
         } finally {
           setIsProcessing(false);
         }
@@ -837,76 +1220,85 @@ const TimeClockScreen = ({onNavigate}) => {
     [syncStateFromStorage, guardedAction],
   );
 
-  // ── Clock Out ─────────────────────────────────────────────────────────────────
   const handleClockOut = useCallback(
-    async (note, endWorkDay, qrValue = null) => {
+    async (note, endWorkDay) => {
       await guardedAction(async () => {
-        if (qrValue) console.log('🔐 Clock Out QR payload:', qrValue);
         const now = new Date().toISOString();
-
         setLastOut(now);
         setClockInTime(null);
         setElapsed(0);
         setStatus('out');
         setSubScreen('main');
-
+        setValidationToken(null);
         await stopAttendanceService();
-        await syncStateFromStorage();
+        setWorkflowFlags({
+          canIn: true,
+          canBreak: false,
+          canBreakEnd: false,
+          canOut: false,
+        });
+        setTimeout(() => syncStateFromStorage().catch(() => {}), 3000);
       });
     },
     [syncStateFromStorage, guardedAction],
   );
 
-  // ── Sub-screen routing ─────────────────────────────────────────────────────
+  // ── Sub-screens ─────────────────────────────────────────────────────────────
+  // P2.5: validationToken passed to all confirm screens.
+  // Confirm screens use Orchestrator.confirm(token) — no redundant SOAP calls.
   if (subScreen === 'confirmIn')
     return (
       <ConfirmClockInScreen
         lastOut={lastOut}
-        initialQrValue={preQrValue}
-        initialFaceResult={preFaceResult}
+        validationToken={validationToken}
         onConfirm={handleClockIn}
-        onBack={() => setSubScreen('main')}
+        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
       />
     );
   if (subScreen === 'confirmBreak')
     return (
       <ConfirmBreakScreen
         breakType="BREAK_START"
-        initialQrValue={preQrValue}
-        initialFaceResult={preFaceResult}
+        validationToken={validationToken}
         onConfirm={handleBreakStart}
-        onBack={() => setSubScreen('main')}
+        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
       />
     );
   if (subScreen === 'confirmBreakEnd')
     return (
       <ConfirmBreakScreen
         breakType="BREAK_END"
-        initialQrValue={preQrValue}
-        initialFaceResult={preFaceResult}
+        validationToken={validationToken}
         onConfirm={handleBreakEnd}
-        onBack={() => setSubScreen('main')}
+        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
       />
     );
   if (subScreen === 'confirmOut')
     return (
       <ConfirmClockOutScreen
-        initialQrValue={preQrValue}
-        initialFaceResult={preFaceResult}
+        validationToken={validationToken}
         onConfirm={handleClockOut}
-        onBack={() => setSubScreen('main')}
+        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
       />
     );
 
+  if (isLoading) return <SkeletonScreen />;
+
+  const todayStr = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+
   return (
     <SafeAreaView style={S.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-      <View style={{height: Platform.OS === 'android' ? 8 : 0}} />
+      <StatusBar barStyle="dark-content" backgroundColor={DK.bg} />
+      <View style={{height: Platform.OS === 'android' ? 6 : 0}} />
 
       {isProcessing && (
         <View style={S.processingOverlay}>
           <View style={S.processingContainer}>
-            <ActivityIndicator size="large" color={C.blue} />
+            <ActivityIndicator size="large" color={DK.accent} />
             <Text style={S.processingText}>Processing…</Text>
           </View>
         </View>
@@ -918,16 +1310,21 @@ const TimeClockScreen = ({onNavigate}) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={C.blue}
-            colors={[C.blue]}
+            tintColor={DK.accent}
+            colors={[DK.accent]}
           />
         }
         showsVerticalScrollIndicator={false}>
-        <StatusCard
+        <StatusPill status={status} />
+        <ClockRing status={status} />
+        <Text style={S.dateLabel}>{todayStr}</Text>
+
+        <TimeSummary
           status={status}
           elapsed={elapsed}
           clockInTime={clockInTime}
-          lastOut={lastOut}
+          breakCount={breakCount}
+          totalBreakMs={totalBreakMs}
         />
 
         {notifAction && (
@@ -946,11 +1343,8 @@ const TimeClockScreen = ({onNavigate}) => {
           onPress={() => setModalVisible(true)}
         />
 
-        {/* Spacer pushes buttons to bottom when content is short */}
-        <View style={{flex: 1, minHeight: 40}} />
+        <View style={{flex: 1, minHeight: 20}} />
 
-        {/* Action buttons INSIDE the scroll view so pull-to-refresh
-          works from anywhere on screen */}
         <ActionButtons
           status={status}
           locationLoading={locationLoading}
@@ -983,7 +1377,7 @@ const TimeClockScreen = ({onNavigate}) => {
             : 'BREAK_END'
         }
         onSuccess={handlePreFaceSuccess}
-        onFailure={reason => {
+        onFailure={() => {
           Alert.alert('Verification Failed', 'Could not verify your identity.');
           handlePreFaceCancel();
         }}
@@ -1011,23 +1405,32 @@ const TimeClockScreen = ({onNavigate}) => {
 export default TimeClockScreen;
 
 const S = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: C.bg},
+  screen: {flex: 1, backgroundColor: DK.bg},
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: DK.textSecondary,
+    textAlign: 'center',
+    marginBottom: 16,
+    letterSpacing: 0.3,
+  },
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(240,244,248,0.9)',
+    backgroundColor: 'rgba(245,247,250,0.92)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999,
   },
   processingContainer: {
     alignItems: 'center',
-    backgroundColor: C.surface,
+    backgroundColor: DK.card,
     paddingHorizontal: 40,
-    paddingVertical: 32,
-    borderRadius: R.lg,
-    gap: 14,
-    ...Sh.lg,
+    paddingVertical: 28,
+    borderRadius: 16,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: DK.cardBorder,
   },
-  processingText: {fontSize: 15, color: C.inkSub, fontWeight: '600'},
-  scrollContent: {flexGrow: 1, paddingBottom: 100},
+  processingText: {fontSize: 14, color: DK.textSecondary, fontWeight: '600'},
+  scrollContent: {flexGrow: 1, paddingBottom: 90, paddingTop: 14},
 });
