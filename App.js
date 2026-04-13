@@ -6,6 +6,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {I18nManager, Text, TextInput} from 'react-native';
 import RNRestart from 'react-native-restart';
 import {PersistGate} from 'redux-persist/integration/react';
+import NetInfo from '@react-native-community/netinfo';
 
 import {store, persistor} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
@@ -13,6 +14,11 @@ import firebaseService from './src/store/FirebaseService';
 import {selectIsRTL, selectCurrentLanguage} from './src/store/selectors';
 import useTheme from './src/theme/useTheme';
 import Geolocation from '@react-native-community/geolocation';
+import {Platform} from 'react-native';
+
+NetInfo.configure({
+  shouldFetchWiFiSSID: true,
+});
 
 // Disable font scaling globally
 if (Text.defaultProps == null) Text.defaultProps = {};
@@ -76,10 +82,15 @@ const AppContent = () => {
   );
 };
 
+// Geolocation.setRNConfiguration({
+//   skipPermissionRequests: false,
+//   authorizationLevel: 'whenInUse',
+//   locationProvider: 'auto',
+// });
 Geolocation.setRNConfiguration({
   skipPermissionRequests: false,
   authorizationLevel: 'whenInUse',
-  locationProvider: 'auto',
+  locationProvider: Platform.OS === 'ios' ? 'native' : 'auto',
 });
 
 const App = () => (
