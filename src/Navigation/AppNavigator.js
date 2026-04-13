@@ -9,6 +9,8 @@ import RequestForRegistration from '../screens/RequestForRegistration/RequestFor
 import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 import SettingsScreen from '../screens/Settings/Settingsscreen';
+import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
+import OutlookCalendarScreen from '../screens/Settings/OutlookCalendarScreen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -86,6 +88,11 @@ const AppNavigator = () => {
         component={QRSetupScreen}
         options={{headerShown: false}}
       />
+      <Stack.Screen
+        name="OutlookCalendarScreen"
+        component={OutlookCalendarScreen}
+        options={{headerShown: false}}
+      />
 
       <Stack.Screen
         name="AttendanceManagement"
@@ -98,6 +105,13 @@ const AppNavigator = () => {
         {() => (
           <ScreenWithSessionTimeout>
             <SettingsScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="WorkflowHistoryScreen" options={{headerShown: true}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <WorkflowHistoryScreen />
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>

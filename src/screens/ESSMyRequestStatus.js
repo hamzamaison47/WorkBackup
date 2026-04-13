@@ -713,27 +713,29 @@ const ESSMyRequestStatusListPage = () => {
       PRWFStatus: item.PRWFStatus || 'Unknown',
     };
 
+    const handleCardPress = () => {
+      navigation.navigate('WorkflowHistoryScreen', {
+        recId: item.ContextRecId,
+        tableId: item.ContextTableId,
+        cameFrom: 'ESSMyRequestStatusListPage',
+      });
+    };
+
     return (
-      <Pressable
-        style={({pressed}) => [
-          styles.DLP_PressableCard,
-          pressed && styles.DLP_PressableCardPressed,
-        ]}
-        onPress={() => console.log('Navigate to detail:', item.recId)}>
-        <DynamicRequestCard
-          data={processedItem}
-          headerConfig={CARD_CONFIG.headerConfig}
-          fields={CARD_CONFIG.fields}
-          buttons={BUTTON_CONFIG}
-          onButtonPress={() => {}}
-          isExpandable={false}
-          gradientColors={['#f0f9ff', '#e0f2fe', '#dbeafe']}
-          processingButtons={[]}
-          showNavigationArrow={false}
-          isClickable={true}
-          searchQuery={searchQuery}
-        />
-      </Pressable>
+      <DynamicRequestCard
+        data={processedItem}
+        headerConfig={CARD_CONFIG.headerConfig}
+        fields={CARD_CONFIG.fields}
+        buttons={BUTTON_CONFIG}
+        onButtonPress={() => {}}
+        onPress={handleCardPress} // ← pass directly as onPress prop
+        isExpandable={false}
+        gradientColors={['#f0f9ff', '#e0f2fe', '#dbeafe']}
+        processingButtons={[]}
+        showNavigationArrow={true}
+        isClickable={true}
+        searchQuery={searchQuery}
+      />
     );
   };
 

@@ -26,7 +26,7 @@ import {translate as t} from '../../store/utils/translate';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 import {employeeEOSRequestfindbyEmployee} from '../../API/EmployeeEOSRequest/EmployeeEOSRequestfindbyEmployee';
-import {ScrollView} from 'react-native-gesture-handler';
+import {ScrollView} from 'react-native';
 
 const EmployeeEOSRequestListPage = () => {
   const navigation = useNavigation();
@@ -179,6 +179,15 @@ const EmployeeEOSRequestListPage = () => {
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };
 
+  const handleAddEOSRequest = () => {
+    navigation.navigate('EOSRequestScreen', {
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      cameFrom: 'EmployeeEOSRequestListPage',
+      userData: effectiveUserData,
+    });
+  };
   // Handle back navigation
   const handleGoBack = () => {
     let targetRoute = 'MainDashboard'; // default
@@ -220,23 +229,21 @@ const EmployeeEOSRequestListPage = () => {
   };
 
   const handleButtonPress = (buttonType, itemData) => {
-    switch (
-      buttonType
-      // case BUTTON_TYPES.EDIT:
-      //   handleEditPress(itemData);
-      //   break;
-      // case BUTTON_TYPES.DELETE:
-      //   handleDeletePress(itemData);
-      //   break;
-      // case BUTTON_TYPES.SUBMIT:
-      //   handleSubmitPress(itemData);
-      //   break;
-      // case BUTTON_TYPES.ATTACHMENT:
-      //   handleReceiptAttachmentPress(itemData);
-      //   break;
-      // default:
-      // console.log('Unknown button pressed:', buttonType);
-    ) {
+    switch (buttonType) {
+      case 'clearance':
+        navigation.navigate('EmployeeEOSClearanceItemsListPage', {
+          employeeId: effectiveEmployeeId,
+          employeeName: effectiveEmployeeName,
+          WorkerRecId: effectiveWorkerRecId,
+          recId: itemData?.RecId, // 🔥 REQUIRED
+          cameFrom: 'EmployeeEOSRequestListPage',
+          userData: effectiveUserData,
+        });
+        break;
+
+      // other buttons (edit, delete, attachment, submit) can stay here
+      default:
+        console.log('Unknown button pressed:', buttonType);
     }
   };
 
@@ -289,6 +296,16 @@ const EmployeeEOSRequestListPage = () => {
         icon: 'send',
         iconSize: 16,
         text: t('buttons.submit'),
+        textColor: '#0A66C2',
+        iconColor: '#0A66C2',
+      },
+      clearance: {
+        show: true, // always show the clearance button
+        position: 'bottom', // shows at bottom of card
+        style: 'text', // text button
+        icon: 'check-circle', // optional icon
+        iconSize: 16,
+        text: t('buttons.clearance') || 'Clearance',
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },
@@ -353,11 +370,11 @@ const EmployeeEOSRequestListPage = () => {
       pageTitle={getPageLabel()}
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={true}
+      showFloatingButton={EOSRequestData.length === 0}
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={0}>
+      onFloatingButtonPress={handleAddEOSRequest}>
       {/* Main content */}
       {isLoading ? (
         <CustomIndicator />

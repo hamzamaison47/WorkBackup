@@ -164,6 +164,14 @@ const PersonalEducationListPage = () => {
     fetchEducationData();
   };
 
+  const handleViewHistory = itemData => {
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: itemData.RecId,
+      tableId: itemData.TableId,
+      cameFrom: 'PersonalEducationListPage',
+    });
+  };
+
   /* ---------- status ---------- */
   const getStatusLabel = status => {
     if (!status) return 'Approved'; // ← empty = Approved
@@ -236,13 +244,13 @@ const PersonalEducationListPage = () => {
   };
 
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
+    const statusLabel = getStatusLabel(item.ApprovalStatus);
+    const isDraft = statusLabel === 'Draft';
     const isCancelled =
-      getStatusLabel(item.ApprovalStatus) === 'Cancelled' ||
-      getStatusLabel(item.ApprovalStatus) === 'Canceled';
+      statusLabel === 'Cancelled' || statusLabel === 'Canceled';
     const canDelete = isDraft || isCancelled;
-    const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
-    const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
+    const isHCMRecord = statusLabel === '';
+    const isRejected = statusLabel === 'Rejected';
 
     return {
       edit: {
@@ -282,19 +290,35 @@ const PersonalEducationListPage = () => {
         customStyle: {},
       },
       approval: {
-        show: isDraft || isRejected,
+        show: true, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
-        icon: 'check-square-o',
+        icon: 'check-square',
         textColor: '#0A66C2',
         disabled: false,
         actions: [
-          {
-            key: 'submit',
-            label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
-          },
+          // Submit: only on Draft or Rejected
+          ...(isDraft || isRejected
+            ? [
+                {
+                  key: 'submit',
+                  label: isRejected ? 'Re-submit' : 'Submit',
+                  icon: 'send',
+                },
+              ]
+            : []),
+
+          // View History: every status except Draft and HCM records
+          ...(!isDraft && !isHCMRecord
+            ? [
+                {
+                  key: 'viewHistory',
+                  label: 'View History',
+                  icon: 'clock',
+                },
+              ]
+            : []),
         ],
       },
     };
@@ -324,6 +348,9 @@ const PersonalEducationListPage = () => {
         break;
       case 'attachment':
         handleReceiptAttachmentPress(itemData);
+        break;
+      case 'viewHistory': // ← add this
+        handleViewHistory(itemData);
         break;
       default:
         console.log('Unknown button type:', buttonType);

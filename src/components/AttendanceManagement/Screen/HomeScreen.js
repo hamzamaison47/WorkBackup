@@ -11,10 +11,10 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
-  StyleSheet,
   ActivityIndicator,
   Linking,
   Platform,
+  Dimensions,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {useGeofence} from '../GeofenceContext';
@@ -107,33 +107,43 @@ const GPSUnavailableView = ({onNavigate, onRetry}) => (
   </View>
 );
 
-// ─────────────────────────────────────────────
-// Location card
-// ─────────────────────────────────────────────
-const LocationCard = ({
+// ─────────────────────────────────────────────────────────────────────────────
+// Location Status Banner
+// ─────────────────────────────────────────────────────────────────────────────
+const LocationBanner = ({
   matchedFence,
   locationLoading,
   locationError,
   coords,
   onPress,
 }) => {
+  const T = useAppTokens();
   const matched = !!matchedFence;
+
   return (
     <TouchableOpacity
-      style={[
-        S.locationCard,
-        matched ? S.locationCardGreen : S.locationCardRed,
-      ]}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: matched ? T.greenBg : T.redBg,
+        borderRadius: conditionalScale(10, 11, 12, 12),
+        padding: conditionalScale(12, 13, 14, 14),
+        marginBottom: conditionalVerticalScale(14, 15, 16, 16),
+        borderLeftWidth: 4,
+        borderLeftColor: matched ? T.green : T.red,
+      }}
       onPress={onPress}
-      activeOpacity={0.75}>
+      activeOpacity={0.7}>
       <View
-        style={[
-          S.locationBar,
-          {backgroundColor: matched ? C.greenMid : C.redMid},
-        ]}
-      />
-      <View style={S.locationCardBody}>
-        <Text style={S.locationCardLabel}>CURRENT LOCATION</Text>
+        style={{
+          width: conditionalScale(36, 38, 40, 40),
+          height: conditionalScale(36, 38, 40, 40),
+          borderRadius: conditionalScale(18, 19, 20, 20),
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: matched ? T.green : T.red,
+          marginRight: conditionalScale(10, 11, 12, 12),
+        }}>
         {locationLoading ? (
           <View style={S.locationCardLoading}>
             <ActivityIndicator size="small" color={C.blue} />
@@ -222,7 +232,7 @@ const ActivityTimeline = ({events}) => {
 };
 
 // ─────────────────────────────────────────────
-// Skeleton Loader 
+// Skeleton Loader
 // ─────────────────────────────────────────────
 const SkeletonBox = ({width, height, style}) => (
   <View
@@ -243,6 +253,7 @@ const SkeletonBox = ({width, height, style}) => (
 // Main HomeScreen
 // ─────────────────────────────────────────────
 const HomeScreen = ({onNavigate}) => {
+  const T = useAppTokens();
   const [lastOut, setLastOut] = useState(null);
   const [isActive, setIsActive] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -317,8 +328,12 @@ const HomeScreen = ({onNavigate}) => {
   // ── Permission denied ─────────────────────────────────────
   if (permissionStatus === 'denied') {
     return (
-      <SafeAreaView style={S.screen}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
+        />
         <PermissionDeniedView onNavigate={onNavigate} />
       </SafeAreaView>
     );
@@ -327,8 +342,12 @@ const HomeScreen = ({onNavigate}) => {
   // ── Loading GPS ──────────────────────────────────────────
   if (permissionStatus === 'unknown' || (locationLoading && !coords)) {
     return (
-      <SafeAreaView style={S.screen}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
+        />
         <LoadingView onNavigate={onNavigate} />
       </SafeAreaView>
     );
@@ -337,8 +356,12 @@ const HomeScreen = ({onNavigate}) => {
   // ── No GPS fix ───────────────────────────────────────────
   if (!locationLoading && !coords && permissionStatus === 'granted') {
     return (
-      <SafeAreaView style={S.screen}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
+        />
         <GPSUnavailableView onNavigate={onNavigate} onRetry={refresh} />
       </SafeAreaView>
     );
@@ -354,143 +377,152 @@ const HomeScreen = ({onNavigate}) => {
   const employeeName = userData?.employeeName || userData?.Name || 'there';
 
   return (
-    <SafeAreaView style={S.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-
-      <ScrollView
-        contentContainerStyle={S.scroll}
-        showsVerticalScrollIndicator={false}>
-        {/* ── Warning banner ── */}
-        {showWarning && (
-          <TouchableOpacity
-            style={S.warningBanner}
-            onPress={refresh}
-            activeOpacity={0.8}>
-            <Text style={S.warningIcon}>⚠️</Text>
-            <View style={{flex: 1}}>
-              <Text style={S.warningTitle}>Location Issue</Text>
-              <Text style={S.warningText} numberOfLines={2}>
-                {locationError} Tap to retry.
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* ── Location card ── */}
-        <LocationCard
-          matchedFence={matchedFence}
-          locationLoading={locationLoading}
-          locationError={locationError}
-          coords={coords}
-          onPress={() => setModalVisible(true)}
+    <PageBackground>
+      <SafeAreaView style={{flex: 1}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
         />
 
-        {/* ── Stats row ── */}
-        {recordsLoading ? (
-          <View style={S.statsRow}>
-            <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
-            <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
-            <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
-          </View>
-        ) : (
-          <View style={S.statsRow}>
-            <View style={[S.statCard, {backgroundColor: C.greenLight}]}>
-              <Text style={[S.statNum, {color: C.greenDark}]}>
-                {todayStats.sessions}
-              </Text>
-              <Text style={S.statLabel}>Sessions</Text>
-            </View>
-            <View style={[S.statCard, {backgroundColor: C.blueLight}]}>
-              <Text style={[S.statNum, {color: C.blueDark, fontSize: 18}]}>
-                {formatDuration(todayStats.worked)}
-              </Text>
-              <Text style={S.statLabel}>Worked</Text>
-            </View>
-            <View
-              style={[
-                S.statCard,
-                {
-                  backgroundColor: C.surfaceAlt,
-                  borderWidth: 1,
-                  borderColor: C.border,
-                },
-              ]}>
-              <Text
-                style={[S.statNum, {color: isActive ? C.greenDark : C.inkSub}]}>
-                {isActive ? 'In' : 'Out'}
-              </Text>
-              <Text style={S.statLabel}>Status</Text>
-            </View>
-          </View>
-        )}
-
-        {/* ── Time Clock card ── */}
-        {recordsLoading ? (
-          <View style={[S.card, {gap: 10}]}>
-            <SkeletonBox width="40%" height={16} />
-            <SkeletonBox width="70%" height={12} />
-            <View style={S.cardDivider} />
-            <SkeletonBox width="50%" height={14} />
-          </View>
-        ) : (
-          <View style={S.card}>
-            <View style={S.cardTitleRow}>
-              <Text style={S.cardTitle}>Time Clock</Text>
-              {isActive && (
-                <View style={S.activePill}>
-                  <View style={S.activePillDot} />
-                  <Text style={S.activePillTxt}>Active</Text>
-                </View>
-              )}
-            </View>
-            <Text style={S.cardSub}>
-              {lastOut
-                ? `Last clocked out at ${formatTime(lastOut)} · ${formatDateShort(
-                    lastOut,
-                  )}`
-                : "You haven't clocked in yet today"}
-            </Text>
-            <View style={S.cardDivider} />
+        <ScrollView
+          contentContainerStyle={S.scroll}
+          showsVerticalScrollIndicator={false}>
+          {/* ── Warning banner ── */}
+          {showWarning && (
             <TouchableOpacity
-              style={S.cardAction}
-              onPress={() => onNavigate('TimeClock')}>
-              <Text style={S.cardActionTxt}>
-                {isActive ? 'View Time Clock' : 'Clock In Now'}
-              </Text>
-              <Text style={S.cardActionArrow}>→</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* ── Today's activity timeline ── */}
-        {recordsLoading ? (
-          <View style={S.card}>
-            <SkeletonBox width="35%" height={14} style={{marginBottom: 12}} />
-            <View style={S.cardDivider} />
-            {[1, 2, 3].map(i => (
-              <View
-                key={i}
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  paddingVertical: 6,
-                }}>
-                <SkeletonBox width="45%" height={12} />
-                <SkeletonBox width="20%" height={12} />
+              style={S.warningBanner}
+              onPress={refresh}
+              activeOpacity={0.8}>
+              <Text style={S.warningIcon}>⚠️</Text>
+              <View style={{flex: 1}}>
+                <Text style={S.warningTitle}>Location Issue</Text>
+                <Text style={S.warningText} numberOfLines={2}>
+                  {locationError} Tap to retry.
+                </Text>
               </View>
-            ))}
-          </View>
-        ) : (
-          <ActivityTimeline events={todayEvents} />
-        )}
-      </ScrollView>
+            </TouchableOpacity>
+          )}
 
-      <NavigationFAB activeScreen="Home" onNavigate={onNavigate} />
-      <LocationPickerModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-      />
-    </SafeAreaView>
+          {/* ── Location card ── */}
+          <LocationCard
+            matchedFence={matchedFence}
+            locationLoading={locationLoading}
+            locationError={locationError}
+            coords={coords}
+            onPress={() => setModalVisible(true)}
+          />
+
+          {/* ── Stats row ── */}
+          {recordsLoading ? (
+            <View style={S.statsRow}>
+              <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+              <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+              <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+            </View>
+          ) : (
+            <View style={S.statsRow}>
+              <View style={[S.statCard, {backgroundColor: C.greenLight}]}>
+                <Text style={[S.statNum, {color: C.greenDark}]}>
+                  {todayStats.sessions}
+                </Text>
+                <Text style={S.statLabel}>Sessions</Text>
+              </View>
+              <View style={[S.statCard, {backgroundColor: C.blueLight}]}>
+                <Text style={[S.statNum, {color: C.blueDark, fontSize: 18}]}>
+                  {formatDuration(todayStats.worked)}
+                </Text>
+                <Text style={S.statLabel}>Worked</Text>
+              </View>
+              <View
+                style={[
+                  S.statCard,
+                  {
+                    backgroundColor: C.surfaceAlt,
+                    borderWidth: 1,
+                    borderColor: C.border,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    S.statNum,
+                    {color: isActive ? C.greenDark : C.inkSub},
+                  ]}>
+                  {isActive ? 'In' : 'Out'}
+                </Text>
+                <Text style={S.statLabel}>Status</Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── Time Clock card ── */}
+          {recordsLoading ? (
+            <View style={[S.card, {gap: 10}]}>
+              <SkeletonBox width="40%" height={16} />
+              <SkeletonBox width="70%" height={12} />
+              <View style={S.cardDivider} />
+              <SkeletonBox width="50%" height={14} />
+            </View>
+          ) : (
+            <View style={S.card}>
+              <View style={S.cardTitleRow}>
+                <Text style={S.cardTitle}>Time Clock</Text>
+                {isActive && (
+                  <View style={S.activePill}>
+                    <View style={S.activePillDot} />
+                    <Text style={S.activePillTxt}>Active</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={S.cardSub}>
+                {lastOut
+                  ? `Last clocked out at ${formatTime(
+                      lastOut,
+                    )} · ${formatDateShort(lastOut)}`
+                  : "You haven't clocked in yet today"}
+              </Text>
+              <View style={S.cardDivider} />
+              <TouchableOpacity
+                style={S.cardAction}
+                onPress={() => onNavigate('TimeClock')}>
+                <Text style={S.cardActionTxt}>
+                  {isActive ? 'View Time Clock' : 'Clock In Now'}
+                </Text>
+                <Text style={S.cardActionArrow}>→</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Today's activity timeline ── */}
+          {recordsLoading ? (
+            <View style={S.card}>
+              <SkeletonBox width="35%" height={14} style={{marginBottom: 12}} />
+              <View style={S.cardDivider} />
+              {[1, 2, 3].map(i => (
+                <View
+                  key={i}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    paddingVertical: 6,
+                  }}>
+                  <SkeletonBox width="45%" height={12} />
+                  <SkeletonBox width="20%" height={12} />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <ActivityTimeline events={todayEvents} />
+          )}
+        </ScrollView>
+
+        <NavigationFAB activeScreen="Home" onNavigate={onNavigate} />
+        <LocationPickerModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+        />
+      </SafeAreaView>
+    </PageBackground>
   );
 };
 

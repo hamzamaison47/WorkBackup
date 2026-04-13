@@ -7,6 +7,8 @@ const initialState = {
   refreshToken: null,
   userToken: null,
   lastBackgroundTime: null,
+  graphAccessToken: null, // ← ADD
+  graphRefreshToken: null, // ← ADD
 };
 
 const authSlice = createSlice({
@@ -28,6 +30,14 @@ const authSlice = createSlice({
     setLastBackgroundTime: (state, action) => {
       state.lastBackgroundTime = action.payload;
     },
+    setGraphAccessToken: (state, action) => {
+      // ← ADD
+      state.graphAccessToken = action.payload;
+    },
+    setGraphRefreshToken: (state, action) => {
+      // ← ADD
+      state.graphRefreshToken = action.payload;
+    },
     setAuthTokens: (state, action) => {
       const {accessToken, idToken, refreshToken} = action.payload;
       if (accessToken !== undefined) state.accessToken = accessToken;
@@ -40,6 +50,8 @@ const authSlice = createSlice({
       state.refreshToken = null;
       state.userToken = null;
       state.lastBackgroundTime = null;
+      state.graphAccessToken = null; // ← ADD
+      state.graphRefreshToken = null; // ← ADD
     },
   },
 });
@@ -50,6 +62,8 @@ export const {
   setRefreshToken,
   setUserToken,
   setLastBackgroundTime,
+  setGraphAccessToken, // ← ADD
+  setGraphRefreshToken, // ← ADD
   setAuthTokens,
   clearAuthTokens,
 } = authSlice.actions;

@@ -322,7 +322,8 @@ const ESSEmployeeTask_ListPage = () => {
         />
       ) : (
         <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText}>No Tasks Found</Text>
+          <Text style={styles.noDataTitle}>No Tasks Found</Text>
+          <Text style={styles.noDataText}>You're all caught up.</Text>
         </View>
       )}
       <AlertModal

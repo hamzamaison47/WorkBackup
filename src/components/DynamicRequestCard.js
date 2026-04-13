@@ -3539,7 +3539,7 @@ const DynamicRequestCard = ({
 const S = {
   card: {
     borderRadius: conditionalScale(12, 13, 14, 14),
-    marginHorizontal: conditionalScale(8, 10, 12, 12),
+    // marginHorizontal: conditionalScale(4, 6, 8, 8),
     marginBottom: conditionalVerticalScale(8, 9, 10, 10),
     borderWidth: 1,
     shadowOffset: {width: 0, height: 2},
