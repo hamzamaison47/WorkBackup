@@ -53,6 +53,8 @@ const FindIdentificationTypeRequest = async () => {
       return [];
     }
 
+    console.log(JSON.stringify(parsed, null, 2));
+
     const cleanObject = obj =>
       Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [

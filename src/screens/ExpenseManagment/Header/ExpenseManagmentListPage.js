@@ -274,10 +274,9 @@ const ExpenseManagmentListPage = () => {
     });
   };
 
-  // Buttons config
   const getButtonConfig = item => {
     const isDraft = item.DocumentStatus === 'Draft';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
+    const isRejected = getStatusLabel(item.DocumentStatus) === 'Rejected';
 
     return {
       edit: {
@@ -302,31 +301,36 @@ const ExpenseManagmentListPage = () => {
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      //   submit: {
-      //     show: isDraft,
-      //     position: 'bottom',
-      //     style: 'text',
-      //     icon: 'send',
-      //     iconSize: 16,
-      //     text: 'Submit',
-      //     textColor: '#0A66C2',
-      //     iconColor: '#0A66C2',
-      //   },
-      // };
       approval: {
-        show: isDraft || isRejected,
+        show: true, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
-        // no icon field needed anymore
+        icon: 'check-square',
         textColor: '#0A66C2',
         disabled: false,
         actions: [
-          {
-            key: 'submit',
-            label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
-          },
+          // Submit: only on Draft or Rejected
+          ...(isDraft || isRejected
+            ? [
+                {
+                  key: 'submit',
+                  label: isRejected ? 'Re-submit' : 'Submit',
+                  icon: 'send',
+                },
+              ]
+            : []),
+
+          // View History: every status except Draft
+          ...(!isDraft
+            ? [
+                {
+                  key: 'viewHistory',
+                  label: 'View History',
+                  icon: 'clock',
+                },
+              ]
+            : []),
         ],
       },
     };
@@ -336,6 +340,7 @@ const ExpenseManagmentListPage = () => {
     if (buttonType === 'edit') handleEditPress(item);
     else if (buttonType === 'delete') handleDeletePress(item);
     else if (buttonType === 'submit') handleSubmitPress(item);
+    else if (buttonType === 'viewHistory') handleViewHistory(item); // ← add
   };
 
   const handleEditPress = itemData => {
@@ -405,6 +410,15 @@ const ExpenseManagmentListPage = () => {
         setButtonProcessing(itemData.recId, 'submit', false);
       }
     }, 100);
+  };
+
+  const handleViewHistory = item => {
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: normalizeRecId(item),
+      tableId: item.TableId,
+      cameFrom: 'ExpenseManagmentListPage',
+    });
+    console.log('Here is the Sending data', item.recId, item.TableId);
   };
 
   const handleDeleteConfirm = async () => {

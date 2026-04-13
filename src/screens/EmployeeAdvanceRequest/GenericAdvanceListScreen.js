@@ -383,8 +383,9 @@ const GenericAdvanceListScreen = () => {
   };
 
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
+    const statusLabel = getStatusLabel(item.WFStatus);
+    const isDraft = statusLabel === 'Draft';
+    const isRejected = statusLabel === 'Rejected';
 
     return {
       edit: {
@@ -421,18 +422,35 @@ const GenericAdvanceListScreen = () => {
         customStyle: {},
       },
       approval: {
-        show: isDraft || isRejected,
+        show: true, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
+        icon: 'check-square',
         textColor: '#0A66C2',
         disabled: false,
         actions: [
-          {
-            key: 'submit',
-            label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
-          },
+          // Submit: only on Draft or Rejected
+          ...(isDraft || isRejected
+            ? [
+                {
+                  key: 'submit',
+                  label: isRejected ? 'Re-submit' : 'Submit',
+                  icon: 'send',
+                },
+              ]
+            : []),
+
+          // View History: every status except Draft
+          ...(!isDraft
+            ? [
+                {
+                  key: 'viewHistory',
+                  label: 'View History',
+                  icon: 'clock',
+                },
+              ]
+            : []),
         ],
       },
     };
@@ -471,8 +489,19 @@ const GenericAdvanceListScreen = () => {
       case 'attachment':
         handleReceiptAttachmentPress(itemData);
         break;
+      case 'viewHistory': // ← add this
+        handleViewHistory(itemData);
+        break;
       default:
     }
+  };
+
+  const handleViewHistory = itemData => {
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: itemData.RecId,
+      tableId: itemData.TableId,
+      cameFrom: 'GenericAdvanceListScreen',
+    });
   };
 
   const formatDate = date => {

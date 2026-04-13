@@ -8932,6 +8932,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 15,
   },
+
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+
+  noDataTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#222',
+  },
+
+  noDataText: {
+    fontSize: 14,
+    color: '#666',
+  },
 });
 
 export default styles;
