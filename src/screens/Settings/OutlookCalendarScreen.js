@@ -20,6 +20,13 @@ import {
   CreateCalendarEvent,
   DeleteCalendarEvent,
 } from '../../API/Outlook/outlookCalendarApi';
+import {authorize} from 'react-native-app-auth';
+import {getGraphConsentConfiguration} from '../../Controller/configuration';
+import {
+  setGraphAccessToken,
+  setGraphRefreshToken,
+} from '../../store/slices/authSlice';
+import {store} from '../../store';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const DAYS_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -53,6 +60,35 @@ export const useOutlookCalendar = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const requestGraphConsent = useCallback(async retryFetch => {
+    try {
+      // Get email from store to pin the account
+      const storeState = store.getState();
+      const loginHint =
+        storeState.user?.userData?.email ??
+        storeState.user?.userData?.userPrincipalName ??
+        null;
+
+      const graphConfig = await getGraphConsentConfiguration(loginHint);
+
+      const result = await authorize({
+        ...graphConfig,
+        additionalParameters: {
+          prompt: 'consent',
+          ...(loginHint && {login_hint: loginHint}), // ← same fix here
+        },
+      });
+      store.dispatch(setGraphAccessToken(result.accessToken));
+      store.dispatch(setGraphRefreshToken(result.refreshToken));
+      await retryFetch();
+    } catch (consentErr) {
+      Alert.alert(
+        'Calendar Permission Required',
+        'Please grant access to your Outlook calendar to use this feature.',
+      );
+    }
+  }, []);
+
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -81,11 +117,15 @@ export const useOutlookCalendar = () => {
       const todayIds = new Set(todayData.map(e => e.id));
       setWeekEvents(rangeData.filter(e => !todayIds.has(e.id)));
     } catch (err) {
-      setError(err.message ?? 'Failed to load calendar events');
+      if (err.message === 'GRAPH_CONSENT_REQUIRED') {
+        await requestGraphConsent(fetchEvents);
+      } else {
+        setError(err.message ?? 'Failed to load calendar events');
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [requestGraphConsent]);
 
   const createEvent = useCallback(
     async eventData => {
@@ -112,6 +152,7 @@ export const useOutlookCalendar = () => {
     fetchEvents,
     createEvent,
     deleteEvent,
+    requestGraphConsent,
   };
 };
 
@@ -523,6 +564,7 @@ const OutlookCalendarScreen = () => {
     fetchEvents,
     createEvent,
     deleteEvent,
+    requestGraphConsent, // ← add this
   } = useOutlookCalendar();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
