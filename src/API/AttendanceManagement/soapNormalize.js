@@ -3,7 +3,10 @@ export const removeNamespace = key => {
 };
 
 export const normalizeValue = value => {
-  if (value === null || value === undefined || value === '') return [];
+  // Return null (not []) for absent/empty values so that downstream truthiness
+  // checks (e.g. !net.BSSID) behave correctly. An empty array is truthy and
+  // would be misinterpreted as a configured-but-empty BSSID.
+  if (value === null || value === undefined || value === '') return null;
 
   if (value === 'Yes') return 1;
   if (value === 'No') return 0;
@@ -20,7 +23,14 @@ export const normalizeObject = obj => {
     return obj.map(normalizeObject);
   }
 
-  if (typeof obj === 'object' && obj !== null) {
+  // IMPORTANT: typeof null === 'object' in JavaScript. Without this guard,
+  // null values would be processed as objects and wrapped in [null] arrays,
+  // causing downstream flatMap calls to crash on null.property access.
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+
+  if (typeof obj === 'object') {
     const keys = Object.keys(obj);
 
     // 🔹 Auto-flatten SOAP wrappers like:
@@ -35,10 +45,16 @@ export const normalizeObject = obj => {
       const cleanKey = removeNamespace(key);
       const value = obj[key];
 
-      if (typeof value === 'object') {
+      // Preserve null/undefined without wrapping in arrays
+      if (value === null || value === undefined) {
+        newObj[cleanKey] = null;
+      } else if (typeof value === 'object') {
         const normalized = normalizeObject(value);
 
-        if (Array.isArray(normalized)) {
+        if (normalized === null || normalized === undefined) {
+          // normalizeObject returned null (e.g. the value was an empty wrapper)
+          newObj[cleanKey] = null;
+        } else if (Array.isArray(normalized)) {
           newObj[cleanKey] = normalized;
         } else {
           newObj[cleanKey] = [normalized];

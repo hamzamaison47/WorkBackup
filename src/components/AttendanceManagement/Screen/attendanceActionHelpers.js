@@ -202,6 +202,16 @@ export const buildAttendancePayload = async ({
     VerifyFaceId: faceResult?.verified === true,
   };
 
+  if (__DEV__) {
+    console.log('[buildAttendancePayload] raw payload:', {
+      NetworkID: payload.NetworkID,
+      NetworkName: payload.NetworkName,
+      BSSID: payload.BSSID,
+      DeviceId: payload.DeviceId,
+      GenerationType: payload.GenerationType,
+    });
+  }
+
   const filtered = Object.fromEntries(
     Object.entries(payload).filter(([key, value]) => {
       if (key === 'DeviceId') return true; // always send, SOAP builder handles nil
@@ -210,6 +220,17 @@ export const buildAttendancePayload = async ({
       return true;
     }),
   );
+
+  if (__DEV__) {
+    const missing = ['NetworkID', 'NetworkName', 'BSSID'].filter(
+      k => !(k in filtered),
+    );
+    if (missing.length) {
+      console.warn('[buildAttendancePayload] ⚠️ Fields stripped from payload:', missing);
+    } else {
+      console.log('[buildAttendancePayload] ✓ Network fields present in payload.');
+    }
+  }
 
   return filtered;
 };
