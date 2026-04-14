@@ -144,9 +144,14 @@ export const checkNetworkMatch = (
   const matched = fenceNetworks.some(net => {
     const ssidMatch =
       net.NetworkName && normalizeNet(net.NetworkName) === deviceSsid;
-    // If BSSID is configured on the fence entry, it must match too.
+    // Treat BSSID as "not configured" if it is null, undefined, or an empty
+    // array ([] can appear from old cached data before the normalizeValue fix).
+    const bssidConfigured =
+      net.BSSID &&
+      !(Array.isArray(net.BSSID) && net.BSSID.length === 0) &&
+      normalizeNet(net.BSSID).length > 0;
     const bssidMatch =
-      !net.BSSID ||
+      !bssidConfigured ||
       (deviceBssid && normalizeNet(net.BSSID) === deviceBssid);
     return ssidMatch && bssidMatch;
   });
@@ -310,13 +315,14 @@ export const GeofenceProvider = ({children, person}) => {
         dateValid,
         distanceMetres,
         withinRadius,
-        // Store networks for Orchestrator validation at confirm-time
+        // Store networks for Orchestrator validation at confirm-time.
+        // Filter null/undefined entries so flatMap never crashes on n.property.
         networks: Array.isArray(f.Networks)
-          ? f.Networks.flatMap(n =>
-              Array.isArray(n.DFGeoFencesNetworksSvcContract)
-                ? n.DFGeoFencesNetworksSvcContract
-                : n
-            )
+          ? f.Networks.filter(n => n != null).flatMap(n =>
+              Array.isArray(n?.DFGeoFencesNetworksSvcContract)
+                ? n.DFGeoFencesNetworksSvcContract.filter(e => e != null)
+                : (n != null ? [n] : [])
+            ).filter(e => e != null && typeof e === 'object')
           : [],
       };
     });

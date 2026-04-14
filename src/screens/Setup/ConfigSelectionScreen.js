@@ -826,6 +826,7 @@ const ConfigSelectionScreen = () => {
       />
       <AlertDeleteModal
         visible={deleteModal}
+        heading={t('leaveRequest.deleteConfirmTitle')}
         text={`Are you sure you want to remove "${selectedRecName}"?`}
         onPress={() => {
           deleteConfiguration(selectedRecId);

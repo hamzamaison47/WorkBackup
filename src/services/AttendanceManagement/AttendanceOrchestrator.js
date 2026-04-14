@@ -93,11 +93,13 @@ const enrichFences = (rawFences, coords) => {
     }
 
     const networks = Array.isArray(f.Networks)
-      ? f.Networks.flatMap(n =>
-          Array.isArray(n.DFGeoFencesNetworksSvcContract)
-            ? n.DFGeoFencesNetworksSvcContract
-            : n,
-        )
+      // Guard against null entries (e.g. fence with Networks: null flattened
+      // to [null] by normalizeObject before the null-check fix propagated).
+      ? f.Networks.filter(n => n != null).flatMap(n =>
+          Array.isArray(n?.DFGeoFencesNetworksSvcContract)
+            ? n.DFGeoFencesNetworksSvcContract.filter(e => e != null)
+            : (n != null ? [n] : [])
+        ).filter(e => e != null && typeof e === 'object')
       : [];
 
     return {
@@ -176,6 +178,30 @@ const fetchNetworkInfo = async () => {
     }
   } catch {}
   return {isWifi: false, ssid: null, bssid: null};
+};
+
+// ─────────────────────────────────────────────
+// Public IP fetch — NetworkID field
+// Uses api.ipify.org with a 5-second abort timeout.
+// Returns null on any failure (offline, timeout, error) so the
+// rest of the flow is never blocked by this call.
+// Called in parallel with fetchNetworkInfo() to add zero latency.
+// ─────────────────────────────────────────────
+const fetchPublicIP = async () => {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    const resp = await fetch('https://api.ipify.org?format=json', {
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data?.ip ?? null;
+  } catch {
+    // Offline, timeout, or parse error — degrade gracefully
+    return null;
+  }
 };
 
 // ─────────────────────────────────────────────
@@ -266,13 +292,38 @@ const prepare = async ({
     }
   }
 
-  // ── Network validation ───────────────────────
-  let networkContext = {networkId: null, networkName: null, bssid: null};
+  // ── Network context capture (always) + validation (when configured) ────────
+  // IMPORTANT: WiFi data is ALWAYS captured for audit trail and DB persistence,
+  // regardless of whether this fence has a network policy configured.
+  // Validation (blocking) is only enforced when fenceNetworks.length > 0.
+  // fetchNetworkInfo and fetchPublicIP run in parallel — zero added latency.
+  const [netInfo, publicIp] = await Promise.all([
+    fetchNetworkInfo(),
+    fetchPublicIP(),
+  ]);
+
+  // Default: always send all three network fields.
+  //   NetworkID   = device public IP  (unique per network, backend audit field)
+  //   NetworkName = WiFi SSID          (human-readable network name)
+  //   BSSID       = AP hardware MAC   (unique per access point)
+  let networkContext = {
+    networkId: publicIp ?? null,         // public IP — always recorded
+    networkName: netInfo.ssid ?? null,   // device SSID — always recorded
+    bssid: netInfo.bssid ?? null,        // device BSSID — always recorded
+  };
+
   const fenceNetworks = actionFence?.networks ?? [];
 
-  if (fenceNetworks.length > 0) {
-    const netInfo = await fetchNetworkInfo();
+  if (__DEV__) {
+    console.log(
+      '[Orchestrator] actionFence.networks:',
+      JSON.stringify(fenceNetworks),
+      '→ count:', fenceNetworks.length,
+    );
+  }
 
+  if (fenceNetworks.length > 0) {
+    // This fence enforces a network policy — run validation.
     if (isUnknownSsid(netInfo.ssid) && netInfo.isWifi) {
       return {
         ok: false,
@@ -291,21 +342,33 @@ const prepare = async ({
     if (!networkMatched)
       return {ok: false, error: buildNetworkErrorMessage(actionFence, networkFailReason)};
 
-    // Find canonical network entry values for the payload
+    // Upgrade networkContext with canonical values from the matched fence entry.
+    // Falls back to live device values if the fence entry has no configured value.
     const matchedNet = fenceNetworks.find(net => {
       const ssidMatch =
         net.NetworkName &&
         normalizeNet(net.NetworkName) === normalizeNet(netInfo.ssid);
+      // Mirror the same [] guard used in checkNetworkMatch so both checks
+      // are guaranteed to agree on whether BSSID is "configured".
+      const bssidConfigured =
+        net.BSSID &&
+        !(Array.isArray(net.BSSID) && net.BSSID.length === 0) &&
+        normalizeNet(net.BSSID).length > 0;
       const bssidMatch =
-        !net.BSSID ||
+        !bssidConfigured ||
         (netInfo.bssid && normalizeNet(net.BSSID) === normalizeNet(netInfo.bssid));
       return ssidMatch && bssidMatch;
     });
     networkContext = {
-      networkId: matchedNet?.NetworkID ?? null,
+      // Priority: admin-configured NetworkID in fence entry → device public IP
+      networkId: matchedNet?.NetworkID ?? publicIp ?? null,
       networkName: matchedNet?.NetworkName ?? netInfo.ssid,
       bssid: matchedNet?.BSSID ?? netInfo.bssid,
     };
+
+    console.log('[Orchestrator] Network validated. networkContext:', networkContext);
+  } else {
+    console.log('[Orchestrator] No fence network policy. WiFi captured for audit:', networkContext);
   }
 
   // ── Build and return ValidationToken ────────

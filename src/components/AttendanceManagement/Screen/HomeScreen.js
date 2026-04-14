@@ -15,6 +15,7 @@ import {
   Linking,
   Platform,
   Dimensions,
+  StyleSheet,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {useGeofence} from '../GeofenceContext';
@@ -30,6 +31,12 @@ import {
   getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import {C, R, Sh} from '../theme';
+import useAppTokens from '../../AppComponentsDesign/useAppTokens';
+import PageBackground from '../../AppComponentsDesign/PageBackground';
+import {
+  conditionalScale,
+  conditionalVerticalScale,
+} from '../../../store/utils/scaling';
 
 // ─────────────────────────────────────────────
 // Permission denied
@@ -144,6 +151,10 @@ const LocationBanner = ({
           backgroundColor: matched ? T.green : T.red,
           marginRight: conditionalScale(10, 11, 12, 12),
         }}>
+        <Text style={{fontSize: 16}}>{matched ? '📍' : '⚠️'}</Text>
+      </View>
+
+      <View style={{flex: 1}}>
         {locationLoading ? (
           <View style={S.locationCardLoading}>
             <ActivityIndicator size="small" color={C.blue} />
@@ -405,7 +416,7 @@ const HomeScreen = ({onNavigate}) => {
           )}
 
           {/* ── Location card ── */}
-          <LocationCard
+          <LocationBanner
             matchedFence={matchedFence}
             locationLoading={locationLoading}
             locationError={locationError}
@@ -530,191 +541,249 @@ export default HomeScreen;
 
 const S = StyleSheet.create({
   screen: {flex: 1, backgroundColor: C.bg},
-  scroll: {padding: 16, paddingBottom: 100},
 
-  stateWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 36,
-    backgroundColor: C.bg,
+  scroll: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 120,
   },
-  stateIconCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 22,
+
+  // ── GLOBAL CARD ─────────────────────────────
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: C.border,
     ...Sh.sm,
   },
-  stateEmoji: {fontSize: 38},
-  stateTitle: {
-    fontSize: 20,
+
+  cardTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  cardTitle: {
+    fontSize: 16,
     fontWeight: '700',
     color: C.ink,
-    textAlign: 'center',
-    marginBottom: 10,
   },
-  stateSub: {
-    fontSize: 14,
-    color: C.inkSub,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 28,
-  },
-  stateBtn: {
-    backgroundColor: C.blue,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-    marginBottom: 12,
-    ...Sh.sm,
-  },
-  stateBtnTxt: {color: C.white, fontWeight: '700', fontSize: 15},
 
-  // ── Welcome banner ────────────────────────────────────────
-  welcomeBanner: {
+  cardSub: {
+    fontSize: 13,
+    color: C.inkMuted,
+    marginTop: 6,
+    lineHeight: 18,
+  },
+
+  cardDivider: {
+    height: 1,
+    backgroundColor: C.border,
+    marginVertical: 14,
+  },
+
+  cardAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  cardActionTxt: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.blue,
+  },
+
+  cardActionArrow: {
+    fontSize: 18,
+    color: C.blue,
+  },
+
+  // ── LOCATION BANNER FIX ─────────────────────
+  locationCardLoading: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: C.blue,
-    borderRadius: R.lg,
-    padding: 16,
-    marginBottom: 12,
-    ...Sh.sm,
+    gap: 8,
   },
-  welcomeGreeting: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    marginBottom: 2,
-  },
-  welcomeName: {fontSize: 18, fontWeight: '700', color: C.white},
-  welcomeAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  welcomeAvatarTxt: {fontSize: 18, fontWeight: '700', color: C.white},
 
-  // ── Warning ──────────────────────────────────────────────
+  locationCardName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.ink,
+  },
+
+  locationCardMeta: {
+    fontSize: 12,
+    color: C.greenDark,
+    marginTop: 2,
+  },
+
+  locationCardCoords: {
+    fontSize: 11,
+    color: C.inkFaint,
+    marginTop: 4,
+  },
+
+  locationCardArrow: {
+    fontSize: 18,
+    marginLeft: 6,
+  },
+
+  // ── WARNING ─────────────────────────────
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
     backgroundColor: C.amberLight,
-    borderRadius: R.md,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 14,
     borderLeftWidth: 4,
     borderLeftColor: C.amber,
-    ...Sh.xs,
   },
+
   warningIcon: {fontSize: 18},
-  warningTitle: {fontSize: 13, fontWeight: '600', color: C.ink},
-  warningText: {fontSize: 12, color: C.inkSub, marginTop: 2},
 
-  // ── Location card ─────────────────────────────────────────
-  locationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: R.md,
-    marginBottom: 12,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    ...Sh.sm,
-    backgroundColor: C.surface,
-  },
-  locationCardGreen: {borderColor: C.greenMid},
-  locationCardRed: {borderColor: C.redMid},
-  locationBar: {width: 4, alignSelf: 'stretch'},
-  locationCardBody: {flex: 1, padding: 14},
-  locationCardLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: C.inkFaint,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  locationCardLoading: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  locationCardName: {
-    fontSize: 15,
-    fontWeight: '700',
+  warningTitle: {
+    fontSize: 13,
+    fontWeight: '600',
     color: C.ink,
-    marginBottom: 2,
   },
-  locationCardMeta: {fontSize: 12, color: C.greenDark, fontWeight: '500'},
-  locationCardCoords: {fontSize: 11, color: C.inkFaint, marginTop: 3},
-  locationCardArrow: {fontSize: 20, paddingRight: 14},
 
-  // ── Stats ─────────────────────────────────────────────────
-  statsRow: {flexDirection: 'row', gap: 10, marginBottom: 12},
+  warningText: {
+    fontSize: 12,
+    color: C.inkSub,
+    marginTop: 2,
+  },
+
+  // ── STATS ROW FIX (BIG IMPROVEMENT) ─────────
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 14,
+  },
+
   statCard: {
     flex: 1,
-    borderRadius: R.md,
-    padding: 14,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
-    ...Sh.xs,
+    justifyContent: 'center',
+    ...Sh.sm,
   },
-  statNum: {fontSize: 22, fontWeight: '800', textAlign: 'center'},
-  statLabel: {fontSize: 11, color: C.inkMuted, marginTop: 2, fontWeight: '500'},
 
-  // ── Card ──────────────────────────────────────────────────
-  card: {
-    backgroundColor: C.surface,
-    borderRadius: R.md,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    ...Sh.xs,
+  statNum: {
+    fontSize: 20,
+    fontWeight: '800',
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+
+  statLabel: {
+    fontSize: 11,
+    color: C.inkMuted,
+    marginTop: 4,
   },
-  cardTitle: {fontSize: 15, fontWeight: '700', color: C.ink},
+
+  // ── ACTIVE PILL ─────────────────────────
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
     backgroundColor: C.greenLight,
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: R.full,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
+
   activePillDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: C.greenMid,
+    marginRight: 6,
   },
-  activePillTxt: {fontSize: 11, fontWeight: '600', color: C.greenDark},
-  cardSub: {fontSize: 13, color: C.inkMuted, lineHeight: 19},
-  cardDivider: {height: 1, backgroundColor: C.border, marginVertical: 12},
-  cardAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardActionTxt: {fontSize: 14, fontWeight: '600', color: C.blue},
-  cardActionArrow: {fontSize: 16, color: C.blue},
 
-  // ── Activity timeline ─────────────────────────────────────
+  activePillTxt: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.greenDark,
+  },
+
+  // ── ACTIVITY TIMELINE FIX ────────────────
   activityRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
-  activityLeft: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  activityDot: {width: 8, height: 8, borderRadius: 4},
-  activityLabel: {fontSize: 13, color: C.inkSub},
-  activityTime: {fontSize: 13, fontWeight: '600', color: C.ink},
+
+  activityLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  activityDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+
+  activityLabel: {
+    fontSize: 13,
+    color: C.inkSub,
+  },
+
+  activityTime: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.ink,
+  },
+
+  // ── STATE SCREENS (UNCHANGED BUT CLEANED) ─
+  stateWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: C.bg,
+  },
+
+  stateIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    ...Sh.sm,
+  },
+
+  stateEmoji: {fontSize: 36},
+
+  stateTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: C.ink,
+    textAlign: 'center',
+  },
+
+  stateSub: {
+    fontSize: 14,
+    color: C.inkSub,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+
+  stateBtn: {
+    backgroundColor: C.blue,
+    paddingHorizontal: 30,
+    paddingVertical: 14,
+    borderRadius: 30,
+  },
+
+  stateBtnTxt: {
+    color: C.white,
+    fontWeight: '700',
+  },
 });
