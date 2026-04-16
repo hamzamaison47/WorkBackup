@@ -35,8 +35,12 @@ const RetrieveByPerson = async ({person}) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction: 'http://tempuri.org/DFUserGeofencesSvc/retrieveByPerson',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
         responseType: 'text',
+        timeout: 10000, // 10 seconds timeout for slow internet
       },
     );
 
@@ -100,6 +104,13 @@ const RetrieveByPerson = async ({person}) => {
         'Retrieve Person location SOAP error:',
         err.response?.data || err.message,
       );
+    }
+    if (
+      err.code === 'ECONNABORTED' ||
+      !err.response ||
+      err.message?.toLowerCase().includes('network error')
+    ) {
+      throw new Error('Internet connection is slow or down. Please try again.');
     }
     throw err;
   }

@@ -38,8 +38,12 @@ const RetrieveByPersonAttendance = async ({person}) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction: 'http://tempuri.org/DFUserAttendanceSvc/retrieveByPerson',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
         responseType: 'text',
+        timeout: 10000, // 10 seconds timeout for slow internet
       },
     );
 
@@ -102,6 +106,13 @@ const RetrieveByPersonAttendance = async ({person}) => {
         'Retrieve Person attendance SOAP error:',
         err.response?.data || err.message,
       );
+    }
+    if (
+      err.code === 'ECONNABORTED' ||
+      !err.response ||
+      err.message?.toLowerCase().includes('network error')
+    ) {
+      throw new Error('Internet connection is slow or down. Please try again.');
     }
     throw err;
   }
