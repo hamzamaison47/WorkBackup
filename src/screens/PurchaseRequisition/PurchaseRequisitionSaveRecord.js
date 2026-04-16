@@ -62,29 +62,76 @@ const PurchaseRequisitionSaveRecord = () => {
     useState(false);
   const [showTransDateCalendar, setShowTransDateCalendar] = useState(false);
 
+  // Replace the existing formatDate function with this safer version
   const formatDate = date => {
     if (!date) return '';
+
+    // If date is already a string in MM/DD/YYYY format, return it as-is
+    if (typeof date === 'string' && date.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      return date;
+    }
+
     const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+
     return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(
       d.getDate(),
     ).padStart(2, '0')}/${d.getFullYear()}`;
   };
 
+  // PurchaseRequisitionSaveRecord.js - replace convertDateFormat
   const convertDateFormat = date => {
     const d = new Date(date);
+    // Return only YYYY-MM-DD format without time
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
       2,
       '0',
-    )}-${String(d.getDate()).padStart(2, '0')}T12:00:00`;
+    )}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  const todayISO = new Date().toISOString(); // Full ISO string
+  // Add a helper function to parse various date formats to YYYY-MM-DD
+  const parseToISODate = dateValue => {
+    if (!dateValue) return todayISO;
+
+    // If it's already in YYYY-MM-DD format
+    if (
+      typeof dateValue === 'string' &&
+      dateValue.match(/^\d{4}-\d{2}-\d{2}/)
+    ) {
+      return dateValue.split('T')[0];
+    }
+
+    // If it's in MM/DD/YYYY format (from display)
+    if (
+      typeof dateValue === 'string' &&
+      dateValue.match(/^\d{2}\/\d{2}\/\d{4}$/)
+    ) {
+      const [month, day, year] = dateValue.split('/');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Try to parse as Date object or ISO string
+    const d = new Date(dateValue);
+    if (isNaN(d.getTime())) return todayISO;
+
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      '0',
+    )}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  // Also update todayISO to just the date string
+  const todayDate = new Date();
+  const todayISO = `${todayDate.getFullYear()}-${String(
+    todayDate.getMonth() + 1,
+  ).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+
   const createInitialFormData = () => ({
     RecId: '',
     PurchReqId: '',
     PurchReqName: '',
-    RequiredDate: convertDateFormat(todayISO), // default to today
-    TransDate: convertDateFormat(todayISO), // default to today
+    RequiredDate: todayISO, // now just YYYY-MM-DD
+    TransDate: todayISO, // now just YYYY-MM-DD
     employeeId,
     employeeName,
     WorkerRecId,
@@ -155,8 +202,16 @@ const PurchaseRequisitionSaveRecord = () => {
     };
 
     if (mode === 'create') fetchPurchReqId();
-    if (mode === 'edit' && purchaseRequisitiondata)
-      setFormData(purchaseRequisitiondata);
+    if (mode === 'edit' && purchaseRequisitiondata) {
+      const requiredDateValue =
+        purchaseRequisitiondata.RequiredDate || todayISO;
+      const transDateValue = purchaseRequisitiondata.TransDate || todayISO;
+      setFormData({
+        ...purchaseRequisitiondata,
+        RequiredDate: parseToISODate(requiredDateValue),
+        TransDate: parseToISODate(transDateValue),
+      });
+    }
   }, [mode, purchaseRequisitiondata]);
 
   useEffect(() => {

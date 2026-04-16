@@ -1563,6 +1563,7 @@ const ActionPaneContainer = ({
   showTabNavigator = true,
   onFloatingButtonPress,
   onRefresh,
+  onBackPress,
   showPageTitleRow = false,
   showSearchBar = false,
   onSearchChange = () => {},
@@ -1695,7 +1696,8 @@ const ActionPaneContainer = ({
         onCount: notificationCount,
         headerBg: T.blue,
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
-        isBack: false,
+        isBack: !!onBackPress, // ← was hardcoded false
+        onBackPress: onBackPress,
         selectedDat:
           selectedLegalEntity ||
           defaultLegalEntity ||

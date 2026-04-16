@@ -86,10 +86,15 @@ const GenericAdvanceListScreen = () => {
     try {
       const allResults = await FindByEmployeeAdvanceRequest({employeeId});
 
+      console.log('=== API Response Debug ===');
+      console.log('Raw API results:', allResults);
+
       const filteredResults = allResults.filter(item => {
         const type = item.AdvanceTypeCode?.toLowerCase() || '';
         return !type.includes('expense');
       });
+
+      console.log('Filtered results:', filteredResults);
 
       const sortedResults = filteredResults.sort((a, b) => {
         const aCreated = new Date(a.CreatedDateTime || a.RequestDate || 0);
@@ -110,6 +115,8 @@ const GenericAdvanceListScreen = () => {
 
         return 0;
       });
+
+      console.log('Sorted results:', sortedResults);
 
       setAllAdvanceData(sortedResults);
       setRawData(allResults); // ← here
@@ -504,22 +511,68 @@ const GenericAdvanceListScreen = () => {
     });
   };
 
+  // Format date - parse parts directly to avoid timezone issues
   const formatDate = date => {
     if (!date) return '';
-    const d = new Date(date);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${month}/${day}/${year}`;
+    try {
+      // Extract date parts directly from string to avoid timezone conversion issues
+      let datePart = date;
+      if (typeof date === 'string' && date.includes('T')) {
+        datePart = date.split('T')[0];
+      }
+
+      // Handle YYYY-MM-DD format
+      if (
+        typeof datePart === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ) {
+        const [year, month, day] = datePart.split('-');
+        return `${month}/${day}/${year}`;
+      }
+
+      // Fallback: try parsing as Date but use UTC methods to avoid timezone shift
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const monthStr = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dayStr = String(d.getUTCDate()).padStart(2, '0');
+      const yearStr = d.getUTCFullYear();
+      return `${monthStr}/${dayStr}/${yearStr}`;
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '';
+    }
   };
 
+  // Format date to ISO string with time - parse parts directly to avoid timezone issues
   const formatToISOWithTime = date => {
     if (!date) return '';
-    const baseDate = new Date(date);
-    const year = baseDate.getFullYear();
-    const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-    const day = String(baseDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}T12:00:00`;
+    try {
+      // Extract date parts directly from string to avoid timezone conversion issues
+      let datePart = date;
+      if (typeof date === 'string' && date.includes('T')) {
+        datePart = date.split('T')[0];
+      }
+
+      // Handle YYYY-MM-DD format
+      if (
+        typeof datePart === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ) {
+        return `${datePart}T12:00:00`;
+      }
+
+      // Fallback: try parsing as Date but use UTC methods to avoid timezone shift
+      const baseDate = new Date(date);
+      if (isNaN(baseDate.getTime())) return '';
+
+      const year = baseDate.getUTCFullYear();
+      const month = String(baseDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(baseDate.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}T12:00:00`;
+    } catch (error) {
+      console.error('Date ISO formatting error:', error);
+      return '';
+    }
   };
 
   const formatNumberForDisplay = value => {
@@ -696,6 +749,21 @@ const GenericAdvanceListScreen = () => {
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
     const requestTypeInfo = getRequestTypeFromData(item);
+
+    // Debug logging for date formatting
+    console.log('=== Date Processing Debug ===');
+    console.log('Original RequestedPaymentDate:', item.RequestedPaymentDate);
+    console.log(
+      'Formatted RequestedPaymentDate:',
+      formatDate(item.RequestedPaymentDate),
+    );
+    console.log('Original RecoveryStartDate:', item.RecoveryStartDate);
+    console.log(
+      'Formatted RecoveryStartDate:',
+      formatDate(item.RecoveryStartDate),
+    );
+    console.log('Original RequestDate:', item.RequestDate);
+    console.log('Formatted RequestDate:', formatDate(item.RequestDate));
 
     const processedItem = {
       ...item,

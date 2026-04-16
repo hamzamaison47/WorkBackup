@@ -109,7 +109,8 @@ const buildContractXml = contract => {
   return fields
     .map(field => {
       const value = contract[field];
-      if (value === null || value === undefined) {
+      // Check for null, undefined, or empty string
+      if (value === null || value === undefined || value === '') {
         return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
       }
       return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;

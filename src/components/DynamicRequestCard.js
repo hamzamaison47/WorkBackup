@@ -2949,23 +2949,27 @@ const DynamicRequestCard = ({
 
   const formatValue = (value, fieldType) => {
     if (value === null || value === undefined) return '—';
+    if (value === '') return '—';
+
     switch (fieldType) {
       case 'date':
+      case 'datetime': {
+        // If value is already a formatted date string (not a Date object or ISO string),
+        // return it as-is to avoid double formatting
+        if (
+          typeof value === 'string' &&
+          /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)
+        ) {
+          return value; // Already formatted as MM/DD/YYYY or similar
+        }
         return formatDateValue(
           value,
           selectedFormat,
-          'date',
+          fieldType,
           selectedTimeFormat,
           selectedTimezone,
         );
-      case 'datetime':
-        return formatDateValue(
-          value,
-          selectedFormat,
-          'datetime',
-          selectedTimeFormat,
-          selectedTimezone,
-        );
+      }
       case 'currency': {
         const num = Number(value);
         return isNaN(num)
@@ -3053,8 +3057,33 @@ const DynamicRequestCard = ({
 
   const renderField = (field, index) => {
     const value = data[field.key];
-    if (field.type === 'status') return null;
     const formattedValue = formatValue(value, field.type);
+
+    if (field.type === 'status') {
+      const statusColors = getStatusColors(value);
+      return (
+        <View key={index} style={S.fieldRow}>
+          <Text style={[S.fieldLabel, {color: T.subtitleText}]}>
+            {field.label}
+          </Text>
+          <View
+            style={[
+              S.heroBadge,
+              {
+                backgroundColor: statusColors.bg,
+                borderColor: statusColors.dot + '55',
+              },
+            ]}>
+            <View
+              style={[S.heroBadgeDot, {backgroundColor: statusColors.dot}]}
+            />
+            <Text style={[S.heroBadgeText, {color: statusColors.text}]}>
+              {formattedValue}
+            </Text>
+          </View>
+        </View>
+      );
+    }
     const hasLabel = field.label && String(field.label).trim().length > 0;
 
     if (field.type === 'boolean') {

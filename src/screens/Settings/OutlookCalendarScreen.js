@@ -1,6 +1,6 @@
 // screens/OutlookCalendarScreen.js
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useCallback, useRef, useMemo} from 'react';
+import React, {useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,18 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  ScrollView,
+  StatusBar,
+  Modal,
+  TextInput,
+  Dimensions,
+  Platform,
+  KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
-import useAppTokens from '../../components/AppComponentsDesign/useAppTokens';
 import {
   GetCalendarEvents,
   CreateCalendarEvent,
@@ -28,17 +35,89 @@ import {
 } from '../../store/slices/authSlice';
 import {store} from '../../store';
 
+const {width: SW} = Dimensions.get('window');
+
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const T = {
+  // Backgrounds
+  bgPage: '#F0F2F7',
+  bgCard: '#FFFFFF',
+  bgSurface: '#F7F8FC',
+
+  // Brand: deep slate-blue with warm gold accent
+  brand: '#1A2E4A',
+  brandMid: '#2A4A7F',
+  brandLight: '#3D6CB5',
+  brandPale: '#E8EFF9',
+  brandGhost: '#F2F5FC',
+
+  accent: '#E8A020',
+  accentLight: '#FEF3D9',
+  accentDark: '#C47800',
+
+  // Semantic
+  success: '#1A8754',
+  successBg: '#E3F6EC',
+  danger: '#C0392B',
+  dangerBg: '#FDECEA',
+  warning: '#B85C00',
+  warningBg: '#FEF3D9',
+  info: '#0A6CB5',
+  infoBg: '#E5F1FB',
+
+  // Text
+  textTitle: '#0D1B2E',
+  textBody: '#2D3F55',
+  textMuted: '#7A8FA6',
+  textHint: '#A8B8CB',
+  textInverse: '#FFFFFF',
+
+  // Borders
+  borderFaint: '#E8ECF3',
+  borderMed: '#CCD5E3',
+
+  // Event category palette (6 distinct)
+  eventPalette: [
+    '#2A4A7F', // deep blue
+    '#7B3DB5', // purple
+    '#B83D6C', // rose
+    '#C47800', // amber
+    '#1A8754', // emerald
+    '#0A6CB5', // sky
+  ],
+
+  // Radius
+  r4: 4,
+  r8: 8,
+  r12: 12,
+  r16: 16,
+  r24: 24,
+
+  // Shadows
+  sh1: {
+    shadowColor: '#0D1B2E',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  sh2: {
+    shadowColor: '#0D1B2E',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.09,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  sh3: {
+    shadowColor: '#0D1B2E',
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
-const DAYS_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const DAYS_FULL = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
 const MONTHS = [
   'January',
   'February',
@@ -53,570 +132,1367 @@ const MONTHS = [
   'November',
   'December',
 ];
+const MONTHS_SHORT = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+const WEEK_DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const WEEK_DAYS_FULL = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
-export const useOutlookCalendar = () => {
-  const [todayEvents, setTodayEvents] = useState([]);
-  const [weekEvents, setWeekEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const requestGraphConsent = useCallback(async retryFetch => {
-    try {
-      // Get email from store to pin the account
-      const storeState = store.getState();
-      const loginHint =
-        storeState.user?.userData?.email ??
-        storeState.user?.userData?.userPrincipalName ??
-        null;
-
-      const graphConfig = await getGraphConsentConfiguration(loginHint);
-
-      const result = await authorize({
-        ...graphConfig,
-        additionalParameters: {
-          prompt: 'consent',
-          ...(loginHint && {login_hint: loginHint}), // ← same fix here
-        },
-      });
-      store.dispatch(setGraphAccessToken(result.accessToken));
-      store.dispatch(setGraphRefreshToken(result.refreshToken));
-      await retryFetch();
-    } catch (consentErr) {
-      Alert.alert(
-        'Calendar Permission Required',
-        'Please grant access to your Outlook calendar to use this feature.',
-      );
-    }
-  }, []);
-
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const now = new Date();
-
-      // Today: midnight → 23:59:59
-      const todayStart = new Date(now);
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date(now);
-      todayEnd.setHours(23, 59, 59, 999);
-
-      // Next 30 days (covers full month grid)
-      const rangeEnd = new Date(now);
-      rangeEnd.setDate(rangeEnd.getDate() + 30);
-      rangeEnd.setHours(23, 59, 59, 999);
-
-      const [todayData, rangeData] = await Promise.all([
-        GetCalendarEvents(todayStart.toISOString(), todayEnd.toISOString(), 20),
-        GetCalendarEvents(now.toISOString(), rangeEnd.toISOString(), 100),
-      ]);
-
-      setTodayEvents(todayData);
-
-      // weekEvents holds everything beyond today to avoid duplication
-      const todayIds = new Set(todayData.map(e => e.id));
-      setWeekEvents(rangeData.filter(e => !todayIds.has(e.id)));
-    } catch (err) {
-      if (err.message === 'GRAPH_CONSENT_REQUIRED') {
-        await requestGraphConsent(fetchEvents);
-      } else {
-        setError(err.message ?? 'Failed to load calendar events');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [requestGraphConsent]);
-
-  const createEvent = useCallback(
-    async eventData => {
-      const result = await CreateCalendarEvent(eventData);
-      await fetchEvents(); // refresh after creation
-      return result;
-    },
-    [fetchEvents],
-  );
-
-  const deleteEvent = useCallback(
-    async eventId => {
-      await DeleteCalendarEvent(eventId);
-      await fetchEvents(); // refresh after deletion
-    },
-    [fetchEvents],
-  );
-
-  return {
-    todayEvents,
-    weekEvents,
-    loading,
-    error,
-    fetchEvents,
-    createEvent,
-    deleteEvent,
-    requestGraphConsent,
-  };
+// ─── Utilities ────────────────────────────────────────────────────────────────
+/**
+ * Graph API returns dateTime as UTC ISO without 'Z'.
+ * Appending 'Z' or passing directly both work since JS Date treats
+ * bare ISO strings as UTC. We then display in local timezone.
+ */
+const parseGD = obj => {
+  if (!obj) return null;
+  const s = (obj.dateTime || obj).replace('Z', '');
+  // Treat as UTC
+  return new Date(s + 'Z');
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const isSameDay = (a, b) =>
+const sameDay = (a, b) =>
+  a &&
+  b &&
   a.getFullYear() === b.getFullYear() &&
   a.getMonth() === b.getMonth() &&
   a.getDate() === b.getDate();
 
-const formatTime = iso =>
-  new Date(iso).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
-
-/** Returns array of Date objects for all cells in the month grid (incl. padding) */
-const buildMonthGrid = (year, month) => {
-  const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const prevMonthDays = new Date(year, month, 0).getDate();
-  const cells = [];
-
-  // Leading days from prev month
-  for (let i = firstDay - 1; i >= 0; i--) {
-    cells.push({
-      date: new Date(year, month - 1, prevMonthDays - i),
-      current: false,
-    });
-  }
-  // Current month
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({date: new Date(year, month, d), current: true});
-  }
-  // Trailing days — fill to complete last row
-  const remaining = 7 - (cells.length % 7);
-  if (remaining < 7) {
-    for (let d = 1; d <= remaining; d++) {
-      cells.push({date: new Date(year, month + 1, d), current: false});
-    }
-  }
-  return cells;
+const fmtTime = iso => {
+  if (!iso) return '';
+  return parseGD(iso).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
 };
 
-// ─── Month Grid ───────────────────────────────────────────────────────────────
-const MonthGrid = ({selectedDate, onSelectDate, eventDates, T}) => {
-  const today = new Date();
-  const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
+const fmtDuration = (s, e) => {
+  if (!s || !e) return '';
+  const mins = (parseGD(e) - parseGD(s)) / 60000;
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60),
+    m = mins % 60;
+  return m ? `${h}h ${m}m` : `${h}h`;
+};
 
-  const cells = useMemo(
-    () => buildMonthGrid(viewYear, viewMonth),
-    [viewYear, viewMonth],
+const eventColor = (id, idx) => {
+  const hash = id ? id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : idx;
+  return T.eventPalette[hash % T.eventPalette.length];
+};
+
+const relativeDay = date => {
+  const today = new Date();
+  const diff = Math.round(
+    (new Date(date.getFullYear(), date.getMonth(), date.getDate()) -
+      new Date(today.getFullYear(), today.getMonth(), today.getDate())) /
+      86400000,
+  );
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff > 1 && diff < 7) return `In ${diff} days`;
+  if (diff === -1) return 'Yesterday';
+  return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
+};
+
+// ─── Calendar Data Hook ───────────────────────────────────────────────────────
+export const useOutlookCalendar = () => {
+  const [allEvents, setAllEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const requestConsent = useCallback(async retry => {
+    try {
+      const state = store.getState();
+      const hint = state.user?.userData?.email ?? null;
+      const cfg = await getGraphConsentConfiguration(hint);
+      const res = await authorize({
+        ...cfg,
+        additionalParameters: {
+          prompt: 'consent',
+          ...(hint && {login_hint: hint}),
+        },
+      });
+      store.dispatch(setGraphAccessToken(res.accessToken));
+      store.dispatch(setGraphRefreshToken(res.refreshToken));
+      await retry();
+    } catch {
+      Alert.alert(
+        'Permission Required',
+        'Please grant access to your Outlook calendar.',
+      );
+    }
+  }, []);
+
+  const fetch = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const now = new Date();
+      const end = new Date(now);
+      end.setDate(end.getDate() + 90);
+      end.setHours(23, 59, 59, 999);
+      const data = await GetCalendarEvents(
+        now.toISOString(),
+        end.toISOString(),
+        100,
+      );
+      setAllEvents(data.sort((a, b) => parseGD(a.start) - parseGD(b.start)));
+    } catch (err) {
+      if (err.message === 'GRAPH_CONSENT_REQUIRED') await requestConsent(fetch);
+      else setError(err.message ?? 'Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  }, [requestConsent]);
+
+  const create = useCallback(
+    async eventData => {
+      const result = await CreateCalendarEvent(eventData);
+      await fetch();
+      return result;
+    },
+    [fetch],
   );
 
-  const eventSet = useMemo(() => {
-    const s = new Set();
-    eventDates.forEach(d =>
-      s.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
-    );
-    return s;
-  }, [eventDates]);
+  const remove = useCallback(
+    async eventId => {
+      await DeleteCalendarEvent(eventId);
+      await fetch();
+    },
+    [fetch],
+  );
 
-  const hasEvent = d =>
-    eventSet.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+  return {
+    allEvents,
+    loading,
+    error,
+    fetchEvents: fetch,
+    createEvent: create,
+    deleteEvent: remove,
+  };
+};
 
-  const prevMonth = () => {
-    if (viewMonth === 0) {
-      setViewYear(y => y - 1);
-      setViewMonth(11);
-    } else setViewMonth(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewYear(y => y + 1);
-      setViewMonth(0);
-    } else setViewMonth(m => m + 1);
-  };
-  const goToday = () => {
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth());
-    onSelectDate(today);
+// ─── Calendar Grid ────────────────────────────────────────────────────────────
+const CalendarGrid = ({selectedDate, onSelectDate, events}) => {
+  const [viewMonth, setViewMonth] = useState(() => new Date(selectedDate));
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  const yr = viewMonth.getFullYear();
+  const mo = viewMonth.getMonth();
+
+  const eventMap = useMemo(() => {
+    const m = {};
+    events.forEach(ev => {
+      const d = parseGD(ev.start);
+      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      m[k] = (m[k] || 0) + 1;
+    });
+    return m;
+  }, [events]);
+
+  const days = useMemo(() => {
+    const first = new Date(yr, mo, 1).getDay();
+    const total = new Date(yr, mo + 1, 0).getDate();
+    const prevTotal = new Date(yr, mo, 0).getDate();
+    const cells = [];
+    for (let i = first - 1; i >= 0; i--)
+      cells.push({d: new Date(yr, mo - 1, prevTotal - i), cur: false});
+    for (let i = 1; i <= total; i++)
+      cells.push({d: new Date(yr, mo, i), cur: true});
+    while (cells.length < 42)
+      cells.push({
+        d: new Date(yr, mo + 1, cells.length - total - first + 1),
+        cur: false,
+      });
+    return cells;
+  }, [yr, mo]);
+
+  const slideMonth = dir => {
+    Animated.sequence([
+      Animated.timing(slideAnim, {
+        toValue: dir * -30,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    setViewMonth(new Date(yr, mo + dir, 1));
   };
 
-  const s = gridStyles(T);
+  const today = new Date();
+  const CELL = (SW - 40 - 32) / 7;
 
   return (
-    <View style={s.wrapper}>
-      {/* Nav row */}
-      <View style={s.navRow}>
-        <TouchableOpacity
-          onPress={prevMonth}
-          style={s.navBtn}
-          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+    <View style={cg.wrapper}>
+      {/* Month Nav */}
+      <View style={cg.nav}>
+        <TouchableOpacity onPress={() => slideMonth(-1)} style={cg.navBtn}>
           <MaterialCommunityIcons
             name="chevron-left"
             size={22}
-            color={T.textPrimary}
+            color={T.brandMid}
           />
         </TouchableOpacity>
-        <Text style={s.monthLabel}>
-          {MONTHS[viewMonth]} {viewYear}
-        </Text>
-        <TouchableOpacity
-          onPress={nextMonth}
-          style={s.navBtn}
-          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+        <View style={cg.navCenter}>
+          <Text style={cg.navMonth}>{MONTHS[mo]}</Text>
+          <Text style={cg.navYear}>{yr}</Text>
+        </View>
+        <TouchableOpacity onPress={() => slideMonth(1)} style={cg.navBtn}>
           <MaterialCommunityIcons
             name="chevron-right"
             size={22}
-            color={T.textPrimary}
+            color={T.brandMid}
           />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={goToday}
-          style={[s.todayBtn, {borderColor: T.primary}]}>
-          <Text style={[s.todayText, {color: T.primary}]}>Today</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Day-of-week headers */}
-      <View style={s.dowRow}>
-        {DAYS_SHORT.map(d => (
-          <Text key={d} style={s.dow}>
+      {/* Week day headers */}
+      <View style={cg.weekRow}>
+        {WEEK_DAYS.map((d, i) => (
+          <Text key={i} style={[cg.weekLabel, i === 0 && {color: T.danger}]}>
             {d}
           </Text>
         ))}
       </View>
 
-      {/* Day cells — 6 rows max */}
-      <View style={s.grid}>
-        {cells.map(({date, current}, i) => {
-          const isToday = isSameDay(date, today);
-          const isSelected = isSameDay(date, selectedDate);
-          const hasDot = hasEvent(date);
+      {/* Grid */}
+      <Animated.View style={[cg.grid, {transform: [{translateX: slideAnim}]}]}>
+        {days.map((cell, i) => {
+          const k = `${cell.d.getFullYear()}-${cell.d.getMonth()}-${cell.d.getDate()}`;
+          const cnt = eventMap[k] || 0;
+          const sel = sameDay(cell.d, selectedDate);
+          const tod = sameDay(cell.d, today);
 
           return (
             <TouchableOpacity
               key={i}
-              style={s.cell}
-              onPress={() => {
-                if (!current) {
-                  // navigate view to that month when tapping overflow cell
-                  setViewYear(date.getFullYear());
-                  setViewMonth(date.getMonth());
-                }
-                onSelectDate(new Date(date));
-              }}
-              activeOpacity={0.7}>
+              onPress={() => onSelectDate(cell.d)}
+              activeOpacity={0.7}
+              style={[cg.cell, {width: CELL, height: CELL + 8}]}>
               <View
                 style={[
-                  s.dayCircle,
-                  isSelected && {backgroundColor: T.primary},
-                  isToday &&
-                    !isSelected && {borderWidth: 1.5, borderColor: T.primary},
+                  cg.dayCircle,
+                  {width: CELL - 8, height: CELL - 8},
+                  tod && cg.todayRing,
+                  sel && cg.selCircle,
                 ]}>
                 <Text
                   style={[
-                    s.dayNum,
-                    !current && s.otherMonth,
-                    isSelected && {color: '#fff', fontWeight: '600'},
-                    isToday &&
-                      !isSelected && {color: T.primary, fontWeight: '600'},
+                    cg.dayNum,
+                    !cell.cur && cg.dimDay,
+                    tod && cg.todayNum,
+                    sel && cg.selNum,
                   ]}>
-                  {date.getDate()}
+                  {cell.d.getDate()}
                 </Text>
               </View>
-              {hasDot && (
-                <View
-                  style={[
-                    s.dot,
-                    {backgroundColor: isSelected ? '#fff' : T.primary},
-                  ]}
-                />
+              {cnt > 0 && (
+                <View style={cg.dotsRow}>
+                  {Array.from({length: Math.min(cnt, 3)}).map((_, j) => (
+                    <View
+                      key={j}
+                      style={[cg.dot, sel && {backgroundColor: T.textInverse}]}
+                    />
+                  ))}
+                </View>
               )}
             </TouchableOpacity>
           );
         })}
-      </View>
+      </Animated.View>
+
+      {/* Today shortcut */}
+      <TouchableOpacity
+        onPress={() => {
+          setViewMonth(new Date());
+          onSelectDate(new Date());
+        }}
+        style={cg.todayPill}>
+        <Text style={cg.todayPillText}>Jump to Today</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-const gridStyles = T =>
-  StyleSheet.create({
-    wrapper: {
-      backgroundColor: T.cardBg ?? '#fff',
-      paddingHorizontal: 10,
-      paddingTop: 8,
-      paddingBottom: 4,
-      borderBottomWidth: 1,
-      borderBottomColor: T.border ?? '#eee',
-    },
-    navRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-      gap: 4,
-    },
-    navBtn: {padding: 4},
-    monthLabel: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '700',
-      color: T.textPrimary,
-      textAlign: 'center',
-    },
-    todayBtn: {
-      borderWidth: 1,
-      borderRadius: 6,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-    },
-    todayText: {fontSize: 12, fontWeight: '600'},
-    dowRow: {
-      flexDirection: 'row',
-      marginBottom: 2,
-    },
-    dow: {
-      flex: 1,
-      textAlign: 'center',
-      fontSize: 11,
-      fontWeight: '600',
-      color: T.textSecondary ?? '#888',
-      paddingVertical: 2,
-    },
-    grid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-    },
-    cell: {
-      width: `${100 / 7}%`,
-      alignItems: 'center',
-      paddingVertical: 3,
-    },
-    dayCircle: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    dayNum: {
-      fontSize: 13,
-      color: T.textPrimary,
-    },
-    otherMonth: {
-      color: T.textMuted ?? '#ccc',
-    },
-    dot: {
-      width: 4,
-      height: 4,
-      borderRadius: 2,
-      marginTop: 1,
-    },
-  });
+const cg = StyleSheet.create({
+  wrapper: {
+    backgroundColor: T.bgCard,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    borderRadius: T.r24,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 14,
+    ...T.sh2,
+  },
+  nav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  navBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: T.brandGhost,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navCenter: {alignItems: 'center'},
+  navMonth: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: T.textTitle,
+    letterSpacing: -0.3,
+  },
+  navYear: {fontSize: 12, color: T.textMuted, marginTop: 2, fontWeight: '500'},
+  weekRow: {flexDirection: 'row', marginBottom: 6},
+  weekLabel: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 11,
+    fontWeight: '700',
+    color: T.textHint,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  grid: {flexDirection: 'row', flexWrap: 'wrap'},
+  cell: {alignItems: 'center', justifyContent: 'center', paddingVertical: 2},
+  dayCircle: {
+    borderRadius: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayRing: {borderWidth: 2, borderColor: T.brandLight},
+  selCircle: {backgroundColor: T.brandMid},
+  dayNum: {fontSize: 14, fontWeight: '500', color: T.textBody},
+  dimDay: {color: T.textHint},
+  todayNum: {color: T.brandMid, fontWeight: '700'},
+  selNum: {color: T.textInverse, fontWeight: '700'},
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 3,
+    marginTop: 2,
+    height: 5,
+    alignItems: 'center',
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: T.accent,
+  },
+  todayPill: {
+    alignSelf: 'center',
+    marginTop: 10,
+    backgroundColor: T.brandGhost,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: T.r24,
+  },
+  todayPillText: {fontSize: 12, fontWeight: '600', color: T.brandMid},
+});
 
-// ─── Event Card ───────────────────────────────────────────────────────────────
-const STRIPE_COLORS = ['#185FA5', '#0F6E56', '#993556', '#534AB7', '#854F0B'];
-const getStripeColor = id =>
-  STRIPE_COLORS[Math.abs(id.charCodeAt(0)) % STRIPE_COLORS.length];
+// ─── Upcoming Strip ───────────────────────────────────────────────────────────
+const UpcomingStrip = ({events, onPressEvent}) => {
+  const upcoming = useMemo(() => {
+    const now = new Date();
+    return events.filter(e => parseGD(e.start) >= now).slice(0, 6);
+  }, [events]);
 
-const EventCard = ({item, T, onDelete}) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      tension: 60,
-      friction: 8,
-    }).start();
-  }, [scaleAnim]);
-
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Event',
-      `Are you sure you want to delete "${item.subject}"?`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Animated.timing(scaleAnim, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }).start(() => onDelete(item.id));
-          },
-        },
-      ],
-    );
-  };
-
-  const startTime = item.isAllDay ? null : formatTime(item.start?.dateTime);
-  const endTime = item.isAllDay ? null : formatTime(item.end?.dateTime);
-  const stripeColor = getStripeColor(item.id ?? 'x');
-  const s = cardStyles(T);
+  if (!upcoming.length) return null;
 
   return (
-    <Animated.View style={[s.card, {transform: [{scaleY: scaleAnim}]}]}>
-      <View style={[s.stripe, {backgroundColor: stripeColor}]} />
-      <View style={s.body}>
-        <View style={s.topRow}>
-          <Text style={s.subject} numberOfLines={1}>
-            {item.subject}
-          </Text>
-          <TouchableOpacity
-            onPress={handleDelete}
-            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
-            <MaterialCommunityIcons
-              name="trash-can-outline"
-              size={17}
-              color={T.textMuted ?? '#bbb'}
-            />
-          </TouchableOpacity>
-        </View>
+    <View style={up.container}>
+      <View style={up.header}>
+        <MaterialCommunityIcons
+          name="lightning-bolt"
+          size={16}
+          color={T.accent}
+        />
+        <Text style={up.heading}>Upcoming</Text>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={up.scroll}>
+        {upcoming.map((ev, i) => {
+          const d = parseGD(ev.start);
+          const col = eventColor(ev.id, i);
+          return (
+            <TouchableOpacity
+              key={ev.id || i}
+              onPress={() => onPressEvent && onPressEvent(ev)}
+              activeOpacity={0.8}
+              style={[up.card, {borderTopColor: col}]}>
+              <View style={[up.colorDot, {backgroundColor: col}]} />
+              <Text style={up.cardTime}>
+                {ev.isAllDay ? 'All day' : fmtTime(ev.start?.dateTime)}
+              </Text>
+              <Text style={up.cardDate}>{relativeDay(d)}</Text>
+              <Text style={up.cardSubject} numberOfLines={2}>
+                {ev.subject}
+              </Text>
+              {ev.location?.displayName ? (
+                <View style={up.locRow}>
+                  <MaterialCommunityIcons
+                    name="map-marker-outline"
+                    size={11}
+                    color={T.textHint}
+                  />
+                  <Text style={up.locText} numberOfLines={1}>
+                    {ev.location.displayName}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+};
 
-        <Text style={s.meta}>
-          {item.isAllDay ? '⬤  All day' : `🕐  ${startTime} – ${endTime}`}
-          {item.location?.displayName
-            ? `    📍  ${item.location.displayName}`
-            : ''}
+const up = StyleSheet.create({
+  container: {marginBottom: 8},
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    marginTop: 20,
+  },
+  heading: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: T.textTitle,
+    letterSpacing: 0.2,
+  },
+  scroll: {paddingHorizontal: 16, paddingBottom: 4, gap: 10},
+  card: {
+    width: 162,
+    backgroundColor: T.bgCard,
+    borderRadius: T.r16,
+    padding: 14,
+    borderTopWidth: 3,
+    ...T.sh1,
+  },
+  colorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  cardTime: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: T.brandMid,
+    marginBottom: 2,
+  },
+  cardDate: {
+    fontSize: 10,
+    color: T.textMuted,
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  cardSubject: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: T.textTitle,
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  locRow: {flexDirection: 'row', alignItems: 'center', gap: 3},
+  locText: {fontSize: 11, color: T.textMuted, flex: 1},
+});
+
+// ─── Day Header Bar ───────────────────────────────────────────────────────────
+const DayHeaderBar = ({date, count}) => {
+  const tod = sameDay(date, new Date());
+  return (
+    <View style={dh.container}>
+      <View style={[dh.badge, tod && dh.todayBadge]}>
+        <Text style={[dh.badgeNum, tod && dh.todayBadgeNum]}>
+          {date.getDate()}
         </Text>
-
-        {!!item.bodyPreview && (
-          <Text style={s.preview} numberOfLines={2}>
-            {item.bodyPreview}
+        <Text style={[dh.badgeMo, tod && dh.todayBadgeMo]}>
+          {MONTHS_SHORT[date.getMonth()]}
+        </Text>
+      </View>
+      <View style={dh.info}>
+        <Text style={[dh.dayName, tod && {color: T.brandMid}]}>
+          {tod ? 'Today' : WEEK_DAYS_FULL[date.getDay()]}
+        </Text>
+        {count > 0 && (
+          <Text style={dh.countText}>
+            {count} {count === 1 ? 'event' : 'events'}
           </Text>
-        )}
-
-        {!!item.onlineMeetingUrl && (
-          <View style={[s.badge, {backgroundColor: stripeColor + '18'}]}>
-            <MaterialCommunityIcons
-              name="video-outline"
-              size={12}
-              color={stripeColor}
-            />
-            <Text style={[s.badgeText, {color: stripeColor}]}>
-              {' '}
-              Online meeting
-            </Text>
-          </View>
         )}
       </View>
+      <View style={dh.line} />
+    </View>
+  );
+};
+
+const dh = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    marginTop: 6,
+  },
+  badge: {
+    width: 46,
+    height: 46,
+    borderRadius: T.r12,
+    backgroundColor: T.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: T.borderFaint,
+  },
+  todayBadge: {backgroundColor: T.brandMid, borderColor: T.brandMid},
+  badgeNum: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: T.textTitle,
+    lineHeight: 20,
+  },
+  badgeMo: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: T.textMuted,
+    letterSpacing: 0.5,
+  },
+  todayBadgeNum: {color: T.textInverse},
+  todayBadgeMo: {color: 'rgba(255,255,255,0.7)'},
+  info: {gap: 2},
+  dayName: {fontSize: 16, fontWeight: '700', color: T.textTitle},
+  countText: {fontSize: 12, color: T.textMuted, fontWeight: '500'},
+  line: {flex: 1, height: 1, backgroundColor: T.borderFaint, marginLeft: 10},
+});
+
+// ─── Event Card ───────────────────────────────────────────────────────────────
+const EventCard = ({event, index, onDelete}) => {
+  const [expanded, setExpanded] = useState(false);
+  const expandAnim = useRef(new Animated.Value(0)).current;
+  const col = eventColor(event.id, index);
+  const isPast = parseGD(event.start) < new Date();
+
+  const toggle = () => {
+    Animated.timing(expandAnim, {
+      toValue: expanded ? 0 : 1,
+      duration: 220,
+      useNativeDriver: false,
+    }).start();
+    setExpanded(!expanded);
+  };
+
+  const extraHeight = expandAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 80],
+  });
+
+  return (
+    <TouchableOpacity
+      onPress={toggle}
+      activeOpacity={0.95}
+      style={[ec.wrapper, isPast && ec.past]}>
+      {/* Left accent stripe */}
+      <View style={[ec.stripe, {backgroundColor: col}]} />
+
+      <View style={ec.body}>
+        {/* Top row */}
+        <View style={ec.topRow}>
+          <View style={ec.timeBlock}>
+            {event.isAllDay ? (
+              <Text style={[ec.timeMain, {color: col}]}>All Day</Text>
+            ) : (
+              <>
+                <Text style={[ec.timeMain, {color: col}]}>
+                  {fmtTime(event.start?.dateTime)}
+                </Text>
+                <Text style={ec.timeEnd}>{fmtTime(event.end?.dateTime)}</Text>
+              </>
+            )}
+          </View>
+          <View style={ec.main}>
+            <Text style={ec.subject} numberOfLines={expanded ? 0 : 2}>
+              {event.subject}
+            </Text>
+          </View>
+          <View style={ec.actions}>
+            <TouchableOpacity
+              onPress={() => onDelete(event.id)}
+              style={ec.delBtn}
+              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+              <MaterialCommunityIcons
+                name="trash-can-outline"
+                size={16}
+                color={T.textHint}
+              />
+            </TouchableOpacity>
+            <MaterialCommunityIcons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={T.textHint}
+              style={{marginTop: 6}}
+            />
+          </View>
+        </View>
+
+        {/* Chips row */}
+        <View style={ec.chips}>
+          {!event.isAllDay && (
+            <View style={[ec.chip, {backgroundColor: col + '18'}]}>
+              <MaterialCommunityIcons
+                name="clock-outline"
+                size={11}
+                color={col}
+              />
+              <Text style={[ec.chipTxt, {color: col}]}>
+                {fmtDuration(event.start?.dateTime, event.end?.dateTime)}
+              </Text>
+            </View>
+          )}
+          {event.location?.displayName ? (
+            <View style={ec.chip}>
+              <MaterialCommunityIcons
+                name="map-marker-outline"
+                size={11}
+                color={T.textMuted}
+              />
+              <Text style={ec.chipTxt} numberOfLines={1}>
+                {event.location.displayName}
+              </Text>
+            </View>
+          ) : null}
+          {event.attendees?.length > 0 && (
+            <View style={ec.chip}>
+              <MaterialCommunityIcons
+                name="account-multiple-outline"
+                size={11}
+                color={T.textMuted}
+              />
+              <Text style={ec.chipTxt}>{event.attendees.length} people</Text>
+            </View>
+          )}
+          {event.onlineMeetingUrl && (
+            <View style={[ec.chip, {backgroundColor: T.successBg}]}>
+              <MaterialCommunityIcons
+                name="video-outline"
+                size={11}
+                color={T.success}
+              />
+              <Text style={[ec.chipTxt, {color: T.success}]}>Teams</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Expanded detail */}
+        <Animated.View style={{overflow: 'hidden', maxHeight: extraHeight}}>
+          {event.bodyPreview ? (
+            <Text style={ec.preview}>{event.bodyPreview}</Text>
+          ) : null}
+          {event.organizer?.emailAddress?.address ? (
+            <View style={ec.organizerRow}>
+              <Text style={ec.orgLabel}>Organizer </Text>
+              <Text style={ec.orgValue}>
+                {event.organizer.emailAddress.address}
+              </Text>
+            </View>
+          ) : null}
+        </Animated.View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const ec = StyleSheet.create({
+  wrapper: {
+    flexDirection: 'row',
+    backgroundColor: T.bgCard,
+    borderRadius: T.r16,
+    marginBottom: 10,
+    marginHorizontal: 16,
+    overflow: 'hidden',
+    ...T.sh1,
+  },
+  past: {opacity: 0.55},
+  stripe: {width: 4},
+  body: {flex: 1, padding: 14, gap: 8},
+  topRow: {flexDirection: 'row', gap: 10, alignItems: 'flex-start'},
+  timeBlock: {width: 62, gap: 3},
+  timeMain: {fontSize: 13, fontWeight: '700', lineHeight: 16},
+  timeEnd: {fontSize: 11, color: T.textMuted, fontWeight: '500'},
+  main: {flex: 1},
+  subject: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: T.textTitle,
+    lineHeight: 21,
+  },
+  actions: {alignItems: 'center', gap: 2},
+  delBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: T.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chips: {flexDirection: 'row', flexWrap: 'wrap', gap: 6},
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: T.bgSurface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: T.r8,
+  },
+  chipTxt: {fontSize: 11, color: T.textMuted, fontWeight: '500', maxWidth: 110},
+  preview: {fontSize: 13, color: T.textMuted, lineHeight: 19},
+  organizerRow: {flexDirection: 'row', alignItems: 'center'},
+  orgLabel: {fontSize: 12, color: T.textHint, fontWeight: '600'},
+  orgValue: {fontSize: 12, color: T.textBody, flex: 1},
+});
+
+// ─── Move this OUTSIDE CreateEventModal (at module level) ────────────────────
+const Field = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  inputRef,
+  onSubmitEditing,
+  returnKeyType,
+}) => (
+  <View style={cm.fieldWrap}>
+    <Text style={cm.fieldLabel}>{label}</Text>
+    <TextInput
+      ref={inputRef}
+      style={cm.input}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor={T.textHint}
+      keyboardType={keyboardType || 'default'}
+      autoCapitalize="none"
+      blurOnSubmit={false}
+      returnKeyType={returnKeyType || 'next'}
+      onSubmitEditing={onSubmitEditing}
+    />
+  </View>
+);
+
+const CreateEventModal = ({visible, onClose, onSave, defaultDate}) => {
+  const [subject, setSubject] = useState('');
+  const [dateStr, setDateStr] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [location, setLocation] = useState('');
+  const [saving, setSaving] = useState(false);
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
+  const opacAnim = useRef(new Animated.Value(0)).current;
+
+  // FIX: Use refs to prevent unnecessary re-renders
+  const subjectRef = useRef(null);
+  const dateRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const endTimeRef = useRef(null);
+  const locationRef = useRef(null);
+
+  useEffect(() => {
+    if (visible) {
+      if (defaultDate) {
+        const y = defaultDate.getFullYear();
+        const m = String(defaultDate.getMonth() + 1).padStart(2, '0');
+        const d = String(defaultDate.getDate()).padStart(2, '0');
+        setDateStr(`${y}-${m}-${d}`);
+      }
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 7,
+          tension: 60,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      scaleAnim.setValue(0.92);
+      opacAnim.setValue(0);
+      setSubject('');
+      setDateStr('');
+      setStartTime('');
+      setEndTime('');
+      setLocation('');
+    }
+  }, [visible, defaultDate, opacAnim, scaleAnim]);
+
+  const handleSave = async () => {
+    if (!subject.trim()) {
+      Alert.alert('Required', 'Please enter an event title.');
+      return;
+    }
+    if (!dateStr || !startTime || !endTime) {
+      Alert.alert('Required', 'Please enter date, start time, and end time.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave({
+        subject: subject.trim(),
+        start: {dateTime: `${dateStr}T${startTime}:00`, timeZone: 'UTC'},
+        end: {dateTime: `${dateStr}T${endTime}:00`, timeZone: 'UTC'},
+        ...(location.trim() && {location: {displayName: location.trim()}}),
+      });
+      onClose();
+    } catch (e) {
+      Alert.alert('Error', e.message ?? 'Failed to create event.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}>
+      <View style={cm.overlay}>
+        <Pressable style={cm.backdropPressable} onPress={onClose} />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          style={cm.keyboardView}>
+          <Animated.View
+            style={[
+              cm.sheet,
+              {transform: [{scale: scaleAnim}], opacity: opacAnim},
+            ]}>
+            {/* Header */}
+            <View style={cm.modalHeader}>
+              <View style={cm.headerLeft}>
+                <View style={cm.headerIcon}>
+                  <MaterialCommunityIcons
+                    name="calendar-plus"
+                    size={20}
+                    color={T.brandMid}
+                  />
+                </View>
+                <Text style={cm.modalTitle}>New Event</Text>
+              </View>
+              <TouchableOpacity onPress={onClose} style={cm.closeBtn}>
+                <MaterialCommunityIcons
+                  name="close"
+                  size={18}
+                  color={T.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={cm.formScroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="none">
+              <Field
+                label="Title *"
+                value={subject}
+                onChangeText={setSubject}
+                placeholder="Event title"
+                inputRef={subjectRef}
+                returnKeyType="next"
+                onSubmitEditing={() => dateRef.current?.focus()}
+              />
+
+              {/* Date row */}
+              <View style={cm.fieldWrap}>
+                <Text style={cm.fieldLabel}>Date *</Text>
+                <TextInput
+                  ref={dateRef}
+                  style={cm.input}
+                  value={dateStr}
+                  onChangeText={setDateStr}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={T.textHint}
+                  keyboardType="numbers-and-punctuation"
+                  blurOnSubmit={false}
+                  returnKeyType="next"
+                  onSubmitEditing={() => startTimeRef.current?.focus()}
+                />
+              </View>
+
+              {/* Time row */}
+              <View style={cm.timeRow}>
+                <View style={[cm.fieldWrap, {flex: 1}]}>
+                  <Text style={cm.fieldLabel}>Start *</Text>
+                  <TextInput
+                    ref={startTimeRef}
+                    style={cm.input}
+                    value={startTime}
+                    onChangeText={setStartTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor={T.textHint}
+                    keyboardType="numbers-and-punctuation"
+                    blurOnSubmit={false}
+                    returnKeyType="next"
+                    onSubmitEditing={() => endTimeRef.current?.focus()}
+                  />
+                </View>
+                <View style={cm.timeSep}>
+                  <Text style={cm.timeSepText}>→</Text>
+                </View>
+                <View style={[cm.fieldWrap, {flex: 1}]}>
+                  <Text style={cm.fieldLabel}>End *</Text>
+                  <TextInput
+                    ref={endTimeRef}
+                    style={cm.input}
+                    value={endTime}
+                    onChangeText={setEndTime}
+                    placeholder="HH:MM"
+                    placeholderTextColor={T.textHint}
+                    keyboardType="numbers-and-punctuation"
+                    blurOnSubmit={false}
+                    returnKeyType="next"
+                    onSubmitEditing={() => locationRef.current?.focus()}
+                  />
+                </View>
+              </View>
+
+              <Field
+                label="Location"
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Conference room, Teams link..."
+                inputRef={locationRef}
+                returnKeyType="done"
+              />
+
+              {/* Helper note */}
+              <View style={cm.helperRow}>
+                <MaterialCommunityIcons
+                  name="information-outline"
+                  size={13}
+                  color={T.textHint}
+                />
+                <Text style={cm.helperText}>
+                  Times are in UTC. Use 24-hour format (e.g. 14:30).
+                </Text>
+              </View>
+
+              <View style={{height: 20}} />
+            </ScrollView>
+
+            {/* Footer */}
+            <View style={cm.footer}>
+              <TouchableOpacity onPress={onClose} style={cm.cancelBtn}>
+                <Text style={cm.cancelTxt}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSave}
+                disabled={saving}
+                style={[cm.saveBtn, saving && {opacity: 0.6}]}>
+                {saving ? (
+                  <ActivityIndicator size="small" color={T.textInverse} />
+                ) : (
+                  <>
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={16}
+                      color={T.textInverse}
+                    />
+                    <Text style={cm.saveTxt}>Save Event</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+};
+
+const cm = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,20,40,0.55)',
+    justifyContent: 'flex-end',
+  },
+  backdropPressable: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  keyboardView: {
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: T.bgCard,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    maxHeight: '90%', // Increased from 85%
+    // FIX: Ensure modal stays above tab bar
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 20,
+  },
+  // ... rest of your styles remain the same
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: T.borderFaint,
+  },
+  headerLeft: {flexDirection: 'row', alignItems: 'center', gap: 10},
+  headerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: T.r12,
+    backgroundColor: T.brandGhost,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {fontSize: 17, fontWeight: '700', color: T.textTitle},
+  closeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: T.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  formScroll: {paddingHorizontal: 20, paddingTop: 8},
+  fieldWrap: {marginBottom: 14},
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: T.textMuted,
+    marginBottom: 6,
+    letterSpacing: 0.4,
+  },
+  input: {
+    backgroundColor: T.bgSurface,
+    borderRadius: T.r12,
+    borderWidth: 1,
+    borderColor: T.borderFaint,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: T.textTitle,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    marginBottom: 14,
+  },
+  timeSep: {paddingBottom: 12, alignItems: 'center'},
+  timeSepText: {fontSize: 16, color: T.textHint},
+  helperRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: T.infoBg,
+    padding: 12,
+    borderRadius: T.r8,
+    marginBottom: 20,
+  },
+  helperText: {fontSize: 12, color: T.info, flex: 1, lineHeight: 17},
+  footer: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: T.borderFaint,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    alignItems: 'center',
+    backgroundColor: T.bgSurface,
+    borderRadius: T.r12,
+    borderWidth: 1,
+    borderColor: T.borderMed,
+  },
+  cancelTxt: {fontSize: 15, fontWeight: '600', color: T.textMuted},
+  saveBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: T.brandMid,
+    borderRadius: T.r12,
+  },
+  saveTxt: {fontSize: 15, fontWeight: '700', color: T.textInverse},
+});
+
+// ─── Empty / Loading / Error ──────────────────────────────────────────────────
+const EmptyDay = ({onCreatePress}) => (
+  <View style={st.emptyWrap}>
+    <View style={st.emptyIcon}>
+      <MaterialCommunityIcons
+        name="calendar-blank-outline"
+        size={44}
+        color={T.textHint}
+      />
+    </View>
+    <Text style={st.emptyTitle}>No events this day</Text>
+    <Text style={st.emptySub}>Tap the button below to schedule something</Text>
+    <TouchableOpacity onPress={onCreatePress} style={st.emptyBtn}>
+      <MaterialCommunityIcons name="plus" size={16} color={T.brandMid} />
+      <Text style={st.emptyBtnTxt}>New Event</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+const Loader = () => (
+  <View style={st.center}>
+    <View style={st.loaderCard}>
+      <ActivityIndicator size="large" color={T.brandMid} />
+      <Text style={st.loaderTxt}>Syncing calendar…</Text>
+    </View>
+  </View>
+);
+
+const ErrView = ({msg, onRetry}) => (
+  <View style={st.center}>
+    <View style={st.errCard}>
+      <View style={st.errIcon}>
+        <MaterialCommunityIcons
+          name="cloud-off-outline"
+          size={40}
+          color={T.danger}
+        />
+      </View>
+      <Text style={st.errTitle}>Couldn't load calendar</Text>
+      <Text style={st.errMsg}>{msg}</Text>
+      <TouchableOpacity onPress={onRetry} style={st.retryBtn}>
+        <MaterialCommunityIcons
+          name="refresh"
+          size={16}
+          color={T.textInverse}
+        />
+        <Text style={st.retryTxt}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
+
+const st = StyleSheet.create({
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  loaderCard: {
+    backgroundColor: T.bgCard,
+    borderRadius: T.r24,
+    padding: 32,
+    alignItems: 'center',
+    gap: 14,
+    ...T.sh2,
+  },
+  loaderTxt: {fontSize: 15, color: T.textMuted, fontWeight: '500'},
+  errCard: {
+    backgroundColor: T.bgCard,
+    borderRadius: T.r24,
+    padding: 28,
+    alignItems: 'center',
+    gap: 10,
+    ...T.sh2,
+    width: '100%',
+  },
+  errIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: T.dangerBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  errTitle: {fontSize: 17, fontWeight: '700', color: T.textTitle},
+  errMsg: {
+    fontSize: 14,
+    color: T.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryBtn: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    backgroundColor: T.brandMid,
+    paddingHorizontal: 22,
+    paddingVertical: 11,
+    borderRadius: T.r12,
+    marginTop: 6,
+  },
+  retryTxt: {fontSize: 14, fontWeight: '600', color: T.textInverse},
+  emptyWrap: {
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 32,
+    gap: 10,
+  },
+  emptyIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: T.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: T.borderFaint,
+  },
+  emptyTitle: {fontSize: 17, fontWeight: '600', color: T.textBody},
+  emptySub: {
+    fontSize: 14,
+    color: T.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    backgroundColor: T.brandGhost,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: T.r12,
+  },
+  emptyBtnTxt: {fontSize: 14, fontWeight: '600', color: T.brandMid},
+});
+
+// ─── FAB ──────────────────────────────────────────────────────────────────────
+const FAB = ({onPress}) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const pressIn = () =>
+    Animated.spring(scaleAnim, {toValue: 0.92, useNativeDriver: true}).start();
+  const pressOut = () =>
+    Animated.spring(scaleAnim, {toValue: 1, useNativeDriver: true}).start();
+
+  return (
+    <Animated.View style={[fab.wrap, {transform: [{scale: scaleAnim}]}]}>
+      <TouchableOpacity
+        onPress={onPress}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        activeOpacity={1}
+        style={fab.btn}>
+        <MaterialCommunityIcons name="plus" size={22} color={T.textInverse} />
+        <Text style={fab.txt}>New Event</Text>
+      </TouchableOpacity>
     </Animated.View>
   );
 };
 
-const cardStyles = T =>
-  StyleSheet.create({
-    card: {
-      flexDirection: 'row',
-      backgroundColor: T.cardBg ?? '#fff',
-      borderRadius: 12,
-      marginBottom: 10,
-      overflow: 'hidden',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 1},
-      shadowOpacity: 0.06,
-      shadowRadius: 4,
-    },
-    stripe: {width: 4, flexShrink: 0},
-    body: {flex: 1, padding: 12},
-    topRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 8,
-    },
-    subject: {
-      flex: 1,
-      fontSize: 14,
-      fontWeight: '700',
-      color: T.textPrimary,
-    },
-    meta: {
-      fontSize: 12,
-      color: T.textSecondary ?? '#888',
-      marginTop: 5,
-      lineHeight: 17,
-    },
-    preview: {
-      fontSize: 12,
-      color: T.textMuted ?? '#bbb',
-      marginTop: 6,
-      lineHeight: 17,
-    },
-    badge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'flex-start',
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 6,
-      marginTop: 8,
-    },
-    badgeText: {fontSize: 11, fontWeight: '600'},
-  });
+const fab = StyleSheet.create({
+  wrap: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    ...T.sh3,
+  },
+  btn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: T.brand,
+    paddingLeft: 18,
+    paddingRight: 22,
+    paddingVertical: 14,
+    borderRadius: 100,
+  },
+  txt: {fontSize: 15, fontWeight: '700', color: T.textInverse},
+});
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const OutlookCalendarScreen = () => {
   const navigation = useNavigation();
-  const T = useAppTokens();
-
-  const {
-    todayEvents,
-    weekEvents,
-    loading,
-    error,
-    fetchEvents,
-    createEvent,
-    deleteEvent,
-    requestGraphConsent, // ← add this
-  } = useOutlookCalendar();
+  const {allEvents, loading, error, fetchEvents, createEvent, deleteEvent} =
+    useOutlookCalendar();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [modalVisible, setModalVisible] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
 
-  // Load events covering the current month ± a little buffer
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  // All events flat (today + rest of week)
-  const allEvents = useMemo(
-    () => [...todayEvents, ...weekEvents],
-    [todayEvents, weekEvents],
-  );
-
-  // Events for the selected day
-  const selectedDayEvents = useMemo(
-    () =>
-      allEvents.filter(e => {
-        const d = new Date(e.start?.dateTime ?? e.start?.date);
-        return isSameDay(d, selectedDate);
-      }),
+  const selectedEvents = useMemo(
+    () => allEvents.filter(e => sameDay(parseGD(e.start), selectedDate)),
     [allEvents, selectedDate],
   );
 
-  // Dates that have at least one event (for dots)
-  const eventDates = useMemo(
-    () => allEvents.map(e => new Date(e.start?.dateTime ?? e.start?.date)),
-    [allEvents],
-  );
-
-  const handleCreate = async eventData => {
-    setCreating(true);
-    try {
-      await createEvent(eventData);
-      setModalVisible(false);
-    } catch (err) {
-      Alert.alert('Error', err.message ?? 'Failed to create event');
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const handleDelete = useCallback(
-    async eventId => {
-      try {
-        await deleteEvent(eventId);
-      } catch (err) {
-        Alert.alert('Error', err.message ?? 'Failed to delete event');
-      }
+    eventId => {
+      Alert.alert('Delete Event', 'Remove this event from your calendar?', [
+        {text: 'Cancel', style: 'cancel'},
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEvent(eventId);
+            } catch (e) {
+              Alert.alert('Error', e.message ?? 'Could not delete event');
+            }
+          },
+        },
+      ]);
     },
     [deleteEvent],
   );
@@ -626,173 +1502,96 @@ const OutlookCalendarScreen = () => {
     else navigation.navigate('MainDashboard');
   };
 
-  const isToday = isSameDay(selectedDate, new Date());
-  const dateLabel = isToday
-    ? 'Today'
-    : `${DAYS_FULL[selectedDate.getDay()]}, ${
-        MONTHS[selectedDate.getMonth()]
-      } ${selectedDate.getDate()}`;
+  // ── List sections ──
+  const listData = useMemo(
+    () => [
+      {type: 'UPCOMING'},
+      {type: 'CALENDAR'},
+      {type: 'DAY_HEADER'},
+      ...(selectedEvents.length > 0
+        ? selectedEvents.map((ev, i) => ({type: 'EVENT', event: ev, index: i}))
+        : [{type: 'EMPTY'}]),
+    ],
+    [selectedEvents],
+  );
 
-  const s = screenStyles(T);
+  const renderItem = ({item}) => {
+    switch (item.type) {
+      case 'UPCOMING':
+        return (
+          <UpcomingStrip
+            events={allEvents}
+            onPressEvent={ev => setSelectedDate(parseGD(ev.start))}
+          />
+        );
+      case 'CALENDAR':
+        return (
+          <CalendarGrid
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            events={allEvents}
+          />
+        );
+      case 'DAY_HEADER':
+        return (
+          <DayHeaderBar date={selectedDate} count={selectedEvents.length} />
+        );
+      case 'EVENT':
+        return (
+          <EventCard
+            event={item.event}
+            index={item.index}
+            onDelete={handleDelete}
+          />
+        );
+      case 'EMPTY':
+        return <EmptyDay onCreatePress={() => setShowCreate(true)} />;
+      default:
+        return null;
+    }
+  };
 
   return (
-    <ActionPaneContainer
-      pageTitle="Outlook Calendar"
-      isBackButton={true}
-      showFooter={false}
-      showFloatingButton={false}
-      isHeaderActive={true}
-      showTabNavigator={true}
-      showPageTitleRow={true}
-      onBackPress={handleGoBack}>
-      {/* ── Month Grid (non-scrolling, sits above the list) ── */}
-      <MonthGrid
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-        eventDates={eventDates}
-        T={T}
-      />
-
-      {/* ── Event list for selected day ── */}
-      {loading ? (
-        <ActivityIndicator color={T.primary} style={{marginTop: 40}} />
-      ) : error ? (
-        <View style={s.centered}>
-          <MaterialCommunityIcons
-            name="cloud-off-outline"
-            size={48}
-            color={T.textMuted ?? '#ccc'}
+    <>
+      <ActionPaneContainer
+        pageTitle="Calendar"
+        showFooter
+        isHeaderActive
+        onBackPress={handleGoBack}
+        onRefresh={fetchEvents}
+        showFloatingButton={false}
+        showPageTitleRow={true}
+        showSearchBar={false}
+        showFilterPills={false}>
+        {loading ? (
+          <Loader />
+        ) : error ? (
+          <ErrView msg={error} onRetry={fetchEvents} />
+        ) : (
+          <FlatList
+            data={listData}
+            keyExtractor={(item, i) =>
+              item.type === 'EVENT' ? item.event?.id || i.toString() : item.type
+            }
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: 120,
+            }}
           />
-          <Text style={s.errorText}>{error}</Text>
-          <TouchableOpacity
-            onPress={fetchEvents}
-            style={[s.retryBtn, {borderColor: T.primary}]}>
-            <Text style={[s.retryText, {color: T.primary}]}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={selectedDayEvents}
-          keyExtractor={item => item.id}
-          contentContainerStyle={s.listContent}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={true}
-          renderItem={({item}) => (
-            <EventCard item={item} T={T} onDelete={handleDelete} />
-          )}
-          ListHeaderComponent={
-            <View style={s.dateHeader}>
-              <Text style={s.dateLabel}>{dateLabel}</Text>
-              <Text style={s.eventCount}>
-                {selectedDayEvents.length} event
-                {selectedDayEvents.length !== 1 ? 's' : ''}
-              </Text>
-            </View>
-          }
-          ListEmptyComponent={
-            <View style={s.emptyBox}>
-              <MaterialCommunityIcons
-                name="calendar-check-outline"
-                size={52}
-                color={T.textMuted ?? '#ccc'}
-              />
-              <Text style={s.emptyText}>No events this day</Text>
-              <Text style={s.emptyHint}>Tap + to create one</Text>
-            </View>
-          }
-        />
-      )}
+        )}
+        <FAB onPress={() => setShowCreate(true)} />
+      </ActionPaneContainer>
 
-      {/* ── FAB ── */}
-      <TouchableOpacity
-        style={[s.fab, {backgroundColor: T.primary}]}
-        onPress={() => setModalVisible(true)}
-        activeOpacity={0.85}>
-        <MaterialCommunityIcons name="plus" size={26} color="#fff" />
-      </TouchableOpacity>
-
-      {/* <CreateEventModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        onSubmit={handleCreate}
-        loading={creating}
-        defaultDate={selectedDate} // pre-fills date when tapping FAB
-      /> */}
-    </ActionPaneContainer>
+      {/* Move Modal HERE - outside ActionPaneContainer */}
+      <CreateEventModal
+        visible={showCreate}
+        onClose={() => setShowCreate(false)}
+        onSave={createEvent}
+        defaultDate={selectedDate}
+      />
+    </>
   );
 };
-
-const screenStyles = T =>
-  StyleSheet.create({
-    listContent: {
-      padding: 14,
-      paddingBottom: 100,
-    },
-    dateHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 12,
-    },
-    dateLabel: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: T.textPrimary,
-    },
-    eventCount: {
-      fontSize: 13,
-      color: T.textSecondary ?? '#888',
-    },
-    centered: {
-      flex: 1,
-      alignItems: 'center',
-      paddingTop: 60,
-    },
-    errorText: {
-      fontSize: 14,
-      color: '#e53935',
-      marginTop: 12,
-      textAlign: 'center',
-      paddingHorizontal: 32,
-    },
-    retryBtn: {
-      marginTop: 14,
-      borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-    },
-    retryText: {fontSize: 14, fontWeight: '600'},
-    emptyBox: {
-      alignItems: 'center',
-      paddingTop: 40,
-    },
-    emptyText: {
-      fontSize: 15,
-      color: T.textSecondary ?? '#aaa',
-      marginTop: 12,
-      fontWeight: '600',
-    },
-    emptyHint: {
-      fontSize: 13,
-      color: T.textMuted ?? '#ccc',
-      marginTop: 4,
-    },
-    fab: {
-      position: 'absolute',
-      bottom: 24,
-      right: 20,
-      width: 54,
-      height: 54,
-      borderRadius: 27,
-      alignItems: 'center',
-      justifyContent: 'center',
-      elevation: 6,
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 3},
-      shadowOpacity: 0.2,
-      shadowRadius: 6,
-    },
-  });
 
 export default OutlookCalendarScreen;

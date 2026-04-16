@@ -233,7 +233,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             isLast
           />
           <SettingRow
-            icon="calendar"
+            icon="clock"
             iconColor={AppTokens.indigo}
             iconBg={AppTokens.indigoBg}
             title="Date & Time Settings"
@@ -243,7 +243,7 @@ const SettingsScreen = ({navigation: navProp}) => {
           />
           {!!accessToken && (
             <SettingRow
-              icon="calendar-sync"
+              icon="calendar"
               iconColor={AppTokens.indigo}
               iconBg={AppTokens.indigoBg}
               title="Outlook Calendar"
@@ -252,6 +252,23 @@ const SettingsScreen = ({navigation: navProp}) => {
               isLast
             />
           )}
+          {/* <SettingRow
+            icon="shopping-cart"
+            iconColor={AppTokens.indigo}
+            iconBg={AppTokens.indigoBg}
+            title="Purchase Orders"
+            subtitle="View and manage purchase orders"
+            onPress={() =>
+              navigation.navigate('PurchaseOrderListPage', {
+                employeeId: userData?.employeeId,
+                employeeName: userData?.employeeName,
+                WorkerRecId: userData?.WorkerRecId,
+                cameFrom: 'Settings',
+                userData: userData,
+              })
+            }
+            isLast
+          /> */}
         </AnimatedCard>
 
         {/* ── SECURITY ─────────────────────────────────────────────────── */}
@@ -271,7 +288,7 @@ const SettingsScreen = ({navigation: navProp}) => {
           />
         </AnimatedCard>
 
-        {/* ── NOTIFICATIONS ────────────────────────────────────────────── */}
+        {/* ── NOTIFICATIONS ──────────────────────────────────────────────
         <AnimatedCard delay={CARD_STAGGER * 2}>
           <CardHeading label="NOTIFICATIONS" />
           <SettingRow
@@ -291,7 +308,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             onPress={() => navigation.navigate('EmailNotificationSettings')}
             isLast
           />
-        </AnimatedCard>
+        </AnimatedCard> */}
 
         {/* ── Footer ───────────────────────────────────────────────────── */}
         <FooterNote

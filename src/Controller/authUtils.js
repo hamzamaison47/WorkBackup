@@ -85,21 +85,57 @@ if (typeof global.btoa === 'undefined') {
 //     });
 //   }
 // };
+// export const handleLogoutauth = async (navigation, dispatch) => {
+//   try {
+//     // Cleanup Firebase service
+//     await firebaseService.cleanup();
+
+//     // Clear Redux store - all state management now via Redux
+//     dispatch(clearAuthTokens());
+//     dispatch(clearUserData()); // ← fixed: was setUserData(null) — never imported
+//     dispatch(clearFirebaseData());
+//     dispatch(clearBiometric());
+//     dispatch(setSkipLoginAfterRestart(false));
+
+//     console.log('User logged out and Redux state cleared');
+
+//     // Navigate to Login screen and reset the stack
+//     navigation.reset({
+//       index: 0,
+//       routes: [{name: 'Login'}],
+//     });
+//   } catch (error) {
+//     console.error('Logout error:', error);
+//     navigation.reset({
+//       index: 0,
+//       routes: [{name: 'Login'}],
+//     });
+//   }
+// };
+
 export const handleLogoutauth = async (navigation, dispatch) => {
   try {
-    // Cleanup Firebase service
+    // 1. 🧹 WIPE THE API CACHE FIRST
+    // This ensures no cached attendance/profile data remains in memory
+    apiCache.clear();
+    console.log('API Cache cleared successfully');
+
+    // 2. Cleanup Firebase service
     await firebaseService.cleanup();
 
-    // Clear Redux store - all state management now via Redux
+    // 3. Clear Redux store
     dispatch(clearAuthTokens());
-    dispatch(clearUserData()); // ← fixed: was setUserData(null) — never imported
+    dispatch(clearUserData());
     dispatch(clearFirebaseData());
     dispatch(clearBiometric());
     dispatch(setSkipLoginAfterRestart(false));
 
+    // ✅ Add this: Clear chatbot history so the new user starts fresh
+    dispatch(chatbotClearMessages());
+
     console.log('User logged out and Redux state cleared');
 
-    // Navigate to Login screen and reset the stack
+    // 4. Navigate to Login screen and reset the stack
     navigation.reset({
       index: 0,
       routes: [{name: 'Login'}],

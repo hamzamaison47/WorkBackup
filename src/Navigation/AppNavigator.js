@@ -11,6 +11,7 @@ import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen
 import SettingsScreen from '../screens/Settings/Settingsscreen';
 import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
 import OutlookCalendarScreen from '../screens/Settings/OutlookCalendarScreen';
+import PurchaseOrderListPage from '../screens/PurchaseOrder/PurchaseOrderListPage';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -91,7 +92,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="OutlookCalendarScreen"
         component={OutlookCalendarScreen}
-        options={{headerShown: false}}
+        options={{headerShown: true}}
       />
 
       <Stack.Screen
@@ -112,6 +113,18 @@ const AppNavigator = () => {
         {() => (
           <ScreenWithSessionTimeout>
             <WorkflowHistoryScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="PurchaseOrderListPage"
+        options={{
+          title: 'Purchase Orders',
+          headerBackTitle: 'Back',
+        }}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <PurchaseOrderListPage />
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
