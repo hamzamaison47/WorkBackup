@@ -13,6 +13,7 @@
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		8D733B872F8A34B900DE59DF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 8D733B862F8A34B900DE59DF /* GoogleService-Info.plist */; };
+		8D9389F32F8E799500193E3A /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 8D9389F22F8E799500193E3A /* main.jsbundle */; };
 		A02E1CA739CF8A47F77BDB27 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6836E891D50324EBC5EDECDA /* PrivacyInfo.xcprivacy */; };
 		BE638BE4AD0F24B3E8D8CCF1 /* libPods-Authentication.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 621718C1CCC79B7A4B79979D /* libPods-Authentication.a */; };
 		F968DFBCDA79F71921F25373 /* libPods-Authentication-AuthenticationTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B3BBA9DE53956412F8EA763E /* libPods-Authentication-AuthenticationTests.a */; };
@@ -46,6 +47,7 @@
 		8B417FB7482657EAECD74958 /* Pods-Authentication.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Authentication.debug.xcconfig"; path = "Target Support Files/Pods-Authentication/Pods-Authentication.debug.xcconfig"; sourceTree = "<group>"; };
 		8D6E6BBC2F8D12CF00DBFA9B /* Authentication.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = Authentication.entitlements; path = Authentication/Authentication.entitlements; sourceTree = "<group>"; };
 		8D733B862F8A34B900DE59DF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		8D9389F22F8E799500193E3A /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
 		B3BBA9DE53956412F8EA763E /* libPods-Authentication-AuthenticationTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Authentication-AuthenticationTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B56FBF4D3ABC07EBEAFE9C71 /* Pods-Authentication-AuthenticationTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Authentication-AuthenticationTests.debug.xcconfig"; path = "Target Support Files/Pods-Authentication-AuthenticationTests/Pods-Authentication-AuthenticationTests.debug.xcconfig"; sourceTree = "<group>"; };
 		DECE26612247BEE4F35986D9 /* Pods-Authentication.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Authentication.release.xcconfig"; path = "Target Support Files/Pods-Authentication/Pods-Authentication.release.xcconfig"; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				8D9389F22F8E799500193E3A /* main.jsbundle */,
 				8D733B862F8A34B900DE59DF /* GoogleService-Info.plist */,
 				13B07FAE1A68108700A75B9A /* Authentication */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
@@ -252,6 +255,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8D9389F32F8E799500193E3A /* main.jsbundle in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				8D733B872F8A34B900DE59DF /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
