@@ -21,6 +21,7 @@ import {
 } from '../store/slices/firebaseSlice';
 import {clearBiometric} from '../store/slices/biometricSlice';
 import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
+import {clearUserData} from '../store/slices/userSlice';
 
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
@@ -91,16 +92,14 @@ export const handleLogoutauth = async (navigation, dispatch) => {
 
     // Clear Redux store - all state management now via Redux
     dispatch(clearAuthTokens());
-    dispatch(setUserData(null));
-    dispatch(setLegalEntities([]));
-    dispatch(setMenuItems([]));
+    dispatch(clearUserData()); // ← fixed: was setUserData(null) — never imported
     dispatch(clearFirebaseData());
     dispatch(clearBiometric());
     dispatch(setSkipLoginAfterRestart(false));
 
     console.log('User logged out and Redux state cleared');
 
-    // Navigate to Login screen
+    // Navigate to Login screen and reset the stack
     navigation.reset({
       index: 0,
       routes: [{name: 'Login'}],

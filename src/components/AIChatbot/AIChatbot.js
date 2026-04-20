@@ -419,12 +419,16 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
   /**
    * GENERIC: Send message and handle AI response
    * Works with any service that implements getFunctionDefinitions() and execute()
+   * In Foundry Agent mode, serviceInstance is not needed — the agent handles tools via MCP.
    */
   const handleSend = async (textOverride, preferredLanguageOverride) => {
     const text = (textOverride ?? input).trim();
     if (!text) return;
     if (processingRef.current) return;
-    if (!serviceInstance) {
+
+    // In Foundry Agent mode, serviceInstance is not required
+    const isFoundryMode = azureAIService.useFoundryAgent;
+    if (!isFoundryMode && !serviceInstance) {
       addMessage('Service not configured. Please contact support.', 'bot');
       return;
     }
@@ -435,12 +439,16 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
     setIsTyping(true);
 
     try {
-      // Get functions from the service (generic)
-      const functions = serviceInstance.getFunctionDefinitions();
+      // Get functions from the service (only needed in direct OpenAI mode)
+      const functions = isFoundryMode
+        ? []
+        : serviceInstance.getFunctionDefinitions();
       const langHint = preferredLanguageOverride || 'auto';
 
+      // Foundry Agent mode needs longer timeout (agent does MCP calls internally)
+      const timeoutMs = isFoundryMode ? 65000 : 30000;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('AI response timeout')), 30000);
+        setTimeout(() => reject(new Error('AI response timeout')), timeoutMs);
       });
 
       const aiResponse = await Promise.race([
@@ -455,6 +463,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
       ]);
 
       if (aiResponse?.type === 'function_call') {
+        // In Foundry mode, only navigation function_calls come through
         await handleFunctionCall(aiResponse);
       } else {
         addMessage(aiResponse?.text || 'Sorry, I could not respond.', 'bot');
@@ -468,6 +477,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
       processingRef.current = false;
       setIsTyping(false);
     }
+
   };
 
   /**

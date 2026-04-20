@@ -209,8 +209,8 @@
     "dynaface": "Dynaface",
     "alert": "Alert",
     "processing": "Processing...",
-    "create": "Create",
-    "update": "Update",
+    "create": "Created",
+    "update": "Updated",
     "close": "Close",
     "save": "Save"
   },

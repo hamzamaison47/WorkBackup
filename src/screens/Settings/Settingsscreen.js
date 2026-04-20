@@ -39,6 +39,7 @@ const SettingsScreen = ({navigation: navProp}) => {
   // ── Selectors ─────────────────────────────────────────────────────────────
   const currentLanguage = useSelector(state => state.language.currentLanguage);
   const userData = useSelector(state => state.user.userData);
+  const accessToken = useSelector(state => state.auth.accessToken);
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
@@ -240,6 +241,17 @@ const SettingsScreen = ({navigation: navProp}) => {
             onPress={() => navigation.navigate('DateFormatSettingsScreen')}
             isLast
           />
+          {!!accessToken && (
+            <SettingRow
+              icon="calendar-sync"
+              iconColor={AppTokens.indigo}
+              iconBg={AppTokens.indigoBg}
+              title="Outlook Calendar"
+              subtitle="View and manage your calendar events"
+              onPress={() => navigation.navigate('OutlookCalendarScreen')}
+              isLast
+            />
+          )}
         </AnimatedCard>
 
         {/* ── SECURITY ─────────────────────────────────────────────────── */}

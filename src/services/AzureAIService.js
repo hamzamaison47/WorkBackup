@@ -761,26 +761,48 @@
 // export default azureAIService;
 
 // services/AzureAIService.js
+// Supports BOTH:
+//   1. Direct Azure OpenAI (current mode — chat/completions with local function routing)
+//   2. Azure AI Foundry Agent (MCP mode — threads/messages/runs with server-side tools)
+//
+// Set AZURE_USE_FOUNDRY_AGENT=true in .env to enable Foundry Agent mode.
 
 /* eslint-disable curly */
 import {getAzureAIConfig} from './SecureConfigService';
+import {AZURE_USE_FOUNDRY_AGENT} from '@env';
 
 class AzureAIService {
   constructor() {
     this.config = null;
     this.initialized = false;
+    this.useFoundryAgent =
+      AZURE_USE_FOUNDRY_AGENT === 'true' || AZURE_USE_FOUNDRY_AGENT === true;
+    this.threadId = null; // Legacy — kept for backward compat
   }
 
   async initialize() {
     if (this.initialized) return;
 
     try {
+      // Always load base config (needed for voice normalization even in Foundry mode)
       this.config = await getAzureAIConfig();
-      if (!this.config?.apiKey) {
+
+      if (this.useFoundryAgent) {
+        console.log(
+          '✅ Azure AI Foundry Agent mode enabled (via MCP Server proxy)',
+        );
+      }
+
+      if (!this.useFoundryAgent && !this.config?.apiKey) {
         throw new Error('Azure API Key missing');
       }
+
       this.initialized = true;
-      console.log('✅ Azure AI initialized');
+      console.log(
+        `✅ Azure AI initialized (${
+          this.useFoundryAgent ? 'Foundry Agent' : 'Direct OpenAI'
+        })`,
+      );
     } catch (error) {
       console.error('❌ Azure init failed:', error.message);
       throw error;
@@ -793,14 +815,227 @@ class AzureAIService {
     }
   }
 
+  // ─── Foundry Agent: Responses API ─────────────────────────────────────────
+  // When AZURE_USE_FOUNDRY_AGENT=true, this replaces the direct OpenAI flow.
+  // Uses Azure AI Foundry's Responses API — single POST, agent handles all
+  // MCP tool orchestration internally and returns the final text.
+  // No threads, no messages, no runs, no polling needed.
+
   /**
-   * GENERIC: Main chat function - works with ANY service
+   * Send a message to the Foundry Agent via the Responses API.
+   * The agent handles tool calls (MCP) internally and returns the final text.
+   *
+   * Flow:
+   *   1. POST to Responses API with user message + agent reference
+   *   2. Agent connects to MCP server, calls D365 tools as needed
+   *   3. Returns complete response text — no polling required
+   *   4. Conversation continuity via previous_response_id
+   *
    * @param {Object} options
    * @param {string} options.userMessage - User's message
-   * @param {Array} options.conversationHistory - Previous messages
-   * @param {Array} options.availableFunctions - Functions from ANY service
-   * @param {Object} options.userData - User context
+   * @param {Object} options.userData - User context (employeeId, employeeName, etc.)
    * @param {string} options.preferredLanguage - Language preference
+   * @returns {{ type: 'message', text: string }}
+   */
+  // async chatWithFoundryAgent({ userMessage, userData = {}, preferredLanguage = 'en' }) {
+  //   await this.ensureInitialized();
+
+  //   // Route to MCP backend running in Azure Container Apps
+  //   const backendUrl = `https://dynaface-mcp.bravepond-921a8740.eastus2.azurecontainerapps.io/chat`;
+
+  //   const response = await fetch(backendUrl, {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({
+  //       userMessage,
+  //       userData: {
+  //         employeeId: userData.employeeId,
+  //         employeeName: userData.employeeName,
+  //         WorkerRecId: userData.WorkerRecId,
+  //       },
+  //       preferredLanguage,
+  //     }),
+  //   });
+
+  //   if (!response.ok) {
+  //     const err = await response.text();
+  //     throw new Error(`Chat backend error ${response.status}: ${err}`);
+  //   }
+
+  //   const result = await response.json();
+
+  //   // Check for navigation (same logic as before)
+  //   const navResult = this.detectNavigation(result.text || '');
+  //   if (navResult) return navResult;
+
+  //   return result;
+  // }
+  async chatWithFoundryAgent({
+    userMessage,
+    userData = {},
+    preferredLanguage = 'en',
+  }) {
+    await this.ensureInitialized();
+
+    const backendUrl = `https://dynaface-mcp.bravepond-921a8740.eastus2.azurecontainerapps.io/chat`;
+
+    console.log('📤 Sending to backend:', backendUrl);
+
+    try {
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          userMessage,
+          userData: {
+            employeeId: userData.employeeId,
+            employeeName: userData.employeeName,
+            WorkerRecId: userData.WorkerRecId,
+          },
+          preferredLanguage,
+        }),
+      });
+
+      console.log('📥 Backend response status:', response.status);
+
+      if (!response.ok) {
+        const err = await response.text();
+        console.log('❌ Backend error body:', err);
+        throw new Error(`Chat backend error ${response.status}: ${err}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Backend result:', JSON.stringify(result));
+
+      const navResult = this.detectNavigation(result.text || '');
+      if (navResult) return navResult;
+
+      return result;
+    } catch (error) {
+      console.log('❌ chatWithFoundryAgent caught error:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Extract text from Responses API response data.
+   * Handles multiple possible response formats from Azure AI Foundry.
+   */
+  extractResponseText(data) {
+    // Format 1: Direct output_text field (most common)
+    if (data.output_text && typeof data.output_text === 'string') {
+      return data.output_text;
+    }
+
+    // Format 2: output array with message items
+    if (Array.isArray(data.output)) {
+      for (const item of data.output) {
+        // Look for message type output
+        if (item.type === 'message' && Array.isArray(item.content)) {
+          const textParts = item.content
+            .filter(c => c.type === 'output_text' || c.type === 'text')
+            .map(c => c.text || c.value || '')
+            .filter(Boolean);
+
+          if (textParts.length > 0) {
+            return textParts.join('\n');
+          }
+        }
+
+        // Direct text in output item
+        if (item.type === 'text' && item.text) {
+          return typeof item.text === 'object' ? item.text.value : item.text;
+        }
+      }
+    }
+
+    // Format 3: choices array (OpenAI compatibility)
+    if (Array.isArray(data.choices) && data.choices.length > 0) {
+      const message = data.choices[0].message;
+      if (message?.content) return message.content;
+    }
+
+    // Format 4: direct content field
+    if (data.content) {
+      if (typeof data.content === 'string') return data.content;
+      if (Array.isArray(data.content)) {
+        const text = data.content.find(c => c.type === 'text');
+        if (text?.text) return text.text;
+      }
+    }
+
+    return 'Sorry, I could not generate a response.';
+  }
+
+  /**
+   * Detect navigation commands embedded in agent response.
+   * The MCP navigate_to_screen tool returns JSON with action:"navigate".
+   * The agent may include this in its text response.
+   */
+  detectNavigation(responseText) {
+    // Pattern 1: JSON navigation block in markdown
+    const navPattern = /```navigation\s*\n?([\s\S]*?)\n?```/;
+    const match = responseText.match(navPattern);
+
+    if (match) {
+      try {
+        const navData = JSON.parse(match[1]);
+        return {
+          type: 'function_call',
+          function: 'navigate_to_screen',
+          parameters: {
+            screenName: navData.screenName,
+            message:
+              navData.message || responseText.replace(match[0], '').trim(),
+          },
+        };
+      } catch (e) {
+        // Not valid JSON, continue
+      }
+    }
+
+    // Pattern 2: Inline navigate action JSON
+    try {
+      if (
+        responseText.includes('"action":"navigate"') ||
+        responseText.includes('"action": "navigate"')
+      ) {
+        const jsonMatch = responseText.match(
+          /\{[^{}]*"action"\s*:\s*"navigate"[^{}]*\}/,
+        );
+        if (jsonMatch) {
+          const navData = JSON.parse(jsonMatch[0]);
+          return {
+            type: 'function_call',
+            function: 'navigate_to_screen',
+            parameters: {
+              screenName: navData.screenName,
+              message: navData.message || '',
+            },
+          };
+        }
+      }
+    } catch (e) {
+      // Not navigation
+    }
+
+    return null;
+  }
+
+  /**
+   * Reset the Foundry Agent conversation (for new conversations)
+   */
+  resetThread() {
+    this.lastResponseId = null;
+    this.threadId = null;
+    console.log('🔄 Foundry Agent conversation reset');
+  }
+
+  // ─── Direct OpenAI Mode (Legacy — kept for backward compatibility) ───────
+
+  /**
+   * GENERIC: Main chat function - works with ANY service
+   * In Foundry Agent mode, this delegates to chatWithFoundryAgent() instead.
    */
   async chat({
     userMessage,
@@ -811,9 +1046,18 @@ class AzureAIService {
   }) {
     await this.ensureInitialized();
 
+    // ── Foundry Agent Mode: delegate to agent ──
+    if (this.useFoundryAgent) {
+      return this.chatWithFoundryAgent({
+        userMessage,
+        userData,
+        preferredLanguage,
+      });
+    }
+
+    // ── Direct OpenAI Mode: existing behavior ──
     const safeUserMessage = String(userMessage || '').substring(0, 2000);
 
-    // Build system prompt (generic, service provides context)
     const systemPrompt = this.buildSystemPrompt(
       userData,
       preferredLanguage,
@@ -929,6 +1173,7 @@ Dynaface was conceptualized in 2025 as an AI-based enterprise assistant designed
 
   /**
    * GENERIC: Continue after function execution
+   * NOTE: In Foundry Agent mode, this is NOT called — the agent handles tools internally.
    */
   async continueAfterFunction({
     previousMessages,

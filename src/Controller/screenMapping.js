@@ -54,7 +54,10 @@ import HrPoliciesScreen from '../screens/HrPolicies/HrPoliciesScreen';
 import HrNewsUpdatesScreen from '../screens/HrNewsUpdates/HrNewsUpdatesScreen';
 import OutstandingAdvancesScreen from '../screens/OutstandingAdvances/OutstandingAdvancesScreen';
 import ESSEmployeeCourse_ListPage from '../screens/EmployeeOpenCourse/ESSEmployeeCourse_ListPage';
-
+import HRExitInterviewListPage from '../screens/ExitInterview/HRExitInterview_ListPage';
+import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
+import EOSRequestScreen from '../screens/EmployeeEOSRequest/EmployeeEOS_SaveRecord';
+import EmployeeEOSClearanceItemsListPage from '../screens/EmployeeEOSClearanceItems/EmployeeEOSClearanceItems_ListPage';
 // Map MenuId from API → Screen component
 export const screenMapping = {
   // Tab Navigator Screens
@@ -102,6 +105,7 @@ export const screenMapping = {
   BankAccountListPage: BankAccountListPage,
   BankAccountSaveRecord: BankAccountSaveRecord,
   DateFormatSettingsScreen: DateFormatSettingsScreen,
+  AttendanceManagement: AttendanceManagement,
   // OutstandingAdvancesScreen: OutstandingAdvancesScreen,
   // TimeClockListPage: TimeClockListPage,
   EmployeeEOSRequestListPage: EmployeeEOSRequestListPage,
@@ -117,6 +121,9 @@ export const screenMapping = {
   HrPoliciesScreen: HrPoliciesScreen,
   HrNewsUpdatesScreen: HrNewsUpdatesScreen,
   OutstandingAdvancesScreen: OutstandingAdvancesScreen,
+  HRExitInterviewListPage: HRExitInterviewListPage,
+  EOSRequestScreen: EOSRequestScreen,
+  EmployeeEOSClearanceItemsListPage: EmployeeEOSClearanceItemsListPage,
 };
 
 // Map Images → Screen component

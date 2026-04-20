@@ -8,6 +8,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {translate as t} from '../store/utils/translate';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
+import {screenMapping} from './screenMapping';
 
 export default function CustomTabBar(props) {
   // ✅ reactive theme tokens
@@ -21,7 +22,10 @@ export default function CustomTabBar(props) {
   const {menuItems} = useSelector(state => state.menuItem);
 
   const footerTabs = menuItems.filter(
-    item => item.Visible === '1' && item.DisplayOnFooter === 'Yes',
+    item =>
+      item.Visible === '1' &&
+      item.DisplayOnFooter === 'Yes' &&
+      screenMapping[item.MenuId],
   );
 
   const iconMap = {
@@ -35,6 +39,7 @@ export default function CustomTabBar(props) {
       unfocused: 'document-text-outline',
     },
     WorkItemsAssignedToMePage: {focused: 'list', unfocused: 'list-outline'},
+    AttendanceManagement: {focused: 'calendar', unfocused: 'calendar-outline'},
   };
 
   const uniqueFooterTabs = footerTabs
@@ -76,11 +81,26 @@ export default function CustomTabBar(props) {
 
   const activeTab = getActiveTabName();
 
+  // const handlePress = tabName => {
+  //   if (tabBarNavigation && typeof tabBarNavigation.navigate === 'function') {
+  //     tabBarNavigation.navigate(tabName);
+  //     return;
+  //   }
+  //   nav.navigate(tabName);
+  // };
   const handlePress = tabName => {
+    if (tabName === 'AttendanceManagement') {
+      nav.navigate('AttendanceManagement', {
+        fromTab: true,
+      });
+      return;
+    }
+
     if (tabBarNavigation && typeof tabBarNavigation.navigate === 'function') {
       tabBarNavigation.navigate(tabName);
       return;
     }
+
     nav.navigate(tabName);
   };
 

@@ -22,6 +22,7 @@ import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByE
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
 import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/RetrieveEntitlementBalanceRequest';
 import styles from '../../styles/styles';
+import LinearGradient from 'react-native-linear-gradient';
 
 // ✅ Brand-only tokens — never change between themes
 const BRAND = {

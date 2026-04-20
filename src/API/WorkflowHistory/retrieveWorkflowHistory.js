@@ -9,6 +9,8 @@ const retrieveWorkflowHistory = async ({_recId, _tableId}) => {
   try {
     const config = await getActiveConfigData();
 
+    console.log('HERE IS TABLE ID', _recId, _tableId);
+
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
     }
