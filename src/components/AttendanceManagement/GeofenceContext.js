@@ -1,10 +1,5 @@
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/GeofenceContext.js
-//
-// FLOW CHANGE:
-//   Location verification = GPS + coordinates ONLY.
-//   Network (WiFi/IP) check is NOT done here anymore.
-//   It is done at confirm-time in each ConfirmScreen.
 // ─────────────────────────────────────────────
 /* eslint-disable curly */
 import React, {
@@ -23,6 +18,7 @@ import {RetrieveByPerson} from '../../API/AttendanceManagement/RetrieveByPerson'
 import {haversineDistance} from '../../hooks/useLocation';
 
 const SOFT_BUFFER_METRES = 15;
+const CLOCK_IN_FENCE_KEY = '@attendance_clock_in_fence';
 
 const isActiveFlag = val => {
   const s = String(val).trim().toLowerCase();
@@ -38,7 +34,7 @@ const fetchFreshCoords = async () => {
   try {
     const p = await tryPos({
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 15000,
       maximumAge: 5000,
     });
     return {
@@ -51,7 +47,7 @@ const fetchFreshCoords = async () => {
     try {
       const p = await tryPos({
         enableHighAccuracy: false,
-        timeout: 10000,
+        timeout: 15000,
         maximumAge: 30000,
       });
       return {
@@ -66,90 +62,40 @@ const fetchFreshCoords = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// Network helpers — exported so ConfirmScreens
-// can call them at confirm-time.
-// ─────────────────────────────────────────────
-//
-// API Networks entry:
-//   { NetworkID: "58.27.244.226", NetworkName: "MAISON" }
-//   NetworkName = WiFi SSID
-//   NetworkID   = Public IP address of that network
-//
-// Rule: BOTH must match on the SAME entry (AND logic).
-
 const normalizeNet = s =>
   String(s ?? '')
     .trim()
     .toLowerCase();
 
-export const fetchPublicIP = async () => {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch('https://api.ipify.org?format=text', {
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const ip = (await res.text()).trim();
-    return ip.length > 0 ? ip : null;
-  } catch {
-    return null;
-  }
-};
+export const isUnknownSsid = ssid =>
+  !ssid ||
+  ssid === '<unknown ssid>' ||
+  ssid === '0x' ||
+  ssid === '"<unknown ssid>"';
 
-// checkNetworkMatch — called at confirm-time, not at location-match time.
-//
-//   fenceNetworks  Networks[] from the matched fence
-//   wifiSsid       device WiFi SSID (from NetInfo)
-//   isWifi         device is on WiFi
-//   publicIP       device public IP (from fetchPublicIP)
-//
-// Returns { networkRequired, networkMatched, networkFailReason }
 export const checkNetworkMatch = (
   fenceNetworks,
   wifiSsid,
   wifiBssid,
   isWifi,
-  publicIP,
-  isInternetReachable = true,
 ) => {
   if (!fenceNetworks || fenceNetworks.length === 0)
-    return {
-      networkRequired: false,
-      networkMatched: true,
-      networkFailReason: null,
-    };
+    return {networkRequired: false, networkMatched: true, networkFailReason: null};
 
   if (!isWifi)
-    return {
-      networkRequired: true,
-      networkMatched: false,
-      networkFailReason: 'NOT_ON_WIFI',
-    };
+    return {networkRequired: true, networkMatched: false, networkFailReason: 'NOT_ON_WIFI'};
 
-  if (!publicIP && isInternetReachable)
-    return {
-      networkRequired: true,
-      networkMatched: false,
-      networkFailReason: 'PUBLIC_IP_UNAVAILABLE',
-    };
+  if (isUnknownSsid(wifiSsid))
+    return {networkRequired: true, networkMatched: false, networkFailReason: 'SSID_UNAVAILABLE'};
 
   const deviceSsid = normalizeNet(wifiSsid);
-  const deviceIp = normalizeNet(publicIP);
   const deviceBssid = normalizeNet(wifiBssid);
 
-  // Both NetworkName AND NetworkID AND BSSID must match on the same entry
-  const matched = fenceNetworks.some(
-    net =>
-      net.NetworkName &&
-      net.NetworkID &&
-      net.BSSID &&
-      normalizeNet(net.NetworkName) === deviceSsid &&
-      (!isInternetReachable || normalizeNet(net.NetworkID) === deviceIp) &&
-      normalizeNet(net.BSSID) === deviceBssid,
-  );
+  const matched = fenceNetworks.some(net => {
+    const ssidMatch = net.NetworkName && normalizeNet(net.NetworkName) === deviceSsid;
+    const bssidMatch = !net.BSSID || (deviceBssid && normalizeNet(net.BSSID) === deviceBssid);
+    return ssidMatch && bssidMatch;
+  });
 
   return {
     networkRequired: true,
@@ -158,24 +104,18 @@ export const checkNetworkMatch = (
   };
 };
 
-// Human-readable error from a fail reason
 export const buildNetworkErrorMessage = (fence, failReason) => {
   const names = (fence?.networks ?? [])
     .map(n => n.NetworkName)
     .filter(Boolean)
     .join(', ');
   if (failReason === 'NOT_ON_WIFI')
-    return `This location requires office WiFi.\nRequired network: ${
-      names || 'office WiFi'
-    }`;
-  if (failReason === 'PUBLIC_IP_UNAVAILABLE')
-    return 'Unable to verify your network. Check your internet connection.';
-  return `Wrong WiFi network.\nPlease connect to: ${
-    names || 'required office network'
-  }`;
+    return `This location requires office WiFi.\nRequired network: ${names || 'office WiFi'}`;
+  if (failReason === 'SSID_UNAVAILABLE')
+    return 'Unable to read WiFi network name. Ensure Location permission is granted and Location Services are enabled.';
+  return `Wrong WiFi network.\nPlease connect to: ${names || 'required office network'}`;
 };
 
-// ─────────────────────────────────────────────
 const GeofenceContext = createContext(null);
 
 export const useGeofence = () => {
@@ -193,13 +133,17 @@ export const GeofenceProvider = ({children, person}) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [clockInFence, setClockInFence] = useState(null);
-
-  // wifiInfo exposed so ConfirmScreens can read current SSID
-  const [wifiInfo, setWifiInfo] = useState({ssid: null, isWifi: false});
+  const [wifiInfo, setWifiInfo] = useState({
+    ssid: null,
+    bssid: null,
+    isWifi: false,
+    isUnknown: false,
+  });
 
   const watchId = useRef(null);
   const latestCoordsRef = useRef(null);
   const wifiInfoRef = useRef(wifiInfo);
+  const inflightRefreshRef = useRef(null);
 
   useEffect(() => {
     wifiInfoRef.current = wifiInfo;
@@ -208,21 +152,43 @@ export const GeofenceProvider = ({children, person}) => {
   // ── Subscribe to NetInfo ──────────────────────────────────
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-      const next =
-        state.type === 'wifi' && state.details
-          ? {ssid: state.details.ssid ?? null, isWifi: true}
-          : {ssid: null, isWifi: false};
-
-      setWifiInfo(prev => {
-        if (prev.isWifi === next.isWifi && prev.ssid === next.ssid) return prev;
-        wifiInfoRef.current = next;
-        return next;
-      });
+      if (state.type === 'wifi' && state.details) {
+        const ssid = state.details.ssid ?? null;
+        const bssid = state.details.bssid ?? null;
+        const unknown = isUnknownSsid(ssid);
+        const next = {ssid, bssid, isWifi: true, isUnknown: unknown};
+        setWifiInfo(prev => {
+          if (prev.isWifi === next.isWifi && prev.ssid === next.ssid && prev.bssid === next.bssid)
+            return prev;
+          wifiInfoRef.current = next;
+          return next;
+        });
+      } else {
+        const next = {ssid: null, bssid: null, isWifi: false, isUnknown: false};
+        setWifiInfo(prev => {
+          if (!prev.isWifi) return prev;
+          wifiInfoRef.current = next;
+          return next;
+        });
+      }
     });
+
+    // Initial snapshot
+    NetInfo.fetch().then(state => {
+      if (state.type === 'wifi' && state.details) {
+        const ssid = state.details.ssid ?? null;
+        const bssid = state.details.bssid ?? null;
+        const unknown = isUnknownSsid(ssid);
+        const next = {ssid, bssid, isWifi: true, isUnknown: unknown};
+        setWifiInfo(next);
+        wifiInfoRef.current = next;
+      }
+    });
+
     return () => unsubscribe();
   }, []);
 
-  // ── Permission ────────────────────────────────────────────
+  // ── Permission — FIXED FOR BOTH ANDROID AND iOS ───────────
   const requestPermission = useCallback(async () => {
     if (Platform.OS === 'android') {
       const r = await PermissionsAndroid.request(
@@ -236,23 +202,53 @@ export const GeofenceProvider = ({children, person}) => {
       );
       return r === PermissionsAndroid.RESULTS.GRANTED;
     }
-    return new Promise(resolve =>
-      Geolocation.requestAuthorization(resolve, () => resolve(false)),
-    );
+
+    // ── iOS FIX: Check if already granted first ──────────────
+    // requestAuthorization returns a STATUS STRING not true/false
+    return new Promise(resolve => {
+      Geolocation.getCurrentPosition(
+        () => {
+          // Can get position = permission already granted
+          console.log('✅ GeofenceContext: iOS location already granted');
+          resolve(true);
+        },
+        error => {
+          console.log('📍 GeofenceContext iOS check:', error.code, error.message);
+          if (error.code === 1) {
+            // PERMISSION_DENIED — need to request it
+            Geolocation.requestAuthorization(
+              status => {
+                console.log('📍 GeofenceContext iOS auth status:', status);
+                const isGranted =
+                  status === 'authorizedWhenInUse' ||
+                  status === 'authorizedAlways' ||
+                  status === 'whenInUse' ||
+                  status === 'always' ||
+                  status === 'granted';
+                resolve(isGranted);
+              },
+              () => resolve(false),
+            );
+          } else {
+            // Timeout or other error — permission likely granted
+            // GPS just took too long on first try
+            console.log('📍 GeofenceContext iOS: assuming granted, error:', error.code);
+            resolve(true);
+          }
+        },
+        {enableHighAccuracy: false, timeout: 3000, maximumAge: 60000},
+      );
+    });
   }, []);
 
   // ── enrichFences ──────────────────────────────────────────
-  // GPS + coordinates ONLY. No network check here.
-  // Networks array is stored on each fence for use at confirm-time.
   const enrichFences = useCallback((raw, cur) => {
     const now = new Date();
-
     return raw.map(f => {
       const lat = parseFloat(f.Latitude);
       const lng = parseFloat(f.Longitude);
       const radius = parseFloat(f.AllowedRadius);
-      const active =
-        isActiveFlag(f.IsFenceActive) && isActiveFlag(f.IsUserFenceActive);
+      const active = isActiveFlag(f.IsFenceActive) && isActiveFlag(f.IsUserFenceActive);
       const vFrom = f.ValidFrom ? new Date(f.ValidFrom) : null;
       const vTo = f.ValidTo ? new Date(f.ValidTo) : null;
       const dateValid = (!vFrom || now >= vFrom) && (!vTo || now <= vTo);
@@ -263,8 +259,7 @@ export const GeofenceProvider = ({children, person}) => {
         distanceMetres = Math.round(
           haversineDistance(cur.latitude, cur.longitude, lat, lng),
         );
-        withinRadius =
-          !isNaN(radius) && distanceMetres <= radius + SOFT_BUFFER_METRES;
+        withinRadius = !isNaN(radius) && distanceMetres <= radius + SOFT_BUFFER_METRES;
       }
 
       return {
@@ -276,7 +271,6 @@ export const GeofenceProvider = ({children, person}) => {
         dateValid,
         distanceMetres,
         withinRadius,
-        // Store networks for confirm-time validation — not used for matching here
         networks: Array.isArray(f.Networks)
           ? f.Networks.flatMap(n =>
               Array.isArray(n.DFGeoFencesNetworksSvcContract)
@@ -288,25 +282,16 @@ export const GeofenceProvider = ({children, person}) => {
     });
   }, []);
 
-  // ── selectBestFence ───────────────────────────────────────
-  // GPS-only: active + valid dates + within radius.
-  // Closest wins when multiple qualify.
   const selectBestFence = fences => {
-    const candidates = fences.filter(
-      f => f.active && f.dateValid && f.withinRadius,
-    );
+    const candidates = fences.filter(f => f.active && f.dateValid && f.withinRadius);
     if (candidates.length === 0) return null;
-    return candidates.reduce((a, b) =>
-      b.distanceMetres < a.distanceMetres ? b : a,
-    );
+    return candidates.reduce((a, b) => b.distanceMetres < a.distanceMetres ? b : a);
   };
 
-  // ── reEnrichWithCoords (G5) ───────────────────────────────
   const reEnrichWithCoords = useCallback(
     newCoords => {
       setAllFences(prev => {
         if (!prev.length) return prev;
-
         const enriched = enrichFences(
           prev.map(f => ({
             ...f,
@@ -321,27 +306,18 @@ export const GeofenceProvider = ({children, person}) => {
           })),
           newCoords,
         );
-
         const matched = selectBestFence(enriched);
         setMatchedFence(matched);
-        setLocationError(
-          matched ? null : 'You are outside all authorised zones.',
-        );
-
-        // M1 — clear manual selection if no longer in radius
-        // (multi-select feature commented out — see LocationPickerModal)
+        setLocationError(matched ? null : 'You are outside all authorised zones.');
         setManualSelectedFence(prev2 => {
           if (!prev2) return null;
           const stillValid = enriched.find(
             f =>
               String(f.GeoFenceID) === String(prev2.GeoFenceID) &&
-              f.withinRadius &&
-              f.active &&
-              f.dateValid,
+              f.withinRadius && f.active && f.dateValid,
           );
           return stillValid ?? null;
         });
-
         return enriched;
       });
     },
@@ -355,81 +331,58 @@ export const GeofenceProvider = ({children, person}) => {
     setLocationError(errorMessage);
   }, []);
 
-  // ── Main refresh ──────────────────────────────────────────
-  const refresh = useCallback(async () => {
+  // ── Core refresh ──────────────────────────────────────────
+  const _doRefresh = useCallback(async () => {
     setLocationLoading(true);
     setLocationError(null);
-
     try {
       const fresh = await fetchFreshCoords();
       if (!fresh) {
-        const errorMessage =
-          'Unable to get GPS location. Please enable location services.';
+        const errorMessage = 'Unable to get GPS location. Please enable location services.';
         resetFenceState(errorMessage);
         throw new Error(errorMessage);
       }
       setCoords(fresh);
       latestCoordsRef.current = fresh;
 
-      let raw = null;
-      try {
-        raw = await RetrieveByPerson({person});
-        if (raw && raw.length > 0) {
-          await AsyncStorage.setItem('@cached_geofences', JSON.stringify({
-            fetchedAt: Date.now(),
-            fences: raw,
-          }));
-        }
-      } catch (apiError) {
-        console.warn('RetrieveByPerson failed, attempting to use cache', apiError.message);
-        const cachedStr = await AsyncStorage.getItem('@cached_geofences');
-        if (cachedStr) {
-          const cachedData = JSON.parse(cachedStr);
-          const ageHours = (Date.now() - cachedData.fetchedAt) / (1000 * 60 * 60);
-          if (ageHours > 24) {
-            throw new Error('Offline geofence data is older than 24 hours. Please connect to the internet to update security policies.');
-          }
-          raw = cachedData.fences;
-          console.log('Using cached geofences from', new Date(cachedData.fetchedAt).toISOString());
-        } else {
-          throw new Error('Network error and no offline geofence data available.');
-        }
-      }
+      const raw = await RetrieveByPerson({person});
 
       if (!raw || raw.length === 0) {
-        const errorMessage =
-          'No geofence configured for your account. Contact HR.';
+        const errorMessage = 'No geofence configured for your account. Contact HR.';
         resetFenceState(errorMessage);
         throw new Error(errorMessage);
       }
 
       const enriched = enrichFences(raw, fresh);
       const matched = selectBestFence(enriched);
-      const errorMessage = matched
-        ? null
-        : 'You are outside all authorised zones.';
+      const errorMessage = matched ? null : 'You are outside all authorised zones.';
 
       setAllFences(enriched);
       setMatchedFence(matched);
       setManualSelectedFence(null);
       setLocationError(errorMessage);
 
-      return {
-        coords: fresh,
-        allFences: enriched,
-        matchedFence: matched,
-        locationError: errorMessage,
-      };
+      return {coords: fresh, allFences: enriched, matchedFence: matched, locationError: errorMessage};
     } catch (err) {
       console.error('[GeofenceContext]', err.message);
-      const errorMessage =
-        err?.message || 'Failed to verify location. Check your connection.';
+      const errorMessage = err?.message || 'Failed to verify location. Check your connection.';
       resetFenceState(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setLocationLoading(false);
     }
   }, [person, enrichFences, resetFenceState]);
+
+  // Deduplicated refresh
+  const refresh = useCallback(async () => {
+    if (inflightRefreshRef.current) return inflightRefreshRef.current;
+    inflightRefreshRef.current = _doRefresh();
+    try {
+      return await inflightRefreshRef.current;
+    } finally {
+      inflightRefreshRef.current = null;
+    }
+  }, [_doRefresh]);
 
   // ── Mount ─────────────────────────────────────────────────
   useEffect(() => {
@@ -444,6 +397,7 @@ export const GeofenceProvider = ({children, person}) => {
 
       setPermissionStatus('granted');
 
+      // ── watchPosition with iOS-required options ────────────
       watchId.current = Geolocation.watchPosition(
         pos => {
           if (!mounted) return;
@@ -457,17 +411,19 @@ export const GeofenceProvider = ({children, person}) => {
           latestCoordsRef.current = newCoords;
           reEnrichWithCoords(newCoords);
         },
-        () => {
+        err => {
+          console.warn('📍 watchPosition error:', err.message);
           if (mounted)
-            setLocationError(
-              'GPS signal lost. Please check location services.',
-            );
+            setLocationError('GPS signal lost. Please check location services.');
         },
         {
           enableHighAccuracy: true,
           distanceFilter: 10,
-          interval: 5000,
-          fastestInterval: 2000,
+          interval: 5000,           // Android only
+          fastestInterval: 2000,    // Android only
+          timeout: 20000,           // ← iOS required
+          maximumAge: 10000,        // ← iOS required
+          useSignificantChanges: false, // ← iOS required
         },
       );
 
@@ -475,6 +431,11 @@ export const GeofenceProvider = ({children, person}) => {
         await refresh();
       } catch {}
     })();
+
+    // Restore persisted clock in fence
+    AsyncStorage.getItem(CLOCK_IN_FENCE_KEY).then(raw => {
+      if (raw) setClockInFence(JSON.parse(raw));
+    });
 
     return () => {
       mounted = false;
@@ -485,7 +446,14 @@ export const GeofenceProvider = ({children, person}) => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const recordClockInFence = useCallback(fence => setClockInFence(fence), []);
+  const recordClockInFence = useCallback(async fence => {
+    setClockInFence(fence);
+    if (fence) {
+      await AsyncStorage.setItem(CLOCK_IN_FENCE_KEY, JSON.stringify(fence));
+    } else {
+      await AsyncStorage.removeItem(CLOCK_IN_FENCE_KEY);
+    }
+  }, []);
 
   const effectiveMatchedFence = manualSelectedFence ?? matchedFence;
 
@@ -502,7 +470,7 @@ export const GeofenceProvider = ({children, person}) => {
         setManualSelectedFence,
         clockInFence,
         recordClockInFence,
-        wifiInfo, // current WiFi state for ConfirmScreens
+        wifiInfo,
       }}>
       {children}
     </GeofenceContext.Provider>

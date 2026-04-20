@@ -8,6 +8,7 @@ import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const FIELDS = [
   'BSSID',
+  'DeviceId',
   'FenceName',
   'GenerationType',
   'GeoFenceID',
@@ -42,8 +43,12 @@ const CreateUserAttendance = async ({attendanceData}) => {
 
     if (typeof normalizedData.VerifyFaceId === 'boolean') {
       normalizedData.VerifyFaceId = normalizedData.VerifyFaceId ? 'Yes' : 'No';
-    } else if (normalizedData.VerifyFaceId === 1 || normalizedData.VerifyFaceId === 0) {
-      normalizedData.VerifyFaceId = normalizedData.VerifyFaceId === 1 ? 'Yes' : 'No';
+    } else if (
+      normalizedData.VerifyFaceId === 1 ||
+      normalizedData.VerifyFaceId === 0
+    ) {
+      normalizedData.VerifyFaceId =
+        normalizedData.VerifyFaceId === 1 ? 'Yes' : 'No';
     }
 
     const soapBody = `
@@ -101,11 +106,17 @@ const CreateUserAttendance = async ({attendanceData}) => {
 
     const cleanedResult = cleanObject(result);
 
-    const successVal = cleanedResult?.success ?? cleanedResult?.Success;
+    // The AX backend returns 'IsSuccess' (capital I capital S).
+    // Check all known casing variants so no backend rejection is silently swallowed.
+    const successVal =
+      cleanedResult?.IsSuccess ??
+      cleanedResult?.isSuccess ??
+      cleanedResult?.success ??
+      cleanedResult?.Success;
     if (successVal === false || String(successVal).toLowerCase() === 'false') {
       const serverMsg =
-        cleanedResult?.message ||
         cleanedResult?.Message ||
+        cleanedResult?.message ||
         cleanedResult?.errorMessage ||
         'Attendance was rejected by the server.';
       throw new Error(serverMsg);

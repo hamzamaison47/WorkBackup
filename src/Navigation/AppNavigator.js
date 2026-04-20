@@ -9,9 +9,12 @@ import RequestForRegistration from '../screens/RequestForRegistration/RequestFor
 import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 import SettingsScreen from '../screens/Settings/Settingsscreen';
+import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
+import OutlookCalendarScreen from '../screens/Settings/OutlookCalendarScreen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
+import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
 
 const Stack = createStackNavigator();
 
@@ -46,7 +49,6 @@ const AppNavigator = () => {
         component={LoginScreen}
         options={{headerShown: false}}
       />
-
       {/* Screens WITH session timeout */}
       <Stack.Screen name="DrawerNavigator" options={{headerShown: false}}>
         {() => (
@@ -55,7 +57,6 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
       <Stack.Screen
         name="RequestForRegistration"
         options={{headerShown: false}}>
@@ -65,7 +66,6 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
       <Stack.Screen
         name="CreateAttendanceScreen"
         options={{
@@ -78,17 +78,25 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
-
       <Stack.Screen
         name="ConfigSelectionScreen"
         component={ConfigSelectionScreen}
         options={{headerShown: false}}
       />
-
       <Stack.Screen
         name="QRSetupScreen"
         component={QRSetupScreen}
         options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="OutlookCalendarScreen"
+        component={OutlookCalendarScreen}
+        options={{headerShown: false}}
+      />
+
+      <Stack.Screen
+        name="AttendanceManagement"
+        component={AttendanceManagement}
       />
 
       {/* SettingsScreen — must NOT hide the header so ActionPaneContainer
@@ -97,6 +105,13 @@ const AppNavigator = () => {
         {() => (
           <ScreenWithSessionTimeout>
             <SettingsScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="WorkflowHistoryScreen" options={{headerShown: true}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <WorkflowHistoryScreen />
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>

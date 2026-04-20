@@ -1,89 +1,92 @@
 /* eslint-disable curly */
 // ─────────────────────────────────────────────
 // screens/AttendanceManagement/helpers.js
-// Shared formatters + server-fetch helpers
+// Shared formatters + server-fetch helper
+// PKT = UTC+5 — all PunchDateTime values from server are UTC
+//
+// OPTIMIZATION: Removed 5s debounce cache (was always invalidated before use).
+// Removed offline queue merge (system is online-first, no offline support).
+// Fixed canClockOut: now blocks when an open break exists.
 // ─────────────────────────────────────────────
 import {RetrieveByPersonAttendance} from '../../API/AttendanceManagement/RetrieveByPersonAttendance';
-import {getSyncQueue} from '../../services/AttendanceManagement/SyncManager';
 
 export const STORAGE_KEY = '@attendance_records';
+
+// ─────────────────────────────────────────────
+// UTC → PKT helper  (server stores in UTC, display in PKT = UTC+5)
+// ─────────────────────────────────────────────
+const toPKT = date => new Date(new Date(date).getTime() + 5 * 60 * 60 * 1000);
 
 // ─────────────────────────────────────────────
 // Formatters
 // ─────────────────────────────────────────────
 export const formatTime = date => {
-  const d = new Date(date);
-  let h = d.getHours();
-  const m = d.getMinutes().toString().padStart(2, '0');
+  const d = toPKT(date);
+  let h = d.getUTCHours();
+  const m = d.getUTCMinutes().toString().padStart(2, '0');
   const ap = h >= 12 ? 'pm' : 'am';
   h = h % 12 || 12;
   return `${h}:${m} ${ap}`;
 };
 
 export const formatDate = date => {
-  const d = new Date(date);
+  const d = toPKT(date);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
-  return `${days[d.getDay()]}, ${
-    months[d.getMonth()]
-  } ${d.getDate()}, ${d.getFullYear()}`;
+  return `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 };
 
 export const formatDateShort = date => {
-  const d = new Date(date);
+  const d = toPKT(date);
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
-  return `${months[d.getMonth()]} ${d.getDate()}`;
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 };
 
 export const formatElapsed = seconds => {
   const h = Math.floor(seconds / 3600).toString();
-  const m = Math.floor((seconds % 3600) / 60)
-    .toString()
-    .padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
   const s = (seconds % 60).toString().padStart(2, '0');
   return `${h}:${m}:${s}`;
 };
 
 export const formatDuration = ms => {
-  if (!ms) return '0h 0m';
+  if (!ms || ms <= 0) return '0h 0m';
   const totalMin = Math.floor(ms / 60000);
   const h = Math.floor(totalMin / 60);
   const m = totalMin % 60;
+  if (h === 0) return `${m}m`;
   return `${h}h ${m}m`;
 };
 
+export const formatDurationShort = ms => {
+  if (!ms || ms <= 0) return '—';
+  const totalMin = Math.floor(ms / 60000);
+  if (totalMin < 60) return `${totalMin} min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+};
+
+// Returns true if the given date (UTC string) is "today" in PKT
+export const isToday = dateStr => {
+  if (!dateStr) return false;
+  const d = toPKT(dateStr);
+  const now = toPKT(new Date().toISOString());
+  return (
+    d.getUTCFullYear() === now.getUTCFullYear() &&
+    d.getUTCMonth() === now.getUTCMonth() &&
+    d.getUTCDate() === now.getUTCDate()
+  );
+};
+
 // ─────────────────────────────────────────────
-// GenerationType integer → action string mapping
-//   1 = ClockIn
-//   2 = ClockOut
-//   3 = StartBreak
-//   4 = EndBreak
+// GenerationType string → integer mapping
 // ─────────────────────────────────────────────
 const GEN_TYPE = {
   ClockIn: 1,
@@ -94,19 +97,10 @@ const GEN_TYPE = {
 
 // ─────────────────────────────────────────────
 // aggregateServerPunches
-//
-// Converts a flat array of server punch records:
-//   [ { GenerationType, PunchDateTime, RecId, ... }, ... ]
-// into the grouped shift format the UI expects:
-//   [ { id, clockIn, clockOut, breaks: [...], RecId, FenceName, ... } ]
-//
-// Punches are sorted chronologically (oldest first) so we can
-// reconstruct a sessionable timeline.
 // ─────────────────────────────────────────────
 export const aggregateServerPunches = flatPunches => {
   if (!flatPunches || !flatPunches.length) return [];
 
-  // Automatically drop completely invalid payloads (e.g. phantom XML nodes lacking required fields)
   const validPunches = flatPunches.filter(
     p =>
       p.GenerationType !== undefined &&
@@ -116,7 +110,6 @@ export const aggregateServerPunches = flatPunches => {
 
   if (!validPunches.length) return [];
 
-  // Sort ascending by PunchDateTime
   const sorted = [...validPunches].sort(
     (a, b) =>
       new Date(a.PunchDateTime).getTime() - new Date(b.PunchDateTime).getTime(),
@@ -126,31 +119,25 @@ export const aggregateServerPunches = flatPunches => {
   let currentShift = null;
 
   for (const punch of sorted) {
-    // GenerationType can arrive as a string ("ClockIn") or integer (1).
-    // Normalise to integer so the switch always works.
     const rawType = punch.GenerationType;
     const type =
       typeof rawType === 'string' && isNaN(Number(rawType))
-        ? GEN_TYPE[rawType] // "ClockIn" → 1, "ClockOut" → 2, …
-        : Number(rawType); // "1" or 1 → 1
+        ? GEN_TYPE[rawType]
+        : Number(rawType);
     const time = punch.PunchDateTime;
     const recId = punch.RecId;
 
     switch (type) {
       case GEN_TYPE.ClockIn: {
-        // Start a new shift — even if one was already open (handles edge cases)
         currentShift = {
-          // Use the RecId of the clock-in punch as the shift id
           id: recId,
           RecId: recId,
           clockIn: time,
           clockOut: null,
           breaks: [],
-          // Metadata from the server punch
           FenceName: punch.FenceName,
           LocationCode: punch.LocationCode,
           GeoFenceID: punch.GeoFenceID,
-          // Collect all RecIds belonging to this shift
           punchRecIds: [recId],
         };
         shifts.push(currentShift);
@@ -163,7 +150,6 @@ export const aggregateServerPunches = flatPunches => {
           currentShift.punchRecIds.push(recId);
           currentShift.clockOutRecId = recId;
         } else {
-          // Orphan clock-out — no open shift; create a synthetic one
           const orphan = {
             id: recId,
             RecId: recId,
@@ -178,7 +164,6 @@ export const aggregateServerPunches = flatPunches => {
           };
           shifts.push(orphan);
         }
-        // Reset — clock-out closes the session
         currentShift = null;
         break;
       }
@@ -203,7 +188,6 @@ export const aggregateServerPunches = flatPunches => {
             lastBreak.breakEnd = time;
             lastBreak.breakEndRecId = recId;
           } else {
-            // Orphan end-break
             currentShift.breaks.push({
               breakStart: null,
               breakEnd: time,
@@ -224,164 +208,84 @@ export const aggregateServerPunches = flatPunches => {
 };
 
 // ─────────────────────────────────────────────
-// mergeQueuedPunches
-//
-// Injects pending offline-queue entries on top of
-// already-aggregated server shifts so the UI shows
-// optimistic state before the server has the data.
-// ─────────────────────────────────────────────
-const mergeQueuedPunches = (serverShifts, queueItems) => {
-  if (!queueItems || !queueItems.length) return serverShifts;
-
-  // Only process items that haven't been synced yet
-  const pending = queueItems.filter(q => q.status === 'pending');
-  if (!pending.length) return serverShifts;
-
-  // Build a synthetic flat punch array from the queue
-  const syntheticPunches = pending.map(item => ({
-    GenerationType: item.payload.GenerationType,
-    PunchDateTime: item.payload.PunchDateTime,
-    RecId: `offline_${item.id}`, // temporary id
-    FenceName: item.payload.FenceName,
-    LocationCode: item.payload.LocationCode,
-    GeoFenceID: item.payload.GeoFenceID,
-    _isOffline: true,
-  }));
-
-  // Find server punches (already flat) — re-flatten the server shifts then re-aggregate
-  // so ordering is deterministic across online + offline punches
-  const serverPunches = serverShifts.flatMap(shift => {
-    const punches = [];
-    if (shift.clockIn) {
-      punches.push({
-        GenerationType: GEN_TYPE.ClockIn,
-        PunchDateTime: shift.clockIn,
-        RecId: shift.RecId,
-        FenceName: shift.FenceName,
-        LocationCode: shift.LocationCode,
-        GeoFenceID: shift.GeoFenceID,
-      });
-    }
-    (shift.breaks || []).forEach(b => {
-      if (b.breakStart)
-        punches.push({
-          GenerationType: GEN_TYPE.StartBreak,
-          PunchDateTime: b.breakStart,
-          RecId: b.breakStartRecId,
-          FenceName: shift.FenceName,
-          LocationCode: shift.LocationCode,
-          GeoFenceID: shift.GeoFenceID,
-        });
-      if (b.breakEnd)
-        punches.push({
-          GenerationType: GEN_TYPE.EndBreak,
-          PunchDateTime: b.breakEnd,
-          RecId: b.breakEndRecId,
-          FenceName: shift.FenceName,
-          LocationCode: shift.LocationCode,
-          GeoFenceID: shift.GeoFenceID,
-        });
-    });
-    if (shift.clockOut) {
-      punches.push({
-        GenerationType: GEN_TYPE.ClockOut,
-        PunchDateTime: shift.clockOut,
-        RecId: shift.clockOutRecId,
-        FenceName: shift.FenceName,
-        LocationCode: shift.LocationCode,
-        GeoFenceID: shift.GeoFenceID,
-      });
-    }
-    return punches;
-  });
-
-  return aggregateServerPunches([...serverPunches, ...syntheticPunches]);
-};
-
-// ─────────────────────────────────────────────
-// loadRecords  (the new server-first version)
-//
-// Requires `person` (PersonRecId) to query the API.
-// Falls back to an empty array on error.
-// Always merges unsynced offline-queue entries on top.
+// loadRecords  — always fetches fresh from server (online-first).
+// No local caching — QA constraint requires fresh data every time.
 // ─────────────────────────────────────────────
 export const loadRecords = async ({person} = {}) => {
+  if (!person) return [];
   try {
-    let serverShifts = [];
-
-    if (person) {
-      const flatPunches = await RetrieveByPersonAttendance({person});
-      serverShifts = aggregateServerPunches(flatPunches);
-    }
-
-    // Merge unsynced offline queue on top
-    const queue = await getSyncQueue();
-    return mergeQueuedPunches(serverShifts, queue);
+    const flatPunches = await RetrieveByPersonAttendance({person});
+    return aggregateServerPunches(flatPunches);
   } catch (err) {
-    console.warn(
-      '[loadRecords] Error fetching from server, using queue only:',
-      err.message,
-    );
-    // Fallback: try to show at least the offline queue
-    try {
-      const queue = await getSyncQueue();
-      const pending = queue.filter(q => q.status !== 'synced');
-      const syntheticPunches = pending.map(item => ({
-        GenerationType: item.payload.GenerationType,
-        PunchDateTime: item.payload.PunchDateTime,
-        RecId: `offline_${item.id}`,
-        FenceName: item.payload.FenceName,
-        LocationCode: item.payload.LocationCode,
-        GeoFenceID: item.payload.GeoFenceID,
-        _isOffline: true,
-      }));
-      return aggregateServerPunches(syntheticPunches);
-    } catch {
-      return [];
-    }
+    console.warn('[loadRecords] Error fetching from server:', err.message);
+    return [];
   }
 };
 
-// saveRecords is intentionally removed — the server is the source of truth.
-// All writes go through CreateUserAttendance via SyncManager.enqueueAttendance.
-
 // ─────────────────────────────────────────────
-// Attendance workflow guard helpers
-// Used across TimeClockScreen to prevent:
-//   A5 — Clock out without clock in
-//   A6 — Break without clock in
-//   A7 — Double clock in
-//   A8 — Break start twice
-//   A9 — Break end without active break
+// Workflow guard helpers
+//
+// P1.3 FIX: canClockOut now returns false if there is an open (unended) break.
+// Previously this was UI-only — a race condition could bypass it.
 // ─────────────────────────────────────────────
 export const canClockIn = records => {
   if (!records.length) return true;
   const last = records[records.length - 1];
-  return !!last.clockOut; // A7: must not have an open session
+  return !!last.clockOut;
 };
 
 export const canStartBreak = records => {
-  if (!records.length) return false; // A6
+  if (!records.length) return false;
   const last = records[records.length - 1];
-  if (last.clockOut) return false; // A6: already clocked out
+  if (last.clockOut) return false;
   const breaks = last.breaks || [];
   if (!breaks.length) return true;
   const lastBreak = breaks[breaks.length - 1];
-  return !!lastBreak.breakEnd; // A8: last break must be ended
+  return !!lastBreak.breakEnd;
 };
 
 export const canEndBreak = records => {
-  if (!records.length) return false; // A9
+  if (!records.length) return false;
   const last = records[records.length - 1];
   if (last.clockOut) return false;
   const breaks = last.breaks || [];
   if (!breaks.length) return false;
   const lastBreak = breaks[breaks.length - 1];
-  return !lastBreak.breakEnd; // A9: must have an open break
+  return !lastBreak.breakEnd;
 };
 
+// FIX: Clock out is blocked when there is an open break (breakEnd is null).
+// Must end break before clocking out.
 export const canClockOut = records => {
-  if (!records.length) return false; // A5
+  if (!records.length) return false;
   const last = records[records.length - 1];
-  return !last.clockOut; // A5: must have an open session
+  if (last.clockOut) return false; // already clocked out
+  // Block if there is an ongoing break
+  const breaks = last.breaks || [];
+  if (breaks.length) {
+    const lastBreak = breaks[breaks.length - 1];
+    if (lastBreak.breakStart && !lastBreak.breakEnd) return false;
+  }
+  return true;
+};
+
+// ─────────────────────────────────────────────
+// getSessionStats — compute stats for a shift record
+// ─────────────────────────────────────────────
+export const getSessionStats = record => {
+  if (!record) return null;
+  const breaks = record.breaks || [];
+  let breakMs = 0;
+  breaks.forEach(b => {
+    if (b.breakStart && b.breakEnd) {
+      breakMs += new Date(b.breakEnd) - new Date(b.breakStart);
+    }
+  });
+  const completedBreaks = breaks.filter(b => b.breakEnd).length;
+  const grossMs = record.clockIn
+    ? (record.clockOut ? new Date(record.clockOut) : Date.now()) -
+      new Date(record.clockIn)
+    : 0;
+  const netMs = Math.max(0, grossMs - breakMs);
+  return {breakMs, completedBreaks, grossMs, netMs};
 };

@@ -5,6 +5,7 @@ import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {normalizeObject} from './soapNormalize';
 
 const RetrieveByPersonAttendance = async ({person}) => {
   try {
@@ -24,8 +25,10 @@ const RetrieveByPersonAttendance = async ({person}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    console.log('Person =-=-=-=-=-', {person});
-    console.log('soapEnvelope =-=-=-=-=-', {soapEnvelope});
+    if (__DEV__) {
+      console.log('Person =-=-=-=-=-', {person});
+      console.log('soapEnvelope =-=-=-=-=-', {soapEnvelope});
+    }
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/DFUserAttendanceSvcGroup`,
@@ -35,8 +38,12 @@ const RetrieveByPersonAttendance = async ({person}) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction: 'http://tempuri.org/DFUserAttendanceSvc/retrieveByPerson',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
         },
         responseType: 'text',
+        timeout: 10000, // 10 seconds timeout for slow internet
       },
     );
 
@@ -83,77 +90,32 @@ const RetrieveByPersonAttendance = async ({person}) => {
       };
     });
 
-    // console.log('Final cleaned person location data:', cleanedData);
-
-    console.log(
-      'Final cleaned person attendance data:',
-      JSON.stringify(cleanedData, null, 2),
-    );
+    if (__DEV__) {
+      console.log(
+        'Final cleaned person attendance data:',
+        cleanedData?.length,
+        'records fetched',
+      );
+      console.log('Final cleaned person attendance data:', cleanedData);
+    }
 
     return cleanedData;
   } catch (err) {
-    console.error(
-      'Retrieve Person attendance SOAP error:',
-      err.response?.data || err.message,
-    );
+    if (__DEV__) {
+      console.error(
+        'Retrieve Person attendance SOAP error:',
+        err.response?.data || err.message,
+      );
+    }
+    if (
+      err.code === 'ECONNABORTED' ||
+      !err.response ||
+      err.message?.toLowerCase().includes('network error')
+    ) {
+      throw new Error('Internet connection is slow or down. Please try again.');
+    }
     throw err;
   }
-};
-
-const removeNamespace = key => {
-  return key.includes(':') ? key.split(':')[1] : key;
-};
-
-const normalizeValue = value => {
-  if (value === null || value === undefined || value === '') return [];
-
-  if (value === 'Yes') return 1;
-  if (value === 'No') return 0;
-
-  if (typeof value === 'string' && !isNaN(value)) {
-    return Number(value);
-  }
-
-  return value;
-};
-
-const normalizeObject = obj => {
-  if (Array.isArray(obj)) {
-    return obj.map(normalizeObject);
-  }
-
-  if (typeof obj === 'object' && obj !== null) {
-    const keys = Object.keys(obj);
-
-    // 🔹 Auto-flatten SOAP wrappers like:
-    // { DFGeoFencesNetworksSvcContract: [ ... ] }
-    if (keys.length === 1 && Array.isArray(obj[keys[0]])) {
-      return normalizeObject(obj[keys[0]]);
-    }
-
-    const newObj = {};
-
-    keys.forEach(key => {
-      const cleanKey = removeNamespace(key);
-      const value = obj[key];
-
-      if (typeof value === 'object') {
-        const normalized = normalizeObject(value);
-
-        if (Array.isArray(normalized)) {
-          newObj[cleanKey] = normalized;
-        } else {
-          newObj[cleanKey] = [normalized];
-        }
-      } else {
-        newObj[cleanKey] = normalizeValue(value);
-      }
-    });
-
-    return newObj;
-  }
-
-  return normalizeValue(obj);
 };
 
 export {RetrieveByPersonAttendance};

@@ -8,6 +8,11 @@ const RetrieveUserInfoByEmail = async ({email}) => {
   try {
     // Get configuration from secure storage
     const config = await getActiveConfigData();
+    console.log(
+      '🔍 Full active config keys:',
+      JSON.stringify(Object.keys(config || {})),
+    );
+    console.log('🔍 Full active config:', JSON.stringify(config));
 
     // console.log({config});
 
@@ -20,7 +25,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
       <soapenv:Header>
         <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-            <dat:Company>DAT</dat:Company>
+            <dat:Company>USMF</dat:Company>
             <dat:Language>en-us</dat:Language>
         </dat:CallContext>
       </soapenv:Header>

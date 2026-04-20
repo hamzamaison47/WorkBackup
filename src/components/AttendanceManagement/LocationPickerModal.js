@@ -1,14 +1,9 @@
 /* eslint-disable no-unused-vars */
-// ─────────────────────────────────────────────
-// components/AttendanceManagement/LocationPickerModal.js
-//
-// FLOW CHANGE:
-//   - Shows GPS + coordinate status only.
-//   - Network badges removed (network check happens at confirm-time).
-//   - Multi-select is COMMENTED OUT (not removed).
-// ─────────────────────────────────────────────
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
+// ─────────────────────────────────────────────
+// components/AttendanceManagement/LocationPickerModal.js
+// ─────────────────────────────────────────────
 import React, {useCallback} from 'react';
 import {
   View,
@@ -27,22 +22,56 @@ import {C, R, Sh} from './theme';
 const fmtDist = m =>
   m == null ? '—' : m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
 
+const isQRActive = fence => {
+  if (!fence) return false;
+  const v = String(fence.IsQRCodeActive ?? '')
+    .trim()
+    .toLowerCase();
+  return v === '1' || v === 'yes' || v === 'true';
+};
+
+const isFaceActive = fence => {
+  if (!fence) return false;
+  const v = String(fence.IsFaceIDActive ?? '').trim();
+  return v === 'Required' || v === 'RequiredWithBackground';
+};
+
 // ─────────────────────────────────────────────
-// Single fence row — GPS status only
+// Single fence row
 // ─────────────────────────────────────────────
 const FenceRow = ({item, isMatched}) => {
   const isInactive = !item.active || !item.dateValid;
   const isOutside = !item.withinRadius;
+  const hasNetwork = Array.isArray(item.networks) && item.networks.length > 0;
+  const qrRequired = isQRActive(item);
+  const faceRequired = isFaceActive(item);
 
   return (
     <View
       style={[S.row, isMatched && S.rowMatched, isInactive && S.rowInactive]}>
-      {/* Icon */}
+      {/* Left colour bar */}
+      <View
+        style={[
+          S.rowBar,
+          {
+            backgroundColor: isMatched
+              ? C.greenMid
+              : isInactive
+              ? C.redMid
+              : isOutside
+              ? C.border
+              : C.blueMid,
+          },
+        ]}
+      />
+
+      {/* Status icon */}
       <View
         style={[
           S.icon,
           isMatched && S.iconMatched,
           isInactive && S.iconInactive,
+          !isMatched && !isInactive && isOutside && S.iconOutside,
         ]}>
         <Text
           style={[
@@ -66,14 +95,15 @@ const FenceRow = ({item, isMatched}) => {
           {item.FenceName}
         </Text>
 
-        {item.LocationDescription || item.LocationCode ? (
+        {(item.LocationDescription || item.LocationCode) && (
           <Text style={S.rowDesc} numberOfLines={1}>
-            {item.LocationDescription || item.LocationCode}
+            {item.LocationCode}
+            {item.LocationDescription ? `  ·  ${item.LocationDescription}` : ''}
           </Text>
-        ) : null}
+        )}
 
+        {/* Distance pill */}
         <View style={S.pills}>
-          {/* Distance + in/out */}
           <View
             style={[
               S.pill,
@@ -97,14 +127,12 @@ const FenceRow = ({item, isMatched}) => {
             </Text>
           </View>
 
-          {/* Allowed radius */}
           {!isNaN(item.allowedRadius) && (
             <View style={S.pillGrey}>
               <Text style={S.pillGreyTxt}>Radius {item.allowedRadius} m</Text>
             </View>
           )}
 
-          {/* M4 — expired */}
           {item.active && !item.dateValid && (
             <View style={[S.pillGrey, {backgroundColor: C.redLight}]}>
               <Text style={[S.pillGreyTxt, {color: C.redDark}]}>Expired</Text>
@@ -112,14 +140,45 @@ const FenceRow = ({item, isMatched}) => {
           )}
         </View>
 
-        {/* Network hint — informational only, validation happens at confirm-time */}
-        {item.networks?.length > 0 && (
-          <Text style={S.networkHint}>
-            📶 Network verification required on confirm
-          </Text>
+        {/* Verification requirements */}
+        {(qrRequired || faceRequired || hasNetwork) && (
+          <View style={S.verifyRow}>
+            {qrRequired && (
+              <View
+                style={[
+                  S.verifyBadge,
+                  {backgroundColor: '#FEF3C7', borderColor: '#FCD34D'},
+                ]}>
+                <Text style={[S.verifyBadgeTxt, {color: '#92400E'}]}>
+                  QR required
+                </Text>
+              </View>
+            )}
+            {faceRequired && (
+              <View
+                style={[
+                  S.verifyBadge,
+                  {backgroundColor: '#EDE9FE', borderColor: '#C4B5FD'},
+                ]}>
+                <Text style={[S.verifyBadgeTxt, {color: '#5B21B6'}]}>
+                  Face ID
+                </Text>
+              </View>
+            )}
+            {hasNetwork && (
+              <View
+                style={[
+                  S.verifyBadge,
+                  {backgroundColor: C.blueLight, borderColor: '#93C5FD'},
+                ]}>
+                <Text style={[S.verifyBadgeTxt, {color: C.blueDark}]}>
+                  Network verified
+                </Text>
+              </View>
+            )}
+          </View>
         )}
 
-        {/* M3 — inactive label */}
         {isInactive && (
           <Text style={S.inactiveTag}>
             {!item.active ? 'Inactive' : 'Schedule Expired'}
@@ -127,8 +186,13 @@ const FenceRow = ({item, isMatched}) => {
         )}
       </View>
 
-      {/* Right dot */}
-      <View style={[S.dot, isMatched ? S.dotGreen : S.dotGrey]} />
+      {/* Right status dot */}
+      <View
+        style={[
+          S.dot,
+          isMatched ? S.dotGreen : isOutside ? S.dotGrey : S.dotBlue,
+        ]}
+      />
     </View>
   );
 };
@@ -144,21 +208,9 @@ const LocationPickerModal = ({visible, onClose}) => {
     locationError,
     coords,
     refresh,
-    // setManualSelectedFence,  // MULTI-SELECT COMMENTED OUT
   } = useGeofence();
 
   const matchedId = matchedFence?.GeoFenceID ?? null;
-
-  // MULTI-SELECT COMMENTED OUT:
-  // U2 — manual selection was previously allowed for fences in radius.
-  // Disabled for now — auto-selection (closest GPS match) is used exclusively.
-  //
-  // const handleManualSelect = useCallback(item => {
-  //   const selectable = item.withinRadius && item.active && item.dateValid;
-  //   if (!selectable) return;
-  //   setManualSelectedFence(item);
-  //   onClose();
-  // }, [setManualSelectedFence, onClose]);
 
   return (
     <Modal
@@ -167,17 +219,17 @@ const LocationPickerModal = ({visible, onClose}) => {
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
       <SafeAreaView style={S.sheet}>
-        {/* Handle bar */}
+        {/* Handle */}
         <View style={S.handleWrap}>
           <View style={S.handle} />
         </View>
 
         {/* Header */}
         <View style={S.header}>
-          <View>
+          <View style={{flex: 1}}>
             <Text style={S.headerTitle}>Authorised Locations</Text>
             <Text style={S.headerSub}>
-              GPS verified. Network check happens when you confirm.
+              GPS verified · network &amp; QR checks happen at confirm-time
             </Text>
           </View>
           {!locationLoading && (
@@ -193,6 +245,11 @@ const LocationPickerModal = ({visible, onClose}) => {
             <View style={S.gpsDot} />
             <Text style={S.gpsTxt}>
               GPS active · ±{Math.round(coords.accuracy ?? 0)} m accuracy
+              {coords.latitude
+                ? `  ·  ${coords.latitude.toFixed(
+                    4,
+                  )}, ${coords.longitude.toFixed(4)}`
+                : ''}
             </Text>
           </View>
         )}
@@ -215,7 +272,8 @@ const LocationPickerModal = ({visible, onClose}) => {
             <Text style={S.centerEmoji}>⚠️</Text>
             <Text style={S.centerTitle}>No locations found</Text>
             <Text style={S.centerSub}>
-              {locationError ?? 'No geofence configured for your account.'}
+              {locationError ??
+                'No geofence configured for your account. Contact HR.'}
             </Text>
             <TouchableOpacity style={S.retryBtn} onPress={refresh}>
               <Text style={S.retryTxt}>Try Again</Text>
@@ -223,7 +281,7 @@ const LocationPickerModal = ({visible, onClose}) => {
           </View>
         ) : (
           <>
-            {/* G3 — Inside/outside status banner */}
+            {/* Status banner */}
             <View style={[S.banner, matchedId ? S.bannerGreen : S.bannerRed]}>
               <View
                 style={[
@@ -254,16 +312,6 @@ const LocationPickerModal = ({visible, onClose}) => {
               </View>
             </View>
 
-            {/* MULTI-SELECT HINT COMMENTED OUT:
-            {allFences.filter(f => f.withinRadius && f.active && f.dateValid).length > 1 && (
-              <View style={S.hintBanner}>
-                <Text style={S.hintTxt}>
-                  💡 Multiple zones match your position. Tap one to select it.
-                </Text>
-              </View>
-            )} */}
-
-            {/* Fence list — sorted closest first */}
             <FlatList
               data={[...allFences].sort((a, b) => {
                 const aOk = a.active && a.dateValid && a.withinRadius ? 0 : 1;
@@ -273,8 +321,6 @@ const LocationPickerModal = ({visible, onClose}) => {
               })}
               keyExtractor={item => String(item.GeoFenceID)}
               renderItem={({item}) => (
-                // MULTI-SELECT COMMENTED OUT: rows are view-only, no tap-to-select
-                // To re-enable: wrap in TouchableOpacity calling handleManualSelect(item)
                 <FenceRow
                   item={item}
                   isMatched={String(item.GeoFenceID) === String(matchedId)}
@@ -286,7 +332,7 @@ const LocationPickerModal = ({visible, onClose}) => {
           </>
         )}
 
-        {/* Close */}
+        {/* Close button */}
         <View style={S.footer}>
           <TouchableOpacity style={S.closeBtn} onPress={onClose}>
             <Text style={S.closeTxt}>Close</Text>
@@ -337,7 +383,7 @@ const S = StyleSheet.create({
     borderBottomColor: C.border,
   },
   gpsDot: {width: 7, height: 7, borderRadius: 4, backgroundColor: C.greenMid},
-  gpsTxt: {fontSize: 12, color: C.greenDark, fontWeight: '500'},
+  gpsTxt: {fontSize: 11, color: C.greenDark, fontWeight: '500'},
 
   banner: {
     flexDirection: 'row',
@@ -369,10 +415,10 @@ const S = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     backgroundColor: C.surface,
     borderRadius: R.md,
-    padding: 14,
+    overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: 'transparent',
     ...Sh.xs,
@@ -380,27 +426,32 @@ const S = StyleSheet.create({
   rowMatched: {borderColor: C.greenMid, backgroundColor: '#F0FFF8'},
   rowInactive: {opacity: 0.45},
 
+  rowBar: {width: 4, alignSelf: 'stretch'},
+
   icon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: C.surfaceAlt,
     borderWidth: 1.5,
     borderColor: C.border,
+    flexShrink: 0,
+    marginLeft: 4,
   },
   iconMatched: {backgroundColor: C.greenLight, borderColor: C.greenMid},
   iconInactive: {backgroundColor: C.redLight, borderColor: C.redMid},
-  iconChar: {fontSize: 16, fontWeight: '700', color: C.inkMuted},
+  iconOutside: {backgroundColor: C.surfaceAlt, borderColor: C.border},
+  iconChar: {fontSize: 15, fontWeight: '700', color: C.inkMuted},
 
-  rowBody: {flex: 1},
-  rowName: {fontSize: 15, fontWeight: '600', color: C.ink, marginBottom: 2},
+  rowBody: {flex: 1, paddingVertical: 12, paddingRight: 4},
+  rowName: {fontSize: 14, fontWeight: '600', color: C.ink, marginBottom: 2},
   rowNameMatch: {color: C.greenDark},
   rowNameInactive: {color: C.inkFaint},
-  rowDesc: {fontSize: 12, color: C.inkFaint, marginBottom: 6},
+  rowDesc: {fontSize: 11, color: C.inkFaint, marginBottom: 5},
 
-  pills: {flexDirection: 'row', flexWrap: 'wrap', gap: 5},
+  pills: {flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 5},
   pill: {paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.full},
   pillGreen: {backgroundColor: C.greenLight},
   pillBlue: {backgroundColor: C.blueLight},
@@ -416,11 +467,21 @@ const S = StyleSheet.create({
     borderRadius: R.full,
   },
   pillGreyTxt: {fontSize: 11, color: C.inkMuted, fontWeight: '500'},
-  inactiveTag: {fontSize: 11, color: C.redMid, marginTop: 4, fontWeight: '500'},
-  networkHint: {fontSize: 11, color: C.inkMuted, marginTop: 4},
 
-  dot: {width: 12, height: 12, borderRadius: 6},
+  verifyRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 5},
+  verifyBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: R.full,
+    borderWidth: 1,
+  },
+  verifyBadgeTxt: {fontSize: 10, fontWeight: '600'},
+
+  inactiveTag: {fontSize: 11, color: C.redMid, marginTop: 4, fontWeight: '500'},
+
+  dot: {width: 10, height: 10, borderRadius: 5, marginRight: 12, flexShrink: 0},
   dotGreen: {backgroundColor: C.greenMid},
+  dotBlue: {backgroundColor: C.blueMid},
   dotGrey: {backgroundColor: C.border},
 
   center: {

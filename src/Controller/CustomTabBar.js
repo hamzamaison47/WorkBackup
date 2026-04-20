@@ -81,11 +81,26 @@ export default function CustomTabBar(props) {
 
   const activeTab = getActiveTabName();
 
+  // const handlePress = tabName => {
+  //   if (tabBarNavigation && typeof tabBarNavigation.navigate === 'function') {
+  //     tabBarNavigation.navigate(tabName);
+  //     return;
+  //   }
+  //   nav.navigate(tabName);
+  // };
   const handlePress = tabName => {
+    if (tabName === 'AttendanceManagement') {
+      nav.navigate('AttendanceManagement', {
+        fromTab: true,
+      });
+      return;
+    }
+
     if (tabBarNavigation && typeof tabBarNavigation.navigate === 'function') {
       tabBarNavigation.navigate(tabName);
       return;
     }
+
     nav.navigate(tabName);
   };
 

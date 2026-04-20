@@ -395,10 +395,10 @@ const LeaveRequestListPage = () => {
     return ['All', ...unique];
   }, [leavesData]);
 
-  // Define button configuration
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
+    const statusLabel = getStatusLabel(item.WFStatus);
+    const isDraft = statusLabel === 'Draft';
+    const isRejected = statusLabel === 'Rejected';
 
     return {
       edit: {
@@ -436,22 +436,46 @@ const LeaveRequestListPage = () => {
         customStyle: {},
       },
       approval: {
-        show: isDraft || isRejected, // only visible when action is possible
+        show: true, // ← always show the button
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
-        icon: 'check-square-o',
+        icon: 'check-square',
         textColor: '#0A66C2',
         disabled: false,
         actions: [
-          {
-            key: 'submit',
-            label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
-          },
+          // ── Submit action: only on Draft or Rejected ──
+          ...(isDraft || isRejected
+            ? [
+                {
+                  key: 'submit',
+                  label: isRejected ? 'Re-submit' : 'Submit',
+                  icon: 'send',
+                },
+              ]
+            : []),
+
+          // ── View History: on every status EXCEPT Draft ──
+          ...(!isDraft
+            ? [
+                {
+                  key: 'viewHistory',
+                  label: 'View History',
+                  icon: 'clock',
+                },
+              ]
+            : []),
         ],
       },
     };
+  };
+
+  const handleViewHistory = itemData => {
+    navigation.navigate('WorkflowHistoryScreen', {
+      recId: itemData.RecId,
+      tableId: itemData.TableId, // your table name/id
+      cameFrom: 'LeavesListPage', // ← tell it where to go back
+    });
   };
 
   const checkWorkflowConfig = useCallback(async () => {
@@ -495,6 +519,9 @@ const LeaveRequestListPage = () => {
         break;
       case BUTTON_TYPES.ATTACHMENT:
         handleReceiptAttachmentPress(itemData);
+        break;
+      case 'viewHistory': // ← add this case
+        handleViewHistory(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);

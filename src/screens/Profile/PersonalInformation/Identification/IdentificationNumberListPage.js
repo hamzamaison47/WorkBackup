@@ -24,6 +24,7 @@ import {IdentificationFindRequest} from '../../../../API/PersonalInformation/Ide
 import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identification/DeleteIdentityRequest';
 import {canEnableEditButton} from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
 import {translate as t} from '../../../../store/utils/translate';
+import {retrieveESSIdentificationtableTableRecId} from '../../../../API/PersonalInformation/Identification/retrieveESSIdentificationtableTableRecId&TableId';
 
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
@@ -125,6 +126,28 @@ const IdentificationNumberListPage = () => {
     }
   }, [effectiveEmployeeId]);
 
+  const fetchTableIdAndRecId = async itemData => {
+    try {
+      const result = await retrieveESSIdentificationtableTableRecId({
+        person: effectiveWorkerRecId,
+      });
+      console.log('TableId and RecId result:', result);
+
+      // Adjust field names based on what your API actually returns
+      return {
+        tableId: result?.TableId || result?.tableId || itemData.TableId,
+        recId: result?.RecId || result?.recId || itemData.RecId,
+      };
+    } catch (error) {
+      console.error('Failed to fetch TableId/RecId:', error);
+      // Fallback to item's own values
+      return {
+        tableId: itemData.TableId,
+        recId: itemData.RecId,
+      };
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       fetchIdentifications();
@@ -177,6 +200,26 @@ const IdentificationNumberListPage = () => {
   // Consistent refresh handler used everywhere
   const handleRefresh = () => {
     fetchIdentifications();
+  };
+
+  const handleViewHistory = async itemData => {
+    setIsProcessing(true);
+    try {
+      const {tableId, recId} = await fetchTableIdAndRecId(itemData);
+
+      console.log('Navigating to history with:', recId, tableId);
+
+      navigation.navigate('WorkflowHistoryScreen', {
+        recId: recId,
+        tableId: tableId,
+        cameFrom: 'IdentificationListPage',
+      });
+    } catch (error) {
+      setAlertMessage('Failed to load workflow history.');
+      setAlertModal(true);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getStatusLabel = status => {
@@ -262,10 +305,11 @@ const IdentificationNumberListPage = () => {
   };
 
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.ApprovalStatus) === 'Draft';
-    const isHCMRecord = getStatusLabel(item.ApprovalStatus) === '';
-    const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
-    const isCancelled = getStatusLabel(item.ApprovalStatus) === 'Cancelled';
+    const statusLabel = getStatusLabel(item.ApprovalStatus);
+    const isDraft = statusLabel === 'Draft';
+    const isHCMRecord = statusLabel === '';
+    const isRejected = statusLabel === 'Rejected';
+    const isCancelled = statusLabel === 'Cancelled';
 
     return {
       edit: {
@@ -304,19 +348,35 @@ const IdentificationNumberListPage = () => {
         customStyle: {},
       },
       approval: {
-        show: isDraft || isRejected,
+        show: true, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
-        icon: 'check-square-o',
+        icon: 'check-square',
         textColor: '#0A66C2',
         disabled: false,
         actions: [
-          {
-            key: 'submit',
-            label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
-          },
+          // Submit: only on Draft or Rejected
+          ...(isDraft || isRejected
+            ? [
+                {
+                  key: 'submit',
+                  label: isRejected ? 'Re-submit' : 'Submit',
+                  icon: 'send',
+                },
+              ]
+            : []),
+
+          // View History: every status except Draft and HCM records (empty status)
+          ...(!isDraft && !isHCMRecord
+            ? [
+                {
+                  key: 'viewHistory',
+                  label: 'View History',
+                  icon: 'clock',
+                },
+              ]
+            : []),
         ],
       },
     };
@@ -346,6 +406,9 @@ const IdentificationNumberListPage = () => {
         break;
       case 'attachment':
         handleReceiptAttachmentPress(itemData);
+        break;
+      case 'viewHistory': // ← add this
+        handleViewHistory(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);

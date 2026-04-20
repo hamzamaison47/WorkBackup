@@ -17,7 +17,6 @@
  */
 
 import {useState, useCallback, useRef} from 'react';
-import LeaveService from './LeaveService';
 // TODO: Import AdvanceService when ready
 // import useAdvanceService from './AdvanceService';
 // TODO: Import SalarySlipService when ready
@@ -27,7 +26,6 @@ const MasterService = () => {
   // ========================================
   // STEP 1: Initialize all service instances
   // ========================================
-  const leaveService = LeaveService();
 
   // TODO: Uncomment when AdvanceService is ready
   // const advanceService = useAdvanceService();
@@ -53,46 +51,42 @@ const MasterService = () => {
    * @param {string} userData.employeeName - Employee Name
    * @param {string} userData.WorkerRecId - Worker Record ID
    */
-  const initialize = useCallback(
-    userData => {
-      if (!userData) {
-        throw new Error(
-          'SECURITY_ERROR: User data required for MasterService initialization',
-        );
-      }
+  const initialize = useCallback(userData => {
+    if (!userData) {
+      throw new Error(
+        'SECURITY_ERROR: User data required for MasterService initialization',
+      );
+    }
 
-      console.log('🚀 MasterService: Initializing all services...');
+    console.log('🚀 MasterService: Initializing all services...');
 
-      // ========================================
-      // STEP 2: Initialize each service
-      // ========================================
-      try {
-        // Initialize LeaveService
-        leaveService.initialize(userData);
-        servicesInitializedRef.current.leave = true;
-        console.log('  ✅ LeaveService initialized');
+    // ========================================
+    // STEP 2: Initialize each service
+    // ========================================
+    try {
+      // Initialize LeaveService
 
-        // TODO: Uncomment when AdvanceService is ready
-        // advanceService.initialize(userData);
-        // servicesInitializedRef.current.advance = true;
-        // console.log('  ✅ AdvanceService initialized');
+      console.log('  ✅ LeaveService initialized');
 
-        // TODO: Uncomment when SalarySlipService is ready
-        // salarySlipService.initialize(userData);
-        // servicesInitializedRef.current.salarySlip = true;
-        // console.log('  ✅ SalarySlipService initialized');
+      // TODO: Uncomment when AdvanceService is ready
+      // advanceService.initialize(userData);
+      // servicesInitializedRef.current.advance = true;
+      // console.log('  ✅ AdvanceService initialized');
 
-        // Add more service initializations here...
+      // TODO: Uncomment when SalarySlipService is ready
+      // salarySlipService.initialize(userData);
+      // servicesInitializedRef.current.salarySlip = true;
+      // console.log('  ✅ SalarySlipService initialized');
 
-        setInitialized(true);
-        console.log('✅ MasterService: All services initialized successfully');
-      } catch (error) {
-        console.error('❌ MasterService initialization failed:', error);
-        throw error;
-      }
-    },
-    [leaveService],
-  );
+      // Add more service initializations here...
+
+      setInitialized(true);
+      console.log('✅ MasterService: All services initialized successfully');
+    } catch (error) {
+      console.error('❌ MasterService initialization failed:', error);
+      throw error;
+    }
+  }, []);
 
   /**
    * Validate that MasterService is initialized
@@ -120,26 +114,26 @@ const MasterService = () => {
     // ========================================
     // STEP 3: Merge function definitions from all services
     // ========================================
-    const allFunctions = [
-      // Get all Leave functions
-      ...(leaveService.getFunctionDefinitions
-        ? leaveService.getFunctionDefinitions()
-        : []),
+    // const allFunctions = [
+    //   // Get all Leave functions
+    //   ...(leaveService.getFunctionDefinitions
+    //     ? leaveService.getFunctionDefinitions()
+    //     : []),
 
-      // TODO: Uncomment when AdvanceService is ready
-      // ...advanceService.getFunctionDefinitions(),
+    // TODO: Uncomment when AdvanceService is ready
+    // ...advanceService.getFunctionDefinitions(),
 
-      // TODO: Uncomment when SalarySlipService is ready
-      // ...salarySlipService.getFunctionDefinitions(),
+    // TODO: Uncomment when SalarySlipService is ready
+    // ...salarySlipService.getFunctionDefinitions(),
 
-      // Add more service functions here...
-    ];
+    // Add more service functions here...
+    // ];
 
-    console.log(
-      `📋 MasterService: Providing ${allFunctions.length} functions to AI`,
-    );
-    return allFunctions;
-  }, [validateInitialized, leaveService]);
+    // console.log(
+    //   `📋 MasterService: Providing ${allFunctions.length} functions to AI`,
+    // );
+    return [];
+  }, [validateInitialized]);
 
   /**
    * Execute a function by routing to the correct service
@@ -168,21 +162,21 @@ const MasterService = () => {
       // LEAVE SERVICE ROUTING
       // ----------------
       // Handle all leave-related functions
-      if (
-        functionName.includes('leave') ||
-        functionName === 'get_available_leave_types' ||
-        functionName === 'calculate_leave_days' ||
-        functionName === 'get_leave_balance' ||
-        functionName === 'create_leave_request' ||
-        functionName === 'submit_leave_request' ||
-        functionName === 'delete_leave_request' ||
-        functionName === 'get_leave_requests' ||
-        functionName === 'validate_leave_request' ||
-        functionName === 'get_leave_options_for_request'
-      ) {
-        console.log('  ➡️  Routing to LeaveService');
-        return await leaveService.execute(functionName, parameters);
-      }
+      // if (
+      //   functionName.includes('leave') ||
+      //   functionName === 'get_available_leave_types' ||
+      //   functionName === 'calculate_leave_days' ||
+      //   functionName === 'get_leave_balance' ||
+      //   functionName === 'create_leave_request' ||
+      //   functionName === 'submit_leave_request' ||
+      //   functionName === 'delete_leave_request' ||
+      //   functionName === 'get_leave_requests' ||
+      //   functionName === 'validate_leave_request' ||
+      //   functionName === 'get_leave_options_for_request'
+      // ) {
+      //   console.log('  ➡️  Routing to LeaveService');
+      //   return await leaveService.execute(functionName, parameters);
+      // }
 
       // ----------------
       // ADVANCE SERVICE ROUTING
@@ -230,12 +224,12 @@ const MasterService = () => {
         const {screenName} = parameters;
 
         // Route to appropriate service based on screen name
-        if (
-          screenName === 'LeaveRequestSaveRecord' ||
-          screenName === 'LeavesListPage'
-        ) {
-          return await leaveService.execute(functionName, parameters);
-        }
+        // if (
+        //   screenName === 'LeaveRequestSaveRecord' ||
+        //   screenName === 'LeavesListPage'
+        // ) {
+        //   return await leaveService.execute(functionName, parameters);
+        // }
 
         // TODO: Add navigation routing for other services
         /*
@@ -272,7 +266,7 @@ const MasterService = () => {
         ],
       };
     },
-    [validateInitialized, leaveService],
+    [validateInitialized],
   );
 
   /**
@@ -280,42 +274,40 @@ const MasterService = () => {
    *
    * @returns {Object} Statistics about loaded services and functions
    */
-  const getServiceStats = useCallback(() => {
-    validateInitialized();
+  // const getServiceStats = useCallback(() => {
+  //   validateInitialized();
 
-    const stats = {
-      totalServices: 1, // Update this as you add services
-      totalFunctions: getFunctionDefinitions().length,
-      services: {
-        leave: {
-          initialized: servicesInitializedRef.current.leave,
-          functions: leaveService.getFunctionDefinitions
-            ? leaveService.getFunctionDefinitions().length
-            : 0,
-        },
-        // TODO: Add stats for other services
-        /*
-        advance: {
-          initialized: servicesInitializedRef.current.advance,
-          functions: advanceService.getFunctionDefinitions().length,
-        },
-        salarySlip: {
-          initialized: servicesInitializedRef.current.salarySlip,
-          functions: salarySlipService.getFunctionDefinitions().length,
-        },
-        */
-      },
-    };
+  //   const stats = {
+  //     totalServices: 1, // Update this as you add services
+  //     totalFunctions: getFunctionDefinitions().length,
+  //     services: {
+  //       leave: {
+  //         initialized: servicesInitializedRef.current.leave,
+  //         functions: leaveService.getFunctionDefinitions
+  //           ? leaveService.getFunctionDefinitions().length
+  //           : 0,
+  //       },
+  //       // TODO: Add stats for other services
+  //       /*
+  //       advance: {
+  //         initialized: servicesInitializedRef.current.advance,
+  //         functions: advanceService.getFunctionDefinitions().length,
+  //       },
+  //       salarySlip: {
+  //         initialized: servicesInitializedRef.current.salarySlip,
+  //         functions: salarySlipService.getFunctionDefinitions().length,
+  //       },
+  //       */
+  //     },
+  //   };
 
-    return stats;
-  }, [validateInitialized, getFunctionDefinitions, leaveService]);
+  //   return stats;
+  // }, [validateInitialized, getFunctionDefinitions, leaveService]);
 
   // Return all functions and state
   return {
     // State
     initialized,
-    loading: leaveService.loading,
-    error: leaveService.error,
 
     // Core functions
     initialize,
@@ -324,10 +316,8 @@ const MasterService = () => {
     // Main functions
     getFunctionDefinitions,
     execute,
-    getServiceStats,
 
     // Service instances (for direct access if needed)
-    leaveService,
     // advanceService, // TODO: Uncomment when ready
     // salarySlipService, // TODO: Uncomment when ready
   };

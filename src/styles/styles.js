@@ -386,6 +386,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  Login_AttendanceButton: {
+    position: 'absolute',
+    top: 50, // match Login_QRButton top value
+    left: 20, // left side instead of right
+    padding: 8,
+    zIndex: 10,
+  },
+
   // ============================================
   // CONFIG SELECTION SCREEN - RESPONSIVE STYLES
   // ============================================
@@ -8931,6 +8939,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 15,
+  },
+
+  noDataContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+
+  noDataTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 6,
+    color: '#222',
+  },
+
+  noDataText: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

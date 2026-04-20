@@ -25,6 +25,7 @@ const FS_STATE_KEY = '@fs_attendance_state';
 let _isRunning = false;
 let _clockInEpoch = 0;
 let _breakStartEpoch = 0;
+let _totalBreakMs = 0;
 let _isOnBreak = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ const persistState = async () => {
         isOnBreak: _isOnBreak,
         clockInEpoch: _clockInEpoch,
         breakStartEpoch: _breakStartEpoch,
+        totalBreakMs: _totalBreakMs,
       }),
     );
   } catch {}
@@ -94,6 +96,7 @@ export const startAttendanceService = async clockInTimestamp => {
       ? new Date(clockInTimestamp).getTime()
       : Number(clockInTimestamp);
   _breakStartEpoch = 0;
+  _totalBreakMs = 0;
   _isOnBreak = false;
   _isRunning = true;
 
@@ -101,13 +104,17 @@ export const startAttendanceService = async clockInTimestamp => {
 
   try {
     AttendanceService.startService(_clockInEpoch);
-    console.log(
-      '[AttendanceForegroundService] Started — clock-in at',
-      new Date(_clockInEpoch).toISOString(),
-    );
+    if (__DEV__) {
+      console.log(
+        '[AttendanceForegroundService] Started — clock-in at',
+        new Date(_clockInEpoch).toISOString(),
+      );
+    }
   } catch (err) {
     _isRunning = false;
-    console.error('[AttendanceForegroundService] startService failed:', err);
+    if (__DEV__) {
+      console.error('[AttendanceForegroundService] startService failed:', err);
+    }
   }
 };
 
@@ -130,13 +137,17 @@ export const markBreakStarted = async breakStartTimestamp => {
   await persistState();
 
   try {
-    AttendanceService.updateBreakState(true, _breakStartEpoch);
-    console.log('[AttendanceForegroundService] Break started');
+    AttendanceService.updateBreakState(true, _breakStartEpoch, _totalBreakMs);
+    if (__DEV__) {
+      console.log('[AttendanceForegroundService] Break started');
+    }
   } catch (err) {
-    console.error(
-      '[AttendanceForegroundService] updateBreakState(true) failed:',
-      err,
-    );
+    if (__DEV__) {
+      console.error(
+        '[AttendanceForegroundService] updateBreakState(true) failed:',
+        err,
+      );
+    }
   }
 };
 
@@ -148,19 +159,27 @@ export const markBreakEnded = async () => {
   if (Platform.OS !== 'android') return;
   if (!checkNativeModule() || !_isRunning) return;
 
+  if (_isOnBreak && _breakStartEpoch > 0) {
+    _totalBreakMs += Date.now() - _breakStartEpoch;
+  }
+
   _isOnBreak = false;
   _breakStartEpoch = 0;
 
   await persistState();
 
   try {
-    AttendanceService.updateBreakState(false, 0);
-    console.log('[AttendanceForegroundService] Break ended');
+    AttendanceService.updateBreakState(false, 0, _totalBreakMs);
+    if (__DEV__) {
+      console.log('[AttendanceForegroundService] Break ended, total breaks:', _totalBreakMs);
+    }
   } catch (err) {
-    console.error(
-      '[AttendanceForegroundService] updateBreakState(false) failed:',
-      err,
-    );
+    if (__DEV__) {
+      console.error(
+        '[AttendanceForegroundService] updateBreakState(false) failed:',
+        err,
+      );
+    }
   }
 };
 
@@ -176,14 +195,19 @@ export const stopAttendanceService = async () => {
   _isOnBreak = false;
   _clockInEpoch = 0;
   _breakStartEpoch = 0;
+  _totalBreakMs = 0;
 
   await clearPersistedFSState();
 
   try {
     AttendanceService.stopService();
-    console.log('[AttendanceForegroundService] Stopped');
+    if (__DEV__) {
+      console.log('[AttendanceForegroundService] Stopped');
+    }
   } catch (err) {
-    console.error('[AttendanceForegroundService] stopService failed:', err);
+    if (__DEV__) {
+      console.error('[AttendanceForegroundService] stopService failed:', err);
+    }
   }
 };
 
@@ -199,16 +223,21 @@ export const resumeAttendanceService = async savedState => {
 
   _clockInEpoch = savedState.clockInEpoch ?? 0;
   _breakStartEpoch = savedState.breakStartEpoch ?? 0;
+  _totalBreakMs = savedState.totalBreakMs ?? 0;
   _isOnBreak = savedState.isOnBreak ?? false;
   _isRunning = true;
 
   // The native service is already running and ticking — nothing else needed.
-  console.log(
-    '[AttendanceForegroundService] JS state resumed after app restart',
-  );
+  if (__DEV__) {
+    console.log(
+      '[AttendanceForegroundService] JS state resumed after app restart',
+    );
+  }
 };
 
 /**
  * isServiceRunning — synchronous status check
  */
 export const isServiceRunning = () => _isRunning;
+
+export const getTotalBreakMs = () => _totalBreakMs;

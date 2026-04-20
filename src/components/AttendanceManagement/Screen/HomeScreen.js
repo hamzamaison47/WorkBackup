@@ -1,8 +1,8 @@
+/* eslint-disable curly */
+/* eslint-disable react-native/no-inline-styles */
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/screens/HomeScreen.js
 // ─────────────────────────────────────────────
-/* eslint-disable curly */
-/* eslint-disable react-native/no-inline-styles */
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -11,22 +11,35 @@ import {
   ScrollView,
   SafeAreaView,
   StatusBar,
-  StyleSheet,
   ActivityIndicator,
   Linking,
   Platform,
+  Dimensions,
+  StyleSheet,
 } from 'react-native';
+import {useSelector} from 'react-redux';
 import {useGeofence} from '../GeofenceContext';
 import LocationPickerModal from '../LocationPickerModal';
 import NavigationFAB from '../NavigationFAB';
 import {
   loadRecords,
   formatTime,
+  formatDateShort,
+  formatDuration,
+  formatDurationShort,
+  isToday,
+  getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import {C, R, Sh} from '../theme';
+import useAppTokens from '../../AppComponentsDesign/useAppTokens';
+import PageBackground from '../../AppComponentsDesign/PageBackground';
+import {
+  conditionalScale,
+  conditionalVerticalScale,
+} from '../../../store/utils/scaling';
 
 // ─────────────────────────────────────────────
-// Full-screen: P1 — Permission denied
+// Permission denied
 // ─────────────────────────────────────────────
 const PermissionDeniedView = ({onNavigate}) => (
   <View style={S.stateWrap}>
@@ -35,8 +48,8 @@ const PermissionDeniedView = ({onNavigate}) => (
     </View>
     <Text style={S.stateTitle}>Location Access Required</Text>
     <Text style={S.stateSub}>
-      Attendance tracking needs your location to confirm you're at an authorised
-      office zone before clocking in or out.
+      Attendance tracking needs your location to confirm you are at an
+      authorised office zone before clocking in or out.
     </Text>
     <TouchableOpacity
       style={S.stateBtn}
@@ -52,7 +65,7 @@ const PermissionDeniedView = ({onNavigate}) => (
 );
 
 // ─────────────────────────────────────────────
-// Full-screen: P3 — GPS loading
+// GPS loading
 // ─────────────────────────────────────────────
 const LoadingView = ({onNavigate}) => (
   <View style={S.stateWrap}>
@@ -68,7 +81,7 @@ const LoadingView = ({onNavigate}) => (
 );
 
 // ─────────────────────────────────────────────
-// Full-screen: P2 — GPS off / no fix
+// GPS unavailable
 // ─────────────────────────────────────────────
 const GPSUnavailableView = ({onNavigate, onRetry}) => (
   <View style={S.stateWrap}>
@@ -101,33 +114,47 @@ const GPSUnavailableView = ({onNavigate, onRetry}) => (
   </View>
 );
 
-// ─────────────────────────────────────────────
-// Location card
-// ─────────────────────────────────────────────
-const LocationCard = ({
+// ─────────────────────────────────────────────────────────────────────────────
+// Location Status Banner
+// ─────────────────────────────────────────────────────────────────────────────
+const LocationBanner = ({
   matchedFence,
   locationLoading,
   locationError,
   coords,
   onPress,
 }) => {
+  const T = useAppTokens();
   const matched = !!matchedFence;
+
   return (
     <TouchableOpacity
-      style={[
-        S.locationCard,
-        matched ? S.locationCardGreen : S.locationCardRed,
-      ]}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: matched ? T.greenBg : T.redBg,
+        borderRadius: conditionalScale(10, 11, 12, 12),
+        padding: conditionalScale(12, 13, 14, 14),
+        marginBottom: conditionalVerticalScale(14, 15, 16, 16),
+        borderLeftWidth: 4,
+        borderLeftColor: matched ? T.green : T.red,
+      }}
       onPress={onPress}
-      activeOpacity={0.75}>
+      activeOpacity={0.7}>
       <View
-        style={[
-          S.locationBar,
-          {backgroundColor: matched ? C.greenMid : C.redMid},
-        ]}
-      />
-      <View style={S.locationCardBody}>
-        <Text style={S.locationCardLabel}>CURRENT LOCATION</Text>
+        style={{
+          width: conditionalScale(36, 38, 40, 40),
+          height: conditionalScale(36, 38, 40, 40),
+          borderRadius: conditionalScale(18, 19, 20, 20),
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: matched ? T.green : T.red,
+          marginRight: conditionalScale(10, 11, 12, 12),
+        }}>
+        <Text style={{fontSize: 16}}>{matched ? '📍' : '⚠️'}</Text>
+      </View>
+
+      <View style={{flex: 1}}>
         {locationLoading ? (
           <View style={S.locationCardLoading}>
             <ActivityIndicator size="small" color={C.blue} />
@@ -147,7 +174,7 @@ const LocationCard = ({
             </Text>
             {matched && matchedFence.distanceMetres != null && (
               <Text style={S.locationCardMeta}>
-                ✓ Within zone · {matchedFence.distanceMetres} m away
+                Within zone · {matchedFence.distanceMetres} m away
               </Text>
             )}
             {matched && coords && (
@@ -173,12 +200,77 @@ const LocationCard = ({
 };
 
 // ─────────────────────────────────────────────
+// Today's activity timeline
+// ─────────────────────────────────────────────
+const ActivityTimeline = ({events}) => {
+  if (!events.length) return null;
+
+  const DOT_COLORS = {
+    ClockIn: C.greenMid,
+    BreakStart: C.amber,
+    ClockOut: C.redMid,
+  };
+
+  const LABELS = {
+    ClockIn: 'Clock In',
+    BreakStart: 'Break',
+    ClockOut: 'Clock Out',
+  };
+
+  return (
+    <View style={S.card}>
+      <Text style={S.cardTitle}>Today's Activity</Text>
+      <View style={S.cardDivider} />
+      {events.map((ev, i) => (
+        <View key={i} style={S.activityRow}>
+          <View style={S.activityLeft}>
+            <View
+              style={[
+                S.activityDot,
+                {backgroundColor: DOT_COLORS[ev.type] ?? C.inkFaint},
+              ]}
+            />
+            <Text style={S.activityLabel}>
+              {LABELS[ev.type] ?? ev.type}
+              {ev.durationMs ? ` (${formatDurationShort(ev.durationMs)})` : ''}
+            </Text>
+          </View>
+          <Text style={S.activityTime}>{formatTime(ev.time)}</Text>
+        </View>
+      ))}
+    </View>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Skeleton Loader
+// ─────────────────────────────────────────────
+const SkeletonBox = ({width, height, style}) => (
+  <View
+    style={[
+      {
+        width,
+        height,
+        borderRadius: 6,
+        backgroundColor: '#E5E7EB',
+        overflow: 'hidden',
+      },
+      style,
+    ]}
+  />
+);
+
+// ─────────────────────────────────────────────
 // Main HomeScreen
 // ─────────────────────────────────────────────
 const HomeScreen = ({onNavigate}) => {
+  const T = useAppTokens();
   const [lastOut, setLastOut] = useState(null);
   const [isActive, setIsActive] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [todayEvents, setTodayEvents] = useState([]);
+  const [todayStats, setTodayStats] = useState({sessions: 0, worked: 0});
+  const [recordsLoading, setRecordsLoading] = useState(true);
 
   const {
     permissionStatus,
@@ -189,168 +281,259 @@ const HomeScreen = ({onNavigate}) => {
     refresh,
   } = useGeofence();
 
+  const {userData} = useSelector(s => s.user);
+  const person = userData?.Person;
+
   useEffect(() => {
     (async () => {
-      const records = await loadRecords();
-      if (!records.length) return;
+      if (!person) {
+        setRecordsLoading(false);
+        return;
+      }
+      setRecordsLoading(true);
+      const records = await loadRecords({person});
+      if (!records.length) {
+        setRecordsLoading(false);
+        return;
+      }
+
+      // Last session status
       const last = records[records.length - 1];
       if (last.clockOut) setLastOut(last.clockOut);
       setIsActive(!last.clockOut);
-    })();
-  }, []);
 
-  // ── P1 — Permission denied ─────────────────────────────
+      // Build today's events
+      const todayRecords = records.filter(r => r.clockIn && isToday(r.clockIn));
+      const events = [];
+      let totalWorkedMs = 0;
+
+      todayRecords.forEach(r => {
+        if (r.clockIn) {
+          events.push({type: 'ClockIn', time: r.clockIn});
+        }
+        (r.breaks || []).forEach(b => {
+          if (b.breakStart) {
+            const durationMs = b.breakEnd
+              ? new Date(b.breakEnd) - new Date(b.breakStart)
+              : null;
+            events.push({type: 'BreakStart', time: b.breakStart, durationMs});
+          }
+        });
+        if (r.clockOut) {
+          events.push({type: 'ClockOut', time: r.clockOut});
+        }
+        const stats = getSessionStats(r);
+        if (stats) totalWorkedMs += stats.netMs;
+      });
+
+      events.sort((a, b) => new Date(a.time) - new Date(b.time));
+      setTodayEvents(events);
+      setTodayStats({
+        sessions: todayRecords.length,
+        worked: totalWorkedMs,
+      });
+      setRecordsLoading(false);
+    })();
+  }, [person]);
+
+  // ── Permission denied ─────────────────────────────────────
   if (permissionStatus === 'denied') {
     return (
-      <SafeAreaView style={S.screen}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
+        />
         <PermissionDeniedView onNavigate={onNavigate} />
       </SafeAreaView>
     );
   }
 
-  // ── P3 — Still loading initial GPS ─────────────────────
+  // ── Loading GPS ──────────────────────────────────────────
   if (permissionStatus === 'unknown' || (locationLoading && !coords)) {
     return (
-      <SafeAreaView style={S.screen}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
+        />
         <LoadingView onNavigate={onNavigate} />
       </SafeAreaView>
     );
   }
 
-  // ── P2 — GPS granted but no fix and not loading ─────────
-  // coords is null after loading finishes = GPS off or unavailable
+  // ── No GPS fix ───────────────────────────────────────────
   if (!locationLoading && !coords && permissionStatus === 'granted') {
     return (
-      <SafeAreaView style={S.screen}>
-        <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
+        />
         <GPSUnavailableView onNavigate={onNavigate} onRetry={refresh} />
       </SafeAreaView>
     );
   }
 
-  // ── Normal home ─────────────────────────────────────────
-  // G3, N1 — Warning banner when outside or API error
   const showWarning = !locationLoading && !!locationError && !matchedFence;
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
+  const employeeName = userData?.employeeName || userData?.Name || 'there';
 
   return (
-    <SafeAreaView style={S.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={C.bg} />
-
-      <ScrollView
-        contentContainerStyle={S.scroll}
-        showsVerticalScrollIndicator={false}>
-        {/* G3, N1 — Warning banner with retry */}
-        {showWarning && (
-          <TouchableOpacity
-            style={S.warningBanner}
-            onPress={refresh}
-            activeOpacity={0.8}>
-            <Text style={S.warningIcon}>⚠️</Text>
-            <View style={{flex: 1}}>
-              <Text style={S.warningTitle}>Location Issue</Text>
-              <Text style={S.warningText} numberOfLines={2}>
-                {locationError} Tap to retry.
-              </Text>
-            </View>
-          </TouchableOpacity>
-        )}
-
-        {/* Location card */}
-        <LocationCard
-          matchedFence={matchedFence}
-          locationLoading={locationLoading}
-          locationError={locationError}
-          coords={coords}
-          onPress={() => setModalVisible(true)}
+    <PageBackground>
+      <SafeAreaView style={{flex: 1}}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={T.pageBg}
+          translucent={false}
         />
 
-        {/* Stats */}
-        <View style={S.statsRow}>
-          <View style={[S.statCard, {backgroundColor: C.greenLight}]}>
-            <Text style={[S.statNum, {color: C.greenDark}]}>
-              {isActive ? 1 : 0}
-            </Text>
-            <Text style={S.statLabel}>In</Text>
-          </View>
-          <View style={[S.statCard, {backgroundColor: C.purpleLight}]}>
-            <Text style={[S.statNum, {color: C.purpleDark}]}>0</Text>
-            <Text style={S.statLabel}>On Break</Text>
-          </View>
-          <View
-            style={[
-              S.statCard,
-              {
-                backgroundColor: C.surfaceAlt,
-                borderWidth: 1,
-                borderColor: C.border,
-              },
-            ]}>
-            <Text style={[S.statNum, {color: C.inkSub}]}>
-              {isActive ? 0 : 1}
-            </Text>
-            <Text style={S.statLabel}>Out</Text>
-          </View>
-        </View>
-
-        {/* Time Clock card */}
-        <View style={S.card}>
-          <View style={S.cardTitleRow}>
-            <Text style={S.cardTitle}>Time Clock</Text>
-            {isActive && (
-              <View style={S.activePill}>
-                <View style={S.activePillDot} />
-                <Text style={S.activePillTxt}>Active</Text>
+        <ScrollView
+          contentContainerStyle={S.scroll}
+          showsVerticalScrollIndicator={false}>
+          {/* ── Warning banner ── */}
+          {showWarning && (
+            <TouchableOpacity
+              style={S.warningBanner}
+              onPress={refresh}
+              activeOpacity={0.8}>
+              <Text style={S.warningIcon}>⚠️</Text>
+              <View style={{flex: 1}}>
+                <Text style={S.warningTitle}>Location Issue</Text>
+                <Text style={S.warningText} numberOfLines={2}>
+                  {locationError} Tap to retry.
+                </Text>
               </View>
-            )}
-          </View>
-          <Text style={S.cardSub}>
-            {lastOut
-              ? `Last clocked out at ${formatTime(lastOut)}`
-              : "You haven't clocked in yet today"}
-          </Text>
-          <View style={S.cardDivider} />
-          <TouchableOpacity
-            style={S.cardAction}
-            onPress={() => onNavigate('TimeClock')}>
-            <Text style={S.cardActionTxt}>
-              {isActive ? 'View Time Clock' : 'Clock In Now'}
-            </Text>
-            <Text style={S.cardActionArrow}>→</Text>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          )}
 
-        {/* Quick actions */}
-        {/* <View style={S.quickRow}>
-          <TouchableOpacity
-            style={[S.quickBtn, {backgroundColor: C.blue}]}
-            onPress={() => onNavigate('TimeClock')}>
-            <Text style={S.quickIcon}>⏱</Text>
-            <Text style={[S.quickTxt, {color: C.white}]}>Time Clock</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              S.quickBtn,
-              {
-                backgroundColor: C.surface,
-                borderWidth: 1,
-                borderColor: C.border,
-              },
-            ]}
-            onPress={() => onNavigate('Records')}>
-            <Text style={S.quickIcon}>📋</Text>
-            <Text style={[S.quickTxt, {color: C.blue}]}>Timesheets</Text>
-          </TouchableOpacity>
-        </View> */}
-      </ScrollView>
+          {/* ── Location card ── */}
+          <LocationBanner
+            matchedFence={matchedFence}
+            locationLoading={locationLoading}
+            locationError={locationError}
+            coords={coords}
+            onPress={() => setModalVisible(true)}
+          />
 
-      <NavigationFAB activeScreen="Home" onNavigate={onNavigate} />
-      <LocationPickerModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-      />
-    </SafeAreaView>
+          {/* ── Stats row ── */}
+          {recordsLoading ? (
+            <View style={S.statsRow}>
+              <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+              <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+              <SkeletonBox width="31%" height={72} style={{borderRadius: 12}} />
+            </View>
+          ) : (
+            <View style={S.statsRow}>
+              <View style={[S.statCard, {backgroundColor: C.greenLight}]}>
+                <Text style={[S.statNum, {color: C.greenDark}]}>
+                  {todayStats.sessions}
+                </Text>
+                <Text style={S.statLabel}>Sessions</Text>
+              </View>
+              <View style={[S.statCard, {backgroundColor: C.blueLight}]}>
+                <Text style={[S.statNum, {color: C.blueDark, fontSize: 18}]}>
+                  {formatDuration(todayStats.worked)}
+                </Text>
+                <Text style={S.statLabel}>Worked</Text>
+              </View>
+              <View
+                style={[
+                  S.statCard,
+                  {
+                    backgroundColor: C.surfaceAlt,
+                    borderWidth: 1,
+                    borderColor: C.border,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    S.statNum,
+                    {color: isActive ? C.greenDark : C.inkSub},
+                  ]}>
+                  {isActive ? 'In' : 'Out'}
+                </Text>
+                <Text style={S.statLabel}>Status</Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── Time Clock card ── */}
+          {recordsLoading ? (
+            <View style={[S.card, {gap: 10}]}>
+              <SkeletonBox width="40%" height={16} />
+              <SkeletonBox width="70%" height={12} />
+              <View style={S.cardDivider} />
+              <SkeletonBox width="50%" height={14} />
+            </View>
+          ) : (
+            <View style={S.card}>
+              <View style={S.cardTitleRow}>
+                <Text style={S.cardTitle}>Time Clock</Text>
+                {isActive && (
+                  <View style={S.activePill}>
+                    <View style={S.activePillDot} />
+                    <Text style={S.activePillTxt}>Active</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={S.cardSub}>
+                {lastOut
+                  ? `Last clocked out at ${formatTime(
+                      lastOut,
+                    )} · ${formatDateShort(lastOut)}`
+                  : "You haven't clocked in yet today"}
+              </Text>
+              <View style={S.cardDivider} />
+              <TouchableOpacity
+                style={S.cardAction}
+                onPress={() => onNavigate('TimeClock')}>
+                <Text style={S.cardActionTxt}>
+                  {isActive ? 'View Time Clock' : 'Clock In Now'}
+                </Text>
+                <Text style={S.cardActionArrow}>→</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Today's activity timeline ── */}
+          {recordsLoading ? (
+            <View style={S.card}>
+              <SkeletonBox width="35%" height={14} style={{marginBottom: 12}} />
+              <View style={S.cardDivider} />
+              {[1, 2, 3].map(i => (
+                <View
+                  key={i}
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    paddingVertical: 6,
+                  }}>
+                  <SkeletonBox width="45%" height={12} />
+                  <SkeletonBox width="20%" height={12} />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <ActivityTimeline events={todayEvents} />
+          )}
+        </ScrollView>
+
+        <NavigationFAB activeScreen="Home" onNavigate={onNavigate} />
+        <LocationPickerModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+        />
+      </SafeAreaView>
+    </PageBackground>
   );
 };
 
@@ -358,178 +541,249 @@ export default HomeScreen;
 
 const S = StyleSheet.create({
   screen: {flex: 1, backgroundColor: C.bg},
-  scroll: {padding: 16, paddingBottom: 100},
 
-  stateWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 36,
-    backgroundColor: C.bg,
+  scroll: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 120,
   },
-  stateIconCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 22,
+
+  // ── GLOBAL CARD ─────────────────────────────
+  card: {
+    backgroundColor: C.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: C.border,
     ...Sh.sm,
   },
-  stateEmoji: {fontSize: 38},
-  stateTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: C.ink,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  stateSub: {
-    fontSize: 14,
-    color: C.inkSub,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 28,
-  },
-  stateBtn: {
-    backgroundColor: C.blue,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-    ...Sh.sm,
-  },
-  stateBtnTxt: {color: C.white, fontWeight: '700', fontSize: 15},
 
-  greeting: {
+  cardTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
-  greetSub: {fontSize: 13, color: C.inkMuted},
-  greetName: {fontSize: 22, fontWeight: '800', color: C.ink, marginTop: 2},
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: C.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Sh.sm,
-  },
-  avatarLetter: {fontSize: 18, color: C.white, fontWeight: '700'},
 
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: C.ink,
+  },
+
+  cardSub: {
+    fontSize: 13,
+    color: C.inkMuted,
+    marginTop: 6,
+    lineHeight: 18,
+  },
+
+  cardDivider: {
+    height: 1,
+    backgroundColor: C.border,
+    marginVertical: 14,
+  },
+
+  cardAction: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  cardActionTxt: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.blue,
+  },
+
+  cardActionArrow: {
+    fontSize: 18,
+    color: C.blue,
+  },
+
+  // ── LOCATION BANNER FIX ─────────────────────
+  locationCardLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  locationCardName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.ink,
+  },
+
+  locationCardMeta: {
+    fontSize: 12,
+    color: C.greenDark,
+    marginTop: 2,
+  },
+
+  locationCardCoords: {
+    fontSize: 11,
+    color: C.inkFaint,
+    marginTop: 4,
+  },
+
+  locationCardArrow: {
+    fontSize: 18,
+    marginLeft: 6,
+  },
+
+  // ── WARNING ─────────────────────────────
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
     backgroundColor: C.amberLight,
-    borderRadius: R.md,
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 12,
+    marginBottom: 14,
     borderLeftWidth: 4,
     borderLeftColor: C.amber,
-    ...Sh.xs,
   },
+
   warningIcon: {fontSize: 18},
-  warningTitle: {fontSize: 13, fontWeight: '600', color: C.ink},
-  warningText: {fontSize: 12, color: C.inkSub, marginTop: 2},
 
-  locationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: R.md,
-    marginBottom: 12,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    ...Sh.sm,
-    backgroundColor: C.surface,
-  },
-  locationCardGreen: {borderColor: C.greenMid},
-  locationCardRed: {borderColor: C.redMid},
-  locationBar: {width: 4, alignSelf: 'stretch'},
-  locationCardBody: {flex: 1, padding: 14},
-  locationCardLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: C.inkFaint,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  locationCardLoading: {flexDirection: 'row', alignItems: 'center', gap: 8},
-  locationCardName: {
-    fontSize: 15,
-    fontWeight: '700',
+  warningTitle: {
+    fontSize: 13,
+    fontWeight: '600',
     color: C.ink,
-    marginBottom: 2,
   },
-  locationCardMeta: {fontSize: 12, color: C.greenDark, fontWeight: '500'},
-  locationCardCoords: {fontSize: 11, color: C.inkFaint, marginTop: 3},
-  locationCardArrow: {fontSize: 20, paddingRight: 14},
 
-  statsRow: {flexDirection: 'row', gap: 10, marginBottom: 12},
+  warningText: {
+    fontSize: 12,
+    color: C.inkSub,
+    marginTop: 2,
+  },
+
+  // ── STATS ROW FIX (BIG IMPROVEMENT) ─────────
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 14,
+  },
+
   statCard: {
     flex: 1,
-    borderRadius: R.md,
-    padding: 14,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: 'center',
-    ...Sh.xs,
+    justifyContent: 'center',
+    ...Sh.sm,
   },
-  statNum: {fontSize: 28, fontWeight: '800'},
-  statLabel: {fontSize: 11, color: C.inkMuted, marginTop: 2, fontWeight: '500'},
 
-  card: {
-    backgroundColor: C.surface,
-    borderRadius: R.md,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    ...Sh.xs,
+  statNum: {
+    fontSize: 20,
+    fontWeight: '800',
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+
+  statLabel: {
+    fontSize: 11,
+    color: C.inkMuted,
+    marginTop: 4,
   },
-  cardTitle: {fontSize: 16, fontWeight: '700', color: C.ink},
+
+  // ── ACTIVE PILL ─────────────────────────
   activePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
     backgroundColor: C.greenLight,
     paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: R.full,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
+
   activePillDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: C.greenMid,
+    marginRight: 6,
   },
-  activePillTxt: {fontSize: 11, fontWeight: '600', color: C.greenDark},
-  cardSub: {fontSize: 13, color: C.inkMuted, lineHeight: 19},
-  cardDivider: {height: 1, backgroundColor: C.border, marginVertical: 12},
-  cardAction: {
+
+  activePillTxt: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.greenDark,
+  },
+
+  // ── ACTIVITY TIMELINE FIX ────────────────
+  activityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+
+  activityLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 10,
   },
-  cardActionTxt: {fontSize: 14, fontWeight: '600', color: C.blue},
-  cardActionArrow: {fontSize: 16, color: C.blue},
 
-  quickRow: {flexDirection: 'row', gap: 10},
-  quickBtn: {
-    flex: 1,
-    borderRadius: R.md,
-    padding: 16,
-    alignItems: 'center',
-    gap: 6,
-    ...Sh.xs,
+  activityDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  quickIcon: {fontSize: 22},
-  quickTxt: {fontSize: 14, fontWeight: '600'},
+
+  activityLabel: {
+    fontSize: 13,
+    color: C.inkSub,
+  },
+
+  activityTime: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: C.ink,
+  },
+
+  // ── STATE SCREENS (UNCHANGED BUT CLEANED) ─
+  stateWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+    backgroundColor: C.bg,
+  },
+
+  stateIconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    ...Sh.sm,
+  },
+
+  stateEmoji: {fontSize: 36},
+
+  stateTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: C.ink,
+    textAlign: 'center',
+  },
+
+  stateSub: {
+    fontSize: 14,
+    color: C.inkSub,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+
+  stateBtn: {
+    backgroundColor: C.blue,
+    paddingHorizontal: 30,
+    paddingVertical: 14,
+    borderRadius: 30,
+  },
+
+  stateBtnTxt: {
+    color: C.white,
+    fontWeight: '700',
+  },
 });

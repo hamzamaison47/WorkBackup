@@ -1,5 +1,4 @@
 import {getActiveConfigData} from '../Controller/secureConfig';
-
 const GOOGLE_OAUTH_APP_GUID = '127486062920-9v2chjic07bslm1uoqrdodrmskgh9gpl';
 const Googleconfig = {
   issuer: 'https://accounts.google.com',
@@ -127,4 +126,32 @@ export const getAzureConfiguration = async () => {
 
 export const getGoogleConfiguration = () => {
   return Googleconfig;
+};
+
+// Controller/configuration.js
+
+export const getGraphConsentConfiguration = async (loginHint = null) => {
+  const config = await getActiveConfigData();
+  const tenantIdMatch = config.tokenUrl.match(/\/([0-9a-fA-F-]{36})\//);
+  const tenantId = tenantIdMatch?.[1];
+
+  if (!tenantId) throw new Error('Could not extract tenant ID from config.');
+
+  const additionalParameters = {
+    prompt: 'none',
+    ...(loginHint && {login_hint: loginHint}), // ← pins the account
+  };
+
+  return {
+    issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
+    clientId: config.client_id,
+    redirectUrl: 'authentication://callback/',
+    scopes: [
+      'openid',
+      'offline_access',
+      'https://graph.microsoft.com/Calendars.ReadWrite',
+      'https://graph.microsoft.com/User.Read',
+    ],
+    additionalParameters,
+  };
 };

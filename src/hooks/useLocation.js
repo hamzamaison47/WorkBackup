@@ -38,8 +38,10 @@ const checkSpoofing = (position, prevPosition) => {
   if (ts && Date.now() - ts > 180_000)
     return {detected: true, reason: 'stale_fix'};
 
-  if (JailMonkey.isJailBroken() || JailMonkey.trustFall())
-    return {detected: true, reason: 'rooted_device'};
+  try {
+    if (JailMonkey.isJailBroken() || JailMonkey.trustFall())
+      return {detected: true, reason: 'rooted_device'};
+  } catch {}
 
   try {
     if (DeviceInfo.isEmulatorSync())
@@ -77,8 +79,6 @@ const useLocation = () => {
   const [spoofingReason, setSpoofingReason] = useState(null);
   const [locationError, setLocationError] = useState(null);
 
-  // ── NEW: live WiFi info so components can read it synchronously ──
-  // { ssid: string|null, bssid: string|null, isWifi: boolean }
   const [wifiInfo, setWifiInfo] = useState({
     ssid: null,
     bssid: null,
@@ -102,6 +102,7 @@ const useLocation = () => {
     } catch {}
   }, []);
 
+  // ── KEY FIX: iOS permission properly handled ──────────────
   const requestPermission = useCallback(async () => {
     if (Platform.OS === 'android') {
       const granted = await PermissionsAndroid.request(
@@ -115,8 +116,53 @@ const useLocation = () => {
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     }
+
+    // ── iOS: First try getting position directly ──
+    // If permission already granted this will succeed immediately
     return new Promise(resolve => {
-      Geolocation.requestAuthorization(resolve, () => resolve(false));
+      Geolocation.getCurrentPosition(
+        () => {
+          // Position obtained = permission already granted
+          console.log('✅ iOS: location permission already granted');
+          resolve(true);
+        },
+        error => {
+          console.log('📍 iOS location check:', error.code, error.message);
+
+          if (error.code === 1) {
+            // PERMISSION_DENIED — request it
+            Geolocation.requestAuthorization(
+              status => {
+                // status is a string: 'authorizedWhenInUse', 'authorizedAlways',
+                // 'whenInUse', 'always', 'denied', 'restricted'
+                console.log('📍 iOS auth status received:', status);
+                const isGranted =
+                  status === 'authorizedWhenInUse' ||
+                  status === 'authorizedAlways' ||
+                  status === 'whenInUse' ||
+                  status === 'always' ||
+                  status === 'granted';
+                console.log('📍 iOS permission granted:', isGranted);
+                resolve(isGranted);
+              },
+              err => {
+                console.warn('📍 iOS requestAuthorization error:', err);
+                resolve(false);
+              },
+            );
+          } else {
+            // Timeout or other error — permission likely granted
+            // but GPS just took too long
+            console.log('📍 iOS: assuming granted, error code:', error.code);
+            resolve(true);
+          }
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 3000,
+          maximumAge: 60000,
+        },
+      );
     });
   }, []);
 
@@ -163,12 +209,18 @@ const useLocation = () => {
           return cfg;
         });
       },
-      error => setLocationError(error.message),
+      error => {
+        console.warn('📍 Location watch error:', error.message);
+        setLocationError(error.message);
+      },
       {
         enableHighAccuracy: true,
         distanceFilter: 10,
         interval: 5000,
         fastestInterval: 2000,
+        timeout: 20000,
+        maximumAge: 10000,
+        useSignificantChanges: false,
       },
     );
   }, []);
@@ -180,7 +232,6 @@ const useLocation = () => {
     }
   }, []);
 
-  // ── NEW: subscribe to NetInfo for live WiFi state ─────────
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       if (state.type === 'wifi' && state.details) {
@@ -203,9 +254,11 @@ const useLocation = () => {
       const granted = await requestPermission();
       if (!mounted) return;
       if (granted) {
+        console.log('✅ Location permission granted, starting watch');
         setPermissionStatus('granted');
         startWatching();
       } else {
+        console.warn('❌ Location permission denied');
         setPermissionStatus('denied');
       }
     })();
@@ -215,7 +268,6 @@ const useLocation = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── collectAttendanceData ─────────────────────────────────
   const collectAttendanceData = useCallback(
     async (eventLabel = 'EVENT') => {
       let gpsCoords = userCoords;
@@ -228,7 +280,7 @@ const useLocation = () => {
       try {
         const pos = await tryGetPosition({
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 15000,
           maximumAge: 5000,
         });
         gpsCoords = {
@@ -238,15 +290,11 @@ const useLocation = () => {
           timestamp: pos.timestamp,
         };
       } catch (err) {
-        console.warn(
-          'High-accuracy GPS failed:',
-          err.message,
-          '— trying low accuracy',
-        );
+        console.warn('High-accuracy GPS failed:', err.message, '— trying low accuracy');
         try {
           const pos = await tryGetPosition({
             enableHighAccuracy: false,
-            timeout: 10000,
+            timeout: 15000,
             maximumAge: 30000,
           });
           gpsCoords = {
@@ -345,7 +393,7 @@ const useLocation = () => {
     spoofingDetected,
     spoofingReason,
     locationError,
-    wifiInfo, // ← NEW: { ssid, bssid, isWifi }
+    wifiInfo,
     saveLocationConfig,
     startWatching,
     stopWatching,
