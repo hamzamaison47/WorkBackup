@@ -6,6 +6,7 @@ const initialState = {
   idToken: null,
   refreshToken: null,
   userToken: null,
+  aiServiceToken: null,
   lastBackgroundTime: null,
 };
 
@@ -28,6 +29,9 @@ const authSlice = createSlice({
     setLastBackgroundTime: (state, action) => {
       state.lastBackgroundTime = action.payload;
     },
+    setAIServiceToken: (state, action) => {
+      state.aiServiceToken = action.payload;
+    },
     setAuthTokens: (state, action) => {
       const {accessToken, idToken, refreshToken} = action.payload;
       if (accessToken !== undefined) state.accessToken = accessToken;
@@ -39,6 +43,7 @@ const authSlice = createSlice({
       state.idToken = null;
       state.refreshToken = null;
       state.userToken = null;
+      state.aiServiceToken = null;
       state.lastBackgroundTime = null;
     },
   },
@@ -50,6 +55,7 @@ export const {
   setRefreshToken,
   setUserToken,
   setLastBackgroundTime,
+  setAIServiceToken,
   setAuthTokens,
   clearAuthTokens,
 } = authSlice.actions;
