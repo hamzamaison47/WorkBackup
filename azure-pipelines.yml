@@ -1,0 +1,123 @@
+trigger:
+  branches:
+    include:
+      - operational
+
+pr: none # Only run on direct pushes to operational, not PRs
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  NODE_VERSION: '18.x'
+  JAVA_VERSION: '17'           # Required by AGP 8.6.0
+  BUILD_VARIANT: 'assembleRelease'
+  APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
+
+stages:
+
+# ─────────────────────────────────────────────
+# STAGE 1 — Install & Lint
+# ─────────────────────────────────────────────
+- stage: Install
+  displayName: 'Install & Lint'
+  jobs:
+    - job: Setup
+      displayName: 'npm ci + lint'
+      steps:
+
+        - task: NodeTool@0
+          displayName: 'Use Node $(NODE_VERSION)'
+          inputs:
+            versionSpec: $(NODE_VERSION)
+
+        - task: Cache@2
+          displayName: 'Cache node_modules'
+          inputs:
+            key: 'npm | "$(Agent.OS)" | package-lock.json'
+            restoreKeys: |
+              npm | "$(Agent.OS)"
+            path: node_modules
+
+        - script: npm ci
+          displayName: 'Install dependencies'
+
+        - script: npm run lint
+          displayName: 'Run ESLint'
+          continueOnError: false
+
+        - script: npm test -- --passWithNoTests
+          displayName: 'Run Jest tests'
+
+
+# ─────────────────────────────────────────────
+# STAGE 2 — Build Release APK
+# ─────────────────────────────────────────────
+- stage: Android
+  displayName: 'Build Android Release APK'
+  dependsOn: Install
+  jobs:
+    - job: BuildAPK
+      displayName: 'Gradle assembleRelease'
+      steps:
+
+        - task: NodeTool@0
+          displayName: 'Use Node $(NODE_VERSION)'
+          inputs:
+            versionSpec: $(NODE_VERSION)
+
+        - task: Cache@2
+          displayName: 'Restore node_modules cache'
+          inputs:
+            key: 'npm | "$(Agent.OS)" | package-lock.json'
+            restoreKeys: |
+              npm | "$(Agent.OS)"
+            path: node_modules
+
+        - script: npm ci
+          displayName: 'Install dependencies'
+
+        - task: JavaToolInstaller@0
+          displayName: 'Use JDK $(JAVA_VERSION)'
+          inputs:
+            versionSpec: $(JAVA_VERSION)
+            jdkArchitectureOption: 'x64'
+            jdkSourceOption: 'PreInstalled'
+
+        # ── Secure Files ──────────────────────────────────────
+        # Decode the base64-encoded keystore stored as a secret variable
+        - script: |
+            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
+          displayName: 'Decode & place keystore'
+
+        # Download google-services.json from Library → Secure Files
+        - task: DownloadSecureFile@1
+          displayName: 'Download google-services.json'
+          name: googleServices
+          inputs:
+            secureFile: 'google-services.json'
+
+        - script: cp $(googleServices.secureFilePath) android/app/google-services.json
+          displayName: 'Place google-services.json'
+
+        # ── Build ─────────────────────────────────────────────
+        - script: chmod +x android/gradlew
+          displayName: 'Make gradlew executable'
+
+        - script: |
+            cd android && ./gradlew $(BUILD_VARIANT) \
+              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
+              -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
+              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
+              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
+              --no-daemon \
+              --stacktrace
+          displayName: 'Build release APK'
+
+        # ── Artifact ──────────────────────────────────────────
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish APK artifact'
+          inputs:
+            pathToPublish: $(APK_OUTPUT_PATH)
+            artifactName: 'Authentication-release-apk'
+            publishLocation: 'Container'
