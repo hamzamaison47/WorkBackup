@@ -106,8 +106,12 @@ export default function CustomTabBar(props) {
 
   const getResponsiveStyles = () => {
     const tabCount = tabs.length;
-    if (tabCount <= 4) return {iconSize: 24, fontSize: 11, showLabel: true};
-    if (tabCount === 5) return {iconSize: 22, fontSize: 10, showLabel: true};
+    if (tabCount <= 4) {
+      return {iconSize: 24, fontSize: 11, showLabel: true};
+    }
+    if (tabCount === 5) {
+      return {iconSize: 22, fontSize: 10, showLabel: true};
+    }
     return {iconSize: 21, fontSize: 9, showLabel: true};
   };
 

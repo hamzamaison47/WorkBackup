@@ -4,7 +4,6 @@ import {getToken} from '../../Token/getToken';
 import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-
 const GetBankAccountLabels = async () => {
   try {
     const config = await getActiveConfigData();
@@ -30,7 +29,8 @@ const GetBankAccountLabels = async () => {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction: 'http://tempuri.org/HcmWorkerESSBankAccountSvc/getBankAccountLabels',
+          SOAPAction:
+            'http://tempuri.org/HcmWorkerESSBankAccountSvc/getBankAccountLabels',
         },
         responseType: 'text',
       },
@@ -51,7 +51,7 @@ const GetBankAccountLabels = async () => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['getBankAccountLabelsResponse']?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.getBankAccountLabelsResponse?.result;
 
     // console.log('Raw result:', result);
 
@@ -61,7 +61,9 @@ const GetBankAccountLabels = async () => {
     }
 
     const cleanObject = obj => {
-      if (!obj || typeof obj !== 'object') return obj;
+      if (!obj || typeof obj !== 'object') {
+        return obj;
+      }
 
       const cleaned = {};
       for (const [key, value] of Object.entries(obj)) {

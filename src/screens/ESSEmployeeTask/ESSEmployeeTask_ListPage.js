@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, {useState, useCallback, useMemo} from 'react';
 import {
   Text,
@@ -59,7 +58,9 @@ const ESSEmployeeTask_ListPage = () => {
         )
       : taskData;
 
-    if (activeFilter === 'All') return base;
+    if (activeFilter === 'All') {
+      return base;
+    }
 
     // ✅ Active = In progress + Not started
     if (activeFilter === 'Active') {
@@ -87,7 +88,9 @@ const ESSEmployeeTask_ListPage = () => {
 
   /** ================= FETCH TASKS ================= */
   const fetchAllTasks = useCallback(async () => {
-    if (!effectiveEmployeeId) return;
+    if (!effectiveEmployeeId) {
+      return;
+    }
 
     setIsLoading(true);
     try {
@@ -223,7 +226,9 @@ const ESSEmployeeTask_ListPage = () => {
 
   /** ================= RENDER CARD ================= */
   const renderTaskCard = ({item}) => {
-    if (!item) return null;
+    if (!item) {
+      return null;
+    }
     console.log('Before going to Processing ', item);
     const processedItem = {
       recId: item['a:recId'] || item.recId || '',

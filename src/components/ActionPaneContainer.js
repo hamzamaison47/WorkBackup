@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useEffect,
@@ -585,7 +584,9 @@ const ActionPaneContainer = ({
 
   const fetchNotifications = useCallback(async () => {
     try {
-      if (!userData?.employeeId) return;
+      if (!userData?.employeeId) {
+        return;
+      }
       const data = await RetrieveEmployeeNotification({
         employeeId: userData.employeeId,
       });
@@ -604,10 +605,10 @@ const ActionPaneContainer = ({
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  const toggleDrawer = () => {
+  const toggleDrawer = useCallback(() => {
     closeAllOverlays();
     navigation.toggleDrawer?.();
-  };
+  }, [closeAllOverlays, navigation]);
   const toggleNotification = () => {
     setDropdownVisible(false);
     setNotificationVisible(prev => !prev);
@@ -651,6 +652,8 @@ const ActionPaneContainer = ({
     selectedLegalEntity,
     defaultLegalEntity,
     isHeaderActive,
+    toggleDrawer,
+    T.blue,
   ]);
 
   const handleCompanySelect = async newLegalEntity => {
@@ -662,7 +665,9 @@ const ActionPaneContainer = ({
         newLegalEntity,
       );
       dispatch(setMenuItems(newMenuItems));
-      if (onRefresh) await onRefresh();
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (error) {
       dispatch(setSelectedLegalEntity(selectedLegalEntity));
       setAlertMessage(t('actionPane.companyChangeFailed'));

@@ -48,7 +48,8 @@ const ConfirmClockOutScreen = ({
   const [processingLabel, setProcessingLabel] = useState('Processing...');
   const [sessionSummary, setSessionSummary] = useState(null);
 
-  const {matchedFence, clockInFence, locationError, locationLoading} = useGeofence();
+  const {matchedFence, clockInFence, locationError, locationLoading} =
+    useGeofence();
   const {spoofingDetected} = useLocation();
   const {userData} = useSelector(s => s.user);
 
@@ -56,8 +57,10 @@ const ConfirmClockOutScreen = ({
   useEffect(() => {
     if (!validationToken?.serverPunches?.length) return;
     try {
-      const records = require('../../../screens/AttendanceManagement/helpers')
-        .aggregateServerPunches(validationToken.serverPunches);
+      const records =
+        require('../../../screens/AttendanceManagement/helpers').aggregateServerPunches(
+          validationToken.serverPunches,
+        );
       if (!records.length) return;
       const last = records[records.length - 1];
       if (!last.clockOut && last.clockIn) {
@@ -113,7 +116,8 @@ const ConfirmClockOutScreen = ({
     onConfirm,
   ]);
 
-  const displayFence = validationToken?.matchedFence ?? clockInFence ?? matchedFence;
+  const displayFence =
+    validationToken?.matchedFence ?? clockInFence ?? matchedFence;
   const matched = !!matchedFence;
 
   return (
@@ -133,7 +137,9 @@ const ConfirmClockOutScreen = ({
         {/* Validation status badge */}
         {validationToken ? (
           <View style={S.validBadge}>
-            <Text style={S.validBadgeText}>✓ All checks passed — ready to clock out</Text>
+            <Text style={S.validBadgeText}>
+              ✓ All checks passed — ready to clock out
+            </Text>
           </View>
         ) : (
           <View style={S.pendingBadge}>
@@ -148,7 +154,9 @@ const ConfirmClockOutScreen = ({
             <View style={S.divider} />
             <View style={S.summaryRow}>
               <Text style={S.summaryKey}>Clocked in at</Text>
-              <Text style={S.summaryVal}>{formatTime(sessionSummary.clockIn)}</Text>
+              <Text style={S.summaryVal}>
+                {formatTime(sessionSummary.clockIn)}
+              </Text>
             </View>
             <View style={S.summaryRow}>
               <Text style={S.summaryKey}>Total breaks</Text>
@@ -162,7 +170,8 @@ const ConfirmClockOutScreen = ({
             </View>
             <View style={S.summaryRow}>
               <Text style={S.summaryKey}>Net work time</Text>
-              <Text style={[S.summaryVal, {color: C.greenDark, fontWeight: '700'}]}>
+              <Text
+                style={[S.summaryVal, {color: C.greenDark, fontWeight: '700'}]}>
                 {formatDuration(sessionSummary.netMs)}
               </Text>
             </View>
@@ -206,7 +215,8 @@ const ConfirmClockOutScreen = ({
                 : locationError ?? 'Outside office zone (allowed)'}
             </Text>
           </View>
-          <Text style={[S.locArrow, {color: matched ? C.greenDark : C.inkFaint}]}>
+          <Text
+            style={[S.locArrow, {color: matched ? C.greenDark : C.inkFaint}]}>
             ›
           </Text>
         </TouchableOpacity>
@@ -305,5 +315,10 @@ const S = StyleSheet.create({
   locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
   locArrow: {fontSize: 18},
   fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
-  divider: {height: 1, backgroundColor: C.border, marginBottom: 4, marginTop: 4},
+  divider: {
+    height: 1,
+    backgroundColor: C.border,
+    marginBottom: 4,
+    marginTop: 4,
+  },
 });

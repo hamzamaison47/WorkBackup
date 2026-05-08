@@ -160,7 +160,9 @@ import React from 'react';
 import DatePicker from 'react-native-date-picker';
 
 const parseLocalDate = dateString => {
-  if (!dateString) return new Date();
+  if (!dateString) {
+    return new Date();
+  }
   const datePart = dateString.split('T')[0];
   const [year, month, day] = datePart.split('-').map(Number);
   return new Date(year, month - 1, day);

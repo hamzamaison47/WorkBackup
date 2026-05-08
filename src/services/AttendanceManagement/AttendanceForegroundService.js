@@ -171,7 +171,10 @@ export const markBreakEnded = async () => {
   try {
     AttendanceService.updateBreakState(false, 0, _totalBreakMs);
     if (__DEV__) {
-      console.log('[AttendanceForegroundService] Break ended, total breaks:', _totalBreakMs);
+      console.log(
+        '[AttendanceForegroundService] Break ended, total breaks:',
+        _totalBreakMs,
+      );
     }
   } catch (err) {
     if (__DEV__) {

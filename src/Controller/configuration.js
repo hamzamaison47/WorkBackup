@@ -135,7 +135,9 @@ export const getGraphConsentConfiguration = async (loginHint = null) => {
   const tenantIdMatch = config.tokenUrl.match(/\/([0-9a-fA-F-]{36})\//);
   const tenantId = tenantIdMatch?.[1];
 
-  if (!tenantId) throw new Error('Could not extract tenant ID from config.');
+  if (!tenantId) {
+    throw new Error('Could not extract tenant ID from config.');
+  }
 
   const additionalParameters = {
     prompt: 'none',

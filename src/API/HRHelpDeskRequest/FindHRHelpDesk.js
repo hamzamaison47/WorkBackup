@@ -54,9 +54,15 @@ const FindHRHelpDesk = async ({recId}) => {
     }
 
     const cleanObject = obj => {
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj !== 'object') return obj;
-      if (Array.isArray(obj)) return obj.map(cleanObject);
+      if (obj === null || obj === undefined) {
+        return obj;
+      }
+      if (typeof obj !== 'object') {
+        return obj;
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(cleanObject);
+      }
 
       return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [

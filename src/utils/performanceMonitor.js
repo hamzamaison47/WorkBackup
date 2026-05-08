@@ -14,7 +14,9 @@ class PerformanceMonitor {
    * @param {string} label - Unique identifier for this measurement
    */
   startMeasure(label) {
-    if (!this.isEnabled) return;
+    if (!this.isEnabled) {
+      return;
+    }
     this.metrics.set(label, {
       startTime: Date.now(),
       startMemory: this.getMemoryUsage(),
@@ -26,7 +28,9 @@ class PerformanceMonitor {
    * @param {string} label - Same label used in startMeasure
    */
   endMeasure(label) {
-    if (!this.isEnabled) return;
+    if (!this.isEnabled) {
+      return;
+    }
 
     const metric = this.metrics.get(label);
     if (!metric) {
@@ -72,7 +76,9 @@ class PerformanceMonitor {
    * @returns {string}
    */
   formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) {
+      return '0 B';
+    }
     const k = 1024;
     const sizes = ['B', 'KB', 'MB'];
     const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));

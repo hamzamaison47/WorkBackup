@@ -52,9 +52,7 @@ const UpdateDueDate = async ({dueDate, recId}) => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['updateTaskDueDateResponse']?.[
-        'result'
-      ];
+      parsed?.['s:Envelope']?.['s:Body']?.updateTaskDueDateResponse?.result;
 
     if (!result) {
       console.log('No result found');
@@ -63,9 +61,15 @@ const UpdateDueDate = async ({dueDate, recId}) => {
 
     // ✅ Clean namespace
     const cleanObject = obj => {
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj !== 'object') return obj;
-      if (Array.isArray(obj)) return obj.map(cleanObject);
+      if (obj === null || obj === undefined) {
+        return obj;
+      }
+      if (typeof obj !== 'object') {
+        return obj;
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(cleanObject);
+      }
 
       return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [

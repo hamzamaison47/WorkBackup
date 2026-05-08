@@ -49,8 +49,7 @@ const canEnableEditButton = async (recId, recVersion) => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['canEnableEditButtonResponse']
-        ?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.canEnableEditButtonResponse?.result;
 
     const canEdit =
       result === true ||

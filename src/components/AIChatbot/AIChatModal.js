@@ -176,7 +176,9 @@ const AIChatModal = ({visible, onClose}) => {
 
   // Check auth state whenever modal opens
   useEffect(() => {
-    if (visible) setAuthed(true);
+    if (visible) {
+      setAuthed(true);
+    }
   }, [visible]);
 
   const handleClose = useCallback(() => {
@@ -193,7 +195,9 @@ const AIChatModal = ({visible, onClose}) => {
 
   const handleSend = useCallback(async () => {
     const text = inputText.trim();
-    if (!text || isTyping) return;
+    if (!text || isTyping) {
+      return;
+    }
     Keyboard.dismiss();
     setInputText('');
 
@@ -210,7 +214,9 @@ const AIChatModal = ({visible, onClose}) => {
         reply,
         consentLink,
       } = await sendMessage(conversationId, text);
-      if (!conversationId) setConversationId(cid);
+      if (!conversationId) {
+        setConversationId(cid);
+      }
       setMessages(prev => [
         ...prev,
         {

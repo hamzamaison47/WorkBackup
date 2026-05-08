@@ -403,7 +403,9 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
   const T = useAppTokens();
 
   const getInitials = useCallback(name => {
-    if (!name) return 'UN';
+    if (!name) {
+      return 'UN';
+    }
     return name
       .split(' ')
       .map(n => n[0])
@@ -553,7 +555,9 @@ const CustomDrawerContent = props => {
       const state = e.data.state;
       if (state && state.routes && state.index !== undefined) {
         const currentRoute = state.routes[state.index]?.name;
-        if (currentRoute) setActiveRoute(currentRoute);
+        if (currentRoute) {
+          setActiveRoute(currentRoute);
+        }
       }
     });
 
@@ -564,7 +568,9 @@ const CustomDrawerContent = props => {
       currentState.index !== undefined
     ) {
       const currentRoute = currentState.routes[currentState.index]?.name;
-      if (currentRoute) setActiveRoute(currentRoute);
+      if (currentRoute) {
+        setActiveRoute(currentRoute);
+      }
     }
 
     return unsubscribe;

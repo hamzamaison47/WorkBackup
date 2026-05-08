@@ -290,7 +290,11 @@ const useLocation = () => {
           timestamp: pos.timestamp,
         };
       } catch (err) {
-        console.warn('High-accuracy GPS failed:', err.message, '— trying low accuracy');
+        console.warn(
+          'High-accuracy GPS failed:',
+          err.message,
+          '— trying low accuracy',
+        );
         try {
           const pos = await tryGetPosition({
             enableHighAccuracy: false,

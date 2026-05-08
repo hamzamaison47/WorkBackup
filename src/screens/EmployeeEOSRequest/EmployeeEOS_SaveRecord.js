@@ -28,7 +28,9 @@ import SubmitEOSRequest from '../../API/EmployeeEOSRequest/SubmitEOSRequest';
 
 // Helper to format date as MM-DD-YYYY
 const formatDate = raw => {
-  if (!raw) return '';
+  if (!raw) {
+    return '';
+  }
   try {
     const d = new Date(raw);
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -42,7 +44,9 @@ const formatDate = raw => {
 
 // Calculate last working date based on notification
 const calculateLastWorkingDate = notificationDate => {
-  if (!notificationDate) return '';
+  if (!notificationDate) {
+    return '';
+  }
   const baseDate = new Date(notificationDate);
   baseDate.setDate(baseDate.getDate() + 30);
   return baseDate.toISOString().split('T')[0];
@@ -167,8 +171,9 @@ const EOSRequestScreen = () => {
       // If not created yet, create first
       if (!recId) {
         const result = await CreateEOSRequest({contract: formData});
-        if (!result?.RecId)
+        if (!result?.RecId) {
           return Alert.alert('Error', 'Failed to create EOS Request.');
+        }
         handleChange('RecId', result.RecId);
         recId = result.RecId;
       }

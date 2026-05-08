@@ -61,7 +61,8 @@ const ConfirmBreakScreen = ({
   const [processingLabel, setProcessingLabel] = useState('Processing...');
   const [sessionSummary, setSessionSummary] = useState(null);
 
-  const {matchedFence, clockInFence, locationLoading, locationError} = useGeofence();
+  const {matchedFence, clockInFence, locationLoading, locationError} =
+    useGeofence();
   const {spoofingDetected, spoofingReason} = useLocation();
   const {userData} = useSelector(s => s.user);
 
@@ -162,7 +163,8 @@ const ConfirmBreakScreen = ({
         {validationToken ? (
           <View style={S.validBadge}>
             <Text style={S.validBadgeText}>
-              ✓ All checks passed — ready to {isBreakEnd ? 'end break' : 'start break'}
+              ✓ All checks passed — ready to{' '}
+              {isBreakEnd ? 'end break' : 'start break'}
             </Text>
           </View>
         ) : (
@@ -194,8 +196,11 @@ const ConfirmBreakScreen = ({
             </View>
             {isBreakEnd && sessionSummary.ongoingBreakStart ? (
               <View style={S.contextRow}>
-                <Text style={[S.contextKey, {color: '#92400E'}]}>Break started</Text>
-                <Text style={[S.contextVal, {color: '#92400E', fontWeight: '700'}]}>
+                <Text style={[S.contextKey, {color: '#92400E'}]}>
+                  Break started
+                </Text>
+                <Text
+                  style={[S.contextVal, {color: '#92400E', fontWeight: '700'}]}>
                   {formatTime(sessionSummary.ongoingBreakStart)}
                   {' · '}
                   {formatDurationShort(
@@ -230,7 +235,8 @@ const ConfirmBreakScreen = ({
           <View style={S.spoofBanner}>
             <Text style={S.spoofTitle}>GPS Integrity Warning</Text>
             <Text style={S.spoofSub}>
-              {SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS activity detected'}
+              {SPOOF_LABELS[spoofingReason] ??
+                'Suspicious GPS activity detected'}
             </Text>
           </View>
         )}
@@ -249,16 +255,25 @@ const ConfirmBreakScreen = ({
           activeOpacity={0.75}
           disabled={isProcessing}>
           {locationLoading ? (
-            <ActivityIndicator size="small" color={C.blue} style={{marginRight: 4}} />
+            <ActivityIndicator
+              size="small"
+              color={C.blue}
+              style={{marginRight: 4}}
+            />
           ) : (
             <View
-              style={[S.locDot, {backgroundColor: matched ? C.greenMid : C.inkFaint}]}
+              style={[
+                S.locDot,
+                {backgroundColor: matched ? C.greenMid : C.inkFaint},
+              ]}
             />
           )}
           <View style={S.locBody}>
             <Text style={S.locLabel}>CURRENT LOCATION</Text>
             {locationLoading ? (
-              <Text style={[S.locValue, {color: C.inkMuted}]}>Verifying location…</Text>
+              <Text style={[S.locValue, {color: C.inkMuted}]}>
+                Verifying location…
+              </Text>
             ) : (
               <Text
                 style={[S.locValue, !matched && {color: C.inkMuted}]}
@@ -269,7 +284,8 @@ const ConfirmBreakScreen = ({
               </Text>
             )}
           </View>
-          <Text style={[S.locArrow, {color: matched ? C.greenDark : C.inkFaint}]}>
+          <Text
+            style={[S.locArrow, {color: matched ? C.greenDark : C.inkFaint}]}>
             ›
           </Text>
         </TouchableOpacity>
@@ -386,5 +402,10 @@ const S = StyleSheet.create({
   fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
   allowedNote: {marginBottom: 8},
   allowedNoteTxt: {fontSize: 11, color: C.inkMuted, fontStyle: 'italic'},
-  divider: {height: 1, backgroundColor: C.border, marginBottom: 4, marginTop: 4},
+  divider: {
+    height: 1,
+    backgroundColor: C.border,
+    marginBottom: 4,
+    marginTop: 4,
+  },
 });

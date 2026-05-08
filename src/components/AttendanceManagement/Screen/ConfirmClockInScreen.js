@@ -1,5 +1,5 @@
 /* eslint-disable curly */
-/* eslint-disable react-native/no-inline-styles */
+
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/screens/ConfirmClockInScreen.js
 //
@@ -15,13 +15,7 @@
 //         (~0 additional SOAP calls if token fresh, ~0.3s)
 // ─────────────────────────────────────────────
 import React, {useState, useCallback} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Alert} from 'react-native';
 import {useSelector} from 'react-redux';
 import ConfirmSheet from '../ConfirmSheet';
 import {NoteRow, OptionRow} from '../FormRow';
@@ -50,7 +44,8 @@ const ConfirmClockInScreen = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState('Processing...');
 
-  const {matchedFence, clockInFence, locationError, locationLoading} = useGeofence();
+  const {matchedFence, clockInFence, locationError, locationLoading} =
+    useGeofence();
   const {spoofingDetected} = useLocation();
   const {userData} = useSelector(s => s.user);
 
@@ -115,7 +110,9 @@ const ConfirmClockInScreen = ({
         {/* Validation status badge */}
         {validationToken ? (
           <View style={S.validBadge}>
-            <Text style={S.validBadgeText}>✓ All checks passed — ready to clock in</Text>
+            <Text style={S.validBadgeText}>
+              ✓ All checks passed — ready to clock in
+            </Text>
           </View>
         ) : (
           <View style={S.pendingBadge}>
@@ -150,7 +147,8 @@ const ConfirmClockInScreen = ({
               <Text style={S.locSub}>{displayFence.distanceMetres} m away</Text>
             )}
           </View>
-          <Text style={[S.locArrow, {color: matched ? C.greenDark : C.redDark}]}>
+          <Text
+            style={[S.locArrow, {color: matched ? C.greenDark : C.redDark}]}>
             ›
           </Text>
         </TouchableOpacity>

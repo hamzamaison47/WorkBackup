@@ -219,13 +219,17 @@ const MonthGrid = ({selectedDate, onSelectDate, eventDates, T}) => {
     if (viewMonth === 0) {
       setViewYear(y => y - 1);
       setViewMonth(11);
-    } else setViewMonth(m => m - 1);
+    } else {
+      setViewMonth(m => m - 1);
+    }
   };
   const nextMonth = () => {
     if (viewMonth === 11) {
       setViewYear(y => y + 1);
       setViewMonth(0);
-    } else setViewMonth(m => m + 1);
+    } else {
+      setViewMonth(m => m + 1);
+    }
   };
   const goToday = () => {
     setViewYear(today.getFullYear());
@@ -622,8 +626,11 @@ const OutlookCalendarScreen = () => {
   );
 
   const handleGoBack = () => {
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate('MainDashboard');
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainDashboard');
+    }
   };
 
   const isToday = isSameDay(selectedDate, new Date());

@@ -649,7 +649,9 @@ const OutstandingAdvancesScreen = () => {
   };
 
   const getFilteredData = () => {
-    if (activeFilter === 'All') return data;
+    if (activeFilter === 'All') {
+      return data;
+    }
     return data.filter(item => getAdvanceType(item) === activeFilter);
   };
 

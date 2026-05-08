@@ -72,7 +72,9 @@ const retrieveSiteIdPurchaseRequisitionLines = async ({_dataAreaid}) => {
 
     // REMOVE "a:" PREFIX FROM ELEMENTS
     const cleanObject = obj => {
-      if (!obj || typeof obj !== 'object') return obj;
+      if (!obj || typeof obj !== 'object') {
+        return obj;
+      }
 
       return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [

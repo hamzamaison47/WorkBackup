@@ -4,7 +4,6 @@ import {getToken} from '../../Token/getToken';
 import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-
 const getpersonalContactLabels = async () => {
   try {
     const config = await getActiveConfigData();
@@ -30,7 +29,8 @@ const getpersonalContactLabels = async () => {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction: 'http://tempuri.org/ESSPersonalContactsSvc/getpersonalContactsLabels',
+          SOAPAction:
+            'http://tempuri.org/ESSPersonalContactsSvc/getpersonalContactsLabels',
         },
         responseType: 'text',
       },
@@ -51,7 +51,8 @@ const getpersonalContactLabels = async () => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['getpersonalContactsLabelsResponse']?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.getpersonalContactsLabelsResponse
+        ?.result;
 
     // console.log('Raw result:', result);
 
@@ -61,7 +62,9 @@ const getpersonalContactLabels = async () => {
     }
 
     const cleanObject = obj => {
-      if (!obj || typeof obj !== 'object') return obj;
+      if (!obj || typeof obj !== 'object') {
+        return obj;
+      }
 
       const cleaned = {};
       for (const [key, value] of Object.entries(obj)) {

@@ -50,7 +50,9 @@ const AppNavigator = () => {
         options={{headerShown: false}}
       />
       {/* Screens WITH session timeout */}
-      <Stack.Screen name="DrawerNavigator" options={{headerShown: false, gestureEnabled: false}}>
+      <Stack.Screen
+        name="DrawerNavigator"
+        options={{headerShown: false, gestureEnabled: false}}>
         {() => (
           <ScreenWithSessionTimeout>
             <DrawerNavigator />

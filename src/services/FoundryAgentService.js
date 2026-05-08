@@ -85,7 +85,9 @@ async function pollResponse(responseId, intervalMs = 1500, maxAttempts = 40) {
     if (data.status === 'failed') {
       throw new Error(data.error?.message ?? 'Response generation failed');
     }
-    if (data.status === 'completed') return extractResult(data);
+    if (data.status === 'completed') {
+      return extractResult(data);
+    }
   }
   throw new Error('Response timed out');
 }
@@ -116,7 +118,9 @@ function extractResult(data) {
       )
       .join('\n');
 
-    if (text) return {type: 'text', reply: text};
+    if (text) {
+      return {type: 'text', reply: text};
+    }
   }
 
   return {type: 'text', reply: '(No response)'};
@@ -135,7 +139,9 @@ function extractText(data) {
           : [],
       )
       .join('\n');
-    if (text) return text;
+    if (text) {
+      return text;
+    }
   }
   return '(No response)';
 }

@@ -2,8 +2,7 @@ import React from 'react';
 import {TouchableOpacity, View, Text, StyleSheet} from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import FAIcon from 'react-native-vector-icons/FontAwesome';
-import { Platform } from 'react-native';
-
+import {Platform} from 'react-native';
 
 import NotificationButton from './NotificationButton';
 import {
@@ -72,18 +71,18 @@ const MainPageHeader = ({
     </View>
   ),
 
- headerStyle: {
-  backgroundColor: headerBg,
-  ...(Platform.OS === 'android' && {
-    height: conditionalScale(48, 50, 52, 54),
-  }),
-  elevation: 4,
-  shadowColor: '#0A2540',
-  shadowOffset: {width: 0, height: 2},
-  shadowOpacity: 0.18,
-  shadowRadius: 6,
-  borderBottomWidth: 0,
-},
+  headerStyle: {
+    backgroundColor: headerBg,
+    ...(Platform.OS === 'android' && {
+      height: conditionalScale(48, 50, 52, 54),
+    }),
+    elevation: 4,
+    shadowColor: '#0A2540',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    borderBottomWidth: 0,
+  },
 
   headerTintColor: '#fff',
   headerTitleAlign: 'left',
