@@ -1155,63 +1155,66 @@ const WorkingHoursChart = ({weekData, T}) => {
       </View>
 
       <View style={[S.chartArea, {height: BAR_H + 28}]}>
-        {/* Target line */}
-        <View
-          style={[
-            S.targetLine,
-            {
-              bottom: 24 + (TARGET / MAX) * BAR_H,
-              borderColor: T.chevronColor,
-            },
-          ]}
-        />
+        <View style={S.chartClip}>
+          {/* Target line */}
+          <View
+            style={[
+              S.targetLine,
+              {
+                bottom: 24 + (TARGET / MAX) * BAR_H,
+                borderColor: T.chevronColor,
+              },
+            ]}
+          />
 
-        {/* Bars */}
-        <View style={S.barsRow}>
-          {weekData.map((d, i) => {
-            const barH = Math.max(4, (d.hours / MAX) * BAR_H);
-            const isOver = d.hours >= TARGET;
-            return (
-              <View key={i} style={S.barCol}>
-                <Text
-                  style={[
-                    S.barValueText,
-                    {
-                      color: d.isToday ? T.blue : T.subtitleText,
-                      fontWeight: d.isToday ? '600' : '400',
-                    },
-                  ]}>
-                  {d.hours > 0 ? `${d.hours}h` : ''}
-                </Text>
-                <View style={[S.barTrack, {height: BAR_H}]}>
-                  <View
+          {/* Bars */}
+          <View style={S.barsRow}>
+            {weekData.map((d, i) => {
+              const barH = Math.max(4, (d.hours / MAX) * BAR_H);
+              const isOver = d.hours >= TARGET;
+              return (
+                <View key={i} style={S.barCol}>
+                  <Text
                     style={[
-                      S.bar,
+                      S.barValueText,
                       {
-                        height: barH,
-                        backgroundColor: d.isToday
-                          ? T.blue
-                          : isOver
-                          ? '#B5D4F4'
-                          : '#DBEAFE',
-                        borderRadius: conditionalScale(4, 4, 5, 5),
+                        color: d.isToday ? T.blue : T.subtitleText,
+                        fontWeight: d.isToday ? '600' : '400',
+                      },
+                    ]}>
+                    {d.hours > 0 ? `${d.hours}h` : ''}
+                  </Text>
+                  <View style={[S.barTrack, {height: BAR_H}]}>
+                    <View
+                      style={[
+                        S.bar,
+                        {
+                          height: barH,
+                          backgroundColor: d.isToday
+                            ? T.blue
+                            : isOver
+                            ? '#B5D4F4'
+                            : '#DBEAFE',
+                          borderRadius: conditionalScale(4, 4, 5, 5),
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      S.barLabel,
+                      {
+                        color: d.isToday ? T.blue : T.subtitleText,
+                        fontWeight: d.isToday ? '600' : '400',
                       },
                     ]}
-                  />
+                    numberOfLines={1}>
+                    {d.label}
+                  </Text>
                 </View>
-                <Text
-                  style={[
-                    S.barLabel,
-                    {
-                      color: d.isToday ? T.blue : T.subtitleText,
-                      fontWeight: d.isToday ? '600' : '400',
-                    },
-                  ]}>
-                  {d.label}
-                </Text>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
         </View>
       </View>
     </View>
@@ -1816,6 +1819,7 @@ const S = StyleSheet.create({
   // ── Chart ─────────────────────────────────────────────────────────────────────
   chartLegendRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 16,
     marginBottom: conditionalVerticalScale(10, 11, 12, 12),
   },
@@ -1835,6 +1839,12 @@ const S = StyleSheet.create({
   chartArea: {
     position: 'relative',
     width: '100%',
+    overflow: 'hidden',
+  },
+  chartClip: {
+    flex: 1,
+    paddingHorizontal: conditionalScale(4, 5, 6, 6),
+    overflow: 'hidden',
   },
   targetLine: {
     position: 'absolute',
@@ -1857,15 +1867,18 @@ const S = StyleSheet.create({
   },
   barCol: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'center',
     justifyContent: 'flex-end',
+    paddingHorizontal: 2,
   },
   barValueText: {
     fontSize: conditionalFontScale(9, 9, 10, 10),
     marginBottom: 2,
   },
   barTrack: {
-    width: '70%',
+    width: '100%',
+    maxWidth: conditionalScale(24, 26, 28, 28),
     justifyContent: 'flex-end',
   },
   bar: {
@@ -1874,6 +1887,7 @@ const S = StyleSheet.create({
   barLabel: {
     fontSize: conditionalFontScale(10, 10, 11, 11),
     marginTop: 5,
+    maxWidth: '100%',
   },
 
   // ── Card ─────────────────────────────────────────────────────────────────────

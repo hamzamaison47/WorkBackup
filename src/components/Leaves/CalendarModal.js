@@ -199,9 +199,11 @@ const CalendarModal = ({
   onDateSelected,
   onClose,
   maxDate,
+  minDate, // ✅ add this
 }) => {
   const date = parseLocalDate(initialDate);
   const max = maxDate ? parseLocalDate(maxDate) : undefined;
+  const min = minDate ? parseLocalDate(minDate) : undefined; // ✅ add this
 
   return (
     <DatePicker
@@ -210,6 +212,7 @@ const CalendarModal = ({
       date={date}
       mode="date"
       maximumDate={max}
+      minimumDate={min} // ✅ add this
       onConfirm={selectedDate => {
         onDateSelected(formatLocalDate(selectedDate));
         onClose();

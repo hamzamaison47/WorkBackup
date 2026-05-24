@@ -174,6 +174,7 @@ const EmploymentCertificate = () => {
       pageTitle="Request For Letters"
       showFooter
       showFloatingButton={false}
+      showPageTitleRow={true}
       isHeaderActive
       onBackPress={() => navigation.goBack()}>
       <ScrollView

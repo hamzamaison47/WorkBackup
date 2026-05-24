@@ -252,7 +252,7 @@ const SettingsScreen = ({navigation: navProp}) => {
               isLast
             />
           )}
-          {/* <SettingRow
+          <SettingRow
             icon="shopping-cart"
             iconColor={AppTokens.indigo}
             iconBg={AppTokens.indigoBg}
@@ -268,7 +268,7 @@ const SettingsScreen = ({navigation: navProp}) => {
               })
             }
             isLast
-          /> */}
+          />
         </AnimatedCard>
 
         {/* ── SECURITY ─────────────────────────────────────────────────── */}

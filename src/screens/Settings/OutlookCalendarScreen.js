@@ -303,9 +303,20 @@ const CalendarGrid = ({selectedDate, onSelectDate, events}) => {
   const eventMap = useMemo(() => {
     const m = {};
     events.forEach(ev => {
-      const d = parseGD(ev.start);
-      const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      m[k] = (m[k] || 0) + 1;
+      const start = parseGD(ev.start);
+      const end = parseGD(ev.end);
+      // Walk each calendar day the event touches
+      const cursor = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate(),
+      );
+      const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      while (cursor <= endDay) {
+        const k = `${cursor.getFullYear()}-${cursor.getMonth()}-${cursor.getDate()}`;
+        m[k] = (m[k] || 0) + 1;
+        cursor.setDate(cursor.getDate() + 1);
+      }
     });
     return m;
   }, [events]);
@@ -1473,7 +1484,20 @@ const OutlookCalendarScreen = () => {
   }, [fetchEvents]);
 
   const selectedEvents = useMemo(
-    () => allEvents.filter(e => sameDay(parseGD(e.start), selectedDate)),
+    () =>
+      allEvents.filter(e => {
+        const start = parseGD(e.start);
+        const end = parseGD(e.end);
+        // Normalize selected date to midnight
+        const selStart = new Date(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth(),
+          selectedDate.getDate(),
+        );
+        const selEnd = new Date(selStart.getTime() + 86400000); // next midnight
+        // Event overlaps this day if it starts before day ends AND ends after day starts
+        return start < selEnd && end > selStart;
+      }),
     [allEvents, selectedDate],
   );
 

@@ -88,25 +88,45 @@ const buildContractXml = contract => {
   if (!contract) return '';
 
   const ns = 'tem';
-  const fields = [
-    'AccountHolder',
-    'AccountId',
-    'AccountNum',
-    'BankIBAN',
-    'BranchName',
-    'BranchNumber',
-    'Name',
-    'recId',
-    'Worker',
+  const numericFields = new Set(['recId', 'Worker']);
+
+  // xmlTag = what WSDL expects, contractKey = what our JS object has
+  const fieldMappings = [
+    {xmlTag: 'AccountHolder', contractKey: 'AccountHolder'},
+    {xmlTag: 'AccountId', contractKey: 'AccountId'},
+    {xmlTag: 'AccountNum', contractKey: 'AccountNum'},
+    {xmlTag: 'BankIBAN', contractKey: 'BankIBAN'},
+    {xmlTag: 'BranchName', contractKey: 'BranchName'},
+    {xmlTag: 'BranchNumber', contractKey: 'BranchNumber'},
+    {xmlTag: 'EmployeeId', contractKey: 'EmployeeId'},
+    {xmlTag: 'Name', contractKey: 'Name'},
+    {xmlTag: 'recId', contractKey: 'RecId'}, // ← WSDL is lowercase recId
+    {xmlTag: 'WFOperation', contractKey: 'WFOperation'},
+    {xmlTag: 'WFStatus', contractKey: 'WFStatus'},
+    {xmlTag: 'Worker', contractKey: 'Worker'},
   ];
 
-  return fields
-    .map(field => {
-      const value = contract[field];
-      if (value === null || value === undefined) {
-        return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
+  return fieldMappings
+    .map(({xmlTag, contractKey}) => {
+      // Always hardcode these
+      if (xmlTag === 'WFStatus')
+        return `<${ns}:${xmlTag}>Not Submitted</${ns}:${xmlTag}>`;
+      if (xmlTag === 'WFOperation')
+        return `<${ns}:${xmlTag}>Update</${ns}:${xmlTag}>`;
+
+      const value = contract[contractKey];
+
+      // Numeric fields must never be nil
+      if (numericFields.has(xmlTag)) {
+        const numVal = !value || value === '' ? '0' : String(value);
+        return `<${ns}:${xmlTag}>${numVal}</${ns}:${xmlTag}>`;
       }
-      return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
+
+      if (value === null || value === undefined || value === '') {
+        return `<${ns}:${xmlTag} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
+      }
+
+      return `<${ns}:${xmlTag}>${escapeXmlValue(value)}</${ns}:${xmlTag}>`;
     })
     .join('');
 };

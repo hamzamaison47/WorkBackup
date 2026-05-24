@@ -515,14 +515,10 @@ const GenericAdvanceSaveScreen = () => {
       });
       const getEmployeeLookup = await GetEmployeeLookup();
 
-      // console.log({allAdvanceCodes});
-      // console.log(getEmployeeLookup, {getEmployeeLookup});
-
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
       }
 
-      // Process Guarantors data
       if (getEmployeeLookup && Array.isArray(getEmployeeLookup)) {
         const filteredGuarantors = getEmployeeLookup
           .filter(
@@ -613,13 +609,27 @@ const GenericAdvanceSaveScreen = () => {
 
               // Only set dates if we have a valid end date
               if (endDate) {
-                const formattedEndDate = formatToISOWithTime(endDate);
-                console.log('Formatted EndDate:', formattedEndDate);
+                const todayISO = new Date().toISOString().split('T')[0];
+                const todayFormatted = formatToISOWithTime(todayISO);
+                // End of current month for recovery start date
+                const now = new Date();
+                const endOfMonth = new Date(
+                  now.getFullYear(),
+                  now.getMonth() + 1,
+                  0,
+                );
+                const endOfMonthISO = `${endOfMonth.getFullYear()}-${String(
+                  endOfMonth.getMonth() + 1,
+                ).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(
+                  2,
+                  '0',
+                )}`;
+                const endOfMonthFormatted = formatToISOWithTime(endOfMonthISO);
 
                 setFormData(prev => ({
                   ...prev,
-                  RequestedPaymentDate: formattedEndDate,
-                  RecoveryStartDate: formattedEndDate,
+                  RequestedPaymentDate: todayFormatted, // ✅ today
+                  RecoveryStartDate: endOfMonthFormatted, // ✅ end of month
                 }));
               } else {
                 // If no end date, use today's date
@@ -1501,6 +1511,7 @@ const GenericAdvanceSaveScreen = () => {
         initialDate={formData.RequestedPaymentDate}
         onDateSelected={handlePaymentDateChange}
         onClose={() => setShowPaymentDateCalendar(false)}
+        minDate={today}
       />
 
       <CalendarModal

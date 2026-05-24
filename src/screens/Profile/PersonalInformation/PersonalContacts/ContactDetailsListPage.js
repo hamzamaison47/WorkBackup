@@ -190,14 +190,15 @@ const ContactDetailsListPage = () => {
       // subtitle: {key: 'Description'},
     },
     fields: [
-      // {key: 'Type', label: 'Type', type: 'text'},
-      // {
-      //   key: 'IsPrimary',
-      //   label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
-      //   type: 'text',
-      // },
+      {key: 'Type', label: 'Type', type: 'text'},
+      {
+        key: 'IsPrimary',
+        label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
+        type: 'text',
+      },
       {
         key: 'Locator',
+        label: 'Address',
         type: 'text',
       },
     ],

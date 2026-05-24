@@ -41,14 +41,7 @@ import {getContactDetailsLabels} from '../../../../API/PersonalInformation/Conta
 import styles from '../../../../styles/styles';
 
 /* -------  PHONE TYPES (show Extension field for these)  ------- */
-const PHONE_TYPES = [
-  'Phone',
-  'Home number',
-  'Work number',
-  'Mobile number',
-  'Fax',
-  'Telex',
-];
+const PHONE_TYPES = ['Phone', 'Fax', 'Telex'];
 
 /* -------  Per-type locator label + placeholder  ------- */
 const LOCATOR_CONFIG = {
@@ -65,12 +58,6 @@ const LOCATOR_CONFIG = {
   LinkedIn: {
     label: 'LinkedIn Profile URL *',
     placeholder: 'e.g., https://linkedin.com/in/username',
-  },
-  'Home number': {label: 'Home Number *', placeholder: 'e.g., +921234567890'},
-  'Work number': {label: 'Work Number *', placeholder: 'e.g., +921234567890'},
-  'Mobile number': {
-    label: 'Mobile Number *',
-    placeholder: 'e.g., +921234567890',
   },
 };
 
@@ -146,9 +133,6 @@ const ContactDetailsSaveRecord = () => {
     {label: 'Facebook', value: 'Facebook'},
     {label: 'Twitter', value: 'Twitter'},
     {label: 'LinkedIn', value: 'LinkedIn'},
-    {label: 'Home number', value: 'Home number'},
-    {label: 'Work number', value: 'Work number'},
-    {label: 'Mobile number', value: 'Mobile number'},
   ];
 
   const fetchgetContactDetailsLabels = async () => {

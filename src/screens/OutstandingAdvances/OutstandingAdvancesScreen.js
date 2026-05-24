@@ -508,6 +508,9 @@ const safeNum = value => {
   return isNaN(n) ? 0 : n;
 };
 
+const hasBlankPostingStatus = item =>
+  !item.PostingStatus || String(item.PostingStatus).trim() === '';
+
 // ─── Outstanding Row Component ───────────────────────────────────────────────────
 const OutstandingRow = ({item, index}) => {
   const T = useAppTokens();
@@ -528,6 +531,7 @@ const OutstandingRow = ({item, index}) => {
 
   return (
     <View
+      // eslint-disable-next-line react-native/no-inline-styles
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -540,6 +544,7 @@ const OutstandingRow = ({item, index}) => {
       {/* Advance Type Column */}
       <View style={{flex: 1}}>
         <View
+          // eslint-disable-next-line react-native/no-inline-styles
           style={{
             backgroundColor: '#FFFFFF',
             paddingHorizontal: conditionalScale(8, 9, 10, 10),
@@ -548,6 +553,7 @@ const OutstandingRow = ({item, index}) => {
             alignSelf: 'flex-start',
           }}>
           <Text
+            // eslint-disable-next-line react-native/no-inline-styles
             style={{
               fontSize: conditionalScale(11, 12, 12, 12),
               fontWeight: '600',
@@ -560,11 +566,13 @@ const OutstandingRow = ({item, index}) => {
 
       {/* Amount Column */}
       <View
+        // eslint-disable-next-line react-native/no-inline-styles
         style={{
           width: conditionalScale(110, 115, 120, 120),
           alignItems: 'flex-end',
         }}>
         <Text
+          // eslint-disable-next-line react-native/no-inline-styles
           style={{
             fontSize: conditionalScale(15, 16, 16, 16),
             fontWeight: '700',
@@ -630,9 +638,11 @@ const OutstandingAdvancesScreen = () => {
     item.TypeName ||
     '—';
 
+  const blankStatusData = data.filter(hasBlankPostingStatus);
+
   const uniqueAdvanceTypes = [
     ...new Set(
-      data
+      blankStatusData
         .map(item => getAdvanceType(item))
         .filter(type => type && type !== '—'),
     ),
@@ -641,16 +651,21 @@ const OutstandingAdvancesScreen = () => {
   const filterPills = ['All', ...uniqueAdvanceTypes];
 
   const getFilterCounts = () => {
-    const counts = {All: data.length};
+    const blankOnly = data.filter(hasBlankPostingStatus);
+    const counts = {All: blankOnly.length};
     uniqueAdvanceTypes.forEach(type => {
-      counts[type] = data.filter(item => getAdvanceType(item) === type).length;
+      counts[type] = blankOnly.filter(
+        item => getAdvanceType(item) === type,
+      ).length;
     });
     return counts;
   };
 
   const getFilteredData = () => {
-    if (activeFilter === 'All') return data;
-    return data.filter(item => getAdvanceType(item) === activeFilter);
+    const blankOnly = data.filter(hasBlankPostingStatus); // ← filter blank posting status
+    // eslint-disable-next-line curly
+    if (activeFilter === 'All') return blankOnly;
+    return blankOnly.filter(item => getAdvanceType(item) === activeFilter);
   };
 
   const filteredData = getFilteredData();
@@ -692,6 +707,7 @@ const OutstandingAdvancesScreen = () => {
             <>
               {/* Header Summary Card - Blue Background */}
               <View
+                // eslint-disable-next-line react-native/no-inline-styles
                 style={{
                   backgroundColor: T.blue,
                   borderRadius: conditionalScale(16, 18, 20, 20),
@@ -705,41 +721,31 @@ const OutstandingAdvancesScreen = () => {
                   elevation: 6,
                 }}>
                 <View
+                  // eslint-disable-next-line react-native/no-inline-styles
                   style={{
-                    flexDirection: 'row',
                     alignItems: 'center',
-                    padding: conditionalScale(20, 22, 24, 24),
+                    paddingVertical: conditionalVerticalScale(16, 18, 20, 20),
+                    paddingHorizontal: conditionalScale(20, 22, 24, 24),
                   }}>
-                  <IconBadge
-                    icon="hand-holding-usd"
-                    iconColor={T.blue}
-                    iconBg="#FFFFFF"
-                    size={conditionalScale(44, 48, 52, 52)}
-                  />
-                  <View
+                  <Text
+                    // eslint-disable-next-line react-native/no-inline-styles
                     style={{
-                      flex: 1,
-                      marginLeft: conditionalScale(14, 15, 16, 16),
+                      fontSize: conditionalScale(13, 14, 14, 14),
+                      fontWeight: '500',
+                      color: 'rgba(255,255,255,0.8)',
+                      marginBottom: conditionalVerticalScale(4, 4, 5, 5),
                     }}>
-                    <Text
-                      style={{
-                        fontSize: conditionalScale(13, 14, 14, 14),
-                        fontWeight: '500',
-                        color: 'rgba(255,255,255,0.8)',
-                        marginBottom: conditionalVerticalScale(4, 4, 5, 5),
-                      }}>
-                      Total Outstanding Amount
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: conditionalScale(28, 30, 32, 32),
-                        fontWeight: '700',
-                        color: '#FFFFFF',
-                        marginLeft: conditionalScale(10, 12, 14, 14), // ← adjust this value to taste
-                      }}>
-                      {formatAmount(total)}
-                    </Text>
-                  </View>
+                    Total Outstanding Amount
+                  </Text>
+                  <Text
+                    // eslint-disable-next-line react-native/no-inline-styles
+                    style={{
+                      fontSize: conditionalScale(28, 30, 32, 32),
+                      fontWeight: '700',
+                      color: '#FFFFFF',
+                    }}>
+                    {formatAmount(total)}
+                  </Text>
                 </View>
               </View>
 
@@ -747,6 +753,7 @@ const OutstandingAdvancesScreen = () => {
               <AnimatedCard delay={0}>
                 {/* Table Header */}
                 <View
+                  // eslint-disable-next-line react-native/no-inline-styles
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -757,6 +764,7 @@ const OutstandingAdvancesScreen = () => {
                     borderTopRightRadius: conditionalScale(12, 13, 14, 14),
                   }}>
                   <Text
+                    // eslint-disable-next-line react-native/no-inline-styles
                     style={{
                       flex: 1,
                       fontSize: conditionalScale(12, 13, 13, 13),
@@ -767,6 +775,7 @@ const OutstandingAdvancesScreen = () => {
                     Advance Type
                   </Text>
                   <Text
+                    // eslint-disable-next-line react-native/no-inline-styles
                     style={{
                       width: conditionalScale(110, 115, 120, 120),
                       fontSize: conditionalScale(12, 13, 13, 13),

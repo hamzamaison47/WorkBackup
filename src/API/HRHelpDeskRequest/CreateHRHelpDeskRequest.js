@@ -10,6 +10,7 @@ import {parse} from 'url';
 const CreateHRHelpDeskRequest = async ({helpDeskData}) => {
   try {
     const config = await getActiveConfigData();
+    console.log('here is the log data', helpDeskData);
 
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
@@ -84,27 +85,27 @@ const buildContractXml = contract => {
   if (!contract) return '';
 
   const ns = 'tem';
+
   const fields = [
-    'DetailProblem',
-    'Division',
+    'Detail',
+    'ESSDate',
+    'ESSDivision',
+    'ESSHRHelpDeskRequestId',
+    'ESSTypeOfProblem',
     'EmpId',
-    'EmployeeId',
-    'ProblemStartedOn',
-    'RecId',
-    'RequestId',
-    'TypeOfProblems',
-    'WFStatus',
+    'EmployeeID',
   ];
 
-  return fields
-    .map(field => {
-      const value = contract[field];
-      if (value === null || value === undefined) {
-        return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
-      }
-      return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
-    })
-    .join('');
+  const xmlParts = fields.map(field => {
+    const value = contract[field];
+    if (value === null || value === undefined || value === '') {
+      return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
+    }
+    return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
+  });
+
+  // EmpId must be a long (number), not string — send without nil
+  return xmlParts.join('');
 };
 
 const escapeXmlValue = value => {

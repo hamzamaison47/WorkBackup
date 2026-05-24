@@ -82,6 +82,7 @@ const BankAccountListPage = () => {
         employeeId: effectiveEmployeeId,
       });
 
+      console.log('object', BankAccountData);
       // Fix: sort using RecId (uppercase) — recId (lowercase) may be undefined
       BankAccountData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
 
@@ -165,6 +166,7 @@ const BankAccountListPage = () => {
   };
 
   const getStatusLabel = status => {
+    if (!status || status.trim() === '') return 'HR'; // ← add this line first
     const statusMap = {
       NotSubmitted: 'Draft',
       Submitted: 'Submitted',
@@ -179,7 +181,7 @@ const BankAccountListPage = () => {
       WorkflowCompleted: 'Workflow Completed',
       Completed: 'Completed',
     };
-    return statusMap[status] || 'Draft';
+    return statusMap[status] || status; // ← return raw status if unknown, not 'Draft'
   };
 
   const getFilteredData = () => {
@@ -257,8 +259,9 @@ const BankAccountListPage = () => {
   };
 
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
+    const statusLabel = getStatusLabel(item.WFStatus);
+    const isEditable = statusLabel === 'Not Submitted' || statusLabel === 'HR'; // ← add HR
+    const isRejected = statusLabel === 'Rejected';
 
     return {
       edit: {
@@ -269,8 +272,8 @@ const BankAccountListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !isEditable, // ← use isEditable
+        customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: true,
@@ -280,28 +283,13 @@ const BankAccountListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !isEditable, // ← use isEditable
+        customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
-      attachment: {
-        show: true,
-        position: 'header',
-        style: 'icon',
-        icon: 'paperclip',
-        iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
-        disabled: false,
-        customStyle: {},
-      },
+      // ...approval button also needs updating:
       approval: {
-        show: isDraft || isRejected,
-        position: 'bottom',
-        style: 'approval_dropdown',
-        text: isRejected ? 'Re-submit' : 'Approval',
-        icon: 'check-square-o',
-        textColor: '#0A66C2',
-        disabled: false,
+        show: isEditable || isRejected, // ← use isEditable
+        // ...
         actions: [
           {
             key: 'submit',
@@ -357,7 +345,7 @@ const BankAccountListPage = () => {
       originalCameFrom: cameFrom,
       bankaccountdata: {
         // Fix: use RecId (uppercase) consistently
-        RecId: itemData.recId,
+        RecId: itemData.recId || itemData.RecId || '', // ← lowercase recId from API
         employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
         WorkerRecId: itemData.WorkerRecId || WorkerRecId,

@@ -26,6 +26,7 @@ import {translate as t} from '../../store/utils/translate';
 import {CreateHRHelpDeskRequest} from '../../API/HRHelpDeskRequest/CreateHRHelpDeskRequest';
 import {UpdateHRHelpDeskRequest} from '../../API/HRHelpDeskRequest/UpdateHRHelpDeskRequest';
 import {RetrieveTypesOfProblems} from '../../API/HRHelpDeskRequest/RetrieveTypesOfProblems';
+import {SubmitHRHelpDeskRequest} from '../../API/HRHelpDeskRequest/SubmitHRHelpDeskRequest';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
@@ -65,6 +66,14 @@ const HRHelpDeskSaveScreen = () => {
   // Dropdown options for TypeOfProblems
   const [typeOfProblemsOptions, setTypeOfProblemsOptions] = useState([]);
 
+  const getTodayISO = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}T12:00:00`;
+  };
+
   const createInitialFormData = useCallback(() => {
     return {
       RecId:
@@ -76,7 +85,7 @@ const HRHelpDeskSaveScreen = () => {
       WorkerRecId: WorkerRecId || '',
       TypeOfProblems: '',
       Division: '',
-      ProblemStartedOn: '',
+      ProblemStartedOn: getTodayISO(), // ← default to today
       DetailProblem: '',
       RequestId: '',
       WFStatus: '',
@@ -117,7 +126,6 @@ const HRHelpDeskSaveScreen = () => {
     }
   }, []);
 
-  // Initialize form based on mode
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -125,20 +133,48 @@ const HRHelpDeskSaveScreen = () => {
       const initializeForm = async () => {
         setIsLoading(true);
 
+        // ✅ Always read fresh from route.params — never use stale closure variables
+        const params = route.params || {};
+        const currentMode = params.mode || 'create';
+        const currentHelpDeskData = params.helpDeskData || {};
+        const currentEmployeeId =
+          params.employeeId || effectiveUserData?.employeeId || '';
+        const currentEmployeeName =
+          params.employeeName || effectiveUserData?.employeeName || '';
+        const currentWorkerRecId =
+          params.WorkerRecId || effectiveUserData?.WorkerRecId || '';
+
         try {
           await fetchTypeOfProblemsOptions();
 
-          if (mode === 'create') {
-            setFormData(createInitialFormData());
+          if (currentMode === 'create') {
+            // ✅ Clean slate for create — no RecId, no RequestId
+            setFormData({
+              RecId: '',
+              EmployeeId: currentEmployeeId,
+              employeeName: currentEmployeeName,
+              WorkerRecId: currentWorkerRecId,
+              TypeOfProblems: '',
+              Division: '',
+              ProblemStartedOn: getTodayISO(),
+              DetailProblem: '',
+              RequestId: '', // ✅ always empty on create
+              WFStatus: '',
+            });
           }
 
-          if (mode === 'edit' && helpDeskData?.RecId) {
+          if (currentMode === 'edit' && currentHelpDeskData?.RecId) {
             setFormData({
-              ...createInitialFormData(),
-              ...helpDeskData,
-              EmployeeId: helpDeskData.EmployeeId || employeeId,
-              employeeName: employeeName,
-              WorkerRecId: WorkerRecId,
+              RecId: currentHelpDeskData.RecId || '',
+              EmployeeId: currentHelpDeskData.EmployeeID || currentEmployeeId,
+              employeeName: currentEmployeeName,
+              WorkerRecId: currentWorkerRecId,
+              TypeOfProblems: currentHelpDeskData.ESSTypeOfProblem || '',
+              ProblemStartedOn: currentHelpDeskData.ESSDate || getTodayISO(), // ✅ actual date
+              DetailProblem: currentHelpDeskData.Detail || '',
+              RequestId: currentHelpDeskData.ESSHRHelpDeskRequestId || '',
+              WFStatus: currentHelpDeskData.ESSWorkFlowStatus || '',
+              Division: currentHelpDeskData.ESSDivision || '',
             });
           }
         } catch (error) {
@@ -155,7 +191,7 @@ const HRHelpDeskSaveScreen = () => {
       return () => {
         isActive = false;
       };
-    }, [mode, helpDeskData?.RecId]),
+    }, [route.params]),
   );
 
   // Handle hardware back
@@ -197,7 +233,7 @@ const HRHelpDeskSaveScreen = () => {
         index: 0,
         routes: [{name: 'MainDashboard'}],
       });
-    } else if (cameFrom === 'HRHelpDeskList_Screen') {
+    } else if (cameFrom === 'HRHelpDeskListScreen') {
       navigation.reset({
         index: 0,
         routes: [
@@ -296,18 +332,22 @@ const HRHelpDeskSaveScreen = () => {
   };
 
   // Create/Update API call
-  const handleAction = async (actionType, modalMode, data = {}) => {
+  const handleAction = async (
+    actionType,
+    modalMode,
+    data = {},
+    silent = false,
+  ) => {
     try {
       const helpDeskRequestData = {
-        EmployeeId: employeeId,
-        TypeOfProblems: data.TypeOfProblems || '',
-        Division: data.Division || '',
-        ProblemStartedOn: data.ProblemStartedOn || '',
-        DetailProblem: data.DetailProblem || '',
-        RecId: data.RecId === '' ? '0' : data.RecId,
-        RequestId: data.RequestId || '',
-        WFStatus: data.WFStatus || '',
-        EmpId: WorkerRecId,
+        Detail: data.DetailProblem || '',
+        ESSDate: data.ProblemStartedOn || '',
+        ESSDivision: '',
+        ESSHRHelpDeskRequestId: '', // auto-generated server side, send empty/nil
+        ESSTypeOfProblem: data.TypeOfProblems || '',
+        EmpId: WorkerRecId, // long — AX checks parmEmpId() to allow create
+        EmployeeID: employeeId, // capital D
+        RecId: data.RecId === '' ? '0' : data.RecId || '0',
       };
 
       let result;
@@ -322,15 +362,19 @@ const HRHelpDeskSaveScreen = () => {
         });
       }
 
-      if (result?.IsSuccess === 'true') {
+      if (result?.IsSuccess === 'true' || result?.IsSuccess === true) {
         const recId = result.RecId || result.recId || data.RecId;
         const successMessage =
           modalMode === 'create'
-            ? 'HR HelpDesk request created successfully'
-            : 'HR HelpDesk request updated successfully';
+            ? 'Record is created successfully'
+            : 'Record is updated successfully';
 
-        setAlertMessage(successMessage);
-        setAlertModal(true);
+        // Only show alert here when called standalone (not from handleSave)
+        if (!silent) {
+          // ✅ only these two lines, remove the duplicate below
+          setAlertMessage(successMessage);
+          setAlertModal(true);
+        }
 
         return {success: true, recId};
       } else {
@@ -348,7 +392,6 @@ const HRHelpDeskSaveScreen = () => {
     }
   };
 
-  // Save handler
   const handleSave = async actionType => {
     if (processingButton) return;
 
@@ -363,27 +406,74 @@ const HRHelpDeskSaveScreen = () => {
     setIsProcessing(true);
 
     try {
+      // ── Step 1: Create or Update ──────────────────────────────
       const result = await handleAction(
         actionType,
         mode === 'edit' ? 'update' : 'create',
         formData,
+        true, // silent — we control the message below
       );
 
-      if (result.success) {
-        setTimeout(() => {
-          setAlertModal(false);
-          clearFormData();
+      if (!result.success) return;
 
-          navigation.navigate('HRHelpDeskListScreen', {
-            employeeId: employeeId,
-            employeeName: employeeName,
-            WorkerRecId: WorkerRecId,
-            userData: effectiveUserData,
-            highlightRecId: result.recId,
-            cameFrom: 'DisplayListPage',
+      // ── Step 2: If actionType is 'submit', also submit workflow ─
+      if (actionType === 'submit' && result.recId) {
+        try {
+          const submitResponse = await SubmitHRHelpDeskRequest({
+            recId: result.recId,
           });
-        }, 2000);
+
+          const isSuccess =
+            submitResponse?.IsSuccess === true ||
+            submitResponse?.IsSuccess === 'true' ||
+            String(submitResponse?.IsSuccess).toLowerCase() === 'true';
+
+          if (isSuccess) {
+            setAlertMessage(
+              mode === 'edit'
+                ? 'Record is updated & submitted successfully'
+                : 'Record is created & submitted successfully',
+            );
+          } else {
+            const saveMessage =
+              mode === 'edit'
+                ? 'Record is updated successfully'
+                : 'Record is created successfully';
+            setAlertMessage(saveMessage);
+            setAlertModal(true);
+          }
+        } catch (submitError) {
+          console.error('Submit after create error:', submitError);
+          setAlertMessage(
+            mode === 'edit'
+              ? 'Record is updated but submission failed. Please submit from the list.'
+              : 'Record is created but submission failed. Please submit from the list.',
+          );
+        }
+
+        setAlertModal(true); // ← show alert for submit
+      } else {
+        // ── Save only — set message here since silent=true suppressed it ──
+        const saveMessage =
+          mode === 'edit'
+            ? 'HR HelpDesk request updated successfully'
+            : 'HR HelpDesk request created successfully';
+        setAlertMessage(saveMessage);
+        setAlertModal(true); // ← show alert for save
       }
+
+      setTimeout(() => {
+        setAlertModal(false);
+        clearFormData();
+        navigation.navigate('HRHelpDeskListScreen', {
+          employeeId: employeeId,
+          employeeName: employeeName,
+          WorkerRecId: WorkerRecId,
+          userData: effectiveUserData,
+          highlightRecId: result.recId,
+          cameFrom: 'DisplayListPage',
+        });
+      }, 2000);
     } catch (error) {
       console.error('Error saving HR HelpDesk request:', error);
       setAlertMessage('Failed to save request. Please try again.');
@@ -497,28 +587,13 @@ const HRHelpDeskSaveScreen = () => {
               maxHeight={280}
             />
 
-            {/* Division */}
-            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              Division
-            </Text>
-            <TextInput
-              style={[
-                styles.DSR_Input,
-                isRTL && {textAlign: 'left', writingDirection: 'rtl'},
-              ]}
-              value={formData.Division}
-              onChangeText={value => handleInputChange('Division', value)}
-              placeholder="Enter division"
-              placeholderTextColor="#888"
-            />
-
             {/* Problem Started On */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               Problem Started On *
             </Text>
             <TouchableOpacity
-              style={styles.DSR_DateSelector}
-              onPress={() => setShowProblemDateCalendar(true)}>
+              style={[styles.DSR_DateSelector, {opacity: 0.6}]}
+              disabled={true}>
               <View style={{flex: 1}}>
                 <Text style={styles.DSR_DateText}>
                   {formData.ProblemStartedOn

@@ -1696,7 +1696,7 @@ const ActionPaneContainer = ({
         onCount: notificationCount,
         headerBg: T.blue,
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
-        isBack: !!onBackPress, // ← was hardcoded false
+        isBack: false,
         onBackPress: onBackPress,
         selectedDat:
           selectedLegalEntity ||

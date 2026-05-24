@@ -630,9 +630,9 @@ const LeaveRequestListPage = () => {
         }, 1000);
       } else {
         const errorMessage =
-          resObj && resObj.Message
-            ? resObj.Message
-            : `Failed to Submit ${itemData.LeaveCode} Request`;
+          resObj?.InfologMessage ||
+          resObj?.Message ||
+          `Failed to Submit ${itemData.LeaveCode} Request`;
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }

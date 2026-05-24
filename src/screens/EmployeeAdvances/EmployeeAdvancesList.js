@@ -749,7 +749,7 @@ const EmployeeAdvancesList = () => {
           ) : (
             <>
               {/* Header Summary Card - Blue Background */}
-              <View
+              {/* <View
                 style={{
                   backgroundColor: T.blue,
                   borderRadius: conditionalScale(16, 18, 20, 20),
@@ -799,7 +799,7 @@ const EmployeeAdvancesList = () => {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </View> */}
 
               {/* Recovery Schedule Table */}
               <AnimatedCard delay={0}>

@@ -633,7 +633,7 @@ const LoginScreen = () => {
 
           {/* ── Action section: sign-in buttons ── */}
           <View style={styles.actionSection}>
-            <Text style={styles.actionLabel}>Secure Sign In</Text>
+            {/* <Text style={styles.actionLabel}>Secure Sign In</Text> */}
 
             <TouchableOpacity
               activeOpacity={0.8}
@@ -875,6 +875,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     fontWeight: '600',
+    paddingBottom: 60,
   },
 });
 

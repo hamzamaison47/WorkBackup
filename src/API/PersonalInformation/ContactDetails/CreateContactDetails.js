@@ -90,33 +90,40 @@ const CreateContactDetails = async contactData => {
   }
 };
 
-/**
- * Build XML body for contact details with correct namespace prefix (dyn:)
- */
 const buildContractXml = contract => {
   if (!contract) return '';
 
   const ns = 'dyn';
-  const fields = [
-    'Description',
-    'EmployeeId',
-    'IsMobilePhone',
-    'IsPrimary',
-    'IsPrivate',
-    'Location',
-    'Locator',
-    'LocatorExtension',
-    'RecId',
-    'Type',
+  const booleanFields = new Set(['IsMobilePhone', 'IsPrimary', 'IsPrivate']);
+
+  // Fields where XML tag name differs from contract key
+  const fieldMappings = [
+    {xmlTag: 'Description', contractKey: 'Description'},
+    {xmlTag: 'EmployeeId', contractKey: 'EmployeeId'},
+    {xmlTag: 'IsMobilePhone', contractKey: 'IsMobilePhone'},
+    {xmlTag: 'IsPrimary', contractKey: 'IsPrimary'},
+    {xmlTag: 'IsPrivate', contractKey: 'IsPrivate'},
+    {xmlTag: 'Location', contractKey: 'Location'},
+    {xmlTag: 'Locator', contractKey: 'Locator'},
+    {xmlTag: 'LocatorExtension', contractKey: 'LocatorExtension'},
+    {xmlTag: 'RecId', contractKey: 'RecId'},
+    {xmlTag: 'type', contractKey: 'Type'}, // ✅ lowercase tag, uppercase key
   ];
 
-  return fields
-    .map(field => {
-      const value = contract[field];
+  return fieldMappings
+    .map(({xmlTag, contractKey}) => {
+      let value = contract[contractKey];
+
       if (value === null || value === undefined) {
-        return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
+        return `<${ns}:${xmlTag} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
       }
-      return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
+
+      if (booleanFields.has(contractKey)) {
+        if (value === 'Yes' || value === true) value = 'true';
+        else if (value === 'No' || value === false) value = 'false';
+      }
+
+      return `<${ns}:${xmlTag}>${escapeXmlValue(value)}</${ns}:${xmlTag}>`;
     })
     .join('');
 };
