@@ -210,8 +210,12 @@ const AttendanceManagement = () => {
   // If the route params change (e.g. the screen is reused with a new initialScreen),
   // reset the stack to the requested screen.
   useEffect(() => {
-    if (!routeInitialScreen) return;
-    if (!VALID_SCREENS.includes(routeInitialScreen)) return;
+    if (!routeInitialScreen) {
+      return;
+    }
+    if (!VALID_SCREENS.includes(routeInitialScreen)) {
+      return;
+    }
     // Only reset if it differs from the current top of stack
     if (screenStack[screenStack.length - 1]?.name !== routeInitialScreen) {
       setScreenStack([
@@ -223,7 +227,9 @@ const AttendanceManagement = () => {
   }, [routeInitialScreen]);
 
   const onNavigate = newScreenName => {
-    if (currentScreen && newScreenName === currentScreen.name) return;
+    if (currentScreen && newScreenName === currentScreen.name) {
+      return;
+    }
 
     // Going back to the immediate previous screen (e.g. via FAB back tap)
     if (previousScreen && previousScreen.name === newScreenName) {
@@ -245,7 +251,7 @@ const AttendanceManagement = () => {
     }).start();
   };
 
-  const handleGoBack = () => {
+  const handleGoBack = React.useCallback(() => {
     if (screenStack.length > 1) {
       Animated.spring(slideAnim, {
         toValue: width,
@@ -262,7 +268,7 @@ const AttendanceManagement = () => {
       return true;
     }
     return false;
-  };
+  }, [currentScreen?.name, fromLogin, screenStack.length, slideAnim]);
 
   const confirmLogout = () => {
     setLogoutModalVisible(false);
@@ -277,7 +283,7 @@ const AttendanceManagement = () => {
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [screenStack.length, currentScreen?.name, fromLogin]),
+    }, [handleGoBack]),
   );
 
   const renderScreen = screenName => {

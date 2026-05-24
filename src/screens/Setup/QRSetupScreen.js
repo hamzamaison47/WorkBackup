@@ -695,7 +695,9 @@ const QRSetupScreen = () => {
         typeof configOrUrl === 'string'
           ? configOrUrl
           : configOrUrl?.resource || '';
-      if (!resource) return t('qrSetup.unknownConfig');
+      if (!resource) {
+        return t('qrSetup.unknownConfig');
+      }
       let withoutProtocol = resource.replace(/(^\w+:|^)\/\//, '');
       const hostname = withoutProtocol.split('/')[0];
       const firstPart = hostname.split('.')[0];
@@ -716,7 +718,9 @@ const QRSetupScreen = () => {
   const processQRData = useCallback(
     async qrData => {
       try {
-        if (!qrData) throw new Error(t('qrSetup.noQRData'));
+        if (!qrData) {
+          throw new Error(t('qrSetup.noQRData'));
+        }
         setIsProcessing(true);
         setIsScanning(false);
 
@@ -802,7 +806,9 @@ const QRSetupScreen = () => {
       });
 
       // User cancelled — do nothing
-      if (!result.assets || result.assets.length === 0) return;
+      if (!result.assets || result.assets.length === 0) {
+        return;
+      }
 
       const imageUri = result.assets[0]?.uri;
       if (!imageUri) {

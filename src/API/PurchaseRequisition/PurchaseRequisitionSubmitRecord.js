@@ -10,8 +10,9 @@ const submitPurchaseRequisition = async ({_requestList}) => {
   try {
     // Get config and token
     const config = await getActiveConfigData();
-    if (!config?.resource)
+    if (!config?.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
+    }
 
     const token = await getToken();
 

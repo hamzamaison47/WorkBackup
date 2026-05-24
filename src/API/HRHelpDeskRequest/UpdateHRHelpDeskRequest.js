@@ -5,6 +5,10 @@ import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
 import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../Controller/secureConfig';
+import {XMLParser} from 'fast-xml-parser';
+import {getToken} from '../Token/getToken';
+import {createSoapEnvelope} from '../../store/utils/soapHeaderUtils';
+import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const UpdateHRHelpDeskRequest = async ({helpDeskData}) => {
   try {
@@ -14,9 +18,14 @@ const UpdateHRHelpDeskRequest = async ({helpDeskData}) => {
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
     }
+    if (!config || !config.resource) {
+      throw new Error('No configuration found. Please scan QR code first.');
+    }
 
     const token = await getToken();
+    const token = await getToken();
 
+    const soapBody = `
     const soapBody = `
       <update xmlns="http://tempuri.org">
         <contract xmlns:tem="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application">
@@ -39,7 +48,26 @@ const UpdateHRHelpDeskRequest = async ({helpDeskData}) => {
         responseType: 'text',
       },
     );
+    const {data: xml} = await axios.post(
+      `${config.resource}soap/services/ESSHRHelpDeskRequestSvcGroup`,
+      soapEnvelope,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'text/xml;charset=utf-8',
+          SOAPAction: 'http://tempuri.org/ESSHRHelpDeskRequestSvc/update',
+        },
+        responseType: 'text',
+      },
+    );
 
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      ignoreNameSpace: false,
+      attributeNamePrefix: '',
+      isArray: () => false,
+      parseTagValue: false,
+    });
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -49,11 +77,19 @@ const UpdateHRHelpDeskRequest = async ({helpDeskData}) => {
     });
 
     const parsed = parser.parse(xml);
+    const parsed = parser.parse(xml);
 
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.['updateResponse']?.['result'] ||
       parsed?.['soap:Envelope']?.['soap:Body']?.['updateResponse']?.['result'];
+    const result =
+      parsed?.['s:Envelope']?.['s:Body']?.['updateResponse']?.['result'] ||
+      parsed?.['soap:Envelope']?.['soap:Body']?.['updateResponse']?.['result'];
 
+    if (!result) {
+      console.log('No result found in Update HR HelpDesk SOAP response');
+      return null;
+    }
     if (!result) {
       console.log('No result found in Update HR HelpDesk SOAP response');
       return null;
@@ -63,7 +99,18 @@ const UpdateHRHelpDeskRequest = async ({helpDeskData}) => {
       if (obj === null || obj === undefined) return obj;
       if (typeof obj !== 'object') return obj;
       if (Array.isArray(obj)) return obj.map(cleanObject);
+    const cleanObject = obj => {
+      if (obj === null || obj === undefined) return obj;
+      if (typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(cleanObject);
 
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [
+          key.replace(/^[a-zA-Z0-9]+:/, ''),
+          typeof value === 'object' ? cleanObject(value) : value,
+        ]),
+      );
+    };
       return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
           key.replace(/^[a-zA-Z0-9]+:/, ''),
@@ -80,9 +127,18 @@ const UpdateHRHelpDeskRequest = async ({helpDeskData}) => {
     );
     throw error;
   }
+    return cleanObject(result);
+  } catch (error) {
+    console.error(
+      'Failed to update HR HelpDesk request:',
+      error.response?.data || error.message,
+    );
+    throw error;
+  }
 };
 
 const buildContractXml = contract => {
+  if (!contract) return '';
   if (!contract) return '';
 
   const ns = 'tem';
@@ -116,6 +172,13 @@ const escapeXmlValue = value => {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 };
 
+export {UpdateHRHelpDeskRequest};
 export {UpdateHRHelpDeskRequest};

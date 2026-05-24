@@ -1,5 +1,5 @@
 /* eslint-disable no-bitwise */
-/* eslint-disable dot-notation */
+
 /* eslint-disable curly */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';

@@ -355,7 +355,48 @@ const CalendarGrid = ({selectedDate, onSelectDate, events}) => {
   };
 
   const today = new Date();
-  const CELL = (SW - 40 - 32) / 7;
+  const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
+
+  const cells = useMemo(
+    () => buildMonthGrid(viewYear, viewMonth),
+    [viewYear, viewMonth],
+  );
+
+  const eventSet = useMemo(() => {
+    const s = new Set();
+    eventDates.forEach(d =>
+      s.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
+    );
+    return s;
+  }, [eventDates]);
+
+  const hasEvent = d =>
+    eventSet.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear(y => y - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth(m => m - 1);
+    }
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear(y => y + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth(m => m + 1);
+    }
+  };
+  const goToday = () => {
+    setViewYear(today.getFullYear());
+    setViewMonth(today.getMonth());
+    onSelectDate(today);
+  };
+
+  const s = gridStyles(T);
 
   return (
     <View style={cg.wrapper}>

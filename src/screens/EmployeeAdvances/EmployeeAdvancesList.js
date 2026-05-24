@@ -711,7 +711,9 @@ const EmployeeAdvancesList = () => {
   };
 
   const getFilteredData = () => {
-    if (activeFilter === 'All') return data;
+    if (activeFilter === 'All') {
+      return data;
+    }
     return data.filter(item => item.AdvanceTypeCode === activeFilter);
   };
 

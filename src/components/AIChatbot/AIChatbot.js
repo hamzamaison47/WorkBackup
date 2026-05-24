@@ -477,7 +477,6 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
       processingRef.current = false;
       setIsTyping(false);
     }
-
   };
 
   /**

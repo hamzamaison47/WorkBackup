@@ -55,7 +55,7 @@ const updateESSEmployeeTask = async ({employeeTaskData}) => {
 
     // Extract result following the example pattern
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['updateTaskResponse']?.['result'];
+      parsed?.['s:Envelope']?.['s:Body']?.updateTaskResponse?.result;
 
     if (!result) {
       console.log('No result found in SOAP response');
@@ -64,9 +64,15 @@ const updateESSEmployeeTask = async ({employeeTaskData}) => {
 
     // Clean the object by removing namespace prefixes
     const cleanObject = obj => {
-      if (obj === null || obj === undefined) return obj;
-      if (typeof obj !== 'object') return obj;
-      if (Array.isArray(obj)) return obj.map(cleanObject);
+      if (obj === null || obj === undefined) {
+        return obj;
+      }
+      if (typeof obj !== 'object') {
+        return obj;
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(cleanObject);
+      }
 
       return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
@@ -91,7 +97,9 @@ const updateESSEmployeeTask = async ({employeeTaskData}) => {
 };
 
 const buildContractXml = contract => {
-  if (!contract) return '';
+  if (!contract) {
+    return '';
+  }
 
   const ns = 'tem';
   const fields = ['Status', 'contactperson', 'recId'];

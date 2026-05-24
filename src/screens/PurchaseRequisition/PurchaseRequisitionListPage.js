@@ -293,7 +293,6 @@ const PurchaseRequisitionListPage = () => {
   const handleSelectAll = useCallback(() => {
     const allIds = getFilteredData().map(item => item.RecId);
     setSelectedIds(new Set(allIds));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayData, activeFilter, purchaseRequisitiondata]);
 
   // Bulk Submit — only submits Draft items from the selection
@@ -337,7 +336,6 @@ const PurchaseRequisitionListPage = () => {
       setIsBulkSubmitting(false);
       handleMultiSelectCancel();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds, fetchPurchaseRequisitionData, handleMultiSelectCancel]);
 
   // Bulk Delete — only deletes Draft items from the selection
@@ -359,7 +357,6 @@ const PurchaseRequisitionListPage = () => {
     // Store all selected items temporarily
     setItemToDelete({_bulk: true, items: selectedItems});
     setDeleteModal(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIds]);
 
   // ────────────────────────────────────────────────────────────
@@ -428,7 +425,6 @@ const PurchaseRequisitionListPage = () => {
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [navigation]),
   );
 

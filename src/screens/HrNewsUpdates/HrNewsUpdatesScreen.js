@@ -62,7 +62,9 @@ const HrNewsUpdatesScreen = ({navigation}) => {
 
   const fetchNewsUpdates = useCallback(async () => {
     try {
-      if (!refreshing) setLoading(true);
+      if (!refreshing) {
+        setLoading(true);
+      }
       const data = await RetrieveHrNewsUpdates();
       setNewsUpdates(Array.isArray(data) ? data : []);
       console.log('here is the data', data);

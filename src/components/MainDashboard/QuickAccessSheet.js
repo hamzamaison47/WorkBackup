@@ -145,7 +145,9 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
     </TouchableOpacity>
   );
 
-  if (!visible && !isRendered.current) return null;
+  if (!visible && !isRendered.current) {
+    return null;
+  }
 
   return (
     <Animated.View

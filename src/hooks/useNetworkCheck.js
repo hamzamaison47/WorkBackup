@@ -1,11 +1,13 @@
 // ─────────────────────────────────────────────
 // hooks/useNetworkCheck.js
 //
-// P1.2 OPTIMIZATION: Removed fetchPublicIP / api.ipify.org call.
-// Network validation is now SSID + BSSID only — no external HTTP call
-// in the critical attendance path.
+// FIXED FOR iOS:
+//   - iOS requires special handling for SSID/BSSID
+//   - NetInfo on iOS returns limited WiFi details
+//   - Added multiple fetch attempts for iOS
 // ─────────────────────────────────────────────
 import {useCallback} from 'react';
+import {Platform} from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import {
   checkNetworkMatch,
@@ -22,33 +24,110 @@ export const checkIsOnline = async () => {
   }
 };
 
+// ── Get WiFi details cross-platform ──────────────────────────
+const getWifiDetails = async () => {
+  let wifiSsid = null;
+  let wifiBssid = null;
+  let isWifi = false;
+
+  try {
+    // ── Attempt 1: Standard NetInfo fetch ──
+    let state = await NetInfo.fetch();
+    console.log('📶 NetInfo state type:', state.type);
+    console.log('📶 NetInfo details:', JSON.stringify(state.details));
+
+    if (state.type === 'wifi' && state.details) {
+      isWifi = true;
+      wifiSsid = state.details.ssid ?? null;
+      wifiBssid = state.details.bssid ?? null;
+    }
+
+    // ── Attempt 2: Force wifi-specific fetch if SSID missing ──
+    if (isWifi && !wifiSsid) {
+      try {
+        const wifiState = await NetInfo.fetch('wifi');
+        if (wifiState?.details?.ssid) {
+          wifiSsid = wifiState.details.ssid;
+          wifiBssid = wifiState.details.bssid ?? wifiBssid;
+          console.log('📶 Got SSID from wifi-specific fetch:', wifiSsid);
+        }
+      } catch {}
+    }
+
+    // ── Attempt 3: iOS refresh ──
+    if (Platform.OS === 'ios' && isWifi && !wifiSsid) {
+      try {
+        if (NetInfo.refresh) {
+          const refreshed = await NetInfo.refresh();
+          if (refreshed?.details?.ssid) {
+            wifiSsid = refreshed.details.ssid;
+            wifiBssid = refreshed.details.bssid ?? wifiBssid;
+            console.log('📶 Got SSID from NetInfo.refresh:', wifiSsid);
+          }
+        }
+      } catch {}
+    }
+
+    console.log('📶 Final WiFi details:', {isWifi, wifiSsid, wifiBssid});
+  } catch (err) {
+    console.warn('📶 getWifiDetails error:', err.message);
+  }
+
+  return {isWifi, wifiSsid, wifiBssid};
+};
+
 const useNetworkCheck = () => {
   const runNetworkCheck = useCallback(async fence => {
     const fenceNetworks = fence?.networks ?? [];
 
-    let wifiSsid = null;
-    let wifiBssid = null;
-    let isWifi = false;
+    // Get WiFi details using cross-platform helper
+    const {isWifi, wifiSsid, wifiBssid} = await getWifiDetails();
 
-    try {
-      let state = await (NetInfo.refresh ? NetInfo.refresh() : NetInfo.fetch());
-      // Force a wifi-specific fetch if SSID is missing from the first result
-      if (state.type === 'wifi' && !state.details?.ssid) {
-        state = await NetInfo.fetch('wifi');
+    // ── iOS specific: SSID may not be available ───────────────
+    // On iOS 13+, SSID requires Location permission AND
+    // the device must be connected to WiFi
+    // iOS: if on WiFi but SSID unavailable, check if fence has networks
+    // If fence has no networks configured, allow through anyway
+    if (Platform.OS === 'ios' && isWifi && !wifiSsid) {
+      console.warn('📶 iOS: SSID unavailable');
+      // If no fence networks configured, pass through
+      if (!fenceNetworks.length) {
+        return {
+          passed: true,
+          networkContext: {networkId: null, networkName: null, bssid: null},
+        };
       }
-      if (state.type === 'wifi' && state.details) {
-        isWifi = true;
-        wifiSsid = state.details.ssid ?? null;
-        wifiBssid = state.details.bssid ?? null;
+      // If fence has networks but we cant read SSID on iOS
+      // Try matching by BSSID only if available
+      if (wifiBssid) {
+        const normalizeNet = s =>
+          String(s ?? '')
+            .trim()
+            .toLowerCase();
+        const bssidOnlyMatch = fenceNetworks.find(
+          net =>
+            net.BSSID && normalizeNet(net.BSSID) === normalizeNet(wifiBssid),
+        );
+        if (bssidOnlyMatch) {
+          console.log('📶 iOS: Matched by BSSID only:', wifiBssid);
+          return {
+            passed: true,
+            networkContext: {
+              networkId: bssidOnlyMatch?.NetworkID ?? null,
+              networkName: bssidOnlyMatch?.NetworkName ?? null,
+              bssid: wifiBssid,
+            },
+          };
+        }
       }
-    } catch {}
+    }
 
-    // If no fence networks configured, pass through with collected context
+    // If no fence networks configured, pass through
     if (!fenceNetworks.length) {
       return {
         passed: true,
         networkContext: {
-          networkId: null, // no public IP — removed
+          networkId: null,
           networkName: wifiSsid,
           bssid: wifiBssid,
         },
@@ -63,8 +142,10 @@ const useNetworkCheck = () => {
     );
 
     if (networkMatched) {
-      // Find the matching entry to use its canonical values in the payload
-      const normalizeNet = s => String(s ?? '').trim().toLowerCase();
+      const normalizeNet = s =>
+        String(s ?? '')
+          .trim()
+          .toLowerCase();
       const matchedNetwork = fenceNetworks.find(net => {
         const ssidMatch =
           net.NetworkName &&

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-/* eslint-disable no-undef */
+
 import {decode as atob, encode as btoa} from 'base-64';
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';

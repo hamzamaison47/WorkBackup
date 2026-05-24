@@ -1,19 +1,5 @@
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/GeofenceContext.js
-//
-// OPTIMIZATIONS:
-//   P0.2 — Added inflight deduplication: concurrent refresh() calls share
-//           the same in-flight promise instead of spawning parallel SOAP calls.
-//   P0.2 — Removed AsyncStorage geofence cache (online-first; cache caused
-//           stale-data confusion with QA workflow).
-//   P1.2 — Removed fetchPublicIP / api.ipify.org dependency entirely.
-//           Network validation is now SSID + BSSID only (more reliable,
-//           no external HTTP call in the critical path).
-//   P3.2 — Unknown SSID detection: warns when Android 9+ returns
-//           '<unknown ssid>' due to location permission not being granted.
-//
-// Location verification = GPS + coordinates ONLY.
-// Network (WiFi SSID + BSSID) check is done at confirm-time in Orchestrator.
 // ─────────────────────────────────────────────
 /* eslint-disable curly */
 import React, {
@@ -48,7 +34,7 @@ const fetchFreshCoords = async () => {
   try {
     const p = await tryPos({
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 15000,
       maximumAge: 5000,
     });
     return {
@@ -61,7 +47,7 @@ const fetchFreshCoords = async () => {
     try {
       const p = await tryPos({
         enableHighAccuracy: false,
-        timeout: 10000,
+        timeout: 15000,
         maximumAge: 30000,
       });
       return {
@@ -76,39 +62,17 @@ const fetchFreshCoords = async () => {
   }
 };
 
-// ─────────────────────────────────────────────
-// Network helpers — exported so the Orchestrator
-// can call them at validation time.
-//
-// API Networks entry:
-//   { NetworkID: "xx:xx:xx:xx", NetworkName: "MAISON", BSSID: "aa:bb:cc:dd" }
-//   NetworkName = WiFi SSID
-//   BSSID       = Access point hardware address
-//
-// Rule: SSID must match. BSSID must match if configured.
-// fetchPublicIP REMOVED — external HTTP call in critical path eliminated.
-// ─────────────────────────────────────────────
-
 const normalizeNet = s =>
   String(s ?? '')
     .trim()
     .toLowerCase();
 
-// P3.2 — Detect Android 9+ returning placeholder instead of real SSID
 export const isUnknownSsid = ssid =>
   !ssid ||
   ssid === '<unknown ssid>' ||
   ssid === '0x' ||
   ssid === '"<unknown ssid>"';
 
-// checkNetworkMatch — called at validation time by the Orchestrator.
-//
-//   fenceNetworks  Networks[] from the matched fence
-//   wifiSsid       device WiFi SSID (from NetInfo)
-//   wifiBssid      device WiFi BSSID (from NetInfo)
-//   isWifi         device is on WiFi
-//
-// Returns { networkRequired, networkMatched, networkFailReason }
 export const checkNetworkMatch = (
   fenceNetworks,
   wifiSsid,
@@ -129,7 +93,6 @@ export const checkNetworkMatch = (
       networkFailReason: 'NOT_ON_WIFI',
     };
 
-  // P3.2 — Unknown SSID: Android 9+ requires location services for SSID
   if (isUnknownSsid(wifiSsid))
     return {
       networkRequired: true,
@@ -140,19 +103,11 @@ export const checkNetworkMatch = (
   const deviceSsid = normalizeNet(wifiSsid);
   const deviceBssid = normalizeNet(wifiBssid);
 
-  // SSID must match. BSSID must match if it is configured on the entry.
   const matched = fenceNetworks.some(net => {
     const ssidMatch =
       net.NetworkName && normalizeNet(net.NetworkName) === deviceSsid;
-    // Treat BSSID as "not configured" if it is null, undefined, or an empty
-    // array ([] can appear from old cached data before the normalizeValue fix).
-    const bssidConfigured =
-      net.BSSID &&
-      !(Array.isArray(net.BSSID) && net.BSSID.length === 0) &&
-      normalizeNet(net.BSSID).length > 0;
     const bssidMatch =
-      !bssidConfigured ||
-      (deviceBssid && normalizeNet(net.BSSID) === deviceBssid);
+      !net.BSSID || (deviceBssid && normalizeNet(net.BSSID) === deviceBssid);
     return ssidMatch && bssidMatch;
   });
 
@@ -163,7 +118,6 @@ export const checkNetworkMatch = (
   };
 };
 
-// Human-readable error from a fail reason
 export const buildNetworkErrorMessage = (fence, failReason) => {
   const names = (fence?.networks ?? [])
     .map(n => n.NetworkName)
@@ -174,13 +128,12 @@ export const buildNetworkErrorMessage = (fence, failReason) => {
       names || 'office WiFi'
     }`;
   if (failReason === 'SSID_UNAVAILABLE')
-    return 'Unable to read WiFi network name. Ensure Location permission is granted and Location Services are enabled on your device.';
+    return 'Unable to read WiFi network name. Ensure Location permission is granted and Location Services are enabled.';
   return `Wrong WiFi network.\nPlease connect to: ${
     names || 'required office network'
   }`;
 };
 
-// ─────────────────────────────────────────────
 const GeofenceContext = createContext(null);
 
 export const useGeofence = () => {
@@ -198,8 +151,6 @@ export const GeofenceProvider = ({children, person}) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [clockInFence, setClockInFence] = useState(null);
-
-  // wifiInfo exposed so Orchestrator can read current SSID/BSSID
   const [wifiInfo, setWifiInfo] = useState({
     ssid: null,
     bssid: null,
@@ -210,8 +161,6 @@ export const GeofenceProvider = ({children, person}) => {
   const watchId = useRef(null);
   const latestCoordsRef = useRef(null);
   const wifiInfoRef = useRef(wifiInfo);
-
-  // P0.2 — Inflight deduplication: share one promise across concurrent callers
   const inflightRefreshRef = useRef(null);
 
   useEffect(() => {
@@ -245,8 +194,8 @@ export const GeofenceProvider = ({children, person}) => {
         });
       }
     });
-    
-    // P1.3 — Initial snapshot fetch because event listener may take a few seconds
+
+    // Initial snapshot
     NetInfo.fetch().then(state => {
       if (state.type === 'wifi' && state.details) {
         const ssid = state.details.ssid ?? null;
@@ -261,7 +210,7 @@ export const GeofenceProvider = ({children, person}) => {
     return () => unsubscribe();
   }, []);
 
-  // ── Permission ────────────────────────────────────────────
+  // ── Permission — FIXED FOR BOTH ANDROID AND iOS ───────────
   const requestPermission = useCallback(async () => {
     if (Platform.OS === 'android') {
       const r = await PermissionsAndroid.request(
@@ -275,17 +224,55 @@ export const GeofenceProvider = ({children, person}) => {
       );
       return r === PermissionsAndroid.RESULTS.GRANTED;
     }
-    return new Promise(resolve =>
-      Geolocation.requestAuthorization(resolve, () => resolve(false)),
-    );
+
+    // ── iOS FIX: Check if already granted first ──────────────
+    // requestAuthorization returns a STATUS STRING not true/false
+    return new Promise(resolve => {
+      Geolocation.getCurrentPosition(
+        () => {
+          // Can get position = permission already granted
+          console.log('✅ GeofenceContext: iOS location already granted');
+          resolve(true);
+        },
+        error => {
+          console.log(
+            '📍 GeofenceContext iOS check:',
+            error.code,
+            error.message,
+          );
+          if (error.code === 1) {
+            // PERMISSION_DENIED — need to request it
+            Geolocation.requestAuthorization(
+              status => {
+                console.log('📍 GeofenceContext iOS auth status:', status);
+                const isGranted =
+                  status === 'authorizedWhenInUse' ||
+                  status === 'authorizedAlways' ||
+                  status === 'whenInUse' ||
+                  status === 'always' ||
+                  status === 'granted';
+                resolve(isGranted);
+              },
+              () => resolve(false),
+            );
+          } else {
+            // Timeout or other error — permission likely granted
+            // GPS just took too long on first try
+            console.log(
+              '📍 GeofenceContext iOS: assuming granted, error:',
+              error.code,
+            );
+            resolve(true);
+          }
+        },
+        {enableHighAccuracy: false, timeout: 3000, maximumAge: 60000},
+      );
+    });
   }, []);
 
   // ── enrichFences ──────────────────────────────────────────
-  // GPS + coordinates ONLY. No network check here.
-  // Networks array is stored on each fence for Orchestrator use.
   const enrichFences = useCallback((raw, cur) => {
     const now = new Date();
-
     return raw.map(f => {
       const lat = parseFloat(f.Latitude);
       const lng = parseFloat(f.Longitude);
@@ -315,20 +302,17 @@ export const GeofenceProvider = ({children, person}) => {
         dateValid,
         distanceMetres,
         withinRadius,
-        // Store networks for Orchestrator validation at confirm-time.
-        // Filter null/undefined entries so flatMap never crashes on n.property.
         networks: Array.isArray(f.Networks)
-          ? f.Networks.filter(n => n != null).flatMap(n =>
-              Array.isArray(n?.DFGeoFencesNetworksSvcContract)
-                ? n.DFGeoFencesNetworksSvcContract.filter(e => e != null)
-                : (n != null ? [n] : [])
-            ).filter(e => e != null && typeof e === 'object')
+          ? f.Networks.flatMap(n =>
+              Array.isArray(n.DFGeoFencesNetworksSvcContract)
+                ? n.DFGeoFencesNetworksSvcContract
+                : n,
+            )
           : [],
       };
     });
   }, []);
 
-  // ── selectBestFence ───────────────────────────────────────
   const selectBestFence = fences => {
     const candidates = fences.filter(
       f => f.active && f.dateValid && f.withinRadius,
@@ -339,12 +323,10 @@ export const GeofenceProvider = ({children, person}) => {
     );
   };
 
-  // ── reEnrichWithCoords ────────────────────────────────────
   const reEnrichWithCoords = useCallback(
     newCoords => {
       setAllFences(prev => {
         if (!prev.length) return prev;
-
         const enriched = enrichFences(
           prev.map(f => ({
             ...f,
@@ -359,13 +341,11 @@ export const GeofenceProvider = ({children, person}) => {
           })),
           newCoords,
         );
-
         const matched = selectBestFence(enriched);
         setMatchedFence(matched);
         setLocationError(
           matched ? null : 'You are outside all authorised zones.',
         );
-
         setManualSelectedFence(prev2 => {
           if (!prev2) return null;
           const stillValid = enriched.find(
@@ -377,7 +357,6 @@ export const GeofenceProvider = ({children, person}) => {
           );
           return stillValid ?? null;
         });
-
         return enriched;
       });
     },
@@ -392,12 +371,9 @@ export const GeofenceProvider = ({children, person}) => {
   }, []);
 
   // ── Core refresh ──────────────────────────────────────────
-  // P0.2 — _doRefresh is the actual implementation.
-  // refresh() deduplicates concurrent callers.
   const _doRefresh = useCallback(async () => {
     setLocationLoading(true);
     setLocationError(null);
-
     try {
       const fresh = await fetchFreshCoords();
       if (!fresh) {
@@ -409,7 +385,6 @@ export const GeofenceProvider = ({children, person}) => {
       setCoords(fresh);
       latestCoordsRef.current = fresh;
 
-      // Always fetch fresh from server — no AsyncStorage cache (online-first)
       const raw = await RetrieveByPerson({person});
 
       if (!raw || raw.length === 0) {
@@ -445,13 +420,11 @@ export const GeofenceProvider = ({children, person}) => {
     } finally {
       setLocationLoading(false);
     }
-  }, [person, enrichFences, resetFenceState]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [person, enrichFences, resetFenceState]);
 
-  // P0.2 — Deduplicated refresh: concurrent callers receive the same promise
+  // Deduplicated refresh
   const refresh = useCallback(async () => {
-    if (inflightRefreshRef.current) {
-      return inflightRefreshRef.current;
-    }
+    if (inflightRefreshRef.current) return inflightRefreshRef.current;
     inflightRefreshRef.current = _doRefresh();
     try {
       return await inflightRefreshRef.current;
@@ -473,6 +446,7 @@ export const GeofenceProvider = ({children, person}) => {
 
       setPermissionStatus('granted');
 
+      // ── watchPosition with iOS-required options ────────────
       watchId.current = Geolocation.watchPosition(
         pos => {
           if (!mounted) return;
@@ -486,7 +460,8 @@ export const GeofenceProvider = ({children, person}) => {
           latestCoordsRef.current = newCoords;
           reEnrichWithCoords(newCoords);
         },
-        () => {
+        err => {
+          console.warn('📍 watchPosition error:', err.message);
           if (mounted)
             setLocationError(
               'GPS signal lost. Please check location services.',
@@ -495,8 +470,11 @@ export const GeofenceProvider = ({children, person}) => {
         {
           enableHighAccuracy: true,
           distanceFilter: 10,
-          interval: 5000,
-          fastestInterval: 2000,
+          interval: 5000, // Android only
+          fastestInterval: 2000, // Android only
+          timeout: 20000, // ← iOS required
+          maximumAge: 10000, // ← iOS required
+          useSignificantChanges: false, // ← iOS required
         },
       );
 
@@ -543,7 +521,7 @@ export const GeofenceProvider = ({children, person}) => {
         setManualSelectedFence,
         clockInFence,
         recordClockInFence,
-        wifiInfo, // current WiFi state for Orchestrator (includes bssid now)
+        wifiInfo,
       }}>
       {children}
     </GeofenceContext.Provider>

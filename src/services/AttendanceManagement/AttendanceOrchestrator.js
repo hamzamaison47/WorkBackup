@@ -89,17 +89,22 @@ const enrichFences = (rawFences, coords) => {
       distanceMetres = Math.round(
         haversineDistance(coords.latitude, coords.longitude, lat, lng),
       );
-      withinRadius = !isNaN(radius) && distanceMetres <= radius + SOFT_BUFFER_METRES;
+      withinRadius =
+        !isNaN(radius) && distanceMetres <= radius + SOFT_BUFFER_METRES;
     }
 
     const networks = Array.isArray(f.Networks)
-      // Guard against null entries (e.g. fence with Networks: null flattened
-      // to [null] by normalizeObject before the null-check fix propagated).
-      ? f.Networks.filter(n => n != null).flatMap(n =>
-          Array.isArray(n?.DFGeoFencesNetworksSvcContract)
-            ? n.DFGeoFencesNetworksSvcContract.filter(e => e != null)
-            : (n != null ? [n] : [])
-        ).filter(e => e != null && typeof e === 'object')
+      ? // Guard against null entries (e.g. fence with Networks: null flattened
+        // to [null] by normalizeObject before the null-check fix propagated).
+        f.Networks.filter(n => n != null)
+          .flatMap(n =>
+            Array.isArray(n?.DFGeoFencesNetworksSvcContract)
+              ? n.DFGeoFencesNetworksSvcContract.filter(e => e != null)
+              : n != null
+              ? [n]
+              : [],
+          )
+          .filter(e => e != null && typeof e === 'object')
       : [];
 
     return {
@@ -117,9 +122,13 @@ const enrichFences = (rawFences, coords) => {
 };
 
 const selectBestFence = fences => {
-  const candidates = fences.filter(f => f.active && f.dateValid && f.withinRadius);
+  const candidates = fences.filter(
+    f => f.active && f.dateValid && f.withinRadius,
+  );
   if (!candidates.length) return null;
-  return candidates.reduce((a, b) => (b.distanceMetres < a.distanceMetres ? b : a));
+  return candidates.reduce((a, b) =>
+    b.distanceMetres < a.distanceMetres ? b : a,
+  );
 };
 
 // ─────────────────────────────────────────────
@@ -233,7 +242,10 @@ const prepare = async ({
 }) => {
   // ── Safety: GPS spoofing hard block ─────────
   if (spoofingDetected)
-    return {ok: false, error: 'Suspicious GPS activity detected. Cannot record attendance.'};
+    return {
+      ok: false,
+      error: 'Suspicious GPS activity detected. Cannot record attendance.',
+    };
 
   // ── Parallel SOAP fetch ──────────────────────
   // P0 CORE: Both retrieve APIs called simultaneously.
@@ -250,11 +262,19 @@ const prepare = async ({
   // ── Geofence evaluation ──────────────────────
   const enriched = coords ? enrichFences(rawFences ?? [], coords) : [];
   const matchedFence = coords ? selectBestFence(enriched) : null;
-  const actionFence = getActionFenceFromFences(actionType, matchedFence, clockInFence);
+  const actionFence = getActionFenceFromFences(
+    actionType,
+    matchedFence,
+    clockInFence,
+  );
 
   // Clock In requires a matched fence
   if (actionType === ACTION_TYPES.CLOCK_IN && !actionFence) {
-    return {ok: false, error: 'You are outside all authorised zones. Move closer to an authorised location.'};
+    return {
+      ok: false,
+      error:
+        'You are outside all authorised zones. Move closer to an authorised location.',
+    };
   }
 
   // ── Workflow check ───────────────────────────
@@ -267,7 +287,9 @@ const prepare = async ({
   const qrRequired =
     actionFence &&
     (() => {
-      const val = String(actionFence?.IsQRCodeActive ?? '').trim().toLowerCase();
+      const val = String(actionFence?.IsQRCodeActive ?? '')
+        .trim()
+        .toLowerCase();
       return val === 'yes' || val === '1' || val === 'true';
     })();
 
@@ -285,7 +307,11 @@ const prepare = async ({
         geoFenceID: String(actionFence?.GeoFenceID ?? ''),
       });
       if (!validationResult || validationResult === 0)
-        return {ok: false, error: 'Invalid QR code for this location. Please scan the correct QR.'};
+        return {
+          ok: false,
+          error:
+            'Invalid QR code for this location. Please scan the correct QR.',
+        };
       qrValidated = true;
     } catch (err) {
       return {ok: false, error: `QR validation failed: ${err.message}`};
@@ -307,9 +333,9 @@ const prepare = async ({
   //   NetworkName = WiFi SSID          (human-readable network name)
   //   BSSID       = AP hardware MAC   (unique per access point)
   let networkContext = {
-    networkId: publicIp ?? null,         // public IP — always recorded
-    networkName: netInfo.ssid ?? null,   // device SSID — always recorded
-    bssid: netInfo.bssid ?? null,        // device BSSID — always recorded
+    networkId: publicIp ?? null, // public IP — always recorded
+    networkName: netInfo.ssid ?? null, // device SSID — always recorded
+    bssid: netInfo.bssid ?? null, // device BSSID — always recorded
   };
 
   const fenceNetworks = actionFence?.networks ?? [];
@@ -318,7 +344,8 @@ const prepare = async ({
     console.log(
       '[Orchestrator] actionFence.networks:',
       JSON.stringify(fenceNetworks),
-      '→ count:', fenceNetworks.length,
+      '→ count:',
+      fenceNetworks.length,
     );
   }
 
@@ -340,7 +367,10 @@ const prepare = async ({
     );
 
     if (!networkMatched)
-      return {ok: false, error: buildNetworkErrorMessage(actionFence, networkFailReason)};
+      return {
+        ok: false,
+        error: buildNetworkErrorMessage(actionFence, networkFailReason),
+      };
 
     // Upgrade networkContext with canonical values from the matched fence entry.
     // Falls back to live device values if the fence entry has no configured value.
@@ -356,7 +386,8 @@ const prepare = async ({
         normalizeNet(net.BSSID).length > 0;
       const bssidMatch =
         !bssidConfigured ||
-        (netInfo.bssid && normalizeNet(net.BSSID) === normalizeNet(netInfo.bssid));
+        (netInfo.bssid &&
+          normalizeNet(net.BSSID) === normalizeNet(netInfo.bssid));
       return ssidMatch && bssidMatch;
     });
     networkContext = {
@@ -366,9 +397,15 @@ const prepare = async ({
       bssid: matchedNet?.BSSID ?? netInfo.bssid,
     };
 
-    console.log('[Orchestrator] Network validated. networkContext:', networkContext);
+    console.log(
+      '[Orchestrator] Network validated. networkContext:',
+      networkContext,
+    );
   } else {
-    console.log('[Orchestrator] No fence network policy. WiFi captured for audit:', networkContext);
+    console.log(
+      '[Orchestrator] No fence network policy. WiFi captured for audit:',
+      networkContext,
+    );
   }
 
   // ── Build and return ValidationToken ────────
@@ -376,8 +413,8 @@ const prepare = async ({
     actionType,
     person,
     fenceId: actionFence?.GeoFenceID ?? null,
-    matchedFence: actionFence,           // Full fence object embedded
-    serverPunches: rawPunches ?? [],     // Raw punches for re-check on confirm
+    matchedFence: actionFence, // Full fence object embedded
+    serverPunches: rawPunches ?? [], // Raw punches for re-check on confirm
     networkContext,
     coords,
     qrRawValue,
@@ -417,11 +454,14 @@ const confirm = async ({
   clockInFence,
   spoofingDetected = false,
 }) => {
-  if (!token) throw new Error('No validation token. Please restart the action.');
+  if (!token)
+    throw new Error('No validation token. Please restart the action.');
 
   // Spoofing re-check at confirm time
   if (spoofingDetected)
-    throw new Error('Suspicious GPS activity detected. Cannot record attendance.');
+    throw new Error(
+      'Suspicious GPS activity detected. Cannot record attendance.',
+    );
 
   let activeToken = token;
 
@@ -429,7 +469,11 @@ const confirm = async ({
   const tokenAge = Date.now() - token.fetchedAt;
   if (tokenAge > TOKEN_TTL_MS) {
     // Token expired — transparently re-validate
-    console.log(`[Orchestrator] Token expired after ${Math.round(tokenAge / 1000)}s — re-validating`);
+    console.log(
+      `[Orchestrator] Token expired after ${Math.round(
+        tokenAge / 1000,
+      )}s — re-validating`,
+    );
     const result = await prepare({
       person: token.person,
       actionType: token.actionType,

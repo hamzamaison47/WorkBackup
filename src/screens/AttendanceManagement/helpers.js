@@ -33,24 +33,48 @@ export const formatDate = date => {
   const d = toPKT(date);
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
-  return `${days[d.getUTCDay()]}, ${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  return `${days[d.getUTCDay()]}, ${
+    months[d.getUTCMonth()]
+  } ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 };
 
 export const formatDateShort = date => {
   const d = toPKT(date);
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
 };
 
 export const formatElapsed = seconds => {
   const h = Math.floor(seconds / 3600).toString();
-  const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+  const m = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, '0');
   const s = (seconds % 60).toString().padStart(2, '0');
   return `${h}:${m}:${s}`;
 };

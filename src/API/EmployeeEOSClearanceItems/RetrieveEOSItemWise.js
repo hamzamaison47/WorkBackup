@@ -49,9 +49,9 @@ const retrieveEOSItemWise = async ({employeeId, recId}) => {
 
     const parsed = parser.parse(xml);
     const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['retrieveEOSItemWiseResponse']?.[
-        'result'
-      ]?.['a:PREmployeeEOSClearanceItemsContract'];
+      parsed?.['s:Envelope']?.['s:Body']?.retrieveEOSItemWiseResponse?.result?.[
+        'a:PREmployeeEOSClearanceItemsContract'
+      ];
 
     if (!rawData) {
       console.log('No EOS Clearance Items data found');

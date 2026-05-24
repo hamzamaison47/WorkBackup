@@ -38,7 +38,9 @@ import SubmitEOSRequest from '../../API/EmployeeEOSRequest/SubmitEOSRequest';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = raw => {
-  if (!raw) return '';
+  if (!raw) {
+    return '';
+  }
   try {
     const d = new Date(raw);
     const month = String(d.getMonth() + 1).padStart(2, '0');

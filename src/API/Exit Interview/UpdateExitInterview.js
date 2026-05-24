@@ -1,4 +1,3 @@
-/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';

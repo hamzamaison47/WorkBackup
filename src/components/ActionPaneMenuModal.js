@@ -604,7 +604,9 @@ const ActionPaneMenuModal = ({
   };
 
   const handleCompanyPress = entity => {
-    if (onCompanySelect) onCompanySelect(entity.LegalEntity);
+    if (onCompanySelect) {
+      onCompanySelect(entity.LegalEntity);
+    }
     setCompanyOpen(false);
     onClose();
   };

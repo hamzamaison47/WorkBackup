@@ -57,7 +57,9 @@ const retrieveEmployeeReporteesEOS = async employeeId => {
         'result'
       ]['a:PREmployeeEOSRequestsSvcContract'];
 
-    if (!rawData) return [];
+    if (!rawData) {
+      return [];
+    }
 
     const cleanObject = obj =>
       Object.fromEntries(

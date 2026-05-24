@@ -31,7 +31,7 @@ import {
   Dimensions,
   BackHandler,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
 import {useGeofence} from '../GeofenceContext';
 import useLocation from '../../../hooks/useLocation';
@@ -45,7 +45,11 @@ import QRScannerModal, {
   isFaceRecognitionActive,
 } from '../QRScannerModal';
 import FaceVerificationModal from '../FaceVerificationModal';
-import {getActionFence, ACTION_TYPES, prewarmToken} from './attendanceActionHelpers';
+import {
+  getActionFence,
+  ACTION_TYPES,
+  prewarmToken,
+} from './attendanceActionHelpers';
 import {
   loadRecords,
   formatElapsed,
@@ -1252,7 +1256,10 @@ const TimeClockScreen = ({onNavigate}) => {
         lastOut={lastOut}
         validationToken={validationToken}
         onConfirm={handleClockIn}
-        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
+        onBack={() => {
+          setSubScreen('main');
+          setValidationToken(null);
+        }}
       />
     );
   if (subScreen === 'confirmBreak')
@@ -1261,7 +1268,10 @@ const TimeClockScreen = ({onNavigate}) => {
         breakType="BREAK_START"
         validationToken={validationToken}
         onConfirm={handleBreakStart}
-        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
+        onBack={() => {
+          setSubScreen('main');
+          setValidationToken(null);
+        }}
       />
     );
   if (subScreen === 'confirmBreakEnd')
@@ -1270,7 +1280,10 @@ const TimeClockScreen = ({onNavigate}) => {
         breakType="BREAK_END"
         validationToken={validationToken}
         onConfirm={handleBreakEnd}
-        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
+        onBack={() => {
+          setSubScreen('main');
+          setValidationToken(null);
+        }}
       />
     );
   if (subScreen === 'confirmOut')
@@ -1278,7 +1291,10 @@ const TimeClockScreen = ({onNavigate}) => {
       <ConfirmClockOutScreen
         validationToken={validationToken}
         onConfirm={handleClockOut}
-        onBack={() => { setSubScreen('main'); setValidationToken(null); }}
+        onBack={() => {
+          setSubScreen('main');
+          setValidationToken(null);
+        }}
       />
     );
 

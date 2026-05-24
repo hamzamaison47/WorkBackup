@@ -27,7 +27,9 @@ const MemoModal = ({
   };
 
   const handleClose = () => {
-    if (isProcessing) return;
+    if (isProcessing) {
+      return;
+    }
     setMemoText('');
     onClose();
   };

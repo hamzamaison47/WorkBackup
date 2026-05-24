@@ -58,7 +58,9 @@ const RetrieveEmployeeReporteesEmpInfo = async employeeId => {
         'result'
       ]['a:PREmploymentInformationSvcContract'];
 
-    if (!rawData) return [];
+    if (!rawData) {
+      return [];
+    }
 
     // ✅ Clean namespace prefix
     const cleanObject = obj =>

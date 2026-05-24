@@ -20,7 +20,9 @@ export const AnimatedCard = ({children, delay = 0, style, animate = true}) => {
   ).current;
 
   useEffect(() => {
-    if (!animate) return;
+    if (!animate) {
+      return;
+    }
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,

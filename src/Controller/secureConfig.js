@@ -25,6 +25,17 @@ export async function getConfig() {
   return null;
 }
 
+// export async function getConfig() {
+//   return {
+//     tokenUrl:
+//       'https://login.windows.net/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/token',
+//     client_id: '44c7cff3-bed3-4644-bed9-36c7c0a13dbe',
+//     client_secret: 'VUw8Q~OD7aGLfl39TRFCUeFhs5KnVLxvIzN5Occz',
+//     grant_type: 'client_credentials',
+//     resource: 'https://maison-uat.sandbox.operations.dynamics.com/',
+//   };
+// }
+
 export async function clearConfig() {
   await Keychain.resetGenericPassword({service: CONFIG_SERVICE});
 }
