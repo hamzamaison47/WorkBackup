@@ -30,6 +30,7 @@ import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 import styles from '../../../styles/styles';
+import useNotify from '../../../hooks/useNotify';
 
 const ExpenseManagmentListPage = () => {
   const navigation = useNavigation();
@@ -67,6 +68,8 @@ const ExpenseManagmentListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} =
+    useNotify('Expense Report');
 
   // Card config
   const CARD_CONFIG = {
@@ -393,18 +396,19 @@ const ExpenseManagmentListPage = () => {
         console.log('here is theresult', result);
 
         if (result.success) {
+          notifySuccess('Request submitted successfully.');
           setAlertMessage('Request submitted successfully.');
-          setAlertModal(true); // ADD THIS - Show the alert modal
+          setAlertModal(true);
           setTimeout(() => fetchExpenseData(), 1000);
         } else {
-          // This will show exactly what the API sent
+          notifyError(result.message);
           setAlertMessage(result.message);
-          setAlertModal(true); // ADD THIS - Show the alert modal
+          setAlertModal(true);
           console.log('API error message:', result.message);
         }
       } catch (error) {
         setAlertMessage(`Failed to submit request: ${error.message}`);
-        setAlertModal(true); // ADD THIS - Show the alert modal
+        setAlertModal(true);
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemData.recId, 'submit', false);
@@ -423,11 +427,8 @@ const ExpenseManagmentListPage = () => {
 
   const handleDeleteConfirm = async () => {
     const itemRecId = normalizeRecId(itemToDelete);
-    // setButtonProcessing(itemRecId, 'delete', true);
 
     setDeleteModal(false);
-
-    // Small delay to ensure modal is closed before showing processing overlay
     setTimeout(async () => {
       setIsProcessing(true); // Show processing overlay
       setButtonProcessing(itemToDelete.recId, 'delete', true);
@@ -440,6 +441,7 @@ const ExpenseManagmentListPage = () => {
         });
 
         if (result.success) {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
           setExpenseData(prev =>
             prev.filter(exp => normalizeRecId(exp) !== itemRecId),
@@ -450,7 +452,7 @@ const ExpenseManagmentListPage = () => {
       } catch (error) {
         setAlertMessage('Failed to delete record. Please try again.');
       } finally {
-        setIsProcessing(false); // Hide processing overlay
+        setIsProcessing(false);
         setButtonProcessing(itemToDelete.recId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
@@ -459,7 +461,7 @@ const ExpenseManagmentListPage = () => {
           fetchExpenseData();
         }, 800);
       }
-    }, 100); // Small delay to ensure modal closes first
+    }, 100);
   };
 
   const handleRefresh = () => {

@@ -44,13 +44,13 @@ const RetrieveEmployeeMenuItems = async ({person}) => {
     });
 
     const parsed = parser.parse(xml);
-
+    console.log('Menu Item Payload :', parsed);
     // 🔎 Navigate safely
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveUserMenuItemsResponse']?.[
         'result'
       ];
-
+    console.log('Menu Item Result :', result);
     if (!result || Object.keys(result).length === 0) {
       console.log('No menu items returned from backend');
       return [];

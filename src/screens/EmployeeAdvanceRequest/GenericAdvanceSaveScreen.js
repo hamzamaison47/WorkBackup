@@ -43,6 +43,7 @@ import styles from '../../styles/styles';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../components/Buttons/SaveRecordButtons';
+import useNotify from '../../hooks/useNotify';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -80,6 +81,7 @@ const GenericAdvanceSaveScreen = () => {
   const [filteredGuarantors2, setFilteredGuarantors2] = useState([]);
   const [guarantor1SearchQuery, setGuarantor1SearchQuery] = useState('');
   const [guarantor2SearchQuery, setGuarantor2SearchQuery] = useState('');
+  const {notifySuccess, notifyError} = useNotify('Loan Request');
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
@@ -918,25 +920,20 @@ const GenericAdvanceSaveScreen = () => {
     );
   };
 
-  // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
       const formattedRequestDate = `${
         new Date().toISOString().split('T')[0]
       }T12:00:00`;
 
-      // Ensure dates are properly formatted for API - never send empty strings
       const formatApiDate = dateStr => {
         if (!dateStr || dateStr.trim() === '') {
-          // Use today's date as fallback for empty dates
           const todayISO = new Date().toISOString().split('T')[0];
           return `${todayISO}T12:00:00`;
         }
-        // If already in correct format with time, return as-is
         if (dateStr.includes('T')) {
           return dateStr;
         }
-        // If just a date (YYYY-MM-DD), add time component
         return `${dateStr}T12:00:00`;
       };
 
@@ -957,24 +954,6 @@ const GenericAdvanceSaveScreen = () => {
         Guarantor2: data.Guarantor2 || '',
       };
 
-      // Debug logging for dates
-      console.log('=== Date Debug Info ===');
-      console.log(
-        'Raw RequestedPaymentDate from form:',
-        data.RequestedPaymentDate,
-      );
-      console.log('Raw RecoveryStartDate from form:', data.RecoveryStartDate);
-      console.log(
-        'Formatted RequestedPaymentDate for API:',
-        advanceRequestData.RequestedPaymentDate,
-      );
-      console.log(
-        'Formatted RecoveryStartDate for API:',
-        advanceRequestData.RecoveryStartDate,
-      );
-      console.log('Full advanceRequestData:', advanceRequestData);
-
-      // Enhanced validation before API call
       if (
         !advanceRequestData.AdvanceTypeCode ||
         !advanceRequestData.RequestedPaymentDate
@@ -1011,7 +990,9 @@ const GenericAdvanceSaveScreen = () => {
         } else if (submitResult?.IsSuccess === 'false') {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
+        const successMsg = `Record ${actionText}${submitText} successfully`;
 
+        notifySuccess(successMsg);
         setAlertMessage(`Record ${actionText}${submitText} successfully`);
         setAlertModal(true);
 
@@ -1032,21 +1013,17 @@ const GenericAdvanceSaveScreen = () => {
     }
   };
 
-  // Enhanced field validation with comprehensive checks
   const validateFields = () => {
     const errors = [];
 
-    // Validate Advance Type Code
     if (!formData.AdvanceTypeCode) {
       errors.push('Advance Type Code is required');
     }
 
-    // Validate Advance Amount
     const advanceAmount = parseNumber(formData.AdvanceAmount);
     if (!advanceAmount || advanceAmount === 0) {
       errors.push('Advance Amount is required and must be greater than 0');
     } else {
-      // Check if amount exceeds maximum allowed
       if (selectedAdvanceTypeData && selectedAdvanceTypeData.MaxAdanceAmount) {
         const maxAmount = parseNumber(selectedAdvanceTypeData.MaxAdanceAmount);
         if (maxAmount > 0 && advanceAmount > maxAmount) {

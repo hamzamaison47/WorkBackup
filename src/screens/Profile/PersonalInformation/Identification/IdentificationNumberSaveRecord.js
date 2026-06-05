@@ -31,13 +31,12 @@ import {UpdateIdentityRequest} from '../../../../API/PersonalInformation/Identif
 import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/Identification/SubmitIdentificationRequest';
 import {FindIdentificationTypeRequest} from '../../../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
 import {getpersonalContactsLabels} from '../../../../API/PersonalInformation/Identification/GetIdentificationLabels';
-
 import AlertModal from '../../../../components/Alert/AlertModal';
 import CalendarModal from '../../../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
-
+import useNotify from '../../../../hooks/useNotify';
 import styles from '../../../../styles/styles';
 
 const IdentificationNumberSaveRecord = () => {
@@ -76,6 +75,7 @@ const IdentificationNumberSaveRecord = () => {
   const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
     {},
   );
+  const {notifySuccess, notifyError} = useNotify('My Identification Numbers');
   const createInitialFormData = () => ({
     recId:
       !identityData.recId || identityData.recId === '0'
@@ -355,10 +355,7 @@ const IdentificationNumberSaveRecord = () => {
     return true;
   };
 
-  // 🔧 Centralized Save/Update/Submit logic
   const handleAction = async (actionType, modalMode, data) => {
-    console.log('Action Type', actionType);
-    console.log('Modal Mode', modalMode);
     try {
       const contract = {
         RecId: data.recId || '',
@@ -411,6 +408,8 @@ const IdentificationNumberSaveRecord = () => {
           );
         }
 
+        const finalMsg = `Record ${textAction} successfully`;
+        notifySuccess(finalMsg);
         setAlertMessage(`Record ${textAction} successfully`);
         setAlertModal(true);
         return {success: true, recId: response.RecId || contract.RecId};

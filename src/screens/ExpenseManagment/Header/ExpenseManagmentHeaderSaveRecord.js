@@ -35,6 +35,7 @@ import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../components/Buttons/SaveRecordButtons';
 import styles from '../../../styles/styles';
+import useNotify from '../../../hooks/useNotify';
 
 const ExpenseManagementHeaderSaveRecord = () => {
   const route = useRoute();
@@ -79,6 +80,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
   const [dataFetched, setDataFetched] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('Expense Report');
 
   const createInitialFormData = () => ({
     recId: expenseData.recId || expenseData.RecId || '',
@@ -387,6 +389,9 @@ const ExpenseManagementHeaderSaveRecord = () => {
 
       if (isSuccess) {
         const successAction = modalMode === 'create' ? 'created' : 'updated';
+        const successMsg =
+          response?.Message || `Record ${successAction} successfully`;
+        notifySuccess(successMsg);
         setAlertMessage(
           response?.Message || `Record ${successAction} successfully`,
         );
@@ -407,6 +412,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
         const errorMessage =
           response?.Message ||
           `Error ${modalMode === 'create' ? 'creating' : 'updating'} Record`;
+        notifyError(errorMessage);
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};

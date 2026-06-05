@@ -1,391 +1,3 @@
-// /* eslint-disable curly */
-// import React, {useState, useEffect} from 'react';
-// import {
-//   View,
-//   Text,
-//   TouchableOpacity,
-//   ScrollView,
-//   Animated,
-//   Modal,
-//   ActivityIndicator,
-//   FlatList,
-//   RefreshControl,
-// } from 'react-native';
-// import FontAwesome from 'react-native-vector-icons/FontAwesome';
-// import {updateNotificationByRecID} from '../../API/Notification/UpdateNotificationByRecID';
-// import styles from '../../styles/styles';
-
-// const NotificationPanel = ({
-//   visible,
-//   notifications,
-//   onClose,
-//   onRefresh,
-//   employeeId,
-// }) => {
-//   const [slideAnim] = useState(new Animated.Value(0));
-//   const [fadeAnim] = useState(new Animated.Value(0));
-//   const [loadingStates, setLoadingStates] = useState({});
-//   const [markAllLoading, setMarkAllLoading] = useState(false);
-//   const [processedNotifications, setProcessedNotifications] = useState([]);
-
-//   // Process and categorize notifications
-//   useEffect(() => {
-//     if (!notifications || !Array.isArray(notifications)) {
-//       setProcessedNotifications([]);
-//       return;
-//     }
-
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-//     // First sort by CreatedDateTime (newest first)
-//     const sortedNotifications = [...notifications].sort((a, b) => {
-//       return new Date(b.CreatedDateTime) - new Date(a.CreatedDateTime);
-//     });
-
-//     const processed = sortedNotifications.map(notification => {
-//       const notificationDate = new Date(notification.CreatedDateTime);
-//       notificationDate.setHours(0, 0, 0, 0);
-
-//       const isToday = notificationDate.getTime() === today.getTime();
-
-//       return {
-//         ...notification,
-//         createdAt: notification.CreatedDateTime,
-//         isToday,
-//         isRead:
-//           notification.NotificationActivityStatus === 'Read' ||
-//           notification.EmailStatus === 'Sent',
-//         notificationText:
-//           notification.NotificationText ||
-//           `${notification.EmailLogType} - ${notification.EmployeeName}`,
-//       };
-//     });
-
-//     setProcessedNotifications(processed);
-//   }, [notifications]);
-
-//   React.useEffect(() => {
-//     if (visible) {
-//       Animated.parallel([
-//         Animated.timing(slideAnim, {
-//           toValue: 1,
-//           duration: 300,
-//           useNativeDriver: true,
-//         }),
-//         Animated.timing(fadeAnim, {
-//           toValue: 1,
-//           duration: 300,
-//           useNativeDriver: true,
-//         }),
-//       ]).start();
-//     } else {
-//       Animated.parallel([
-//         Animated.timing(slideAnim, {
-//           toValue: 0,
-//           duration: 250,
-//           useNativeDriver: true,
-//         }),
-//         Animated.timing(fadeAnim, {
-//           toValue: 0,
-//           duration: 250,
-//           useNativeDriver: true,
-//         }),
-//       ]).start();
-//     }
-//   }, [visible, slideAnim, fadeAnim]);
-
-//   const categorizeNotifications = () => {
-//     const todayNotifications = [];
-//     const olderNotifications = [];
-
-//     processedNotifications.forEach(notification => {
-//       if (notification.isToday) {
-//         todayNotifications.push(notification);
-//       } else {
-//         olderNotifications.push(notification);
-//       }
-//     });
-
-//     return {todayNotifications, olderNotifications};
-//   };
-
-//   const handleMarkAsRead = async notification => {
-//     if (!notification.RecId || notification.isRead) return;
-
-//     setLoadingStates(prev => ({...prev, [notification.RecId]: true}));
-
-//     try {
-//       await updateNotificationByRecID(notification.RecId);
-
-//       if (onRefresh) await onRefresh();
-//     } catch (error) {
-//       console.error('Error marking notification as read:', error);
-//     } finally {
-//       setLoadingStates(prev => ({...prev, [notification.RecId]: false}));
-//     }
-//   };
-
-//   const handleMarkAllAsRead = async () => {
-//     const unreadNotifications = processedNotifications.filter(n => !n.isRead);
-//     if (unreadNotifications.length === 0) return;
-
-//     setMarkAllLoading(true);
-
-//     try {
-//       const unreadRecIds = unreadNotifications.map(n => n.RecId);
-
-//       const result = await updateNotificationByRecID(unreadRecIds);
-
-//       console.log('Mark all as read result:', result);
-
-//       // Refresh the notifications list
-//       if (onRefresh) await onRefresh();
-//     } catch (error) {
-//       console.error('Error marking all notifications as read:', error);
-//     } finally {
-//       setMarkAllLoading(false);
-//     }
-//   };
-
-//   const [isRefreshing, setIsRefreshing] = useState(false);
-
-//   const handleRefresh = async () => {
-//     setIsRefreshing(true);
-//     try {
-//       if (onRefresh) await onRefresh();
-//     } catch (error) {
-//       console.error('Error refreshing:', error);
-//     } finally {
-//       setIsRefreshing(false);
-//     }
-//   };
-
-//   const translateX = slideAnim.interpolate({
-//     inputRange: [0, 1],
-//     outputRange: [400, 0],
-//   });
-
-//   const {todayNotifications, olderNotifications} = categorizeNotifications();
-//   const unreadCount = processedNotifications.filter(n => !n.isRead).length;
-
-//   const renderNotificationItem = ({item}) => (
-//     <View
-//       style={[
-//         styles.notif_NotificationItem,
-//         item.isToday && styles.notif_NotificationItemToday,
-//         item.isRead && styles.notif_NotificationItemRead,
-//       ]}>
-//       {/* Left Logo Container with overlapping button */}
-//       <TouchableOpacity
-//         style={styles.notif_LogoContainer}
-//         onPress={() => handleMarkAsRead(item)}
-//         disabled={item.isRead || loadingStates[item.RecId]}>
-//         <View style={styles.notif_IconContainer}>
-//           <FontAwesome
-//             name={getIconName(item.EmailLogType)}
-//             style={[
-//               styles.notif_NotificationIcon,
-//               item.isToday && styles.notif_NotificationIconToday,
-//             ]}
-//           />
-//         </View>
-
-//         {/* Mark as read button positioned at bottom-right of logo */}
-//         <View style={styles.notif_MarkReadButtonContainer}>
-//           <TouchableOpacity
-//             style={[
-//               styles.notif_MarkReadButton,
-//               item.isToday && styles.notif_MarkReadButtonToday,
-//               item.isRead && styles.notif_MarkReadButtonRead,
-//               loadingStates[item.RecId] && styles.notif_MarkReadButtonDisabled,
-//             ]}
-//             onPress={() => handleMarkAsRead(item)}
-//             disabled={item.isRead || loadingStates[item.RecId]}>
-//             {loadingStates[item.RecId] ? (
-//               <ActivityIndicator
-//                 size="small"
-//                 color={item.isToday ? '#ffffff' : '#0A66C2'}
-//               />
-//             ) : (
-//               <FontAwesome
-//                 name={item.isRead ? 'check-circle' : 'circle'}
-//                 style={[
-//                   styles.notif_MarkReadIcon,
-//                   item.isToday && styles.notif_MarkReadIconToday,
-//                   item.isRead && styles.notif_MarkReadIconRead,
-//                 ]}
-//               />
-//             )}
-//           </TouchableOpacity>
-//         </View>
-//       </TouchableOpacity>
-
-//       {/* Content Container */}
-//       <View style={styles.notif_ContentContainer}>
-//         <Text
-//           style={[
-//             styles.notif_NotificationMessage,
-//             item.isToday && styles.notif_NotificationMessageToday,
-//           ]}>
-//           {item.notificationText}
-//         </Text>
-//         <Text
-//           style={[
-//             styles.notif_NotificationTime,
-//             item.isToday && styles.notif_NotificationTimeToday,
-//           ]}>
-//           {formatTime(item.CreatedDateTime)}
-//         </Text>
-//       </View>
-//     </View>
-//   );
-
-//   const renderSectionHeader = (title, count) => (
-//     <View style={styles.notif_SectionHeader}>
-//       <Text style={styles.notif_SectionTitle}>{title}</Text>
-//       <View style={styles.notif_CountBadge}>
-//         <Text style={styles.notif_CountText}>{count}</Text>
-//       </View>
-//     </View>
-//   );
-
-//   if (!visible) return null;
-
-//   return (
-//     <Modal
-//       visible={visible}
-//       transparent
-//       animationType="none"
-//       onRequestClose={onClose}>
-//       <Animated.View style={[styles.notif_Overlay, {opacity: fadeAnim}]}>
-//         <TouchableOpacity
-//           style={styles.notif_OverlayTouchable}
-//           activeOpacity={1}
-//           onPress={onClose}
-//         />
-
-//         <Animated.View
-//           style={[styles.notif_Panel, {transform: [{translateX}]}]}>
-//           <View style={styles.notif_Header}>
-//             <View style={styles.notif_HeaderLeft}>
-//               <FontAwesome name="bell" style={styles.notif_BellIcon} />
-//               <View>
-//                 <Text style={styles.notif_HeaderTitle}>Notifications</Text>
-//                 <Text style={styles.notif_HeaderCount}>
-//                   {unreadCount} unread
-//                 </Text>
-//               </View>
-//             </View>
-
-//             <View style={styles.notif_HeaderRight}>
-//               {/* Mark All as Read Button */}
-//               <TouchableOpacity
-//                 onPress={handleMarkAllAsRead}
-//                 style={[
-//                   styles.notif_MarkAllButton,
-//                   markAllLoading && styles.notif_MarkAllButtonDisabled,
-//                 ]}
-//                 disabled={unreadCount === 0 || markAllLoading}>
-//                 {markAllLoading ? (
-//                   <ActivityIndicator size="small" color="#ffffff" />
-//                 ) : (
-//                   <>
-//                     <FontAwesome
-//                       name="check"
-//                       style={styles.notif_MarkAllIcon}
-//                     />
-//                     <Text style={styles.notif_MarkAllText}>Mark all read</Text>
-//                   </>
-//                 )}
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-
-//           <ScrollView
-//             style={styles.notif_ScrollView}
-//             showsVerticalScrollIndicator={false}
-//             refreshControl={
-//               <RefreshControl
-//                 refreshing={isRefreshing}
-//                 onRefresh={handleRefresh}
-//               />
-//             }>
-//             {processedNotifications.length === 0 ? (
-//               <View style={styles.notif_EmptyContainer}>
-//                 <FontAwesome name="bell-slash" style={styles.notif_EmptyIcon} />
-//                 <Text style={styles.notif_EmptyText}>No notifications</Text>
-//               </View>
-//             ) : (
-//               <>
-//                 {todayNotifications.length > 0 && (
-//                   <>
-//                     {renderSectionHeader('Today', todayNotifications.length)}
-//                     <FlatList
-//                       data={todayNotifications}
-//                       renderItem={renderNotificationItem}
-//                       keyExtractor={item => `today-${item.RecId}`}
-//                       scrollEnabled={false}
-//                     />
-//                   </>
-//                 )}
-
-//                 {olderNotifications.length > 0 && (
-//                   <>
-//                     {renderSectionHeader('Older', olderNotifications.length)}
-//                     <FlatList
-//                       data={olderNotifications}
-//                       renderItem={renderNotificationItem}
-//                       keyExtractor={item => `older-${item.RecId}`}
-//                       scrollEnabled={false}
-//                     />
-//                   </>
-//                 )}
-//               </>
-//             )}
-//           </ScrollView>
-
-//           <TouchableOpacity onPress={onClose} style={styles.notif_CloseButton}>
-//             <FontAwesome name="times" style={styles.notif_CloseIcon} />
-//           </TouchableOpacity>
-//         </Animated.View>
-//       </Animated.View>
-//     </Modal>
-//   );
-// };
-
-// // Helper function to get icon based on notification type
-// const getIconName = emailLogType => {
-//   switch (emailLogType) {
-//     case 'SalarySlip':
-//       return 'money';
-//     case 'LeaveRequest':
-//       return 'calendar';
-//     case 'Expense':
-//       return 'credit-card';
-//     default:
-//       return 'file-text-o';
-//   }
-// };
-
-// const formatTime = dateString => {
-//   if (!dateString) return 'Just now';
-
-//   const date = new Date(dateString);
-//   const now = new Date();
-//   const diffMs = now - date;
-//   const diffMins = Math.floor(diffMs / 60000);
-//   const diffHours = Math.floor(diffMs / 3600000);
-//   const diffDays = Math.floor(diffMs / 86400000);
-
-//   if (diffMins < 1) return 'Just now';
-//   if (diffMins < 60) return `${diffMins}m ago`;
-//   if (diffHours < 24) return `${diffHours}h ago`;
-//   if (diffDays === 1) return 'Yesterday';
-//   if (diffDays < 7) return `${diffDays}d ago`;
-//   return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-// };
-
 // export default NotificationPanel;
 /* eslint-disable curly */
 import React, {useState, useEffect, useRef} from 'react';
@@ -442,8 +54,8 @@ const T = {
   shadow: 'rgba(10, 102, 194, 0.10)',
 };
 
-// ─── Notification type configs ─────────────────────────────────────────────────
 const TYPE_CONFIG = {
+  // your existing ones unchanged...
   SalarySlip: {
     icon: 'money',
     color: '#10B981',
@@ -462,6 +74,24 @@ const TYPE_CONFIG = {
     bg: '#FEF3C7',
     label: 'Expense',
   },
+
+  // 👇 ADD THESE
+  Success: {
+    icon: 'check-circle',
+    color: '#10B981',
+    bg: '#D1FAE5',
+    label: 'Success',
+  },
+  Error: {
+    icon: 'times-circle',
+    color: '#DC2626',
+    bg: '#FEE2E2',
+    label: 'Error',
+  },
+  Delete: {icon: 'trash', color: '#DC2626', bg: '#FEE2E2', label: 'Deleted'},
+  Firebase: {icon: 'bell', color: '#0A66C2', bg: '#E8F1FB', label: 'Push'},
+  Info: {icon: 'info-circle', color: '#0A66C2', bg: '#E8F1FB', label: 'Info'},
+
   default: {icon: 'bell', color: '#0A66C2', bg: '#E8F1FB', label: 'System'},
 };
 
@@ -474,15 +104,21 @@ const NotificationPanel = ({
   onClose,
   onRefresh,
   employeeId,
+  onMarkLocalRead,
+  onClearAll, // 👈 ADD
 }) => {
   const slideAnim = useRef(new Animated.Value(PANEL_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const headerScale = useRef(new Animated.Value(0.97)).current;
 
   const [loadingStates, setLoadingStates] = useState({});
-  const [markAllLoading, setMarkAllLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [processedNotifications, setProcessedNotifications] = useState([]);
+  const [expandedItems, setExpandedItems] = useState({});
+
+  const toggleExpand = recId => {
+    setExpandedItems(prev => ({...prev, [recId]: !prev[recId]}));
+  };
 
   // ── Process notifications ──────────────────────────────────────────────────
   useEffect(() => {
@@ -518,6 +154,19 @@ const NotificationPanel = ({
   // ── Open / close animation ─────────────────────────────────────────────────
   useEffect(() => {
     if (visible) {
+      // Auto-mark all as read when panel opens
+      const unread = processedNotifications.filter(n => !n.isRead);
+      if (unread.length) {
+        const localUnread = unread.filter(n => n.source === 'local');
+        const apiUnread = unread.filter(n => n.source !== 'local');
+        localUnread.forEach(n => onMarkLocalRead?.(n.RecId));
+        if (apiUnread.length) {
+          updateNotificationByRecID(apiUnread.map(n => n.RecId))
+            .then(() => onRefresh?.())
+            .catch(e => console.error('Auto mark read error:', e));
+        }
+      }
+
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -559,33 +208,34 @@ const NotificationPanel = ({
         }),
       ]).start();
     }
-  }, [visible, slideAnim, fadeAnim, headerScale]);
+  }, [
+    fadeAnim,
+    headerScale,
+    onMarkLocalRead,
+    onRefresh,
+    processedNotifications,
+    slideAnim,
+    visible,
+  ]); // keep deps as just visible to avoid re-triggering on processedNotifications change
 
   // ── Actions ────────────────────────────────────────────────────────────────
+  // Update handleMarkAsRead — replace the existing one:
   const handleMarkAsRead = async notification => {
     if (!notification.RecId || notification.isRead) return;
     setLoadingStates(prev => ({...prev, [notification.RecId]: true}));
     try {
-      await updateNotificationByRecID(notification.RecId);
-      if (onRefresh) await onRefresh();
+      if (notification.source === 'local') {
+        // Local only — no API call needed
+        onMarkLocalRead?.(notification.RecId);
+      } else {
+        // Your existing API call — unchanged
+        await updateNotificationByRecID(notification.RecId);
+        if (onRefresh) await onRefresh();
+      }
     } catch (e) {
       console.error('Error marking as read:', e);
     } finally {
       setLoadingStates(prev => ({...prev, [notification.RecId]: false}));
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    const unread = processedNotifications.filter(n => !n.isRead);
-    if (!unread.length) return;
-    setMarkAllLoading(true);
-    try {
-      await updateNotificationByRecID(unread.map(n => n.RecId));
-      if (onRefresh) await onRefresh();
-    } catch (e) {
-      console.error('Error marking all read:', e);
-    } finally {
-      setMarkAllLoading(false);
     }
   };
 
@@ -639,11 +289,32 @@ const NotificationPanel = ({
                 {formatTime(item.CreatedDateTime)}
               </Text>
             </View>
+
+            {/* Title for Firebase notifications */}
+            {item.NotificationTitle ? (
+              <Text style={styles.notifTitle} numberOfLines={1}>
+                {item.NotificationTitle}
+              </Text>
+            ) : null}
+
+            {/* Expandable message text */}
             <Text
               style={[styles.notifText, !item.isRead && styles.notifTextUnread]}
-              numberOfLines={2}>
+              numberOfLines={expandedItems[item.RecId] ? undefined : 3}>
               {item.notificationText}
             </Text>
+
+            {/* Show more / Show less — only renders if text is long */}
+            {item.notificationText?.length > 120 && (
+              <TouchableOpacity
+                onPress={() => toggleExpand(item.RecId)}
+                hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
+                style={styles.showMoreBtn}>
+                <Text style={[styles.showMoreText, {color: cfg.color}]}>
+                  {expandedItems[item.RecId] ? 'Show less ▲' : 'Show more ▼'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Read toggle */}
@@ -716,7 +387,7 @@ const NotificationPanel = ({
         <Animated.View
           style={[styles.header, {transform: [{scale: headerScale}]}]}>
           <View style={styles.headerTop}>
-            {/* Back / close */}
+            {/* Close */}
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
@@ -725,54 +396,42 @@ const NotificationPanel = ({
             <View style={styles.headerCenter}>
               <Text style={styles.headerTitle}>Notifications</Text>
               <Text style={styles.headerSub}>
-                {unreadCount > 0
-                  ? `${unreadCount} unread message${unreadCount > 1 ? 's' : ''}`
+                {processedNotifications.length > 0
+                  ? `${processedNotifications.length} notification${
+                      processedNotifications.length > 1 ? 's' : ''
+                    }`
                   : 'All caught up'}
               </Text>
             </View>
 
-            {/* Bell with badge */}
-            <View style={styles.bellWrap}>
-              <Ionicons name="notifications" size={22} color="#fff" />
-              {unreadCount > 0 && (
-                <View style={styles.bellBadge}>
-                  <Text style={styles.bellBadgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </View>
+            {/* Clear all button */}
+            <TouchableOpacity
+              onPress={onClearAll}
+              disabled={processedNotifications.length === 0}
+              activeOpacity={0.75}
+              style={[
+                styles.clearBtn,
+                processedNotifications.length === 0 && styles.clearBtnDisabled,
+              ]}>
+              <Ionicons
+                name="trash-outline"
+                size={14}
+                color={
+                  processedNotifications.length === 0
+                    ? 'rgba(255,255,255,0.3)'
+                    : '#fff'
+                }
+              />
+              <Text
+                style={[
+                  styles.clearBtnText,
+                  processedNotifications.length === 0 &&
+                    styles.clearBtnTextDisabled,
+                ]}>
+                Clear
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          {/* Mark all read */}
-          <TouchableOpacity
-            style={[
-              styles.markAllBtn,
-              (unreadCount === 0 || markAllLoading) &&
-                styles.markAllBtnDisabled,
-            ]}
-            onPress={handleMarkAllAsRead}
-            disabled={unreadCount === 0 || markAllLoading}
-            activeOpacity={0.75}>
-            {markAllLoading ? (
-              <ActivityIndicator size="small" color={T.blue} />
-            ) : (
-              <>
-                <Ionicons
-                  name="checkmark-done"
-                  size={14}
-                  color={unreadCount === 0 ? T.textMute : T.blue}
-                />
-                <Text
-                  style={[
-                    styles.markAllText,
-                    unreadCount === 0 && styles.markAllTextDisabled,
-                  ]}>
-                  Mark all as read
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
         </Animated.View>
 
         {/* ── List ───────────────────────────────────────────────────────── */}
@@ -990,7 +649,7 @@ const styles = StyleSheet.create({
   // Notification item
   notifItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 14,
     paddingVertical: 13,
     backgroundColor: T.surface,
@@ -1099,6 +758,41 @@ const styles = StyleSheet.create({
     color: T.textMute,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  notifTitle: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: T.text,
+    marginBottom: 3,
+  },
+  showMoreBtn: {
+    marginTop: 4,
+    alignSelf: 'flex-start',
+  },
+  showMoreText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  clearBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+  },
+  clearBtnDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  clearBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  clearBtnTextDisabled: {
+    color: 'rgba(255,255,255,0.3)',
   },
 });
 

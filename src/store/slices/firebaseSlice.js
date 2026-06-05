@@ -9,6 +9,7 @@ const initialState = {
   employeeId: null,
   company: null,
   dynamicsSynced: false,
+  inAppNotifications: [], // 👈 ADD
 };
 
 const firebaseSlice = createSlice({
@@ -17,6 +18,25 @@ const firebaseSlice = createSlice({
   reducers: {
     setFirebaseToken: (state, action) => {
       state.fcmToken = action.payload;
+    },
+    addInAppNotification: (state, action) => {
+      state.inAppNotifications.unshift({
+        RecId: `local_${Date.now()}`,
+        CreatedDateTime: new Date().toISOString(),
+        NotificationText: action.payload.text,
+        EmailLogType: action.payload.type, // 'Success' | 'Error' | 'Firebase' | 'Delete'
+        NotificationActivityStatus: 'Unread',
+        EmailStatus: null,
+        EmployeeName: '',
+        source: 'local', // marks it as local, not from API
+      });
+    },
+    markInAppNotificationRead: (state, action) => {
+      const n = state.inAppNotifications.find(n => n.RecId === action.payload);
+      if (n) n.NotificationActivityStatus = 'Read';
+    },
+    clearInAppNotifications: state => {
+      state.inAppNotifications = [];
     },
     setDeviceId: (state, action) => {
       state.deviceId = action.payload;
@@ -46,6 +66,7 @@ const firebaseSlice = createSlice({
       state.employeeId = null;
       state.company = null;
       state.dynamicsSynced = false;
+      state.inAppNotifications = []; // 👈 ADD THIS LINE
     },
   },
 });
@@ -58,6 +79,9 @@ export const {
   setFirebaseUserData,
   setDynamicsSynced,
   clearFirebaseData,
+  addInAppNotification, // 👈 ADD
+  markInAppNotificationRead, // 👈 ADD
+  clearInAppNotifications, // 👈 ADD
 } = firebaseSlice.actions;
 
 export default firebaseSlice.reducer;

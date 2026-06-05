@@ -26,6 +26,7 @@ import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import styles from '../../../../styles/styles';
 import {translate as t} from '../../../../store/utils/translate';
+import useNotify from '../../../../hooks/useNotify';
 
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
@@ -67,6 +68,8 @@ const FamilyContact_ListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} =
+    useNotify('Personal Contacts');
 
   const fetchFamilyContactsData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
@@ -343,6 +346,7 @@ const FamilyContact_ListPage = () => {
         });
 
         if (response?.[0]?.IsSuccess) {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
           setfamilycontactsdata(prev =>
             prev.filter(c => c.RecId !== itemToDelete.RecId),

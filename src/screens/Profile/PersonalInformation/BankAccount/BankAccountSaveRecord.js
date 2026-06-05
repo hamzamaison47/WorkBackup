@@ -29,6 +29,7 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
+import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 
@@ -67,6 +68,7 @@ const BankAccountSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('Bank Account');
 
   // Create initial form data function
   const createInitialFormData = () => ({
@@ -176,30 +178,6 @@ const BankAccountSaveRecord = () => {
     };
   }, []);
 
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     if (mode === 'create') {
-  //       const freshFormData = createInitialFormData();
-  //       setFormData(freshFormData);
-  //     } else if (mode === 'edit' && bankaccountdata?.recId) {
-  //       const editFormData = {
-  //         ...createInitialFormData(),
-  //         ...bankaccountdata,
-  //         employeeId: bankaccountdata.employeeId || employeeId,
-  //         employeeName: bankaccountdata.employeeName || employeeName,
-  //         WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
-  //       };
-  //       setFormData(editFormData);
-  //     }
-  //   }, [
-  //     mode,
-  //     bankaccountdata?.recId,
-  //     employeeId,
-  //     employeeName,
-  //     WorkerRecId,
-  //     bankaccountdata,
-  //   ]),
-  // );
   const fetchGetBankAccountLabel = async () => {
     try {
       const labels = await GetBankAccountLabels();
@@ -332,13 +310,6 @@ const BankAccountSaveRecord = () => {
             : String(data.WorkerRecId),
       };
 
-      // let response;
-      // if (modalMode === 'create') {
-      //   response = await createBankAccountRecord({
-      //     bankaccountdata: bankaccountsdata,
-      //   });
-      // }
-
       let response, submitResult;
       if (modalMode === 'create') {
         response = await createBankAccountRecord({
@@ -371,6 +342,8 @@ const BankAccountSaveRecord = () => {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
 
+        const successMsg = `Record ${actionText}${submitText} successfully`;
+        notifySuccess(successMsg); // ← add
         setAlertMessage(`Record ${actionText}${submitText} successfully`);
         setAlertModal(true);
 

@@ -32,7 +32,7 @@ import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
-
+import useNotify from '../../hooks/useNotify';
 import styles from '../../styles/styles';
 
 const HRHelpDeskListScreen = () => {
@@ -50,6 +50,8 @@ const HRHelpDeskListScreen = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} =
+    useNotify('Help Desk Request');
 
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const [selectedHelpDeskItem, setSelectedHelpDeskItem] = useState(null);
@@ -448,6 +450,7 @@ const HRHelpDeskListScreen = () => {
         );
 
         if (recordResult && recordResult.IsSuccess === 'true') {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
           setAllHelpDeskData(prev =>
             prev.filter(item => item.RecId !== itemToDelete.RecId),
@@ -456,6 +459,7 @@ const HRHelpDeskListScreen = () => {
           setAlertMessage('Unable to delete record. Please try again.');
         }
       } catch (error) {
+        notifyError('Failed to delete record');
         setAlertMessage('Failed to delete record');
       } finally {
         setIsProcessing(false);
@@ -482,6 +486,7 @@ const HRHelpDeskListScreen = () => {
           String(response?.IsSuccess).toLowerCase() === 'true';
 
         if (isSuccess) {
+          notifySuccess(response?.Message || 'Record submitted successfully');
           setAlertMessage(response?.Message || 'Record submitted successfully');
           setAlertModal(true);
           setHighlightedRecId(itemData.RecId);

@@ -34,6 +34,7 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
 import SaveRecordButtons from '../../components/Buttons/SaveRecordButtons';
+import useNotify from '../../hooks/useNotify';
 
 const HRHelpDeskSaveScreen = () => {
   const route = useRoute();
@@ -62,6 +63,7 @@ const HRHelpDeskSaveScreen = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [showProblemDateCalendar, setShowProblemDateCalendar] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('Help Desk Request');
 
   // Dropdown options for TypeOfProblems
   const [typeOfProblemsOptions, setTypeOfProblemsOptions] = useState([]);
@@ -369,9 +371,7 @@ const HRHelpDeskSaveScreen = () => {
             ? 'Record is created successfully'
             : 'Record is updated successfully';
 
-        // Only show alert here when called standalone (not from handleSave)
         if (!silent) {
-          // ✅ only these two lines, remove the duplicate below
           setAlertMessage(successMessage);
           setAlertModal(true);
         }
@@ -429,16 +429,18 @@ const HRHelpDeskSaveScreen = () => {
             String(submitResponse?.IsSuccess).toLowerCase() === 'true';
 
           if (isSuccess) {
-            setAlertMessage(
+            const msg =
               mode === 'edit'
                 ? 'Record is updated & submitted successfully'
-                : 'Record is created & submitted successfully',
-            );
+                : 'Record is created & submitted successfully';
+            notifySuccess(msg);
+            setAlertMessage(msg);
           } else {
             const saveMessage =
               mode === 'edit'
                 ? 'Record is updated successfully'
                 : 'Record is created successfully';
+            notifySuccess(saveMessage); // ← add
             setAlertMessage(saveMessage);
             setAlertModal(true);
           }

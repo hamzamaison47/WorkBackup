@@ -25,7 +25,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
       <soapenv:Header>
         <dat:CallContext xmlns:dat="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-            <dat:Company>USMF</dat:Company>
+            <dat:Company></dat:Company>
             <dat:Language>en-us</dat:Language>
         </dat:CallContext>
       </soapenv:Header>

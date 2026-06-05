@@ -293,6 +293,8 @@ export const useOutlookCalendar = () => {
 };
 
 // ─── Calendar Grid ────────────────────────────────────────────────────────────
+const CELL = Math.floor((SW - 32 - 32) / 7); // derived from wrapper padding
+
 const CalendarGrid = ({selectedDate, onSelectDate, events}) => {
   const [viewMonth, setViewMonth] = useState(() => new Date(selectedDate));
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -355,48 +357,6 @@ const CalendarGrid = ({selectedDate, onSelectDate, events}) => {
   };
 
   const today = new Date();
-  const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
-
-  const cells = useMemo(
-    () => buildMonthGrid(viewYear, viewMonth),
-    [viewYear, viewMonth],
-  );
-
-  const eventSet = useMemo(() => {
-    const s = new Set();
-    eventDates.forEach(d =>
-      s.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`),
-    );
-    return s;
-  }, [eventDates]);
-
-  const hasEvent = d =>
-    eventSet.has(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
-
-  const prevMonth = () => {
-    if (viewMonth === 0) {
-      setViewYear(y => y - 1);
-      setViewMonth(11);
-    } else {
-      setViewMonth(m => m - 1);
-    }
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) {
-      setViewYear(y => y + 1);
-      setViewMonth(0);
-    } else {
-      setViewMonth(m => m + 1);
-    }
-  };
-  const goToday = () => {
-    setViewYear(today.getFullYear());
-    setViewMonth(today.getMonth());
-    onSelectDate(today);
-  };
-
-  const s = gridStyles(T);
 
   return (
     <View style={cg.wrapper}>
@@ -978,7 +938,6 @@ const CreateEventModal = ({visible, onClose, onSave, defaultDate}) => {
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
   const opacAnim = useRef(new Animated.Value(0)).current;
 
-  // FIX: Use refs to prevent unnecessary re-renders
   const subjectRef = useRef(null);
   const dateRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -1223,15 +1182,13 @@ const cm = StyleSheet.create({
     borderTopRightRadius: 28,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    maxHeight: '90%', // Increased from 85%
-    // FIX: Ensure modal stays above tab bar
+    maxHeight: '90%',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: -2},
     shadowOpacity: 0.25,
     shadowRadius: 10,
     elevation: 20,
   },
-  // ... rest of your styles remain the same
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1529,14 +1486,12 @@ const OutlookCalendarScreen = () => {
       allEvents.filter(e => {
         const start = parseGD(e.start);
         const end = parseGD(e.end);
-        // Normalize selected date to midnight
         const selStart = new Date(
           selectedDate.getFullYear(),
           selectedDate.getMonth(),
           selectedDate.getDate(),
         );
-        const selEnd = new Date(selStart.getTime() + 86400000); // next midnight
-        // Event overlaps this day if it starts before day ends AND ends after day starts
+        const selEnd = new Date(selStart.getTime() + 86400000);
         return start < selEnd && end > selStart;
       }),
     [allEvents, selectedDate],
@@ -1567,7 +1522,6 @@ const OutlookCalendarScreen = () => {
     else navigation.navigate('MainDashboard');
   };
 
-  // ── List sections ──
   const listData = useMemo(
     () => [
       {type: 'UPCOMING'},
@@ -1648,7 +1602,6 @@ const OutlookCalendarScreen = () => {
         <FAB onPress={() => setShowCreate(true)} />
       </ActionPaneContainer>
 
-      {/* Move Modal HERE - outside ActionPaneContainer */}
       <CreateEventModal
         visible={showCreate}
         onClose={() => setShowCreate(false)}

@@ -27,6 +27,7 @@ import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
 import {chatbotClearMessages} from '../store/slices/chatbotSlice';
+import {apiCache} from '../utils/apiCache';
 
 // Polyfill at the top of your authUtils file
 if (typeof global.atob === 'undefined') {

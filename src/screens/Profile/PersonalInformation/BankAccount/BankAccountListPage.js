@@ -30,6 +30,7 @@ import {translate as t} from '../../../../store/utils/translate';
 import {retrieveAllBankAccounts} from '../../../../API/PersonalInformation/BankAccounts/BankAccountfindbyEmployee';
 import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts/BankAccountDelete';
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
+import useNotify from '../../../../hooks/useNotify';
 
 const BankAccountListPage = () => {
   const navigation = useNavigation();
@@ -67,6 +68,7 @@ const BankAccountListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} = useNotify('Bank Account');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -372,18 +374,16 @@ const BankAccountListPage = () => {
 
     setTimeout(async () => {
       setIsProcessing(true);
-      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
         const response = await DeletBankAccount({
-          // Fix: use RecId (uppercase) consistently
           recordsRecId: [itemToDelete.RecId],
         });
 
         if (response[0].IsSuccess) {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
-          // Fix: filter using RecId (uppercase) consistently
           setbankaccountdata(prev =>
             prev.filter(bank => bank.RecId !== itemToDelete.RecId),
           );
@@ -395,7 +395,6 @@ const BankAccountListPage = () => {
         console.log('Delete Bank Account response', error);
       } finally {
         setIsProcessing(false);
-        // Fix: use RecId (uppercase) consistently
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
@@ -410,21 +409,19 @@ const BankAccountListPage = () => {
   const handleSubmitPress = async itemData => {
     setTimeout(async () => {
       setIsProcessing(true);
-      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemData.RecId, 'submit', true);
 
       try {
         const response = await SubmitBankAccountRecord({
-          // Fix: use RecId (uppercase) consistently
           recId: itemData.RecId,
         });
 
         const resObj = Array.isArray(response) ? response[0] : response;
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+          notifySuccess('Request submitted successfully');
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
-          // Fix: use RecId (uppercase) consistently
           setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {
@@ -448,7 +445,6 @@ const BankAccountListPage = () => {
         setAlertModal(true);
       } finally {
         setIsProcessing(false);
-        // Fix: use RecId (uppercase) consistently
         setButtonProcessing(itemData.RecId, 'submit', false);
       }
     }, 100);

@@ -35,6 +35,7 @@ import {retrieveEmployeeReporteesEOS} from '../../API/EmployeeEOSRequest/Retriev
 import {RetrieveEmployeeReporteesEmpInfo} from '../../API/EmploymentInformation/RetrieveEmployeeReporteesEmpInfo';
 import {CreateEOSRequest} from '../../API/EmployeeEOSRequest/CreateEOSRequest';
 import SubmitEOSRequest from '../../API/EmployeeEOSRequest/SubmitEOSRequest';
+import useNotify from '../../hooks/useNotify';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = raw => {
@@ -99,7 +100,7 @@ const EmployeeEOS_SaveRecord = () => {
   const [noticePeriods, setNoticePeriods] = useState([]);
   const [reasonCodes, setReasonCodes] = useState([]);
   const [showActualDateCalendar, setShowActualDateCalendar] = useState(false);
-
+  const {notifySuccess, notifyError} = useNotify('EOS Request');
   const [formData, setFormData] = useState({
     employee: effectiveEmployeeName || userData?.employeeName || '',
     employeeId: effectiveEmployeeId || userData?.employeeId || 0,
@@ -257,9 +258,11 @@ const EmployeeEOS_SaveRecord = () => {
 
         if (actionType === 'submit') {
           await SubmitEOSRequest(result.RecId);
+          notifySuccess('EOS Request Created & Submitted Successfully!');
           setAlertMessage('EOS Request Created & Submitted Successfully!');
         } else {
-          setAlertMessage('EOS Request Draft Created Successfully!');
+          notifySuccess('EOS Request Created Successfully!');
+          setAlertMessage('EOS Request Created Successfully!');
         }
 
         setAlertModal(true);
@@ -276,11 +279,14 @@ const EmployeeEOS_SaveRecord = () => {
           });
         }, 2000);
       } else {
-        setAlertMessage(result?.Message || 'Failed to create EOS Request.');
+        const errMsg = result?.Message || 'Failed to create EOS Request.';
+        notifyError(errMsg); // 👈 ADD
+        setAlertMessage(errMsg);
         setAlertModal(true);
       }
     } catch (error) {
       console.error('Save error:', error);
+      notifyError('Error while saving EOS Request.');
       setAlertMessage('Error while saving EOS Request.');
       setAlertModal(true);
     } finally {

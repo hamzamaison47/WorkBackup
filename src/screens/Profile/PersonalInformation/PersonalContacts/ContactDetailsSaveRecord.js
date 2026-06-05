@@ -33,6 +33,7 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../components/Buttons/SaveRecordButtons';
+import useNotify from '../../../../hooks/useNotify';
 
 import {CreateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/CreateContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
@@ -116,6 +117,7 @@ const ContactDetailsSaveRecord = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [contactDetailsLabels, setContactDetailsLabels] = useState({});
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('Contact Details');
 
   /* -------  DERIVED  ------- */
   const isPhoneType = PHONE_TYPES.includes(formData.Type);
@@ -302,7 +304,6 @@ const ContactDetailsSaveRecord = () => {
     }
   };
 
-  /* -------  CORE ACTION  ------- */
   const handleAction = async actionType => {
     if (processingButton) return;
     const missing = validateForm();
@@ -345,6 +346,8 @@ const ContactDetailsSaveRecord = () => {
         response?.IsSuccess === true || response?.IsSuccess === 'true';
       if (isSuccess) {
         const actionText = mode === 'edit' ? 'updated' : 'created';
+        const successMsg = `Record ${actionText} successfully`;
+        notifySuccess(successMsg); // ← add
         setAlertMessage(`Record ${actionText} successfully`);
         setAlertModal(true);
 

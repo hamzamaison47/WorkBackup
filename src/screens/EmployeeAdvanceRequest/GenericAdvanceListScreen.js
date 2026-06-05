@@ -32,6 +32,7 @@ import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+import useNotify from '../../hooks/useNotify';
 
 import styles from '../../styles/styles';
 
@@ -50,7 +51,7 @@ const GenericAdvanceListScreen = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  // const [typeSelectionModal, setTypeSelectionModal] = useState(false);
+  const {notifySuccess, notifyError, notifyDelete} = useNotify('Loan Request');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -640,6 +641,7 @@ const GenericAdvanceListScreen = () => {
         );
 
         if (recordResult && recordResult.IsSuccess === 'true') {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
           setAllAdvanceData(prev =>
             prev.filter(adv => adv.RecId !== itemToDelete.RecId),
@@ -671,6 +673,7 @@ const GenericAdvanceListScreen = () => {
         const resObj = Array.isArray(response) ? response[0] : response;
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+          notifySuccess('Request submitted successfully');
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
 
