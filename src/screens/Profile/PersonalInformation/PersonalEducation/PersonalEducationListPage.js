@@ -27,13 +27,12 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import {translate as t} from '../../../../store/utils/translate';
-
-// API
 import {EmployeePersonalEducation} from '../../../../API/PersonalInformation/Education/PersonalEducation';
 import {DeleteEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationDelete';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
 import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
+import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 
@@ -70,6 +69,8 @@ const PersonalEducationListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} =
+    useNotify('Education Details');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -394,8 +395,8 @@ const PersonalEducationListPage = () => {
           recordsRecId: [itemToDelete.RecId],
         });
         if (response[0]?.IsSuccess) {
+          notifyDelete('Record deleted successfully.');
           setAlertMessage('Record deleted successfully.');
-          // Fix: filter using RecId (uppercase) consistently
           setEducationData(prev =>
             prev.filter(ed => ed.RecId !== itemToDelete.RecId),
           );
@@ -431,10 +432,9 @@ const PersonalEducationListPage = () => {
       const res = Array.isArray(response) ? response[0] : response;
 
       if (String(res?.IsSuccess).toLowerCase() === 'true') {
+        notifySuccess('Request submitted successfully.');
         setAlertMessage('Request submitted successfully.');
         setAlertModal(true);
-
-        // Fix: use RecId (uppercase) consistently
         setHighlightedRecId(itemData.RecId);
 
         setTimeout(() => setHighlightedRecId(null), 3000);

@@ -28,8 +28,8 @@ import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 import ReceiptDetailsModal from '../../../shared/ReceiptDetailsModal';
-
 import styles from '../../../styles/styles';
+import useNotify from '../../../hooks/useNotify';
 
 const ExpenseManagmentLinesListPage = () => {
   const navigation = useNavigation();
@@ -78,6 +78,8 @@ const ExpenseManagmentLinesListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} =
+    useNotify('Expense Report');
 
   const CARD_CONFIG = {
     headerConfig: {
@@ -420,6 +422,7 @@ const ExpenseManagmentLinesListPage = () => {
       });
 
       if (result.success) {
+        notifyDelete('Record deleted successfully');
         setAlertMessage('Record deleted successfully');
         setExpenseLinesData(prev =>
           prev.filter(

@@ -85,9 +85,13 @@ if (__DEV__) {
   const lightKeys = new Set(Object.keys(lightTheme));
   const darkKeys = new Set(Object.keys(darkTheme));
   lightKeys.forEach(k => {
-    if (!darkKeys.has(k)) console.warn(`darkTheme missing key: "${k}"`);
+    if (!darkKeys.has(k)) {
+      console.warn(`darkTheme missing key: "${k}"`);
+    }
   });
   darkKeys.forEach(k => {
-    if (!lightKeys.has(k)) console.warn(`lightTheme missing key: "${k}"`);
+    if (!lightKeys.has(k)) {
+      console.warn(`lightTheme missing key: "${k}"`);
+    }
   });
 }

@@ -76,6 +76,8 @@
     <!-- ============================================ -->
     <!-- NOTIFICATIONS -->
     <!-- ============================================ -->
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <true/>
     <key>UIBackgroundModes</key>
     <array>
         <string>fetch</string>
@@ -122,6 +124,15 @@
         <true/>
         <key>NSExceptionDomains</key>
         <dict>
+            <key>maison-uat.sandbox.operations.dynamics.com</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+            </dict>
             <key>login.microsoftonline.com</key>
             <dict>
                 <key>NSExceptionAllowsInsecureHTTPLoads</key>

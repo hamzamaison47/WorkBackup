@@ -25,11 +25,10 @@ import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import {translate as t} from '../../../../store/utils/translate';
-
-// API
 import {ContactDetails} from '../../../../API/PersonalInformation/ContactDetails/ContactDetails';
 import {DeleteContactDetails} from '../../../../API/PersonalInformation/ContactDetails/DeleteContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
+import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 
@@ -37,16 +36,12 @@ const ContactDetailsListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  // Get userData from Redux
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = reduxUserData;
 
-  // Extract employee details
   const effectiveEmployeeId = effectiveUserData?.employeeId;
   const effectiveEmployeeName = effectiveUserData?.employeeName;
   const effectiveWorkerRecId = effectiveUserData?.WorkerRecId;
-
-  // 🔹 Modals & Alerts
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
@@ -56,13 +51,12 @@ const ContactDetailsListPage = () => {
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // 🔹 Processing states
+  const {notifySuccess, notifyError, notifyDelete} =
+    useNotify('Contact Details');
   const [processingButtons, setProcessingButtons] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [contactsData, setContactsData] = useState([]);
 
-  // 🔹 Fetch Contacts from API
   const fetchContactsData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -141,7 +135,6 @@ const ContactDetailsListPage = () => {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-    // setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
     setDeleteModal(false);
 
@@ -155,6 +148,7 @@ const ContactDetailsListPage = () => {
         });
 
         if (response[0].IsSuccess) {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
           setContactsData(prev =>
             prev.filter(contact => contact.RecId !== itemToDelete.RecId),
@@ -190,14 +184,15 @@ const ContactDetailsListPage = () => {
       // subtitle: {key: 'Description'},
     },
     fields: [
-      // {key: 'Type', label: 'Type', type: 'text'},
-      // {
-      //   key: 'IsPrimary',
-      //   label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
-      //   type: 'text',
-      // },
+      {key: 'Type', label: 'Type', type: 'text'},
+      {
+        key: 'IsPrimary',
+        label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
+        type: 'text',
+      },
       {
         key: 'Locator',
+        label: 'Address',
         type: 'text',
       },
     ],

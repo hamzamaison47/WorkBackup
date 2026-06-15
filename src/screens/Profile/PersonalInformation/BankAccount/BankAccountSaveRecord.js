@@ -29,6 +29,7 @@ import AlertModal from '../../../../components/Alert/AlertModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
+import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 
@@ -67,13 +68,14 @@ const BankAccountSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('Bank Account');
 
   // Create initial form data function
   const createInitialFormData = () => ({
-    recId:
-      !bankaccountdata.recId || bankaccountdata.recId === '0'
+    RecId:
+      !bankaccountdata.RecId && !bankaccountdata.recId
         ? ''
-        : bankaccountdata.recId,
+        : bankaccountdata.RecId || bankaccountdata.recId || '',
     employeeId: employeeId,
     employeeName: employeeName,
     WorkerRecId: WorkerRecId,
@@ -176,30 +178,6 @@ const BankAccountSaveRecord = () => {
     };
   }, []);
 
-  // useFocusEffect(
-  //   React.useCallback(() => {
-  //     if (mode === 'create') {
-  //       const freshFormData = createInitialFormData();
-  //       setFormData(freshFormData);
-  //     } else if (mode === 'edit' && bankaccountdata?.recId) {
-  //       const editFormData = {
-  //         ...createInitialFormData(),
-  //         ...bankaccountdata,
-  //         employeeId: bankaccountdata.employeeId || employeeId,
-  //         employeeName: bankaccountdata.employeeName || employeeName,
-  //         WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
-  //       };
-  //       setFormData(editFormData);
-  //     }
-  //   }, [
-  //     mode,
-  //     bankaccountdata?.recId,
-  //     employeeId,
-  //     employeeName,
-  //     WorkerRecId,
-  //     bankaccountdata,
-  //   ]),
-  // );
   const fetchGetBankAccountLabel = async () => {
     try {
       const labels = await GetBankAccountLabels();
@@ -234,11 +212,17 @@ const BankAccountSaveRecord = () => {
           // 🔹 EDIT MODE
           else if (mode === 'edit' && bankaccountdata?.RecId) {
             setFormData({
-              ...createInitialFormData(),
-              ...bankaccountdata,
-              employeeId: bankaccountdata.employeeId || employeeId,
-              employeeName: bankaccountdata.employeeName || employeeName,
-              WorkerRecId: bankaccountdata.WorkerRecId || WorkerRecId,
+              RecId: bankaccountdata?.RecId || bankaccountdata?.recId || '',
+              employeeId: bankaccountdata?.employeeId || employeeId,
+              employeeName: bankaccountdata?.employeeName || employeeName,
+              WorkerRecId: bankaccountdata?.WorkerRecId || WorkerRecId,
+              AccountHolder: bankaccountdata?.AccountHolder || '',
+              AccountId: bankaccountdata?.AccountId || '',
+              AccountNum: bankaccountdata?.AccountNum || '',
+              BankIBAN: bankaccountdata?.BankIBAN || '',
+              BranchNumber: bankaccountdata?.BranchNumber || '',
+              BranchName: bankaccountdata?.BranchName || '',
+              Name: bankaccountdata?.Name || '',
             });
           }
         } catch (error) {
@@ -255,7 +239,13 @@ const BankAccountSaveRecord = () => {
       return () => {
         isActive = false;
       };
-    }, [mode, bankaccountdata?.recId, employeeId, employeeName, WorkerRecId]),
+    }, [
+      mode,
+      bankaccountdata?.AccountId,
+      employeeId,
+      employeeName,
+      WorkerRecId,
+    ]),
   );
 
   const handleRefresh = async () => {
@@ -295,25 +285,30 @@ const BankAccountSaveRecord = () => {
 
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
+      if (
+        !data.WorkerRecId ||
+        data.WorkerRecId === '0' ||
+        data.WorkerRecId === 0
+      ) {
+        setAlertMessage('Worker ID is missing. Please go back and try again.');
+        setAlertModal(true);
+        return {success: false};
+      }
       const bankaccountsdata = {
-        AccountHolder: data.AccountHolder,
-        AccountId: data.AccountId,
-        AccountNum: data.AccountNum,
-        BranchNumber: data.BranchNumber,
-        BranchName: data.BranchName,
-        BankIBAN: data.BankIBAN,
-        Name: data.Name,
-        EmployeeId: data.employeeId,
-        recId: data.recId === '' ? '0' : data.recId,
-        Worker: data.WorkerRecId === '' ? '0' : data.WorkerRecId,
+        AccountHolder: data.AccountHolder || '',
+        AccountId: data.AccountId || '',
+        AccountNum: data.AccountNum || '',
+        BranchNumber: data.BranchNumber || '',
+        BranchName: data.BranchName || '',
+        BankIBAN: data.BankIBAN || '',
+        Name: data.Name || '',
+        EmployeeId: data.employeeId || employeeId || '', // ← add this
+        RecId: !data.RecId || data.RecId === '' ? '0' : String(data.RecId), // ← uppercase in contract
+        Worker:
+          !data.WorkerRecId || data.WorkerRecId === ''
+            ? '0'
+            : String(data.WorkerRecId),
       };
-
-      // let response;
-      // if (modalMode === 'create') {
-      //   response = await createBankAccountRecord({
-      //     bankaccountdata: bankaccountsdata,
-      //   });
-      // }
 
       let response, submitResult;
       if (modalMode === 'create') {
@@ -347,6 +342,8 @@ const BankAccountSaveRecord = () => {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
 
+        const successMsg = `Record ${actionText}${submitText} successfully`;
+        notifySuccess(successMsg); // ← add
         setAlertMessage(`Record ${actionText}${submitText} successfully`);
         setAlertModal(true);
 

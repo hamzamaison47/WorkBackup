@@ -98,7 +98,9 @@ export const processAction = async (action, context = {}) => {
 
   // Strip undefined fields
   const payload = Object.fromEntries(
-    Object.entries(basePayload).filter(([, v]) => v !== undefined && v !== null),
+    Object.entries(basePayload).filter(
+      ([, v]) => v !== undefined && v !== null,
+    ),
   );
 
   switch (action) {

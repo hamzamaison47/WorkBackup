@@ -6,10 +6,16 @@ export const normalizeValue = value => {
   // Return null (not []) for absent/empty values so that downstream truthiness
   // checks (e.g. !net.BSSID) behave correctly. An empty array is truthy and
   // would be misinterpreted as a configured-but-empty BSSID.
-  if (value === null || value === undefined || value === '') return null;
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
 
-  if (value === 'Yes') return 1;
-  if (value === 'No') return 0;
+  if (value === 'Yes') {
+    return 1;
+  }
+  if (value === 'No') {
+    return 0;
+  }
 
   if (typeof value === 'string' && !isNaN(value)) {
     return Number(value);

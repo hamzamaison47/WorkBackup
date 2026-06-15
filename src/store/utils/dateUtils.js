@@ -9,11 +9,17 @@ export function formatDateValue(
   timeFormatOption,
   timezoneOption,
 ) {
-  if (!value) return '—';
+  if (!value) {
+    return '—';
+  }
 
   const d = typeof value === 'string' ? new Date(value) : value;
-  if (!d || isNaN(d.getTime())) return '—';
-  if (d.getFullYear() < INVALID_YEAR_THRESHOLD) return '—';
+  if (!d || isNaN(d.getTime())) {
+    return '—';
+  }
+  if (d.getFullYear() < INVALID_YEAR_THRESHOLD) {
+    return '—';
+  }
 
   try {
     const isLocal =
@@ -28,9 +34,15 @@ export function formatDateValue(
     const dateFormat = momentDateFormat(formatOption?.dateFormat);
     const timeFormat = momentTimeFormat(timeFormatOption?.timeFormat);
 
-    if (type === 'date') return m.format(dateFormat);
-    if (type === 'time') return m.format(timeFormat);
-    if (type === 'datetime') return m.format(`${dateFormat} ${timeFormat}`);
+    if (type === 'date') {
+      return m.format(dateFormat);
+    }
+    if (type === 'time') {
+      return m.format(timeFormat);
+    }
+    if (type === 'datetime') {
+      return m.format(`${dateFormat} ${timeFormat}`);
+    }
   } catch (e) {
     console.warn('formatDateValue error:', e?.message, '| value:', value);
     return '—';

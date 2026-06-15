@@ -38,7 +38,7 @@ export const ATTENDANCE_MODE = {
 // ─────────────────────────────────────────────
 const _tokenManager = (() => {
   let _token = null;
-  let _expiresAt = 0;           // epoch ms
+  let _expiresAt = 0; // epoch ms
   let _inflightPromise = null;
   const EXPIRE_BUFFER_MS = 60_000; // refresh 60s before actual expiry
 
@@ -55,9 +55,13 @@ const _tokenManager = (() => {
   const get = async () => {
     const now = Date.now();
     const needsRefresh = !_token || now >= _expiresAt - EXPIRE_BUFFER_MS;
-    if (!needsRefresh) return _token;
+    if (!needsRefresh) {
+      return _token;
+    }
 
-    if (_inflightPromise) return _inflightPromise;
+    if (_inflightPromise) {
+      return _inflightPromise;
+    }
 
     _inflightPromise = _fetchToken().finally(() => {
       _inflightPromise = null;
@@ -214,9 +218,15 @@ export const buildAttendancePayload = async ({
 
   const filtered = Object.fromEntries(
     Object.entries(payload).filter(([key, value]) => {
-      if (key === 'DeviceId') return true; // always send, SOAP builder handles nil
-      if (value === null || value === undefined) return false;
-      if (typeof value === 'string') return value.trim().length > 0;
+      if (key === 'DeviceId') {
+        return true;
+      } // always send, SOAP builder handles nil
+      if (value === null || value === undefined) {
+        return false;
+      }
+      if (typeof value === 'string') {
+        return value.trim().length > 0;
+      }
       return true;
     }),
   );
@@ -226,9 +236,14 @@ export const buildAttendancePayload = async ({
       k => !(k in filtered),
     );
     if (missing.length) {
-      console.warn('[buildAttendancePayload] ⚠️ Fields stripped from payload:', missing);
+      console.warn(
+        '[buildAttendancePayload] ⚠️ Fields stripped from payload:',
+        missing,
+      );
     } else {
-      console.log('[buildAttendancePayload] ✓ Network fields present in payload.');
+      console.log(
+        '[buildAttendancePayload] ✓ Network fields present in payload.',
+      );
     }
   }
 

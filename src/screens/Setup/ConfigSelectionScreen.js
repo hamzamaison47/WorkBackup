@@ -538,12 +538,16 @@ const extractTitle = configOrUrl => {
       typeof configOrUrl === 'string'
         ? configOrUrl
         : configOrUrl?.resource || '';
-    if (!resource) return 'Unknown Environment';
+    if (!resource) {
+      return 'Unknown Environment';
+    }
     let withoutProtocol = resource.replace(/(^\w+:|^)\/\//, '');
     const hostname = withoutProtocol.split('/')[0];
     const firstPart = hostname.split('.')[0];
     const hyphenParts = firstPart.split('-');
-    if (hyphenParts.length >= 2) return `${hyphenParts[0]}-${hyphenParts[1]}`;
+    if (hyphenParts.length >= 2) {
+      return `${hyphenParts[0]}-${hyphenParts[1]}`;
+    }
     return firstPart || 'Unknown Environment';
   } catch (err) {
     return 'Unknown Environment';
@@ -606,7 +610,9 @@ const ConfigSelectionScreen = () => {
   const handleSelectConfiguration = async configId => {
     try {
       const selectedConfig = configs.find(config => config.id === configId);
-      if (selectedConfig) await saveConfig(selectedConfig.data);
+      if (selectedConfig) {
+        await saveConfig(selectedConfig.data);
+      }
       await setActiveConfig(configId);
       setActiveConfigId(configId);
       setAlertMessage(t('configSelection.activateSuccess'));
@@ -619,7 +625,9 @@ const ConfigSelectionScreen = () => {
 
   const saveEditedTitle = async () => {
     try {
-      if (!editingConfig) return;
+      if (!editingConfig) {
+        return;
+      }
       const updatedConfig = {
         ...editingConfig,
         name: editedTitle,

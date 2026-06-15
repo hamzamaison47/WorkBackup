@@ -32,6 +32,7 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import AlertModal from '../../../../components/Alert/AlertModal';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
+import useNotify from '../../../../hooks/useNotify';
 import styles from '../../../../styles/styles';
 
 // D365 boundary dates — defined at module level, not inside render
@@ -75,6 +76,9 @@ const IdentificationNumberListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} = useNotify(
+    'My Identification Numbers',
+  );
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -477,8 +481,8 @@ const IdentificationNumberListPage = () => {
         });
 
         if (response[0].IsSuccess) {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
-          // Fix: filter using RecId (uppercase) consistently
           setIdentificationsData(prev =>
             prev.filter(item => item.RecId !== itemToDelete.RecId),
           );
@@ -514,10 +518,9 @@ const IdentificationNumberListPage = () => {
         const resObj = Array.isArray(response) ? response[0] : response;
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+          notifySuccess('Request submitted successfully');
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
-
-          // Fix: use RecId (uppercase) consistently
           setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {

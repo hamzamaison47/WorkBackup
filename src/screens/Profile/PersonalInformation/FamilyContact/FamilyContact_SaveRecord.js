@@ -38,6 +38,7 @@ import {retrieveRelationshipTypeId} from '../../../../API/PersonalInformation/Fa
 import {FamilyContactCreate} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactCreate';
 import {FamilyContactUpdate} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactUpdate';
 import {getpersonalContactLabels} from '../../../../API/PersonalInformation/FamilyContacts/GetPersonalContactsLabels';
+import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 import {borderRadius, spacing} from '../../../../store/utils/scaling';
@@ -53,6 +54,7 @@ const FamilyContact_SaveRecord = () => {
   const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
     {},
   );
+  const {notifySuccess, notifyError} = useNotify('Personal Contacts');
 
   const routeParams = useMemo(() => route.params || {}, [route.params]);
 
@@ -439,89 +441,94 @@ const FamilyContact_SaveRecord = () => {
     return true;
   }, [formData.firstName, formData.relationship]);
 
-  const handleAction = useCallback(async (mode, data) => {
-    try {
-      const contract = {
-        RecId: Number(data.recId || 0),
-        FirstName: data.firstName,
-        MiddleName: data.middleName,
-        LastName: data.lastName,
-        Name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
-        EmployeeId: data.employeeId || '',
-        RelationShipTypeId: data.relationship || '',
-        EmergencyContact: data.EmergencyContact ? 1 : 0,
-        isDependent: data.isDependent ? 1 : 0,
-        isBeneficiary: data.isBeneficiary ? 1 : 0,
-        BeneficiaryFromDate: data.beneficiaryValidFrom
-          ? data.beneficiaryValidFrom
-          : '1900-01-01T00:00:00.000Z',
+  const handleAction = useCallback(
+    async (mode, data) => {
+      try {
+        const contract = {
+          RecId: Number(data.recId || 0),
+          FirstName: data.firstName,
+          MiddleName: data.middleName,
+          LastName: data.lastName,
+          Name: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+          EmployeeId: data.employeeId || '',
+          RelationShipTypeId: data.relationship || '',
+          EmergencyContact: data.EmergencyContact ? 1 : 0,
+          isDependent: data.isDependent ? 1 : 0,
+          isBeneficiary: data.isBeneficiary ? 1 : 0,
+          BeneficiaryFromDate: data.beneficiaryValidFrom
+            ? data.beneficiaryValidFrom
+            : '1900-01-01T00:00:00.000Z',
 
-        BeneficiaryToDate:
-          data.beneficiaryValidTo === D365_MAX_DATETIME
-            ? D365_MAX_DATETIME
-            : data.beneficiaryValidTo
-            ? data.beneficiaryValidTo
-            : D365_MAX_DATETIME,
+          BeneficiaryToDate:
+            data.beneficiaryValidTo === D365_MAX_DATETIME
+              ? D365_MAX_DATETIME
+              : data.beneficiaryValidTo
+              ? data.beneficiaryValidTo
+              : D365_MAX_DATETIME,
 
-        Gender: data.Gender || '',
-        BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
-        DependentValidFrom: data.dependentValidFrom
-          ? data.dependentValidFrom
-          : '1900-01-01T00:00:00.000Z',
+          Gender: data.Gender || '',
+          BirthDate: data.BirthDate || '1900-01-01T00:00:00.000Z',
+          DependentValidFrom: data.dependentValidFrom
+            ? data.dependentValidFrom
+            : '1900-01-01T00:00:00.000Z',
 
-        DependentValidTo:
-          data.dependentValidTo === D365_MAX_DATETIME
-            ? D365_MAX_DATETIME
-            : data.dependentValidTo
-            ? data.dependentValidTo
-            : D365_MAX_DATETIME,
+          DependentValidTo:
+            data.dependentValidTo === D365_MAX_DATETIME
+              ? D365_MAX_DATETIME
+              : data.dependentValidTo
+              ? data.dependentValidTo
+              : D365_MAX_DATETIME,
 
-        IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
-        IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
-        Worker: Number(data.WorkerRecId) || 0,
-        ApprovalStatus: 'Draft',
-        WorkflowOperation: mode === 'edit' ? 'Update' : 'Create',
-      };
-
-      let response;
-      if (mode === 'create') {
-        response = await FamilyContactCreate({
-          familyContactDataSet: contract,
-        });
-      } else if (mode === 'edit') {
-        response = await FamilyContactUpdate({
-          familyContactDataSet: contract,
-        });
-      }
-
-      if (!response) {
-        throw new Error('No response from server');
-      }
-
-      if (response.IsSuccess === 'true') {
-        const actionText = mode === 'edit' ? 'updated' : 'created';
-        setAlertMessage(`Record ${actionText} successfully`);
-        setAlertModal(true);
-        return {
-          success: true,
-          recId: response.RecId || contract.RecId,
+          IsFullTimeStudent: data.IsFullTimeStudent ? 1 : 0,
+          IsPersonWithDisabilities: data.IsPersonWithDisabilities ? 1 : 0,
+          Worker: Number(data.WorkerRecId) || 0,
+          ApprovalStatus: 'Draft',
+          WorkflowOperation: mode === 'edit' ? 'Update' : 'Create',
         };
-      } else if (response.IsSuccess === 'false') {
-        const actionText = mode === 'edit' ? 'updated' : 'created';
-        setAlertMessage(response.Message);
+
+        let response;
+        if (mode === 'create') {
+          response = await FamilyContactCreate({
+            familyContactDataSet: contract,
+          });
+        } else if (mode === 'edit') {
+          response = await FamilyContactUpdate({
+            familyContactDataSet: contract,
+          });
+        }
+
+        if (!response) {
+          throw new Error('No response from server');
+        }
+
+        if (response.IsSuccess === 'true') {
+          const actionText = mode === 'edit' ? 'updated' : 'created';
+          const successMsg = `Record ${actionText} successfully`;
+          notifyError(response.Message);
+          setAlertMessage(`Record ${actionText} successfully`);
+          setAlertModal(true);
+          return {
+            success: true,
+            recId: response.RecId || contract.RecId,
+          };
+        } else if (response.IsSuccess === 'false') {
+          const actionText = mode === 'edit' ? 'updated' : 'created';
+          setAlertMessage(response.Message);
+          setAlertModal(true);
+          return {
+            success: false,
+            recId: 0,
+          };
+        }
+      } catch (error) {
+        console.error('Error in handleAction:', error);
+        setAlertMessage('Failed to process request.');
         setAlertModal(true);
-        return {
-          success: false,
-          recId: 0,
-        };
+        return {success: false};
       }
-    } catch (error) {
-      console.error('Error in handleAction:', error);
-      setAlertMessage('Failed to process request.');
-      setAlertModal(true);
-      return {success: false};
-    }
-  }, []);
+    },
+    [notifyError],
+  );
 
   const handleSave = useCallback(
     async actionType => {

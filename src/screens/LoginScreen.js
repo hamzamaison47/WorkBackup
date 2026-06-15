@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
@@ -633,7 +632,7 @@ const LoginScreen = () => {
 
           {/* ── Action section: sign-in buttons ── */}
           <View style={styles.actionSection}>
-            <Text style={styles.actionLabel}>Secure Sign In</Text>
+            {/* <Text style={styles.actionLabel}>Secure Sign In</Text> */}
 
             <TouchableOpacity
               activeOpacity={0.8}
@@ -875,6 +874,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     fontWeight: '600',
+    paddingBottom: 60,
   },
 });
 

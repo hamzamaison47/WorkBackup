@@ -118,7 +118,7 @@
 
 // export default EntitlementBalance;
 /* eslint-disable curly */
-/* eslint-disable react-native/no-inline-styles */
+
 import React, {useState, useCallback} from 'react';
 import {Text, FlatList, RefreshControl, ScrollView} from 'react-native';
 import {useSelector} from 'react-redux';

@@ -76,16 +76,22 @@ export const enqueueAttendance = async payload => {
 };
 
 export const drainSyncQueue = async () => {
-  if (syncing) return;
+  if (syncing) {
+    return;
+  }
 
   const state = await NetInfo.fetch();
-  if (!state.isConnected) return;
+  if (!state.isConnected) {
+    return;
+  }
 
   syncing = true;
 
   try {
     const queue = await getSyncQueue();
-    if (!queue.length) return;
+    if (!queue.length) {
+      return;
+    }
 
     const newQueue = [...queue];
     let didChange = false;
@@ -95,8 +101,9 @@ export const drainSyncQueue = async () => {
 
     for (let i = 0; i < newQueue.length; i++) {
       const item = newQueue[i];
-      if (item.status === 'synced' || item.status === 'permanent_failure')
+      if (item.status === 'synced' || item.status === 'permanent_failure') {
         continue;
+      }
 
       // Prune ancient items
       if (now - item.timestamp > SEVEN_DAYS_MS) {
@@ -107,7 +114,9 @@ export const drainSyncQueue = async () => {
 
       // Exponential backoff
       if (item.status === 'failed') {
-        if (item.nextRetryAt && now < item.nextRetryAt) continue;
+        if (item.nextRetryAt && now < item.nextRetryAt) {
+          continue;
+        }
         item.status = 'pending';
         didChange = true;
       }
@@ -156,7 +165,9 @@ export const drainSyncQueue = async () => {
 // Global network listener — call once from TimeClockScreen mount
 let networkListenerActive = false;
 export const initSyncListener = () => {
-  if (networkListenerActive) return;
+  if (networkListenerActive) {
+    return;
+  }
   networkListenerActive = true;
   NetInfo.addEventListener(state => {
     if (state.isConnected && state.isInternetReachable !== false) {

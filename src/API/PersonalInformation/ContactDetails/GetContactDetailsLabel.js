@@ -29,7 +29,8 @@ const getContactDetailsLabels = async () => {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction: 'http://tempuri.org/LogisticsElectronicAddressSvc/getContactDetailsLabels',
+          SOAPAction:
+            'http://tempuri.org/LogisticsElectronicAddressSvc/getContactDetailsLabels',
         },
         responseType: 'text',
       },
@@ -50,7 +51,8 @@ const getContactDetailsLabels = async () => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['getContactDetailsLabelsResponse']?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.getContactDetailsLabelsResponse
+        ?.result;
 
     // console.log('Raw result:', result);
 
@@ -60,7 +62,9 @@ const getContactDetailsLabels = async () => {
     }
 
     const cleanObject = obj => {
-      if (!obj || typeof obj !== 'object') return obj;
+      if (!obj || typeof obj !== 'object') {
+        return obj;
+      }
 
       const cleaned = {};
       for (const [key, value] of Object.entries(obj)) {

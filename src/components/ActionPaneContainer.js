@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useEffect,
@@ -21,6 +20,10 @@ import {
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import {translate as t} from '../store/utils/translate';
+import {
+  markInAppNotificationRead,
+  clearInAppNotifications,
+} from '../store/slices/firebaseSlice';
 
 import {
   setSelectedLegalEntity,
@@ -503,6 +506,7 @@ const ActionPaneContainer = ({
   showTabNavigator = true,
   onFloatingButtonPress,
   onRefresh,
+  onBackPress,
   showPageTitleRow = false,
   showSearchBar = false,
   onSearchChange = () => {},
@@ -538,6 +542,15 @@ const ActionPaneContainer = ({
     state => state.company,
   );
   const {userData} = useSelector(state => state.user);
+
+  // 👇 ADD THESE here, inside ActionPaneContainer
+  const inAppNotifications = useSelector(
+    state => state.firebase.inAppNotifications,
+  );
+  const allNotifications = [...inAppNotifications, ...notifications];
+  const totalUnreadCount =
+    inAppNotifications.filter(n => n.NotificationActivityStatus === 'Unread')
+      .length + notificationCount;
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('state', () => {
@@ -585,7 +598,9 @@ const ActionPaneContainer = ({
 
   const fetchNotifications = useCallback(async () => {
     try {
-      if (!userData?.employeeId) return;
+      if (!userData?.employeeId) {
+        return;
+      }
       const data = await RetrieveEmployeeNotification({
         employeeId: userData.employeeId,
       });
@@ -604,10 +619,10 @@ const ActionPaneContainer = ({
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  const toggleDrawer = () => {
+  const toggleDrawer = useCallback(() => {
     closeAllOverlays();
     navigation.toggleDrawer?.();
-  };
+  }, [closeAllOverlays, navigation]);
   const toggleNotification = () => {
     setDropdownVisible(false);
     setNotificationVisible(prev => !prev);
@@ -632,10 +647,11 @@ const ActionPaneContainer = ({
         onToggleDrawer: toggleDrawer,
         onTitle: pageTitle,
         onShowNotify: toggleNotification,
-        onCount: notificationCount,
+        onCount: totalUnreadCount,
         headerBg: T.blue,
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
         isBack: false,
+        onBackPress: onBackPress,
         selectedDat:
           selectedLegalEntity ||
           defaultLegalEntity ||
@@ -647,10 +663,13 @@ const ActionPaneContainer = ({
   }, [
     navigation,
     pageTitle,
-    notificationCount,
     selectedLegalEntity,
     defaultLegalEntity,
     isHeaderActive,
+    toggleDrawer,
+    T.blue,
+    onBackPress,
+    totalUnreadCount,
   ]);
 
   const handleCompanySelect = async newLegalEntity => {
@@ -662,7 +681,9 @@ const ActionPaneContainer = ({
         newLegalEntity,
       );
       dispatch(setMenuItems(newMenuItems));
-      if (onRefresh) await onRefresh();
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (error) {
       dispatch(setSelectedLegalEntity(selectedLegalEntity));
       setAlertMessage(t('actionPane.companyChangeFailed'));
@@ -742,10 +763,14 @@ const ActionPaneContainer = ({
       />
       <NotificationPanel
         visible={notificationVisible}
-        notifications={notifications}
+        notifications={allNotifications}
         onClose={() => setNotificationVisible(false)}
         onRefresh={fetchNotifications}
         employeeId={userData?.employeeId}
+        onMarkLocalRead={(
+          recId, // 👈 ADD this prop
+        ) => dispatch(markInAppNotificationRead(recId))}
+        onClearAll={() => dispatch(clearInAppNotifications())}
       />
       <ActionPaneMenuModal
         visible={headerMenuVisible}

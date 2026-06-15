@@ -1,5 +1,5 @@
 /* eslint-disable no-bitwise */
-/* eslint-disable dot-notation */
+
 /* eslint-disable curly */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
@@ -85,6 +85,11 @@ const SaveAttachmentByteArray = async ({
   </s:Body>
 </s:Envelope>`;
 
+    console.log('=== SAVE ENVELOPE (first 500 chars) ===');
+    console.log(soapEnvelope.substring(0, 500));
+    console.log('RecordRefRecId being sent:', recordRefRecId);
+    console.log('TableName being sent:', tableName);
+
     const endpoint = `${config.resource}soap/services/DocumentAttachmentSvcGroup`;
 
     const response = await axios.post(endpoint, soapEnvelope, {
@@ -107,6 +112,11 @@ const SaveAttachmentByteArray = async ({
       };
     }
 
+    console.log('=== RAW SAVE RESPONSE ===');
+    console.log('Status:', response.status);
+    console.log('Response XML:', response.data);
+    console.log('=== END SAVE RESPONSE ===');
+
     // Check for SOAP Fault
     if (
       xml.includes('s:Fault') ||
@@ -124,6 +134,7 @@ const SaveAttachmentByteArray = async ({
         });
         const parsed = parser.parse(xml);
         const fault = parsed?.Envelope?.Body?.Fault;
+        console.log('=== FAULT PARSED ===', JSON.stringify(parsed, null, 2));
         if (fault?.faultstring) {
           errorMessage = fault.faultstring;
         } else if (fault?.ExceptionMessage) {
@@ -169,12 +180,14 @@ const SaveAttachmentByteArray = async ({
           ignoreNamespace: true,
         });
         const parsed = parser.parse(err.response.data);
+        console.log('=== SUCCESS PARSED RESPONSE ===');
+        console.log(JSON.stringify(parsed, null, 2));
         const fault = parsed?.Envelope?.Body?.Fault;
         if (fault?.faultstring) {
           errorMessage = fault.faultstring;
         }
       } catch (e) {
-        // Ignore parsing errors
+        console.log('Could not parse success response:', e.message);
       }
     }
 

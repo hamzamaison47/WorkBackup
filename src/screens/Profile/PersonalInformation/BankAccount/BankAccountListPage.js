@@ -30,6 +30,7 @@ import {translate as t} from '../../../../store/utils/translate';
 import {retrieveAllBankAccounts} from '../../../../API/PersonalInformation/BankAccounts/BankAccountfindbyEmployee';
 import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts/BankAccountDelete';
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
+import useNotify from '../../../../hooks/useNotify';
 
 const BankAccountListPage = () => {
   const navigation = useNavigation();
@@ -67,6 +68,7 @@ const BankAccountListPage = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const {notifySuccess, notifyError, notifyDelete} = useNotify('Bank Account');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -82,6 +84,7 @@ const BankAccountListPage = () => {
         employeeId: effectiveEmployeeId,
       });
 
+      console.log('object', BankAccountData);
       // Fix: sort using RecId (uppercase) — recId (lowercase) may be undefined
       BankAccountData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
 
@@ -165,6 +168,7 @@ const BankAccountListPage = () => {
   };
 
   const getStatusLabel = status => {
+    if (!status || status.trim() === '') return 'HR'; // ← add this line first
     const statusMap = {
       NotSubmitted: 'Draft',
       Submitted: 'Submitted',
@@ -179,7 +183,7 @@ const BankAccountListPage = () => {
       WorkflowCompleted: 'Workflow Completed',
       Completed: 'Completed',
     };
-    return statusMap[status] || 'Draft';
+    return statusMap[status] || status; // ← return raw status if unknown, not 'Draft'
   };
 
   const getFilteredData = () => {
@@ -257,8 +261,9 @@ const BankAccountListPage = () => {
   };
 
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
-    const isRejected = getStatusLabel(item.WFStatus) === 'Rejected';
+    const statusLabel = getStatusLabel(item.WFStatus);
+    const isEditable = statusLabel === 'Not Submitted' || statusLabel === 'HR'; // ← add HR
+    const isRejected = statusLabel === 'Rejected';
 
     return {
       edit: {
@@ -269,8 +274,8 @@ const BankAccountListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !isEditable, // ← use isEditable
+        customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: true,
@@ -280,28 +285,13 @@ const BankAccountListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: '#0A66C2',
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        disabled: !isEditable, // ← use isEditable
+        customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
-      attachment: {
-        show: true,
-        position: 'header',
-        style: 'icon',
-        icon: 'paperclip',
-        iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
-        disabled: false,
-        customStyle: {},
-      },
+      // ...approval button also needs updating:
       approval: {
-        show: isDraft || isRejected,
-        position: 'bottom',
-        style: 'approval_dropdown',
-        text: isRejected ? 'Re-submit' : 'Approval',
-        icon: 'check-square-o',
-        textColor: '#0A66C2',
-        disabled: false,
+        show: isEditable || isRejected, // ← use isEditable
+        // ...
         actions: [
           {
             key: 'submit',
@@ -357,7 +347,7 @@ const BankAccountListPage = () => {
       originalCameFrom: cameFrom,
       bankaccountdata: {
         // Fix: use RecId (uppercase) consistently
-        RecId: itemData.recId,
+        RecId: itemData.recId || itemData.RecId || '', // ← lowercase recId from API
         employeeId: itemData.employeeId || employeeId,
         employeeName: itemData.employeeName || employeeName,
         WorkerRecId: itemData.WorkerRecId || WorkerRecId,
@@ -384,18 +374,16 @@ const BankAccountListPage = () => {
 
     setTimeout(async () => {
       setIsProcessing(true);
-      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemToDelete.RecId, 'delete', true);
 
       try {
         const response = await DeletBankAccount({
-          // Fix: use RecId (uppercase) consistently
           recordsRecId: [itemToDelete.RecId],
         });
 
         if (response[0].IsSuccess) {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
-          // Fix: filter using RecId (uppercase) consistently
           setbankaccountdata(prev =>
             prev.filter(bank => bank.RecId !== itemToDelete.RecId),
           );
@@ -407,7 +395,6 @@ const BankAccountListPage = () => {
         console.log('Delete Bank Account response', error);
       } finally {
         setIsProcessing(false);
-        // Fix: use RecId (uppercase) consistently
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
@@ -422,21 +409,19 @@ const BankAccountListPage = () => {
   const handleSubmitPress = async itemData => {
     setTimeout(async () => {
       setIsProcessing(true);
-      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemData.RecId, 'submit', true);
 
       try {
         const response = await SubmitBankAccountRecord({
-          // Fix: use RecId (uppercase) consistently
           recId: itemData.RecId,
         });
 
         const resObj = Array.isArray(response) ? response[0] : response;
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+          notifySuccess('Request submitted successfully');
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
-          // Fix: use RecId (uppercase) consistently
           setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {
@@ -460,7 +445,6 @@ const BankAccountListPage = () => {
         setAlertModal(true);
       } finally {
         setIsProcessing(false);
-        // Fix: use RecId (uppercase) consistently
         setButtonProcessing(itemData.RecId, 'submit', false);
       }
     }, 100);

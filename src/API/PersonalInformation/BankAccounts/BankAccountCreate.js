@@ -10,6 +10,7 @@ import {getActiveConfigData} from '../../../Controller/secureConfig';
 const createBankAccountRecord = async ({bankaccountdata}) => {
   try {
     const config = await getActiveConfigData();
+    console.log('bankaccountdata received:', JSON.stringify(bankaccountdata));
 
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
@@ -91,6 +92,8 @@ const buildContractXml = contract => {
   if (!contract) return '';
 
   const ns = 'tem';
+  const numericFields = ['RecId', 'Worker']; // fields that need 0 instead of nil
+
   const fields = [
     'AccountHolder',
     'AccountId',
@@ -98,17 +101,37 @@ const buildContractXml = contract => {
     'BankIBAN',
     'BranchName',
     'BranchNumber',
+    'EmployeeId',
     'Name',
     'RecId',
+    'WFOperation',
+    'WFStatus',
     'Worker',
   ];
 
   return fields
     .map(field => {
+      // Always send WFStatus as Draft
+      if (field === 'WFStatus') {
+        return `<${ns}:${field}>Not Submitted</${ns}:${field}>`;
+      }
+
+      // Always send WFOperation
+      if (field === 'WFOperation') {
+        return `<${ns}:${field}>Insert</${ns}:${field}>`;
+      }
+
       const value = contract[field];
-      if (value === null || value === undefined) {
+
+      if (numericFields.includes(field)) {
+        const numVal = !value || value === '' ? '0' : value;
+        return `<${ns}:${field}>${numVal}</${ns}:${field}>`;
+      }
+
+      if (value === null || value === undefined || value === '') {
         return `<${ns}:${field} xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>`;
       }
+
       return `<${ns}:${field}>${escapeXmlValue(value)}</${ns}:${field}>`;
     })
     .join('');

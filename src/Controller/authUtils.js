@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-/* eslint-disable no-undef */
+
 import {decode as atob, encode as btoa} from 'base-64';
 import {authorize} from 'react-native-app-auth';
 import {jwtDecode} from 'jwt-decode';
@@ -27,6 +27,7 @@ import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
 import {chatbotClearMessages} from '../store/slices/chatbotSlice';
+import {apiCache} from '../utils/apiCache';
 
 // Polyfill at the top of your authUtils file
 if (typeof global.atob === 'undefined') {
@@ -85,21 +86,57 @@ if (typeof global.btoa === 'undefined') {
 //     });
 //   }
 // };
+// export const handleLogoutauth = async (navigation, dispatch) => {
+//   try {
+//     // Cleanup Firebase service
+//     await firebaseService.cleanup();
+
+//     // Clear Redux store - all state management now via Redux
+//     dispatch(clearAuthTokens());
+//     dispatch(clearUserData()); // ← fixed: was setUserData(null) — never imported
+//     dispatch(clearFirebaseData());
+//     dispatch(clearBiometric());
+//     dispatch(setSkipLoginAfterRestart(false));
+
+//     console.log('User logged out and Redux state cleared');
+
+//     // Navigate to Login screen and reset the stack
+//     navigation.reset({
+//       index: 0,
+//       routes: [{name: 'Login'}],
+//     });
+//   } catch (error) {
+//     console.error('Logout error:', error);
+//     navigation.reset({
+//       index: 0,
+//       routes: [{name: 'Login'}],
+//     });
+//   }
+// };
+
 export const handleLogoutauth = async (navigation, dispatch) => {
   try {
-    // Cleanup Firebase service
+    // 1. 🧹 WIPE THE API CACHE FIRST
+    // This ensures no cached attendance/profile data remains in memory
+    apiCache.clear();
+    console.log('API Cache cleared successfully');
+
+    // 2. Cleanup Firebase service
     await firebaseService.cleanup();
 
-    // Clear Redux store - all state management now via Redux
+    // 3. Clear Redux store
     dispatch(clearAuthTokens());
-    dispatch(clearUserData()); // ← fixed: was setUserData(null) — never imported
+    dispatch(clearUserData());
     dispatch(clearFirebaseData());
     dispatch(clearBiometric());
     dispatch(setSkipLoginAfterRestart(false));
 
+    // ✅ Add this: Clear chatbot history so the new user starts fresh
+    dispatch(chatbotClearMessages());
+
     console.log('User logged out and Redux state cleared');
 
-    // Navigate to Login screen and reset the stack
+    // 4. Navigate to Login screen and reset the stack
     navigation.reset({
       index: 0,
       routes: [{name: 'Login'}],

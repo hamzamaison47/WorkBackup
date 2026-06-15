@@ -61,7 +61,9 @@ class APICache {
     const key = this.generateKey(endpoint, params);
     const cached = this.cache.get(key);
 
-    if (!cached) return null;
+    if (!cached) {
+      return null;
+    }
 
     const {data, timestamp, ttl} = cached;
     const now = Date.now();
@@ -86,7 +88,9 @@ class APICache {
     const key = this.generateKey(endpoint, params);
     const cached = this.cache.get(key);
 
-    if (!cached) return false;
+    if (!cached) {
+      return false;
+    }
 
     const {timestamp, ttl} = cached;
     return Date.now() - timestamp <= ttl;

@@ -11,6 +11,9 @@ import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen
 import SettingsScreen from '../screens/Settings/Settingsscreen';
 import WorkflowHistoryScreen from '../screens/WorkflowHistory/WorkflowHistoryListPage';
 import OutlookCalendarScreen from '../screens/Settings/OutlookCalendarScreen';
+import PurchaseOrderListPage from '../screens/PurchaseOrder/PurchaseOrderListPage';
+import HRHelpDeskListScreen from '../screens/HRHelpDeskRequest/HRHelpDeskList_Screen';
+import HRHelpDeskSaveScreen from '../screens/HRHelpDeskRequest/HRHelpDeskSave_Screen';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -50,7 +53,9 @@ const AppNavigator = () => {
         options={{headerShown: false}}
       />
       {/* Screens WITH session timeout */}
-      <Stack.Screen name="DrawerNavigator" options={{headerShown: false}}>
+      <Stack.Screen
+        name="DrawerNavigator"
+        options={{headerShown: false, gestureEnables: false}}>
         {() => (
           <ScreenWithSessionTimeout>
             <DrawerNavigator />
@@ -91,7 +96,7 @@ const AppNavigator = () => {
       <Stack.Screen
         name="OutlookCalendarScreen"
         component={OutlookCalendarScreen}
-        options={{headerShown: false}}
+        options={{headerShown: true}}
       />
 
       <Stack.Screen
@@ -112,6 +117,33 @@ const AppNavigator = () => {
         {() => (
           <ScreenWithSessionTimeout>
             <WorkflowHistoryScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+      <Stack.Screen
+        name="PurchaseOrderListPage"
+        options={{
+          title: 'Purchase Orders',
+          headerBackTitle: 'Back',
+        }}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <PurchaseOrderListPage />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="HRHelpDeskSaveScreen" options={{headerShown: true}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <HRHelpDeskSaveScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="HRHelpDeskListScreen" options={{headerShown: true}}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <HRHelpDeskListScreen />
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>

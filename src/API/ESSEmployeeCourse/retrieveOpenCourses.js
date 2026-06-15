@@ -53,14 +53,10 @@ const retrieveOpenCourses = async ({person}) => {
     const parsed = parser.parse(xml);
 
     const rawData =
-      parsed?.['s:Envelope']?.['s:Body']?.['retrieveOpenCoursesResponse']?.[
-        'result'
-      ];
+      parsed?.['s:Envelope']?.['s:Body']?.retrieveOpenCoursesResponse?.result;
 
     let courseData =
-      rawData?.['a:ESSCourseContract'] ||
-      rawData?.['ESSCourseContract'] ||
-      rawData;
+      rawData?.['a:ESSCourseContract'] || rawData?.ESSCourseContract || rawData;
 
     if (!courseData || Object.keys(courseData).length === 0) {
       console.warn('No assigned courses found');

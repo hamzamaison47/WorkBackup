@@ -308,7 +308,7 @@
 // // });
 
 // export default ESSEmployeeTaskDetail;
-/* eslint-disable react-hooks/exhaustive-deps */
+
 import React, {useState, useEffect, useCallback} from 'react';
 import {
   Text,
@@ -352,9 +352,13 @@ const ESSEmployeeTaskDetail = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const formatDate = dateValue => {
-    if (!dateValue) return '';
+    if (!dateValue) {
+      return '';
+    }
     const date = new Date(dateValue);
-    if (isNaN(date)) return dateValue;
+    if (isNaN(date)) {
+      return dateValue;
+    }
     const months = [
       'Jan',
       'Feb',
@@ -394,7 +398,9 @@ const ESSEmployeeTaskDetail = () => {
   );
 
   const fetchTaskDetail = useCallback(async () => {
-    if (!recId) return;
+    if (!recId) {
+      return;
+    }
     setIsLoading(true);
     try {
       const response = await retrieveDetailESSEmployeeTask({recId});

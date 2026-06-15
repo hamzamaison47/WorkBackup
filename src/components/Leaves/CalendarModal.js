@@ -159,11 +159,31 @@
 import React from 'react';
 import DatePicker from 'react-native-date-picker';
 
+// CalendarModal.js - replace the parseLocalDate function
 const parseLocalDate = dateString => {
   if (!dateString) return new Date();
-  const datePart = dateString.split('T')[0];
+
+  // Handle both YYYY-MM-DD and YYYY-MM-DDTHH:MM:SS formats
+  let datePart = dateString;
+  if (dateString.includes('T')) {
+    datePart = dateString.split('T')[0];
+  }
+
   const [year, month, day] = datePart.split('-').map(Number);
-  return new Date(year, month - 1, day);
+
+  // Validate the date components
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    return new Date();
+  }
+
+  const date = new Date(year, month - 1, day);
+
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return new Date();
+  }
+
+  return date;
 };
 
 const formatLocalDate = date => {
@@ -179,9 +199,11 @@ const CalendarModal = ({
   onDateSelected,
   onClose,
   maxDate,
+  minDate, // ✅ add this
 }) => {
   const date = parseLocalDate(initialDate);
   const max = maxDate ? parseLocalDate(maxDate) : undefined;
+  const min = minDate ? parseLocalDate(minDate) : undefined; // ✅ add this
 
   return (
     <DatePicker
@@ -190,6 +212,7 @@ const CalendarModal = ({
       date={date}
       mode="date"
       maximumDate={max}
+      minimumDate={min} // ✅ add this
       onConfirm={selectedDate => {
         onDateSelected(formatLocalDate(selectedDate));
         onClose();

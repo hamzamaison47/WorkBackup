@@ -26,9 +26,9 @@ export const useDashboardData = () => {
 
       if (
         !forceRefresh &&
-        apiCache.has(`profilePicture`, {employeeId: empId})
+        apiCache.has('profilePicture', {employeeId: empId})
       ) {
-        const cachedData = apiCache.get(`profilePicture`, {employeeId: empId});
+        const cachedData = apiCache.get('profilePicture', {employeeId: empId});
         if (isMountedRef.current) {
           setProfilePictureUrl(cachedData);
           setIsLoading(false);
@@ -50,7 +50,7 @@ export const useDashboardData = () => {
           const imageUrl = `data:image/png;base64,${clean}`;
 
           // Cache the result (15 minutes)
-          apiCache.set(`profilePicture`, imageUrl, 15 * 60 * 1000, {
+          apiCache.set('profilePicture', imageUrl, 15 * 60 * 1000, {
             employeeId: empId,
           });
 

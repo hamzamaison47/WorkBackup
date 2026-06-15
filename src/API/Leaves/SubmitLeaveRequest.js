@@ -69,6 +69,17 @@ const SubmitLeaveRequest = async ({recId}) => {
         'submitLeaveRequestByRecIdResponse'
       ]?.['result'];
 
+    const infologEntries =
+      parsed?.['s:Envelope']?.['s:Header']?.['Infolog']?.['Entries']?.[
+        'InfologEntry'
+      ];
+
+    const infologMessage = Array.isArray(infologEntries)
+      ? infologEntries.map(e => e.Message).join('\n')
+      : infologEntries?.Message || null;
+
+    console.log('Infolog Message:', infologMessage); // ✅ "Attachment is mandatory..."
+
     // console.log('Result SOAP ENVELOPE IN SUBMIT REQUEST', result);
 
     if (!result) {
@@ -96,7 +107,10 @@ const SubmitLeaveRequest = async ({recId}) => {
     //   cleanedResult,
     // );
 
-    return cleanedResult;
+    return {
+      ...cleanedResult,
+      InfologMessage: infologMessage,
+    };
   } catch (error) {
     console.error(
       'Failed to submit leave request:',

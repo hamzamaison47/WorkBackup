@@ -877,7 +877,8 @@ class AzureAIService {
   }) {
     await this.ensureInitialized();
 
-    const backendUrl = `https://dynaface-mcp.bravepond-921a8740.eastus2.azurecontainerapps.io/chat`;
+    const backendUrl =
+      'https://dynaface-mcp.bravepond-921a8740.eastus2.azurecontainerapps.io/chat';
 
     console.log('📤 Sending to backend:', backendUrl);
 

@@ -42,16 +42,26 @@ const BRAND = {
 };
 
 const formatRelativeTime = raw => {
-  if (!raw) return '';
+  if (!raw) {
+    return '';
+  }
   try {
     const diff = Date.now() - new Date(raw).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) {
+      return 'just now';
+    }
+    if (mins < 60) {
+      return `${mins}m ago`;
+    }
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
+    if (hrs < 24) {
+      return `${hrs}h ago`;
+    }
     const days = Math.floor(hrs / 24);
-    if (days < 7) return `${days}d ago`;
+    if (days < 7) {
+      return `${days}d ago`;
+    }
     return new Date(raw).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
@@ -63,11 +73,18 @@ const formatRelativeTime = raw => {
 
 const getTypeAccent = type => {
   const t = (type || '').toLowerCase();
-  if (t.includes('leave')) return {color: BRAND.blue, bg: BRAND.blueSoft};
-  if (t.includes('purchase') || t.includes('requisition'))
+  if (t.includes('leave')) {
+    return {color: BRAND.blue, bg: BRAND.blueSoft};
+  }
+  if (t.includes('purchase') || t.includes('requisition')) {
     return {color: BRAND.amber, bg: BRAND.amberSoft};
-  if (t.includes('expense')) return {color: BRAND.green, bg: BRAND.greenSoft};
-  if (t.includes('travel')) return {color: BRAND.teal, bg: BRAND.tealSoft};
+  }
+  if (t.includes('expense')) {
+    return {color: BRAND.green, bg: BRAND.greenSoft};
+  }
+  if (t.includes('travel')) {
+    return {color: BRAND.teal, bg: BRAND.tealSoft};
+  }
   return {color: BRAND.blue, bg: BRAND.blueSoft};
 };
 
@@ -253,7 +270,9 @@ const ApprovalsSection = ({userData, navigation}) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const fetchApprovals = useCallback(async () => {
-    if (!userData?.email) return;
+    if (!userData?.email) {
+      return;
+    }
     setLoading(true);
     try {
       const data = await RetrieveByEmail({email: userData.email});
@@ -330,7 +349,9 @@ const ApprovalsSection = ({userData, navigation}) => {
     });
   };
 
-  if (!loading && items.length === 0) return null;
+  if (!loading && items.length === 0) {
+    return null;
+  }
 
   return (
     <Animated.View style={[styles.MG_section, {opacity: fadeAnim}]}>
@@ -477,7 +498,9 @@ const LeavesAvailableSection = ({navigation, userData}) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const fetchLeaves = useCallback(async () => {
-    if (!userData?.employeeId) return;
+    if (!userData?.employeeId) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -526,7 +549,9 @@ const LeavesAvailableSection = ({navigation, userData}) => {
       }).start();
     }
   }, [loading, fadeAnim]);
-  if (!loading && items.length === 0) return null;
+  if (!loading && items.length === 0) {
+    return null;
+  }
 
   return (
     <Animated.View style={[styles.MG_section, {opacity: fadeAnim}]}>

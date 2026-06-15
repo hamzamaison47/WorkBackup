@@ -43,6 +43,7 @@ import styles from '../../styles/styles';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../components/Buttons/SaveRecordButtons';
+import useNotify from '../../hooks/useNotify';
 
 const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
@@ -80,6 +81,7 @@ const GenericAdvanceSaveScreen = () => {
   const [filteredGuarantors2, setFilteredGuarantors2] = useState([]);
   const [guarantor1SearchQuery, setGuarantor1SearchQuery] = useState('');
   const [guarantor2SearchQuery, setGuarantor2SearchQuery] = useState('');
+  const {notifySuccess, notifyError} = useNotify('Loan Request');
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [processingButton, setProcessingButton] = useState('');
@@ -307,6 +309,22 @@ const GenericAdvanceSaveScreen = () => {
 
           // 🔹 EDIT MODE
           if (mode === 'edit' && advanceData?.RecId) {
+            const safeParseDate = dateValue => {
+              if (!dateValue) return '';
+              // If it's already in YYYY-MM-DD format
+              if (
+                typeof dateValue === 'string' &&
+                dateValue.match(/^\d{4}-\d{2}-\d{2}/)
+              ) {
+                return dateValue.split('T')[0];
+              }
+              // Try to parse as Date but use UTC methods to avoid timezone shift
+              const d = new Date(dateValue);
+              if (isNaN(d.getTime())) return '';
+              return `${d.getUTCFullYear()}-${String(
+                d.getUTCMonth() + 1,
+              ).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+            };
             setFormData({
               ...createInitialFormData(),
               ...advanceData,
@@ -319,6 +337,11 @@ const GenericAdvanceSaveScreen = () => {
               ),
               RequestedInstallments:
                 advanceData.RequestedInstallments?.toString() || '',
+              // Fix dates: ensure they are in proper YYYY-MM-DD format without time
+              RequestedPaymentDate: safeParseDate(
+                advanceData.RequestedPaymentDate,
+              ),
+              RecoveryStartDate: safeParseDate(advanceData.RecoveryStartDate),
             });
           }
 
@@ -494,14 +517,10 @@ const GenericAdvanceSaveScreen = () => {
       });
       const getEmployeeLookup = await GetEmployeeLookup();
 
-      // console.log({allAdvanceCodes});
-      // console.log(getEmployeeLookup, {getEmployeeLookup});
-
       if (!allAdvanceCodes || !Array.isArray(allAdvanceCodes)) {
         throw new Error('Invalid advance codes data received');
       }
 
-      // Process Guarantors data
       if (getEmployeeLookup && Array.isArray(getEmployeeLookup)) {
         const filteredGuarantors = getEmployeeLookup
           .filter(
@@ -587,20 +606,87 @@ const GenericAdvanceSaveScreen = () => {
             filteredPayGroupPayPeriod.length > 0
           ) {
             if (mode === 'create') {
+              const endDate = filteredPayGroupPayPeriod[0]?.EndDate;
+              console.log('PayGroup EndDate:', endDate);
+
+              // Only set dates if we have a valid end date
+              if (endDate) {
+                const todayISO = new Date().toISOString().split('T')[0];
+                const todayFormatted = formatToISOWithTime(todayISO);
+                // End of current month for recovery start date
+                const now = new Date();
+                const endOfMonth = new Date(
+                  now.getFullYear(),
+                  now.getMonth() + 1,
+                  0,
+                );
+                const endOfMonthISO = `${endOfMonth.getFullYear()}-${String(
+                  endOfMonth.getMonth() + 1,
+                ).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(
+                  2,
+                  '0',
+                )}`;
+                const endOfMonthFormatted = formatToISOWithTime(endOfMonthISO);
+
+                setFormData(prev => ({
+                  ...prev,
+                  RequestedPaymentDate: todayFormatted, // ✅ today
+                  RecoveryStartDate: endOfMonthFormatted, // ✅ end of month
+                }));
+              } else {
+                // If no end date, use today's date
+                const todayISO = new Date().toISOString().split('T')[0];
+                const formattedToday = formatToISOWithTime(todayISO);
+                console.log('Using today as default:', formattedToday);
+
+                setFormData(prev => ({
+                  ...prev,
+                  RequestedPaymentDate: formattedToday,
+                  RecoveryStartDate: formattedToday,
+                }));
+              }
+            }
+          } else {
+            // No active pay periods found, use today's date
+            const todayISO = new Date().toISOString().split('T')[0];
+            const formattedToday = formatToISOWithTime(todayISO);
+            console.log('No active pay periods, using today:', formattedToday);
+
+            if (mode === 'create') {
               setFormData(prev => ({
                 ...prev,
-                RequestedPaymentDate: formatToISOWithTime(
-                  filteredPayGroupPayPeriod[0]?.EndDate,
-                ),
-                RecoveryStartDate: formatToISOWithTime(
-                  filteredPayGroupPayPeriod[0]?.EndDate,
-                ),
+                RequestedPaymentDate: formattedToday,
+                RecoveryStartDate: formattedToday,
               }));
             }
           }
         } catch (payGroupError) {
           console.warn('PayGroup data fetch failed:', payGroupError);
-          // Continue without setting recovery date
+          // Use today's date as fallback
+          const todayISO = new Date().toISOString().split('T')[0];
+          const formattedToday = formatToISOWithTime(todayISO);
+          console.log('PayGroup error, using today:', formattedToday);
+
+          if (mode === 'create') {
+            setFormData(prev => ({
+              ...prev,
+              RequestedPaymentDate: formattedToday,
+              RecoveryStartDate: formattedToday,
+            }));
+          }
+        }
+      } else {
+        // No employeeId, use today's date
+        const todayISO = new Date().toISOString().split('T')[0];
+        const formattedToday = formatToISOWithTime(todayISO);
+        console.log('No employeeId, using today:', formattedToday);
+
+        if (mode === 'create') {
+          setFormData(prev => ({
+            ...prev,
+            RequestedPaymentDate: formattedToday,
+            RecoveryStartDate: formattedToday,
+          }));
         }
       }
     } catch (error) {
@@ -654,15 +740,31 @@ const GenericAdvanceSaveScreen = () => {
     }));
   };
 
-  // Format date functions
+  // Format date functions - parse date parts directly to avoid timezone issues
   const formatDate = date => {
     if (!date) return '';
     try {
+      // Extract date parts directly from string to avoid timezone conversion issues
+      let datePart = date;
+      if (typeof date === 'string' && date.includes('T')) {
+        datePart = date.split('T')[0];
+      }
+
+      // Handle YYYY-MM-DD format
+      if (
+        typeof datePart === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ) {
+        const [year, month, day] = datePart.split('-');
+        return `${month}/${day}/${year}`;
+      }
+
+      // Fallback: try parsing as Date but use UTC methods to avoid timezone shift
       const d = new Date(date);
       if (isNaN(d.getTime())) return '';
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const year = d.getFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      const year = d.getUTCFullYear();
       return `${month}/${day}/${year}`;
     } catch (error) {
       console.error('Date formatting error:', error);
@@ -670,14 +772,32 @@ const GenericAdvanceSaveScreen = () => {
     }
   };
 
+  // Format date to ISO string with time - parse parts directly to avoid timezone issues
   const formatToISOWithTime = date => {
     if (!date) return '';
+
     try {
+      // Extract date parts directly from string to avoid timezone conversion issues
+      let datePart = date;
+      if (typeof date === 'string' && date.includes('T')) {
+        datePart = date.split('T')[0];
+      }
+
+      // Handle YYYY-MM-DD format
+      if (
+        typeof datePart === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ) {
+        return `${datePart}T12:00:00`;
+      }
+
+      // Fallback: try parsing as Date but use UTC methods to avoid timezone shift
       const baseDate = new Date(date);
       if (isNaN(baseDate.getTime())) return '';
-      const year = baseDate.getFullYear();
-      const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-      const day = String(baseDate.getDate()).padStart(2, '0');
+
+      const year = baseDate.getUTCFullYear();
+      const month = String(baseDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(baseDate.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}T12:00:00`;
     } catch (error) {
       console.error('Date ISO formatting error:', error);
@@ -800,18 +920,28 @@ const GenericAdvanceSaveScreen = () => {
     );
   };
 
-  // Enhanced main action handler with better error handling
   const handleAction = async (actionType, modalMode, data = {}) => {
     try {
       const formattedRequestDate = `${
         new Date().toISOString().split('T')[0]
       }T12:00:00`;
 
+      const formatApiDate = dateStr => {
+        if (!dateStr || dateStr.trim() === '') {
+          const todayISO = new Date().toISOString().split('T')[0];
+          return `${todayISO}T12:00:00`;
+        }
+        if (dateStr.includes('T')) {
+          return dateStr;
+        }
+        return `${dateStr}T12:00:00`;
+      };
+
       const advanceRequestData = {
         AdvanceTypeCode: data.AdvanceTypeCode,
         AdvanceAmount: parseNumber(data.AdvanceAmount).toString(),
-        RequestedPaymentDate: data.RequestedPaymentDate,
-        RecoveryStartDate: data.RecoveryStartDate,
+        RequestedPaymentDate: formatApiDate(data.RequestedPaymentDate),
+        RecoveryStartDate: formatApiDate(data.RecoveryStartDate),
         RequestedInstallmentAmount: parseNumber(
           data.RequestedInstallmentAmount,
         ).toString(),
@@ -824,7 +954,6 @@ const GenericAdvanceSaveScreen = () => {
         Guarantor2: data.Guarantor2 || '',
       };
 
-      // Enhanced validation before API call
       if (
         !advanceRequestData.AdvanceTypeCode ||
         !advanceRequestData.RequestedPaymentDate
@@ -861,7 +990,9 @@ const GenericAdvanceSaveScreen = () => {
         } else if (submitResult?.IsSuccess === 'false') {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
+        const successMsg = `Record ${actionText}${submitText} successfully`;
 
+        notifySuccess(successMsg);
         setAlertMessage(`Record ${actionText}${submitText} successfully`);
         setAlertModal(true);
 
@@ -882,21 +1013,17 @@ const GenericAdvanceSaveScreen = () => {
     }
   };
 
-  // Enhanced field validation with comprehensive checks
   const validateFields = () => {
     const errors = [];
 
-    // Validate Advance Type Code
     if (!formData.AdvanceTypeCode) {
       errors.push('Advance Type Code is required');
     }
 
-    // Validate Advance Amount
     const advanceAmount = parseNumber(formData.AdvanceAmount);
     if (!advanceAmount || advanceAmount === 0) {
       errors.push('Advance Amount is required and must be greater than 0');
     } else {
-      // Check if amount exceeds maximum allowed
       if (selectedAdvanceTypeData && selectedAdvanceTypeData.MaxAdanceAmount) {
         const maxAmount = parseNumber(selectedAdvanceTypeData.MaxAdanceAmount);
         if (maxAmount > 0 && advanceAmount > maxAmount) {
@@ -1361,6 +1488,7 @@ const GenericAdvanceSaveScreen = () => {
         initialDate={formData.RequestedPaymentDate}
         onDateSelected={handlePaymentDateChange}
         onClose={() => setShowPaymentDateCalendar(false)}
+        minDate={today}
       />
 
       <CalendarModal

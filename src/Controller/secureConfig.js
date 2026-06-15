@@ -35,7 +35,6 @@ export async function getConfig() {
 //     resource: 'https://maison-uat.sandbox.operations.dynamics.com/',
 //   };
 // }
- 
 
 export async function clearConfig() {
   await Keychain.resetGenericPassword({service: CONFIG_SERVICE});

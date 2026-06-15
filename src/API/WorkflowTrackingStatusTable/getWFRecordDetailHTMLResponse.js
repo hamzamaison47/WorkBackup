@@ -7,11 +7,14 @@ import {getActiveConfigData} from '../../Controller/secureConfig';
 
 const getWFRecordDetailHTMLResponse = async ({tableId, contextRecId}) => {
   try {
-    if (!tableId || !contextRecId)
+    if (!tableId || !contextRecId) {
       throw new Error('Some Parameters are missing.');
+    }
 
     const config = await getActiveConfigData();
-    if (!config || !config.resource) throw new Error('No configuration found.');
+    if (!config || !config.resource) {
+      throw new Error('No configuration found.');
+    }
 
     const token = await getToken();
 
@@ -49,11 +52,12 @@ const getWFRecordDetailHTMLResponse = async ({tableId, contextRecId}) => {
 
     // Extract the <result> content
     const resultEncoded =
-      parsed?.['s:Envelope']?.['s:Body']?.[
-        'getWFRecordDetailHTMLResponseResponse'
-      ]?.['result'];
+      parsed?.['s:Envelope']?.['s:Body']?.getWFRecordDetailHTMLResponseResponse
+        ?.result;
 
-    if (!resultEncoded) return '<p>No data returned</p>';
+    if (!resultEncoded) {
+      return '<p>No data returned</p>';
+    }
     // Decode HTML entities
     const resultHtml = resultEncoded;
 

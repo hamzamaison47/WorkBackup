@@ -72,6 +72,7 @@ const CreateEmploymentCertificate = async ({certificateData}) => {
     };
 
     const cleanedResult = cleanObject(result);
+    console.log('here is the cleaneed result.', cleanedResult);
 
     return cleanedResult;
   } catch (error) {

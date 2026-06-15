@@ -38,8 +38,10 @@ export const SettingRow = ({
   };
 
   const renderRight = () => {
-    if (rightElement) return rightElement;
-    if (rightLabel)
+    if (rightElement) {
+      return rightElement;
+    }
+    if (rightLabel) {
       return (
         <Text
           style={{
@@ -52,6 +54,7 @@ export const SettingRow = ({
           {rightLabel}
         </Text>
       );
+    }
     return (
       <FeatherIcon
         name={I18nManager.isRTL ? 'chevron-left' : 'chevron-right'}

@@ -1,5 +1,6 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useRef} from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {
   View,
   Text,
@@ -7,17 +8,26 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  KeyboardAvoidingView,
   Platform,
-  Alert,
+  ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {Dropdown} from 'react-native-element-dropdown';
-import {useNavigation} from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from '@react-navigation/native';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
+import AlertModal from '../../components/Alert/AlertModal';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../components/Buttons/SaveRecordButtons';
 import styles from '../../styles/styles';
+import CalendarModal from '../../components/Leaves/CalendarModal';
 
 import {eosRetrieveReasonCode} from '../../API/EmployeeEOSRequest/RetrieveReasonCode';
 import {eosRetrieveNoticePeriodCode} from '../../API/EmployeeEOSRequest/RetrieveNoticePeriodCode';
@@ -25,10 +35,13 @@ import {retrieveEmployeeReporteesEOS} from '../../API/EmployeeEOSRequest/Retriev
 import {RetrieveEmployeeReporteesEmpInfo} from '../../API/EmploymentInformation/RetrieveEmployeeReporteesEmpInfo';
 import {CreateEOSRequest} from '../../API/EmployeeEOSRequest/CreateEOSRequest';
 import SubmitEOSRequest from '../../API/EmployeeEOSRequest/SubmitEOSRequest';
+import useNotify from '../../hooks/useNotify';
 
-// Helper to format date as MM-DD-YYYY
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = raw => {
-  if (!raw) return '';
+  if (!raw) {
+    return '';
+  }
   try {
     const d = new Date(raw);
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -40,28 +53,62 @@ const formatDate = raw => {
   }
 };
 
-// Calculate last working date based on notification
-const calculateLastWorkingDate = notificationDate => {
-  if (!notificationDate) return '';
-  const baseDate = new Date(notificationDate);
-  baseDate.setDate(baseDate.getDate() + 30);
-  return baseDate.toISOString().split('T')[0];
+const getLastWorkingDateFromNoticePeriod = (
+  noticePeriodCode,
+  notificationDate,
+) => {
+  const base = new Date(notificationDate);
+  const code = String(noticePeriodCode).toLowerCase();
+
+  if (code.includes('one day') || code.includes('1 day')) {
+    return base.toISOString().split('T')[0];
+  } else if (code.includes('one month') || code.includes('1 month')) {
+    base.setMonth(base.getMonth() + 1);
+    return base.toISOString().split('T')[0];
+  } else {
+    base.setDate(base.getDate() + 30);
+    return base.toISOString().split('T')[0];
+  }
 };
 
-const EOSRequestScreen = () => {
+// ─── Component ────────────────────────────────────────────────────────────────
+const EmployeeEOS_SaveRecord = () => {
   const userData = useSelector(state => state.user.userData);
+  const {menuItems} = useSelector(state => state.menuItem);
   const today = new Date().toISOString().split('T')[0];
   const scrollRef = useRef(null);
   const navigation = useNavigation();
+  const route = useRoute();
 
+  const {
+    employeeId,
+    employeeName,
+    WorkerRecId,
+    cameFrom = 'EmployeeEOSRequestListPage',
+    userData: routeUserData,
+  } = route.params || {};
+
+  const effectiveUserData = routeUserData || userData;
+  const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
+  const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingButton, setProcessingButton] = useState('');
+  const [alertModal, setAlertModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [noticePeriods, setNoticePeriods] = useState([]);
+  const [reasonCodes, setReasonCodes] = useState([]);
+  const [showActualDateCalendar, setShowActualDateCalendar] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('EOS Request');
   const [formData, setFormData] = useState({
-    employee: userData?.employeeName || '',
-    employeeId: userData?.employeeId || 0,
-    EmployeeId: userData?.WorkerRecId || 0,
-    RecId: userData?.WorkerRecId || 0,
+    employee: effectiveEmployeeName || userData?.employeeName || '',
+    employeeId: effectiveEmployeeId || userData?.employeeId || 0,
+    EmployeeId: WorkerRecId || userData?.WorkerRecId || 0,
+    RecId: 0,
     activePayPeriod: '',
-    EOSType: '',
-    lastWorkingDatePlanned: '',
+    EOSType: 'Resignation',
+    lastWorkingDatePlanned: today,
     NoticePeriodCode: '',
     EOSNotificationDate: today,
     LastWorkingDate_Actual: today,
@@ -71,132 +118,213 @@ const EOSRequestScreen = () => {
     remarks: '',
   });
 
-  const [noticePeriods, setNoticePeriods] = useState([]);
-  const [reasonCodes, setReasonCodes] = useState([]);
-
-  const eosTypes = [
-    {label: 'Resignation', value: 'Resignation'},
-    {label: 'Termination', value: 'Termination'},
-  ];
-
   const handleChange = (field, value) => {
     setFormData(prev => ({...prev, [field]: value}));
   };
 
-  // Load dropdowns and employee defaults
+  // ── Page Label ──────────────────────────────────────────────────────────────
+  const getPageLabel = () => {
+    const currentMenuItem = menuItems.find(
+      item => item.MenuId === 'EOSRequestScreen',
+    );
+    return currentMenuItem?.Label || 'EOS Request';
+  };
+
+  // ── Back Navigation ─────────────────────────────────────────────────────────
+  const goBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('EmployeeEOSRequestListPage');
+    }
+  }, [navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        goBack();
+        return true;
+      };
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [goBack]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({y: 0, animated: false});
+      }
+    }, []),
+  );
+
+  // ── Load Data ───────────────────────────────────────────────────────────────
   useEffect(() => {
-    const loadDropdowns = async () => {
+    const initialize = async () => {
+      setIsLoading(true);
       try {
-        const noticeData = await eosRetrieveNoticePeriodCode();
-        setNoticePeriods(
-          noticeData.map(item => ({
-            label: item.NoticePeriodCode,
-            value: item.NoticePeriodCode,
-          })),
-        );
-
-        const reasonData = await eosRetrieveReasonCode();
-        setReasonCodes(
-          reasonData.map(item => ({
-            label: item.ReasonCodeId,
-            value: item.ReasonCodeId,
-          })),
-        );
+        await Promise.all([loadDropdowns(), loadEmployeeDefaults()]);
       } catch (error) {
-        console.log('Dropdown Load Error:', error);
+        console.error('Initialization error:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
+    initialize();
+  }, [effectiveEmployeeId]);
 
-    const loadEmployeeDefaults = async () => {
-      try {
-        const reporteeData = await retrieveEmployeeReporteesEOS(
-          userData.employeeId,
-        );
-        if (reporteeData?.length > 0) {
-          const defaultData = reporteeData[0];
-          const calculatedDate = calculateLastWorkingDate(today);
+  const loadDropdowns = async () => {
+    try {
+      const [noticeData, reasonData] = await Promise.all([
+        eosRetrieveNoticePeriodCode(),
+        eosRetrieveReasonCode(),
+      ]);
+      setNoticePeriods(
+        (noticeData || []).map(item => ({
+          label: item.NoticePeriodCode,
+          value: item.NoticePeriodCode,
+        })),
+      );
+      setReasonCodes(
+        (reasonData || []).map(item => ({
+          label: item.ReasonCodeId,
+          value: item.ReasonCodeId,
+        })),
+      );
+    } catch (error) {
+      console.log('Dropdown Load Error:', error);
+    }
+  };
 
-          handleChange('EOSType', defaultData.EOS_Type || '-1');
-          handleChange('LastWorkingDate_Actual', calculatedDate);
-          handleChange('lastWorkingDatePlanned', calculatedDate);
-        }
+  const loadEmployeeDefaults = async () => {
+    try {
+      const [reporteeData, empInfoData] = await Promise.all([
+        retrieveEmployeeReporteesEOS(effectiveEmployeeId),
+        RetrieveEmployeeReporteesEmpInfo(effectiveEmployeeId),
+      ]);
 
-        const empInfoData = await RetrieveEmployeeReporteesEmpInfo(
-          userData.employeeId,
-        );
-        if (empInfoData?.length > 0) {
-          const empData = empInfoData[0];
-          handleChange('activePayPeriod', empData.ActivePayPeriodCode || '');
-          handleChange(
-            'hiringDate',
-            empData.hiringdate || userData?.OriginalHireDate || '',
-          );
-          handleChange('serviceDuration', empData.ServiceDuration || '');
-        } else {
-          handleChange('hiringDate', userData?.OriginalHireDate || '');
-        }
-      } catch (error) {
-        console.log('Employee Info Load Error:', error);
+      if (reporteeData?.length > 0) {
+        const calculatedDate = getLastWorkingDateFromNoticePeriod('', today);
+        handleChange('LastWorkingDate_Actual', today);
+        handleChange('lastWorkingDatePlanned', today);
       }
-    };
 
-    loadDropdowns();
-    loadEmployeeDefaults();
-  }, [userData.employeeId, today, userData?.OriginalHireDate]);
+      if (empInfoData?.length > 0) {
+        const empData = empInfoData[0];
+        handleChange('activePayPeriod', empData.ActivePayPeriodCode || '');
+        handleChange(
+          'hiringDate',
+          empData.hiringdate || userData?.OriginalHireDate || '',
+        );
+        handleChange('serviceDuration', empData.ServiceDuration || '');
+      }
+    } catch (error) {
+      console.log('Employee Info Load Error:', error);
+    }
+  };
 
-  // API Handlers
-  const handleCreate = async () => {
+  // ── Validation ──────────────────────────────────────────────────────────────
+  const validateForm = () => {
+    const missing = [];
+    if (!formData.NoticePeriodCode) missing.push('Notice Period Code');
+    if (!formData.reasonCode) missing.push('Reason Code');
+
+    if (missing.length > 0) {
+      setAlertMessage('Please fill required fields:\n' + missing.join('\n'));
+      setAlertModal(true);
+      return false;
+    }
+    return true;
+  };
+
+  // ── API Handlers ────────────────────────────────────────────────────────────
+  const handleSave = async actionType => {
+    if (processingButton) return;
+    if (!validateForm()) return;
+
+    setProcessingButton(actionType);
+    setIsProcessing(true);
+
     try {
       const result = await CreateEOSRequest({contract: formData});
-      if (result?.RecId) {
-        Alert.alert('Success', 'EOS Request Draft Created Successfully!');
+
+      if (
+        result?.IsSuccess === 'true' &&
+        result?.RecId &&
+        result.RecId !== '0'
+      ) {
         handleChange('RecId', result.RecId);
+
+        if (actionType === 'submit') {
+          await SubmitEOSRequest(result.RecId);
+          notifySuccess('EOS Request Created & Submitted Successfully!');
+          setAlertMessage('EOS Request Created & Submitted Successfully!');
+        } else {
+          notifySuccess('EOS Request Created Successfully!');
+          setAlertMessage('EOS Request Created Successfully!');
+        }
+
+        setAlertModal(true);
+
+        setTimeout(() => {
+          setAlertModal(false);
+          navigation.navigate('EmployeeEOSRequestListPage', {
+            employeeId: effectiveEmployeeId,
+            employeeName: effectiveEmployeeName,
+            WorkerRecId: WorkerRecId || userData?.WorkerRecId,
+            highlightRecId: result.RecId,
+            cameFrom: cameFrom,
+            userData: effectiveUserData,
+          });
+        }, 2000);
       } else {
-        Alert.alert('Error', 'Failed to create EOS Request.');
+        const errMsg = result?.Message || 'Failed to create EOS Request.';
+        notifyError(errMsg); // 👈 ADD
+        setAlertMessage(errMsg);
+        setAlertModal(true);
       }
     } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Error while creating EOS Request.');
+      console.error('Save error:', error);
+      notifyError('Error while saving EOS Request.');
+      setAlertMessage('Error while saving EOS Request.');
+      setAlertModal(true);
+    } finally {
+      setProcessingButton('');
+      setIsProcessing(false);
     }
   };
 
-  const handleCreateAndSubmit = async () => {
-    try {
-      let recId = formData.RecId;
-
-      // If not created yet, create first
-      if (!recId) {
-        const result = await CreateEOSRequest({contract: formData});
-        if (!result?.RecId)
-          return Alert.alert('Error', 'Failed to create EOS Request.');
-        handleChange('RecId', result.RecId);
-        recId = result.RecId;
-      }
-
-      // Submit
-      await SubmitEOSRequest(recId);
-      Alert.alert('Success', 'EOS Request Created & Submitted Successfully!');
-      navigation.navigate('EmployeeEOSRequestListPage');
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Error while creating or submitting EOS Request.');
-    }
-  };
-
-  const handleCancel = () => {
-    navigation.navigate('EmployeeEOSRequestListPage');
-  };
-
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <ActionPaneContainer pageTitle="EOS Request" isBackButton={true}>
-      <SafeAreaView style={styles.DSR_SafeArea}>
-        <KeyboardAvoidingView
-          style={{flex: 1}}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <ActionPaneContainer
+      pageTitle={getPageLabel()}
+      isBackButton={true}
+      showFooter={false}
+      showFloatingButton={false}
+      isHeaderActive={true}
+      onBackPress={goBack}
+      showPageTitleRow={true}>
+      {isLoading ? (
+        <View style={styles.DLP_LoadingContainer}>
+          <ActivityIndicator size="large" color="#0A66C2" />
+        </View>
+      ) : (
+        <SafeAreaView style={styles.DSR_SafeArea}>
+          {isProcessing && (
+            <View style={styles.DSR_ProcessingOverlay}>
+              <View style={styles.DSR_ProcessingContainer}>
+                <ActivityIndicator size="large" color="#0A66C2" />
+                <Text style={styles.DSR_ProcessingText}>Processing...</Text>
+              </View>
+            </View>
+          )}
+
           <ScrollView
             ref={scrollRef}
             contentContainerStyle={styles.DSR_FormContainer}
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled">
             {/* Employee */}
             <Text style={styles.DSR_Label}>Employee</Text>
             <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
@@ -205,47 +333,64 @@ const EOSRequestScreen = () => {
 
             {/* Active Pay Period */}
             <Text style={styles.DSR_Label}>Active Pay Period</Text>
-            <TextInput
-              style={[styles.DSR_Input, styles.DSR_Disabled]}
-              value={formData.activePayPeriod}
-              editable={false}
-            />
+            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+              {formData.activePayPeriod || '—'}
+            </Text>
 
-            {/* EOS Type */}
+            {/* EOS Type — disabled, Resignation pre-selected */}
             <Text style={styles.DSR_Label}>EOS Type</Text>
-            <Dropdown
-              style={styles.DSR_Input}
-              data={eosTypes}
-              labelField="label"
-              valueField="value"
-              value={formData.EOSType}
-              onChange={item => handleChange('EOSType', item.value)}
-            />
+            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+              Resignation
+            </Text>
 
-            {/* Last Working Date Planned */}
-            <Text style={styles.DSR_Label}>Last Working Date (Planned)</Text>
-            <TouchableOpacity style={styles.DSR_DateSelector}>
-              <Text style={styles.DSR_DateText}>
-                {formatDate(formData.lastWorkingDatePlanned)}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Notice Period */}
+            {/* Notice Period Code */}
             <Text style={styles.DSR_Label}>Notice Period Code</Text>
             <Dropdown
               style={styles.DSR_Input}
               data={noticePeriods}
               labelField="label"
               valueField="value"
+              placeholder="Select Notice Period"
               value={formData.NoticePeriodCode}
+              onFocus={loadDropdowns}
               onChange={item => {
                 handleChange('NoticePeriodCode', item.value);
-                const calculatedDate = calculateLastWorkingDate(
-                  formData.EOSNotificationDate,
-                );
-                handleChange('LastWorkingDate_Actual', calculatedDate);
-                handleChange('lastWorkingDatePlanned', calculatedDate);
+
+                const code = String(item.value).toLowerCase();
+                let newNotificationDate = today;
+
+                if (code.includes('one month') || code.includes('1 month')) {
+                  const oneMonthLater = new Date(today);
+                  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+                  newNotificationDate = oneMonthLater
+                    .toISOString()
+                    .split('T')[0];
+                }
+
+                handleChange('EOSNotificationDate', newNotificationDate);
+                handleChange('lastWorkingDatePlanned', newNotificationDate); // ← same as notification date
+                // LastWorkingDate_Actual stays as today — don't touch it
               }}
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              dropdownPosition="auto"
+              renderRightIcon={() => (
+                <Icon
+                  name="chevron-down"
+                  size={10}
+                  color="#8b8b8bff"
+                  style={{marginHorizontal: 8}}
+                />
+              )}
+              iconStyle={{width: 0, height: 0}}
             />
 
             {/* Notification Date */}
@@ -254,12 +399,25 @@ const EOSRequestScreen = () => {
               {formatDate(formData.EOSNotificationDate)}
             </Text>
 
+            {/* Last Working Date Planned */}
+            <Text style={styles.DSR_Label}>Last Working Date (Planned)</Text>
+            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+              {formatDate(formData.lastWorkingDatePlanned) || '—'}
+            </Text>
+
             {/* Last Working Date Requested */}
             <Text style={styles.DSR_Label}>Last Working Date (Requested)</Text>
-            <TouchableOpacity style={styles.DSR_DateSelector}>
-              <Text style={styles.DSR_DateText}>
-                {formatDate(formData.LastWorkingDate_Actual)}
-              </Text>
+            <TouchableOpacity
+              style={styles.DSR_DateSelector}
+              onPress={() => setShowActualDateCalendar(true)}>
+              <View style={{flex: 1}}>
+                <Text style={styles.DSR_DateText}>
+                  {formData.LastWorkingDate_Actual
+                    ? formatDate(formData.LastWorkingDate_Actual)
+                    : 'Select Date'}
+                </Text>
+              </View>
+              <Icon name="calendar" size={20} color="#0A66C2" />
             </TouchableOpacity>
 
             {/* Reason Code */}
@@ -269,25 +427,45 @@ const EOSRequestScreen = () => {
               data={reasonCodes}
               labelField="label"
               valueField="value"
+              placeholder="Select Reason Code"
               value={formData.reasonCode}
               onChange={item => handleChange('reasonCode', item.value)}
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              dropdownPosition="auto"
+              search
+              searchPlaceholder="Search reason code..."
+              inputSearchStyle={styles.DSR_DropdownSearchInput}
+              renderRightIcon={() => (
+                <Icon
+                  name="chevron-down"
+                  size={10}
+                  color="#8b8b8bff"
+                  style={{marginHorizontal: 8}}
+                />
+              )}
+              iconStyle={{width: 0, height: 0}}
             />
 
             {/* Hiring Date */}
             <Text style={styles.DSR_Label}>Hiring Date</Text>
-            <TextInput
-              style={[styles.DSR_Input, styles.DSR_Disabled]}
-              value={formatDate(formData.hiringDate)}
-              editable={false}
-            />
+            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+              {formatDate(formData.hiringDate) || '—'}
+            </Text>
 
             {/* Service Duration */}
             <Text style={styles.DSR_Label}>Service Duration</Text>
-            <TextInput
-              style={[styles.DSR_Input, styles.DSR_Disabled]}
-              value={formData.serviceDuration}
-              editable={false}
-            />
+            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+              {formData.serviceDuration || '—'}
+            </Text>
 
             {/* Remarks */}
             <Text style={styles.DSR_Label}>Remarks</Text>
@@ -295,74 +473,51 @@ const EOSRequestScreen = () => {
               style={[styles.DSR_Input, styles.DSR_TextArea]}
               value={formData.remarks}
               onChangeText={v => handleChange('remarks', v)}
+              placeholder="Enter remarks..."
               multiline
               numberOfLines={5}
             />
-
-            {/* Buttons */}
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'center',
-                marginTop: 20,
-              }}>
-              {/* Create Button */}
-              <TouchableOpacity
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#0A66C2',
-                  backgroundColor: '#fff',
-                  paddingVertical: 12,
-                  paddingHorizontal: 25,
-                  borderRadius: 50,
-                  alignItems: 'center',
-                  marginRight: 10,
-                }}
-                onPress={handleCreate}>
-                <Text
-                  style={{color: '#0A66C2', fontWeight: '600', fontSize: 16}}>
-                  Create
-                </Text>
-              </TouchableOpacity>
-
-              {/* Create & Submit Button */}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: '#0A66C2',
-                  paddingVertical: 12,
-                  paddingHorizontal: 25,
-                  borderRadius: 50,
-                  alignItems: 'center',
-                  marginRight: 10,
-                }}
-                onPress={handleCreateAndSubmit}>
-                <Text style={{color: '#fff', fontWeight: '600', fontSize: 16}}>
-                  Create & Submit
-                </Text>
-              </TouchableOpacity>
-
-              {/* Cancel Button */}
-              <TouchableOpacity
-                style={{
-                  borderWidth: 1,
-                  borderColor: '#B0B0B0',
-                  backgroundColor: '#fff',
-                  paddingVertical: 12,
-                  paddingHorizontal: 25,
-                  borderRadius: 50,
-                  alignItems: 'center',
-                }}
-                onPress={handleCancel}>
-                <Text style={{color: '#555', fontWeight: '600', fontSize: 16}}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+
+          <SaveRecordButtons
+            mode="create"
+            processingButton={processingButton}
+            onSave={handleSave}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+            showButtons={[
+              BUTTON_TYPES.CREATE,
+              BUTTON_TYPES.SUBMIT,
+              BUTTON_TYPES.CANCEL,
+            ]}
+          />
+        </SafeAreaView>
+      )}
+
+      <AlertModal
+        visible={alertModal}
+        heading="Alert"
+        text={alertMessage}
+        onPress={() => setAlertModal(false)}
+      />
+      {showActualDateCalendar && (
+        <CalendarModal
+          visible={showActualDateCalendar}
+          initialDate={formData.LastWorkingDate_Actual}
+          onDateSelected={date => {
+            const formatted = `${date.getFullYear()}-${String(
+              date.getMonth() + 1,
+            ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            handleChange('LastWorkingDate_Actual', formatted);
+            setShowActualDateCalendar(false);
+          }}
+          onClose={() => setShowActualDateCalendar(false)}
+        />
+      )}
     </ActionPaneContainer>
   );
 };
 
-export default EOSRequestScreen;
+export default EmployeeEOS_SaveRecord;

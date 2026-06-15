@@ -1,6 +1,7 @@
 #import "AppDelegate.h"
 #import <React/RCTBundleURLProvider.h>
 #import <Firebase.h>
+#import <RNCPushNotificationIOS.h>
 #import <UserNotifications/UserNotifications.h>
 #import <UIKit/UIKit.h>
 
@@ -76,6 +77,7 @@
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
 {
   NSLog(@"[AppDelegate] ========== APNS TOKEN RECEIVED START ==========");
+  [RNCPushNotificationIOS didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
   
   // Convert binary token to hex string for logging
   const unsigned char *bytes = (const unsigned char *)deviceToken.bytes;
@@ -89,7 +91,11 @@
   // Forward to Firebase - CRITICAL step
   // This ensures Firebase SDK has the APNS token needed to work with FCM
   NSLog(@"[AppDelegate] Forwarding APNS token to Firebase");
-  [FIRMessaging messaging].APNSToken = deviceToken;
+#ifdef DEBUG
+  [[FIRMessaging messaging] setAPNSToken:deviceToken type:FIRMessagingAPNSTokenTypeSandbox];
+#else
+  [[FIRMessaging messaging] setAPNSToken:deviceToken type:FIRMessagingAPNSTokenTypeProd];
+#endif
   
   NSLog(@"[AppDelegate] ✅ APNS token successfully forwarded to Firebase");
   NSLog(@"[AppDelegate] ========== APNS TOKEN RECEIVED END ==========");
@@ -98,6 +104,7 @@
 - (void)application:(UIApplication *)application
     didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
 {
+  [RNCPushNotificationIOS didFailToRegisterForRemoteNotificationsWithError:error];
   NSLog(@"[AppDelegate] ❌ FAILED TO REGISTER FOR REMOTE NOTIFICATIONS");
   NSLog(@"[AppDelegate] Error Code: %ld", (long)error.code);
   NSLog(@"[AppDelegate] Error Domain: %@", error.domain);
@@ -108,6 +115,15 @@
   NSLog(@"[AppDelegate] 1. Valid APNs certificate in Apple Developer account");
   NSLog(@"[AppDelegate] 2. Provisioning profile includes remote notification capability");
   NSLog(@"[AppDelegate] 3. push-notification entitlement is set in app.entitlements");
+}
+
+- (void)application:(UIApplication *)application
+    didReceiveRemoteNotification:(NSDictionary *)userInfo
+          fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler
+{
+  NSLog(@"[AppDelegate] Remote notification payload received: %@", userInfo);
+  [RNCPushNotificationIOS didReceiveRemoteNotification:userInfo
+                                fetchCompletionHandler:completionHandler];
 }
 
 // MARK: - UserNotificationCenter Delegate Methods (iOS Notification Handling)
@@ -154,8 +170,13 @@
   
   NSLog(@"[AppDelegate] ✅ Foreground notification will be presented with all options");
   NSLog(@"[AppDelegate] ========== FOREGROUND NOTIFICATION END ==========");
-  
-  completionHandler(presentationOptions);
+
+  // RNFirebase wraps the notification center delegate internally. When that
+  // wrapper is active it owns the completion callback, so we avoid calling it
+  // twice from the original delegate.
+  if (center.delegate == self) {
+    completionHandler(presentationOptions);
+  }
 }
 
 /**
@@ -171,6 +192,7 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
 {
   NSLog(@"[AppDelegate] ========== NOTIFICATION TAP/LAUNCH START ==========");
   NSLog(@"[AppDelegate] User interaction: notification tapped or app launched");
+  [RNCPushNotificationIOS didReceiveNotificationResponse:response];
   
   UNNotification *notification = response.notification;
   UNNotificationContent *content = notification.request.content;
@@ -203,8 +225,10 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
   
   NSLog(@"[AppDelegate] ✅ Notification interaction forwarded to Firebase SDK and JS handlers");
   NSLog(@"[AppDelegate] ========== NOTIFICATION TAP/LAUNCH END ==========");
-  
-  completionHandler();
+
+  if (center.delegate == self) {
+    completionHandler();
+  }
 }
 
 @end

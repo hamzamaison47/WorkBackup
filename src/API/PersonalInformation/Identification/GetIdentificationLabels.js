@@ -29,7 +29,8 @@ const getpersonalContactsLabels = async () => {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
-          SOAPAction: 'http://tempuri.org/HcmPersonIdentificationNumberSvc/getpersonalContactsLabels',
+          SOAPAction:
+            'http://tempuri.org/HcmPersonIdentificationNumberSvc/getpersonalContactsLabels',
         },
         responseType: 'text',
       },
@@ -50,7 +51,8 @@ const getpersonalContactsLabels = async () => {
     const parsed = parser.parse(xml);
 
     const result =
-      parsed?.['s:Envelope']?.['s:Body']?.['getpersonalContactsLabelsResponse']?.result;
+      parsed?.['s:Envelope']?.['s:Body']?.getpersonalContactsLabelsResponse
+        ?.result;
 
     // console.log('Raw result:', result);
 
@@ -60,7 +62,9 @@ const getpersonalContactsLabels = async () => {
     }
 
     const cleanObject = obj => {
-      if (!obj || typeof obj !== 'object') return obj;
+      if (!obj || typeof obj !== 'object') {
+        return obj;
+      }
 
       const cleaned = {};
       for (const [key, value] of Object.entries(obj)) {

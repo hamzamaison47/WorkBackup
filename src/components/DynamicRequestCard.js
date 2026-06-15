@@ -2741,10 +2741,12 @@ export const BUTTON_TYPES = {
 // ✅ AppTokens used here only for brand colors (never change between themes)
 const getStatusColors = status => {
   const s = String(status ?? '').toLowerCase();
-  if (['active', 'approved', 'success', 'yes', 'true'].includes(s))
+  if (['active', 'approved', 'success', 'yes', 'true'].includes(s)) {
     return {bg: AppTokens.greenBg, text: '#065F46', dot: AppTokens.green};
-  if (s === 'completed')
+  }
+  if (s === 'completed') {
     return {bg: AppTokens.purpleBg, text: '#4C1D95', dot: AppTokens.purple};
+  }
   if (
     [
       'pending',
@@ -2754,26 +2756,35 @@ const getStatusColors = status => {
       'processing',
       'in progress',
     ].includes(s)
-  )
+  ) {
     return {bg: AppTokens.amberBg, text: '#92400E', dot: AppTokens.amber};
-  if (['cancelled', 'rejected', 'failed', 'no', 'false'].includes(s))
+  }
+  if (['cancelled', 'rejected', 'failed', 'no', 'false'].includes(s)) {
     return {bg: AppTokens.redBg, text: '#991B1B', dot: AppTokens.red};
-  if (['draft', 'notsubmitted'].includes(s))
+  }
+  if (['draft', 'notsubmitted'].includes(s)) {
     return {bg: AppTokens.slateBg, text: AppTokens.slate, dot: '#94A3B8'};
+  }
   return {bg: AppTokens.slateBg, text: AppTokens.slate, dot: '#94A3B8'};
 };
 
 let globalMenuCloser = null;
 const registerMenuCloser = closer => {
-  if (globalMenuCloser && globalMenuCloser !== closer) globalMenuCloser();
+  if (globalMenuCloser && globalMenuCloser !== closer) {
+    globalMenuCloser();
+  }
   globalMenuCloser = closer;
 };
 const unregisterMenuCloser = closer => {
-  if (globalMenuCloser === closer) globalMenuCloser = null;
+  if (globalMenuCloser === closer) {
+    globalMenuCloser = null;
+  }
 };
 
 const HighlightText = ({text, query, style}) => {
-  if (!query?.trim()) return <Text style={style}>{text}</Text>;
+  if (!query?.trim()) {
+    return <Text style={style}>{text}</Text>;
+  }
   const parts = String(text).split(new RegExp(`(${query})`, 'gi'));
   return (
     <Text style={style}>
@@ -2949,23 +2960,30 @@ const DynamicRequestCard = ({
 
   const formatValue = (value, fieldType) => {
     if (value === null || value === undefined) return '—';
+    if (value === '') return '—';
+
+    if (value === null || value === undefined) {
+      return '—';
+    }
     switch (fieldType) {
       case 'date':
+      case 'datetime': {
+        // If value is already a formatted date string (not a Date object or ISO string),
+        // return it as-is to avoid double formatting
+        if (
+          typeof value === 'string' &&
+          /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)
+        ) {
+          return value; // Already formatted as MM/DD/YYYY or similar
+        }
         return formatDateValue(
           value,
           selectedFormat,
-          'date',
+          fieldType,
           selectedTimeFormat,
           selectedTimezone,
         );
-      case 'datetime':
-        return formatDateValue(
-          value,
-          selectedFormat,
-          'datetime',
-          selectedTimeFormat,
-          selectedTimezone,
-        );
+      }
       case 'currency': {
         const num = Number(value);
         return isNaN(num)
@@ -3053,8 +3071,36 @@ const DynamicRequestCard = ({
 
   const renderField = (field, index) => {
     const value = data[field.key];
-    if (field.type === 'status') return null;
+    if (field.type === 'status') {
+      return null;
+    }
     const formattedValue = formatValue(value, field.type);
+
+    if (field.type === 'status') {
+      const statusColors = getStatusColors(value);
+      return (
+        <View key={index} style={S.fieldRow}>
+          <Text style={[S.fieldLabel, {color: T.subtitleText}]}>
+            {field.label}
+          </Text>
+          <View
+            style={[
+              S.heroBadge,
+              {
+                backgroundColor: statusColors.bg,
+                borderColor: statusColors.dot + '55',
+              },
+            ]}>
+            <View
+              style={[S.heroBadgeDot, {backgroundColor: statusColors.dot}]}
+            />
+            <Text style={[S.heroBadgeText, {color: statusColors.text}]}>
+              {formattedValue}
+            </Text>
+          </View>
+        </View>
+      );
+    }
     const hasLabel = field.label && String(field.label).trim().length > 0;
 
     if (field.type === 'boolean') {
@@ -3100,7 +3146,9 @@ const DynamicRequestCard = ({
 
   const renderMenuItem = buttonType => {
     const cfg = getMergedButtonConfig(buttonType);
-    if (!cfg.show) return null;
+    if (!cfg.show) {
+      return null;
+    }
     const isProcessing = processingButtons.includes(buttonType);
     const isDisabled = cfg.disabled || processingButtons.length > 0;
 
@@ -3135,7 +3183,9 @@ const DynamicRequestCard = ({
 
   const renderBottomButton = buttonType => {
     const cfg = getMergedButtonConfig(buttonType);
-    if (!cfg.show || cfg.style === 'approval_dropdown') return null;
+    if (!cfg.show || cfg.style === 'approval_dropdown') {
+      return null;
+    }
     const isProcessing = processingButtons.includes(buttonType);
     const isDisabled = cfg.disabled || isProcessing;
 
@@ -3165,7 +3215,9 @@ const DynamicRequestCard = ({
 
   const renderApprovalButton = () => {
     const cfg = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
-    if (!cfg.show) return null;
+    if (!cfg.show) {
+      return null;
+    }
     const isDisabled = cfg.disabled || processingButtons.length > 0;
     const actions = cfg.actions || [
       {key: 'submit', label: 'Submit', icon: 'send'},
@@ -3280,7 +3332,9 @@ const DynamicRequestCard = ({
   };
 
   const renderCheckbox = () => {
-    if (!isMultiSelectMode) return null;
+    if (!isMultiSelectMode) {
+      return null;
+    }
     return (
       <Animated.View
         pointerEvents="none"
@@ -3361,8 +3415,11 @@ const DynamicRequestCard = ({
             onSelectToggle?.(data);
             return;
           }
-          if (menuVisible) closeMenu();
-          else onPress?.();
+          if (menuVisible) {
+            closeMenu();
+          } else {
+            onPress?.();
+          }
         }}
         onLongPress={() => !isMultiSelectMode && onLongPress?.(data)}>
         <View

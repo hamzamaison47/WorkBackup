@@ -128,19 +128,49 @@ export const getGoogleConfiguration = () => {
   return Googleconfig;
 };
 
-// Controller/configuration.js
+// // Controller/configuration.js
 
-export const getGraphConsentConfiguration = async (loginHint = null) => {
+// export const getGraphConsentConfiguration = async (
+//   loginHint = null,
+//   promptType = 'select_account',
+// ) => {
+//   const config = await getActiveConfigData();
+
+//   // Extract tenant ID
+//   const tenantIdMatch = config.tokenUrl.match(/\/([0-9a-fA-F-]{36})\//);
+//   const tenantId = tenantIdMatch?.[1];
+
+//   if (!tenantId) throw new Error('Could not extract tenant ID from config.');
+
+//   return {
+//     issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
+//     clientId: config.client_id,
+//     redirectUrl: 'authentication://callback/',
+//     scopes: [
+//       'openid',
+//       'offline_access',
+//       'https://graph.microsoft.com/Calendars.ReadWrite',
+//       'https://graph.microsoft.com/User.Read',
+//     ],
+//     additionalParameters: {
+//       // ✅ Use the passed promptType (defaults to 'select_account' for safety)
+//       prompt: 'select_account', // This MUST be 'select_account' for a fresh login
+//       ...(loginHint && {login_hint: loginHint}),
+//     },
+//   };
+// };
+
+export const getGraphConsentConfiguration = async (
+  loginHint = null,
+  promptType = 'none',
+) => {
   const config = await getActiveConfigData();
   const tenantIdMatch = config.tokenUrl.match(/\/([0-9a-fA-F-]{36})\//);
   const tenantId = tenantIdMatch?.[1];
 
-  if (!tenantId) throw new Error('Could not extract tenant ID from config.');
-
-  const additionalParameters = {
-    prompt: 'none',
-    ...(loginHint && {login_hint: loginHint}), // ← pins the account
-  };
+  if (!tenantId) {
+    throw new Error('Could not extract tenant ID from config.');
+  }
 
   return {
     issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`,
@@ -152,6 +182,9 @@ export const getGraphConsentConfiguration = async (loginHint = null) => {
       'https://graph.microsoft.com/Calendars.ReadWrite',
       'https://graph.microsoft.com/User.Read',
     ],
-    additionalParameters,
+    additionalParameters: {
+      prompt: promptType, // ← was hardcoded to 'select_account' before
+      ...(loginHint && {login_hint: loginHint}),
+    },
   };
 };

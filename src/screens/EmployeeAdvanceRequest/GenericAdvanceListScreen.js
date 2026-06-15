@@ -40,6 +40,7 @@ import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+import useNotify from '../../hooks/useNotify';
 
 import styles from '../../styles/styles';
 
@@ -78,6 +79,7 @@ const GenericAdvanceListScreen = () => {
     RequestedInstallments: '',
   });
   const [isSaving, setIsSaving] = useState(false);
+  const {notifySuccess, notifyError, notifyDelete} = useNotify('Loan Request');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
@@ -736,13 +738,68 @@ const GenericAdvanceListScreen = () => {
     });
   };
 
+  // Format date - parse parts directly to avoid timezone issues
   const formatDate = date => {
     if (!date) return '';
-    const d = new Date(date);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${month}/${day}/${year}`;
+    try {
+      // Extract date parts directly from string to avoid timezone conversion issues
+      let datePart = date;
+      if (typeof date === 'string' && date.includes('T')) {
+        datePart = date.split('T')[0];
+      }
+
+      // Handle YYYY-MM-DD format
+      if (
+        typeof datePart === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ) {
+        const [year, month, day] = datePart.split('-');
+        return `${month}/${day}/${year}`;
+      }
+
+      // Fallback: try parsing as Date but use UTC methods to avoid timezone shift
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      const monthStr = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dayStr = String(d.getUTCDate()).padStart(2, '0');
+      const yearStr = d.getUTCFullYear();
+      return `${monthStr}/${dayStr}/${yearStr}`;
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return '';
+    }
+  };
+
+  // Format date to ISO string with time - parse parts directly to avoid timezone issues
+  const formatToISOWithTime = date => {
+    if (!date) return '';
+    try {
+      // Extract date parts directly from string to avoid timezone conversion issues
+      let datePart = date;
+      if (typeof date === 'string' && date.includes('T')) {
+        datePart = date.split('T')[0];
+      }
+
+      // Handle YYYY-MM-DD format
+      if (
+        typeof datePart === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+      ) {
+        return `${datePart}T12:00:00`;
+      }
+
+      // Fallback: try parsing as Date but use UTC methods to avoid timezone shift
+      const baseDate = new Date(date);
+      if (isNaN(baseDate.getTime())) return '';
+
+      const year = baseDate.getUTCFullYear();
+      const month = String(baseDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(baseDate.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}T12:00:00`;
+    } catch (error) {
+      console.error('Date ISO formatting error:', error);
+      return '';
+    }
   };
 
   const formatNumberForDisplay = value => {
@@ -776,6 +833,7 @@ const GenericAdvanceListScreen = () => {
           r => String(r.RecId) === String(itemToDelete.RecId),
         );
         if (recordResult && recordResult.IsSuccess === 'true') {
+          notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
           setAllAdvanceData(prev =>
             prev.filter(adv => adv.RecId !== itemToDelete.RecId),
@@ -803,6 +861,7 @@ const GenericAdvanceListScreen = () => {
         const response = await SubmitAdvanceRequest({recId: itemData.RecId});
         const resObj = Array.isArray(response) ? response[0] : response;
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+          notifySuccess('Request submitted successfully');
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
           setHighlightedRecId(itemData.RecId);

@@ -41,7 +41,9 @@ const HRExitInterviewListPage = () => {
 
   // 🔹 FETCH DATA
   const fetchData = useCallback(async () => {
-    if (!effectiveEmployeeId) return;
+    if (!effectiveEmployeeId) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -91,7 +93,9 @@ const HRExitInterviewListPage = () => {
 
   // 🔹 HANDLE ROW CLICK
   const handleRowPress = item => {
-    if (status !== 'open') return;
+    if (status !== 'open') {
+      return;
+    }
 
     const type = item.QuestionType?.toLowerCase();
 

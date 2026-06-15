@@ -1,4 +1,3 @@
-/* eslint-disable dot-notation */
 import {getToken} from '../../Token/getToken';
 import axios from 'axios';
 import {getActiveConfigData} from '../../../Controller/secureConfig';

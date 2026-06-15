@@ -68,9 +68,15 @@ const ESSEmployeeCourse_ListPage = () => {
         } catch (error) {
           console.error(`Error fetching ${activeTab} courses:`, error);
 
-          if (activeTab === 'assigned') setAssignedCourses([]);
-          if (activeTab === 'open') setOpenCourses([]);
-          if (activeTab === 'completed') setCompletedCourses([]);
+          if (activeTab === 'assigned') {
+            setAssignedCourses([]);
+          }
+          if (activeTab === 'open') {
+            setOpenCourses([]);
+          }
+          if (activeTab === 'completed') {
+            setCompletedCourses([]);
+          }
         } finally {
           setLoading(false);
         }
@@ -130,9 +136,13 @@ const ESSEmployeeCourse_ListPage = () => {
   const renderCourseCard = ({item}) => {
     let config;
 
-    if (activeTab === 'assigned') config = assignedCardConfig;
-    else if (activeTab === 'open') config = openCardConfig;
-    else config = completedCardConfig;
+    if (activeTab === 'assigned') {
+      config = assignedCardConfig;
+    } else if (activeTab === 'open') {
+      config = openCardConfig;
+    } else {
+      config = completedCardConfig;
+    }
 
     return (
       <DynamicRequestCard

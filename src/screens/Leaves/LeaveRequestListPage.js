@@ -36,6 +36,7 @@ import SubmitLeaveRequest from '../../API/Leaves/SubmitLeaveRequest';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import {isLeaveWorkflowConfigured} from '../../API/Leaves/isLeaveWorkflowEnabled';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+import useNotify from '../../hooks/useNotify';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
@@ -83,7 +84,7 @@ const LeaveRequestListPage = () => {
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-
+  const {notifySuccess, notifyError, notifyDelete} = useNotify('Leave Request');
   // Function to get the page label
   const getPageLabel = () => {
     const currentMenuItem = menuItems.find(
@@ -580,6 +581,7 @@ const LeaveRequestListPage = () => {
         });
 
         if (response[0].IsSuccess) {
+          notifyDelete(t('leaveRequest.deleteSuccess')); // 👈 ADD
           setAlertMessage(t('leaveRequest.deleteSuccess'));
           setLeavesData(prev =>
             prev.filter(leave => leave.RecId !== itemToDelete.RecId),
@@ -614,6 +616,10 @@ const LeaveRequestListPage = () => {
       const resObj = Array.isArray(response) ? response[0] : response;
 
       if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
+        notifySuccess(
+          // 👈 ADD
+          t('leaveRequest.submitSuccess', {leaveCode: itemData.LeaveCode}),
+        );
         setAlertMessage(
           t('leaveRequest.submitSuccess', {leaveCode: itemData.LeaveCode}),
         );
@@ -630,9 +636,9 @@ const LeaveRequestListPage = () => {
         }, 1000);
       } else {
         const errorMessage =
-          resObj && resObj.Message
-            ? resObj.Message
-            : `Failed to Submit ${itemData.LeaveCode} Request`;
+          resObj?.InfologMessage ||
+          resObj?.Message ||
+          `Failed to Submit ${itemData.LeaveCode} Request`;
         setAlertMessage(errorMessage);
         setAlertModal(true);
       }

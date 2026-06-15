@@ -7,6 +7,10 @@ import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../Controller/secureConfig';
 
 const RetrieveAttachment = async ({docuRefRecId}) => {
+  console.log('=== RETRIEVE ATTACHMENT CALLED ===');
+  console.log('docuRefRecId:', docuRefRecId);
+  console.log('type:', typeof docuRefRecId);
+  console.log('==================================');
   try {
     const config = await getActiveConfigData();
 
@@ -45,6 +49,11 @@ const RetrieveAttachment = async ({docuRefRecId}) => {
     );
 
     const xml = response.data;
+    // ✅ DEBUG 2: Full raw response
+    console.log('=== RAW RETRIEVE RESPONSE ===');
+    console.log('HTTP Status:', response.status);
+    console.log('Full XML:', xml);
+    console.log('=== END RAW RETRIEVE RESPONSE ===');
 
     // DEBUG: Log the first 500 characters of the response
     console.log('=== SOAP Response Preview ===');

@@ -86,38 +86,41 @@ const useNetworkCheck = () => {
     // ── iOS specific: SSID may not be available ───────────────
     // On iOS 13+, SSID requires Location permission AND
     // the device must be connected to WiFi
-   // iOS: if on WiFi but SSID unavailable, check if fence has networks
-// If fence has no networks configured, allow through anyway
-if (Platform.OS === 'ios' && isWifi && !wifiSsid) {
-  console.warn('📶 iOS: SSID unavailable');
-  // If no fence networks configured, pass through
-  if (!fenceNetworks.length) {
-    return {
-      passed: true,
-      networkContext: {networkId: null, networkName: null, bssid: null},
-    };
-  }
-  // If fence has networks but we cant read SSID on iOS
-  // Try matching by BSSID only if available
-  if (wifiBssid) {
-    const normalizeNet = s => String(s ?? '').trim().toLowerCase();
-    const bssidOnlyMatch = fenceNetworks.find(
-      net => net.BSSID &&
-      normalizeNet(net.BSSID) === normalizeNet(wifiBssid)
-    );
-    if (bssidOnlyMatch) {
-      console.log('📶 iOS: Matched by BSSID only:', wifiBssid);
-      return {
-        passed: true,
-        networkContext: {
-          networkId: bssidOnlyMatch?.NetworkID ?? null,
-          networkName: bssidOnlyMatch?.NetworkName ?? null,
-          bssid: wifiBssid,
-        },
-      };
+    // iOS: if on WiFi but SSID unavailable, check if fence has networks
+    // If fence has no networks configured, allow through anyway
+    if (Platform.OS === 'ios' && isWifi && !wifiSsid) {
+      console.warn('📶 iOS: SSID unavailable');
+      // If no fence networks configured, pass through
+      if (!fenceNetworks.length) {
+        return {
+          passed: true,
+          networkContext: {networkId: null, networkName: null, bssid: null},
+        };
+      }
+      // If fence has networks but we cant read SSID on iOS
+      // Try matching by BSSID only if available
+      if (wifiBssid) {
+        const normalizeNet = s =>
+          String(s ?? '')
+            .trim()
+            .toLowerCase();
+        const bssidOnlyMatch = fenceNetworks.find(
+          net =>
+            net.BSSID && normalizeNet(net.BSSID) === normalizeNet(wifiBssid),
+        );
+        if (bssidOnlyMatch) {
+          console.log('📶 iOS: Matched by BSSID only:', wifiBssid);
+          return {
+            passed: true,
+            networkContext: {
+              networkId: bssidOnlyMatch?.NetworkID ?? null,
+              networkName: bssidOnlyMatch?.NetworkName ?? null,
+              bssid: wifiBssid,
+            },
+          };
+        }
+      }
     }
-  }
-}
 
     // If no fence networks configured, pass through
     if (!fenceNetworks.length) {
@@ -139,7 +142,10 @@ if (Platform.OS === 'ios' && isWifi && !wifiSsid) {
     );
 
     if (networkMatched) {
-      const normalizeNet = s => String(s ?? '').trim().toLowerCase();
+      const normalizeNet = s =>
+        String(s ?? '')
+          .trim()
+          .toLowerCase();
       const matchedNetwork = fenceNetworks.find(net => {
         const ssidMatch =
           net.NetworkName &&

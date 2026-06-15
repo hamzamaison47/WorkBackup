@@ -37,6 +37,7 @@ import {UpdateEducationDetails} from '../../../../API/PersonalInformation/Educat
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
 import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
+import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 import {conditionalVerticalScale} from '../../../../store/utils/scaling';
@@ -113,6 +114,7 @@ const PersonalEducationSaveRecord = () => {
   const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
   const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
   const [educationLabels, setEducationLabels] = useState({});
+  const {notifySuccess, notifyError} = useNotify('Education Details');
 
   /* ---------- helpers ---------- */
   const formatDate = date => {
@@ -396,6 +398,11 @@ const PersonalEducationSaveRecord = () => {
           ? 'Request submitted successfully.'
           : 'Record created successfully.',
       );
+      const successMsg =
+        actionType === 'submit'
+          ? 'Request submitted successfully.'
+          : 'Record created successfully.';
+      notifySuccess(successMsg);
       setAlertModal(true);
       setTimeout(() => {
         setAlertModal(false);

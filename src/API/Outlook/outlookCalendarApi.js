@@ -31,7 +31,19 @@ export const GetCalendarEvents = async (
   top = 50,
 ) => {
   try {
-    const {data} = await graphClient.get('/me/calendarView', {
+    // const {data} = await graphClient.get('/me/calendarView', {
+    //   params: {
+    //     startDateTime,
+    //     endDateTime,
+    //     $top: top,
+    //     $select:
+    //       'id,subject,start,end,location,bodyPreview,isAllDay,organizer,attendees,onlineMeetingUrl',
+    //     $orderby: 'start/dateTime asc',
+    //   },
+    // });
+
+    // return data.value ?? [];
+    const response = await graphClient.get('/me/calendarView', {
       params: {
         startDateTime,
         endDateTime,
@@ -42,7 +54,10 @@ export const GetCalendarEvents = async (
       },
     });
 
-    return data.value ?? [];
+    console.log('Graph API FULL response:', response.data);
+    console.log('Calendar events:', response.data.value);
+
+    return response.data.value ?? [];
   } catch (err) {
     console.error('GetCalendarEvents error:', {
       message: err.message,

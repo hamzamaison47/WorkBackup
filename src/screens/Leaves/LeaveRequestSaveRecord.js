@@ -26,6 +26,7 @@ import {useSelector} from 'react-redux';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {translate as t} from '../../store/utils/translate';
+import useNotify from '../../hooks/useNotify';
 
 import {
   fetchLeaveBalance,
@@ -86,6 +87,7 @@ const LeaveRequestSaveRecord = () => {
   const [startCalendarKey, setStartCalendarKey] = useState(Date.now());
   const [endCalendarKey, setEndCalendarKey] = useState(Date.now());
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const {notifySuccess, notifyError} = useNotify('Leave Request');
 
   const createInitialFormData = () => ({
     recId: !leaveData.recId || leaveData.recId === '0' ? '' : leaveData.recId,
@@ -690,6 +692,7 @@ const LeaveRequestSaveRecord = () => {
         }
       }
 
+      // REPLACE WITH:
       if (response.IsSuccess === 'true') {
         const actionText =
           modalMode === 'create' ? t('common.create') : t('common.update');
@@ -699,18 +702,18 @@ const LeaveRequestSaveRecord = () => {
             : actionType === 'submit' && submitResult?.IsSuccess === 'false'
             ? ` ${t('leaveSaveRecord.butNotSubmitted')}`
             : '';
+        const successMsg = `${
+          leavesData.LeaveCode
+        } ${actionText}${submitText} ${t('leaveSaveRecord.successfully')}`;
 
-        setAlertMessage(
-          `${leavesData.LeaveCode} ${actionText}${submitText} ${t(
-            'leaveSaveRecord.successfully',
-          )}`,
-        );
+        notifySuccess(successMsg); // 👈 ADD
+        setAlertMessage(successMsg);
         setAlertModal(true);
-
         return {success: true, recId: response?.RecId};
       } else {
         const errorMessage =
           response?.Message || t('leaveSaveRecord.operationFailed');
+        notifyError(errorMessage); // 👈 ADD
         setAlertMessage(errorMessage);
         setAlertModal(true);
         return {success: false, message: errorMessage};

@@ -8,6 +8,9 @@ import {
   BackHandler,
   RefreshControl,
   I18nManager,
+  View,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import {
   useNavigation,
@@ -23,10 +26,8 @@ import DynamicRequestCard from '../../components/DynamicRequestCard';
 import styles from '../../styles/styles';
 import {useSelector} from 'react-redux';
 import {translate as t} from '../../store/utils/translate';
-import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 import {employeeEOSRequestfindbyEmployee} from '../../API/EmployeeEOSRequest/EmployeeEOSRequestfindbyEmployee';
-import {ScrollView} from 'react-native';
 
 const EmployeeEOSRequestListPage = () => {
   const navigation = useNavigation();
@@ -47,39 +48,36 @@ const EmployeeEOSRequestListPage = () => {
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
-  const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
-    state => state.company,
-  );
 
   const isRTL = I18nManager.isRTL;
 
-  // Example states
   const [isLoading, setIsLoading] = useState(false);
   const [EOSRequestData, setEOSRequestData] = useState([]);
+  const [rawData, setRawData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
-  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
-  const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
-  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
-
-  // Delete confirmation modal state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [sortOrder, setSortOrder] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
 
+  // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchEmployeeEosRequest = useCallback(async () => {
     if (!effectiveEmployeeId) return;
 
     setIsLoading(true);
     try {
-      const EmployeeEOSData = await employeeEOSRequestfindbyEmployee({
+      const data = await employeeEOSRequestfindbyEmployee({
         employeeId: effectiveEmployeeId,
       });
-
-      console.log('EmployeeEOSData', {EmployeeEOSData});
-
-      setEOSRequestData(EmployeeEOSData);
+      setEOSRequestData(data);
+      setRawData(data);
+      setDisplayData(data);
     } catch (error) {
       setAlertMessage(t('EmployeeEOSData.fetchFailed'));
       setAlertModal(true);
@@ -88,24 +86,18 @@ const EmployeeEOSRequestListPage = () => {
     }
   }, [effectiveEmployeeId]);
 
-  // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       fetchEmployeeEosRequest();
     }, [fetchEmployeeEosRequest]),
   );
 
-  // Handle highlighting of records
   useFocusEffect(
     useCallback(() => {
       if (highlightRecId) {
         setHighlightedRecId(highlightRecId);
         fetchEmployeeEosRequest();
-
-        const timer = setTimeout(() => {
-          setHighlightedRecId(null);
-        }, 3000);
-
+        const timer = setTimeout(() => setHighlightedRecId(null), 3000);
         return () => clearTimeout(timer);
       }
     }, [highlightRecId, fetchEmployeeEosRequest]),
@@ -117,90 +109,22 @@ const EmployeeEOSRequestListPage = () => {
         handleGoBack();
         return true;
       };
-
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [handleGoBack, navigation]),
   );
 
-  const cardConfig = {
-    headerConfig: {
-      title: {key: 'EOSRequestId'},
-    },
-
-    fields: [
-      {
-        key: 'EmployeePersonnelNumber',
-        label: 'Employee Id' || 'Employee Id',
-        type: 'text',
-      },
-      {
-        key: 'EmployeeName',
-        label: 'Employee Name' || 'Employee Name',
-        type: 'text',
-      },
-      {
-        key: 'EOSType',
-        label: 'EOS Type' || 'EOS Type',
-        type: 'text',
-      },
-      {
-        key: 'NoticePeriodCode',
-        label: 'Notice Period Code' || 'Notice Period Code',
-        type: 'text',
-      },
-    ],
-
-    expandableFields: [
-      {
-        key: 'EOSNotificationDate',
-        label: 'Notification Date' || 'Notification Date',
-        type: 'Date',
-      },
-      {
-        key: 'LastWorkingDate_Actual',
-        label: 'Last Working Date Requested' || 'Last Working Date Requested',
-        type: 'Date',
-      },
-      {
-        key: 'LastWorkingDate_Calculated',
-        label: 'Last Working Date Planned' || 'Last Working Date Planned',
-        type: 'Date',
-      },
-    ],
-    isRTL: isRTL,
-  };
-
-  const formatDate = date => {
-    if (!date) return '';
-    const d = new Date(date);
-    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-  };
-
-  const handleAddEOSRequest = () => {
-    navigation.navigate('EOSRequestScreen', {
-      employeeId: effectiveEmployeeId,
-      employeeName: effectiveEmployeeName,
-      WorkerRecId: effectiveWorkerRecId,
-      cameFrom: 'EmployeeEOSRequestListPage',
-      userData: effectiveUserData,
-    });
-  };
-  // Handle back navigation
+  // ── Navigation ─────────────────────────────────────────────────────────────
   const handleGoBack = () => {
-    let targetRoute = 'MainDashboard'; // default
-
+    let targetRoute = 'MainDashboard';
     switch (cameFrom) {
       case 'MainDashboard':
+      case 'DrawerNavigator':
         targetRoute = 'MainDashboard';
         break;
       case 'DisplayListPage':
         targetRoute = 'DisplayListPage';
-        break;
-      case 'DrawerNavigator':
-        targetRoute = 'MainDashboard';
         break;
       case 'WorkerAssignedToMe':
         targetRoute = 'WorkerAssignedToMe';
@@ -209,49 +133,105 @@ const EmployeeEOSRequestListPage = () => {
         if (navigation.canGoBack()) {
           navigation.goBack();
           return;
-        } else {
-          targetRoute = 'MainDashboard';
         }
-        return; // exit early
+        targetRoute = 'MainDashboard';
+        return;
     }
+    navigation.reset({index: 0, routes: [{name: targetRoute}]});
+  };
 
-    navigation.reset({
-      index: 0,
-      routes: [{name: targetRoute}],
+  const handleRefresh = () => fetchEmployeeEosRequest();
+
+  const handleAddEOSRequest = () => {
+    navigation.navigate('EmployeeEOS_SaveRecord', {
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      cameFrom: 'EmployeeEOSRequestListPage',
+      userData: effectiveUserData,
     });
   };
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
   const getPageLabel = () => {
     const currentMenuItem = menuItems.find(
       item => item.MenuId === 'EmployeeEOSRequestListPage',
     );
-    return currentMenuItem?.Label || t('EmployeeEOSRequestListPage.pageTitle'); // Fallback to default if not found
+    return currentMenuItem?.Label || t('EmployeeEOSRequestListPage.pageTitle');
   };
 
-  const handleButtonPress = (buttonType, itemData) => {
-    switch (buttonType) {
-      case 'clearance':
-        navigation.navigate('EmployeeEOSClearanceItemsListPage', {
-          employeeId: effectiveEmployeeId,
-          employeeName: effectiveEmployeeName,
-          WorkerRecId: effectiveWorkerRecId,
-          recId: itemData?.RecId, // 🔥 REQUIRED
-          cameFrom: 'EmployeeEOSRequestListPage',
-          userData: effectiveUserData,
-        });
-        break;
+  const getStatusLabel = status => {
+    const statusMap = {
+      NotSubmitted: 'Draft',
+      Approved: 'Approved',
+      Cancelled: 'Cancelled',
+      Rejected: 'Rejected',
+      Submitted: 'Submitted',
+      ChangeRequest: 'Change Request',
+      PendingCancellation: 'Pending Cancellation',
+      Returned: 'Returned',
+      PendingApproval: 'Pending Approval',
+      PendingComplete: 'Pending Complete',
+      WorkflowCompleted: 'Workflow Completed',
+      Completed: 'Completed',
+      Failed: 'Failed',
+    };
+    return statusMap[status] || 'Draft';
+  };
 
-      // other buttons (edit, delete, attachment, submit) can stay here
-      default:
-        console.log('Unknown button pressed:', buttonType);
+  const formatDate = date => {
+    if (!date) return '';
+    const d = new Date(date);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
+
+  // ── Search & Sort ──────────────────────────────────────────────────────────
+  const applySearchAndSort = useCallback((data, query, sort) => {
+    let result = [...data];
+
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      result = result.filter(item =>
+        Object.values(item).some(val =>
+          String(val ?? '')
+            .toLowerCase()
+            .includes(q),
+        ),
+      );
     }
+
+    if (sort) {
+      result.sort((a, b) => {
+        const getDate = obj => {
+          for (const val of Object.values(obj)) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d;
+          }
+          return new Date(0);
+        };
+        const diff = getDate(a) - getDate(b);
+        return sort === 'asc' ? diff : -diff;
+      });
+    }
+
+    setDisplayData(result);
+  }, []);
+
+  const handleSearch = query => {
+    setSearchQuery(query);
+    applySearchAndSort(rawData, query, sortOrder);
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    fetchEmployeeEosRequest();
+  const handleSort = sort => {
+    setSortOrder(sort);
+    applySearchAndSort(rawData, searchQuery, sort);
   };
 
+  const getFilteredData = () => {
+    return searchQuery.trim() ? displayData : rawData;
+  };
+
+  // ── Button Config ──────────────────────────────────────────────────────────
   const getButtonConfig = item => {
     const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
 
@@ -300,10 +280,10 @@ const EmployeeEOSRequestListPage = () => {
         iconColor: '#0A66C2',
       },
       clearance: {
-        show: true, // always show the clearance button
-        position: 'bottom', // shows at bottom of card
-        style: 'text', // text button
-        icon: 'check-circle', // optional icon
+        show: true,
+        position: 'bottom',
+        style: 'text',
+        icon: 'check-circle',
         iconSize: 16,
         text: t('buttons.clearance') || 'Clearance',
         textColor: '#0A66C2',
@@ -312,23 +292,49 @@ const EmployeeEOSRequestListPage = () => {
     };
   };
 
-  const getStatusLabel = status => {
-    const statusMap = {
-      NotSubmitted: 'Draft',
-      Approved: 'Approved',
-      Cancelled: 'Cancelled',
-      Rejected: 'Rejected',
-      Submitted: 'Submitted',
-      ChangeRequest: 'Change Request',
-      PendingCancellation: 'Pending Cancellation',
-      Returned: 'Returned',
-      PendingApproval: 'Pending Approval',
-      PendingComplete: 'Pending Complete',
-      WorkflowCompleted: 'Workflow Completed',
-      Completed: 'Completed',
-      Failed: 'Failed',
-    };
-    return statusMap[status] || 'Draft';
+  // ── Button Press Handler ───────────────────────────────────────────────────
+  const handleButtonPress = (buttonType, itemData) => {
+    switch (buttonType) {
+      case 'clearance':
+        navigation.navigate('EmployeeEOSClearanceItemsListPage', {
+          employeeId: effectiveEmployeeId,
+          employeeName: effectiveEmployeeName,
+          WorkerRecId: effectiveWorkerRecId,
+          recId: itemData?.RecId,
+          cameFrom: 'EmployeeEOSRequestListPage',
+          userData: effectiveUserData,
+        });
+        break;
+      default:
+        console.log('Unknown button pressed:', buttonType);
+    }
+  };
+
+  // ── Card Config & Render ───────────────────────────────────────────────────
+  const cardConfig = {
+    headerConfig: {
+      title: {key: 'EOSRequestId'},
+    },
+    fields: [
+      {key: 'EmployeePersonnelNumber', label: 'Employee Id', type: 'text'},
+      {key: 'EmployeeName', label: 'Employee Name', type: 'text'},
+      {key: 'EOSType', label: 'EOS Type', type: 'text'},
+      {key: 'NoticePeriodCode', label: 'Notice Period Code', type: 'text'},
+    ],
+    expandableFields: [
+      {key: 'EOSNotificationDate', label: 'Notification Date', type: 'date'},
+      {
+        key: 'LastWorkingDate_Actual',
+        label: 'Last Working Date Requested',
+        type: 'date',
+      },
+      {
+        key: 'LastWorkingDate_Calculated',
+        label: 'Last Working Date Planned',
+        type: 'date',
+      },
+    ],
+    isRTL: isRTL,
   };
 
   const renderEmployeeEOSReqCard = ({item}) => {
@@ -343,19 +349,16 @@ const EmployeeEOSRequestListPage = () => {
       LastWorkingDate_Calculated: formatDate(item.LastWorkingDate_Calculated),
     };
 
-    // Get button configuration
-    const buttonConfig = getButtonConfig(item);
-
     return (
       <DynamicRequestCard
         data={processedItem}
         headerConfig={cardConfig.headerConfig}
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
-        buttons={buttonConfig} // Only this prop needed now!
+        buttons={getButtonConfig(item)}
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
-        isExpandable={true} // Can set to false to disable
+        isExpandable={true}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
@@ -364,28 +367,49 @@ const EmployeeEOSRequestListPage = () => {
     );
   };
 
+  const filteredData = getFilteredData();
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <ActionPaneContainer
-      // pageTitle="Leave Requests"
       pageTitle={getPageLabel()}
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={EOSRequestData.length === 0}
+      showFloatingButton={true}
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      onFloatingButtonPress={handleAddEOSRequest}>
-      {/* Main content */}
+      onFloatingButtonPress={handleAddEOSRequest}
+      showPageTitleRow={true}
+      showSearchBar={true}
+      onSearchChange={handleSearch}
+      onSortChange={handleSort}
+      activeSortOrder={sortOrder}>
+      {/* Processing Overlay */}
+      {isProcessing && (
+        <View style={styles.DLP_ProcessingOverlay}>
+          <View style={styles.DLP_ProcessingContainer}>
+            <ActivityIndicator size="large" color="#0A66C2" />
+            <Text style={styles.DLP_ProcessingText}>
+              {t('common.processing')}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Main Content */}
       {isLoading ? (
-        <CustomIndicator />
-      ) : EOSRequestData.length > 0 ? (
+        <View style={styles.DLP_LoadingContainer}>
+          <CustomIndicator />
+        </View>
+      ) : filteredData.length > 0 ? (
         <FlatList
-          data={EOSRequestData}
+          data={filteredData}
           renderItem={renderEmployeeEOSReqCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
           }
-          contentContainerStyle={styles.LReqLP_ListContainer}
+          contentContainerStyle={styles.DLP_ListContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
@@ -393,45 +417,26 @@ const EmployeeEOSRequestListPage = () => {
         />
       ) : (
         <ScrollView
-          contentContainerStyle={{flexGrow: 1}}
+          contentContainerStyle={styles.DLP_NoDataContainer}
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          <Text style={styles.LReqLP_NoDataText}>
-            {t('Employee EOS Request Data Not Found')}
-          </Text>
+          {searchQuery.trim() ? (
+            <Text style={styles.DLP_NoDataSubText}>
+              No records match "{searchQuery}"
+            </Text>
+          ) : rawData.length === 0 ? (
+            <>
+              <Text style={styles.DLP_NoDataText}>Get started</Text>
+              <Text style={styles.DLP_NoDataSubText}>
+                Tap + to add a new record
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.DLP_NoDataText}>No records found.</Text>
+          )}
         </ScrollView>
       )}
-
-      {/* Attachment Modal
-      <DynamicAttachmentModal
-        visible={attachmentModalVisible}
-        recordData={selectedLeaveItem}
-        tableName="PREmployeeLeaveRequest"
-        onClose={() => {
-          setAttachmentModalVisible(false);
-          setSelectedLeaveItem(null);
-        }}
-        onSave={() => {
-          fetchEmployeeEosRequest();
-        }}
-        legalEntity={selectedLegalEntity}
-        employeeId={effectiveEmployeeId}
-        employeeName={effectiveEmployeeName}
-        modalTitle={t('EmployeeEOSRequestListPage.pageTitle') + ' Attachments'}
-        showDetails={true}
-        detailFields={[
-          {key: 'LeaveCode', label: 'Leave Type'},
-          {key: 'LeaveCategory', label: 'Category'},
-          {key: 'LeaveStartDate', label: 'Start Date'},
-          {key: 'LeaveEndDate', label: 'End Date'},
-        ]}
-        detailData={selectedLeaveItem || {}}
-        showTakePhoto={selectedLeaveItem?.WFStatus === 'Draft'}
-        showChooseFile={selectedLeaveItem?.WFStatus === 'Draft'}
-        showDownload={true}
-        showDelete={selectedLeaveItem?.WFStatus === 'Draft'}
-      /> */}
 
       {/* Alert Modal */}
       <AlertModal
