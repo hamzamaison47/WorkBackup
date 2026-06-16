@@ -1,161 +1,101 @@
 trigger:
   branches:
     include:
-      - operational
+      - operational   # your branch
 
-pr: none # Only run on direct pushes to operational, not PRs
+pr: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'macos-latest'   # IMPORTANT: needed for React Native + iOS + Android
 
 variables:
   NODE_VERSION: '18.x'
-  JAVA_VERSION: '17'           # Required by AGP 8.6.0
-  BUILD_VARIANT: 'assembleRelease'
-  APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
 
 stages:
 
-# ─────────────────────────────────────────────
-# STAGE 1 — Install & Lint
-# ─────────────────────────────────────────────
+# ─────────────────────────────
+# STAGE 1: INSTALL
+# ─────────────────────────────
 - stage: Install
-  displayName: 'Install & Lint'
+  displayName: Install Dependencies
   jobs:
-    - job: Setup
-      displayName: 'npm ci + lint'
+    - job: setup
       steps:
 
         - task: NodeTool@0
-          displayName: 'Use Node $(NODE_VERSION)'
           inputs:
-            versionSpec: $(NODE_VERSION)
+            versionSpec: '$(NODE_VERSION)'
 
-        - task: Cache@2
-          displayName: 'Cache node_modules'
-          inputs:
-            key: 'npm | "$(Agent.OS)" | package-lock.json'
-            restoreKeys: |
-              npm | "$(Agent.OS)"
-            path: node_modules
+        - script: npm install
+          displayName: Install packages
 
-        - script: npm install --legacy-peer-deps
-          displayName: 'Install dependencies'
+        - script: npm run lint --if-present
+          displayName: Lint code
 
-        - script: npm run lint
-          displayName: 'Run ESLint'
-          continueOnError: false
-
-        - script: npm test -- --passWithNoTests
-          displayName: 'Run Jest tests'
+        - script: npm test --if-present
+          displayName: Run tests
 
 
-# ─────────────────────────────────────────────
-# STAGE 2 — Build Release APK
-# ─────────────────────────────────────────────
+# ─────────────────────────────
+# STAGE 2: ANDROID BUILD
+# ─────────────────────────────
 - stage: Android
-  displayName: 'Build Android Release APK'
+  displayName: Build Android APK
   dependsOn: Install
   jobs:
-    - job: BuildAPK
-      displayName: 'Gradle assembleRelease'
+    - job: android
       steps:
 
         - task: NodeTool@0
-          displayName: 'Use Node $(NODE_VERSION)'
           inputs:
-            versionSpec: $(NODE_VERSION)
+            versionSpec: '$(NODE_VERSION)'
 
-        - task: Cache@2
-          displayName: 'Restore node_modules cache'
-          inputs:
-            key: 'npm | "$(Agent.OS)" | package-lock.json'
-            restoreKeys: |
-              npm | "$(Agent.OS)"
-            path: node_modules
-
-        - script: npm install --legacy-peer-deps
-          displayName: 'Install dependencies'
-
-        - task: JavaToolInstaller@0
-          displayName: 'Use JDK $(JAVA_VERSION)'
-          inputs:
-            versionSpec: $(JAVA_VERSION)
-            jdkArchitectureOption: 'x64'
-            jdkSourceOption: 'PreInstalled'
-
-        # ── Secure Files ──────────────────────────────────────
-        # Decode the base64-encoded keystore stored as a secret variable
-        - script: |
-            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
-          displayName: 'Decode & place keystore'
-
-        # Download google-services.json from Library → Secure Files
-        - task: DownloadSecureFile@1
-          displayName: 'Download google-services.json'
-          name: googleServices
-          inputs:
-            secureFile: 'google-services.json'
-
-        - script: cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: 'Place google-services.json'
-
-        # ── Build ─────────────────────────────────────────────
-        - script: chmod +x android/gradlew
-          displayName: 'Make gradlew executable'
+        - script: npm install
+          displayName: Install dependencies
 
         - script: |
-            cd android && ./gradlew $(BUILD_VARIANT) \
-              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
-              -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
-              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
-              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
-              --no-daemon \
-              --stacktrace
-          displayName: 'Build release APK'
+            cd android
+            chmod +x gradlew
+            ./gradlew assembleRelease
+          displayName: Build Android Release APK
 
-        # ── Artifact ──────────────────────────────────────────
         - task: PublishBuildArtifacts@1
-          displayName: 'Publish APK artifact'
           inputs:
-            pathToPublish: $(APK_OUTPUT_PATH)
-            artifactName: 'Authentication-release-apk'
-            publishLocation: 'Container'
-  # ─────────────────────────────────────────────
-  # STAGE 3 — Firebase App Distribution
-  # ─────────────────────────────────────────────
-- stage: Distribute
-  displayName: 'Distribute via Firebase'
-  dependsOn: Android
+            pathToPublish: 'android/app/build/outputs/apk/release'
+            artifactName: 'android-apk'
+
+
+# ─────────────────────────────
+# STAGE 3: IOS BUILD
+# ─────────────────────────────
+- stage: iOS
+  displayName: Build iOS IPA
+  dependsOn: Install
   jobs:
-    - job: FirebaseDistribute
-      displayName: 'Upload APK to Firebase App Distribution'
+    - job: ios
       steps:
-        # ── Download the built APK from previous stage ────────
-        - task: DownloadBuildArtifacts@1
-          displayName: 'Download APK artifact'
-          inputs:
-            buildType: 'current'
-            downloadType: 'single'
-            artifactName: 'Authentication-release-apk'
-            downloadPath: '$(System.ArtifactsDirectory)'
 
-        # ── Download Firebase service account JSON ────────────
-        - task: DownloadSecureFile@1
-          displayName: 'Download Firebase service account'
-          name: firebaseServiceAccount
+        - task: NodeTool@0
           inputs:
-            secureFile: 'firebase-app-distributor-dynaface-operational.json'   # must match the name you uploaded
+            versionSpec: '$(NODE_VERSION)'
 
-        # ── Install Firebase CLI ──────────────────────────────
-        - script: npm install -g firebase-tools
-          displayName: 'Install Firebase CLI'
-        # ── Upload & Distribute ───────────────────────────────
+        - script: npm install
+          displayName: Install dependencies
+
         - script: |
-            export GOOGLE_APPLICATION_CREDENTIALS=$(firebaseServiceAccount.secureFilePath)
-            firebase appdistribution:distribute \
-              $(System.ArtifactsDirectory)/Authentication-release-apk/app-release.apk \
-              --app $(FIREBASE_APP_ID) \
-              --groups "testers" \
-              --release-notes "Build $(Build.BuildNumber) — branch $(Build.SourceBranchName)"
-          displayName: 'Upload APK to Firebase App Distribution'
+            cd ios
+            pod install
+          displayName: Install CocoaPods
+
+        - script: |
+            xcodebuild -workspace ios/*.xcworkspace \
+            -scheme YOUR_APP_NAME \
+            -configuration Release \
+            archive \
+            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
+          displayName: Build iOS Archive
+
+        - task: PublishBuildArtifacts@1
+          inputs:
+            pathToPublish: '$(Build.ArtifactStagingDirectory)'
+            artifactName: 'ios-build'
