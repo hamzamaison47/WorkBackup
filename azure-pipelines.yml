@@ -9,7 +9,7 @@ pool:
   vmImage: 'macos-latest'
 
 variables:
-  NODE_VERSION: '18.x'   # ✅ FIXED (IMPORTANT)
+  NODE_VERSION: '18.x'
 
 stages:
 
@@ -25,11 +25,9 @@ stages:
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
-          displayName: Install Node
 
         - script: |
             node -v
-            npm -v
             npm ci --legacy-peer-deps
           displayName: Install packages
 
@@ -41,7 +39,7 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 2: ANDROID BUILD
+# STAGE 2: ANDROID BUILD (FIXED)
 # ─────────────────────────────
 - stage: Android
   displayName: Build Android APK
@@ -53,12 +51,20 @@ stages:
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
-          displayName: Install Node
+
+        - script: npm ci --legacy-peer-deps
+          displayName: Install dependencies
+
+        # ✅ FIX: Firebase file missing issue
+        - task: DownloadSecureFile@1
+          name: googleServices
+          inputs:
+            secureFile: 'google-services.json'
 
         - script: |
-            node -v
-            npm ci --legacy-peer-deps
-          displayName: Install dependencies
+            mkdir -p android/app
+            cp $(googleServices.secureFilePath) android/app/google-services.json
+          displayName: Place google-services.json
 
         - script: |
             cd android
@@ -73,7 +79,7 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 3: IOS BUILD
+# STAGE 3: IOS BUILD (FIXED)
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
@@ -85,11 +91,8 @@ stages:
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
-          displayName: Install Node
 
-        - script: |
-            node -v
-            npm ci --legacy-peer-deps
+        - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
         - script: |
@@ -97,9 +100,10 @@ stages:
             pod install
           displayName: Install CocoaPods
 
+        # 🔥 FIX: Correct scheme MUST be used here
         - script: |
-            xcodebuild -workspace ios/*.xcworkspace \
-            -Authentication \
+            xcodebuild -workspace ios/Authentication.xcworkspace \
+            -scheme Authentication \
             -configuration Release \
             archive \
             -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
