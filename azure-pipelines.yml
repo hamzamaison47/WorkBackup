@@ -9,7 +9,7 @@ pool:
   vmImage: 'macos-latest'   # IMPORTANT: needed for React Native + iOS + Android
 
 variables:
-  NODE_VERSION: '18.x'
+  NODE_VERSION: '16.x'
 
 stages:
 
@@ -26,7 +26,7 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - script: npm install
+        - script: npm ci --legacy-peer-deps
           displayName: Install packages
 
         - script: npm run lint --if-present
@@ -50,7 +50,7 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - script: npm install
+        - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
         - script: |
@@ -79,7 +79,7 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - script: npm install
+        - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
         - script: |
