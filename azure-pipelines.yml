@@ -99,7 +99,7 @@ stages:
 
         - script: |
             xcodebuild -workspace ios/*.xcworkspace \
-            -scheme YOUR_APP_NAME \
+            -Authentication \
             -configuration Release \
             archive \
             -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
