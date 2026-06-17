@@ -12,16 +12,21 @@ variables:
   NODE_VERSION: '18.x'
   APP_SCHEME: 'Authentication'
 
+  # Android variables (from your working pipeline)
+  JAVA_VERSION: '17'
+  BUILD_VARIANT: 'assembleRelease'
+  APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
+
 stages:
 
 # ─────────────────────────────
 # INSTALL
 # ─────────────────────────────
 - stage: Install
+  displayName: Install Dependencies
   jobs:
     - job: setup
       steps:
-
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
@@ -33,60 +38,82 @@ stages:
 
 
 # ─────────────────────────────
-# ANDROID
+# ANDROID (REPLACED WITH YOUR WORKING VERSION)
 # ─────────────────────────────
 - stage: Android
+  displayName: Build Android Release APK
+  dependsOn: Install
   jobs:
-    - job: build
+    - job: BuildAPK
       pool:
         vmImage: 'ubuntu-latest'
       steps:
 
         - task: NodeTool@0
+          displayName: 'Use Node $(NODE_VERSION)'
           inputs:
+            versionSource: 'spec'
             versionSpec: '$(NODE_VERSION)'
+            checkLatest: true
 
-        - script: npm ci --legacy-peer-deps
+        - task: Cache@2
+          displayName: Cache node_modules
+          inputs:
+            key: 'npm | "$(Agent.OS)" | package-lock.json'
+            restoreKeys: |
+              npm | "$(Agent.OS)"
+            path: node_modules
+
+        - script: npm install --legacy-peer-deps
           displayName: Install dependencies
 
-        # Firebase config
+        - task: JavaToolInstaller@0
+          displayName: 'Use JDK $(JAVA_VERSION)'
+          inputs:
+            versionSpec: '$(JAVA_VERSION)'
+            jdkArchitectureOption: 'x64'
+            jdkSourceOption: 'PreInstalled'
+
+        # Decode keystore
+        - script: |
+            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
+          displayName: Decode & place keystore
+
+        # google-services.json
         - task: DownloadSecureFile@1
+          displayName: Download google-services.json
           name: googleServices
           inputs:
             secureFile: 'google-services.json'
 
+        - script: cp $(googleServices.secureFilePath) android/app/google-services.json
+          displayName: Place google-services.json
+
+        # Build
+        - script: chmod +x android/gradlew
+          displayName: Make gradlew executable
+
         - script: |
-            mkdir -p android/app
-            cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: Add google-services.json
+            cd android && ./gradlew $(BUILD_VARIANT) \
+              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
+              -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
+              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
+              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
+              --no-daemon \
+              --stacktrace
+          displayName: Build release APK
 
-        # Keystore (BASE64 FIX - SAFE)
-        - script: |
-            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
-          displayName: Decode Keystore
-
-        # 🔥 FIX: export env properly
-        - script: |
-            cd android
-            chmod +x gradlew
-
-            export MYAPP_UPLOAD_STORE_FILE=release.keystore
-            export MYAPP_UPLOAD_STORE_PASSWORD="$(KEYSTORE_PASSWORD)"
-            export MYAPP_UPLOAD_KEY_ALIAS="$(KEY_ALIAS)"
-            export MYAPP_UPLOAD_KEY_PASSWORD="$(KEY_PASSWORD)"
-
-            ./gradlew clean
-            ./gradlew assembleRelease --stacktrace
-          displayName: Build Android APK
-
+        # Publish APK
         - task: PublishBuildArtifacts@1
+          displayName: Publish APK artifact
           inputs:
-            pathToPublish: android/app/build/outputs/apk/release
-            artifactName: android-apk
+            pathToPublish: $(APK_OUTPUT_PATH)
+            artifactName: Authentication-release-apk
+            publishLocation: Container
 
 
 # ─────────────────────────────
-# IOS
+# IOS (UNCHANGED)
 # ─────────────────────────────
 - stage: iOS
   jobs:
@@ -109,7 +136,7 @@ stages:
             pod install --repo-update
           displayName: Install Pods
 
-        # FIX: correct workspace path
+        # Clean Xcode
         - script: |
             xcodebuild clean \
               -workspace ios/Authentication.xcworkspace \
