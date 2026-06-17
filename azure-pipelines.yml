@@ -6,15 +6,16 @@ trigger:
 pr: none
 
 pool:
-  vmImage: 'ubuntu-latest'   # default pool for jobs that don't need macOS
+  vmImage: 'macos-latest'
 
 variables:
   NODE_VERSION: '18.x'
+  APP_SCHEME: 'Authentication'
 
 stages:
 
 # ─────────────────────────────
-# STAGE 1: INSTALL
+# INSTALL STAGE
 # ─────────────────────────────
 - stage: Install
   displayName: Install Dependencies
@@ -25,7 +26,6 @@ stages:
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
-          displayName: Install Node
 
         - script: |
             node -v
@@ -34,7 +34,7 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 2: ANDROID
+# ANDROID STAGE
 # ─────────────────────────────
 - stage: Android
   displayName: Build Android APK
@@ -42,7 +42,7 @@ stages:
   jobs:
     - job: android
       pool:
-        vmImage: 'ubuntu-latest'   # Android doesn't need macOS — faster, cheaper, more reliable network
+        vmImage: 'ubuntu-latest'
       steps:
 
         - task: NodeTool@0
@@ -52,7 +52,7 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # ───── FIREBASE CONFIG ─────
+        # Firebase config
         - task: DownloadSecureFile@1
           name: googleServices
           inputs:
@@ -61,40 +61,35 @@ stages:
         - script: |
             mkdir -p android/app
             cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: Place google-services.json
+          displayName: Add google-services.json
 
-        # ───── KEYSTORE ─────
-        - task: DownloadSecureFile@1
-          name: keystoreFile
-          inputs:
-            secureFile: 'debug.keystore'
-
+        # KEYSTORE (BASE64 FIX - YOUR ACTUAL SETUP)
         - script: |
-            cp $(keystoreFile.secureFilePath) android/app/debug.keystore
-          displayName: Place keystore
+            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
+          displayName: Decode Keystore
 
-        # ───── BUILD ANDROID (with network retry/timeout hardening) ─────
+        # Android Build
         - script: |
             cd android
             chmod +x gradlew
             ./gradlew clean
-            ./gradlew assembleRelease --stacktrace --no-daemon \
-              -Dorg.gradle.internal.http.connectionTimeout=180000 \
-              -Dorg.gradle.internal.http.socketTimeout=180000 \
-              -Dorg.gradle.internal.repository.max.retries=10 \
-              -Dorg.gradle.internal.repository.initial.backoff=500
+            ./gradlew assembleRelease \
+              --stacktrace \
+              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
+              -PMYAPP_UPLOAD_STORE_PASSWORD=$(KEYSTORE_PASSWORD) \
+              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
+              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD)
           displayName: Build Android APK
-          retryCountOnTaskFailure: 2
 
-        # ───── ARTIFACT ─────
+        # Artifact
         - task: PublishBuildArtifacts@1
           inputs:
-            pathToPublish: 'android/app/build/outputs/apk/release'
-            artifactName: 'android-apk'
+            pathToPublish: android/app/build/outputs/apk/release
+            artifactName: android-apk
 
 
 # ─────────────────────────────
-# STAGE 3: IOS
+# IOS STAGE (PRODUCTION READY)
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
@@ -102,7 +97,7 @@ stages:
   jobs:
     - job: ios
       pool:
-        vmImage: 'macos-latest'   # iOS builds require macOS
+        vmImage: 'macos-latest'
       steps:
 
         - task: NodeTool@0
@@ -112,69 +107,41 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # ───── DOWNLOAD SIGNING ASSETS ─────
-        # Replace the secureFile names below with whatever you named them
-        # when uploading to Pipelines > Library > Secure Files
-        - task: DownloadSecureFile@1
-          name: signingCert
-          inputs:
-            secureFile: 'ios_distribution.p12'
-
-        - task: DownloadSecureFile@1
-          name: provisioningProfile
-          inputs:
-            secureFile: 'Dynaface.mobileprovision'
-
-        # ───── IMPORT CERTIFICATE INTO A TEMP KEYCHAIN ─────
-        # P12_PASSWORD and KEYCHAIN_PASSWORD must be set as SECRET pipeline variables
-        - script: |
-            KEYCHAIN_PATH=$(Agent.TempDirectory)/build.keychain
-            security create-keychain -p "$(KEYCHAIN_PASSWORD)" $KEYCHAIN_PATH
-            security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-            security unlock-keychain -p "$(KEYCHAIN_PASSWORD)" $KEYCHAIN_PATH
-            security import $(signingCert.secureFilePath) -P "$(P12_PASSWORD)" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$(KEYCHAIN_PASSWORD)" $KEYCHAIN_PATH
-            security list-keychain -d user -s $KEYCHAIN_PATH login.keychain
-          displayName: Import signing certificate into keychain
-
-        # ───── INSTALL PROVISIONING PROFILE ─────
-        - script: |
-            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-            cp $(provisioningProfile.secureFilePath) ~/Library/MobileDevice/Provisioning\ Profiles/
-          displayName: Install provisioning profile
-
-        # ───── CLEAN PODS ─────
+        # Clean Pods (CRITICAL FIX)
         - script: |
             cd ios
             rm -rf Pods Podfile.lock build
             pod install --repo-update
-          displayName: Clean CocoaPods
+          displayName: Install Pods
 
-        # ───── CLEAN XCODE ─────
+        # Clean Xcode
         - script: |
-            xcodebuild clean -workspace ios/Authentication.xcworkspace \
-            -scheme Authentication
+            xcodebuild clean \
+              -workspace Authentication.xcworkspace \
+              -scheme $(APP_SCHEME)
           displayName: Clean Xcode
 
-        # ───── ARCHIVE ─────
+        # Archive iOS
         - script: |
-            xcodebuild -workspace ios/Authentication.xcworkspace \
-            -scheme Authentication \
-            -configuration Release \
-            archive \
-            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
+            xcodebuild \
+              -workspace ios/Authentication.xcworkspace \
+              -scheme $(APP_SCHEME) \
+              -configuration Release \
+              archive \
+              -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+              -allowProvisioningUpdates
           displayName: Build iOS Archive
 
-        # ───── EXPORT IPA ─────
+        # Export IPA
         - script: |
             xcodebuild -exportArchive \
-            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
-            -exportPath $(Build.ArtifactStagingDirectory)/ipa \
-            -exportOptionsPlist ios/exportOptions.plist
+              -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+              -exportPath $(Build.ArtifactStagingDirectory)/ipa \
+              -exportOptionsPlist ios/exportOptions.plist
           displayName: Export IPA
 
-        # ───── ARTIFACT ─────
+        # Artifact
         - task: PublishBuildArtifacts@1
           inputs:
-            pathToPublish: '$(Build.ArtifactStagingDirectory)'
-            artifactName: 'ios-build'
+            pathToPublish: $(Build.ArtifactStagingDirectory)
+            artifactName: ios-build
