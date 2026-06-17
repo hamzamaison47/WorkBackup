@@ -6,7 +6,7 @@ trigger:
 pr: none
 
 pool:
-  vmImage: 'macos-latest'
+  vmImage: 'ubuntu-latest'   # default pool for jobs that don't need macOS
 
 variables:
   NODE_VERSION: '18.x'
@@ -34,13 +34,15 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 2: ANDROID (FIXED EVERYTHING)
+# STAGE 2: ANDROID
 # ─────────────────────────────
 - stage: Android
   displayName: Build Android APK
   dependsOn: Install
   jobs:
     - job: android
+      pool:
+        vmImage: 'ubuntu-latest'   # Android doesn't need macOS — faster, cheaper, more reliable network
       steps:
 
         - task: NodeTool@0
@@ -50,7 +52,7 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # ───── FIREBASE CONFIG FIX ─────
+        # ───── FIREBASE CONFIG ─────
         - task: DownloadSecureFile@1
           name: googleServices
           inputs:
@@ -61,7 +63,7 @@ stages:
             cp $(googleServices.secureFilePath) android/app/google-services.json
           displayName: Place google-services.json
 
-        # ───── KEYSTORE FIX ─────
+        # ───── KEYSTORE ─────
         - task: DownloadSecureFile@1
           name: keystoreFile
           inputs:
@@ -71,13 +73,18 @@ stages:
             cp $(keystoreFile.secureFilePath) android/app/debug.keystore
           displayName: Place keystore
 
-        # ───── BUILD ANDROID ─────
+        # ───── BUILD ANDROID (with network retry/timeout hardening) ─────
         - script: |
             cd android
             chmod +x gradlew
             ./gradlew clean
-            ./gradlew assembleRelease --stacktrace
+            ./gradlew assembleRelease --stacktrace --no-daemon \
+              -Dorg.gradle.internal.http.connectionTimeout=180000 \
+              -Dorg.gradle.internal.http.socketTimeout=180000 \
+              -Dorg.gradle.internal.repository.max.retries=10 \
+              -Dorg.gradle.internal.repository.initial.backoff=500
           displayName: Build Android APK
+          retryCountOnTaskFailure: 2
 
         # ───── ARTIFACT ─────
         - task: PublishBuildArtifacts@1
@@ -87,13 +94,15 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 3: IOS (FULL FIXED)
+# STAGE 3: IOS
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
   dependsOn: Install
   jobs:
     - job: ios
+      pool:
+        vmImage: 'macos-latest'   # iOS builds require macOS
       steps:
 
         - task: NodeTool@0
@@ -103,11 +112,42 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # ───── CLEAN PODS (VERY IMPORTANT) ─────
+        # ───── DOWNLOAD SIGNING ASSETS ─────
+        # Replace the secureFile names below with whatever you named them
+        # when uploading to Pipelines > Library > Secure Files
+        - task: DownloadSecureFile@1
+          name: signingCert
+          inputs:
+            secureFile: 'ios_distribution.p12'
+
+        - task: DownloadSecureFile@1
+          name: provisioningProfile
+          inputs:
+            secureFile: 'Dynaface.mobileprovision'
+
+        # ───── IMPORT CERTIFICATE INTO A TEMP KEYCHAIN ─────
+        # P12_PASSWORD and KEYCHAIN_PASSWORD must be set as SECRET pipeline variables
+        - script: |
+            KEYCHAIN_PATH=$(Agent.TempDirectory)/build.keychain
+            security create-keychain -p "$(KEYCHAIN_PASSWORD)" $KEYCHAIN_PATH
+            security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+            security unlock-keychain -p "$(KEYCHAIN_PASSWORD)" $KEYCHAIN_PATH
+            security import $(signingCert.secureFilePath) -P "$(P12_PASSWORD)" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$(KEYCHAIN_PASSWORD)" $KEYCHAIN_PATH
+            security list-keychain -d user -s $KEYCHAIN_PATH login.keychain
+          displayName: Import signing certificate into keychain
+
+        # ───── INSTALL PROVISIONING PROFILE ─────
+        - script: |
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            cp $(provisioningProfile.secureFilePath) ~/Library/MobileDevice/Provisioning\ Profiles/
+          displayName: Install provisioning profile
+
+        # ───── CLEAN PODS ─────
         - script: |
             cd ios
             rm -rf Pods Podfile.lock build
-            pod install
+            pod install --repo-update
           displayName: Clean CocoaPods
 
         # ───── CLEAN XCODE ─────
@@ -122,8 +162,7 @@ stages:
             -scheme Authentication \
             -configuration Release \
             archive \
-            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
-            -allowProvisioningUpdates
+            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
           displayName: Build iOS Archive
 
         # ───── EXPORT IPA ─────
