@@ -2,27 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>method</key>
-    <string>app-store</string>
+  <key>method</key>
+  <string>ad-hoc</string>
 
-    <key>teamID</key>
-    <string>VQJ56CW334</string>
-
-    <key>signingStyle</key>
-    <string>manual</string>
-
-    <key>signingCertificate</key>
-    <string>Apple Distribution</string>
-
-    <!-- Double-check this profile name matches EXACTLY (including dots/case)
-         what's shown on developer.apple.com -> Profiles -->
-    <key>provisioningProfiles</key>
-    <dict>
-        <key>com.danishbutt.dynaface</key>
-        <string>XC com.danishbutt.dynaface</string>
-    </dict>
-
-    <key>uploadSymbols</key>
-    <true/>
+  <key>signingStyle</key>
+  <string>automatic</string>
 </dict>
 </plist>
