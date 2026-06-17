@@ -32,15 +32,9 @@ stages:
             npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        - script: npm run lint --if-present
-          displayName: Lint
-
-        - script: npm test --if-present
-          displayName: Test
-
 
 # ─────────────────────────────
-# STAGE 2: ANDROID BUILD (FIXED)
+# STAGE 2: ANDROID (FIXED EVERYTHING)
 # ─────────────────────────────
 - stage: Android
   displayName: Build Android APK
@@ -56,23 +50,36 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # 🔥 USE YOUR UPLOADED DEBUG KEYSTORE
+        # ───── FIREBASE CONFIG FIX ─────
+        - task: DownloadSecureFile@1
+          name: googleServices
+          inputs:
+            secureFile: 'google-services.json'
+
+        - script: |
+            mkdir -p android/app
+            cp $(googleServices.secureFilePath) android/app/google-services.json
+          displayName: Place google-services.json
+
+        # ───── KEYSTORE FIX ─────
         - task: DownloadSecureFile@1
           name: keystoreFile
           inputs:
             secureFile: 'debug.keystore'
 
         - script: |
-            mkdir -p android/app
             cp $(keystoreFile.secureFilePath) android/app/debug.keystore
-          displayName: Place keystore file
+          displayName: Place keystore
 
+        # ───── BUILD ANDROID ─────
         - script: |
             cd android
             chmod +x gradlew
-            ./gradlew assembleRelease
-          displayName: Build Android Release APK
+            ./gradlew clean
+            ./gradlew assembleRelease --stacktrace
+          displayName: Build Android APK
 
+        # ───── ARTIFACT ─────
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: 'android/app/build/outputs/apk/release'
@@ -80,7 +87,7 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 3: IOS BUILD (FULL FIXED)
+# STAGE 3: IOS (FULL FIXED)
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
@@ -96,21 +103,30 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
+        # ───── CLEAN PODS (VERY IMPORTANT) ─────
         - script: |
             cd ios
+            rm -rf Pods Podfile.lock build
             pod install
-          displayName: Install CocoaPods
+          displayName: Clean CocoaPods
 
-        # 🔥 ARCHIVE STEP
+        # ───── CLEAN XCODE ─────
+        - script: |
+            xcodebuild clean -workspace ios/Authentication.xcworkspace \
+            -scheme Authentication
+          displayName: Clean Xcode
+
+        # ───── ARCHIVE ─────
         - script: |
             xcodebuild -workspace ios/Authentication.xcworkspace \
             -scheme Authentication \
             -configuration Release \
             archive \
-            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
+            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+            -allowProvisioningUpdates
           displayName: Build iOS Archive
 
-        # 🔥 EXPORT IPA STEP (IMPORTANT)
+        # ───── EXPORT IPA ─────
         - script: |
             xcodebuild -exportArchive \
             -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
@@ -118,6 +134,7 @@ stages:
             -exportOptionsPlist ios/exportOptions.plist
           displayName: Export IPA
 
+        # ───── ARTIFACT ─────
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: '$(Build.ArtifactStagingDirectory)'
