@@ -25,17 +25,18 @@ stages:
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
+          displayName: Install Node
 
         - script: |
             node -v
             npm ci --legacy-peer-deps
-          displayName: Install packages
+          displayName: Install dependencies
 
         - script: npm run lint --if-present
-          displayName: Lint code
+          displayName: Lint
 
         - script: npm test --if-present
-          displayName: Run tests
+          displayName: Test
 
 
 # ─────────────────────────────
@@ -55,16 +56,16 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # ✅ FIX: Firebase file missing issue
+        # 🔥 USE YOUR UPLOADED DEBUG KEYSTORE
         - task: DownloadSecureFile@1
-          name: googleServices
+          name: keystoreFile
           inputs:
-            secureFile: 'google-services.json'
+            secureFile: 'debug.keystore'
 
         - script: |
             mkdir -p android/app
-            cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: Place google-services.json
+            cp $(keystoreFile.secureFilePath) android/app/debug.keystore
+          displayName: Place keystore file
 
         - script: |
             cd android
@@ -79,7 +80,7 @@ stages:
 
 
 # ─────────────────────────────
-# STAGE 3: IOS BUILD (FIXED)
+# STAGE 3: IOS BUILD (FULL FIXED)
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
@@ -100,7 +101,7 @@ stages:
             pod install
           displayName: Install CocoaPods
 
-        # 🔥 FIX: Correct scheme MUST be used here
+        # 🔥 ARCHIVE STEP
         - script: |
             xcodebuild -workspace ios/Authentication.xcworkspace \
             -scheme Authentication \
@@ -108,6 +109,14 @@ stages:
             archive \
             -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive
           displayName: Build iOS Archive
+
+        # 🔥 EXPORT IPA STEP (IMPORTANT)
+        - script: |
+            xcodebuild -exportArchive \
+            -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+            -exportPath $(Build.ArtifactStagingDirectory)/ipa \
+            -exportOptionsPlist ios/exportOptions.plist
+          displayName: Export IPA
 
         - task: PublishBuildArtifacts@1
           inputs:
