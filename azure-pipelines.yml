@@ -15,10 +15,9 @@ variables:
 stages:
 
 # ─────────────────────────────
-# INSTALL STAGE
+# INSTALL
 # ─────────────────────────────
 - stage: Install
-  displayName: Install Dependencies
   jobs:
     - job: setup
       steps:
@@ -34,13 +33,11 @@ stages:
 
 
 # ─────────────────────────────
-# ANDROID STAGE
+# ANDROID
 # ─────────────────────────────
 - stage: Android
-  displayName: Build Android APK
-  dependsOn: Install
   jobs:
-    - job: android
+    - job: build
       pool:
         vmImage: 'ubuntu-latest'
       steps:
@@ -63,25 +60,25 @@ stages:
             cp $(googleServices.secureFilePath) android/app/google-services.json
           displayName: Add google-services.json
 
-        # KEYSTORE (BASE64 FIX - YOUR ACTUAL SETUP)
+        # Keystore (BASE64 FIX - SAFE)
         - script: |
             echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
           displayName: Decode Keystore
 
-        # Android Build
+        # 🔥 FIX: export env properly
         - script: |
             cd android
             chmod +x gradlew
+
+            export MYAPP_UPLOAD_STORE_FILE=release.keystore
+            export MYAPP_UPLOAD_STORE_PASSWORD="$(KEYSTORE_PASSWORD)"
+            export MYAPP_UPLOAD_KEY_ALIAS="$(KEY_ALIAS)"
+            export MYAPP_UPLOAD_KEY_PASSWORD="$(KEY_PASSWORD)"
+
             ./gradlew clean
-            ./gradlew assembleRelease \
-              --stacktrace \
-              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
-              -PMYAPP_UPLOAD_STORE_PASSWORD=$(KEYSTORE_PASSWORD) \
-              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
-              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD)
+            ./gradlew assembleRelease --stacktrace
           displayName: Build Android APK
 
-        # Artifact
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: android/app/build/outputs/apk/release
@@ -89,13 +86,11 @@ stages:
 
 
 # ─────────────────────────────
-# IOS STAGE (PRODUCTION READY)
+# IOS
 # ─────────────────────────────
 - stage: iOS
-  displayName: Build iOS IPA
-  dependsOn: Install
   jobs:
-    - job: ios
+    - job: build
       pool:
         vmImage: 'macos-latest'
       steps:
@@ -107,21 +102,21 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install dependencies
 
-        # Clean Pods (CRITICAL FIX)
+        # Clean Pods
         - script: |
             cd ios
             rm -rf Pods Podfile.lock build
             pod install --repo-update
           displayName: Install Pods
 
-        # Clean Xcode
+        # FIX: correct workspace path
         - script: |
             xcodebuild clean \
-              -workspace Authentication.xcworkspace \
+              -workspace ios/Authentication.xcworkspace \
               -scheme $(APP_SCHEME)
           displayName: Clean Xcode
 
-        # Archive iOS
+        # Archive
         - script: |
             xcodebuild \
               -workspace ios/Authentication.xcworkspace \
@@ -140,7 +135,6 @@ stages:
               -exportOptionsPlist ios/exportOptions.plist
           displayName: Export IPA
 
-        # Artifact
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: $(Build.ArtifactStagingDirectory)
