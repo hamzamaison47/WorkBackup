@@ -19,10 +19,9 @@ variables:
 stages:
 
 # ─────────────────────────────
-# INSTALL STAGE
+# INSTALL
 # ─────────────────────────────
 - stage: Install
-  displayName: Install Dependencies
   jobs:
     - job: setup
       steps:
@@ -30,21 +29,18 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - task: CmdLine@2
+        - script: |
+            node -v
+            npm ci --legacy-peer-deps
           displayName: Install dependencies
-          inputs:
-            script: |
-              node -v
-              npm ci --legacy-peer-deps
 
 # ─────────────────────────────
-# ANDROID STAGE
+# ANDROID
 # ─────────────────────────────
 - stage: Android
-  displayName: Build Android APK
   dependsOn: Install
   jobs:
-    - job: BuildAPK
+    - job: BuildAndroid
       pool:
         vmImage: 'ubuntu-latest'
       steps:
@@ -53,50 +49,30 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - task: Cache@2
-          inputs:
-            key: 'npm | "$(Agent.OS)" | package-lock.json'
-            path: node_modules
-
-        - task: CmdLine@2
-          displayName: Install dependencies
-          inputs:
-            script: npm install --legacy-peer-deps
+        - script: npm install --legacy-peer-deps
+          displayName: Install JS deps
 
         - task: JavaToolInstaller@0
           inputs:
             versionSpec: '$(JAVA_VERSION)'
-            jdkArchitectureOption: 'x64'
-            jdkSourceOption: 'PreInstalled'
 
-        - task: CmdLine@2
-          displayName: Decode Keystore
-          inputs:
-            script: |
-              echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
+        - script: |
+            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
+          displayName: Decode keystore
 
         - task: DownloadSecureFile@1
           name: googleServices
           inputs:
             secureFile: google-services.json
 
-        - task: CmdLine@2
+        - script: cp $(googleServices.secureFilePath) android/app/google-services.json
           displayName: Copy google-services.json
-          inputs:
-            script: cp $(googleServices.secureFilePath) android/app/google-services.json
 
-        - task: CmdLine@2
+        - script: |
+            cd android
+            chmod +x gradlew
+            ./gradlew $(BUILD_VARIANT) --no-daemon --stacktrace
           displayName: Build Android
-          inputs:
-            script: |
-              cd android
-              chmod +x gradlew
-              ./gradlew $(BUILD_VARIANT) \
-                -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
-                -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
-                -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
-                -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
-                --no-daemon --stacktrace
 
         - task: PublishBuildArtifacts@1
           inputs:
@@ -104,13 +80,12 @@ stages:
             artifactName: android-release
 
 # ─────────────────────────────
-# iOS STAGE (FULL FIXED)
+# iOS (FULL FIXED + GUARANTEED)
 # ─────────────────────────────
 - stage: iOS
-  displayName: Build iOS IPA
   dependsOn: Install
   jobs:
-    - job: build
+    - job: BuildiOS
       pool:
         vmImage: 'macos-latest'
       steps:
@@ -119,79 +94,82 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - task: CmdLine@2
+        - script: npm ci --legacy-peer-deps
           displayName: Install JS deps
-          inputs:
-            script: npm ci --legacy-peer-deps
 
         # ─────────────────────────────
-        # POD INSTALL (FIXED + RETRY + STABLE)
+        # POD INSTALL (ROBUST FIX)
         # ─────────────────────────────
-        - task: CmdLine@2
+        - script: |
+            set -e
+            cd ios
+
+            rm -rf Pods Podfile.lock
+
+            git config --global http.postBuffer 524288000
+            git config --global core.compression 0
+
+            pod install --repo-update || pod install --repo-update || pod install --repo-update
           displayName: Install CocoaPods
-          inputs:
-            script: |
-              set -e
-              cd ios
-
-              rm -rf Pods Podfile.lock
-
-              git config --global http.postBuffer 524288000
-              git config --global http.maxRequestBuffer 100M
-              git config --global core.compression 0
-              git config --global http.lowSpeedLimit 0
-              git config --global http.lowSpeedTime 999999
-
-              pod install --repo-update || pod install --repo-update || pod install --repo-update
 
         # ─────────────────────────────
         # CLEAN
         # ─────────────────────────────
-        - task: CmdLine@2
+        - script: |
+            xcodebuild clean \
+              -workspace ios/Authentication.xcworkspace \
+              -scheme $(APP_SCHEME)
           displayName: Clean Xcode
-          inputs:
-            script: |
-              xcodebuild clean \
-                -workspace ios/Authentication.xcworkspace \
-                -scheme $(APP_SCHEME)
 
         # ─────────────────────────────
-        # ARCHIVE (FIXED PATH ISSUE)
+        # ARCHIVE (FIXED + VERIFIED)
         # ─────────────────────────────
-        - task: CmdLine@2
+        - script: |
+            set -e
+
+            ARCHIVE_DIR="$(Pipeline.Workspace)/ios-build"
+            ARCHIVE_PATH="$ARCHIVE_DIR/app.xcarchive"
+
+            mkdir -p "$ARCHIVE_DIR"
+
+            echo "👉 Archiving to: $ARCHIVE_PATH"
+
+            xcodebuild \
+              -workspace ios/Authentication.xcworkspace \
+              -scheme $(APP_SCHEME) \
+              -configuration Release \
+              -sdk iphoneos \
+              -destination 'generic/platform=iOS' \
+              clean archive \
+              -archivePath "$ARCHIVE_PATH" \
+              -allowProvisioningUpdates
+
+            echo "👉 Checking archive:"
+            ls -la "$ARCHIVE_DIR"
+
+            if [ ! -d "$ARCHIVE_PATH" ]; then
+              echo "❌ Archive not created!"
+              exit 1
+            fi
           displayName: Build iOS Archive
-          inputs:
-            script: |
-              set -e
-
-              mkdir -p $(Pipeline.Workspace)/ios-build
-
-              xcodebuild \
-                -workspace ios/Authentication.xcworkspace \
-                -scheme $(APP_SCHEME) \
-                -configuration Release \
-                -sdk iphoneos \
-                -destination 'generic/platform=iOS' \
-                clean archive \
-                -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
-                -allowProvisioningUpdates \
-                | tee ios-build.log
 
         # ─────────────────────────────
         # EXPORT IPA (FIXED PATH MATCH)
         # ─────────────────────────────
-        - task: CmdLine@2
+        - script: |
+            set -e
+
+            ARCHIVE_PATH="$(Pipeline.Workspace)/ios-build/app.xcarchive"
+
+            echo "👉 Using archive: $ARCHIVE_PATH"
+
+            ls -R "$(Pipeline.Workspace)/ios-build"
+
+            xcodebuild -exportArchive \
+              -archivePath "$ARCHIVE_PATH" \
+              -exportPath "$(Build.ArtifactStagingDirectory)/ipa" \
+              -exportOptionsPlist ios/exportOptions.plist
           displayName: Export IPA
-          inputs:
-            script: |
-              set -e
-
-              ls -la $(Pipeline.Workspace)/ios-build
-
-              xcodebuild -exportArchive \
-                -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
-                -exportPath $(Build.ArtifactStagingDirectory)/ipa \
-                -exportOptionsPlist ios/exportOptions.plist
 
         # ─────────────────────────────
         # PUBLISH
