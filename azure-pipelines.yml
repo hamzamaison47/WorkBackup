@@ -38,7 +38,7 @@ stages:
               npm ci --legacy-peer-deps
 
 # ─────────────────────────────
-# ANDROID BUILD
+# ANDROID STAGE
 # ─────────────────────────────
 - stage: Android
   displayName: Build Android APK
@@ -104,7 +104,7 @@ stages:
             artifactName: android-release
 
 # ─────────────────────────────
-# iOS BUILD (FIXED + STABLE)
+# iOS STAGE (FULL FIXED)
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
@@ -125,10 +125,10 @@ stages:
             script: npm ci --legacy-peer-deps
 
         # ─────────────────────────────
-        # POD INSTALL (ROBUST FIX)
+        # POD INSTALL (FIXED + RETRY + STABLE)
         # ─────────────────────────────
         - task: CmdLine@2
-          displayName: Install CocoaPods (stable)
+          displayName: Install CocoaPods
           inputs:
             script: |
               set -e
@@ -136,7 +136,6 @@ stages:
 
               rm -rf Pods Podfile.lock
 
-              # 🔧 Fix CI git instability (ZXingObjC fix)
               git config --global http.postBuffer 524288000
               git config --global http.maxRequestBuffer 100M
               git config --global core.compression 0
@@ -146,7 +145,7 @@ stages:
               pod install --repo-update || pod install --repo-update || pod install --repo-update
 
         # ─────────────────────────────
-        # CLEAN BUILD
+        # CLEAN
         # ─────────────────────────────
         - task: CmdLine@2
           displayName: Clean Xcode
@@ -157,13 +156,15 @@ stages:
                 -scheme $(APP_SCHEME)
 
         # ─────────────────────────────
-        # ARCHIVE (IMPORTANT FIX)
+        # ARCHIVE (FIXED PATH ISSUE)
         # ─────────────────────────────
         - task: CmdLine@2
           displayName: Build iOS Archive
           inputs:
             script: |
               set -e
+
+              mkdir -p $(Pipeline.Workspace)/ios-build
 
               xcodebuild \
                 -workspace ios/Authentication.xcworkspace \
@@ -172,19 +173,23 @@ stages:
                 -sdk iphoneos \
                 -destination 'generic/platform=iOS' \
                 clean archive \
-                -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+                -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
                 -allowProvisioningUpdates \
                 | tee ios-build.log
 
         # ─────────────────────────────
-        # EXPORT IPA
+        # EXPORT IPA (FIXED PATH MATCH)
         # ─────────────────────────────
         - task: CmdLine@2
           displayName: Export IPA
           inputs:
             script: |
+              set -e
+
+              ls -la $(Pipeline.Workspace)/ios-build
+
               xcodebuild -exportArchive \
-                -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+                -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
                 -exportPath $(Build.ArtifactStagingDirectory)/ipa \
                 -exportOptionsPlist ios/exportOptions.plist
 
