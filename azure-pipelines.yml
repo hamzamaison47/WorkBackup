@@ -44,6 +44,7 @@ stages:
       pool:
         vmImage: 'ubuntu-latest'
       steps:
+
         - task: NodeTool@0
           inputs:
             versionSpec: '$(NODE_VERSION)'
@@ -51,9 +52,11 @@ stages:
         - script: npm install --legacy-peer-deps
           displayName: Install JS deps
 
+        # ✅ FIXED JAVA TOOL INSTALLER
         - task: JavaToolInstaller@0
           inputs:
             versionSpec: '$(JAVA_VERSION)'
+            jdkArchitectureOption: 'x64'
 
         - script: |
             echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
@@ -96,6 +99,9 @@ stages:
         - script: npm ci --legacy-peer-deps
           displayName: Install JS deps
 
+        # ─────────────────────────────
+        # POD INSTALL
+        # ─────────────────────────────
         - script: |
             set -e
             cd ios
@@ -108,12 +114,18 @@ stages:
             pod install --repo-update || pod install --repo-update || pod install --repo-update
           displayName: Install CocoaPods
 
+        # ─────────────────────────────
+        # CLEAN
+        # ─────────────────────────────
         - script: |
             xcodebuild clean \
               -workspace ios/Authentication.xcworkspace \
               -scheme $(APP_SCHEME)
           displayName: Clean Xcode
 
+        # ─────────────────────────────
+        # ARCHIVE
+        # ─────────────────────────────
         - script: |
             set -e
 
@@ -132,31 +144,25 @@ stages:
               -archivePath "$ARCHIVE_PATH" \
               -allowProvisioningUpdates
 
-            ls -la "$ARCHIVE_DIR"
-
             if [ ! -d "$ARCHIVE_PATH" ]; then
               echo "❌ Archive not created!"
               exit 1
             fi
+
+            ls -la "$ARCHIVE_DIR"
           displayName: Build iOS Archive
 
         # ─────────────────────────────
-        # ✅ ONLY FIXED PART (EXPORT IPA)
+        # EXPORT IPA (FIXED)
         # ─────────────────────────────
         - script: |
             set -e
 
-            echo "🔍 Searching for xcarchive..."
+            ARCHIVE_PATH="$(Pipeline.Workspace)/ios-build/app.xcarchive"
 
-            ARCHIVE_PATH=$(find $(Pipeline.Workspace) -name "*.xcarchive" | head -n 1)
+            echo "Using archive: $ARCHIVE_PATH"
 
-            echo "👉 Found archive: $ARCHIVE_PATH"
-
-            if [ -z "$ARCHIVE_PATH" ]; then
-              echo "❌ No xcarchive found!"
-              ls -R $(Pipeline.Workspace)
-              exit 1
-            fi
+            ls -R "$(Pipeline.Workspace)/ios-build"
 
             xcodebuild -exportArchive \
               -archivePath "$ARCHIVE_PATH" \
@@ -164,6 +170,9 @@ stages:
               -exportOptionsPlist ios/exportOptions.plist
           displayName: Export IPA
 
+        # ─────────────────────────────
+        # PUBLISH
+        # ─────────────────────────────
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: $(Build.ArtifactStagingDirectory)
