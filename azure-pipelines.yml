@@ -3,24 +3,28 @@ trigger:
     include:
       - operational
 
-pr: none
+pr:
+  none
 
 pool:
   vmImage: 'macos-latest'
 
 variables:
-  NODE_VERSION: '18.x'
-  APP_SCHEME: 'Authentication'
-
-  # Android variables (from your working pipeline)
-  JAVA_VERSION: '17'
-  BUILD_VARIANT: 'assembleRelease'
-  APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
+  - name: NODE_VERSION
+    value: '18.x'
+  - name: APP_SCHEME
+    value: 'Authentication'
+  - name: JAVA_VERSION
+    value: '17'
+  - name: BUILD_VARIANT
+    value: 'assembleRelease'
+  - name: APK_OUTPUT_PATH
+    value: 'android/app/build/outputs/apk/release'
 
 stages:
 
 # ─────────────────────────────
-# INSTALL
+# INSTALL STAGE
 # ─────────────────────────────
 - stage: Install
   displayName: Install Dependencies
@@ -31,14 +35,15 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - script: |
-            node -v
-            npm ci --legacy-peer-deps
+        - task: CmdLine@2
           displayName: Install dependencies
-
+          inputs:
+            script: |
+              node -v
+              npm ci --legacy-peer-deps
 
 # ─────────────────────────────
-# ANDROID (REPLACED WITH YOUR WORKING VERSION)
+# ANDROID STAGE
 # ─────────────────────────────
 - stage: Android
   displayName: Build Android Release APK
@@ -50,11 +55,9 @@ stages:
       steps:
 
         - task: NodeTool@0
-          displayName: 'Use Node $(NODE_VERSION)'
           inputs:
             versionSource: 'spec'
             versionSpec: '$(NODE_VERSION)'
-            checkLatest: true
 
         - task: Cache@2
           displayName: Cache node_modules
@@ -64,58 +67,60 @@ stages:
               npm | "$(Agent.OS)"
             path: node_modules
 
-        - script: npm install --legacy-peer-deps
+        - task: CmdLine@2
           displayName: Install dependencies
+          inputs:
+            script: npm install --legacy-peer-deps
 
         - task: JavaToolInstaller@0
-          displayName: 'Use JDK $(JAVA_VERSION)'
           inputs:
             versionSpec: '$(JAVA_VERSION)'
             jdkArchitectureOption: 'x64'
             jdkSourceOption: 'PreInstalled'
 
-        # Decode keystore
-        - script: |
-            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
-          displayName: Decode & place keystore
+        - task: CmdLine@2
+          displayName: Decode keystore
+          inputs:
+            script: |
+              echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
 
-        # google-services.json
         - task: DownloadSecureFile@1
-          displayName: Download google-services.json
           name: googleServices
           inputs:
             secureFile: 'google-services.json'
 
-        - script: cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: Place google-services.json
+        - task: CmdLine@2
+          displayName: Copy google-services.json
+          inputs:
+            script: cp $(googleServices.secureFilePath) android/app/google-services.json
 
-        # Build
-        - script: chmod +x android/gradlew
+        - task: CmdLine@2
           displayName: Make gradlew executable
+          inputs:
+            script: chmod +x android/gradlew
 
-        - script: |
-            cd android && ./gradlew $(BUILD_VARIANT) \
-              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
-              -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
-              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
-              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
-              --no-daemon \
-              --stacktrace
-          displayName: Build release APK
+        - task: CmdLine@2
+          displayName: Build Android APK
+          inputs:
+            script: |
+              cd android && ./gradlew $(BUILD_VARIANT) \
+                -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
+                -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
+                -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
+                -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
+                --no-daemon --stacktrace
 
-        # Publish APK
         - task: PublishBuildArtifacts@1
-          displayName: Publish APK artifact
           inputs:
             pathToPublish: $(APK_OUTPUT_PATH)
             artifactName: Authentication-release-apk
-            publishLocation: Container
-
 
 # ─────────────────────────────
-# IOS (UNCHANGED)
+# iOS STAGE (FIXED)
 # ─────────────────────────────
 - stage: iOS
+  displayName: Build iOS IPA
+  dependsOn: Install
   jobs:
     - job: build
       pool:
@@ -126,41 +131,60 @@ stages:
           inputs:
             versionSpec: '$(NODE_VERSION)'
 
-        - script: npm ci --legacy-peer-deps
+        - task: CmdLine@2
           displayName: Install dependencies
+          inputs:
+            script: npm ci --legacy-peer-deps
 
-        # Clean Pods
-        - script: |
-            cd ios
-            rm -rf Pods Podfile.lock build
-            pod install --repo-update
-          displayName: Install Pods
+        # ─────────────────────────────
+        # 🔥 FIXED POD INSTALL (IMPORTANT)
+        # ─────────────────────────────
+        - task: CmdLine@2
+          displayName: Install Pods (stable)
+          inputs:
+            script: |
+              set -e
+              cd ios
 
-        # Clean Xcode
-        - script: |
-            xcodebuild clean \
-              -workspace ios/Authentication.xcworkspace \
-              -scheme $(APP_SCHEME)
+              rm -rf Pods Podfile.lock
+
+              # 🔧 Fix CI git instability (ZXingObjC crash fix)
+              git config --global http.postBuffer 524288000
+              git config --global http.maxRequestBuffer 100M
+              git config --global core.compression 0
+              git config --global http.lowSpeedLimit 0
+              git config --global http.lowSpeedTime 999999
+
+              pod install --repo-update || pod install --repo-update || pod install --repo-update
+
+        - task: CmdLine@2
           displayName: Clean Xcode
+          inputs:
+            script: |
+              xcodebuild clean \
+                -workspace ios/Authentication.xcworkspace \
+                -scheme $(APP_SCHEME)
 
-        # Archive
-        - script: |
-            xcodebuild \
-              -workspace ios/Authentication.xcworkspace \
-              -scheme $(APP_SCHEME) \
-              -configuration Release \
-              archive \
-              -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
-              -allowProvisioningUpdates
+        - task: CmdLine@2
           displayName: Build iOS Archive
+          inputs:
+            script: |
+              xcodebuild \
+                -workspace ios/Authentication.xcworkspace \
+                -scheme $(APP_SCHEME) \
+                -configuration Release \
+                archive \
+                -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+                -allowProvisioningUpdates
 
-        # Export IPA
-        - script: |
-            xcodebuild -exportArchive \
-              -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
-              -exportPath $(Build.ArtifactStagingDirectory)/ipa \
-              -exportOptionsPlist ios/exportOptions.plist
+        - task: CmdLine@2
           displayName: Export IPA
+          inputs:
+            script: |
+              xcodebuild -exportArchive \
+                -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
+                -exportPath $(Build.ArtifactStagingDirectory)/ipa \
+                -exportOptionsPlist ios/exportOptions.plist
 
         - task: PublishBuildArtifacts@1
           inputs:
