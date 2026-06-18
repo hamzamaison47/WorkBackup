@@ -10,16 +10,11 @@ pool:
   vmImage: 'macos-latest'
 
 variables:
-  - name: NODE_VERSION
-    value: '18.x'
-  - name: APP_SCHEME
-    value: 'Authentication'
-  - name: JAVA_VERSION
-    value: '17'
-  - name: BUILD_VARIANT
-    value: 'assembleRelease'
-  - name: APK_OUTPUT_PATH
-    value: 'android/app/build/outputs/apk/release'
+  NODE_VERSION: '18.x'
+  APP_SCHEME: 'Authentication'
+  JAVA_VERSION: '17'
+  BUILD_VARIANT: 'assembleRelease'
+  APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
 
 stages:
 
@@ -43,10 +38,10 @@ stages:
               npm ci --legacy-peer-deps
 
 # ─────────────────────────────
-# ANDROID STAGE
+# ANDROID BUILD
 # ─────────────────────────────
 - stage: Android
-  displayName: Build Android Release APK
+  displayName: Build Android APK
   dependsOn: Install
   jobs:
     - job: BuildAPK
@@ -56,15 +51,11 @@ stages:
 
         - task: NodeTool@0
           inputs:
-            versionSource: 'spec'
             versionSpec: '$(NODE_VERSION)'
 
         - task: Cache@2
-          displayName: Cache node_modules
           inputs:
             key: 'npm | "$(Agent.OS)" | package-lock.json'
-            restoreKeys: |
-              npm | "$(Agent.OS)"
             path: node_modules
 
         - task: CmdLine@2
@@ -79,7 +70,7 @@ stages:
             jdkSourceOption: 'PreInstalled'
 
         - task: CmdLine@2
-          displayName: Decode keystore
+          displayName: Decode Keystore
           inputs:
             script: |
               echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
@@ -87,7 +78,7 @@ stages:
         - task: DownloadSecureFile@1
           name: googleServices
           inputs:
-            secureFile: 'google-services.json'
+            secureFile: google-services.json
 
         - task: CmdLine@2
           displayName: Copy google-services.json
@@ -95,15 +86,12 @@ stages:
             script: cp $(googleServices.secureFilePath) android/app/google-services.json
 
         - task: CmdLine@2
-          displayName: Make gradlew executable
-          inputs:
-            script: chmod +x android/gradlew
-
-        - task: CmdLine@2
-          displayName: Build Android APK
+          displayName: Build Android
           inputs:
             script: |
-              cd android && ./gradlew $(BUILD_VARIANT) \
+              cd android
+              chmod +x gradlew
+              ./gradlew $(BUILD_VARIANT) \
                 -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
                 -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
                 -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
@@ -113,10 +101,10 @@ stages:
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: $(APK_OUTPUT_PATH)
-            artifactName: Authentication-release-apk
+            artifactName: android-release
 
 # ─────────────────────────────
-# iOS STAGE (FIXED)
+# iOS BUILD (FIXED + STABLE)
 # ─────────────────────────────
 - stage: iOS
   displayName: Build iOS IPA
@@ -132,15 +120,15 @@ stages:
             versionSpec: '$(NODE_VERSION)'
 
         - task: CmdLine@2
-          displayName: Install dependencies
+          displayName: Install JS deps
           inputs:
             script: npm ci --legacy-peer-deps
 
         # ─────────────────────────────
-        # 🔥 FIXED POD INSTALL (IMPORTANT)
+        # POD INSTALL (ROBUST FIX)
         # ─────────────────────────────
         - task: CmdLine@2
-          displayName: Install Pods (stable)
+          displayName: Install CocoaPods (stable)
           inputs:
             script: |
               set -e
@@ -148,7 +136,7 @@ stages:
 
               rm -rf Pods Podfile.lock
 
-              # 🔧 Fix CI git instability (ZXingObjC crash fix)
+              # 🔧 Fix CI git instability (ZXingObjC fix)
               git config --global http.postBuffer 524288000
               git config --global http.maxRequestBuffer 100M
               git config --global core.compression 0
@@ -157,6 +145,9 @@ stages:
 
               pod install --repo-update || pod install --repo-update || pod install --repo-update
 
+        # ─────────────────────────────
+        # CLEAN BUILD
+        # ─────────────────────────────
         - task: CmdLine@2
           displayName: Clean Xcode
           inputs:
@@ -165,18 +156,29 @@ stages:
                 -workspace ios/Authentication.xcworkspace \
                 -scheme $(APP_SCHEME)
 
+        # ─────────────────────────────
+        # ARCHIVE (IMPORTANT FIX)
+        # ─────────────────────────────
         - task: CmdLine@2
           displayName: Build iOS Archive
           inputs:
             script: |
+              set -e
+
               xcodebuild \
                 -workspace ios/Authentication.xcworkspace \
                 -scheme $(APP_SCHEME) \
                 -configuration Release \
-                archive \
+                -sdk iphoneos \
+                -destination 'generic/platform=iOS' \
+                clean archive \
                 -archivePath $(Build.ArtifactStagingDirectory)/app.xcarchive \
-                -allowProvisioningUpdates
+                -allowProvisioningUpdates \
+                | tee ios-build.log
 
+        # ─────────────────────────────
+        # EXPORT IPA
+        # ─────────────────────────────
         - task: CmdLine@2
           displayName: Export IPA
           inputs:
@@ -186,7 +188,10 @@ stages:
                 -exportPath $(Build.ArtifactStagingDirectory)/ipa \
                 -exportOptionsPlist ios/exportOptions.plist
 
+        # ─────────────────────────────
+        # PUBLISH
+        # ─────────────────────────────
         - task: PublishBuildArtifacts@1
           inputs:
             pathToPublish: $(Build.ArtifactStagingDirectory)
-            artifactName: ios-build
+            artifactName: ios-release
