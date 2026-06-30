@@ -37,7 +37,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>msauth.com.authentication</string>
+				<string>msauth.com.dynaface365</string>
 			</array>
 		</dict>
 	</array>

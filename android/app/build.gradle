@@ -80,9 +80,9 @@ android {
         applicationId "com.dynaface365.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
-        manifestPlaceholders = [appAuthRedirectScheme: 'com.authentication.callback',
+        versionCode 3
+        versionName "1.0.2"
+        manifestPlaceholders = [appAuthRedirectScheme: 'com.dynaface365.callback',
                         appAuthRedirectScheme:'authentication']
         missingDimensionStrategy 'react-native-camera', 'general'
        //  manifestPlaceholders = [appAuthRedirectScheme: 'com.redirectScheme.comm']
@@ -129,6 +129,7 @@ dependencies {
     implementation project(':react-native-vector-icons')
     implementation("com.facebook.react:react-android")
     implementation project(':react-native-splash-screen')
+     implementation 'com.google.firebase:firebase-messaging:24.0.0' 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
