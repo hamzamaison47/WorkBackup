@@ -31,7 +31,6 @@ const WorkflowHistoryScreen = () => {
   const route = useRoute();
 
   const {recId, tableId, cameFrom} = route.params ?? {};
-
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +38,10 @@ const WorkflowHistoryScreen = () => {
   const [totalRecords, setTotalRecords] = useState(0);
 
   const fetchWorkflowHistory = useCallback(async () => {
+    console.log('[WorkflowHistory] fetchWorkflowHistory called with:', {
+      recId,
+      tableId,
+    });
     if (!recId) {
       setAlertMessage('Missing required parameter: recId');
       setAlertModal(true);
@@ -140,11 +143,21 @@ const WorkflowHistoryScreen = () => {
   );
 
   const handleRefresh = () => fetchWorkflowHistory();
+
   const handleGoBack = () => {
+    console.log(
+      '[WorkflowHistory] handleGoBack called | cameFrom:',
+      cameFrom,
+      '| canGoBack:',
+      navigation.canGoBack(),
+    );
+
     if (cameFrom) {
-      navigation.navigate(cameFrom); // ← go back to whoever called it
+      navigation.navigate(cameFrom); // ← always prefer explicit target
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
     } else {
-      navigation.goBack(); // ← fallback if nothing was passed
+      console.warn('[WorkflowHistory] No cameFrom and cannot goBack — stuck!');
     }
   };
 

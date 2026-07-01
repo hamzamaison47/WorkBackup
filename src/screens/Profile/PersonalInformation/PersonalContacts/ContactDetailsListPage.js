@@ -61,7 +61,7 @@ const ContactDetailsListPage = () => {
     setIsLoading(true);
     try {
       const data = await ContactDetails({employeeId: effectiveEmployeeId});
-      // console.log({data});
+      console.log({data});
       setContactsData(data);
       setRawData(data); // ← here
       setDisplayData(data); // ← here
@@ -180,11 +180,11 @@ const ContactDetailsListPage = () => {
   // 🔹 Define Card Config
   const cardConfig = {
     headerConfig: {
-      title: {key: 'Type', label: 'Type'},
+      title: {key: 'type', label: 'Type'},
       // subtitle: {key: 'Description'},
     },
     fields: [
-      {key: 'Type', label: 'Type', type: 'text'},
+      {key: 'type', label: 'Type', type: 'text'},
       {
         key: 'IsPrimary',
         label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
@@ -209,15 +209,15 @@ const ContactDetailsListPage = () => {
       iconColor: '#fff',
       backgroundColor: '#0A66C2', // Add this line
     },
-    delete: {
-      show: true,
-      position: 'header',
-      style: 'icon',
-      icon: 'trash',
-      iconSize: 20,
-      iconColor: '#fff',
-      backgroundColor: '#0A66C2', // Add this line
-    },
+    // delete: {
+    //   show: true,
+    //   position: 'header',
+    //   style: 'icon',
+    //   icon: 'trash',
+    //   iconSize: 20,
+    //   iconColor: '#fff',
+    //   backgroundColor: '#0A66C2', // Add this line
+    // },
   });
 
   // ✅ 🔹 EDIT LOGIC (taken from LeaveRequestListPage)

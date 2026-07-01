@@ -354,7 +354,7 @@ const HRHelpDeskListScreen = () => {
   const handleViewHistory = itemData => {
     navigation.navigate('WorkflowHistoryScreen', {
       recId: itemData.RecId,
-      tableId: itemData.TableId,
+      tableId: itemData.tableId,
       cameFrom: 'HRHelpDeskListScreen',
     });
   };

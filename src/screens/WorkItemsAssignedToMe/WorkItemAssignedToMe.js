@@ -930,7 +930,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   Text,
   FlatList,
@@ -954,6 +954,7 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
+import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
@@ -976,6 +977,13 @@ const WorkItemsAssignedToMePage = () => {
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRecIds, setSelectedRecIds] = useState([]);
+
+  const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+  const [selectedWorkItem, setSelectedWorkItem] = useState(null);
+  const {selectedLegalEntity} = useSelector(state => state.company);
+
+  const effectiveEmployeeId = effectiveUserData?.employeeId;
+  const effectiveEmployeeName = effectiveUserData?.employeeName;
 
   // ── Pill filter — replaces old activeTab ──
   const [activeFilter, setActiveFilter] = useState('All');
@@ -1006,6 +1014,8 @@ const WorkItemsAssignedToMePage = () => {
     try {
       const data = await RetrieveByEmail({email: effectiveUserData.email});
 
+      console.log('here is retieve by email', data);
+
       const formattedData = (data || []).map((item, index) => {
         const documentStr = item.Document || '';
 
@@ -1031,6 +1041,7 @@ const WorkItemsAssignedToMePage = () => {
           requester: requester,
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
+          TableName: item.TableName,
           workflowWorkItemType: item.workflowWorkItemType,
           Document: item.Document,
           createdDateTime: item.createdDateTime,
@@ -1077,6 +1088,13 @@ const WorkItemsAssignedToMePage = () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [selectionMode]),
   );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      exitSelectionMode();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   /* ==============================
      Selection Logic
@@ -1200,7 +1218,7 @@ const WorkItemsAssignedToMePage = () => {
 
       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
 
-      setAlertMessage(`Workitem ${actionType}ed`);
+      setAlertMessage(`Workitem ${actionType}d`);
       setAlertModal(true);
       await fetchWorkItems();
     } catch (error) {
@@ -1211,13 +1229,14 @@ const WorkItemsAssignedToMePage = () => {
       setCardButtonProcessing(recId, buttonKey, false);
     }
   };
-
   const handleViewHistory = (ContextRecId, ContextTableId) => {
     navigation.navigate('WorkflowHistoryScreen', {
       recId: ContextRecId,
       tableId: ContextTableId,
+      cameFrom: 'WorkItemsAssignedToMePage', // ← add this
     });
   };
+
   const handleWorkflowDetail = (ContextRecId, ContextTableId) => {
     navigation.navigate('WorkflowDetailScreen', {
       tableId: ContextTableId,
@@ -1268,6 +1287,16 @@ const WorkItemsAssignedToMePage = () => {
   };
 
   const getButtonConfig = Item => ({
+    attachment: {
+      show: true,
+      position: 'header',
+      style: 'icon',
+      icon: 'paperclip',
+      iconSize: 20,
+      iconColor: '#fff',
+      backgroundColor: '#0A66C2',
+      disabled: false,
+    },
     approval: {
       show: !selectionMode,
       position: 'bottom',
@@ -1299,6 +1328,12 @@ const WorkItemsAssignedToMePage = () => {
     else if (buttonType === 'recall') handleSingleAction(item.recId, 'Recall');
     else if (buttonType === 'viewHistory')
       handleViewHistory(item.ContextRecId, item.ContextTableId);
+    else if (buttonType === 'attachment') handleAttachmentPress(item);
+  };
+
+  const handleAttachmentPress = item => {
+    setSelectedWorkItem(item);
+    setAttachmentModalVisible(true);
   };
 
   /* ==============================
@@ -1333,9 +1368,13 @@ const WorkItemsAssignedToMePage = () => {
           fields={CARD_CONFIG.fields}
           buttons={getButtonConfig(item)}
           onButtonPress={handleButtonPress}
-          onPress={() =>
-            handleWorkflowDetail(item.ContextRecId, item.ContextTableId)
-          }
+          onPress={() => {
+            if (selectionMode) {
+              toggleSelection(item.recId);
+            } else {
+              handleWorkflowDetail(item.ContextRecId, item.ContextTableId);
+            }
+          }}
           onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
           gradientColors={
@@ -1449,6 +1488,27 @@ const WorkItemsAssignedToMePage = () => {
           </View>
         </View>
       )}
+
+      <DynamicAttachmentModal
+        visible={attachmentModalVisible}
+        recordData={selectedWorkItem}
+        recordIdKey="ContextRecId"
+        tableName={selectedWorkItem?.TableName || ''}
+        onClose={() => {
+          setAttachmentModalVisible(false);
+          setSelectedWorkItem(null);
+        }}
+        onSave={() => fetchWorkItems()}
+        legalEntity={selectedLegalEntity}
+        employeeId={effectiveEmployeeId}
+        employeeName={effectiveEmployeeName}
+        modalTitle="Work Item Attachments"
+        showTakePhoto={false}
+        showChooseFile={false}
+        showDownload={true}
+        showView={true}
+        showDelete={false}
+      />
 
       {/* Bulk Toolbar */}
       {selectionMode && (

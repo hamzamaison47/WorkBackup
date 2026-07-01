@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
-import {StyleSheet} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import React, {useState, useEffect, useCallback} from 'react'; // ← remove useFocusEffect
+import {StyleSheet, BackHandler} from 'react-native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native'; // ← add here
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import {translate as t} from '../../../store/utils/translate';
 import {conditionalVerticalScale} from '../../../store/utils/scaling';
@@ -24,12 +24,19 @@ const DisplayPersonalInfo = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        navigation.navigate('Profile');
+        return true;
+      };
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
   const handleGoBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('MainDashboard');
-    }
+    navigation.navigate('Profile');
   };
 
   const personalItems = [

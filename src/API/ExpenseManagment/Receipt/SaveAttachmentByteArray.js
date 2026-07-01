@@ -64,7 +64,7 @@ const SaveAttachmentByteArray = async ({
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Header>
     <h:CallContext xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:h="http://schemas.microsoft.com/dynamics/2013/01/datacontracts">
-      <h:Company>${escapeXml(legalEntity)}</h:Company>
+      <h:Company></h:Company>
       <h:Language i:nil="true"></h:Language>
       <h:MessageId>${generateMessageId()}</h:MessageId>
       <h:PartitionKey i:nil="true"></h:PartitionKey>

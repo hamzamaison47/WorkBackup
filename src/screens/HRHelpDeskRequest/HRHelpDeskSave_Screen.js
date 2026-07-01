@@ -228,31 +228,21 @@ const HRHelpDeskSaveScreen = () => {
     };
   }, []);
 
-  // Back navigation
   const goBack = useCallback(() => {
     if (cameFrom === 'MainDashboard') {
       navigation.reset({
         index: 0,
         routes: [{name: 'MainDashboard'}],
       });
-    } else if (cameFrom === 'HRHelpDeskListScreen') {
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: 'HRHelpDeskList_Screen',
-            params: {
-              employeeId,
-              employeeName,
-              WorkerRecId,
-              userData: effectiveUserData,
-              cameFrom: 'DisplayListPage',
-            },
-          },
-        ],
-      });
     } else {
-      navigation.goBack();
+      navigation.navigate('HRHelpDeskListScreen', {
+        // ✅ consistent name
+        employeeId,
+        employeeName,
+        WorkerRecId,
+        userData: effectiveUserData,
+        cameFrom: 'DisplayListPage',
+      });
     }
   }, [
     navigation,

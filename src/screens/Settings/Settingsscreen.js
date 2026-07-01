@@ -241,7 +241,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             onPress={() => navigation.navigate('DateFormatSettingsScreen')}
             isLast
           />
-          {!!accessToken && (
+          {/* {!!accessToken && (
             <SettingRow
               icon="calendar"
               iconColor={AppTokens.indigo}
@@ -251,8 +251,8 @@ const SettingsScreen = ({navigation: navProp}) => {
               onPress={() => navigation.navigate('OutlookCalendarScreen')}
               isLast
             />
-          )}
-          <SettingRow
+          )} */}
+          {/* <SettingRow
             icon="shopping-cart"
             iconColor={AppTokens.indigo}
             iconBg={AppTokens.indigoBg}
@@ -268,7 +268,7 @@ const SettingsScreen = ({navigation: navProp}) => {
               })
             }
             isLast
-          />
+          /> */}
         </AnimatedCard>
 
         {/* ── SECURITY ─────────────────────────────────────────────────── */}
