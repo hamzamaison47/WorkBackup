@@ -1,4 +1,4 @@
-package com.authentication;
+package com.dynaface365.app;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;

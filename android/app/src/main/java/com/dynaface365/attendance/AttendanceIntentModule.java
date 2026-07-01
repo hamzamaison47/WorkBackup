@@ -20,7 +20,7 @@
 //   const action = await NativeModules.AttendanceIntent.getInitialAction();
 //   // + listen to DeviceEventEmitter 'AttendanceNotificationAction'
 // ─────────────────────────────────────────────────────────────────────────────
-package com.authentication.attendance;
+package com.dynaface365.attendance;
 
 import android.app.Activity;
 import android.content.Intent;

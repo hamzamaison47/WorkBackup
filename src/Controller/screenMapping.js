@@ -58,12 +58,15 @@ import HRExitInterviewListPage from '../screens/ExitInterview/HRExitInterview_Li
 import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
 import EmployeeEOS_SaveRecord from '../screens/EmployeeEOSRequest/EmployeeEOS_SaveRecord';
 import EmployeeEOSClearanceItemsListPage from '../screens/EmployeeEOSClearanceItems/EmployeeEOSClearanceItems_ListPage';
-
-//FOR IDAP
-import DFEmployeeLeaveRequestListPage from '../Customizations/IDAP/screens/Leaves/DFEmployeeLeaveRequestListPage';
-import DFEmployeeLeaveRequestSaveRecord from '../Customizations/IDAP/screens/Leaves/DFEmployeeLeaveREquestSaveRecord';
-
-// Map MenuId from API → Screen component
+import ESSEmployeeCertificate_Listpage from '../screens/Certificates/ESSEmployeeCertificate_Listpage';
+import ESSEmployeeCertificate_Saverecord from '../screens/Certificates/ESSEmployeeCertificate_Saverecord'; // Map MenuId from API → Screen component
+import ESSOPDMedicalExpense_ListPage from '../screens/OPD Expense/ESSOPDMedicalExpense_ListPage';
+import ESSOPDMedicalExpense_SaveRecord from '../screens/OPD Expense/ESSOPDMedicalExpense_SaveRecord';
+import LeaveEncashment_ListPage from '../screens/LeaveEncashment/LeaveEncashment_ListPage';
+import LeaveEncashment_SaveRecord from '../screens/LeaveEncashment/LeaveEncashment_SaveRecord';
+import OvertimePlanner_ListPage from '../screens/OvertimePlanner/OvertimePlanner_ListPage';
+import overtimePlanner_Create from '../screens/OvertimePlanner/OvertimePlanner_Create';
+import EmployeeAdvanceSalary_Create from '../screens/EmployeeAdvanceRequest/EmployeeAdvanceSalary_Create';
 export const screenMapping = {
   // Tab Navigator Screens
   MainDashboard: MainDashboard,
@@ -129,10 +132,15 @@ export const screenMapping = {
   HRExitInterviewListPage: HRExitInterviewListPage,
   EmployeeEOS_SaveRecord: EmployeeEOS_SaveRecord,
   EmployeeEOSClearanceItemsListPage: EmployeeEOSClearanceItemsListPage,
-
-  //FOR IDAP
-  DFEmployeeLeaveRequestListPage: DFEmployeeLeaveRequestListPage,
-  DFEmployeeLeaveRequestSaveRecord: DFEmployeeLeaveRequestSaveRecord,
+  ESSEmployeeCertificate_Listpage: ESSEmployeeCertificate_Listpage,
+  ESSEmployeeCertificate_Saverecord: ESSEmployeeCertificate_Saverecord,
+  ESSOPDMedicalExpense_ListPage: ESSOPDMedicalExpense_ListPage,
+  ESSOPDMedicalExpense_SaveRecord: ESSOPDMedicalExpense_SaveRecord,
+  LeaveEncashment_ListPage: LeaveEncashment_ListPage,
+  LeaveEncashment_SaveRecord: LeaveEncashment_SaveRecord,
+  OvertimePlanner_ListPage: OvertimePlanner_ListPage,
+  OvertimePlanner_Create: overtimePlanner_Create,
+  EmployeeAdvanceSalary_Create: EmployeeAdvanceSalary_Create,
 };
 
 // Map Images → Screen component
@@ -158,4 +166,5 @@ export const iconMapping = {
   HrPoliciesScreen: require('../assets/Maindashboard/policies.png'),
   HrNewsUpdatesScreen: require('../assets/Maindashboard/news.png'),
   OutstandingAdvancesScreen: require('../assets/Maindashboard/Loan.png'),
+  EmployeeAdvanceSalary_Create: require('../assets/Maindashboard/loan-approved.png'),
 };

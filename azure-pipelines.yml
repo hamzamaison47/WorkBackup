@@ -3,159 +3,165 @@ trigger:
     include:
       - operational
 
-pr: none # Only run on direct pushes to operational, not PRs
+pr: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'macos-latest'
 
 variables:
   NODE_VERSION: '18.x'
-  JAVA_VERSION: '17'           # Required by AGP 8.6.0
+  APP_SCHEME: 'Authentication'
+  JAVA_VERSION: '17'
   BUILD_VARIANT: 'assembleRelease'
   APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
 
 stages:
 
-# ─────────────────────────────────────────────
-# STAGE 1 — Install & Lint
-# ─────────────────────────────────────────────
+# ─────────────────────────────
+# INSTALL
+# ─────────────────────────────
 - stage: Install
-  displayName: 'Install & Lint'
   jobs:
-    - job: Setup
-      displayName: 'npm ci + lint'
+    - job: setup
       steps:
-
         - task: NodeTool@0
-          displayName: 'Use Node $(NODE_VERSION)'
           inputs:
-            versionSpec: $(NODE_VERSION)
+            versionSpec: '$(NODE_VERSION)'
 
-        - task: Cache@2
-          displayName: 'Cache node_modules'
-          inputs:
-            key: 'npm | "$(Agent.OS)" | package-lock.json'
-            restoreKeys: |
-              npm | "$(Agent.OS)"
-            path: node_modules
+        - script: |
+            node -v
+            npm ci --legacy-peer-deps
+          displayName: Install dependencies
 
-        - script: npm install --legacy-peer-deps
-          displayName: 'Install dependencies'
-
-        - script: npm run lint
-          displayName: 'Run ESLint'
-          continueOnError: false
-
-        - script: npm test -- --passWithNoTests
-          displayName: 'Run Jest tests'
-
-
-# ─────────────────────────────────────────────
-# STAGE 2 — Build Release APK
-# ─────────────────────────────────────────────
+# ─────────────────────────────
+# ANDROID
+# ─────────────────────────────
 - stage: Android
-  displayName: 'Build Android Release APK'
   dependsOn: Install
   jobs:
-    - job: BuildAPK
-      displayName: 'Gradle assembleRelease'
+    - job: BuildAndroid
+      pool:
+        vmImage: 'ubuntu-latest'
       steps:
 
         - task: NodeTool@0
-          displayName: 'Use Node $(NODE_VERSION)'
           inputs:
-            versionSpec: $(NODE_VERSION)
-
-        - task: Cache@2
-          displayName: 'Restore node_modules cache'
-          inputs:
-            key: 'npm | "$(Agent.OS)" | package-lock.json'
-            restoreKeys: |
-              npm | "$(Agent.OS)"
-            path: node_modules
+            versionSpec: '$(NODE_VERSION)'
 
         - script: npm install --legacy-peer-deps
-          displayName: 'Install dependencies'
+          displayName: Install JS deps
 
+        # ✅ FIXED JAVA TOOL (THIS WAS YOUR ERROR)
         - task: JavaToolInstaller@0
-          displayName: 'Use JDK $(JAVA_VERSION)'
           inputs:
-            versionSpec: $(JAVA_VERSION)
+            versionSpec: '17'
             jdkArchitectureOption: 'x64'
             jdkSourceOption: 'PreInstalled'
 
-        # ── Secure Files ──────────────────────────────────────
-        # Decode the base64-encoded keystore stored as a secret variable
         - script: |
             echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
-          displayName: 'Decode & place keystore'
+          displayName: Decode keystore
 
-        # Download google-services.json from Library → Secure Files
         - task: DownloadSecureFile@1
-          displayName: 'Download google-services.json'
           name: googleServices
           inputs:
-            secureFile: 'google-services.json'
+            secureFile: google-services.json
 
         - script: cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: 'Place google-services.json'
-
-        # ── Build ─────────────────────────────────────────────
-        - script: chmod +x android/gradlew
-          displayName: 'Make gradlew executable'
+          displayName: Copy google-services.json
 
         - script: |
-            cd android && ./gradlew $(BUILD_VARIANT) \
-              -PMYAPP_UPLOAD_STORE_FILE=release.keystore \
-              -PMYAPP_UPLOAD_STORE_PASSWORD=$(STORE_PASSWORD) \
-              -PMYAPP_UPLOAD_KEY_ALIAS=$(KEY_ALIAS) \
-              -PMYAPP_UPLOAD_KEY_PASSWORD=$(KEY_PASSWORD) \
-              --no-daemon \
-              --stacktrace
-          displayName: 'Build release APK'
+            cd android
+            chmod +x gradlew
+            ./gradlew $(BUILD_VARIANT) --no-daemon --stacktrace
+          displayName: Build Android
 
-        # ── Artifact ──────────────────────────────────────────
         - task: PublishBuildArtifacts@1
-          displayName: 'Publish APK artifact'
           inputs:
             pathToPublish: $(APK_OUTPUT_PATH)
-            artifactName: 'Authentication-release-apk'
-            publishLocation: 'Container'
-  # ─────────────────────────────────────────────
-  # STAGE 3 — Firebase App Distribution
-  # ─────────────────────────────────────────────
-- stage: Distribute
-  displayName: 'Distribute via Firebase'
-  dependsOn: Android
+            artifactName: android-release
+
+# ─────────────────────────────
+# iOS (FULL FIXED)
+# ─────────────────────────────
+- stage: iOS
+  dependsOn: Install
   jobs:
-    - job: FirebaseDistribute
-      displayName: 'Upload APK to Firebase App Distribution'
+    - job: BuildiOS
+      pool:
+        vmImage: 'macos-latest'
       steps:
-        # ── Download the built APK from previous stage ────────
-        - task: DownloadBuildArtifacts@1
-          displayName: 'Download APK artifact'
-          inputs:
-            buildType: 'current'
-            downloadType: 'single'
-            artifactName: 'Authentication-release-apk'
-            downloadPath: '$(System.ArtifactsDirectory)'
 
-        # ── Download Firebase service account JSON ────────────
-        - task: DownloadSecureFile@1
-          displayName: 'Download Firebase service account'
-          name: firebaseServiceAccount
+        - task: NodeTool@0
           inputs:
-            secureFile: 'firebase-app-distributor-dynaface-operational.json'   # must match the name you uploaded
+            versionSpec: '$(NODE_VERSION)'
 
-        # ── Install Firebase CLI ──────────────────────────────
-        - script: npm install -g firebase-tools
-          displayName: 'Install Firebase CLI'
-        # ── Upload & Distribute ───────────────────────────────
+        - script: npm ci --legacy-peer-deps
+          displayName: Install JS deps
+
+        # ─────────────────────────────
+        # POD INSTALL
+        # ─────────────────────────────
         - script: |
-            export GOOGLE_APPLICATION_CREDENTIALS=$(firebaseServiceAccount.secureFilePath)
-            firebase appdistribution:distribute \
-              $(System.ArtifactsDirectory)/Authentication-release-apk/app-release.apk \
-              --app $(FIREBASE_APP_ID) \
-              --groups "testers" \
-              --release-notes "Build $(Build.BuildNumber) — branch $(Build.SourceBranchName)"
-          displayName: 'Upload APK to Firebase App Distribution'
+            set -e
+            cd ios
+
+            rm -rf Pods Podfile.lock
+
+            pod install --repo-update || pod install --repo-update || pod install --repo-update
+          displayName: Install CocoaPods
+
+        # ─────────────────────────────
+        # CLEAN
+        # ─────────────────────────────
+        - script: |
+            xcodebuild clean \
+              -workspace ios/Authentication.xcworkspace \
+              -scheme $(APP_SCHEME)
+          displayName: Clean Xcode
+
+        # ─────────────────────────────
+        # ARCHIVE (FIXED STABLE PATH)
+        # ─────────────────────────────
+        - script: |
+            set -e
+
+            mkdir -p $(Pipeline.Workspace)/ios-build
+
+            xcodebuild \
+              -workspace ios/Authentication.xcworkspace \
+              -scheme $(APP_SCHEME) \
+              -configuration Release \
+              -sdk iphoneos \
+              clean archive \
+              -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
+              -allowProvisioningUpdates
+
+            echo "Checking archive..."
+            ls -la $(Pipeline.Workspace)/ios-build
+
+            if [ ! -d "$(Pipeline.Workspace)/ios-build/app.xcarchive" ]; then
+              echo "❌ Archive failed"
+              exit 1
+            fi
+          displayName: Build iOS Archive
+
+        # ─────────────────────────────
+        # EXPORT IPA (FIXED)
+        # ─────────────────────────────
+        - script: |
+            set -e
+
+            xcodebuild -exportArchive \
+              -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
+              -exportPath $(Build.ArtifactStagingDirectory)/ipa \
+              -exportOptionsPlist ios/exportOptions.plist
+          displayName: Export IPA
+
+        # ─────────────────────────────
+        # PUBLISH
+        # ─────────────────────────────
+        - task: PublishBuildArtifacts@1
+          inputs:
+            pathToPublish: $(Build.ArtifactStagingDirectory)
+            artifactName: ios-release

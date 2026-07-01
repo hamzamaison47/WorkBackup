@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-shadow */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback, useMemo, useEffect} from 'react';
+import React, {useState, useCallback, useMemo, useRef} from 'react';
 import {
   Text,
   FlatList,
@@ -11,6 +11,13 @@ import {
   I18nManager,
   View,
   ActivityIndicator,
+  TouchableOpacity,
+  Modal,
+  Animated,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView as RNScrollView,
 } from 'react-native';
 import {
   useNavigation,
@@ -23,6 +30,7 @@ import {useSelector} from 'react-redux';
 import {DeleteAdvanceRequest} from '../../API/EmployeeAdvanceRequest/DeleteAdvanceRequest';
 import {SubmitAdvanceRequest} from '../../API/EmployeeAdvanceRequest/SubmitAdvanceRequest';
 import {FindByEmployeeAdvanceRequest} from '../../API/EmployeeAdvanceRequest/FindByEmployeeAdvanceRequest';
+import {UpdateAdvanceRequest} from '../../API/EmployeeAdvanceRequest/UpdateAdvanceRequest';
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
@@ -35,6 +43,12 @@ import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import useNotify from '../../hooks/useNotify';
 
 import styles from '../../styles/styles';
+
+// Speed dial menu item config — no icon field
+const MENU_ITEMS = [
+  {key: 'advance', label: 'Advance Salary', backgroundColor: '#1877F2'},
+  {key: 'loan', label: 'Loan Request', backgroundColor: '#1877F2'},
+];
 
 const GenericAdvanceListScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -51,11 +65,30 @@ const GenericAdvanceListScreen = () => {
   const [displayData, setDisplayData] = useState([]);
   const [sortOrder, setSortOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+
+  // ── Inline edit modal state ──────────────────────────────────────────────
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editForm, setEditForm] = useState({
+    AdvanceAmount: '',
+    AdvanceDescription: '',
+    RequestedPaymentDate: '',
+    RecoveryStartDate: '',
+    RequestedInstallmentAmount: '',
+    RequestedInstallments: '',
+  });
+  const [isSaving, setIsSaving] = useState(false);
   const {notifySuccess, notifyError, notifyDelete} = useNotify('Loan Request');
 
   // Attachment modal state
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const [selectedAdvanceItem, setSelectedAdvanceItem] = useState(null);
+
+  // Animations
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const fabRotation = useRef(new Animated.Value(0)).current;
+  const itemAnims = useRef(MENU_ITEMS.map(() => new Animated.Value(0))).current;
 
   const navigation = useNavigation();
   const route = useRoute();
@@ -79,49 +112,90 @@ const GenericAdvanceListScreen = () => {
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
 
-  /** Fetch all advance data */
+  // ─── Animation helpers ────────────────────────────────────────────────────
+
+  const openMenu = () => {
+    setShowCreateMenu(true);
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fabRotation, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      ...itemAnims.map((anim, i) =>
+        Animated.spring(anim, {
+          toValue: 1,
+          delay: i * 60,
+          friction: 6,
+          tension: 80,
+          useNativeDriver: true,
+        }),
+      ),
+    ]).start();
+  };
+
+  const closeMenu = callback => {
+    Animated.parallel([
+      Animated.timing(backdropOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fabRotation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      ...itemAnims.map((anim, i) =>
+        Animated.timing(anim, {
+          toValue: 0,
+          duration: 150,
+          delay: i * 30,
+          useNativeDriver: true,
+        }),
+      ),
+    ]).start(() => {
+      setShowCreateMenu(false);
+      if (callback) callback();
+    });
+  };
+
+  const fabRotateDeg = fabRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '45deg'],
+  });
+
+  // ─── Fetch ────────────────────────────────────────────────────────────────
+
   const fetchAllAdvanceData = useCallback(async () => {
     if (!effectiveEmployeeId) return;
     setIsLoading(true);
-
     try {
       const allResults = await FindByEmployeeAdvanceRequest({employeeId});
-
-      console.log('=== API Response Debug ===');
-      console.log('Raw API results:', allResults);
-
       const filteredResults = allResults.filter(item => {
         const type = item.AdvanceTypeCode?.toLowerCase() || '';
         return !type.includes('expense');
       });
-
-      console.log('Filtered results:', filteredResults);
-
       const sortedResults = filteredResults.sort((a, b) => {
         const aCreated = new Date(a.CreatedDateTime || a.RequestDate || 0);
         const bCreated = new Date(b.CreatedDateTime || b.RequestDate || 0);
-
         if (!isNaN(aCreated.getTime()) && !isNaN(bCreated.getTime())) {
-          if (bCreated.getTime() !== aCreated.getTime()) {
+          if (bCreated.getTime() !== aCreated.getTime())
             return bCreated - aCreated;
-          }
         }
-
         const aRecId = parseInt(a.RecId, 10);
         const bRecId = parseInt(b.RecId, 10);
-
-        if (!isNaN(aRecId) && !isNaN(bRecId)) {
-          return bRecId - aRecId;
-        }
-
+        if (!isNaN(aRecId) && !isNaN(bRecId)) return bRecId - aRecId;
         return 0;
       });
-
-      console.log('Sorted results:', sortedResults);
-
       setAllAdvanceData(sortedResults);
-      setRawData(allResults); // ← here
-      setDisplayData(allResults); // ← here
+      setRawData(allResults);
+      setDisplayData(allResults);
     } catch (error) {
       console.error('Error fetching advance data:', error);
       setAlertMessage(
@@ -144,11 +218,7 @@ const GenericAdvanceListScreen = () => {
       if (highlightRecId) {
         setHighlightedRecId(highlightRecId);
         fetchAllAdvanceData();
-
-        const timer = setTimeout(() => {
-          setHighlightedRecId(null);
-        }, 3000);
-
+        const timer = setTimeout(() => setHighlightedRecId(null), 3000);
         return () => clearTimeout(timer);
       }
     }, [highlightRecId, fetchAllAdvanceData]),
@@ -157,20 +227,27 @@ const GenericAdvanceListScreen = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        if (editModalVisible) {
+          setEditModalVisible(false);
+          return true;
+        }
+        if (showCreateMenu) {
+          closeMenu();
+          return true;
+        }
         handleGoBack();
         return true;
       };
-
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+    }, [navigation, showCreateMenu, editModalVisible]),
   );
+
+  // ─── Navigation ───────────────────────────────────────────────────────────
 
   const handleGoBack = () => {
     let targetRoute = 'MainDashboard';
-
     switch (cameFrom) {
       case 'MainDashboard':
         targetRoute = 'MainDashboard';
@@ -189,86 +266,249 @@ const GenericAdvanceListScreen = () => {
         navigation.goBack();
         return;
     }
-
-    navigation.reset({
-      index: 0,
-      routes: [{name: targetRoute}],
-    });
+    navigation.reset({index: 0, routes: [{name: targetRoute}]});
   };
 
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return allAdvanceData;
+  const handleRefresh = () => fetchAllAdvanceData();
 
-  //   return allAdvanceData.filter(item => {
-  //     const status = getStatusLabel(item.WFStatus);
-
-  //     // Special handling for Pending filter - include any status that contains "Pending"
-  //     if (activeFilter === 'Pending') {
-  //       return status.includes('Pending'); // This will match "Pending Approval", "Pending", etc.
-  //     }
-
-  //     return status === activeFilter;
-  //   });
-  // };
-
-  const handleRefresh = () => {
-    fetchAllAdvanceData();
-  };
-
+  // FAB toggle
   const handleCreateRequest = () => {
-    navigation.navigate('GenericAdvanceSaveScreen', {
-      mode: 'create',
-      employeeId: effectiveEmployeeId,
-      employeeName: effectiveEmployeeName,
-      WorkerRecId: effectiveWorkerRecId,
-      userData: effectiveUserData,
-      cameFrom: 'GenericAdvanceListScreen',
-      requestType: 'Loan',
-      advanceType: 0,
-      screenName: 'Loan Request',
-      advanceData: {
-        employeeId: effectiveEmployeeId,
-        employeeName: effectiveEmployeeName,
-        WorkerRecId: effectiveWorkerRecId,
-        RecId: '',
-        AdvanceTypeCode: '',
-        AdvanceAmount: '0.00',
-        RequestedPaymentDate: '',
-        RecoveryStartDate: '',
-        RequestedInstallmentAmount: '0.00',
-        RequestedInstallments: '0',
-        AdvanceDescription: '',
-        Guarantor1: '',
-        Guarantor2: '',
-      },
-    });
+    if (showCreateMenu) closeMenu();
+    else openMenu();
   };
+
+  // Speed dial item press
+  const handleSpeedDialPress = key => {
+    if (key === 'advance') {
+      closeMenu(() => {
+        navigation.navigate('EmployeeAdvanceSalary_Create', {
+          mode: 'create',
+          employeeId: effectiveEmployeeId,
+          employeeName: effectiveEmployeeName,
+          WorkerRecId: effectiveWorkerRecId,
+          userData: effectiveUserData,
+          cameFrom: 'GenericAdvanceListScreen',
+          requestType: 'Advance',
+          advanceType: 1,
+          screenName: 'Advance Salary',
+          advanceData: {
+            employeeId: effectiveEmployeeId,
+            employeeName: effectiveEmployeeName,
+            WorkerRecId: effectiveWorkerRecId,
+            RecId: '',
+            AdvanceTypeCode: '',
+            AdvanceAmount: '0.00',
+            RequestedPaymentDate: '',
+            RecoveryStartDate: '',
+            RequestedInstallmentAmount: '0.00',
+            RequestedInstallments: '0',
+            AdvanceDescription: '',
+            Guarantor1: '',
+            Guarantor2: '',
+          },
+        });
+      });
+    } else if (key === 'loan') {
+      closeMenu(() => {
+        navigation.navigate('GenericAdvanceSaveScreen', {
+          mode: 'create',
+          employeeId: effectiveEmployeeId,
+          employeeName: effectiveEmployeeName,
+          WorkerRecId: effectiveWorkerRecId,
+          userData: effectiveUserData,
+          cameFrom: 'GenericAdvanceListScreen',
+          requestType: 'Loan',
+          advanceType: 0,
+          screenName: 'Loan Request',
+          advanceData: {
+            employeeId: effectiveEmployeeId,
+            employeeName: effectiveEmployeeName,
+            WorkerRecId: effectiveWorkerRecId,
+            RecId: '',
+            AdvanceTypeCode: '',
+            AdvanceAmount: '0.00',
+            RequestedPaymentDate: '',
+            RecoveryStartDate: '',
+            RequestedInstallmentAmount: '0.00',
+            RequestedInstallments: '0',
+            AdvanceDescription: '',
+            Guarantor1: '',
+            Guarantor2: '',
+          },
+        });
+      });
+    }
+  };
+
+  // ─── Inline Edit Modal helpers ────────────────────────────────────────────
+
+  // Strip commas and return raw number string
+  const stripFormatting = value =>
+    String(value || '')
+      .replace(/,/g, '')
+      .trim();
+
+  // Format ISO date string to MM/DD/YYYY for display inside input
+  const isoToDisplay = iso => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
+  // Convert MM/DD/YYYY (or any display format) back to ISO with time for API
+  const displayToISO = display => {
+    if (!display) return '';
+    // Already full ISO with time
+    if (display.includes('T')) return display;
+    // MM/DD/YYYY
+    const parts = display.split('/');
+    if (parts.length === 3) {
+      const [mm, dd, yyyy] = parts;
+      return `${yyyy}-${mm}-${dd}T12:00:00`;
+    }
+    // YYYY-MM-DD date-only
+    if (/^\d{4}-\d{2}-\d{2}$/.test(display)) {
+      return `${display}T12:00:00`;
+    }
+    return display;
+  };
+
+  // ─── Open edit modal — sources raw ISO dates from rawData ────────────────
+  const openEditModal = itemData => {
+    // Find the matching raw record so we preserve original ISO date strings
+    const rawItem = rawData.find(r => r.RecId === itemData.RecId) || itemData;
+
+    setEditingItem(rawItem);
+    setEditForm({
+      AdvanceAmount: stripFormatting(itemData.AdvanceAmount),
+      AdvanceDescription: itemData.AdvanceDescription || '',
+      RequestedPaymentDate: isoToDisplay(rawItem.RequestedPaymentDate),
+      RecoveryStartDate: isoToDisplay(rawItem.RecoveryStartDate),
+      RequestedInstallmentAmount: stripFormatting(
+        itemData.RequestedInstallmentAmount,
+      ),
+      RequestedInstallments: String(itemData.RequestedInstallments || ''),
+    });
+    setEditModalVisible(true);
+  };
+
+  // ─── FIX: Spread the full rawItem first so every field is preserved ───────
+  //          then override only the user-edited fields.
+  //          This prevents xsi:nil="true" from blanking out untouched fields
+  //          (Guarantor1, Guarantor2, AdvanceTypeCode, etc.) on the server.
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+    setIsSaving(true);
+    try {
+      const advanceData = {
+        // ── 1. Start with the complete raw server record ──────────────────
+        //       This ensures every field the server originally returned is
+        //       included, so nothing gets silently nulled by xsi:nil="true".
+        ...editingItem,
+
+        // ── 2. Explicitly set identity / type fields ──────────────────────
+        RecId: editingItem.RecId,
+        EmployeeId:
+          editingItem.EmployeeId ||
+          editingItem.employeeId ||
+          effectiveEmployeeId,
+        AdvanceTypeCode: editingItem.AdvanceTypeCode || '',
+        Guarantor1: editingItem.Guarantor1 || '',
+        Guarantor2: editingItem.Guarantor2 || '',
+
+        // ── 3. Override only the fields the user can edit in the form ─────
+        AdvanceAmount: stripFormatting(editForm.AdvanceAmount),
+        AdvanceDescription: editForm.AdvanceDescription,
+        RequestedPaymentDate: displayToISO(editForm.RequestedPaymentDate),
+        RecoveryStartDate: displayToISO(editForm.RecoveryStartDate),
+        RequestedInstallmentAmount: stripFormatting(
+          editForm.RequestedInstallmentAmount,
+        ),
+        RequestedInstallments: editForm.RequestedInstallments,
+
+        // ── 4. Preserve original RequestDate (not editable in the form) ───
+        //       editingItem holds the raw ISO value from the server so
+        //       displayToISO handles it safely.
+        RequestDate: displayToISO(editingItem.RequestDate || ''),
+      };
+
+      const result = await UpdateAdvanceRequest({advanceData});
+
+      if (result) {
+        // Optimistically update the card in local state
+        const updatedItem = {
+          ...editingItem,
+          AdvanceAmount: stripFormatting(editForm.AdvanceAmount),
+          AdvanceDescription: editForm.AdvanceDescription,
+          RequestedPaymentDate: displayToISO(editForm.RequestedPaymentDate),
+          RecoveryStartDate: displayToISO(editForm.RecoveryStartDate),
+          RequestedInstallmentAmount: stripFormatting(
+            editForm.RequestedInstallmentAmount,
+          ),
+          RequestedInstallments: editForm.RequestedInstallments,
+        };
+
+        setAllAdvanceData(prev =>
+          prev.map(item =>
+            item.RecId === editingItem.RecId ? updatedItem : item,
+          ),
+        );
+        setRawData(prev =>
+          prev.map(item =>
+            item.RecId === editingItem.RecId ? updatedItem : item,
+          ),
+        );
+        setDisplayData(prev =>
+          prev.map(item =>
+            item.RecId === editingItem.RecId ? updatedItem : item,
+          ),
+        );
+
+        setEditModalVisible(false);
+        setEditingItem(null);
+        setAlertMessage('Record updated successfully');
+        setAlertModal(true);
+
+        // Refresh from server after a short delay
+        setTimeout(() => fetchAllAdvanceData(), 800);
+      } else {
+        setAlertMessage('Update failed. Please try again.');
+        setAlertModal(true);
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      setAlertMessage('Failed to update record. Please try again.');
+      setAlertModal(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
 
   const getRequestTypeFromData = itemData => {
-    if (!itemData || !itemData.AdvanceTypeCode) {
+    if (!itemData || !itemData.AdvanceTypeCode)
       return {type: 'Loan', advanceType: 0, screenName: 'Loan Request'};
-    }
-
     const advanceTypeCode = itemData.AdvanceTypeCode.toLowerCase();
-
     if (
       advanceTypeCode.includes('loan') ||
       advanceTypeCode.includes('company loan')
-    ) {
+    )
       return {type: 'Loan', advanceType: 0, screenName: 'Loan Request'};
-    } else if (
+    if (
       advanceTypeCode.includes('advance') ||
       advanceTypeCode.includes('salary')
-    ) {
+    )
       return {type: 'Advance', advanceType: 1, screenName: 'Advance Salary'};
-    }
-
     return {type: 'Loan', advanceType: 0, screenName: 'Loan Request'};
   };
 
   const getStatusLabel = status => {
     if (!status) return 'Draft';
-
     const statusMap = {
       NotSubmitted: 'Draft',
       Approved: 'Approved',
@@ -313,7 +553,6 @@ const GenericAdvanceListScreen = () => {
     return ['All', ...unique];
   }, [allAdvanceData]);
 
-  // Handle attachment button press (mirrors LeaveRequestListPage logic)
   const handleReceiptAttachmentPress = async itemData => {
     try {
       const formatDateOnly = date => {
@@ -321,14 +560,12 @@ const GenericAdvanceListScreen = () => {
         const d = new Date(date);
         return d.toISOString().split('T')[0];
       };
-
       const cleanedItem = {
         ...itemData,
         RequestedPaymentDate: formatDateOnly(itemData.RequestedPaymentDate),
         RecoveryStartDate: formatDateOnly(itemData.RecoveryStartDate),
         RequestDate: formatDateOnly(itemData.RequestDate),
       };
-
       setSelectedAdvanceItem(cleanedItem);
       setAttachmentModalVisible(true);
     } catch (error) {
@@ -394,7 +631,6 @@ const GenericAdvanceListScreen = () => {
     const statusLabel = getStatusLabel(item.WFStatus);
     const isDraft = statusLabel === 'Draft';
     const isRejected = statusLabel === 'Rejected';
-
     return {
       edit: {
         show: true,
@@ -430,7 +666,7 @@ const GenericAdvanceListScreen = () => {
         customStyle: {},
       },
       approval: {
-        show: true, // ← always visible
+        show: true,
         position: 'bottom',
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
@@ -438,7 +674,6 @@ const GenericAdvanceListScreen = () => {
         textColor: '#0A66C2',
         disabled: false,
         actions: [
-          // Submit: only on Draft or Rejected
           ...(isDraft || isRejected
             ? [
                 {
@@ -448,26 +683,18 @@ const GenericAdvanceListScreen = () => {
                 },
               ]
             : []),
-
-          // View History: every status except Draft
           ...(!isDraft
-            ? [
-                {
-                  key: 'viewHistory',
-                  label: 'View History',
-                  icon: 'clock',
-                },
-              ]
+            ? [{key: 'viewHistory', label: 'View History', icon: 'clock'}]
             : []),
         ],
       },
     };
   };
 
-  const setButtonProcessing = (recId, buttonType, isProcessing) => {
+  const setButtonProcessing = (recId, buttonType, isProcessingVal) => {
     setProcessingButtons(prev => ({
       ...prev,
-      [recId]: isProcessing
+      [recId]: isProcessingVal
         ? [...(prev[recId] || []), buttonType]
         : (prev[recId] || []).filter(btn => btn !== buttonType),
     }));
@@ -479,7 +706,6 @@ const GenericAdvanceListScreen = () => {
       setAlertModal(true);
       return;
     }
-
     switch (buttonType) {
       case BUTTON_TYPES.EDIT:
       case 'edit':
@@ -497,7 +723,7 @@ const GenericAdvanceListScreen = () => {
       case 'attachment':
         handleReceiptAttachmentPress(itemData);
         break;
-      case 'viewHistory': // ← add this
+      case 'viewHistory':
         handleViewHistory(itemData);
         break;
       default:
@@ -583,38 +809,9 @@ const GenericAdvanceListScreen = () => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
+  // Edit press opens inline modal
   const handleEditPress = itemData => {
-    const requestTypeInfo = getRequestTypeFromData(itemData);
-
-    navigation.navigate('GenericAdvanceSaveScreen', {
-      mode: 'edit',
-      employeeId: itemData.employeeId || effectiveEmployeeId,
-      employeeName: itemData.employeeName || effectiveEmployeeName,
-      WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
-      userData: effectiveUserData,
-      cameFrom: 'GenericAdvanceListScreen',
-      originalCameFrom: cameFrom,
-      requestType: requestTypeInfo.type,
-      advanceType: requestTypeInfo.advanceType,
-      screenName: requestTypeInfo.screenName,
-      advanceData: {
-        RecId: itemData.RecId,
-        employeeId: itemData.employeeId || effectiveEmployeeId,
-        employeeName: itemData.employeeName || effectiveEmployeeName,
-        WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
-        AdvanceTypeCode: itemData.AdvanceTypeCode,
-        AdvanceAmount: itemData.AdvanceAmount,
-        RequestedPaymentDate: formatToISOWithTime(
-          itemData.RequestedPaymentDate,
-        ),
-        RecoveryStartDate: formatToISOWithTime(itemData.RecoveryStartDate),
-        RequestedInstallmentAmount: itemData.RequestedInstallmentAmount,
-        RequestedInstallments: itemData.RequestedInstallments,
-        AdvanceDescription: itemData.AdvanceDescription,
-        Guarantor1: itemData.Guarantor1,
-        Guarantor2: itemData.Guarantor2,
-      },
-    });
+    openEditModal(itemData);
   };
 
   const handleDeletePress = itemData => {
@@ -624,22 +821,17 @@ const GenericAdvanceListScreen = () => {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete) return;
-
     setDeleteModal(false);
-
     setTimeout(async () => {
       setIsProcessing(true);
       setButtonProcessing(itemToDelete.RecId, 'delete', true);
-
       try {
         const response = await DeleteAdvanceRequest({
           recordsRecId: [itemToDelete.RecId],
         });
-
         const recordResult = response.find(
           r => String(r.RecId) === String(itemToDelete.RecId),
         );
-
         if (recordResult && recordResult.IsSuccess === 'true') {
           notifyDelete('Record deleted successfully');
           setAlertMessage('Record deleted successfully');
@@ -656,10 +848,7 @@ const GenericAdvanceListScreen = () => {
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
         setAlertModal(true);
-
-        setTimeout(() => {
-          fetchAllAdvanceData();
-        }, 800);
+        setTimeout(() => fetchAllAdvanceData(), 800);
       }
     }, 100);
   };
@@ -671,27 +860,15 @@ const GenericAdvanceListScreen = () => {
       try {
         const response = await SubmitAdvanceRequest({recId: itemData.RecId});
         const resObj = Array.isArray(response) ? response[0] : response;
-
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
           notifySuccess('Request submitted successfully');
           setAlertMessage('Request submitted successfully');
           setAlertModal(true);
-
           setHighlightedRecId(itemData.RecId);
-
-          setTimeout(() => {
-            setHighlightedRecId(null);
-          }, 3000);
-
-          setTimeout(() => {
-            fetchAllAdvanceData();
-          }, 1000);
+          setTimeout(() => setHighlightedRecId(null), 3000);
+          setTimeout(() => fetchAllAdvanceData(), 1000);
         } else {
-          const errorMessage =
-            resObj && resObj.Message
-              ? resObj.Message
-              : 'Failed to submit request';
-          setAlertMessage(errorMessage);
+          setAlertMessage(resObj?.Message || 'Failed to submit request');
           setAlertModal(true);
         }
       } catch (error) {
@@ -707,7 +884,6 @@ const GenericAdvanceListScreen = () => {
 
   const applySearchAndSort = useCallback((data, query, sort) => {
     let result = [...data];
-
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter(item =>
@@ -718,7 +894,6 @@ const GenericAdvanceListScreen = () => {
         ),
       );
     }
-
     if (sort) {
       result.sort((a, b) => {
         const getDate = obj => {
@@ -732,7 +907,6 @@ const GenericAdvanceListScreen = () => {
         return sort === 'asc' ? diff : -diff;
       });
     }
-
     setDisplayData(result);
   }, []);
 
@@ -748,26 +922,9 @@ const GenericAdvanceListScreen = () => {
 
   const renderAdvanceCard = ({item}) => {
     if (!item) return null;
-
     const isHighlighted = highlightedRecId === item.RecId;
     const itemProcessingButtons = processingButtons[item.RecId] || [];
     const requestTypeInfo = getRequestTypeFromData(item);
-
-    // Debug logging for date formatting
-    console.log('=== Date Processing Debug ===');
-    console.log('Original RequestedPaymentDate:', item.RequestedPaymentDate);
-    console.log(
-      'Formatted RequestedPaymentDate:',
-      formatDate(item.RequestedPaymentDate),
-    );
-    console.log('Original RecoveryStartDate:', item.RecoveryStartDate);
-    console.log(
-      'Formatted RecoveryStartDate:',
-      formatDate(item.RecoveryStartDate),
-    );
-    console.log('Original RequestDate:', item.RequestDate);
-    console.log('Formatted RequestDate:', formatDate(item.RequestDate));
-
     const processedItem = {
       ...item,
       WFStatus: getStatusLabel(item.WFStatus),
@@ -786,7 +943,6 @@ const GenericAdvanceListScreen = () => {
         `${requestTypeInfo.type.toUpperCase()}-${item.RecId}`,
       RequestType: requestTypeInfo.type,
     };
-
     return (
       <DynamicRequestCard
         data={processedItem}
@@ -806,6 +962,376 @@ const GenericAdvanceListScreen = () => {
     );
   };
 
+  // ─── Inline Edit Modal ────────────────────────────────────────────────────
+
+  const renderEditModal = () => {
+    const inputStyle = {
+      borderWidth: 1,
+      borderColor: '#D0D7E2',
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      color: '#1A1A1A',
+      backgroundColor: '#F8FAFC',
+      marginBottom: 14,
+      textAlign: isRTL ? 'right' : 'left',
+    };
+
+    const labelStyle = {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#5A6A85',
+      marginBottom: 4,
+      textAlign: isRTL ? 'right' : 'left',
+    };
+
+    return (
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditModalVisible(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{flex: 1}}>
+          {/* Backdrop */}
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.45)',
+            }}
+            activeOpacity={1}
+            onPress={() => setEditModalVisible(false)}
+          />
+
+          {/* Bottom sheet panel */}
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: Platform.OS === 'ios' ? 36 : 20,
+              maxHeight: '80%',
+              elevation: 20,
+              shadowColor: '#000',
+              shadowOffset: {width: 0, height: -4},
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+            }}>
+            {/* Drag handle */}
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                backgroundColor: '#D0D7E2',
+                borderRadius: 2,
+                alignSelf: 'center',
+                marginBottom: 16,
+              }}
+            />
+
+            {/* Header row */}
+            <View
+              style={{
+                flexDirection: isRTL ? 'row-reverse' : 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 20,
+              }}>
+              <Text style={{fontSize: 17, fontWeight: '700', color: '#1A1A1A'}}>
+                Edit Record
+              </Text>
+              <TouchableOpacity
+                onPress={() => setEditModalVisible(false)}
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 15,
+                  backgroundColor: '#F0F2F5',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <Text style={{fontSize: 16, color: '#5A6A85', lineHeight: 20}}>
+                  ✕
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Scrollable form fields */}
+            <RNScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled">
+              {/* Advance Amount */}
+              <Text style={labelStyle}>
+                {allAdvanceData[0]?.AdvanceAmountlbl || 'Advance Amount'}
+              </Text>
+              <TextInput
+                style={inputStyle}
+                value={editForm.AdvanceAmount}
+                onChangeText={v =>
+                  setEditForm(prev => ({...prev, AdvanceAmount: v}))
+                }
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor="#AABBCC"
+              />
+
+              {/* Description */}
+              <Text style={labelStyle}>Description</Text>
+              <TextInput
+                style={[inputStyle, {minHeight: 70, textAlignVertical: 'top'}]}
+                value={editForm.AdvanceDescription}
+                onChangeText={v =>
+                  setEditForm(prev => ({...prev, AdvanceDescription: v}))
+                }
+                multiline
+                placeholder="Enter description"
+                placeholderTextColor="#AABBCC"
+              />
+
+              {/* Payment Date */}
+              <Text style={labelStyle}>
+                {allAdvanceData[0]?.RequestedPaymentDatelbl || 'Payment Date'}{' '}
+                (MM/DD/YYYY)
+              </Text>
+              <TextInput
+                style={inputStyle}
+                value={editForm.RequestedPaymentDate}
+                onChangeText={v =>
+                  setEditForm(prev => ({...prev, RequestedPaymentDate: v}))
+                }
+                placeholder="MM/DD/YYYY"
+                placeholderTextColor="#AABBCC"
+                keyboardType="numbers-and-punctuation"
+              />
+
+              {/* Recovery Start Date */}
+              <Text style={labelStyle}>
+                {allAdvanceData[0]?.RecoveryStartDatelbl ||
+                  'Recovery Start Date'}{' '}
+                (MM/DD/YYYY)
+              </Text>
+              <TextInput
+                style={inputStyle}
+                value={editForm.RecoveryStartDate}
+                onChangeText={v =>
+                  setEditForm(prev => ({...prev, RecoveryStartDate: v}))
+                }
+                placeholder="MM/DD/YYYY"
+                placeholderTextColor="#AABBCC"
+                keyboardType="numbers-and-punctuation"
+              />
+
+              {/* Recovery Amount */}
+              <Text style={labelStyle}>
+                {allAdvanceData[0]?.RequestedInstallmentAmountlbl ||
+                  'Recovery Amount'}
+              </Text>
+              <TextInput
+                style={inputStyle}
+                value={editForm.RequestedInstallmentAmount}
+                onChangeText={v =>
+                  setEditForm(prev => ({
+                    ...prev,
+                    RequestedInstallmentAmount: v,
+                  }))
+                }
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor="#AABBCC"
+              />
+
+              {/* Recoveries (installments count) */}
+              <Text style={labelStyle}>
+                {allAdvanceData[0]?.recoverieslbl || 'Recoveries'}
+              </Text>
+              <TextInput
+                style={inputStyle}
+                value={editForm.RequestedInstallments}
+                onChangeText={v =>
+                  setEditForm(prev => ({...prev, RequestedInstallments: v}))
+                }
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor="#AABBCC"
+              />
+
+              {/* Action buttons */}
+              <View
+                style={{
+                  flexDirection: isRTL ? 'row-reverse' : 'row',
+                  gap: 12,
+                  marginTop: 8,
+                  marginBottom: 4,
+                }}>
+                {/* Cancel */}
+                <TouchableOpacity
+                  onPress={() => setEditModalVisible(false)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 13,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: '#D0D7E2',
+                    alignItems: 'center',
+                    backgroundColor: '#F8FAFC',
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: '600',
+                      color: '#5A6A85',
+                    }}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Save */}
+                <TouchableOpacity
+                  onPress={handleSaveEdit}
+                  disabled={isSaving}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 13,
+                    borderRadius: 10,
+                    backgroundColor: isSaving ? '#A0B4CC' : '#0A66C2',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: '600',
+                        color: '#FFFFFF',
+                      }}>
+                      Save
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </RNScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    );
+  };
+
+  // ─── Speed Dial overlay ───────────────────────────────────────────────────
+
+  const renderSpeedDial = () => (
+    <Modal
+      visible={showCreateMenu}
+      transparent
+      animationType="none"
+      onRequestClose={() => closeMenu()}>
+      {/* Dimmed backdrop */}
+      <Animated.View
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.45)',
+          opacity: backdropOpacity,
+        }}>
+        <TouchableOpacity
+          style={{flex: 1}}
+          activeOpacity={1}
+          onPress={() => closeMenu()}
+        />
+      </Animated.View>
+
+      {/* Speed dial items + FAB */}
+      <View
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          bottom: 24,
+          right: isRTL ? undefined : 20,
+          left: isRTL ? 20 : undefined,
+          alignItems: isRTL ? 'flex-start' : 'flex-end',
+        }}>
+        {[...MENU_ITEMS].reverse().map((menuItem, reversedIndex) => {
+          const originalIndex = MENU_ITEMS.length - 1 - reversedIndex;
+          const anim = itemAnims[originalIndex];
+          const translateY = anim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [20, 0],
+          });
+          return (
+            <Animated.View
+              key={menuItem.key}
+              style={{
+                opacity: anim,
+                transform: [{translateY}],
+                marginBottom: 14,
+                alignItems: isRTL ? 'flex-start' : 'flex-end',
+              }}>
+              <TouchableOpacity
+                onPress={() => handleSpeedDialPress(menuItem.key)}
+                activeOpacity={0.8}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 20,
+                  elevation: 5,
+                  shadowColor: '#000',
+                  shadowOffset: {width: 0, height: 2},
+                  shadowOpacity: 0.15,
+                  shadowRadius: 4,
+                }}>
+                <Text
+                  style={{
+                    fontSize: 15,
+                    fontWeight: '600',
+                    color: '#1A1A1A',
+                    textAlign: isRTL ? 'right' : 'left',
+                  }}>
+                  {menuItem.label}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
+
+        {/* Main FAB (X to close) */}
+        <TouchableOpacity
+          onPress={() => closeMenu()}
+          activeOpacity={0.85}
+          style={{
+            width: 58,
+            height: 58,
+            borderRadius: 29,
+            backgroundColor: '#E53935',
+            alignItems: 'center',
+            justifyContent: 'center',
+            elevation: 8,
+            shadowColor: '#000',
+            shadowOffset: {width: 0, height: 4},
+            shadowOpacity: 0.25,
+            shadowRadius: 6,
+          }}>
+          <Animated.Text
+            style={{
+              fontSize: 26,
+              color: '#FFFFFF',
+              fontWeight: '300',
+              transform: [{rotate: fabRotateDeg}],
+              lineHeight: 30,
+            }}>
+            ✕
+          </Animated.Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+
+  // ─── Render ───────────────────────────────────────────────────────────────
+
   return (
     <ActionPaneContainer
       pageTitle="Loan Requests"
@@ -816,7 +1342,7 @@ const GenericAdvanceListScreen = () => {
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}
       showFilterPills={true}
-      filterPills={visiblePills} // ← add this
+      filterPills={visiblePills}
       activeFilter={activeFilter}
       onFilterChange={setActiveFilter}
       filterCounts={getFilterCounts()}
@@ -825,6 +1351,7 @@ const GenericAdvanceListScreen = () => {
       onSearchChange={handleSearch}
       onSortChange={handleSort}
       activeSortOrder={sortOrder}>
+      {/* Processing overlay */}
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -835,6 +1362,8 @@ const GenericAdvanceListScreen = () => {
           </View>
         </View>
       )}
+
+      {/* Main list / empty state */}
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
@@ -859,12 +1388,9 @@ const GenericAdvanceListScreen = () => {
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
           {searchQuery.trim() ? (
-            // Search returned no results
-            <>
-              <Text style={styles.DLP_NoDataSubText}>
-                No records match "{searchQuery}"
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataSubText}>
+              No records match "{searchQuery}"
+            </Text>
           ) : rawData.length === 0 && activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
@@ -873,14 +1399,18 @@ const GenericAdvanceListScreen = () => {
               </Text>
             </>
           ) : (
-            <>
-              <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
-              </Text>
-            </>
+            <Text style={styles.DLP_NoDataText}>
+              {`${activeFilter} record not found.`}
+            </Text>
           )}
         </ScrollView>
       )}
+
+      {/* Inline Edit Modal */}
+      {renderEditModal()}
+
+      {/* Speed Dial Modal */}
+      {renderSpeedDial()}
 
       {/* Attachment Modal */}
       <DynamicAttachmentModal
@@ -892,9 +1422,7 @@ const GenericAdvanceListScreen = () => {
           setAttachmentModalVisible(false);
           setSelectedAdvanceItem(null);
         }}
-        onSave={() => {
-          fetchAllAdvanceData();
-        }}
+        onSave={() => fetchAllAdvanceData()}
         legalEntity={selectedLegalEntity}
         employeeId={effectiveEmployeeId}
         employeeName={effectiveEmployeeName}
