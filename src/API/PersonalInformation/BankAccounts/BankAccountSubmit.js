@@ -16,6 +16,7 @@ const SubmitBankAccountRecord = async ({recId}) => {
         throw new Error('Invalid recId. Expected a number, got an object.');
       }
     }
+    console.log('HERE WE GO', recId);
 
     const config = await getActiveConfigData();
 

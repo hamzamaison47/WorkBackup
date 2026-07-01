@@ -54,7 +54,7 @@ const WorkflowItemAction = async ({recId, action, memo}) => {
         responseType: 'text',
       },
     );
-    console.log('Response XML:', xml);
+    console.log('RAW Response XML:', xml);
     // 🔵 Parse XML response
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -127,6 +127,11 @@ const WorkflowItemAction = async ({recId, action, memo}) => {
       'Workflow bulk action failed:',
       error.response?.data || error.message,
     );
+    console.error(
+      'Workflow bulk action failed - Response Data:',
+      error.response?.data,
+    );
+    console.error('Workflow bulk action failed - Message:', error.message);
     throw error;
   }
 };

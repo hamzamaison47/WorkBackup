@@ -31,6 +31,7 @@ import CalendarModal from '../../components/Leaves/CalendarModal';
 
 import {eosRetrieveReasonCode} from '../../API/EmployeeEOSRequest/RetrieveReasonCode';
 import {eosRetrieveNoticePeriodCode} from '../../API/EmployeeEOSRequest/RetrieveNoticePeriodCode';
+import {NoticePeriodCodeModified} from '../../API/EmployeeEOSRequest/NoticePeriodCodeModified';
 import {retrieveEmployeeReporteesEOS} from '../../API/EmployeeEOSRequest/RetrieveEmployeeReportees';
 import {RetrieveEmployeeReporteesEmpInfo} from '../../API/EmploymentInformation/RetrieveEmployeeReporteesEmpInfo';
 import {CreateEOSRequest} from '../../API/EmployeeEOSRequest/CreateEOSRequest';
@@ -130,14 +131,22 @@ const EmployeeEOS_SaveRecord = () => {
     return currentMenuItem?.Label || 'EOS Request';
   };
 
-  // ── Back Navigation ─────────────────────────────────────────────────────────
   const goBack = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    } else {
-      navigation.navigate('EmployeeEOSRequestListPage');
-    }
-  }, [navigation]);
+    navigation.navigate('EmployeeEOSRequestListPage', {
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: WorkerRecId || effectiveUserData?.WorkerRecId,
+      cameFrom: cameFrom,
+      userData: effectiveUserData,
+    });
+  }, [
+    navigation,
+    effectiveEmployeeId,
+    effectiveEmployeeName,
+    WorkerRecId,
+    cameFrom,
+    effectiveUserData,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -353,23 +362,38 @@ const EmployeeEOS_SaveRecord = () => {
               placeholder="Select Notice Period"
               value={formData.NoticePeriodCode}
               onFocus={loadDropdowns}
-              onChange={item => {
+              onChange={async item => {
                 handleChange('NoticePeriodCode', item.value);
+                setIsProcessing(true);
 
-                const code = String(item.value).toLowerCase();
-                let newNotificationDate = today;
+                try {
+                  const result = await NoticePeriodCodeModified(
+                    item.value,
+                    effectiveEmployeeId,
+                    formData.EOSNotificationDate || today,
+                  );
 
-                if (code.includes('one month') || code.includes('1 month')) {
-                  const oneMonthLater = new Date(today);
-                  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
-                  newNotificationDate = oneMonthLater
-                    .toISOString()
-                    .split('T')[0];
+                  if (result && result.length > 0) {
+                    const data = result[0];
+
+                    if (data.LastWorkingDate_Calculated) {
+                      handleChange(
+                        'lastWorkingDatePlanned',
+                        data.LastWorkingDate_Calculated.split('T')[0],
+                      );
+                    }
+                    if (data.LastWorkingDate_Actual) {
+                      handleChange(
+                        'LastWorkingDate_Actual',
+                        data.LastWorkingDate_Actual.split('T')[0],
+                      );
+                    }
+                  }
+                } catch (error) {
+                  console.error('NoticePeriodCodeModified error:', error);
+                } finally {
+                  setIsProcessing(false);
                 }
-
-                handleChange('EOSNotificationDate', newNotificationDate);
-                handleChange('lastWorkingDatePlanned', newNotificationDate); // ← same as notification date
-                // LastWorkingDate_Actual stays as today — don't touch it
               }}
               placeholderStyle={styles.DSR_DropdownPlaceholder}
               selectedTextStyle={styles.DSR_DropdownSelectedText}

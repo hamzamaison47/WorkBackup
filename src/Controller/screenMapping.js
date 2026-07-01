@@ -58,6 +58,11 @@ import HRExitInterviewListPage from '../screens/ExitInterview/HRExitInterview_Li
 import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
 import EmployeeEOS_SaveRecord from '../screens/EmployeeEOSRequest/EmployeeEOS_SaveRecord';
 import EmployeeEOSClearanceItemsListPage from '../screens/EmployeeEOSClearanceItems/EmployeeEOSClearanceItems_ListPage';
+
+//FOR IDAP
+import DFEmployeeLeaveRequestListPage from '../Customizations/IDAP/screens/Leaves/DFEmployeeLeaveRequestListPage';
+import DFEmployeeLeaveRequestSaveRecord from '../Customizations/IDAP/screens/Leaves/DFEmployeeLeaveREquestSaveRecord';
+
 // Map MenuId from API → Screen component
 export const screenMapping = {
   // Tab Navigator Screens
@@ -124,6 +129,10 @@ export const screenMapping = {
   HRExitInterviewListPage: HRExitInterviewListPage,
   EmployeeEOS_SaveRecord: EmployeeEOS_SaveRecord,
   EmployeeEOSClearanceItemsListPage: EmployeeEOSClearanceItemsListPage,
+
+  //FOR IDAP
+  DFEmployeeLeaveRequestListPage: DFEmployeeLeaveRequestListPage,
+  DFEmployeeLeaveRequestSaveRecord: DFEmployeeLeaveRequestSaveRecord,
 };
 
 // Map Images → Screen component

@@ -285,7 +285,7 @@ const EmployeeEOSRequestListPage = () => {
         style: 'text',
         icon: 'check-circle',
         iconSize: 16,
-        text: t('buttons.clearance') || 'Clearance',
+        text: 'Clearance',
         textColor: '#0A66C2',
         iconColor: '#0A66C2',
       },

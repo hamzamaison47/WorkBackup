@@ -1151,12 +1151,15 @@ const GenericAdvanceSaveScreen = () => {
     parseNumber(formData.RequestedInstallments) > 0;
 
   // Check if recoveries field should be disabled
-  const isRecoveriesDisabled =
-    (formData.RequestedInstallmentAmount &&
-      parseNumber(formData.RequestedInstallmentAmount) > 0) ||
-    (selectedAdvanceTypeData?.Recoveries &&
-      parseNumber(selectedAdvanceTypeData.Recoveries) > 0 &&
-      formData.RequestedInstallments === selectedAdvanceTypeData.Recoveries);
+  // const isRecoveriesDisabled =
+  //   (formData.RequestedInstallmentAmount &&
+  //     parseNumber(formData.RequestedInstallmentAmount) > 0) ||
+  //   (selectedAdvanceTypeData?.Recoveries &&
+  //     parseNumber(selectedAdvanceTypeData.Recoveries) > 0 &&
+  //     formData.RequestedInstallments === selectedAdvanceTypeData.Recoveries);
+
+  // ✅ Fix
+  const isRecoveriesDisabled = false;
 
   return (
     <ActionPaneContainer
