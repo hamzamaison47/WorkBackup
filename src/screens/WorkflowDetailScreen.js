@@ -93,6 +93,9 @@ import {
   useNavigation,
   useFocusEffect,
 } from '@react-navigation/native';
+import {ScrollView, Text, useWindowDimensions} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useRoute, useFocusEffect} from '@react-navigation/native';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import RenderHtml from 'react-native-render-html';
@@ -120,6 +123,7 @@ const WorkflowDetailScreen = () => {
   const navigation = useNavigation();
   const {contextRecId, tableId} = route.params ?? {};
   const {width} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const fetchHtmlContent = useCallback(async () => {
     setIsLoadingHtml(true);
@@ -242,6 +246,30 @@ const WorkflowDetailScreen = () => {
       showTabNavigator={false}
       onRefresh={fetchHtmlContent}>
       <View style={styles.screen}>{renderBody()}</View>
+      {isLoadingHtml ? (
+        <CustomIndicator />
+      ) : htmlContent ? (
+        <ScrollView
+          contentContainerStyle={{
+            padding: 16,
+            flexGrow: 1,
+            paddingBottom: 16 + insets.bottom,
+          }}>
+          <RenderHtml
+            contentWidth={width}
+            source={{html: htmlContent}}
+            baseStyle={{fontSize: 16, color: '#000'}}
+            tagsStyles={{
+              table: {borderWidth: 1, borderColor: '#000', marginVertical: 8},
+              th: {fontWeight: 'bold', padding: 4},
+              td: {padding: 4},
+              h2: {color: '#1E40AF', marginBottom: 12},
+            }}
+          />
+        </ScrollView>
+      ) : (
+        <Text>No content available</Text>
+      )}
     </ActionPaneContainer>
   );
 };

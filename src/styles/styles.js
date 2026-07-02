@@ -1379,12 +1379,10 @@ const styles = StyleSheet.create({
 
   WorkerATM_Container: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
   },
 
   WorkerATM_ScrollContainer: {
     flex: 1,
-    backgroundColor: '#FAFAFA',
     paddingTop: conditionalVerticalScale(10, 12, 14, 16),
   },
 
@@ -1401,7 +1399,6 @@ const styles = StyleSheet.create({
     marginTop: conditionalVerticalScale(25, 30, 35, 40),
     fontSize: conditionalFontScale(13, 14, 15, 17),
     fontWeight: '500',
-    color: '#6B7280',
     paddingHorizontal: spacing.md,
     lineHeight: conditionalFontScale(18, 20, 22, 24),
   },
@@ -1416,12 +1413,10 @@ const styles = StyleSheet.create({
   WorkerATM_RootCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
     borderRadius: borderRadius.lg,
     padding: conditionalScale(10, 12, 14, 16),
     borderWidth: 2,
     borderColor: '#0A66C2',
-    shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1432,7 +1427,6 @@ const styles = StyleSheet.create({
   },
 
   WorkerATM_RootCardShrunk: {
-    backgroundColor: '#F0F7FF',
     shadowOpacity: 0.06,
     shadowRadius: 2,
     elevation: 1,
@@ -1459,13 +1453,11 @@ const styles = StyleSheet.create({
   WorkerATM_RootAvatarPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E5E7EB',
   },
 
   WorkerATM_RootInitials: {
     fontSize: conditionalFontScale(16, 18, 20, 22),
     fontWeight: '700',
-    color: '#374151',
   },
 
   WorkerATM_RootInitialsShrunk: {
@@ -1489,7 +1481,6 @@ const styles = StyleSheet.create({
   WorkerATM_RootName: {
     fontSize: conditionalFontScale(14, 16, 17, 19),
     fontWeight: '700',
-    color: '#111827',
     marginRight: spacing.sm,
     flexShrink: 1,
     textAlign: 'left',
@@ -1513,7 +1504,6 @@ const styles = StyleSheet.create({
 
   WorkerATM_RootMeta: {
     fontSize: conditionalFontScale(10, 11, 12, 13),
-    color: '#374151',
     marginRight: spacing.sm,
     flexShrink: 1,
     textAlign: 'left',
@@ -1537,7 +1527,6 @@ const styles = StyleSheet.create({
     paddingVertical: conditionalVerticalScale(5, 6, 7, 8),
     paddingHorizontal: conditionalScale(8, 10, 11, 13),
     borderRadius: borderRadius.md,
-    shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -1582,14 +1571,11 @@ const styles = StyleSheet.create({
   WorkerATM_EmployeeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     paddingVertical: conditionalVerticalScale(8, 10, 11, 13),
     paddingHorizontal: conditionalScale(10, 12, 14, 16),
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
     marginLeft: conditionalScale(12, 16, 18, 20),
-    shadowColor: '#000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -1603,19 +1589,16 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(18, 20, 22, 24),
     marginRight: conditionalScale(8, 10, 11, 13),
     borderWidth: 2,
-    borderColor: '#E5E7EB',
   },
 
   WorkerATM_EmployeeAvatarPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E5E7EB',
   },
 
   WorkerATM_EmployeeInitials: {
     fontSize: conditionalFontScale(13, 14, 15, 17),
     fontWeight: '600',
-    color: '#374151',
   },
 
   WorkerATM_EmployeeInfo: {
@@ -1626,13 +1609,11 @@ const styles = StyleSheet.create({
   WorkerATM_EmployeeName: {
     fontSize: conditionalFontScale(13, 14, 15, 16),
     fontWeight: '600',
-    color: '#111827',
     textAlign: 'left',
   },
 
   WorkerATM_EmployeeRole: {
     fontSize: conditionalFontScale(11, 12, 13, 14),
-    color: '#6B7280',
     marginTop: conditionalVerticalScale(1, 2, 2, 3),
     textAlign: 'left',
   },

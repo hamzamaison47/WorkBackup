@@ -28,6 +28,7 @@ import {useSelector} from 'react-redux';
 import {translate as t} from '../../store/utils/translate';
 
 import {employeeEOSRequestfindbyEmployee} from '../../API/EmployeeEOSRequest/EmployeeEOSRequestfindbyEmployee';
+import useListFilters from '../../hooks/useListFilters';
 
 const EmployeeEOSRequestListPage = () => {
   const navigation = useNavigation();
@@ -53,15 +54,11 @@ const EmployeeEOSRequestListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [EOSRequestData, setEOSRequestData] = useState([]);
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
@@ -76,8 +73,6 @@ const EmployeeEOSRequestListPage = () => {
         employeeId: effectiveEmployeeId,
       });
       setEOSRequestData(data);
-      setRawData(data);
-      setDisplayData(data);
     } catch (error) {
       setAlertMessage(t('EmployeeEOSData.fetchFailed'));
       setAlertModal(true);
@@ -185,51 +180,13 @@ const EmployeeEOSRequestListPage = () => {
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };
 
-  // ── Search & Sort ──────────────────────────────────────────────────────────
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
-
-  const getFilteredData = () => {
-    return searchQuery.trim() ? displayData : rawData;
-  };
+  // ── Filter/search/sort now owned by useListFilters (no pills on this screen).
+  //    Date filter + sort key off CreatedDateTime, resolved case-insensitively.
+  //    Header Date+Sort trigger only. ─────────────────────────────────────────
+  const f = useListFilters({
+    data: EOSRequestData,
+    dateField: 'CreatedDateTime',
+  });
 
   // ── Button Config ──────────────────────────────────────────────────────────
   const getButtonConfig = item => {
@@ -367,7 +324,7 @@ const EmployeeEOSRequestListPage = () => {
     );
   };
 
-  const filteredData = getFilteredData();
+  const filteredData = f.filteredData;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -382,9 +339,7 @@ const EmployeeEOSRequestListPage = () => {
       onFloatingButtonPress={handleAddEOSRequest}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {/* Processing Overlay */}
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
@@ -421,11 +376,11 @@ const EmployeeEOSRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <Text style={styles.DLP_NoDataSubText}>
-              No records match "{searchQuery}"
+              No records match "{f.searchQuery}"
             </Text>
-          ) : rawData.length === 0 ? (
+          ) : EOSRequestData.length === 0 ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>

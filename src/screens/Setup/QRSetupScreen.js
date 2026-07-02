@@ -587,11 +587,11 @@ import {
   I18nManager,
   Platform,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Dimensions,
   Pressable,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import RNQRGenerator from 'rn-qr-generator';
 import {
   Camera,

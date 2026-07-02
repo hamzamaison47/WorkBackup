@@ -331,6 +331,7 @@ import {handleLogoutauth} from '../Controller/authUtils';
 import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfilePicture';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
   conditionalScale,
@@ -790,6 +791,7 @@ const DrawerNavigator = () => {
   const userData = useSelector(state => state.user.userData);
   const {menuItems} = useSelector(state => state.menuItem);
   const T = useAppTokens();
+  const insets = useSafeAreaInsets();
 
   const validScreens = menuItems.filter(item => screenMapping[item.MenuId]);
   const uniqueScreens = validScreens.filter(
@@ -807,11 +809,19 @@ const DrawerNavigator = () => {
           backgroundColor: '#FFFFFF',
         },
         headerShown: true,
+        // Android edge-to-edge: reserve the status-bar strip on the drawer's
+        // default header too, so it isn't squeezed under the status bar before
+        // per-screen MainPageHeader overrides run (and for any drawer screen that
+        // doesn't route through it). iOS keeps its existing height unchanged.
+        ...(Platform.OS === 'android' && {headerStatusBarHeight: insets.top}),
         headerStyle: {
           backgroundColor: T.blue,
           shadowColor: 'transparent',
           elevation: 0,
-          height: conditionalVerticalScale(56, 60, 64, 64),
+          height:
+            Platform.OS === 'android'
+              ? insets.top + conditionalVerticalScale(56, 60, 64, 64)
+              : conditionalVerticalScale(56, 60, 64, 64),
         },
         headerTitleStyle: {
           fontSize: conditionalScale(15, 16, 17, 17),

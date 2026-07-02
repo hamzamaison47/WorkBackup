@@ -1,4 +1,4 @@
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   Text,
   FlatList,
@@ -21,6 +21,7 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
+import useListFilters from '../../hooks/useListFilters';
 import styles from '../../styles/styles';
 
 const ESSEmployeeTask_ListPage = () => {
@@ -40,51 +41,28 @@ const ESSEmployeeTask_ListPage = () => {
 
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
-  // ✅ REQUIRED STATES
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // ✅ FIXED PILLS (ONLY THESE TWO)
-  const visiblePills = ['All', 'Active'];
   const getStatus = item => {
     return (item['a:Status'] || item.Status || '').trim();
   };
 
-  /** ================= FILTER ================= */
-  const getFilteredData = () => {
-    const base = searchQuery.trim()
-      ? taskData.filter(item =>
-          (item.name || '').toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-      : taskData;
-
-    if (activeFilter === 'All') {
-      return base;
-    }
-
-    // ✅ Active = In progress + Not started
-    if (activeFilter === 'Active') {
-      return base.filter(item =>
-        ['In progress', 'Not started'].includes(getStatus(item)),
-      );
-    }
-
-    return base;
-  };
-
-  /** ================= COUNTS ================= */
-  const getFilterCounts = () => {
-    return {
-      All: taskData.length,
-      Active: taskData.filter(item =>
-        ['In progress', 'Not started'].includes(getStatus(item)),
-      ).length,
-    };
-  };
-
-  const handleSearch = value => {
-    setSearchQuery(value);
-  };
+  // Filter / counts / search now come from useListFilters (f.filteredData /
+  // f.actionPaneProps). Derived, faceted pills: In progress / Not started
+  // collapse to "Active", every other status stands alone (normalise-keep-
+  // Active). Search is scan-all (was name-only). Date filter + sort key off the
+  // created-date field (CreatedDateTime), resolved case-insensitively by the
+  // hook. No documentType field → header Date+Sort trigger only.
+  const f = useListFilters({
+    data: taskData,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => {
+      const s = getStatus(item);
+      if (!s) {
+        return null;
+      }
+      return ['In progress', 'Not started'].includes(s) ? 'Active' : s;
+    },
+  });
 
   /** ================= FETCH TASKS ================= */
   const fetchAllTasks = useCallback(async () => {
@@ -295,14 +273,8 @@ const ESSEmployeeTask_ListPage = () => {
       onRefresh={handleRefresh}
       showPageTitleRow
       showFloatingButton={false}
-      showFilterPills={true}
-      filterPills={visiblePills}
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
-      // ✅ SEARCH
       showSearchBar={true}
-      onSearchChange={handleSearch}>
+      {...f.actionPaneProps}>
       {/* Processing Overlay */}
       {isProcessing && (
         <View style={styles.overlay}>
@@ -315,7 +287,7 @@ const ESSEmployeeTask_ListPage = () => {
         </View>
       ) : taskData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderTaskCard}
           keyExtractor={(item, index) =>
             (item['a:recId'] || item.recId || index).toString()

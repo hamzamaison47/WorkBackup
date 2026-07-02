@@ -31,6 +31,7 @@ import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator
 import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 import styles from '../../../styles/styles';
 import useNotify from '../../../hooks/useNotify';
+import useListFilters from '../../../hooks/useListFilters';
 
 const ExpenseManagmentListPage = () => {
   const navigation = useNavigation();
@@ -63,11 +64,6 @@ const ExpenseManagmentListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Expense Report');
 
@@ -108,6 +104,17 @@ const ExpenseManagmentListPage = () => {
 
   const normalizeRecId = item => item.recId || item.RecId || '';
 
+  // Filter/sort/search now owned by useListFilters (parity with ESS/WorkItems).
+  // Derived status pills off getStatusLabel(DocumentStatus); date filter + sort
+  // key off the created-date field (this contract serializes it lowercase as
+  // createdDateTime — resolved case-insensitively by the hook). No documentType
+  // field → header Date+Sort trigger only.
+  const f = useListFilters({
+    data: expenseData,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.DocumentStatus),
+  });
+
   const setButtonProcessing = (recId, buttonType, isProcessing) => {
     setProcessingButtons(prev => ({
       ...prev,
@@ -146,8 +153,6 @@ const ExpenseManagmentListPage = () => {
       });
 
       setExpenseData(sortedData);
-      setRawData(sortedData); // ← here
-      setDisplayData(sortedData); // ← here
 
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -205,34 +210,8 @@ const ExpenseManagmentListPage = () => {
     });
   };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-    if (activeFilter === 'All') return base;
-    return base.filter(
-      item => getStatusLabel(item.DocumentStatus) === activeFilter,
-    ); // ← fix
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: expenseData.length};
-    [
-      ...new Set(expenseData.map(item => getStatusLabel(item.DocumentStatus))),
-    ].forEach(status => {
-      // ← fix
-      counts[status] = expenseData.filter(
-        item => getStatusLabel(item.DocumentStatus) === status,
-      ).length;
-    });
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!expenseData.length) return ['All'];
-    const unique = [
-      ...new Set(expenseData.map(item => getStatusLabel(item.DocumentStatus))), // ← fix
-    ];
-    return ['All', ...unique];
-  }, [expenseData]);
+  // getFilteredData / getFilterCounts / visiblePills removed — the hook provides
+  // them (f.filteredData + f.actionPaneProps), faceted exactly like ESS.
 
   // Card click - Navigate to Lines List
   const handleCardPress = itemData => {
@@ -469,46 +448,7 @@ const ExpenseManagmentListPage = () => {
     fetchExpenseData();
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   // Render expense card
   const renderExpenseCard = ({item}) => {
@@ -548,7 +488,7 @@ const ExpenseManagmentListPage = () => {
         gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -563,16 +503,9 @@ const ExpenseManagmentListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateExpense}
-      showFilterPills={true} // ← this is missing
-      filterPills={visiblePills} // ← add this
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -590,9 +523,9 @@ const ExpenseManagmentListPage = () => {
       ) : (
         <Animated.View
           style={[styles.DLP_AnimatedContainer, {opacity: fadeAnim}]}>
-          {getFilteredData().length > 0 ? (
+          {f.filteredData.length > 0 ? (
             <FlatList
-              data={getFilteredData()}
+              data={f.filteredData}
               renderItem={renderExpenseCard}
               keyExtractor={(item, index) =>
                 normalizeRecId(item)?.toString() ||
@@ -617,14 +550,14 @@ const ExpenseManagmentListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              {searchQuery.trim() ? (
+              {f.searchQuery.trim() ? (
                 <>
                   {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
                   <Text style={styles.DLP_NoDataSubText}>
-                    No records match "{searchQuery}"
+                    No records match "{f.searchQuery}"
                   </Text>
                 </>
-              ) : rawData.length === 0 && activeFilter === 'All' ? (
+              ) : expenseData.length === 0 && f.activeFilter === 'All' ? (
                 <>
                   <Text style={styles.DLP_NoDataText}>Get started</Text>
                   <Text style={styles.DLP_NoDataSubText}>
@@ -633,7 +566,7 @@ const ExpenseManagmentListPage = () => {
                 </>
               ) : (
                 <Text style={styles.DLP_NoDataText}>
-                  {`${activeFilter} record not found.`}
+                  {`${f.activeFilter} record not found.`}
                 </Text>
               )}
             </ScrollView>

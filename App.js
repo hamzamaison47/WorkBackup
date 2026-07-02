@@ -8,6 +8,7 @@ import RNRestart from 'react-native-restart';
 import {PersistGate} from 'redux-persist/integration/react';
 import NetInfo from '@react-native-community/netinfo';
 
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {store, persistor} from './src/store';
 import AppNavigator from './src/Navigation/AppNavigator';
 import firebaseService from './src/store/FirebaseService';
@@ -94,11 +95,13 @@ Geolocation.setRNConfiguration({
 });
 
 const App = () => (
-  <Provider store={store}>
-    <PersistGate loading={null} persistor={persistor}>
-      <AppContent />
-    </PersistGate>
-  </Provider>
+  <SafeAreaProvider>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <AppContent />
+      </PersistGate>
+    </Provider>
+  </SafeAreaProvider>
 );
 
 export default App;

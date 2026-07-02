@@ -29,6 +29,7 @@ import {ContactDetails} from '../../../../API/PersonalInformation/ContactDetails
 import {DeleteContactDetails} from '../../../../API/PersonalInformation/ContactDetails/DeleteContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
 import useNotify from '../../../../hooks/useNotify';
+import useListFilters from '../../../../hooks/useListFilters';
 
 import styles from '../../../../styles/styles';
 
@@ -46,10 +47,6 @@ const ContactDetailsListPage = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Contact Details');
@@ -63,8 +60,6 @@ const ContactDetailsListPage = () => {
       const data = await ContactDetails({employeeId: effectiveEmployeeId});
       console.log({data});
       setContactsData(data);
-      setRawData(data); // ← here
-      setDisplayData(data); // ← here
     } catch (error) {
       console.log('Failed to fetch contacts:', error);
     } finally {
@@ -260,50 +255,13 @@ const ContactDetailsListPage = () => {
     }
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
-
-  const getFilteredData = () => {
-    return searchQuery.trim() ? displayData : rawData;
-  };
+  // Filter/search/sort now owned by useListFilters (no pills on this screen).
+  // Date filter + sort key off CreatedDateTime, resolved case-insensitively.
+  // Header Date+Sort trigger only.
+  const f = useListFilters({
+    data: contactsData,
+    dateField: 'CreatedDateTime',
+  });
 
   // 🔹 Render Each Contact Card
   const renderContactCard = ({item}) => {
@@ -322,7 +280,7 @@ const ContactDetailsListPage = () => {
         isExpandable
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -340,9 +298,7 @@ const ContactDetailsListPage = () => {
       onRefresh={handleRefresh}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -357,9 +313,9 @@ const ContactDetailsListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderContactCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
@@ -376,11 +332,11 @@ const ContactDetailsListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <>
               {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
               <Text style={styles.DLP_NoDataSubText}>
-                No records match "{searchQuery}"
+                No records match "{f.searchQuery}"
               </Text>
             </>
           ) : (

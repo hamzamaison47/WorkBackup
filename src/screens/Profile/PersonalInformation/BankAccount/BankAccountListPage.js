@@ -31,6 +31,7 @@ import {retrieveAllBankAccounts} from '../../../../API/PersonalInformation/BankA
 import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts/BankAccountDelete';
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
 import useNotify from '../../../../hooks/useNotify';
+import useListFilters from '../../../../hooks/useListFilters';
 
 const BankAccountListPage = () => {
   const navigation = useNavigation();
@@ -61,13 +62,8 @@ const BankAccountListPage = () => {
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const {notifySuccess, notifyError, notifyDelete} = useNotify('Bank Account');
 
   // Attachment modal state
@@ -89,8 +85,6 @@ const BankAccountListPage = () => {
       BankAccountData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
 
       setbankaccountdata(BankAccountData);
-      setRawData(BankAccountData); // ← here
-      setDisplayData(BankAccountData); // ← here
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
@@ -186,32 +180,15 @@ const BankAccountListPage = () => {
     return statusMap[status] || status; // ← return raw status if unknown, not 'Draft'
   };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-    if (activeFilter === 'All') return base;
-    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter); // ← fix
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: banksaccountdata.length};
-    [
-      ...new Set(banksaccountdata.map(item => getStatusLabel(item.WFStatus))),
-    ].forEach(status => {
-      // ← fix
-      counts[status] = banksaccountdata.filter(
-        item => getStatusLabel(item.WFStatus) === status,
-      ).length;
-    });
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!banksaccountdata.length) return ['All'];
-    const unique = [
-      ...new Set(banksaccountdata.map(item => getStatusLabel(item.WFStatus))), // ← fix
-    ];
-    return ['All', ...unique];
-  }, [banksaccountdata]);
+  // Filter/sort/search now owned by useListFilters. Derived status pills off
+  // getStatusLabel(WFStatus) (empty status maps to 'HR', unknown kept raw). Date
+  // filter + sort key off CreatedDateTime, resolved case-insensitively. No
+  // documentType field → header Date+Sort trigger only.
+  const f = useListFilters({
+    data: banksaccountdata,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.WFStatus),
+  });
   // Card Configuration
   const cardConfig = {
     headerConfig: {
@@ -460,46 +437,7 @@ const BankAccountListPage = () => {
     }
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderBankAccountCard = ({item}) => {
     // Fix: use RecId (uppercase) consistently
@@ -527,7 +465,7 @@ const BankAccountListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -542,16 +480,9 @@ const BankAccountListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleBankAccountRecordCreation}
-      showFilterPills={true}
-      filterPills={visiblePills} // ← add this
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -566,9 +497,9 @@ const BankAccountListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderBankAccountCard}
           // Fix: use RecId (uppercase) consistently
           keyExtractor={(item, index) =>
@@ -586,14 +517,14 @@ const BankAccountListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <>
               {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
               <Text style={styles.DLP_NoDataSubText}>
-                No records match "{searchQuery}"
+                No records match "{f.searchQuery}"
               </Text>
             </>
-          ) : rawData.length === 0 && activeFilter === 'All' ? (
+          ) : banksaccountdata.length === 0 && f.activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -602,7 +533,7 @@ const BankAccountListPage = () => {
             </>
           ) : (
             <Text style={styles.DLP_NoDataText}>
-              {`${activeFilter} record not found.`}
+              {`${f.activeFilter} record not found.`}
             </Text>
           )}
         </ScrollView>

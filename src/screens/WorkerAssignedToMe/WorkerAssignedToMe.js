@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useEffect, useState} from 'react';
@@ -22,9 +23,11 @@ import AlertModal from '../../components/Alert/AlertModal';
 
 import styles from '../../styles/styles';
 import {iconSize} from '../../store/utils/scaling';
+import useAppTokens from '../../components/AppComponentsDesign/useAppTokens';
 
 // ---------------- Employee Node ----------------
 const EmployeeNode = ({employee, onPress}) => {
+  const T = useAppTokens();
   const [profilePictureUrl, setProfilePictureUrl] = useState(null);
 
   useEffect(() => {
@@ -59,29 +62,45 @@ const EmployeeNode = ({employee, onPress}) => {
       <View style={styles.WorkerATM_HorizontalConnector} />
       <TouchableOpacity
         activeOpacity={0.9}
-        style={styles.WorkerATM_EmployeeCard}
+        style={[
+          styles.WorkerATM_EmployeeCard,
+          {
+            backgroundColor: T.cardBg,
+            borderColor: T.cardDivider,
+            shadowColor: T.shadowColor,
+          },
+        ]}
         onPress={onPress}>
         {profilePictureUrl ? (
           <Image
             source={{uri: profilePictureUrl}}
-            style={styles.WorkerATM_EmployeeAvatar}
+            style={[
+              styles.WorkerATM_EmployeeAvatar,
+              {borderColor: T.cardDivider},
+            ]}
           />
         ) : (
           <View
             style={[
               styles.WorkerATM_EmployeeAvatar,
               styles.WorkerATM_EmployeeAvatarPlaceholder,
+              {borderColor: T.cardDivider, backgroundColor: T.cardDivider},
             ]}>
-            <Text style={styles.WorkerATM_EmployeeInitials}>
+            <Text
+              style={[styles.WorkerATM_EmployeeInitials, {color: T.titleText}]}>
               {getInitials(employee?.name)}
             </Text>
           </View>
         )}
         <View style={styles.WorkerATM_EmployeeInfo}>
-          <Text style={styles.WorkerATM_EmployeeName} numberOfLines={1}>
+          <Text
+            style={[styles.WorkerATM_EmployeeName, {color: T.titleText}]}
+            numberOfLines={1}>
             {employee.name}
           </Text>
-          <Text style={styles.WorkerATM_EmployeeRole} numberOfLines={1}>
+          <Text
+            style={[styles.WorkerATM_EmployeeRole, {color: T.subtitleText}]}
+            numberOfLines={1}>
             {employee.role}
           </Text>
         </View>
@@ -89,7 +108,7 @@ const EmployeeNode = ({employee, onPress}) => {
           <FontAwesome
             name="chevron-right"
             size={iconSize.xs}
-            color="#9CA3AF"
+            color={T.chevronColor}
           />
         </View>
       </TouchableOpacity>
@@ -108,6 +127,7 @@ const RootUser = ({
   onPress,
 }) => {
   const navigation = useNavigation();
+  const T = useAppTokens();
 
   const getInitials = name => {
     if (!name) return 'UN';
@@ -138,6 +158,10 @@ const RootUser = ({
         style={[
           styles.WorkerATM_RootCard,
           isShrunk && styles.WorkerATM_RootCardShrunk,
+          {
+            backgroundColor: isShrunk ? T.cardHeadingBg : T.cardBg,
+            shadowColor: T.shadowColor,
+          },
         ]}>
         {profilePictureUrl ? (
           <Image
@@ -153,11 +177,13 @@ const RootUser = ({
               styles.WorkerATM_RootAvatar,
               isShrunk && styles.WorkerATM_RootAvatarShrunk,
               styles.WorkerATM_RootAvatarPlaceholder,
+              {backgroundColor: T.cardDivider},
             ]}>
             <Text
               style={[
                 styles.WorkerATM_RootInitials,
                 isShrunk && styles.WorkerATM_RootInitialsShrunk,
+                {color: T.titleText},
               ]}>
               {getInitials(employee?.employeeName || employee?.name)}
             </Text>
@@ -169,6 +195,7 @@ const RootUser = ({
               style={[
                 styles.WorkerATM_RootName,
                 isShrunk && styles.WorkerATM_RootNameShrunk,
+                {color: T.titleText},
               ]}
               numberOfLines={1}>
               {employee?.employeeName || employee?.name || 'No name'}
@@ -187,6 +214,7 @@ const RootUser = ({
               style={[
                 styles.WorkerATM_RootMeta,
                 isShrunk && styles.WorkerATM_RootMetaShrunk,
+                {color: T.subtitleText},
               ]}
               numberOfLines={1}>
               Department: {employee?.department || employee?.department || '—'}
@@ -197,6 +225,7 @@ const RootUser = ({
               style={[
                 styles.WorkerATM_RootMeta,
                 isShrunk && styles.WorkerATM_RootMetaShrunk,
+                {color: T.subtitleText},
               ]}
               numberOfLines={1}>
               Position: {employee?.role || employee?.PositionDescription || '—'}
@@ -232,6 +261,7 @@ const RootUser = ({
 
 // ---------------- Main ----------------
 const WorkerAssignedToMe = () => {
+  const T = useAppTokens();
   const [isLoading, setIsLoading] = useState(false);
   const [employees, setEmployees] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
@@ -326,7 +356,10 @@ const WorkerAssignedToMe = () => {
         <CustomIndicator />
       ) : (
         <ScrollView
-          style={styles.WorkerATM_ScrollContainer}
+          style={[
+            styles.WorkerATM_ScrollContainer,
+            {backgroundColor: T.pageBg},
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={isLoading}
@@ -377,7 +410,7 @@ const WorkerAssignedToMe = () => {
                 ))}
               </View>
             ) : rootChain.length === 1 ? (
-              <Text style={styles.WorkerATM_NoDataText}>
+              <Text style={[styles.WorkerATM_NoDataText, {color: T.emptyText}]}>
                 No Team Members Found
               </Text>
             ) : null}

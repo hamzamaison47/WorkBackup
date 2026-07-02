@@ -19,6 +19,7 @@ const MainPageHeader = ({
   onHeaderMenuPress,
   isBack = false,
   headerBg = '#0A66C2',
+  topInset = 0,
 }) => ({
   headerTitle: () => null,
 
@@ -71,10 +72,16 @@ const MainPageHeader = ({
     </View>
   ),
 
+  // Android edge-to-edge: reserve the status-bar strip explicitly so the content
+  // row below keeps its full designed height instead of being squeezed under the
+  // status bar. (iOS untouched — keeps its default 44 + insets.top.)
+  ...(Platform.OS === 'android' && {headerStatusBarHeight: topInset}),
+
   headerStyle: {
     backgroundColor: headerBg,
     ...(Platform.OS === 'android' && {
-      height: conditionalScale(48, 50, 52, 54),
+      // total header = status-bar strip + the existing compact content height
+      height: topInset + conditionalScale(48, 50, 52, 54),
     }),
     elevation: 4,
     shadowColor: '#0A2540',

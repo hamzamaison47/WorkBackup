@@ -30,6 +30,7 @@ import useNotify from '../../../../hooks/useNotify';
 
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
+import useListFilters from '../../../../hooks/useListFilters';
 
 const FamilyContact_ListPage = () => {
   const navigation = useNavigation();
@@ -61,13 +62,8 @@ const FamilyContact_ListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const [selectedContactItem, setSelectedContactItem] = useState(null);
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Personal Contacts');
 
@@ -82,8 +78,6 @@ const FamilyContact_ListPage = () => {
       console.log('here is the data', FamilyContactData);
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       setfamilycontactsdata(FamilyContactData);
-      setRawData(FamilyContactData); // ← here
-      setDisplayData(FamilyContactData); // ← here
     } catch (error) {
       setAlertMessage('Failed to fetch data.');
       setAlertModal(true);
@@ -153,37 +147,15 @@ const FamilyContact_ListPage = () => {
     return statusMap[status] || null;
   };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-    const validBase = base.filter(item => getStatusLabel(item.WFStatus));
-    if (activeFilter === 'All') return validBase;
-    return validBase.filter(
-      item => getStatusLabel(item.WFStatus) === activeFilter,
-    );
-  };
-
-  const getFilterCounts = () => {
-    const validItems = familycontactsdata.filter(item =>
-      getStatusLabel(item.WFStatus),
-    );
-    const counts = {All: validItems.length};
-    [...new Set(validItems.map(item => getStatusLabel(item.WFStatus)))].forEach(
-      status => {
-        counts[status] = validItems.filter(
-          item => getStatusLabel(item.WFStatus) === status,
-        ).length;
-      },
-    );
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!familycontactsdata.length) return ['All'];
-    const unique = [
-      ...new Set(familycontactsdata.map(item => getStatusLabel(item.WFStatus))),
-    ].filter(Boolean); // drop null
-    return ['All', ...unique];
-  }, [familycontactsdata]);
+  // Filter/sort/search now owned by useListFilters. Derived status pills off
+  // getStatusLabel(WFStatus); date filter + sort key off the created-date field
+  // (CreatedDateTime), resolved case-insensitively by the hook. No documentType
+  // field → header Date+Sort trigger only.
+  const f = useListFilters({
+    data: familycontactsdata,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.WFStatus),
+  });
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
@@ -399,46 +371,7 @@ const FamilyContact_ListPage = () => {
     });
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderFamilyContactCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
@@ -471,7 +404,7 @@ const FamilyContact_ListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -486,16 +419,9 @@ const FamilyContact_ListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleFamilyContactRecordCreate}
-      showFilterPills={true}
-      filterPills={visiblePills} // ← add this
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -510,9 +436,9 @@ const FamilyContact_ListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderFamilyContactCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
@@ -529,14 +455,14 @@ const FamilyContact_ListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <>
               {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
               <Text style={styles.DLP_NoDataSubText}>
-                No records match "{searchQuery}"
+                No records match "{f.searchQuery}"
               </Text>
             </>
-          ) : rawData.length === 0 && activeFilter === 'All' ? (
+          ) : familycontactsdata.length === 0 && f.activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -545,7 +471,7 @@ const FamilyContact_ListPage = () => {
             </>
           ) : (
             <Text style={styles.DLP_NoDataText}>
-              {`${activeFilter} record not found.`}
+              {`${f.activeFilter} record not found.`}
             </Text>
           )}
         </ScrollView>
