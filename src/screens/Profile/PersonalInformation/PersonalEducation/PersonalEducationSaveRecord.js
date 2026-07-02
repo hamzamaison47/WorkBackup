@@ -395,12 +395,12 @@ const PersonalEducationSaveRecord = () => {
       /* ---- success flow ---- */
       setAlertMessage(
         actionType === 'submit'
-          ? 'Request submitted successfully.'
+          ? 'Request created & submitted successfully.'
           : 'Record created successfully.',
       );
       const successMsg =
         actionType === 'submit'
-          ? 'Request submitted successfully.'
+          ? 'Request created & submitted successfully.'
           : 'Record created successfully.';
       notifySuccess(successMsg);
       setAlertModal(true);

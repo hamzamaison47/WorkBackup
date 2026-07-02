@@ -8940,6 +8940,102 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+
+  // ─────────────────────────────────────────────────────────────
+  // Append these entries to your existing StyleSheet in styles.js
+  // ─────────────────────────────────────────────────────────────
+
+  // EI_Card
+  EI_Card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    padding: 14,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0A66C2',
+  },
+
+  EI_CardDisabled: {
+    borderLeftColor: '#BDBDBD',
+    opacity: 0.6,
+  },
+
+  EI_CardAnswered: {
+    borderLeftColor: '#2e7d32',
+  },
+
+  // Header row inside card
+  EI_CardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  EI_RowRTL: {
+    flexDirection: 'row-reverse',
+  },
+
+  // Type badge (Simple / Multiple Choice)
+  EI_TypeBadge: {
+    backgroundColor: '#E3F0FB',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+
+  EI_TypeBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#0A66C2',
+    textTransform: 'capitalize',
+  },
+
+  // Answered / Pending badge
+  EI_AnsweredBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+
+  EI_AnsweredBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Question text
+  EI_QuestionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1a1a1a',
+    lineHeight: 20,
+  },
+
+  // Answered preview
+  EI_AnswerPreview: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#555',
+    fontStyle: 'italic',
+    lineHeight: 17,
+  },
+
+  // Button row in answer pane (Save + Cancel side by side)
+  EI_BtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 12,
+  },
+
+  EI_CancelBtn: {
+    backgroundColor: '#f0f0f0',
+  },
 });
 
 export default styles;

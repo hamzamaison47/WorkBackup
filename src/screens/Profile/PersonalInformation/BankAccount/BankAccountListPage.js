@@ -273,7 +273,7 @@ const BankAccountListPage = () => {
           {
             key: 'submit',
             label: isRejected ? 'Re-submit' : 'Submit',
-            icon: 'paper-plane',
+            icon: 'send',
           },
         ],
       },
@@ -390,7 +390,7 @@ const BankAccountListPage = () => {
 
       try {
         const response = await SubmitBankAccountRecord({
-          recId: itemData.RecId,
+          recId: itemData.__k_parmRecId,
         });
 
         const resObj = Array.isArray(response) ? response[0] : response;

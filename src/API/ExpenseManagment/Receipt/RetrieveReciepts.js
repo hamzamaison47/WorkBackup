@@ -19,6 +19,7 @@ const RetrieveReceipts = async ({recordRefRecId, tableName}) => {
       throw new Error('Missing required parameter: tableName');
     }
 
+    console.log('here is the data', recordRefRecId, tableName);
     const token = await getToken();
 
     const soapBody = `

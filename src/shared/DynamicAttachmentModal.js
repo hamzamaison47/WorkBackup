@@ -20,6 +20,8 @@ import {RetrieveReceipts} from '../API/ExpenseManagment/Receipt/RetrieveReciepts
 import {DeleteReceipts} from '../API/ExpenseManagment/Receipt/DeleteReceipts';
 import {RetrieveAttachment} from '../API/ExpenseManagment/Receipt/RetrieveAttachment';
 import {SaveAttachmentByteArray} from '../API/ExpenseManagment/Receipt/SaveAttachmentByteArray';
+import {DeleteAttachmentRecord} from '../API/ExpenseManagment/Receipt/DeleteAttachmentRecord';
+import FileViewer from 'react-native-file-viewer';
 
 import AlertModal from '../components/Alert/AlertModal';
 import AlertDeleteModal from '../components/Alert/AlertDeleteModal';
@@ -71,6 +73,7 @@ const DynamicAttachmentModal = ({
   showChooseFile = true,
   showDownload = true,
   showDelete = true,
+  showView = true,
 }) => {
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -275,15 +278,27 @@ const DynamicAttachmentModal = ({
     setProcessingAction(`delete_${attachmentToDelete}`);
 
     try {
-      const result = await DeleteReceipts({
-        docuRefRecIds: [attachment.docuRefRecId],
+      // const result = await DeleteReceipts({
+      //   docuRefRecIds: [attachment.docuRefRecId],
+      // });
+
+      // if (result.success) {
+      //   setAttachments(prev => prev.filter(a => a.id !== attachmentToDelete));
+      //   setAlertMessage('Attachment deleted successfully');
+      // } else {
+      //   setAlertMessage('Failed to delete attachment');
+      // }
+      // setAlertModal(true);
+
+      const result = await DeleteAttachmentRecord({
+        recId: attachment.docuRefRecId,
       });
 
       if (result.success) {
         setAttachments(prev => prev.filter(a => a.id !== attachmentToDelete));
         setAlertMessage('Attachment deleted successfully');
       } else {
-        setAlertMessage('Failed to delete attachment');
+        setAlertMessage(result.message || 'Failed to delete attachment');
       }
       setAlertModal(true);
     } catch (error) {
@@ -392,6 +407,132 @@ const DynamicAttachmentModal = ({
     } finally {
       setProcessingAction(null);
     }
+  };
+
+  const viewAttachment = async attachment => {
+    if (!attachment.docuRefRecId) {
+      setAlertMessage('Cannot view: missing document reference');
+      setAlertModal(true);
+      return;
+    }
+
+    setProcessingAction(`view_${attachment.id}`);
+
+    try {
+      const result = await RetrieveAttachment({
+        docuRefRecId: attachment.docuRefRecId,
+      });
+
+      if (result.success && result.base64) {
+        let cleanBase64 = result.base64
+          .trim()
+          .replace(/<[^>]*>/g, '')
+          .replace(/\s/g, '');
+
+        if (cleanBase64.length % 4 !== 0) {
+          cleanBase64 += '='.repeat(4 - (cleanBase64.length % 4));
+        }
+
+        let fileName = attachment.name || result.fileName;
+
+        // Determine extension
+        let extension = null;
+
+        if (fileName && fileName.includes('.')) {
+          extension = fileName.split('.').pop().toLowerCase();
+        } else {
+          // Try server type first
+          const serverType = result.fileType || attachment.type;
+          if (serverType && serverType !== 'application/octet-stream') {
+            extension = serverType.split('/').pop()?.split('.').pop();
+          }
+          // Fallback to magic bytes
+          if (!extension || extension === 'octet-stream') {
+            extension = detectExtensionFromBase64(cleanBase64);
+          }
+
+          if (!extension) {
+            setAlertMessage(
+              'Unable to determine file type for this attachment.',
+            );
+            setAlertModal(true);
+            setProcessingAction(null);
+            return;
+          }
+
+          fileName = `${fileName || 'attachment'}.${extension}`;
+        }
+
+        // Map extension to MIME type
+        const mimeMap = {
+          jpg: 'image/jpeg',
+          jpeg: 'image/jpeg',
+          png: 'image/png',
+          gif: 'image/gif',
+          pdf: 'application/pdf',
+          doc: 'application/msword',
+          docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          xls: 'application/vnd.ms-excel',
+          xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ppt: 'application/vnd.ms-powerpoint',
+          pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          txt: 'text/plain',
+          csv: 'text/csv',
+          mp4: 'video/mp4',
+          mp3: 'audio/mpeg',
+        };
+
+        const mimeType =
+          mimeMap[extension.toLowerCase()] || 'application/octet-stream';
+
+        const filePath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+        await RNFS.writeFile(filePath, cleanBase64, 'base64');
+
+        const fileExists = await RNFS.exists(filePath);
+        if (!fileExists) {
+          setAlertMessage('Failed to write file to cache.');
+          setAlertModal(true);
+          setProcessingAction(null);
+          return;
+        }
+
+        // On Android, FileViewer needs a content URI for Android 7+
+        const openPath =
+          Platform.OS === 'android' ? `file://${filePath}` : filePath;
+
+        await FileViewer.open(openPath, {
+          showOpenWithDialog: true, // shows "Open with" chooser
+          showAppsSuggestions: true, // suggests compatible apps
+          mimeType, // critical — tells Android what app to use
+        });
+      } else {
+        setAlertMessage(result.message || 'No attachment content received');
+        setAlertModal(true);
+      }
+    } catch (error) {
+      console.error('Error viewing attachment:', error);
+      if (
+        error.message?.includes('No app associated') ||
+        error.message?.includes('No Activity found')
+      ) {
+        setAlertMessage(
+          'No app installed on this device can open this file type.',
+        );
+      } else {
+        setAlertMessage(`Unable to open file: ${error.message}`);
+      }
+      setAlertModal(true);
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const detectExtensionFromBase64 = base64 => {
+    if (base64.startsWith('/9j/')) return 'jpg';
+    if (base64.startsWith('iVBORw0KGgo')) return 'png';
+    if (base64.startsWith('JVBERi0')) return 'pdf';
+    if (base64.startsWith('UEsDB')) return 'docx'; // also xlsx/pptx (zip-based)
+    return null;
   };
 
   const handleSave = async () => {
@@ -617,6 +758,26 @@ const DynamicAttachmentModal = ({
                         )}
                       </View>
                       <View style={styles.DAM_attachmentActions}>
+                        {showView && attachment.isExisting && (
+                          <TouchableOpacity
+                            style={[
+                              styles.DAM_downloadButton, // reuse same style or make a DAM_viewButton
+                              isAnyProcessing &&
+                                styles.DAM_disabledActionButton,
+                            ]}
+                            onPress={() => viewAttachment(attachment)}
+                            disabled={isAnyProcessing}>
+                            {processingAction === `view_${attachment.id}` ? (
+                              <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                              <FontAwesome
+                                name="eye"
+                                size={iconSize.xs}
+                                color="#fff"
+                              />
+                            )}
+                          </TouchableOpacity>
+                        )}
                         {showDownload && attachment.isExisting && (
                           <TouchableOpacity
                             style={[

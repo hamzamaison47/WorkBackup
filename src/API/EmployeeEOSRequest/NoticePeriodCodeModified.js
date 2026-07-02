@@ -19,14 +19,12 @@ const NoticePeriodCodeModified = async (
 
     const token = await getToken();
 
-    // ✅ SOAP Body WITH parameters
     const soapBody = `
-      <onNoticePeriodCodeModified xmlns="http://tempuri.org">
-       
-        <_employeeId>${employeeId}</_employeeId>
-         <_code>${noticePeriodCode}</_code>
-        <_notificationDate>${notificationDate}</_notificationDate>
-      </onNoticePeriodCodeModified>`;
+  <onNoticePeriodCodeModified xmlns="http://tempuri.org">
+    <_code>${noticePeriodCode}</_code>
+    <_employeeId>${employeeId}</_employeeId>
+    <_notificationDate>${notificationDate}T00:00:00</_notificationDate>
+  </onNoticePeriodCodeModified>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
@@ -53,11 +51,6 @@ const NoticePeriodCodeModified = async (
     });
 
     const parsed = parser.parse(xml);
-
-    console.log(
-      'NoticePeriodCodeModified RESPONSE:',
-      JSON.stringify(parsed, null, 2),
-    );
 
     const rawData =
       parsed['s:Envelope']['s:Body']['onNoticePeriodCodeModifiedResponse'][
