@@ -2,7 +2,7 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useState, useCallback, useMemo, useEffect} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   Text,
   FlatList,
@@ -37,6 +37,7 @@ import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import {isLeaveWorkflowConfigured} from '../../API/Leaves/isLeaveWorkflowEnabled';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
 import useNotify from '../../hooks/useNotify';
+import useListFilters from '../../hooks/useListFilters';
 
 const LeaveRequestListPage = () => {
   const navigation = useNavigation();
@@ -75,11 +76,6 @@ const LeaveRequestListPage = () => {
   const [selectedLeaveItem, setSelectedLeaveItem] = useState(null);
   const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Delete confirmation modal state
   const [deleteModal, setDeleteModal] = useState(false);
@@ -104,8 +100,6 @@ const LeaveRequestListPage = () => {
       });
 
       setLeavesData(LeaveData);
-      setRawData(LeaveData); // ← here
-      setDisplayData(LeaveData); // ← here
     } catch (error) {
       setAlertMessage(t('leaveRequest.fetchFailed'));
       setAlertModal(true);
@@ -243,6 +237,16 @@ const LeaveRequestListPage = () => {
     return statusMap[status] || 'Draft';
   };
 
+  // Filter/sort/search state now lives in useListFilters (parity with WorkItems
+  // + ESS). Derived pills come from getStatusLabel; date filter + sort key off
+  // the created-date field (CreatedDateTime), resolved case-insensitively by the
+  // hook. No documentType field → header Date+Sort trigger only.
+  const f = useListFilters({
+    data: leavesData,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.WFStatus),
+  });
+
   const handleReceiptAttachmentPress = async itemData => {
     try {
       const formatValue = (value, fieldType) => {
@@ -370,31 +374,8 @@ const LeaveRequestListPage = () => {
     isRTL: isRTL,
   };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-    if (activeFilter === 'All') return base;
-    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter);
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: leavesData.length};
-    [...new Set(leavesData.map(item => getStatusLabel(item.WFStatus)))].forEach(
-      status => {
-        counts[status] = leavesData.filter(
-          item => getStatusLabel(item.WFStatus) === status,
-        ).length;
-      },
-    );
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!leavesData.length) return ['All'];
-    const unique = [
-      ...new Set(leavesData.map(item => getStatusLabel(item.WFStatus))),
-    ];
-    return ['All', ...unique];
-  }, [leavesData]);
+  // getFilteredData / getFilterCounts / visiblePills removed — the hook provides
+  // them (f.filteredData + f.actionPaneProps), faceted exactly like ESS.
 
   const getButtonConfig = item => {
     const statusLabel = getStatusLabel(item.WFStatus);
@@ -697,46 +678,8 @@ const LeaveRequestListPage = () => {
     }
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters (scan-all search, orthogonal
+  // date sort keyed on LeaveReqDate) via f.actionPaneProps.
 
   const renderLeavesCard = ({item}) => {
     const isHighlighted = highlightedRecId === item.RecId;
@@ -764,7 +707,7 @@ const LeaveRequestListPage = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -779,16 +722,9 @@ const LeaveRequestListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateLeave}
-      showFilterPills={true}
-      filterPills={visiblePills} // ← add this
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -803,9 +739,9 @@ const LeaveRequestListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderLeavesCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
@@ -822,14 +758,14 @@ const LeaveRequestListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             // Search returned no results
             <>
               <Text style={styles.DLP_NoDataSubText}>
-                No records match "{searchQuery}"
+                No records match "{f.searchQuery}"
               </Text>
             </>
-          ) : rawData.length === 0 && activeFilter === 'All' ? (
+          ) : leavesData.length === 0 && f.activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -839,7 +775,7 @@ const LeaveRequestListPage = () => {
           ) : (
             <>
               <Text style={styles.DLP_NoDataText}>
-                {`${activeFilter} record not found.`}
+                {`${f.activeFilter} record not found.`}
               </Text>
             </>
           )}

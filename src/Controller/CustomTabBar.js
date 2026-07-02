@@ -3,6 +3,7 @@
 import React from 'react';
 import {View, TouchableOpacity, Text, StyleSheet, Platform} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
@@ -13,6 +14,7 @@ import {screenMapping} from './screenMapping';
 export default function CustomTabBar(props) {
   // ✅ reactive theme tokens
   const T = useAppTokens();
+  const insets = useSafeAreaInsets();
 
   const tabBarState = props?.state;
   const tabBarNavigation = props?.navigation;
@@ -148,7 +150,11 @@ export default function CustomTabBar(props) {
     <View
       style={[
         styles.container,
-        {backgroundColor: tabBarBg, borderTopColor: T.divider},
+        {
+          backgroundColor: tabBarBg,
+          borderTopColor: '#0A66C2',
+          paddingBottom: insets.bottom,
+        },
         props.style,
       ]}>
       <View style={styles.tabBarWrapper}>

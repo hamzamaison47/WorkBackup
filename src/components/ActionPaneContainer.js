@@ -18,6 +18,7 @@ import {
   TextInput,
 } from 'react-native';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import {translate as t} from '../store/utils/translate';
 import {
@@ -38,6 +39,7 @@ import NotificationPanel from './PageHeader/NotificationPanel';
 import CompanyDropdown from './PageHeader/CompanyDropdown';
 import ActionPaneMenuModal from './ActionPaneMenuModal';
 import SearchBar from './SearchBar';
+import FilterPanel from './Filters/FilterPanel';
 
 import CustomTabBar from '../Controller/CustomTabBar';
 import {fetchEmployeeMenuItemsByCompany} from '../Controller/authUtils';
@@ -118,6 +120,12 @@ const DEFAULT_PILLS = [
   'Completed',
 ];
 
+// FilterPanel + ListFilterBar now live in src/components/Filters/ (extracted).
+// Filter triggers are split by LOCATION but share one state bundle:
+//   • Header (top-right of SubHeader) → Date + Sort → every opt-in list page,
+//     driven by the `headerFilter` payload on useListFilters' actionPaneProps.
+//   • Body (below the pills) → Document Type only → via <ListFilterBar/>.
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  SubHeader
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,21 +133,28 @@ const SubHeader = ({
   pageTitle,
   showSearchBar,
   onSearchChange,
-  onSortChange,
-  activeSortOrder,
   searchPlaceholder,
   showFilterPills,
   filterPills,
   activeFilter,
   onFilterChange,
   filterCounts,
+  headerFilter,
 }) => {
   // ✅ useAppTokens inside component — reactive to theme changes
   const T = useAppTokens();
 
   const [expanded, setExpanded] = useState(true);
   const [query, setQuery] = useState('');
-  const [sortAsc, setSortAsc] = useState(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // Universal Date + Sort trigger — renders when the screen opts into either
+  // section. Badge/disabled reflect only its own facets (never document type).
+  const showHeaderFilter =
+    !!headerFilter &&
+    (headerFilter.showDateFilter || headerFilter.showSortControl);
+  const filterActive =
+    showHeaderFilter && !headerFilter.disabled && headerFilter.badgeCount > 0;
 
   const chevronAnim = useRef(new Animated.Value(1)).current;
   const expandAnim = useRef(new Animated.Value(1)).current;
@@ -268,6 +283,36 @@ const SubHeader = ({
         </View>
 
         <View style={SH.titleRight}>
+          {showHeaderFilter && (
+            <TouchableOpacity
+              onPress={
+                headerFilter.disabled ? undefined : () => setFilterOpen(true)
+              }
+              disabled={headerFilter.disabled}
+              activeOpacity={headerFilter.disabled ? 1 : 0.7}
+              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+              style={[
+                SH.filterTrigger,
+                {
+                  backgroundColor: T.pageBg,
+                  borderColor: filterActive ? T.blue : T.cardDivider,
+                  opacity: headerFilter.disabled ? 0.45 : 1,
+                },
+              ]}>
+              <FeatherIcon
+                name="filter"
+                size={conditionalFontScale(14, 15, 15, 16)}
+                color={filterActive ? T.blue : T.subtitleText}
+              />
+              {filterActive && (
+                <View style={[SH.filterBadge, {backgroundColor: T.blue}]}>
+                  <Text style={SH.filterBadgeText}>
+                    {headerFilter.badgeCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
           {hasExpandable && (
             <Animated.View style={{transform: [{rotate: chevronRotation}]}}>
               <FeatherIcon
@@ -279,6 +324,21 @@ const SubHeader = ({
           )}
         </View>
       </TouchableOpacity>
+
+      {/* Header trigger's panel — Date + Sort only. Shares the screen's one
+          useListFilters bundle via headerFilter, so it drives the same counts. */}
+      {showHeaderFilter && (
+        <FilterPanel
+          visible={filterOpen}
+          onClose={() => setFilterOpen(false)}
+          showDateFilter={headerFilter.showDateFilter}
+          selectedDateRange={headerFilter.selectedDateRange}
+          onDateRangeChange={headerFilter.onDateRangeChange}
+          showSortControl={headerFilter.showSortControl}
+          activeSortOrder={headerFilter.sortOrder}
+          onSortChange={headerFilter.onSortChange}
+        />
+      )}
 
       {/* ── Expandable body ── */}
       {expanded && (
@@ -430,6 +490,29 @@ const SH = StyleSheet.create({
     gap: conditionalScale(8, 9, 10, 10),
     flexShrink: 0,
   },
+  filterTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: conditionalScale(4, 4, 5, 5),
+    paddingHorizontal: conditionalScale(8, 9, 10, 10),
+    height: conditionalVerticalScale(28, 29, 30, 30),
+    borderRadius: 99,
+    borderWidth: 1,
+  },
+  filterBadge: {
+    minWidth: conditionalScale(15, 16, 16, 17),
+    height: conditionalScale(15, 16, 16, 17),
+    borderRadius: 99,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: {
+    fontSize: conditionalFontScale(9, 9, 9, 10),
+    fontWeight: '700',
+    color: '#fff',
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -510,18 +593,13 @@ const ActionPaneContainer = ({
   showPageTitleRow = false,
   showSearchBar = false,
   onSearchChange = () => {},
-  onSortChange = () => {},
-  activeSortOrder = null,
   searchPlaceholder = 'Search...',
-  showDocumentTypeFilter = false,
-  documentTypes = [],
-  selectedDocumentType = null,
-  onDocumentTypeChange = () => {},
   showFilterPills = false,
   filterPills = DEFAULT_PILLS,
   activeFilter = 'All',
   onFilterChange = () => {},
   filterCounts = {},
+  headerFilter = null,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
@@ -537,6 +615,7 @@ const ActionPaneContainer = ({
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const T = useAppTokens();
+  const insets = useSafeAreaInsets();
 
   const {selectedLegalEntity, defaultLegalEntity, legalEntities} = useSelector(
     state => state.company,
@@ -652,6 +731,7 @@ const ActionPaneContainer = ({
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
         isBack: false,
         onBackPress: onBackPress,
+        topInset: insets.top,
         selectedDat:
           selectedLegalEntity ||
           defaultLegalEntity ||
@@ -670,6 +750,7 @@ const ActionPaneContainer = ({
     T.blue,
     onBackPress,
     totalUnreadCount,
+    insets.top,
   ]);
 
   const handleCompanySelect = async newLegalEntity => {
@@ -694,7 +775,8 @@ const ActionPaneContainer = ({
   // ✅ FAB style uses T.blue and T.shadowColor — reactive
   const fabStyle = {
     position: 'absolute',
-    bottom: conditionalVerticalScale(100, 104, 108, 108),
+    // bottom: conditionalVerticalScale(100, 104, 108, 108),
+    bottom: conditionalVerticalScale(150, 154, 158, 158),
     right: conditionalScale(20, 22, 24, 24),
     width: conditionalScale(52, 54, 56, 56),
     height: conditionalScale(52, 54, 56, 56),
@@ -712,19 +794,18 @@ const ActionPaneContainer = ({
   return (
     <View style={[styles.APCont_container, {backgroundColor: T.pageBg}]}>
       <View style={[styles.APCont_content, {backgroundColor: T.pageBg}]}>
-        {(showPageTitleRow || showFilterPills) && (
+        {(showPageTitleRow || showFilterPills || !!headerFilter) && (
           <SubHeader
             pageTitle={pageTitle}
             showSearchBar={showSearchBar && showPageTitleRow}
             onSearchChange={onSearchChange}
-            onSortChange={onSortChange}
-            activeSortOrder={activeSortOrder}
             searchPlaceholder={searchPlaceholder}
             showFilterPills={showFilterPills}
             filterPills={filterPills}
             activeFilter={activeFilter}
             onFilterChange={onFilterChange}
             filterCounts={filterCounts}
+            headerFilter={headerFilter}
           />
         )}
 

@@ -28,6 +28,7 @@ import {retrievePurchaseRequisitionLines} from '../../API/PurchaseRequisitionLin
 import deletePurchaseRequisitionLineRecord from '../../API/PurchaseRequisitionLines/PurchaseRequisitionLinesDeleteRecord';
 
 import {useSelector} from 'react-redux';
+import useListFilters from '../../hooks/useListFilters';
 
 const PurchaseRequisitionLinesListPage = () => {
   const navigation = useNavigation();
@@ -66,10 +67,6 @@ const PurchaseRequisitionLinesListPage = () => {
   const [itemToSubmit, setItemToSubmit] = useState(null);
   const [deletingItemId, setDeletingItemId] = useState(null); // Track which item is being deleted
   const isActionsDisabled = RequisitionStatus && RequisitionStatus !== 'Draft';
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const leftFields = ['ItemId', 'ItemName'];
   const rightFields = [
@@ -87,6 +84,15 @@ const PurchaseRequisitionLinesListPage = () => {
     LineAmount: 'Net Amount',
   };
 
+  // Search + sort now owned by useListFilters (no pills). PR lines carry no
+  // created-date field, so the header Date section resolves empty and the trigger
+  // shows disabled; it activates automatically if the API later returns
+  // CreatedDateTime.
+  const f = useListFilters({
+    data: lines,
+    dateField: 'CreatedDateTime',
+  });
+
   const fetchLines = useCallback(async () => {
     setLoading(true);
     try {
@@ -96,8 +102,6 @@ const PurchaseRequisitionLinesListPage = () => {
       const data = Array.isArray(response) ? response : [];
 
       setLines(data);
-      setRawData(data); // ✅ set raw data
-      setDisplayData(data);
     } catch (error) {
       console.log('Error fetching PR lines:', error);
       setLines([]);
@@ -262,46 +266,7 @@ const PurchaseRequisitionLinesListPage = () => {
     });
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderLineCard = ({item, index}) => (
     <PRLinesList
@@ -330,10 +295,8 @@ const PurchaseRequisitionLinesListPage = () => {
       floatingButtonDisabled={isActionsDisabled}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder} // Disable floating button
-    >
+      {...f.actionPaneProps}>
+
       {/* ✅ ADD PROCESSING OVERLAY HERE */}
       {isLoading && (
         <View
@@ -377,7 +340,7 @@ const PurchaseRequisitionLinesListPage = () => {
         <CustomIndicator />
       ) : (
         <FlatList
-          data={displayData}
+          data={f.filteredData}
           keyExtractor={(item, index) => index.toString()}
           renderItem={renderLineCard}
           contentContainerStyle={{paddingBottom: 20}}
@@ -386,11 +349,11 @@ const PurchaseRequisitionLinesListPage = () => {
           }
           ListEmptyComponent={
             <View style={{paddingTop: 250, alignItems: 'center'}}>
-              {searchQuery.trim() ? (
+              {f.searchQuery.trim() ? (
                 <>
                   {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
                   <Text style={styles.DLP_NoDataSubText}>
-                    No records match "{searchQuery}"
+                    No records match "{f.searchQuery}"
                   </Text>
                 </>
               ) : (

@@ -41,6 +41,7 @@ import DynamicRequestCard, {
 } from '../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import useNotify from '../../hooks/useNotify';
+import useListFilters from '../../hooks/useListFilters';
 
 import styles from '../../styles/styles';
 
@@ -60,11 +61,6 @@ const GenericAdvanceListScreen = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   // ── Inline edit modal state ──────────────────────────────────────────────
@@ -194,8 +190,6 @@ const GenericAdvanceListScreen = () => {
         return 0;
       });
       setAllAdvanceData(sortedResults);
-      setRawData(allResults);
-      setDisplayData(allResults);
     } catch (error) {
       console.error('Error fetching advance data:', error);
       setAlertMessage(
@@ -377,10 +371,11 @@ const GenericAdvanceListScreen = () => {
     return display;
   };
 
-  // ─── Open edit modal — sources raw ISO dates from rawData ────────────────
+  // ─── Open edit modal — sources raw ISO dates from allAdvanceData ─────────
   const openEditModal = itemData => {
     // Find the matching raw record so we preserve original ISO date strings
-    const rawItem = rawData.find(r => r.RecId === itemData.RecId) || itemData;
+    const rawItem =
+      allAdvanceData.find(r => r.RecId === itemData.RecId) || itemData;
 
     setEditingItem(rawItem);
     setEditForm({
@@ -457,16 +452,6 @@ const GenericAdvanceListScreen = () => {
             item.RecId === editingItem.RecId ? updatedItem : item,
           ),
         );
-        setRawData(prev =>
-          prev.map(item =>
-            item.RecId === editingItem.RecId ? updatedItem : item,
-          ),
-        );
-        setDisplayData(prev =>
-          prev.map(item =>
-            item.RecId === editingItem.RecId ? updatedItem : item,
-          ),
-        );
 
         setEditModalVisible(false);
         setEditingItem(null);
@@ -527,31 +512,16 @@ const GenericAdvanceListScreen = () => {
     return statusMap[status] || 'Draft';
   };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-    if (activeFilter === 'All') return base;
-    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter);
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: allAdvanceData.length};
-    [
-      ...new Set(allAdvanceData.map(item => getStatusLabel(item.WFStatus))),
-    ].forEach(status => {
-      counts[status] = allAdvanceData.filter(
-        item => getStatusLabel(item.WFStatus) === status,
-      ).length;
-    });
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!allAdvanceData.length) return ['All'];
-    const unique = [
-      ...new Set(allAdvanceData.map(item => getStatusLabel(item.WFStatus))),
-    ];
-    return ['All', ...unique];
-  }, [allAdvanceData]);
+  // Filter/sort/search now owned by useListFilters. Fed the expense-filtered
+  // list (allAdvanceData) so the visible list and pill counts share one source.
+  // Derived status pills off getStatusLabel(WFStatus); date filter + sort key off
+  // CreatedDateTime, resolved case-insensitively. No documentType field → header
+  // Date+Sort trigger only.
+  const f = useListFilters({
+    data: allAdvanceData,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.WFStatus),
+  });
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
@@ -882,43 +852,7 @@ const GenericAdvanceListScreen = () => {
     }, 100);
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderAdvanceCard = ({item}) => {
     if (!item) return null;
@@ -957,7 +891,7 @@ const GenericAdvanceListScreen = () => {
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -1341,16 +1275,9 @@ const GenericAdvanceListScreen = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRequest}
-      showFilterPills={true}
-      filterPills={visiblePills}
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {/* Processing overlay */}
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
@@ -1368,9 +1295,9 @@ const GenericAdvanceListScreen = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderAdvanceCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
@@ -1387,11 +1314,11 @@ const GenericAdvanceListScreen = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <Text style={styles.DLP_NoDataSubText}>
-              No records match "{searchQuery}"
+              No records match "{f.searchQuery}"
             </Text>
-          ) : rawData.length === 0 && activeFilter === 'All' ? (
+          ) : allAdvanceData.length === 0 && f.activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -1400,7 +1327,7 @@ const GenericAdvanceListScreen = () => {
             </>
           ) : (
             <Text style={styles.DLP_NoDataText}>
-              {`${activeFilter} record not found.`}
+              {`${f.activeFilter} record not found.`}
             </Text>
           )}
         </ScrollView>

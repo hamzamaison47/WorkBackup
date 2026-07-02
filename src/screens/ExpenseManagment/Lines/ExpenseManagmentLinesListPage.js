@@ -30,6 +30,7 @@ import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 import ReceiptDetailsModal from '../../../shared/ReceiptDetailsModal';
 import styles from '../../../styles/styles';
 import useNotify from '../../../hooks/useNotify';
+import useListFilters from '../../../hooks/useListFilters';
 
 const ExpenseManagmentLinesListPage = () => {
   const navigation = useNavigation();
@@ -74,10 +75,6 @@ const ExpenseManagmentLinesListPage = () => {
 
   const [receiptModal, setReceiptModal] = useState(false);
   const [selectedExpenseLine, setSelectedExpenseLine] = useState(null);
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Expense Report');
 
@@ -173,6 +170,15 @@ const ExpenseManagmentLinesListPage = () => {
 
   const normalizeRecId = item => item.recId || item.RecId || '';
 
+  // Search + sort now owned by useListFilters (no pills on this screen). Date
+  // filter + sort key off the created-date field (this contract serializes it
+  // lowercase as createdDateTime — resolved case-insensitively by the hook).
+  // Header Date+Sort trigger only.
+  const f = useListFilters({
+    data: expenseLinesData,
+    dateField: 'CreatedDateTime',
+  });
+
   const fetchExpenseLinesData = useCallback(async () => {
     if (!effectiveEmployeeId || !expenseReportNumber) {
       setAlertMessage('Missing required parameters');
@@ -201,8 +207,6 @@ const ExpenseManagmentLinesListPage = () => {
       });
 
       setExpenseLinesData(sortedExpenseLines);
-      setRawData(sortedExpenseLines); // ✅ set raw data
-      setDisplayData(sortedExpenseLines);
 
       const myExpenseHeaderData = await GetAllExpenseReports({
         employeeId: effectiveEmployeeId,
@@ -465,46 +469,7 @@ const ExpenseManagmentLinesListPage = () => {
     setSelectedExpenseLine(null);
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderExpenseLineCard = ({item, index}) => {
     const itemRecId = normalizeRecId(item);
@@ -541,7 +506,7 @@ const ExpenseManagmentLinesListPage = () => {
         showNavigationArrow={false}
         gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         processingButtons={itemProcessingButtons}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -585,9 +550,7 @@ const ExpenseManagmentLinesListPage = () => {
       onFloatingButtonPress={handleCreateExpense}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isLoading && <CustomIndicator />}
 
       {!isLoading && (
@@ -598,9 +561,9 @@ const ExpenseManagmentLinesListPage = () => {
             </Text>
           </View>
 
-          {displayData.length > 0 && (
+          {f.filteredData.length > 0 && (
             <FlatList
-              data={displayData} // 👈 was expenseLinesData
+              data={f.filteredData} // 👈 was expenseLinesData
               renderItem={renderExpenseLineCard}
               keyExtractor={(item, index) => {
                 const itemRecId = normalizeRecId(item);
@@ -621,7 +584,7 @@ const ExpenseManagmentLinesListPage = () => {
             />
           )}
 
-          {displayData.length === 0 && ( // 👈 was expenseLinesData.length === 0
+          {f.filteredData.length === 0 && ( // 👈 was expenseLinesData.length === 0
             <ScrollView
               contentContainerStyle={styles.DLP_NoDataContainer}
               refreshControl={
@@ -630,11 +593,11 @@ const ExpenseManagmentLinesListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              {searchQuery.trim() ? (
+              {f.searchQuery.trim() ? (
                 <>
                   {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
                   <Text style={styles.DLP_NoDataSubText}>
-                    No records match "{searchQuery}"
+                    No records match "{f.searchQuery}"
                   </Text>
                 </>
               ) : (

@@ -509,9 +509,9 @@ import {
   I18nManager,
   StyleSheet,
   Dimensions,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Feather';
 import {translate as t} from '../../store/utils/translate';

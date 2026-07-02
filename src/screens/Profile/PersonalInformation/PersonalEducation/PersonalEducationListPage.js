@@ -33,6 +33,7 @@ import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Educat
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
 import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
 import useNotify from '../../../../hooks/useNotify';
+import useListFilters from '../../../../hooks/useListFilters';
 
 import styles from '../../../../styles/styles';
 
@@ -64,11 +65,6 @@ const PersonalEducationListPage = () => {
   const [processingButtons, setProcessingButtons] = useState({});
   const [isWorkflowEnabled, setIsWorkflowEnabled] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Education Details');
 
@@ -88,8 +84,6 @@ const PersonalEducationListPage = () => {
       // Newest record on top
       data.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       setEducationData(data);
-      setRawData(data); // ← here
-      setDisplayData(data); // ← here
     } catch (error) {
       console.log('Failed to fetch education details:', error);
       setAlertMessage('Failed to fetch data.');
@@ -200,38 +194,16 @@ const PersonalEducationListPage = () => {
     return map[normalizedStatus] ?? '';
   };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-    if (activeFilter === 'All') return base;
-    return base.filter(
-      item => getStatusLabel(item.ApprovalStatus) === activeFilter,
-    ); // ← fix
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: educationData.length};
-    [
-      ...new Set(
-        educationData.map(item => getStatusLabel(item.ApprovalStatus)),
-      ),
-    ].forEach(status => {
-      // ← fix
-      counts[status] = educationData.filter(
-        item => getStatusLabel(item.ApprovalStatus) === status,
-      ).length;
-    });
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!educationData.length) return ['All'];
-    const unique = [
-      ...new Set(
-        educationData.map(item => getStatusLabel(item.ApprovalStatus)),
-      ), // ← fix
-    ];
-    return ['All', ...unique.filter(s => s !== '')];
-  }, [educationData]);
+  // Filter/sort/search now owned by useListFilters. Derived status pills off
+  // getStatusLabel(ApprovalStatus) — empty status (HCM/no-workflow records) maps
+  // to '' and is dropped from the pill row exactly as before. Date filter + sort
+  // key off CreatedDateTime, resolved case-insensitively. No documentType field →
+  // header Date+Sort trigger only.
+  const f = useListFilters({
+    data: educationData,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.ApprovalStatus),
+  });
 
   /* ---------- buttons ---------- */
   // Fix: rename param to avoid shadowing isProcessing state
@@ -502,46 +474,7 @@ const PersonalEducationListPage = () => {
     isRTL: isRTL,
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderEducationCard = ({item}) => {
     const updatedItem = {...item, EducationTitle: 'Education'};
@@ -559,7 +492,7 @@ const PersonalEducationListPage = () => {
         isHighlighted={highlightedRecId === item.RecId}
         processingButtons={processingButtons[item.RecId] || []}
         isRTL={isRTL}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -575,16 +508,9 @@ const PersonalEducationListPage = () => {
       onFloatingButtonPress={handleCreateEducation}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      showFilterPills={true}
-      filterPills={visiblePills} // ← add this
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -599,9 +525,9 @@ const PersonalEducationListPage = () => {
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderEducationCard}
           keyExtractor={(item, index) =>
             item.RecId?.toString() || index.toString()
@@ -618,14 +544,14 @@ const PersonalEducationListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <>
               {/* <Text style={styles.DLP_NoDataText}>No results found</Text> */}
               <Text style={styles.DLP_NoDataSubText}>
-                No records match "{searchQuery}"
+                No records match "{f.searchQuery}"
               </Text>
             </>
-          ) : rawData.length === 0 && activeFilter === 'All' ? (
+          ) : educationData.length === 0 && f.activeFilter === 'All' ? (
             <>
               <Text style={styles.DLP_NoDataText}>Get started</Text>
               <Text style={styles.DLP_NoDataSubText}>
@@ -634,7 +560,7 @@ const PersonalEducationListPage = () => {
             </>
           ) : (
             <Text style={styles.DLP_NoDataText}>
-              {`${activeFilter} record not found.`}
+              {`${f.activeFilter} record not found.`}
             </Text>
           )}
         </ScrollView>

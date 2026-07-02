@@ -1,5 +1,6 @@
 import React, {useState, useCallback} from 'react';
 import {ScrollView, Text, useWindowDimensions} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useRoute, useFocusEffect} from '@react-navigation/native';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
@@ -14,6 +15,7 @@ const WorkflowDetailScreen = () => {
   const route = useRoute();
   const {contextRecId, tableId} = route.params ?? {};
   const {width} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const fetchHtmlContent = useCallback(async () => {
     setIsLoadingHtml(true);
@@ -58,7 +60,12 @@ const WorkflowDetailScreen = () => {
       {isLoadingHtml ? (
         <CustomIndicator />
       ) : htmlContent ? (
-        <ScrollView contentContainerStyle={{padding: 16, flexGrow: 1}}>
+        <ScrollView
+          contentContainerStyle={{
+            padding: 16,
+            flexGrow: 1,
+            paddingBottom: 16 + insets.bottom,
+          }}>
           <RenderHtml
             contentWidth={width}
             source={{html: htmlContent}}

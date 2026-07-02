@@ -33,6 +33,7 @@ import {submitPurchaseRequisition} from '../../API/PurchaseRequisition/PurchaseR
 import {useSelector} from 'react-redux';
 import {ScrollView} from 'react-native-gesture-handler';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+import useListFilters from '../../hooks/useListFilters';
 
 // ── Height of your custom tab navigator — adjust if needed ──
 
@@ -69,11 +70,6 @@ const PurchaseRequisitionListPage = () => {
   const [itemToSubmit, setItemToSubmit] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Attachment modal state
   const [attachmentModal, setAttachmentModal] = useState(false);
@@ -115,6 +111,16 @@ const PurchaseRequisitionListPage = () => {
     const date = new Date(dateString);
     return isNaN(date) ? dateString : date.toLocaleDateString();
   };
+
+  // Filter/sort/search now owned by useListFilters (parity with ESS/WorkItems).
+  // Derived status pills off getStatusLabel(RequisitionStatus); date filter + sort
+  // key off the created-date field (CreatedDateTime), resolved case-insensitively
+  // by the hook. No documentType field → header Date+Sort trigger only.
+  const f = useListFilters({
+    data: purchaseRequisitiondata,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.RequisitionStatus),
+  });
 
   const setButtonProcessing = (recId, action, isProc) => {
     setProcessingButtons(prev => {
@@ -291,13 +297,13 @@ const PurchaseRequisitionListPage = () => {
   }, []);
 
   const handleSelectAll = useCallback(() => {
-    const allIds = getFilteredData().map(item => item.RecId);
+    const allIds = f.filteredData.map(item => item.RecId);
     setSelectedIds(new Set(allIds));
-  }, [displayData, activeFilter, purchaseRequisitiondata]);
+  }, [f.filteredData]);
 
   // Bulk Submit — only submits Draft items from the selection
   const handleBulkSubmit = useCallback(async () => {
-    const filteredData = getFilteredData();
+    const filteredData = f.filteredData;
     const selectedItems = filteredData.filter(
       item =>
         selectedIds.has(item.RecId) &&
@@ -340,7 +346,7 @@ const PurchaseRequisitionListPage = () => {
 
   // Bulk Delete — only deletes Draft items from the selection
   const handleBulkDelete = useCallback(async () => {
-    const filteredData = getFilteredData();
+    const filteredData = f.filteredData;
     const selectedItems = filteredData.filter(
       item =>
         selectedIds.has(item.RecId) &&
@@ -377,8 +383,6 @@ const PurchaseRequisitionListPage = () => {
         employeeId: effectiveEmployeeId,
       });
       setPurchaseRequisitionData(data);
-      setRawData(data);
-      setDisplayData(data);
       console.log('Here is req data', data);
 
       Animated.timing(fadeAnim, {
@@ -452,41 +456,8 @@ const PurchaseRequisitionListPage = () => {
   //   });
   // };
 
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : purchaseRequisitiondata;
-    if (activeFilter === 'All') return base;
-    return base.filter(
-      item => getStatusLabel(item.RequisitionStatus) === activeFilter,
-    );
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: purchaseRequisitiondata.length};
-    [
-      ...new Set(
-        purchaseRequisitiondata.map(item =>
-          getStatusLabel(item.RequisitionStatus),
-        ),
-      ),
-    ].forEach(status => {
-      counts[status] = purchaseRequisitiondata.filter(
-        item => getStatusLabel(item.RequisitionStatus) === status,
-      ).length;
-    });
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!purchaseRequisitiondata.length) return ['All'];
-    const unique = [
-      ...new Set(
-        purchaseRequisitiondata.map(item =>
-          getStatusLabel(item.RequisitionStatus),
-        ),
-      ),
-    ];
-    return ['All', ...unique];
-  }, [purchaseRequisitiondata]);
+  // getFilteredData / getFilterCounts / visiblePills removed — the hook provides
+  // them (f.filteredData + f.actionPaneProps), faceted exactly like ESS.
 
   const handleGoBack = () => {
     let targetRoute = 'MainDashboard';
@@ -566,46 +537,7 @@ const PurchaseRequisitionListPage = () => {
     }
   };
 
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) return d;
-          }
-          return new Date(0);
-        };
-        const diff = getDate(a) - getDate(b);
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
+  // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const handleCreateRecord = () => {
     navigation.navigate('PurchaseRequisitionSaveRecord', {
@@ -651,7 +583,7 @@ const PurchaseRequisitionListPage = () => {
         gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
         // // ── Multi-select wiring ──
         // isMultiSelectMode={isMultiSelectMode}
         // isSelected={selectedIds.has(item.RecId)}
@@ -671,16 +603,9 @@ const PurchaseRequisitionListPage = () => {
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
       onFloatingButtonPress={handleCreateRecord}
-      showFilterPills={true}
-      filterPills={visiblePills} // ← add this
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
@@ -697,9 +622,9 @@ const PurchaseRequisitionListPage = () => {
       ) : (
         <Animated.View
           style={[styles.DLP_AnimatedContainer, {opacity: fadeAnim}]}>
-          {getFilteredData().length > 0 ? (
+          {f.filteredData.length > 0 ? (
             <FlatList
-              data={getFilteredData()}
+              data={f.filteredData}
               keyExtractor={item => item.RecId?.toString()}
               renderItem={renderPurchaseRequisitionCard}
               contentContainerStyle={styles.DLP_ListContainer}
@@ -720,14 +645,15 @@ const PurchaseRequisitionListPage = () => {
                   onRefresh={handleRefresh}
                 />
               }>
-              {searchQuery.trim() ? (
+              {f.searchQuery.trim() ? (
                 // Search returned no results
                 <>
                   <Text style={styles.DLP_NoDataSubText}>
-                    No records match "{searchQuery}"
+                    No records match "{f.searchQuery}"
                   </Text>
                 </>
-              ) : rawData.length === 0 && activeFilter === 'All' ? (
+              ) : purchaseRequisitiondata.length === 0 &&
+                f.activeFilter === 'All' ? (
                 <>
                   <Text style={styles.DLP_NoDataText}>Get started</Text>
                   <Text style={styles.DLP_NoDataSubText}>
@@ -737,7 +663,7 @@ const PurchaseRequisitionListPage = () => {
               ) : (
                 <>
                   <Text style={styles.DLP_NoDataText}>
-                    {`${activeFilter} record not found.`}
+                    {`${f.activeFilter} record not found.`}
                   </Text>
                 </>
               )}
@@ -824,10 +750,6 @@ const PurchaseRequisitionListPage = () => {
 
               const deletedIds = new Set(itemToDelete.items.map(i => i.RecId));
               setPurchaseRequisitionData(prev =>
-                prev.filter(i => !deletedIds.has(i.RecId)),
-              );
-              setRawData(prev => prev.filter(i => !deletedIds.has(i.RecId)));
-              setDisplayData(prev =>
                 prev.filter(i => !deletedIds.has(i.RecId)),
               );
 

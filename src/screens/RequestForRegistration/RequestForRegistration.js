@@ -10,6 +10,7 @@ import {
   BackHandler,
   Image,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import PopupDialog from 'react-native-popup-dialog';
 import AlertModal from '../../components/Alert/AlertModal';
@@ -86,7 +87,7 @@ const RequestForRegistration = () => {
 
   return (
     <>
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <Image source={require('../../assets/cloud.png')} style={styles.logo} />
 
         <Text style={styles.title}>Request For Registration</Text>
@@ -111,7 +112,7 @@ const RequestForRegistration = () => {
         <TouchableOpacity style={styles.button} onPress={handleRegister}>
           <Text style={styles.buttonText}>Register</Text>
         </TouchableOpacity>
-      </View>
+      </SafeAreaView>
 
       <PopupDialog
         visible={exitModal}

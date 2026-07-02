@@ -30,6 +30,7 @@ import AlertModal from '../../components/Alert/AlertModal';
 
 import styles from '../../styles/styles';
 import {retrieveAllOverTimePlanner} from '../../API/OvertimePlanner/retrieveAllOverTimePlanner';
+import useListFilters from '../../hooks/useListFilters';
 
 const OvertimePlanner_ListPage = () => {
   const navigation = useNavigation();
@@ -53,13 +54,8 @@ const OvertimePlanner_ListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [overtimeData, setOvertimeData] = useState([]);
-  const [rawData, setRawData] = useState([]);
-  const [displayData, setDisplayData] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch Data
   const fetchOvertimeData = useCallback(async () => {
@@ -78,8 +74,6 @@ const OvertimePlanner_ListPage = () => {
       );
 
       setOvertimeData(response);
-      setRawData(response);
-      setDisplayData(response);
     } catch (error) {
       setAlertMessage('Failed to fetch Overtime Planner records');
       setAlertModal(true);
@@ -203,85 +197,14 @@ const OvertimePlanner_ListPage = () => {
     return statusMap[status] || status || 'Draft';
   };
 
-  // Search + Sort
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-
-      result = result.filter(item =>
-        Object.values(item).some(val =>
-          String(val ?? '')
-            .toLowerCase()
-            .includes(q),
-        ),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const getDate = obj => {
-          for (const val of Object.values(obj)) {
-            const d = new Date(val);
-
-            if (!isNaN(d.getTime())) return d;
-          }
-
-          return new Date(0);
-        };
-
-        const diff = getDate(a) - getDate(b);
-
-        return sort === 'asc' ? diff : -diff;
-      });
-    }
-
-    setDisplayData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
-
-  // Filter
-  const getFilteredData = () => {
-    const base = searchQuery.trim() ? displayData : rawData;
-
-    if (activeFilter === 'All') return base;
-
-    return base.filter(item => getStatusLabel(item.wfStatus) === activeFilter);
-  };
-
-  const getFilterCounts = () => {
-    const counts = {All: overtimeData.length};
-
-    [
-      ...new Set(overtimeData.map(item => getStatusLabel(item.wfStatus))),
-    ].forEach(status => {
-      counts[status] = overtimeData.filter(
-        item => getStatusLabel(item.wfStatus) === status,
-      ).length;
-    });
-
-    return counts;
-  };
-
-  const visiblePills = useMemo(() => {
-    if (!overtimeData.length) return ['All'];
-
-    const unique = [
-      ...new Set(overtimeData.map(item => getStatusLabel(item.wfStatus))),
-    ];
-
-    return ['All', ...unique];
-  }, [overtimeData]);
+  // Filter/sort/search now owned by useListFilters. Derived status pills off
+  // getStatusLabel(wfStatus); date filter + sort key off CreatedDateTime,
+  // resolved case-insensitively. No documentType field → header Date+Sort only.
+  const f = useListFilters({
+    data: overtimeData,
+    dateField: 'CreatedDateTime',
+    classifyPill: item => getStatusLabel(item.wfStatus),
+  });
 
   // Card Config
   const cardConfig = {
@@ -352,7 +275,7 @@ const OvertimePlanner_ListPage = () => {
         gradientColors={['#ffe0b2', '#fff3e0', '#fff8f0']}
         highlightGradientColors={['#FFF3E0', '#FFFDE7']}
         isRTL={isRTL}
-        searchQuery={searchQuery}
+        searchQuery={f.searchQuery}
       />
     );
   };
@@ -367,23 +290,16 @@ const OvertimePlanner_ListPage = () => {
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
-      showFilterPills={true}
-      filterPills={visiblePills}
-      activeFilter={activeFilter}
-      onFilterChange={setActiveFilter}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}>
+      {...f.actionPaneProps}>
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
           <CustomIndicator />
         </View>
-      ) : getFilteredData().length > 0 ? (
+      ) : f.filteredData.length > 0 ? (
         <FlatList
-          data={getFilteredData()}
+          data={f.filteredData}
           renderItem={renderCard}
           keyExtractor={(item, index) =>
             item.recId?.toString() || index.toString()
@@ -400,9 +316,9 @@ const OvertimePlanner_ListPage = () => {
           refreshControl={
             <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
           }>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <Text style={styles.DLP_NoDataSubText}>
-              No records match "{searchQuery}"
+              No records match "{f.searchQuery}"
             </Text>
           ) : (
             <>

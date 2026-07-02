@@ -930,7 +930,7 @@
 /* eslint-disable react-native/no-inline-styles */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable curly */
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   Text,
   FlatList,
@@ -957,6 +957,8 @@ import DynamicRequestCard from '../../components/DynamicRequestCard';
 
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+import useListFilters from '../../hooks/useListFilters';
+import ListFilterBar from '../../components/Filters/ListFilterBar';
 import styles from '../../styles/styles';
 
 const WorkItemsAssignedToMePage = () => {
@@ -967,7 +969,6 @@ const WorkItemsAssignedToMePage = () => {
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = routeUserData || reduxUserData;
 
-  const [tableData, setTableData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -977,23 +978,31 @@ const WorkItemsAssignedToMePage = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedRecIds, setSelectedRecIds] = useState([]);
 
-  // ── Pill filter — replaces old activeTab ──
-  const [activeFilter, setActiveFilter] = useState('All');
-
   // Per-card processing buttons
   const [processingButtons, setProcessingButtons] = useState({});
 
-  const [selectedDocumentType, setSelectedDocumentType] = useState(null);
-
-  const documentTypes = useMemo(
-    () => [
-      ...new Set(tableData.map(item => item.documentType).filter(Boolean)),
-    ],
-    [tableData],
-  );
+  // Source data; filtering/sorting/search all derive from this via the hook.
   const [rawData, setRawData] = useState([]);
-  const [sortOrder, setSortOrder] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+
+  const f = useListFilters({
+    data: rawData,
+    dateField: 'createdDateTime',
+    searchFields: [
+      'documentType',
+      'documentId',
+      'requester',
+      'Subject',
+      'From',
+      'Document',
+    ],
+    pills: ['All', 'Pending', 'Returned'],
+    classifyPill: item =>
+      item.workflowWorkItemType === 'WorkItem'
+        ? 'Pending'
+        : item.workflowWorkItemType === 'Return'
+        ? 'Returned'
+        : null,
+  });
 
   /* ==============================
      Fetch Data
@@ -1039,8 +1048,7 @@ const WorkItemsAssignedToMePage = () => {
         };
       });
 
-      setTableData(formattedData);
-      setRawData(formattedData); // ← add this
+      setRawData(formattedData);
     } catch (error) {
       setAlertMessage('Failed to fetch work items.');
       setAlertModal(true);
@@ -1099,7 +1107,7 @@ const WorkItemsAssignedToMePage = () => {
   };
 
   const selectAll = () => {
-    const currentData = getFilteredData();
+    const currentData = f.filteredData;
     if (selectedRecIds.length === currentData.length) {
       setSelectedRecIds([]);
     } else {
@@ -1141,28 +1149,6 @@ const WorkItemsAssignedToMePage = () => {
   //     ).length,
   //   };
   // };
-
-  const getFilteredData = () => {
-    let base = tableData;
-
-    if (activeFilter === 'Pending')
-      base = base.filter(item => item.workflowWorkItemType === 'WorkItem');
-    else if (activeFilter === 'Returned')
-      base = base.filter(item => item.workflowWorkItemType === 'Return');
-
-    if (selectedDocumentType)
-      base = base.filter(item => item.documentType === selectedDocumentType);
-
-    return base;
-  };
-
-  const getFilterCounts = () => ({
-    All: tableData.length,
-    Pending: tableData.filter(item => item.workflowWorkItemType === 'WorkItem')
-      .length,
-    Returned: tableData.filter(item => item.workflowWorkItemType === 'Return')
-      .length,
-  });
 
   /* ==============================
      Per-card button processing
@@ -1279,13 +1265,13 @@ const WorkItemsAssignedToMePage = () => {
         Item.workflowWorkItemType === 'WorkItem'
           ? [
               {key: 'approve', label: 'Approve', icon: 'check'},
-              {key: 'reject', label: 'Reject', icon: 'times'},
+              {key: 'reject', label: 'Reject', icon: 'x'},
               // {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
               // {key: 'delegate', label: 'Delegate', icon: 'user'},
               // {key: 'recall', label: 'Recall', icon: 'undo'},
               {key: 'viewHistory', label: 'View History', icon: 'clock'},
             ]
-          : [{key: 'viewHistory', label: 'View History', icon: 'history'}],
+          : [{key: 'viewHistory', label: 'View History', icon: 'clock'}],
     },
   });
 
@@ -1346,7 +1332,7 @@ const WorkItemsAssignedToMePage = () => {
           processingButtons={processingButtons[item.recId] || []}
           showNavigationArrow={false}
           isHighlighted={isSelected}
-          searchQuery={searchQuery}
+          searchQuery={f.searchQuery}
         />
       </Pressable>
     );
@@ -1356,61 +1342,22 @@ const WorkItemsAssignedToMePage = () => {
      UI
   ============================== */
 
-  const filteredData = getFilteredData();
+  const filteredData = f.filteredData;
 
   const areSelectedItemsSameType = () => {
     if (selectedRecIds.length === 0) return true;
 
-    const selectedItems = tableData.filter(item =>
-      selectedRecIds.includes(item.recId),
-    );
+    const items = rawData.filter(item => selectedRecIds.includes(item.recId));
 
-    const firstType = selectedItems[0]?.workflowWorkItemType;
+    const firstType = items[0]?.workflowWorkItemType;
 
-    return selectedItems.every(item => item.workflowWorkItemType === firstType);
+    return items.every(item => item.workflowWorkItemType === firstType);
   };
 
   const isUniformSelection = areSelectedItemsSameType();
-  const selectedItems = tableData.filter(t => selectedRecIds.includes(t.recId));
+  const selectedItems = rawData.filter(t => selectedRecIds.includes(t.recId));
 
   const firstSelectedType = selectedItems[0]?.workflowWorkItemType;
-
-  const applySearchAndSort = useCallback((data, query, sort) => {
-    let result = [...data];
-
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      result = result.filter(
-        item =>
-          item.documentType?.toLowerCase().includes(q) ||
-          item.documentId?.toLowerCase().includes(q) ||
-          item.requester?.toLowerCase().includes(q) ||
-          item.Subject?.toLowerCase().includes(q) ||
-          item.From?.toLowerCase().includes(q) ||
-          item.Document?.toLowerCase().includes(q),
-      );
-    }
-
-    if (sort) {
-      result.sort((a, b) => {
-        const dateA = new Date(a.createdDateTime || 0);
-        const dateB = new Date(b.createdDateTime || 0);
-        return sort === 'asc' ? dateA - dateB : dateB - dateA;
-      });
-    }
-
-    setTableData(result);
-  }, []);
-
-  const handleSearch = query => {
-    setSearchQuery(query);
-    applySearchAndSort(rawData, query, sortOrder);
-  };
-
-  const handleSort = sort => {
-    setSortOrder(sort);
-    applySearchAndSort(rawData, searchQuery, sort);
-  };
 
   return (
     <ActionPaneContainer
@@ -1423,23 +1370,15 @@ const WorkItemsAssignedToMePage = () => {
       isHeaderActive={true}
       showTabNavigator={true}
       onRefresh={handleRefresh}
-      showFilterPills={true}
-      filterPills={['All', 'Pending', 'Returned']} // ✅ no Draft
-      activeFilter={activeFilter}
-      onFilterChange={filter => {
-        setActiveFilter(filter);
-        exitSelectionMode();
-      }}
-      filterCounts={getFilterCounts()}
       showPageTitleRow={true}
       showSearchBar={true}
-      onSearchChange={handleSearch}
-      onSortChange={handleSort}
-      activeSortOrder={sortOrder}
-      showDocumentTypeFilter={true}
-      documentTypes={documentTypes}
-      selectedDocumentType={selectedDocumentType}
-      onDocumentTypeChange={setSelectedDocumentType}>
+      {...f.actionPaneProps}
+      onFilterChange={filter => {
+        f.setActiveFilter(filter);
+        exitSelectionMode();
+      }}>
+      <ListFilterBar filters={f} showDocumentTypeFilter />
+
       {/* Processing overlay */}
       {isActionLoading && (
         <View style={styles.DSR_ProcessingOverlay}>
@@ -1487,7 +1426,7 @@ const WorkItemsAssignedToMePage = () => {
                       <ActivityIndicator size="small" />
                     ) : (
                       <Text style={styles.BulkToolbar_ApproveText}>
-                        Approve All
+                        Approve Selected
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -1500,7 +1439,7 @@ const WorkItemsAssignedToMePage = () => {
                       <ActivityIndicator size="small" />
                     ) : (
                       <Text style={styles.BulkToolbar_RejectText}>
-                        Reject All
+                        Reject Selected
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -1561,15 +1500,15 @@ const WorkItemsAssignedToMePage = () => {
       ) : (
         <ScrollView
           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
-          {searchQuery.trim() ? (
+          {f.searchQuery.trim() ? (
             <Text style={styles.LReqLP_NoDataText}>
-              No records match "{searchQuery}"
+              No records match "{f.searchQuery}"
             </Text>
           ) : (
             <Text style={styles.LReqLP_NoDataText}>
-              {activeFilter === 'All'
+              {f.activeFilter === 'All'
                 ? 'No work items found'
-                : `No ${activeFilter.toLowerCase()} items found`}
+                : `No ${f.activeFilter.toLowerCase()} items found`}
             </Text>
           )}
         </ScrollView>

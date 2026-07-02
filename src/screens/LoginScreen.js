@@ -11,11 +11,11 @@ import {
   ToastAndroid,
   Platform,
   StatusBar,
-  SafeAreaView,
   StyleSheet,
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import PopupDialog from 'react-native-popup-dialog';
