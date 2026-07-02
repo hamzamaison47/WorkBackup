@@ -204,19 +204,21 @@ const RootUser = ({
           </View>
 
           {/* Action buttons only for current selected user (not shrunk) */}
-          {!isRootEmployee && !isShrunk && (
-            <View style={styles.WorkerATM_ActionButtonRow}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.WorkerATM_ActionButton}
-                onPress={handleLeaveHistoryPress}>
-                <FontAwesome name="calendar" size={iconSize.xs} color="#fff" />
-                <Text style={styles.WorkerATM_ActionButtonText}>
-                  Leave History
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          {/*
+{!isRootEmployee && !isShrunk && (
+  <View style={styles.WorkerATM_ActionButtonRow}>
+    <TouchableOpacity
+      activeOpacity={0.8}
+      style={styles.WorkerATM_ActionButton}
+      onPress={handleLeaveHistoryPress}>
+      <FontAwesome name="calendar" size={iconSize.xs} color="#fff" />
+      <Text style={styles.WorkerATM_ActionButtonText}>
+        Leave History
+      </Text>
+    </TouchableOpacity>
+  </View>
+)}
+*/}
         </View>
       </View>
 

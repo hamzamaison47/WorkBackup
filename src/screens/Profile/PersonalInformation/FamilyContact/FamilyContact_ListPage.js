@@ -150,24 +150,30 @@ const FamilyContact_ListPage = () => {
       WorkflowCompleted: 'Workflow Completed',
       Completed: 'Completed',
     };
-    return statusMap[status] || 'Draft';
+    return statusMap[status] || null;
   };
 
   const getFilteredData = () => {
     const base = searchQuery.trim() ? displayData : rawData;
-    if (activeFilter === 'All') return base;
-    return base.filter(item => getStatusLabel(item.WFStatus) === activeFilter);
+    const validBase = base.filter(item => getStatusLabel(item.WFStatus));
+    if (activeFilter === 'All') return validBase;
+    return validBase.filter(
+      item => getStatusLabel(item.WFStatus) === activeFilter,
+    );
   };
 
   const getFilterCounts = () => {
-    const counts = {All: familycontactsdata.length};
-    [
-      ...new Set(familycontactsdata.map(item => getStatusLabel(item.WFStatus))),
-    ].forEach(status => {
-      counts[status] = familycontactsdata.filter(
-        item => getStatusLabel(item.WFStatus) === status,
-      ).length;
-    });
+    const validItems = familycontactsdata.filter(item =>
+      getStatusLabel(item.WFStatus),
+    );
+    const counts = {All: validItems.length};
+    [...new Set(validItems.map(item => getStatusLabel(item.WFStatus)))].forEach(
+      status => {
+        counts[status] = validItems.filter(
+          item => getStatusLabel(item.WFStatus) === status,
+        ).length;
+      },
+    );
     return counts;
   };
 
@@ -175,7 +181,7 @@ const FamilyContact_ListPage = () => {
     if (!familycontactsdata.length) return ['All'];
     const unique = [
       ...new Set(familycontactsdata.map(item => getStatusLabel(item.WFStatus))),
-    ];
+    ].filter(Boolean); // drop null
     return ['All', ...unique];
   }, [familycontactsdata]);
 

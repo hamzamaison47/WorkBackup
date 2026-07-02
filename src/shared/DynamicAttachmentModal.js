@@ -500,10 +500,10 @@ const DynamicAttachmentModal = ({
         const openPath =
           Platform.OS === 'android' ? `file://${filePath}` : filePath;
 
-        await FileViewer.open(openPath, {
-          showOpenWithDialog: true, // shows "Open with" chooser
-          showAppsSuggestions: true, // suggests compatible apps
-          mimeType, // critical — tells Android what app to use
+        await FileViewer.open(filePath, {
+          showOpenWithDialog: true,
+          showAppsSuggestions: true,
+          mimeType,
         });
       } else {
         setAlertMessage(result.message || 'No attachment content received');
