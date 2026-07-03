@@ -99,10 +99,20 @@ const AppNavigator = () => {
         options={{headerShown: true}}
       />
 
-      <Stack.Screen
+      {/* Wrapped in ScreenWithSessionTimeout because this is now the post-login
+          kiosk landing screen (bypasses DrawerNavigator), so session
+          expiry/auto-logout would otherwise be lost. */}
+      <Stack.Screen name="AttendanceManagement">
+        {() => (
+          <ScreenWithSessionTimeout>
+            <AttendanceManagement />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+      {/* <Stack.Screen
         name="AttendanceManagement"
         component={AttendanceManagement}
-      />
+      /> */}
 
       {/* SettingsScreen — must NOT hide the header so ActionPaneContainer
           can inject its custom header via navigation.setOptions            */}

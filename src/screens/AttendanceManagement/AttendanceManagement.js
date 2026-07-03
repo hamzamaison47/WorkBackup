@@ -160,20 +160,24 @@ import {
 } from '@react-navigation/native';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import {GeofenceProvider} from '../../components/AttendanceManagement/GeofenceContext';
-import HomeScreen from '../../components/AttendanceManagement/Screen/HomeScreen';
+// Home and Timesheets (Records) sub-screens are disabled — Time Clock is the
+// only active screen. Left on disk, imports commented out. See VALID_SCREENS /
+// renderScreen below.
+// import HomeScreen from '../../components/AttendanceManagement/Screen/HomeScreen';
 import TimeClockScreen from '../../components/AttendanceManagement/Screen/TimeClockScreen';
-import AttendanceRecordsScreen from '../../components/AttendanceManagement/Screen/AttendanceRecordsScreen';
+// import AttendanceRecordsScreen from '../../components/AttendanceManagement/Screen/AttendanceRecordsScreen';
 import LogoutAlertModal from '../../components/Alert/LogoutAlertModal';
 import {handleLogoutauth} from '../../Controller/authUtils';
 import {translate as t} from '../../store/utils/translate';
 
 const TITLES = {
-  Home: 'Attendance',
+  // Home: 'Attendance',    // disabled
   TimeClock: 'Time Clock',
-  Records: 'Timesheets',
+  // Records: 'Timesheets', // disabled
 };
 
-const VALID_SCREENS = ['Home', 'TimeClock', 'Records'];
+// Only Time Clock is active. Home and Records are commented out.
+const VALID_SCREENS = ['TimeClock'];
 
 const {width} = Dimensions.get('window');
 
@@ -193,7 +197,7 @@ const AttendanceManagement = () => {
   const resolvedInitial =
     routeInitialScreen && VALID_SCREENS.includes(routeInitialScreen)
       ? routeInitialScreen
-      : 'Home';
+      : 'TimeClock';
 
   const [screenStack, setScreenStack] = useState([
     {name: resolvedInitial, key: `${resolvedInitial}_0`},
@@ -290,10 +294,11 @@ const AttendanceManagement = () => {
     switch (screenName) {
       case 'TimeClock':
         return <TimeClockScreen onNavigate={onNavigate} />;
-      case 'Records':
-        return <AttendanceRecordsScreen onNavigate={onNavigate} />;
+      // case 'Records':
+      //   return <AttendanceRecordsScreen onNavigate={onNavigate} />;
       default:
-        return <HomeScreen onNavigate={onNavigate} />;
+        // Home and Records are disabled — Time Clock is the only screen.
+        return <TimeClockScreen onNavigate={onNavigate} />;
     }
   };
 

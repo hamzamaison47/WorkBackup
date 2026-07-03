@@ -93,9 +93,7 @@ import {
   useNavigation,
   useFocusEffect,
 } from '@react-navigation/native';
-import {ScrollView, Text, useWindowDimensions} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useRoute, useFocusEffect} from '@react-navigation/native';
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import RenderHtml from 'react-native-render-html';

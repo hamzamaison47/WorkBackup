@@ -14,7 +14,7 @@
 //         → workflow re-check from embedded data → CreateUserAttendance
 //         (~0 additional SOAP calls if token fresh, ~0.3s)
 // ─────────────────────────────────────────────
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Alert} from 'react-native';
 import {useSelector} from 'react-redux';
 import ConfirmSheet from '../ConfirmSheet';
@@ -29,7 +29,7 @@ import {
   formatDateShort,
 } from '../../../screens/AttendanceManagement/helpers';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
-import {C, R} from '../theme';
+import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE = 'ClockIn';
 
@@ -39,6 +39,8 @@ const ConfirmClockInScreen = ({
   onConfirm,
   onBack,
 }) => {
+  const {C, R} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R), [C, R]);
   const [note, setNote] = useState('');
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -169,58 +171,59 @@ const ConfirmClockInScreen = ({
 
 export default ConfirmClockInScreen;
 
-const S = StyleSheet.create({
-  validBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#D1FAE5',
-    borderWidth: 1,
-    borderColor: '#6EE7B7',
-    borderRadius: R.sm,
-    padding: 10,
-    marginBottom: 10,
-  },
-  validBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#065F46',
-  },
-  pendingBadge: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-    borderRadius: R.sm,
-    padding: 10,
-    marginBottom: 10,
-  },
-  pendingBadgeText: {
-    fontSize: 12,
-    color: '#92400E',
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: R.sm,
-    marginBottom: 4,
-    borderWidth: 1,
-  },
-  locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
-  locationRowBad: {backgroundColor: C.redLight, borderColor: C.redMid},
-  locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
-  locBody: {flex: 1},
-  locLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: C.inkFaint,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
-  locSub: {fontSize: 11, color: C.greenDark, opacity: 0.75, marginTop: 1},
-  locArrow: {fontSize: 18},
-  divider: {height: 1, backgroundColor: C.border, marginBottom: 4},
-});
+const makeStyles = (C, R) =>
+  StyleSheet.create({
+    validBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#D1FAE5',
+      borderWidth: 1,
+      borderColor: '#6EE7B7',
+      borderRadius: R.sm,
+      padding: 10,
+      marginBottom: 10,
+    },
+    validBadgeText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#065F46',
+    },
+    pendingBadge: {
+      backgroundColor: '#FEF3C7',
+      borderWidth: 1,
+      borderColor: '#FCD34D',
+      borderRadius: R.sm,
+      padding: 10,
+      marginBottom: 10,
+    },
+    pendingBadgeText: {
+      fontSize: 12,
+      color: '#92400E',
+    },
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: R.sm,
+      marginBottom: 4,
+      borderWidth: 1,
+    },
+    locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
+    locationRowBad: {backgroundColor: C.redLight, borderColor: C.redMid},
+    locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
+    locBody: {flex: 1},
+    locLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: C.inkFaint,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      marginBottom: 2,
+    },
+    locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
+    locSub: {fontSize: 11, color: C.greenDark, opacity: 0.75, marginTop: 1},
+    locArrow: {fontSize: 18},
+    divider: {height: 1, backgroundColor: C.border, marginBottom: 4},
+  });

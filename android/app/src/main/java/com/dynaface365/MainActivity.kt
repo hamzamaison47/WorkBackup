@@ -1,5 +1,7 @@
 package com.dynaface365.app
 
+import android.content.Intent
+import com.dynaface365.attendance.AttendanceIntentModule
 import com.oblador.vectoricons.VectorIconsPackage
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -12,4 +14,17 @@ class MainActivity : ReactActivity() {
 
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+
+  /**
+   * Called when a notification action button (Clock-Out / Break) is tapped while
+   * the app is already running. Forwards the intent to AttendanceIntentModule so
+   * JS receives the AttendanceNotificationAction event.
+   */
+  override fun onNewIntent(intent: Intent?) {
+    super.onNewIntent(intent)
+    intent?.let {
+      setIntent(it) // ensures getIntent() returns the latest intent
+      AttendanceIntentModule.onNewIntentReceived(it)
+    }
+  }
 }

@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/NavigationFAB.js
 // ─────────────────────────────────────────────
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useMemo} from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,18 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import {C, R, Sh} from './theme';
+import useAttendanceTheme from './useAttendanceTheme';
 
 const NAV_ITEMS = [
-  {key: 'Home', label: 'Home', icon: '🏢'},
+  // Home and Timesheets (Records) disabled — Time Clock is the only screen.
+  // {key: 'Home', label: 'Home', icon: '🏢'},
   {key: 'TimeClock', label: 'Time Clock', icon: '🕛'},
-  {key: 'Records', label: 'Timesheets', icon: '📃'},
+  // {key: 'Records', label: 'Timesheets', icon: '📃'},
 ];
 
 const NavigationFAB = ({activeScreen, onNavigate}) => {
+  const {C, R, Sh} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
   const [open, setOpen] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -103,51 +106,52 @@ const NavigationFAB = ({activeScreen, onNavigate}) => {
 
 export default NavigationFAB;
 
-const S = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.3)',
-    zIndex: 90,
-  },
-  container: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 36 : 24,
-    right: 20,
-    alignItems: 'flex-end',
-    zIndex: 100,
-  },
-  fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: C.blue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Sh.lg,
-  },
-  fabOpen: {backgroundColor: C.redMid},
-  fabIcon: {fontSize: 20, color: C.white, fontWeight: '700'},
-  menu: {alignItems: 'flex-end', marginBottom: 12, gap: 10},
-  menuRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  label: {
-    backgroundColor: C.white,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: R.full,
-    ...Sh.sm,
-  },
-  labelActive: {backgroundColor: C.blue},
-  labelTxt: {fontSize: 13, fontWeight: '600', color: C.inkSub},
-  labelTxtActive: {color: C.white},
-  menuBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: C.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Sh.sm,
-  },
-  menuBtnActive: {backgroundColor: C.blue},
-  menuBtnIcon: {fontSize: 20},
-});
+const makeStyles = (C, R, Sh) =>
+  StyleSheet.create({
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(15,23,42,0.3)',
+      zIndex: 90,
+    },
+    container: {
+      position: 'absolute',
+      bottom: Platform.OS === 'ios' ? 36 : 24,
+      right: 20,
+      alignItems: 'flex-end',
+      zIndex: 100,
+    },
+    fab: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: C.blue,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...Sh.lg,
+    },
+    fabOpen: {backgroundColor: C.redMid},
+    fabIcon: {fontSize: 20, color: C.white, fontWeight: '700'}, // icon on brand fab → white
+    menu: {alignItems: 'flex-end', marginBottom: 12, gap: 10},
+    menuRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
+    label: {
+      backgroundColor: C.surface, // pill surface → theme-aware
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+      borderRadius: R.full,
+      ...Sh.sm,
+    },
+    labelActive: {backgroundColor: C.blue},
+    labelTxt: {fontSize: 13, fontWeight: '600', color: C.inkSub},
+    labelTxtActive: {color: C.white}, // text on active blue label → white
+    menuBtn: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: C.surface, // button surface → theme-aware
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...Sh.sm,
+    },
+    menuBtnActive: {backgroundColor: C.blue},
+    menuBtnIcon: {fontSize: 20},
+  });

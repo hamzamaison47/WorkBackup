@@ -19,6 +19,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
+              add(com.dynaface365.attendance.AttendanceServicePackage())
             }
  
         override fun getJSMainModuleName(): String = "index"

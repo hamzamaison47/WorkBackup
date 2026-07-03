@@ -33,7 +33,7 @@ import {
 } from '../../../screens/AttendanceManagement/helpers';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
 import {ACTION_TYPES} from './attendanceActionHelpers';
-import {C, R} from '../theme';
+import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE_MAP = {
   BREAK_START: 'StartBreak',
@@ -55,6 +55,8 @@ const ConfirmBreakScreen = ({
   onBack,
   breakType = 'BREAK_START',
 }) => {
+  const {C, R} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R), [C, R]);
   const [note, setNote] = useState('');
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -319,93 +321,94 @@ const ConfirmBreakScreen = ({
 
 export default ConfirmBreakScreen;
 
-const S = StyleSheet.create({
-  validBadge: {
-    backgroundColor: '#D1FAE5',
-    borderWidth: 1,
-    borderColor: '#6EE7B7',
-    borderRadius: R.sm,
-    padding: 10,
-    marginBottom: 10,
-  },
-  validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
-  pendingBadge: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-    borderRadius: R.sm,
-    padding: 10,
-    marginBottom: 10,
-  },
-  pendingBadgeText: {fontSize: 12, color: '#92400E'},
+const makeStyles = (C, R) =>
+  StyleSheet.create({
+    validBadge: {
+      backgroundColor: '#D1FAE5',
+      borderWidth: 1,
+      borderColor: '#6EE7B7',
+      borderRadius: R.sm,
+      padding: 10,
+      marginBottom: 10,
+    },
+    validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
+    pendingBadge: {
+      backgroundColor: '#FEF3C7',
+      borderWidth: 1,
+      borderColor: '#FCD34D',
+      borderRadius: R.sm,
+      padding: 10,
+      marginBottom: 10,
+    },
+    pendingBadgeText: {fontSize: 12, color: '#92400E'},
 
-  contextCard: {
-    backgroundColor: C.surfaceAlt,
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 14,
-    marginBottom: 10,
-  },
-  contextTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: C.inkSub,
-    marginBottom: 8,
-    letterSpacing: 0.3,
-  },
-  contextRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 3,
-  },
-  contextKey: {fontSize: 12, color: C.inkMuted},
-  contextVal: {fontSize: 12, fontWeight: '600', color: C.ink},
+    contextCard: {
+      backgroundColor: C.surfaceAlt,
+      borderRadius: R.md,
+      borderWidth: 1,
+      borderColor: C.border,
+      padding: 14,
+      marginBottom: 10,
+    },
+    contextTitle: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: C.inkSub,
+      marginBottom: 8,
+      letterSpacing: 0.3,
+    },
+    contextRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 3,
+    },
+    contextKey: {fontSize: 12, color: C.inkMuted},
+    contextVal: {fontSize: 12, fontWeight: '600', color: C.ink},
 
-  spoofBanner: {
-    backgroundColor: '#FFF3CD',
-    borderWidth: 1,
-    borderColor: '#FFC107',
-    borderRadius: R.sm,
-    padding: 12,
-    marginBottom: 10,
-  },
-  spoofTitle: {fontSize: 13, fontWeight: '700', color: '#856404'},
-  spoofSub: {fontSize: 12, color: '#856404', marginTop: 2},
+    spoofBanner: {
+      backgroundColor: '#FFF3CD',
+      borderWidth: 1,
+      borderColor: '#FFC107',
+      borderRadius: R.sm,
+      padding: 12,
+      marginBottom: 10,
+    },
+    spoofTitle: {fontSize: 13, fontWeight: '700', color: '#856404'},
+    spoofSub: {fontSize: 12, color: '#856404', marginTop: 2},
 
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: R.sm,
-    marginBottom: 4,
-    borderWidth: 1,
-  },
-  locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
-  locationRowNeutral: {backgroundColor: C.surfaceAlt, borderColor: C.border},
-  locationRowLoading: {backgroundColor: C.blueLight, borderColor: C.blueMid},
-  locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
-  locBody: {flex: 1},
-  locLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: C.inkFaint,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
-  locArrow: {fontSize: 18},
-  fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
-  allowedNote: {marginBottom: 8},
-  allowedNoteTxt: {fontSize: 11, color: C.inkMuted, fontStyle: 'italic'},
-  divider: {
-    height: 1,
-    backgroundColor: C.border,
-    marginBottom: 4,
-    marginTop: 4,
-  },
-});
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: R.sm,
+      marginBottom: 4,
+      borderWidth: 1,
+    },
+    locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
+    locationRowNeutral: {backgroundColor: C.surfaceAlt, borderColor: C.border},
+    locationRowLoading: {backgroundColor: C.blueLight, borderColor: C.blueMid},
+    locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
+    locBody: {flex: 1},
+    locLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: C.inkFaint,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      marginBottom: 2,
+    },
+    locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
+    locArrow: {fontSize: 18},
+    fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
+    allowedNote: {marginBottom: 8},
+    allowedNoteTxt: {fontSize: 11, color: C.inkMuted, fontStyle: 'italic'},
+    divider: {
+      height: 1,
+      backgroundColor: C.border,
+      marginBottom: 4,
+      marginTop: 4,
+    },
+  });

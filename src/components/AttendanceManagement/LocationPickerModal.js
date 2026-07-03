@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────
 // components/AttendanceManagement/LocationPickerModal.js
 // ─────────────────────────────────────────────
-import React, {useCallback} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
   Platform,
 } from 'react-native';
 import {useGeofence} from './GeofenceContext';
-import {C, R, Sh} from './theme';
+import useAttendanceTheme from './useAttendanceTheme';
 
 const fmtDist = m =>
   m == null ? '—' : m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
@@ -40,6 +40,8 @@ const isFaceActive = fence => {
 // Single fence row
 // ─────────────────────────────────────────────
 const FenceRow = ({item, isMatched}) => {
+  const {C, R, Sh} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
   const isInactive = !item.active || !item.dateValid;
   const isOutside = !item.withinRadius;
   const hasNetwork = Array.isArray(item.networks) && item.networks.length > 0;
@@ -201,6 +203,8 @@ const FenceRow = ({item, isMatched}) => {
 // Modal
 // ─────────────────────────────────────────────
 const LocationPickerModal = ({visible, onClose}) => {
+  const {C, R, Sh} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
   const {
     allFences,
     matchedFence,
@@ -345,182 +349,204 @@ const LocationPickerModal = ({visible, onClose}) => {
 
 export default LocationPickerModal;
 
-const S = StyleSheet.create({
-  sheet: {flex: 1, backgroundColor: C.bg},
-  handleWrap: {alignItems: 'center', paddingTop: 12, paddingBottom: 4},
-  handle: {width: 38, height: 4, borderRadius: 2, backgroundColor: C.borderMid},
+const makeStyles = (C, R, Sh) =>
+  StyleSheet.create({
+    sheet: {flex: 1, backgroundColor: C.bg},
+    handleWrap: {alignItems: 'center', paddingTop: 12, paddingBottom: 4},
+    handle: {
+      width: 38,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: C.borderMid,
+    },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 14,
-    backgroundColor: C.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-  },
-  headerTitle: {fontSize: 17, fontWeight: '700', color: C.ink, marginBottom: 2},
-  headerSub: {fontSize: 12, color: C.inkMuted, lineHeight: 17, maxWidth: 260},
-  refreshBtn: {
-    backgroundColor: C.blueLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: R.full,
-    marginTop: 2,
-  },
-  refreshTxt: {fontSize: 13, fontWeight: '600', color: C.blue},
+    header: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 14,
+      backgroundColor: C.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: C.border,
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: C.ink,
+      marginBottom: 2,
+    },
+    headerSub: {fontSize: 12, color: C.inkMuted, lineHeight: 17, maxWidth: 260},
+    refreshBtn: {
+      backgroundColor: C.blueLight,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: R.full,
+      marginTop: 2,
+    },
+    refreshTxt: {fontSize: 13, fontWeight: '600', color: C.blue},
 
-  gpsBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: C.greenLight,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-  },
-  gpsDot: {width: 7, height: 7, borderRadius: 4, backgroundColor: C.greenMid},
-  gpsTxt: {fontSize: 11, color: C.greenDark, fontWeight: '500'},
+    gpsBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: C.greenLight,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: C.border,
+    },
+    gpsDot: {width: 7, height: 7, borderRadius: 4, backgroundColor: C.greenMid},
+    gpsTxt: {fontSize: 11, color: C.greenDark, fontWeight: '500'},
 
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginHorizontal: 16,
-    marginTop: 14,
-    marginBottom: 6,
-    borderRadius: R.md,
-    padding: 14,
-  },
-  bannerGreen: {backgroundColor: C.greenLight},
-  bannerRed: {backgroundColor: C.redLight},
-  bannerIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bannerIconGreen: {backgroundColor: C.greenMid},
-  bannerIconRed: {backgroundColor: C.redMid},
-  bannerIconChar: {fontSize: 16, fontWeight: '700', color: C.white},
-  bannerTitle: {fontSize: 14, fontWeight: '600'},
-  bannerSub: {fontSize: 12, color: C.inkMuted, marginTop: 2},
+    banner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginHorizontal: 16,
+      marginTop: 14,
+      marginBottom: 6,
+      borderRadius: R.md,
+      padding: 14,
+    },
+    bannerGreen: {backgroundColor: C.greenLight},
+    bannerRed: {backgroundColor: C.redLight},
+    bannerIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bannerIconGreen: {backgroundColor: C.greenMid},
+    bannerIconRed: {backgroundColor: C.redMid},
+    bannerIconChar: {fontSize: 16, fontWeight: '700', color: C.white},
+    bannerTitle: {fontSize: 14, fontWeight: '600'},
+    bannerSub: {fontSize: 12, color: C.inkMuted, marginTop: 2},
 
-  list: {padding: 16, paddingBottom: 8, gap: 10},
+    list: {padding: 16, paddingBottom: 8, gap: 10},
 
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: C.surface,
-    borderRadius: R.md,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    ...Sh.xs,
-  },
-  rowMatched: {borderColor: C.greenMid, backgroundColor: '#F0FFF8'},
-  rowInactive: {opacity: 0.45},
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: C.surface,
+      borderRadius: R.md,
+      overflow: 'hidden',
+      borderWidth: 1.5,
+      borderColor: 'transparent',
+      ...Sh.xs,
+    },
+    rowMatched: {borderColor: C.greenMid, backgroundColor: C.greenLight},
+    rowInactive: {opacity: 0.45},
 
-  rowBar: {width: 4, alignSelf: 'stretch'},
+    rowBar: {width: 4, alignSelf: 'stretch'},
 
-  icon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: C.surfaceAlt,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    flexShrink: 0,
-    marginLeft: 4,
-  },
-  iconMatched: {backgroundColor: C.greenLight, borderColor: C.greenMid},
-  iconInactive: {backgroundColor: C.redLight, borderColor: C.redMid},
-  iconOutside: {backgroundColor: C.surfaceAlt, borderColor: C.border},
-  iconChar: {fontSize: 15, fontWeight: '700', color: C.inkMuted},
+    icon: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: C.surfaceAlt,
+      borderWidth: 1.5,
+      borderColor: C.border,
+      flexShrink: 0,
+      marginLeft: 4,
+    },
+    iconMatched: {backgroundColor: C.greenLight, borderColor: C.greenMid},
+    iconInactive: {backgroundColor: C.redLight, borderColor: C.redMid},
+    iconOutside: {backgroundColor: C.surfaceAlt, borderColor: C.border},
+    iconChar: {fontSize: 15, fontWeight: '700', color: C.inkMuted},
 
-  rowBody: {flex: 1, paddingVertical: 12, paddingRight: 4},
-  rowName: {fontSize: 14, fontWeight: '600', color: C.ink, marginBottom: 2},
-  rowNameMatch: {color: C.greenDark},
-  rowNameInactive: {color: C.inkFaint},
-  rowDesc: {fontSize: 11, color: C.inkFaint, marginBottom: 5},
+    rowBody: {flex: 1, paddingVertical: 12, paddingRight: 4},
+    rowName: {fontSize: 14, fontWeight: '600', color: C.ink, marginBottom: 2},
+    rowNameMatch: {color: C.greenDark},
+    rowNameInactive: {color: C.inkFaint},
+    rowDesc: {fontSize: 11, color: C.inkFaint, marginBottom: 5},
 
-  pills: {flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 5},
-  pill: {paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.full},
-  pillGreen: {backgroundColor: C.greenLight},
-  pillBlue: {backgroundColor: C.blueLight},
-  pillRed: {backgroundColor: C.redLight},
-  pillTxt: {fontSize: 11, fontWeight: '600'},
-  pillTxtGreen: {color: C.greenDark},
-  pillTxtBlue: {color: C.blueDark},
-  pillTxtRed: {color: C.redDark},
-  pillGrey: {
-    backgroundColor: C.surfaceAlt,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: R.full,
-  },
-  pillGreyTxt: {fontSize: 11, color: C.inkMuted, fontWeight: '500'},
+    pills: {flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 5},
+    pill: {paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.full},
+    pillGreen: {backgroundColor: C.greenLight},
+    pillBlue: {backgroundColor: C.blueLight},
+    pillRed: {backgroundColor: C.redLight},
+    pillTxt: {fontSize: 11, fontWeight: '600'},
+    pillTxtGreen: {color: C.greenDark},
+    pillTxtBlue: {color: C.blueDark},
+    pillTxtRed: {color: C.redDark},
+    pillGrey: {
+      backgroundColor: C.surfaceAlt,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: R.full,
+    },
+    pillGreyTxt: {fontSize: 11, color: C.inkMuted, fontWeight: '500'},
 
-  verifyRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 5},
-  verifyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: R.full,
-    borderWidth: 1,
-  },
-  verifyBadgeTxt: {fontSize: 10, fontWeight: '600'},
+    verifyRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 5},
+    verifyBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: R.full,
+      borderWidth: 1,
+    },
+    verifyBadgeTxt: {fontSize: 10, fontWeight: '600'},
 
-  inactiveTag: {fontSize: 11, color: C.redMid, marginTop: 4, fontWeight: '500'},
+    inactiveTag: {
+      fontSize: 11,
+      color: C.redMid,
+      marginTop: 4,
+      fontWeight: '500',
+    },
 
-  dot: {width: 10, height: 10, borderRadius: 5, marginRight: 12, flexShrink: 0},
-  dotGreen: {backgroundColor: C.greenMid},
-  dotBlue: {backgroundColor: C.blueMid},
-  dotGrey: {backgroundColor: C.border},
+    dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: 12,
+      flexShrink: 0,
+    },
+    dotGreen: {backgroundColor: C.greenMid},
+    dotBlue: {backgroundColor: C.blueMid},
+    dotGrey: {backgroundColor: C.border},
 
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  centerEmoji: {fontSize: 44, marginBottom: 14},
-  centerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: C.ink,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  centerSub: {
-    fontSize: 14,
-    color: C.inkSub,
-    textAlign: 'center',
-    lineHeight: 21,
-    marginBottom: 24,
-  },
-  retryBtn: {
-    backgroundColor: C.blue,
-    paddingHorizontal: 28,
-    paddingVertical: 13,
-    borderRadius: R.full,
-    ...Sh.sm,
-  },
-  retryTxt: {color: C.white, fontWeight: '700', fontSize: 14},
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 32,
+    },
+    centerEmoji: {fontSize: 44, marginBottom: 14},
+    centerTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: C.ink,
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    centerSub: {
+      fontSize: 14,
+      color: C.inkSub,
+      textAlign: 'center',
+      lineHeight: 21,
+      marginBottom: 24,
+    },
+    retryBtn: {
+      backgroundColor: C.blue,
+      paddingHorizontal: 28,
+      paddingVertical: 13,
+      borderRadius: R.full,
+      ...Sh.sm,
+    },
+    retryTxt: {color: C.white, fontWeight: '700', fontSize: 14},
 
-  footer: {padding: 16, paddingBottom: Platform.OS === 'ios' ? 8 : 16},
-  closeBtn: {
-    backgroundColor: C.amber,
-    borderRadius: R.md,
-    paddingVertical: 16,
-    alignItems: 'center',
-    ...Sh.sm,
-  },
-  closeTxt: {color: C.white, fontSize: 16, fontWeight: '700'},
-});
+    footer: {padding: 16, paddingBottom: Platform.OS === 'ios' ? 8 : 16},
+    closeBtn: {
+      backgroundColor: C.amber,
+      borderRadius: R.md,
+      paddingVertical: 16,
+      alignItems: 'center',
+      ...Sh.sm,
+    },
+    closeTxt: {color: C.white, fontSize: 16, fontWeight: '700'},
+  });

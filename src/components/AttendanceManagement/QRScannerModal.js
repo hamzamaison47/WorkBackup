@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ import {
   useCameraDevice,
   useCodeScanner,
 } from 'react-native-vision-camera';
-import {C, R, Sh} from './theme';
+import useAttendanceTheme from './useAttendanceTheme';
 
 // ── Helpers ───────────────────────────────────
 export const isQRCodeActive = fence => {
@@ -66,6 +66,8 @@ const QRScannerModal = ({
   onScanSuccess, // (rawValue: string) => void — called once per open
   onCancel, // () => void
 }) => {
+  const {C, R, Sh} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
   const [permissionStatus, setPermissionStatus] = useState('checking'); // 'checking' | 'granted' | 'denied' | 'unavailable'
   const [torchOn, setTorchOn] = useState(false); // QR7
   const [timedOut, setTimedOut] = useState(false); // QR3
@@ -401,190 +403,191 @@ const CORNER_SIZE = 28;
 const CORNER_THICK = 4;
 const WINDOW_SIZE = 240;
 
-const S = StyleSheet.create({
-  sheet: {flex: 1, backgroundColor: '#000'},
+const makeStyles = (C, R, Sh) =>
+  StyleSheet.create({
+    sheet: {flex: 1, backgroundColor: '#000'},
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.85)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  headerTitle: {fontSize: 17, fontWeight: '700', color: '#fff'},
-  headerSub: {fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2},
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeTxt: {fontSize: 14, color: '#fff', fontWeight: '700'},
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      backgroundColor: 'rgba(0,0,0,0.85)',
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(255,255,255,0.1)',
+    },
+    headerTitle: {fontSize: 17, fontWeight: '700', color: '#fff'},
+    headerSub: {fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2},
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeTxt: {fontSize: 14, color: '#fff', fontWeight: '700'},
 
-  instructStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(27,79,216,0.85)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  instructIcon: {fontSize: 16},
-  instructTxt: {flex: 1, fontSize: 12, color: '#fff', lineHeight: 18},
+    instructStrip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: 'rgba(27,79,216,0.85)',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    instructIcon: {fontSize: 16},
+    instructTxt: {flex: 1, fontSize: 12, color: '#fff', lineHeight: 18},
 
-  // ── Scanner overlay ──────────────────────────
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  scanWindow: {
-    width: WINDOW_SIZE,
-    height: WINDOW_SIZE,
-    backgroundColor: 'transparent',
-    position: 'relative',
-  },
+    // ── Scanner overlay ──────────────────────────
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    scanWindow: {
+      width: WINDOW_SIZE,
+      height: WINDOW_SIZE,
+      backgroundColor: 'transparent',
+      position: 'relative',
+    },
 
-  corner: {
-    position: 'absolute',
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    borderColor: '#fff',
-  },
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderTopWidth: CORNER_THICK,
-    borderLeftWidth: CORNER_THICK,
-    borderTopLeftRadius: 4,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderTopWidth: CORNER_THICK,
-    borderRightWidth: CORNER_THICK,
-    borderTopRightRadius: 4,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderBottomWidth: CORNER_THICK,
-    borderLeftWidth: CORNER_THICK,
-    borderBottomLeftRadius: 4,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderBottomWidth: CORNER_THICK,
-    borderRightWidth: CORNER_THICK,
-    borderBottomRightRadius: 4,
-  },
+    corner: {
+      position: 'absolute',
+      width: CORNER_SIZE,
+      height: CORNER_SIZE,
+      borderColor: '#fff',
+    },
+    cornerTL: {
+      top: 0,
+      left: 0,
+      borderTopWidth: CORNER_THICK,
+      borderLeftWidth: CORNER_THICK,
+      borderTopLeftRadius: 4,
+    },
+    cornerTR: {
+      top: 0,
+      right: 0,
+      borderTopWidth: CORNER_THICK,
+      borderRightWidth: CORNER_THICK,
+      borderTopRightRadius: 4,
+    },
+    cornerBL: {
+      bottom: 0,
+      left: 0,
+      borderBottomWidth: CORNER_THICK,
+      borderLeftWidth: CORNER_THICK,
+      borderBottomLeftRadius: 4,
+    },
+    cornerBR: {
+      bottom: 0,
+      right: 0,
+      borderBottomWidth: CORNER_THICK,
+      borderRightWidth: CORNER_THICK,
+      borderBottomRightRadius: 4,
+    },
 
-  scanHint: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 13,
-    marginTop: 24,
-    textAlign: 'center',
-  },
+    scanHint: {
+      color: 'rgba(255,255,255,0.8)',
+      fontSize: 13,
+      marginTop: 24,
+      textAlign: 'center',
+    },
 
-  errorBadge: {
-    marginTop: 16,
-    backgroundColor: 'rgba(220,38,38,0.85)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: R.full,
-  },
-  errorBadgeTxt: {color: '#fff', fontSize: 13, fontWeight: '600'},
+    errorBadge: {
+      marginTop: 16,
+      backgroundColor: 'rgba(220,38,38,0.85)',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: R.full,
+    },
+    errorBadgeTxt: {color: '#fff', fontSize: 13, fontWeight: '600'},
 
-  // ── Torch ────────────────────────────────────
-  torchBtn: {
-    position: 'absolute',
-    bottom: 120,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: R.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  torchIcon: {fontSize: 18},
-  torchTxt: {color: '#fff', fontSize: 13, fontWeight: '600'},
+    // ── Torch ────────────────────────────────────
+    torchBtn: {
+      position: 'absolute',
+      bottom: 120,
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: R.full,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
+    torchIcon: {fontSize: 18},
+    torchTxt: {color: '#fff', fontSize: 13, fontWeight: '600'},
 
-  // ── Timeout hint ─────────────────────────────
-  timeoutHint: {
-    position: 'absolute',
-    bottom: 60,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timeoutHintTxt: {color: 'rgba(255,255,255,0.5)', fontSize: 12},
+    // ── Timeout hint ─────────────────────────────
+    timeoutHint: {
+      position: 'absolute',
+      bottom: 60,
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    timeoutHintTxt: {color: 'rgba(255,255,255,0.5)', fontSize: 12},
 
-  // ── Generic state views ──────────────────────
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 36,
-    backgroundColor: C.bg,
-  },
-  stateEmoji: {fontSize: 52, marginBottom: 16},
-  stateTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: C.ink,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  stateSub: {
-    fontSize: 14,
-    color: C.inkSub,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  centerTxt: {fontSize: 14, color: C.inkMuted, marginTop: 16},
+    // ── Generic state views ──────────────────────
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 36,
+      backgroundColor: C.bg,
+    },
+    stateEmoji: {fontSize: 52, marginBottom: 16},
+    stateTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: C.ink,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    stateSub: {
+      fontSize: 14,
+      color: C.inkSub,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 24,
+    },
+    centerTxt: {fontSize: 14, color: C.inkMuted, marginTop: 16},
 
-  primaryBtn: {
-    backgroundColor: C.blue,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-    marginBottom: 12,
-    ...Sh.sm,
-  },
-  primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
+    primaryBtn: {
+      backgroundColor: C.blue,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: R.full,
+      marginBottom: 12,
+      ...Sh.sm,
+    },
+    primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
 
-  cancelBtn: {
-    backgroundColor: C.surfaceAlt,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-  },
-  cancelBtnTxt: {color: C.inkSub, fontWeight: '600', fontSize: 15},
+    cancelBtn: {
+      backgroundColor: C.surfaceAlt,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: R.full,
+    },
+    cancelBtnTxt: {color: C.inkSub, fontWeight: '600', fontSize: 15},
 
-  // ── Success flash ────────────────────────────
-  successCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: C.greenMid,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    ...Sh.md,
-  },
-  successCheck: {fontSize: 42, color: '#fff', fontWeight: '700'},
-});
+    // ── Success flash ────────────────────────────
+    successCircle: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: C.greenMid,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      ...Sh.md,
+    },
+    successCheck: {fontSize: 42, color: '#fff', fontWeight: '700'},
+  });

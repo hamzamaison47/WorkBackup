@@ -11,7 +11,7 @@
 //   • Analyzes the reflection brightness diff to prevent laptop/screen spoofing.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ import {
 } from 'react-native-vision-camera';
 import {useFaceDetector} from 'react-native-vision-camera-face-detector';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
-import {C, R, Sh} from './theme';
+import useAttendanceTheme from './useAttendanceTheme';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const NO_FACE_GUARD_MS = 5000; // Bail to 'no_face' if nothing detected
@@ -92,6 +92,26 @@ const analyzePassiveLiveness = face => {
 };
 
 // ── CameraErrorBoundary ────────────────────────────────────────────────────────
+// Functional fallback so the error UI can consume the theme hook (the class
+// boundary below cannot call hooks).
+const CameraErrorFallback = ({errorMessage, onRetry, onCancel}) => {
+  const {C, R, Sh} = useAttendanceTheme();
+  const BE = useMemo(() => makeBEStyles(C, R, Sh), [C, R, Sh]);
+  return (
+    <View style={BE.wrap}>
+      <Text style={BE.emoji}>📷</Text>
+      <Text style={BE.title}>Camera Error</Text>
+      <Text style={BE.sub}>{errorMessage}</Text>
+      <TouchableOpacity style={BE.primaryBtn} onPress={onRetry}>
+        <Text style={BE.primaryBtnTxt}>↺ Retry</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={BE.cancelBtn} onPress={onCancel}>
+        <Text style={BE.cancelBtnTxt}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 class CameraErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -114,69 +134,62 @@ class CameraErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const {onRetry, onCancel} = this.props;
       return (
-        <View style={BE.wrap}>
-          <Text style={BE.emoji}>📷</Text>
-          <Text style={BE.title}>Camera Error</Text>
-          <Text style={BE.sub}>{this.state.errorMessage}</Text>
-          <TouchableOpacity
-            style={BE.primaryBtn}
-            onPress={() => {
-              this.setState({hasError: false, errorMessage: ''});
-              if (onRetry) onRetry();
-            }}>
-            <Text style={BE.primaryBtnTxt}>↺ Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={BE.cancelBtn} onPress={onCancel}>
-            <Text style={BE.cancelBtnTxt}>Go Back</Text>
-          </TouchableOpacity>
-        </View>
+        <CameraErrorFallback
+          errorMessage={this.state.errorMessage}
+          onRetry={() => {
+            this.setState({hasError: false, errorMessage: ''});
+            if (onRetry) onRetry();
+          }}
+          onCancel={onCancel}
+        />
       );
     }
     return this.props.children;
   }
 }
-const BE = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 36,
-    backgroundColor: C.bg,
-  },
-  emoji: {fontSize: 52, marginBottom: 16},
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: C.ink,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  sub: {
-    fontSize: 13,
-    color: C.inkSub,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  primaryBtn: {
-    backgroundColor: C.blue,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-    marginBottom: 12,
-    ...Sh.sm,
-  },
-  primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
-  cancelBtn: {
-    backgroundColor: C.surfaceAlt,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-  },
-  cancelBtnTxt: {color: C.inkSub, fontWeight: '600', fontSize: 15},
-});
+const makeBEStyles = (C, R, Sh) =>
+  StyleSheet.create({
+    wrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 36,
+      backgroundColor: C.bg,
+    },
+    emoji: {fontSize: 52, marginBottom: 16},
+    title: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: C.ink,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    sub: {
+      fontSize: 13,
+      color: C.inkSub,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 24,
+    },
+    primaryBtn: {
+      backgroundColor: C.blue,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: R.full,
+      marginBottom: 12,
+      ...Sh.sm,
+    },
+    primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
+    cancelBtn: {
+      backgroundColor: C.surfaceAlt,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: R.full,
+    },
+    cancelBtnTxt: {color: C.inkSub, fontWeight: '600', fontSize: 15},
+  });
 
 // ── Component ──────────────────────────────────────────────────────────────────
 const FaceVerificationModal = ({
@@ -186,6 +199,8 @@ const FaceVerificationModal = ({
   onFailure,
   onCancel,
 }) => {
+  const {C, R, Sh} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
   // ── React state — RENDER ONLY ─────────────────────────────────────────────
   const [phase, setPhaseState] = useState('checking');
 
@@ -697,150 +712,151 @@ const FaceVerificationModal = ({
 export default FaceVerificationModal;
 
 // ── Styles ─────────────────────────────────────────────────────────────────────
-const S = StyleSheet.create({
-  sheet: {flex: 1, backgroundColor: '#000'},
+const makeStyles = (C, R, Sh) =>
+  StyleSheet.create({
+    sheet: {flex: 1, backgroundColor: '#000'},
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: 'rgba(0,0,0,0.88)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  headerTitle: {fontSize: 17, fontWeight: '700', color: '#fff'},
-  headerSub: {fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2},
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeTxt: {fontSize: 14, color: '#fff', fontWeight: '700'},
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 16,
+      backgroundColor: 'rgba(0,0,0,0.88)',
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(255,255,255,0.1)',
+    },
+    headerTitle: {fontSize: 17, fontWeight: '700', color: '#fff'},
+    headerSub: {fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2},
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeTxt: {fontSize: 14, color: '#fff', fontWeight: '700'},
 
-  strip: {
-    backgroundColor: 'rgba(27,79,216,0.88)',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  stripTxt: {fontSize: 12, color: '#fff', textAlign: 'center'},
+    strip: {
+      backgroundColor: 'rgba(27,79,216,0.88)',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    stripTxt: {fontSize: 12, color: '#fff', textAlign: 'center'},
 
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 40,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 40,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+    },
 
-  ovalWrap: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  oval: {
-    width: 220,
-    height: 290,
-    borderRadius: 110,
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.75)',
-  },
+    ovalWrap: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+    oval: {
+      width: 220,
+      height: 290,
+      borderRadius: 110,
+      borderWidth: 3,
+      borderColor: 'rgba(255,255,255,0.75)',
+    },
 
-  card: {
-    width: '88%',
-    backgroundColor: 'rgba(15,23,42,0.85)',
-    borderRadius: R.lg,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  cardEmoji: {fontSize: 36},
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  cardSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.65)',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+    card: {
+      width: '88%',
+      backgroundColor: 'rgba(15,23,42,0.85)',
+      borderRadius: R.lg,
+      paddingVertical: 20,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      gap: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+    },
+    cardEmoji: {fontSize: 36},
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: '#fff',
+      textAlign: 'center',
+    },
+    cardSub: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.65)',
+      textAlign: 'center',
+      lineHeight: 20,
+    },
 
-  scanBar: {
-    marginTop: 8,
-    width: '60%',
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: C.blue,
-    opacity: 0.7,
-  },
+    scanBar: {
+      marginTop: 8,
+      width: '60%',
+      height: 3,
+      borderRadius: 2,
+      backgroundColor: C.blue,
+      opacity: 0.7,
+    },
 
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 36,
-    backgroundColor: C.bg,
-  },
-  centerTxt: {fontSize: 14, color: C.inkMuted, marginTop: 16},
-  stateEmoji: {fontSize: 52, marginBottom: 16},
-  stateTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: C.ink,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  stateSub: {
-    fontSize: 14,
-    color: C.inkSub,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 36,
+      backgroundColor: C.bg,
+    },
+    centerTxt: {fontSize: 14, color: C.inkMuted, marginTop: 16},
+    stateEmoji: {fontSize: 52, marginBottom: 16},
+    stateTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: C.ink,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    stateSub: {
+      fontSize: 14,
+      color: C.inkSub,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 24,
+    },
 
-  spinnerWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: C.blueLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    ...Sh.md,
-  },
-  successCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: C.greenMid,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    ...Sh.md,
-  },
-  successCheck: {fontSize: 44, color: '#fff', fontWeight: '700'},
+    spinnerWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: C.blueLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      ...Sh.md,
+    },
+    successCircle: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      backgroundColor: C.greenMid,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+      ...Sh.md,
+    },
+    successCheck: {fontSize: 44, color: '#fff', fontWeight: '700'},
 
-  primaryBtn: {
-    backgroundColor: C.blue,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-    marginBottom: 12,
-    ...Sh.sm,
-  },
-  primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
-  cancelBtn: {
-    backgroundColor: C.surfaceAlt,
-    borderWidth: 1,
-    borderColor: C.border,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: R.full,
-  },
-  cancelBtnTxt: {color: C.inkSub, fontWeight: '600', fontSize: 15},
-});
+    primaryBtn: {
+      backgroundColor: C.blue,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: R.full,
+      marginBottom: 12,
+      ...Sh.sm,
+    },
+    primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
+    cancelBtn: {
+      backgroundColor: C.surfaceAlt,
+      borderWidth: 1,
+      borderColor: C.border,
+      paddingHorizontal: 32,
+      paddingVertical: 14,
+      borderRadius: R.full,
+    },
+    cancelBtnTxt: {color: C.inkSub, fontWeight: '600', fontSize: 15},
+  });

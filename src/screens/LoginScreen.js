@@ -277,6 +277,10 @@ const LoginScreen = () => {
 
         if (cancelled) return;
 
+        // navigation.navigate('AttendanceManagement', {
+        //   initialScreen: 'TimeClock',
+        //   fromLogin: true,
+        // });
         navigation.navigate('DrawerNavigator');
       } catch (error) {
         if (cancelled) return;
@@ -464,6 +468,10 @@ const LoginScreen = () => {
 
       await saveConfig(activeConfig);
       await loadUserDataFromBiometric(credentials.email, credentials.provider);
+      // navigation.navigate('AttendanceManagement', {
+      //   initialScreen: 'TimeClock',
+      //   fromLogin: true,
+      // });
       navigation.navigate('DrawerNavigator');
     } catch (error) {
       console.error('Biometric login error:', error);

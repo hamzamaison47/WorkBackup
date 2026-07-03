@@ -6,7 +6,7 @@
 // P2.3 OPTIMIZATION: Uses AttendanceOrchestrator token pattern.
 // Confirm press delegates entirely to Orchestrator.confirm().
 // ─────────────────────────────────────────────
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState, useMemo} from 'react';
 import {
   View,
   Text,
@@ -32,7 +32,7 @@ import {
   getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
-import {C, R} from '../theme';
+import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE = 'ClockOut';
 
@@ -41,6 +41,8 @@ const ConfirmClockOutScreen = ({
   onConfirm,
   onBack,
 }) => {
+  const {C, R} = useAttendanceTheme();
+  const S = useMemo(() => makeStyles(C, R), [C, R]);
   const [note, setNote] = useState('');
   const [endWorkDay, setEndWorkDay] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
@@ -246,79 +248,80 @@ const ConfirmClockOutScreen = ({
 
 export default ConfirmClockOutScreen;
 
-const S = StyleSheet.create({
-  validBadge: {
-    backgroundColor: '#D1FAE5',
-    borderWidth: 1,
-    borderColor: '#6EE7B7',
-    borderRadius: R.sm,
-    padding: 10,
-    marginBottom: 10,
-  },
-  validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
-  pendingBadge: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-    borderRadius: R.sm,
-    padding: 10,
-    marginBottom: 10,
-  },
-  pendingBadgeText: {fontSize: 12, color: '#92400E'},
+const makeStyles = (C, R) =>
+  StyleSheet.create({
+    validBadge: {
+      backgroundColor: '#D1FAE5',
+      borderWidth: 1,
+      borderColor: '#6EE7B7',
+      borderRadius: R.sm,
+      padding: 10,
+      marginBottom: 10,
+    },
+    validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
+    pendingBadge: {
+      backgroundColor: '#FEF3C7',
+      borderWidth: 1,
+      borderColor: '#FCD34D',
+      borderRadius: R.sm,
+      padding: 10,
+      marginBottom: 10,
+    },
+    pendingBadgeText: {fontSize: 12, color: '#92400E'},
 
-  summaryCard: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: R.md,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 14,
-    marginBottom: 10,
-  },
-  summaryTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: C.inkSub,
-    marginBottom: 8,
-    letterSpacing: 0.3,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  summaryKey: {fontSize: 12, color: C.inkMuted},
-  summaryVal: {fontSize: 12, fontWeight: '600', color: C.ink},
+    summaryCard: {
+      backgroundColor: C.surfaceAlt,
+      borderRadius: R.md,
+      borderWidth: 1,
+      borderColor: C.border,
+      padding: 14,
+      marginBottom: 10,
+    },
+    summaryTitle: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: C.inkSub,
+      marginBottom: 8,
+      letterSpacing: 0.3,
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 4,
+    },
+    summaryKey: {fontSize: 12, color: C.inkMuted},
+    summaryVal: {fontSize: 12, fontWeight: '600', color: C.ink},
 
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: R.sm,
-    marginBottom: 4,
-    borderWidth: 1,
-  },
-  locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
-  locationRowNeutral: {backgroundColor: C.surfaceAlt, borderColor: C.border},
-  locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
-  locBody: {flex: 1},
-  locLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: C.inkFaint,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 2,
-  },
-  locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
-  locArrow: {fontSize: 18},
-  fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
-  divider: {
-    height: 1,
-    backgroundColor: C.border,
-    marginBottom: 4,
-    marginTop: 4,
-  },
-});
+    locationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: R.sm,
+      marginBottom: 4,
+      borderWidth: 1,
+    },
+    locationRowOk: {backgroundColor: C.greenLight, borderColor: C.greenMid},
+    locationRowNeutral: {backgroundColor: C.surfaceAlt, borderColor: C.border},
+    locDot: {width: 8, height: 8, borderRadius: 4, flexShrink: 0},
+    locBody: {flex: 1},
+    locLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: C.inkFaint,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      marginBottom: 2,
+    },
+    locValue: {fontSize: 14, fontWeight: '600', color: C.greenDark},
+    locArrow: {fontSize: 18},
+    fenceNote: {fontSize: 11, color: C.inkMuted, marginBottom: 6},
+    divider: {
+      height: 1,
+      backgroundColor: C.border,
+      marginBottom: 4,
+      marginTop: 4,
+    },
+  });

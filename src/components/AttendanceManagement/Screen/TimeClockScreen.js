@@ -76,7 +76,7 @@ import {
   FS_EVENT_BREAK_END,
   FS_EVENT_CLOCK_OUT,
 } from '../../../services/AttendanceManagement/AttendanceHeadlessTask';
-import {C, R, Sh} from '../theme';
+import useAttendanceTheme from '../useAttendanceTheme';
 import useAttendanceNotificationAction from '../../../hooks/useAttendanceNotificationAction';
 import {ValidateQRCode} from '../../../API/AttendanceManagement/ValidateQRCode';
 import {initSyncListener} from '../../../services/AttendanceManagement/SyncManager';
@@ -85,25 +85,14 @@ import DeviceInfo from 'react-native-device-info';
 
 const {width: SCREEN_W} = Dimensions.get('window');
 
-const DK = {
-  bg: '#F5F7FA',
-  card: '#FFFFFF',
-  cardBorder: '#E2E8F0',
-  surface: '#EEF2F7',
-  accent: '#1B4FD8',
-  accentGreen: '#059669',
-  accentAmber: '#D97706',
-  accentRed: '#DC2626',
-  textPrimary: '#0F172A',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
-  ring: '#CBD5E1',
-};
+// DK palette now comes from useAttendanceTheme() (light/dark). Each component
+// below pulls `DK` from the hook and memoizes its styles from it.
 
 // ─────────────────────────────────────────────
 // Skeleton
 // ─────────────────────────────────────────────
 const SkeletonBlock = ({width: w, height: h, borderRadius: br = 6, style}) => {
+  const {DK} = useAttendanceTheme();
   const shimmer = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -143,49 +132,52 @@ const SkeletonBlock = ({width: w, height: h, borderRadius: br = 6, style}) => {
   );
 };
 
-const SkeletonScreen = () => (
-  <View style={{flex: 1, backgroundColor: DK.bg, paddingTop: 20}}>
-    <View style={{alignItems: 'center', marginBottom: 24}}>
-      <SkeletonBlock width={120} height={14} borderRadius={7} />
+const SkeletonScreen = () => {
+  const {DK} = useAttendanceTheme();
+  return (
+    <View style={{flex: 1, backgroundColor: DK.bg, paddingTop: 20}}>
+      <View style={{alignItems: 'center', marginBottom: 24}}>
+        <SkeletonBlock width={120} height={14} borderRadius={7} />
+      </View>
+      <View style={{alignItems: 'center', marginBottom: 20}}>
+        <SkeletonBlock width={160} height={160} borderRadius={80} />
+      </View>
+      <View style={{alignItems: 'center', marginBottom: 30}}>
+        <SkeletonBlock
+          width={180}
+          height={40}
+          borderRadius={8}
+          style={{marginBottom: 8}}
+        />
+        <SkeletonBlock width={100} height={12} borderRadius={6} />
+      </View>
+      <View
+        style={{
+          flexDirection: 'row',
+          paddingHorizontal: 16,
+          gap: 10,
+          marginBottom: 14,
+        }}>
+        <SkeletonBlock
+          width={(SCREEN_W - 42) / 2}
+          height={60}
+          borderRadius={12}
+        />
+        <SkeletonBlock
+          width={(SCREEN_W - 42) / 2}
+          height={60}
+          borderRadius={12}
+        />
+      </View>
+      <View style={{paddingHorizontal: 16}}>
+        <SkeletonBlock width={SCREEN_W - 32} height={48} borderRadius={12} />
+      </View>
+      <View style={{paddingHorizontal: 16, marginTop: 14}}>
+        <SkeletonBlock width={SCREEN_W - 32} height={44} borderRadius={22} />
+      </View>
     </View>
-    <View style={{alignItems: 'center', marginBottom: 20}}>
-      <SkeletonBlock width={160} height={160} borderRadius={80} />
-    </View>
-    <View style={{alignItems: 'center', marginBottom: 30}}>
-      <SkeletonBlock
-        width={180}
-        height={40}
-        borderRadius={8}
-        style={{marginBottom: 8}}
-      />
-      <SkeletonBlock width={100} height={12} borderRadius={6} />
-    </View>
-    <View
-      style={{
-        flexDirection: 'row',
-        paddingHorizontal: 16,
-        gap: 10,
-        marginBottom: 14,
-      }}>
-      <SkeletonBlock
-        width={(SCREEN_W - 42) / 2}
-        height={60}
-        borderRadius={12}
-      />
-      <SkeletonBlock
-        width={(SCREEN_W - 42) / 2}
-        height={60}
-        borderRadius={12}
-      />
-    </View>
-    <View style={{paddingHorizontal: 16}}>
-      <SkeletonBlock width={SCREEN_W - 32} height={48} borderRadius={12} />
-    </View>
-    <View style={{paddingHorizontal: 16, marginTop: 14}}>
-      <SkeletonBlock width={SCREEN_W - 32} height={44} borderRadius={22} />
-    </View>
-  </View>
-);
+  );
+};
 
 // ─────────────────────────────────────────────
 // Clock Ring
@@ -194,6 +186,8 @@ const RING_SIZE = 155;
 const RING_STROKE = 5;
 
 const ClockRing = ({status}) => {
+  const {DK} = useAttendanceTheme();
+  const CL = useMemo(() => makeCL(DK), [DK]);
   const pulse = useRef(new Animated.Value(1)).current;
   const [, setTick] = useState(0);
 
@@ -255,55 +249,57 @@ const ClockRing = ({status}) => {
   );
 };
 
-const CL = StyleSheet.create({
-  wrap: {alignItems: 'center', justifyContent: 'center', marginBottom: 18},
-  outerGlow: {
-    position: 'absolute',
-    width: RING_SIZE + 18,
-    height: RING_SIZE + 18,
-    borderRadius: (RING_SIZE + 18) / 2,
-    borderWidth: 1.5,
-    opacity: 0.3,
-  },
-  ring: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    borderRadius: RING_SIZE / 2,
-    borderWidth: RING_STROKE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: DK.card,
-  },
-  inner: {alignItems: 'center'},
-  time: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: DK.textPrimary,
-    letterSpacing: -1,
-  },
-  ampm: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: DK.textSecondary,
-    letterSpacing: 1.5,
-    marginTop: -2,
-  },
-});
+const makeCL = DK =>
+  StyleSheet.create({
+    wrap: {alignItems: 'center', justifyContent: 'center', marginBottom: 18},
+    outerGlow: {
+      position: 'absolute',
+      width: RING_SIZE + 18,
+      height: RING_SIZE + 18,
+      borderRadius: (RING_SIZE + 18) / 2,
+      borderWidth: 1.5,
+      opacity: 0.3,
+    },
+    ring: {
+      width: RING_SIZE,
+      height: RING_SIZE,
+      borderRadius: RING_SIZE / 2,
+      borderWidth: RING_STROKE,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: DK.card,
+    },
+    inner: {alignItems: 'center'},
+    time: {
+      fontSize: 38,
+      fontWeight: '800',
+      color: DK.textPrimary,
+      letterSpacing: -1,
+    },
+    ampm: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: DK.textSecondary,
+      letterSpacing: 1.5,
+      marginTop: -2,
+    },
+  });
 
 // ─────────────────────────────────────────────
 // Status pill
 // ─────────────────────────────────────────────
-const STATUS_CFG = {
-  out: {
-    label: 'Not Clocked In',
-    color: DK.textSecondary,
-    dotColor: DK.textMuted,
-  },
-  in: {label: 'Clocked In', color: DK.accentGreen, dotColor: DK.accentGreen},
-  break: {label: 'On Break', color: DK.accentAmber, dotColor: DK.accentAmber},
-};
-
 const StatusPill = ({status}) => {
+  const {DK} = useAttendanceTheme();
+  const SP = useMemo(() => makeSP(DK), [DK]);
+  const STATUS_CFG = {
+    out: {
+      label: 'Not Clocked In',
+      color: DK.textSecondary,
+      dotColor: DK.textMuted,
+    },
+    in: {label: 'Clocked In', color: DK.accentGreen, dotColor: DK.accentGreen},
+    break: {label: 'On Break', color: DK.accentAmber, dotColor: DK.accentAmber},
+  };
   const cfg = STATUS_CFG[status] ?? STATUS_CFG.out;
   return (
     <View style={SP.wrap}>
@@ -313,23 +309,24 @@ const StatusPill = ({status}) => {
   );
 };
 
-const SP = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: DK.surface,
-    borderWidth: 1,
-    borderColor: DK.cardBorder,
-    marginBottom: 14,
-  },
-  dot: {width: 6, height: 6, borderRadius: 3},
-  text: {fontSize: 11, fontWeight: '700', letterSpacing: 0.4},
-});
+const makeSP = DK =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 20,
+      backgroundColor: DK.surface,
+      borderWidth: 1,
+      borderColor: DK.cardBorder,
+      marginBottom: 14,
+    },
+    dot: {width: 6, height: 6, borderRadius: 3},
+    text: {fontSize: 11, fontWeight: '700', letterSpacing: 0.4},
+  });
 
 // ─────────────────────────────────────────────
 // Time summary — shows elapsed, clock-in time, breaks
@@ -341,6 +338,8 @@ const TimeSummary = ({
   breakCount,
   totalBreakMs,
 }) => {
+  const {DK} = useAttendanceTheme();
+  const TS = useMemo(() => makeTS(DK), [DK]);
   const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
   const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
   const breakStr =
@@ -372,51 +371,52 @@ const TimeSummary = ({
   );
 };
 
-const TS = StyleSheet.create({
-  container: {paddingHorizontal: 16, marginBottom: 12},
-  heroCard: {
-    backgroundColor: DK.card,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: DK.cardBorder,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  heroLabel: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: DK.textMuted,
-    letterSpacing: 1.2,
-    marginBottom: 4,
-  },
-  heroValue: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: DK.textPrimary,
-    letterSpacing: -1,
-  },
-  row: {flexDirection: 'row', gap: 8},
-  miniCard: {
-    flex: 1,
-    backgroundColor: DK.card,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: DK.cardBorder,
-    alignItems: 'center',
-  },
-  miniLabel: {
-    fontSize: 8,
-    fontWeight: '700',
-    color: DK.textMuted,
-    letterSpacing: 1,
-    marginBottom: 3,
-  },
-  miniValue: {fontSize: 15, fontWeight: '700', color: DK.textPrimary},
-});
+const makeTS = DK =>
+  StyleSheet.create({
+    container: {paddingHorizontal: 16, marginBottom: 12},
+    heroCard: {
+      backgroundColor: DK.card,
+      borderRadius: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderWidth: 1,
+      borderColor: DK.cardBorder,
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    heroLabel: {
+      fontSize: 9,
+      fontWeight: '700',
+      color: DK.textMuted,
+      letterSpacing: 1.2,
+      marginBottom: 4,
+    },
+    heroValue: {
+      fontSize: 34,
+      fontWeight: '800',
+      color: DK.textPrimary,
+      letterSpacing: -1,
+    },
+    row: {flexDirection: 'row', gap: 8},
+    miniCard: {
+      flex: 1,
+      backgroundColor: DK.card,
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: DK.cardBorder,
+      alignItems: 'center',
+    },
+    miniLabel: {
+      fontSize: 8,
+      fontWeight: '700',
+      color: DK.textMuted,
+      letterSpacing: 1,
+      marginBottom: 3,
+    },
+    miniValue: {fontSize: 15, fontWeight: '700', color: DK.textPrimary},
+  });
 
 // ─────────────────────────────────────────────
 // Location strip
@@ -427,6 +427,8 @@ const LocationStrip = ({
   locationError,
   onPress,
 }) => {
+  const {DK} = useAttendanceTheme();
+  const LS = useMemo(() => makeLS(DK), [DK]);
   if (locationLoading) {
     return (
       <View style={[LS.strip, LS.stripLoading]}>
@@ -466,44 +468,45 @@ const LocationStrip = ({
   );
 };
 
-const LS = StyleSheet.create({
-  strip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 16,
-    marginBottom: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  stripLoading: {
-    backgroundColor: 'rgba(27,79,216,0.06)',
-    borderColor: 'rgba(27,79,216,0.2)',
-  },
-  stripOk: {
-    backgroundColor: 'rgba(5,150,105,0.06)',
-    borderColor: 'rgba(5,150,105,0.2)',
-  },
-  stripBad: {
-    backgroundColor: 'rgba(220,38,38,0.06)',
-    borderColor: 'rgba(220,38,38,0.2)',
-  },
-  loadingTxt: {fontSize: 12, color: DK.accent, fontWeight: '500'},
-  dot: {width: 7, height: 7, borderRadius: 3.5, flexShrink: 0},
-  body: {flex: 1},
-  label: {
-    fontSize: 8,
-    fontWeight: '700',
-    color: DK.textMuted,
-    letterSpacing: 0.6,
-    marginBottom: 1,
-  },
-  value: {fontSize: 12, fontWeight: '600'},
-  sub: {fontSize: 10, marginTop: 1},
-  arrow: {fontSize: 16},
-});
+const makeLS = DK =>
+  StyleSheet.create({
+    strip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginHorizontal: 16,
+      marginBottom: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+    },
+    stripLoading: {
+      backgroundColor: 'rgba(27,79,216,0.06)',
+      borderColor: 'rgba(27,79,216,0.2)',
+    },
+    stripOk: {
+      backgroundColor: 'rgba(5,150,105,0.06)',
+      borderColor: 'rgba(5,150,105,0.2)',
+    },
+    stripBad: {
+      backgroundColor: 'rgba(220,38,38,0.06)',
+      borderColor: 'rgba(220,38,38,0.2)',
+    },
+    loadingTxt: {fontSize: 12, color: DK.accent, fontWeight: '500'},
+    dot: {width: 7, height: 7, borderRadius: 3.5, flexShrink: 0},
+    body: {flex: 1},
+    label: {
+      fontSize: 8,
+      fontWeight: '700',
+      color: DK.textMuted,
+      letterSpacing: 0.6,
+      marginBottom: 1,
+    },
+    value: {fontSize: 12, fontWeight: '600'},
+    sub: {fontSize: 10, marginTop: 1},
+    arrow: {fontSize: 16},
+  });
 
 // ─────────────────────────────────────────────
 // Spoofing banner
@@ -518,40 +521,47 @@ const SPOOF_LABELS = {
   emulator: 'Cannot run attendance from an emulator',
 };
 
-const SpoofingBanner = ({reason}) => (
-  <View style={SBN.wrap}>
-    <Text style={SBN.icon}>⚠️</Text>
-    <View style={{flex: 1}}>
-      <Text style={SBN.title}>GPS Integrity Warning</Text>
-      <Text style={SBN.sub}>
-        {SPOOF_LABELS[reason] ?? 'Suspicious GPS activity detected'}
-      </Text>
+const SpoofingBanner = ({reason}) => {
+  const {DK} = useAttendanceTheme();
+  const SBN = useMemo(() => makeSBN(DK), [DK]);
+  return (
+    <View style={SBN.wrap}>
+      <Text style={SBN.icon}>⚠️</Text>
+      <View style={{flex: 1}}>
+        <Text style={SBN.title}>GPS Integrity Warning</Text>
+        <Text style={SBN.sub}>
+          {SPOOF_LABELS[reason] ?? 'Suspicious GPS activity detected'}
+        </Text>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
-const SBN = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: 'rgba(217,119,6,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(217,119,6,0.25)',
-  },
-  icon: {fontSize: 16},
-  title: {fontSize: 12, fontWeight: '700', color: DK.accentAmber},
-  sub: {fontSize: 11, color: DK.accentAmber, marginTop: 1, opacity: 0.85},
-});
+const makeSBN = DK =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: 'rgba(217,119,6,0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(217,119,6,0.25)',
+    },
+    icon: {fontSize: 16},
+    title: {fontSize: 12, fontWeight: '700', color: DK.accentAmber},
+    sub: {fontSize: 11, color: DK.accentAmber, marginTop: 1, opacity: 0.85},
+  });
 
 // ─────────────────────────────────────────────
 // Notification banner
 // ─────────────────────────────────────────────
 const NotificationActionBanner = ({action, onDismiss}) => {
+  const {DK} = useAttendanceTheme();
+  const NB = useMemo(() => makeNB(DK), [DK]);
   const messages = {
     break_start: 'Break started from notification',
     break_end: 'Break ended from notification',
@@ -571,22 +581,23 @@ const NotificationActionBanner = ({action, onDismiss}) => {
   );
 };
 
-const NB = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: 'rgba(27,79,216,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(27,79,216,0.2)',
-  },
-  txt: {fontSize: 12, color: DK.accent, fontWeight: '500', flex: 1},
-  dismiss: {fontSize: 13, color: DK.accent, fontWeight: '700'},
-});
+const makeNB = DK =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginHorizontal: 16,
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: 'rgba(27,79,216,0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(27,79,216,0.2)',
+    },
+    txt: {fontSize: 12, color: DK.accent, fontWeight: '500', flex: 1},
+    dismiss: {fontSize: 13, color: DK.accent, fontWeight: '700'},
+  });
 
 // ─────────────────────────────────────────────
 // Action buttons
@@ -604,6 +615,7 @@ const ActionButtons = ({
   onBreakEnd,
   onClockOut,
 }) => {
+  const {DK} = useAttendanceTheme();
   const clockInDisabled = locationLoading || !matchedFence || spoofingDetected;
   const clockOutDisabled = spoofingDetected || !canOut;
   const breakDisabled = spoofingDetected || !canBreak;
@@ -686,6 +698,8 @@ const AB = StyleSheet.create({
 // Main screen
 // ─────────────────────────────────────────────
 const TimeClockScreen = ({onNavigate}) => {
+  const {DK, isDark} = useAttendanceTheme();
+  const S = useMemo(() => makeS(DK), [DK]);
   const {userData} = useSelector(s => s.user);
   const person = userData?.Person;
 
@@ -1308,7 +1322,10 @@ const TimeClockScreen = ({onNavigate}) => {
 
   return (
     <SafeAreaView style={S.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={DK.bg} />
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={DK.bg}
+      />
       <View style={{height: Platform.OS === 'android' ? 6 : 0}} />
 
       {isProcessing && (
@@ -1376,7 +1393,9 @@ const TimeClockScreen = ({onNavigate}) => {
         />
       </ScrollView>
 
-      <NavigationFAB activeScreen="TimeClock" onNavigate={onNavigate} />
+      {/* NavigationFAB hidden — Home and Timesheets are disabled, so the FAB
+          has no other destinations to switch to. */}
+      {/* <NavigationFAB activeScreen="TimeClock" onNavigate={onNavigate} /> */}
       <LocationPickerModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -1420,33 +1439,34 @@ const TimeClockScreen = ({onNavigate}) => {
 
 export default TimeClockScreen;
 
-const S = StyleSheet.create({
-  screen: {flex: 1, backgroundColor: DK.bg},
-  dateLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: DK.textSecondary,
-    textAlign: 'center',
-    marginBottom: 16,
-    letterSpacing: 0.3,
-  },
-  processingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(245,247,250,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 999,
-  },
-  processingContainer: {
-    alignItems: 'center',
-    backgroundColor: DK.card,
-    paddingHorizontal: 40,
-    paddingVertical: 28,
-    borderRadius: 16,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: DK.cardBorder,
-  },
-  processingText: {fontSize: 14, color: DK.textSecondary, fontWeight: '600'},
-  scrollContent: {flexGrow: 1, paddingBottom: 90, paddingTop: 14},
-});
+const makeS = DK =>
+  StyleSheet.create({
+    screen: {flex: 1, backgroundColor: DK.bg},
+    dateLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: DK.textSecondary,
+      textAlign: 'center',
+      marginBottom: 16,
+      letterSpacing: 0.3,
+    },
+    processingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(245,247,250,0.92)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 999,
+    },
+    processingContainer: {
+      alignItems: 'center',
+      backgroundColor: DK.card,
+      paddingHorizontal: 40,
+      paddingVertical: 28,
+      borderRadius: 16,
+      gap: 12,
+      borderWidth: 1,
+      borderColor: DK.cardBorder,
+    },
+    processingText: {fontSize: 14, color: DK.textSecondary, fontWeight: '600'},
+    scrollContent: {flexGrow: 1, paddingBottom: 90, paddingTop: 14},
+  });
