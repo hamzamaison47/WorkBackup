@@ -6,6 +6,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../styles/styles';
+import usePalette from '../hooks/usePalette';
 
 const IdentificationRequestCard = ({
   data = {},
@@ -17,6 +18,7 @@ const IdentificationRequestCard = ({
   isHighlighted = false,
   onButtonPress = () => {},
 }) => {
+  const P = usePalette();
   const getGradientColors = () =>
     isHighlighted ? highlightGradientColors : gradientColors;
 
@@ -66,22 +68,22 @@ const IdentificationRequestCard = ({
             alignItems: 'center',
             paddingVertical: 8,
             paddingHorizontal: 12,
-            backgroundColor: '#0A66C2',
+            backgroundColor: P.primary,
             borderRadius: 8,
             borderWidth: 1,
-            borderColor: '#0A66C2',
+            borderColor: P.primary,
             marginLeft: 10,
           },
           isDisabled && {opacity: 0.5},
         ]}>
         {isProcessing ? (
-          <FontAwesome name="spinner" size={16} color="#0A66C2" />
+          <FontAwesome name="spinner" size={16} color={P.primary} />
         ) : (
           config.icon && (
             <FontAwesome
               name={config.icon}
               size={16}
-              color={config.iconColor || '#0A66C2'}
+              color={config.iconColor || P.primary}
               style={{marginRight: config.text ? 6 : 0}}
             />
           )
@@ -90,7 +92,7 @@ const IdentificationRequestCard = ({
           <Text
             style={{
               fontSize: 13,
-              color: config.textColor || '#0A66C2',
+              color: config.textColor || P.primary,
               fontWeight: '600',
             }}>
             {isProcessing ? 'Processing...' : config.text}
@@ -120,7 +122,7 @@ const IdentificationRequestCard = ({
         <View
           style={{
             width: 6,
-            backgroundColor: isHighlighted ? '#3CB371' : '#0A66C2',
+            backgroundColor: isHighlighted ? '#3CB371' : P.primary,
             borderRadius: 4,
             marginRight: 10,
           }}
@@ -141,14 +143,14 @@ const IdentificationRequestCard = ({
                 <MaterialCommunityIcons
                   name={'card'}
                   size={22}
-                  color="#0A66C2"
+                  color={P.primary}
                   style={{marginRight: 8}}
                 />
                 <Text
                   style={{
                     fontSize: 15,
                     fontWeight: '700',
-                    color: '#0A66C2',
+                    color: P.primary,
                   }}>
                   {data.IdentificationTypeId || 'Identification'}
                 </Text>

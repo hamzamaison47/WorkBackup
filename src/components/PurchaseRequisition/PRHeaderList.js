@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import usePalette from '../../hooks/usePalette';
 
 const PRHeaderList = ({
   item,
@@ -30,6 +31,8 @@ const PRHeaderList = ({
   const threeDotsRef = useRef(null);
   const [menuPosition, setMenuPosition] = useState({x: 0, y: 0});
   const isDraft = item.RequisitionStatus?.toUpperCase() === 'DRAFT';
+  const P = usePalette();
+  const styles = createStyles(P);
 
   const submitLoading =
     processingButtons[item.RecId]?.includes('submit') || false;
@@ -326,141 +329,143 @@ const PRHeaderList = ({
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  mainContent: {
-    flex: 1,
-  },
-  card: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#E8E8E8',
-  },
-  left: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  rightContent: {
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  idBadge: {
-    backgroundColor: '#0A66C2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginRight: 10,
-    minWidth: 80,
-  },
-  idText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  title: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    lineHeight: 20,
-  },
-  detailsContainer: {
-    gap: 6,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailIcon: {
-    marginRight: 6,
-    width: 16,
-  },
-  detailText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#555',
-    flex: 1,
-  },
-  statusPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '800',
-    textAlign: 'center',
-    textTransform: 'uppercase',
-  },
-  menuButton: {
-    padding: 4,
-    zIndex: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  menuContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    minWidth: 120,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  menuText: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginHorizontal: 8,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginTop: 8,
-  },
-  disabledMenuItem: {
-    opacity: 0.5,
-  },
-});
+// const styles = StyleSheet.create({
+const createStyles = P =>
+  StyleSheet.create({
+    wrapper: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    mainContent: {
+      flex: 1,
+    },
+    card: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      backgroundColor: '#fff',
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: '#E8E8E8',
+    },
+    left: {
+      flex: 1,
+      paddingRight: 12,
+    },
+    rightContent: {
+      alignItems: 'flex-end',
+      gap: 8,
+    },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 12,
+    },
+    idBadge: {
+      backgroundColor: P.primary,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      marginRight: 10,
+      minWidth: 80,
+    },
+    idText: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: '#fff',
+      textAlign: 'center',
+    },
+    title: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#1A1A1A',
+      lineHeight: 20,
+    },
+    detailsContainer: {
+      gap: 6,
+    },
+    detailItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    detailIcon: {
+      marginRight: 6,
+      width: 16,
+    },
+    detailText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: '#555',
+      flex: 1,
+    },
+    statusPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    statusText: {
+      fontSize: 11,
+      fontWeight: '800',
+      textAlign: 'center',
+      textTransform: 'uppercase',
+    },
+    menuButton: {
+      padding: 4,
+      zIndex: 10,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'transparent',
+    },
+    menuContainer: {
+      backgroundColor: '#fff',
+      borderRadius: 8,
+      paddingVertical: 8,
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: '#E0E0E0',
+      minWidth: 120,
+    },
+    menuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    menuText: {
+      fontSize: 14,
+      fontWeight: '500',
+      marginLeft: 8,
+    },
+    menuDivider: {
+      height: 1,
+      backgroundColor: '#F0F0F0',
+      marginHorizontal: 8,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: '#F0F0F0',
+      marginTop: 8,
+    },
+    disabledMenuItem: {
+      opacity: 0.5,
+    },
+  });
 
 export default PRHeaderList;

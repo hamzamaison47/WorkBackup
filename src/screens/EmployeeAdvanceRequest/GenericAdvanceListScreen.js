@@ -44,6 +44,7 @@ import useNotify from '../../hooks/useNotify';
 import useListFilters from '../../hooks/useListFilters';
 
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 // Speed dial menu item config — no icon field
 const MENU_ITEMS = [
@@ -52,6 +53,7 @@ const MENU_ITEMS = [
 ];
 
 const GenericAdvanceListScreen = () => {
+  const P = usePalette();
   const [isLoading, setIsLoading] = useState(false);
   const [allAdvanceData, setAllAdvanceData] = useState([]);
   const [alertModal, setAlertModal] = useState(false);
@@ -609,7 +611,7 @@ const GenericAdvanceListScreen = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -620,7 +622,7 @@ const GenericAdvanceListScreen = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -631,7 +633,7 @@ const GenericAdvanceListScreen = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -641,7 +643,7 @@ const GenericAdvanceListScreen = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           ...(isDraft || isRejected
@@ -1131,7 +1133,7 @@ const GenericAdvanceListScreen = () => {
                     flex: 1,
                     paddingVertical: 13,
                     borderRadius: 10,
-                    backgroundColor: isSaving ? '#A0B4CC' : '#0A66C2',
+                    backgroundColor: isSaving ? '#A0B4CC' : P.primary,
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
@@ -1282,7 +1284,7 @@ const GenericAdvanceListScreen = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

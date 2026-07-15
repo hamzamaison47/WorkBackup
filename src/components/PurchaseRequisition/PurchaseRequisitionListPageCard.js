@@ -4,6 +4,7 @@ import React, {useState, useEffect} from 'react';
 import {View, Text, TouchableOpacity, FlatList} from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const DynamicPurchaseReqHeaderCard = ({
   dataList = [], // fixed: array for FlatList
@@ -15,6 +16,7 @@ const DynamicPurchaseReqHeaderCard = ({
   processingButtons = [],
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const P = usePalette();
 
   const formatValue = (value, fieldType) => {
     switch (fieldType) {
@@ -79,7 +81,7 @@ const DynamicPurchaseReqHeaderCard = ({
           <FontAwesome
             name={buttonConfig.icon}
             size={buttonConfig.iconSize || 16}
-            color={isDisabled ? '#999' : buttonConfig.iconColor || '#0A66C2'}
+            color={isDisabled ? '#999' : buttonConfig.iconColor || P.primary}
           />
         )}
         {isProcessing && (
@@ -99,7 +101,7 @@ const DynamicPurchaseReqHeaderCard = ({
               {
                 color: isDisabled
                   ? '#999'
-                  : buttonConfig.textColor || '#0A66C2',
+                  : buttonConfig.textColor || P.primary,
               },
             ]}>
             {isProcessing ? 'Processing...' : buttonConfig.text}

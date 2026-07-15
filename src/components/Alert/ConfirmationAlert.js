@@ -13,6 +13,7 @@ import {useSelector} from 'react-redux';
 import {translate as t} from '../../store/utils/translate';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 /**
  * ConfirmationAlert - A modern, animated confirmation modal with customizable options
@@ -46,14 +47,15 @@ const ConfirmationAlert = ({
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const currentLanguage = useSelector(state => state.language.currentLanguage);
+  const P = usePalette();
 
   // Get configuration based on alert type
   const getAlertConfig = () => {
     const configs = {
       info: {
         icon: 'information-outline',
-        iconColor: '#0A66C2',
-        primaryColor: '#0A66C2',
+        iconColor: P.primary,
+        primaryColor: P.primary,
         iconBg: '#E3F2FD',
       },
       warning: {

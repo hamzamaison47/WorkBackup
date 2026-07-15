@@ -15,6 +15,7 @@ import {Dropdown} from 'react-native-element-dropdown';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {useSelector} from 'react-redux';
+import usePalette from '../../hooks/usePalette';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
@@ -38,6 +39,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
   const navigation = useNavigation();
   const scrollRef = useRef(null);
   const today = new Date().toISOString().split('T')[0];
+  const P = usePalette();
 
   /** ✅ Dropdown Data */
   const [certificateTypes, setCertificateTypes] = useState([]);
@@ -192,7 +194,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
               <Text style={styles.DSR_DateText}>
                 {formatDate(formData.startDate)}
               </Text>
-              <Icon name="calendar" size={18} color="#0A66C2" />
+              <Icon name="calendar" size={18} color={P.primary} />
             </TouchableOpacity>
 
             {/* End Date */}
@@ -203,7 +205,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
               <Text style={styles.DSR_DateText}>
                 {formatDate(formData.endDate)}
               </Text>
-              <Icon name="calendar" size={18} color="#0A66C2" />
+              <Icon name="calendar" size={18} color={P.primary} />
             </TouchableOpacity>
 
             {/* Notes */}
@@ -226,7 +228,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
               }}>
               <TouchableOpacity
                 style={{
-                  backgroundColor: '#0A66C2',
+                  backgroundColor: P.primary,
                   paddingVertical: 12,
                   paddingHorizontal: 30,
                   borderRadius: 50,

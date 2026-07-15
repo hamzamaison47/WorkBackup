@@ -49,11 +49,13 @@ import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../components/Buttons/SaveRecordButtons';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const LeaveRequestSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
+  const P = usePalette();
 
   const currentLanguage = useSelector(state => state.language.currentLanguage);
   const isRTL = useSelector(state => state.language.isRTL);
@@ -815,7 +817,7 @@ const LeaveRequestSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -1008,7 +1010,7 @@ const LeaveRequestSaveRecord = () => {
                     : t('leaveSaveRecord.selectStartDate')}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
 
             {/* Leave End Date */}
@@ -1034,7 +1036,7 @@ const LeaveRequestSaveRecord = () => {
                     : t('leaveSaveRecord.selectEndDate')}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
 
             {/* Leave Days */}

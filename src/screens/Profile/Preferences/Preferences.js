@@ -5,10 +5,12 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
+import usePalette from '../../../hooks/usePalette';
 
 const Preferences = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation();
+  const P = usePalette();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -34,7 +36,7 @@ const Preferences = () => {
         }
       }}>
       <View style={styles.iconContainer}>
-        <Icon name={item.icon} size={22} color="#0A66C2" />
+        <Icon name={item.icon} size={22} color={P.primary} />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title}</Text>
@@ -58,7 +60,7 @@ const Preferences = () => {
         <View style={styles.container}>
           {/* 🌟 Modern Header */}
           <LinearGradient
-            colors={['#0A66C2', '#0A66C2']}
+            colors={[P.primary, P.primary]}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.headerContainer}>

@@ -18,12 +18,18 @@ import {
   conditionalVerticalScale,
   conditionalFontScale,
 } from '../../store/utils/scaling';
+import usePalette from '../../hooks/usePalette';
 
-const BadgePill = ({label, color = '#0A66C2', bgColor = '#E8F1FB', style}) => (
-  <View style={[S.badgePill, {backgroundColor: bgColor}, style]}>
-    <Text style={[S.badgePillText, {color}]}>{label}</Text>
-  </View>
-);
+const BadgePill = ({label, color, bgColor, style}) => {
+  const P = usePalette();
+  return (
+    <View style={[S.badgePill, {backgroundColor: bgColor || P.tint}, style]}>
+      <Text style={[S.badgePillText, {color: color || P.primary}]}>
+        {label}
+      </Text>
+    </View>
+  );
+};
 
 const S = StyleSheet.create({
   badgePill: {

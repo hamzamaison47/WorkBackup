@@ -5,7 +5,11 @@ import {getToken} from '../../Token/getToken';
 import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-const GetAllExpenseReports = async ({employeeId, legalEntity}) => {
+const GetAllExpenseReports = async ({
+  employeeId,
+  legalEntity,
+  purpose = '',
+}) => {
   try {
     const config = await getActiveConfigData();
 
@@ -19,6 +23,7 @@ const GetAllExpenseReports = async ({employeeId, legalEntity}) => {
         <GetAllExpenseReports xmlns="http://tempuri.org">
             <employeeid>${employeeId}</employeeid>
             <legalEntity>${legalEntity}</legalEntity>
+            <purpose>${purpose}</purpose>
         </GetAllExpenseReports>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

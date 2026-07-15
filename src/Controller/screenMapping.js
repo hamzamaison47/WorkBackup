@@ -67,6 +67,21 @@ import LeaveEncashment_SaveRecord from '../screens/LeaveEncashment/LeaveEncashme
 import OvertimePlanner_ListPage from '../screens/OvertimePlanner/OvertimePlanner_ListPage';
 import overtimePlanner_Create from '../screens/OvertimePlanner/OvertimePlanner_Create';
 import EmployeeAdvanceSalary_Create from '../screens/EmployeeAdvanceRequest/EmployeeAdvanceSalary_Create';
+import DFEmployeeLeaveRequestListPage from '../Customizations/IDAP/screens/Leaves/DFEmployeeLeaveRequestListPage';
+import DFEmployeeLeaveRequestSaveRecord from '../Customizations/IDAP/screens/Leaves/DFEmployeeLeaveREquestSaveRecord';
+import MedicalExpenseManagmentListPage from '../Customizations/IDAP/screens/ExpenseManagement/Header/MedicalExpenseManagmentListPage';
+import MedicalExpenseManagementSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Header/MedicalExpenseManagementSaveRecord';
+import MedicalExpenseLinesListPage from '../Customizations/IDAP/screens/ExpenseManagement/Lines/MedicalExpenseLinesListPage';
+import MedicalExpenseLinesSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Lines/MedicalExpenseLinesSaveRecord';
+import TravelRequisitionListPage from '../Customizations/IDAP/screens/TravelRequisition/Header/TravelRequisitionListPage';
+import TravelRequisitionSaveRecord from '../Customizations/IDAP/screens/TravelRequisition/Header/TravelRequisitionSaveRecord';
+import TravelRequisitionLinesListPage from '../Customizations/IDAP/screens/TravelRequisition/Lines/TravelRequisitionLinesListPage';
+import TravelRequisitionLinesSaveRecord from '../Customizations/IDAP/screens/TravelRequisition/Lines/TravelRequisitionLinesSaveRecord';
+import ExpenseManagementHeaderListPage from '../Customizations/IDAP/screens/ExpenseManagement/Header/ExpenseManagementHeaderListPage';
+import ExpenseManagementSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Header/ExpenseManagementSaveRecord';
+import ExpenseManagementLinesListPage from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLinesListPage';
+import ExpenseManagementLineSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLineSaveRecord';
+
 export const screenMapping = {
   // Tab Navigator Screens
   MainDashboard: MainDashboard,
@@ -141,6 +156,22 @@ export const screenMapping = {
   OvertimePlanner_ListPage: OvertimePlanner_ListPage,
   OvertimePlanner_Create: overtimePlanner_Create,
   EmployeeAdvanceSalary_Create: EmployeeAdvanceSalary_Create,
+
+  //IDAP Specific keep it commented in case of source
+  DFEmployeeLeaveRequestListPage: DFEmployeeLeaveRequestListPage,
+  DFEmployeeLeaveRequestSaveRecord: DFEmployeeLeaveRequestSaveRecord,
+  MedicalExpenseManagmentListPage: MedicalExpenseManagmentListPage,
+  MedicalExpenseManagementSaveRecord: MedicalExpenseManagementSaveRecord,
+  MedicalExpenseLinesListPage: MedicalExpenseLinesListPage,
+  MedicalExpenseLinesSaveRecord: MedicalExpenseLinesSaveRecord,
+  TravelRequisitionListPage: TravelRequisitionListPage,
+  TravelRequisitionSaveRecord: TravelRequisitionSaveRecord,
+  TravelRequisitionLinesListPage: TravelRequisitionLinesListPage,
+  TravelRequisitionLinesSaveRecord: TravelRequisitionLinesSaveRecord,
+  ExpenseManagementHeaderListPage: ExpenseManagementHeaderListPage,
+  ExpenseManagementSaveRecord: ExpenseManagementSaveRecord,
+  ExpenseManagementLinesListPage: ExpenseManagementLinesListPage,
+  ExpenseManagementLineSaveRecord: ExpenseManagementLineSaveRecord,
 };
 
 // Map Images → Screen component
@@ -167,4 +198,10 @@ export const iconMapping = {
   HrNewsUpdatesScreen: require('../assets/Maindashboard/news.png'),
   OutstandingAdvancesScreen: require('../assets/Maindashboard/Loan.png'),
   EmployeeAdvanceSalary_Create: require('../assets/Maindashboard/loan-approved.png'),
+  DFEmployeeLeaveRequestListPage: require('../assets/Maindashboard/calendar.png'),
+  MedicalExpenseManagmentListPage: require('../assets/Medical.png'),
+  // TODO(confirm): no dedicated Travel asset exists — reusing the requisition
+  // icon as a placeholder. Swap for a real travel icon when available.
+  TravelRequisitionListPage: require('..//assets//Maindashboard/PurchaseRequisition.png'),
+  ExpenseManagementHeaderListPage: require('../assets/Maindashboard/Expense.png'),
 };

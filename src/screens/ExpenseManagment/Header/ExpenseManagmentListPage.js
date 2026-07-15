@@ -32,10 +32,12 @@ import AlertDeleteModal from '../../../components/Alert/AlertDeleteModal';
 import styles from '../../../styles/styles';
 import useNotify from '../../../hooks/useNotify';
 import useListFilters from '../../../hooks/useListFilters';
+import usePalette from '../../../hooks/usePalette';
 
 const ExpenseManagmentListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette();
 
   const {
     employeeId,
@@ -73,6 +75,7 @@ const ExpenseManagmentListPage = () => {
       title: {key: 'ExpenseReportNumber'},
     },
     fields: [
+      {key: 'ApprovalStatus', label: 'Approval Status', type: 'status'},
       {key: 'Location', label: 'Location', type: 'text'},
       {key: 'Purpose', label: 'Purpose', type: 'text'},
       {key: 'DocumentStatus', label: '', type: 'status'},
@@ -268,7 +271,7 @@ const ExpenseManagmentListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -279,7 +282,7 @@ const ExpenseManagmentListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -289,7 +292,7 @@ const ExpenseManagmentListPage = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           // Submit: only on Draft or Rejected
@@ -509,7 +512,7 @@ const ExpenseManagmentListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

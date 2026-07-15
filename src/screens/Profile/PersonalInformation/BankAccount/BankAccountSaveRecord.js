@@ -30,6 +30,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import useNotify from '../../../../hooks/useNotify';
+import usePalette from '../../../../hooks/usePalette';
 
 import styles from '../../../../styles/styles';
 
@@ -37,6 +38,7 @@ const BankAccountSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
+  const P = usePalette();
 
   const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
@@ -445,7 +447,7 @@ const BankAccountSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>

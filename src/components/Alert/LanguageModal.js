@@ -13,6 +13,7 @@ import {
 import ConfirmationAlert from './ConfirmationAlert';
 import {translate as t} from '../../store/utils/translate';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const LanguageModal = ({visible, onClose}) => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
@@ -26,6 +27,7 @@ const LanguageModal = ({visible, onClose}) => {
   const idToken = useSelector(state => state.auth.idToken);
   const userToken = useSelector(state => state.auth.userToken);
   const userData = useSelector(state => state.user.userData);
+  const P = usePalette();
 
   // Initialize selected language when component mounts or currentLanguage changes
   useEffect(() => {
@@ -180,7 +182,7 @@ const LanguageModal = ({visible, onClose}) => {
                     </Text>
                   </View>
                   {selectedLanguage === language.code && (
-                    <Icon name="check-circle" size={24} color="#0A66C2" />
+                    <Icon name="check-circle" size={24} color={P.primary} />
                   )}
                 </TouchableOpacity>
               ))}

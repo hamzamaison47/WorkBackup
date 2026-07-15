@@ -27,6 +27,7 @@ import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import styles from '../../../../styles/styles';
 import {translate as t} from '../../../../store/utils/translate';
 import useNotify from '../../../../hooks/useNotify';
+import usePalette from '../../../../hooks/usePalette';
 
 import {retrieveAllFamilyContacts} from '../../../../API/PersonalInformation/FamilyContacts/retrieveAllFamilyContacts';
 import {deleteFamilyContactRecord} from '../../../../API/PersonalInformation/FamilyContacts/FamilyContactDelete';
@@ -36,6 +37,7 @@ const FamilyContact_ListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
+  const P = usePalette();
 
   const {
     employeeId,
@@ -215,7 +217,7 @@ const FamilyContact_ListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -226,7 +228,7 @@ const FamilyContact_ListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -237,7 +239,7 @@ const FamilyContact_ListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -425,7 +427,7 @@ const FamilyContact_ListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

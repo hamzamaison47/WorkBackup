@@ -14,6 +14,7 @@ import {useSelector} from 'react-redux';
 
 import {translate as t} from '../../store/utils/translate';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const AlertModal = ({
   visible,
@@ -30,14 +31,15 @@ const AlertModal = ({
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const currentLanguage = useSelector(state => state.language.currentLanguage);
+  const P = usePalette();
 
   // Get configuration based on alert type
   const getAlertConfig = () => {
     const configs = {
       info: {
         icon: 'information-outline',
-        iconColor: '#0A66C2',
-        primaryColor: '#0A66C2',
+        iconColor: P.primary,
+        primaryColor: P.primary,
         iconBg: '#E3F2FD',
       },
       success: {

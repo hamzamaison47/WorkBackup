@@ -8,7 +8,7 @@ import {getActiveConfigData} from '../../../Controller/secureConfig';
 const retrieveESSIdentificationtableTableRecId = async ({person}) => {
   try {
     const config = await getActiveConfigData();
-    console.log('here is the data received in service', person);
+    // console.log('here is the data received in service', person);
 
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');

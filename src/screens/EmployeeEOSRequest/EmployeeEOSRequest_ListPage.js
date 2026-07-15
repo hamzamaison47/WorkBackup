@@ -24,6 +24,7 @@ import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 import {useSelector} from 'react-redux';
 import {translate as t} from '../../store/utils/translate';
 
@@ -31,6 +32,7 @@ import {employeeEOSRequestfindbyEmployee} from '../../API/EmployeeEOSRequest/Emp
 import useListFilters from '../../hooks/useListFilters';
 
 const EmployeeEOSRequestListPage = () => {
+  const P = usePalette();
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -200,7 +202,7 @@ const EmployeeEOSRequestListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -211,7 +213,7 @@ const EmployeeEOSRequestListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -222,7 +224,7 @@ const EmployeeEOSRequestListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -233,8 +235,8 @@ const EmployeeEOSRequestListPage = () => {
         icon: 'send',
         iconSize: 16,
         text: t('buttons.submit'),
-        textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        textColor: P.primary,
+        iconColor: P.primary,
       },
       clearance: {
         show: true,
@@ -243,8 +245,8 @@ const EmployeeEOSRequestListPage = () => {
         icon: 'check-circle',
         iconSize: 16,
         text: 'Clearance',
-        textColor: '#0A66C2',
-        iconColor: '#0A66C2',
+        textColor: P.primary,
+        iconColor: P.primary,
       },
     };
   };
@@ -344,7 +346,7 @@ const EmployeeEOSRequestListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

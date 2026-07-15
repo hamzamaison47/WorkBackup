@@ -4,6 +4,7 @@ import React, {useMemo, useState} from 'react';
 import {Platform, View, Text, TouchableOpacity} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import usePalette from '../../hooks/usePalette';
 
 /* ---------- helpers ---------- */
 const p2 = n => String(n).padStart(2, '0');
@@ -61,6 +62,7 @@ const TimeFlicker = ({
   disabled = false,
 }) => {
   const [visible, setVisible] = useState(false);
+  const P = usePalette();
 
   const seed = useMemo(() => {
     return mode === 'date' ? parseDate(value) : parseTime24(value);
@@ -128,7 +130,7 @@ const TimeFlicker = ({
         <Icon
           name={mode === 'date' ? 'calendar' : 'clock-o'}
           size={18}
-          color="#0A66C2"
+          color={P.primary}
         />
       </TouchableOpacity>
 

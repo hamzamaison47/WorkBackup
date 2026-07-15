@@ -1,3 +1,4 @@
+import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
 // ─────────────────────────────────────────────────────────────────────────────
 // LIGHT TOKENS (default)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,7 +39,8 @@ export const DarkTokens = {
 // BRAND PALETTE — same in both modes
 // ─────────────────────────────────────────────────────────────────────────────
 export const BrandTokens = {
-  blue: '#0A66C2',
+  // blue: '#0A66C2',
+  blue: DEFAULT_PALETTE.primary,
   blueBg: '#E8F1FB',
   indigo: '#6366F1',
   indigoBg: '#EDEFFD',

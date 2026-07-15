@@ -34,12 +34,14 @@ import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation
 import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
 import useNotify from '../../../../hooks/useNotify';
 import useListFilters from '../../../../hooks/useListFilters';
+import usePalette from '../../../../hooks/usePalette';
 
 import styles from '../../../../styles/styles';
 
 const PersonalEducationListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette();
   const isRTL = I18nManager.isRTL;
 
   /* ---------- redux ---------- */
@@ -233,7 +235,7 @@ const PersonalEducationListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: isHCMRecord ? false : !isDraft && !isRejected,
         customStyle:
           !isDraft && !isRejected && !isHCMRecord
@@ -247,7 +249,7 @@ const PersonalEducationListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !canDelete,
         customStyle: !canDelete ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -258,7 +260,7 @@ const PersonalEducationListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -268,7 +270,7 @@ const PersonalEducationListPage = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           // Submit: only on Draft or Rejected
@@ -514,7 +516,7 @@ const PersonalEducationListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import useAppTokens from '../AppComponentsDesign/useAppTokens';
+import usePalette from '../../hooks/usePalette';
 import {AppTokens} from '../AppComponentsDesign/Appcomponents';
 
 const {height: SCREEN_HEIGHT, width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -19,6 +20,7 @@ const {height: SCREEN_HEIGHT, width: SCREEN_WIDTH} = Dimensions.get('window');
 // ─── Arrow Button ─────────────────────────────────────────────────────────────
 export const QuickAccessButton = ({onPress}) => {
   const pulse = useRef(new Animated.Value(1)).current;
+  const P = usePalette();
 
   useEffect(() => {
     Animated.loop(
@@ -41,7 +43,10 @@ export const QuickAccessButton = ({onPress}) => {
     <View style={btnStyles.wrapper}>
       <Animated.View style={{transform: [{scale: pulse}]}}>
         <TouchableOpacity
-          style={btnStyles.button}
+          style={[
+            btnStyles.button,
+            {backgroundColor: P.primary, shadowColor: P.primary},
+          ]}
           onPress={onPress}
           activeOpacity={0.8}>
           <Ionicons name="chevron-up" size={22} color="#fff" />
@@ -66,11 +71,9 @@ const btnStyles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 24,
-    backgroundColor: '#0A66C2',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 6,
-    shadowColor: '#0A66C2',
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.4,
     shadowRadius: 6,
@@ -81,6 +84,8 @@ const btnStyles = StyleSheet.create({
 const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
   // ✅ useAppTokens — reactive
   const T = useAppTokens();
+  const P = usePalette();
+  const sheet = createStyles(P);
 
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isRendered = useRef(false);
@@ -157,7 +162,7 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
         // ✅ sheet bg reacts to theme
         {backgroundColor: T.pageBg, transform: [{translateY}]},
       ]}>
-      <StatusBar backgroundColor="#0A66C2" barStyle="light-content" />
+      <StatusBar backgroundColor={T.blue} barStyle="light-content" />
 
       {/* Blue Header — intentionally brand blue, unchanged */}
       <View style={sheet.header}>
@@ -183,79 +188,81 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
 };
 
 // ✅ Only layout/spacing — zero colors
-const sheet = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-    elevation: 99,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#0A66C2', // brand blue — intentionally static
-    paddingHorizontal: 12,
-    paddingTop: StatusBar.currentHeight || 44,
-    paddingBottom: 14,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-  gridContent: {
-    paddingHorizontal: 12,
-    paddingTop: 16,
-    paddingBottom: 40,
-    flexGrow: 1,
-  },
-  columnWrapper: {
-    justifyContent: 'flex-start',
-    marginBottom: 4,
-  },
-  card: {
-    margin: 6,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderWidth: 1,
-    elevation: 2,
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  iconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  icon: {
-    width: 26,
-    height: 26,
-  },
-  cardTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
-    lineHeight: 15,
-    paddingHorizontal: 4,
-  },
-});
+// const sheet = StyleSheet.create({
+const createStyles = P =>
+  StyleSheet.create({
+    container: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 9999,
+      elevation: 99,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: P.primary, // brand blue — intentionally static
+      paddingHorizontal: 12,
+      paddingTop: StatusBar.currentHeight || 44,
+      paddingBottom: 14,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: '#fff',
+      letterSpacing: 0.3,
+    },
+    gridContent: {
+      paddingHorizontal: 12,
+      paddingTop: 16,
+      paddingBottom: 40,
+      flexGrow: 1,
+    },
+    columnWrapper: {
+      justifyContent: 'flex-start',
+      marginBottom: 4,
+    },
+    card: {
+      margin: 6,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+      borderWidth: 1,
+      elevation: 2,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+    },
+    iconBox: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 8,
+    },
+    icon: {
+      width: 26,
+      height: 26,
+    },
+    cardTitle: {
+      fontSize: 11,
+      fontWeight: '600',
+      textAlign: 'center',
+      lineHeight: 15,
+      paddingHorizontal: 4,
+    },
+  });
 
 export default QuickAccessSheet;

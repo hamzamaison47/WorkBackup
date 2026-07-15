@@ -41,6 +41,7 @@ import {getpersonalContactLabels} from '../../../../API/PersonalInformation/Fami
 import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
+import usePalette from '../../../../hooks/usePalette';
 import {borderRadius, spacing} from '../../../../store/utils/scaling';
 
 const FamilyContact_SaveRecord = () => {
@@ -49,6 +50,8 @@ const FamilyContact_SaveRecord = () => {
   const scrollViewRef = useRef(null);
   const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
+  const P = usePalette();
+
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
   const [PersonalContactsLabelData, setPersonalContactsLabelsData] = useState(
@@ -634,7 +637,7 @@ const FamilyContact_SaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -715,7 +718,7 @@ const FamilyContact_SaveRecord = () => {
                   value={formData.EmergencyContact}
                   onValueChange={() => toggleSwitch('EmergencyContact')}
                   trackColor={{false: '#767577', true: '#81b0ff'}}
-                  thumbColor={formData.EmergencyContact ? '#2196F3' : '#f4f3f4'}
+                  thumbColor={formData.EmergencyContact ? P.primary : '#f4f3f4'}
                 />
               </View>
 
@@ -735,7 +738,7 @@ const FamilyContact_SaveRecord = () => {
                   value={formData.isBeneficiary}
                   onValueChange={() => toggleSwitch('isBeneficiary')}
                   trackColor={{false: '#767577', true: '#81b0ff'}}
-                  thumbColor={formData.isBeneficiary ? '#2196F3' : '#f4f3f4'}
+                  thumbColor={formData.isBeneficiary ? P.primary : '#f4f3f4'}
                 />
               </View>
 
@@ -811,7 +814,7 @@ const FamilyContact_SaveRecord = () => {
                         onValueChange={() => toggleSwitch('isDependent')}
                         trackColor={{false: '#767577', true: '#81b0ff'}}
                         thumbColor={
-                          formData.isDependent ? '#2196F3' : '#f4f3f4'
+                          formData.isDependent ? P.primary : '#f4f3f4'
                         }
                       />
                     </View>

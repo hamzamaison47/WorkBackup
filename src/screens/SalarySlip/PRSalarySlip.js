@@ -21,8 +21,10 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
 import styles from '../../styles/styles';
+import usePallete from '../../hooks/usePalette';
 
 const PRSalarySlip = () => {
+  const P = usePallete();
   const [loading, setLoading] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false); // New state for email sending
   const [alertVisible, setAlertVisible] = useState(false);
@@ -170,7 +172,7 @@ const PRSalarySlip = () => {
             <Icon
               name="file-pdf-o"
               size={50}
-              color="#0A66C2"
+              color={P.primary}
               style={styles.SSlip_Icon}
             />
             <Text style={styles.SSlip_ScreenTitle}>Email Salary Slip</Text>
@@ -197,7 +199,7 @@ const PRSalarySlip = () => {
               activeOpacity={0.7}
               disabled={sendingEmail}>
               <LinearGradient
-                colors={['#0A66C2', '#0A66C2']}
+                colors={[P.primary, P.primary]}
                 style={styles.SSlip_ButtonContent}>
                 {sendingEmail ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />

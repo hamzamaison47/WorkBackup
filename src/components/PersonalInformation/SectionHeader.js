@@ -1,10 +1,15 @@
 import React from 'react';
 import {TouchableOpacity, Text, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import usePalette from '../../hooks/usePalette';
 
 const SectionHeader = ({title, expanded, onToggle}) => {
+  const P = usePalette();
+
   return (
-    <TouchableOpacity onPress={onToggle} style={styles.sectionHeader}>
+    <TouchableOpacity
+      onPress={onToggle}
+      style={[styles.sectionHeader, {backgroundColor: P.primary}]}>
       <Text style={styles.sectionTitle}>{title}</Text>
       <Icon name={expanded ? 'chevron-up' : 'chevron-down'} size={16} />
     </TouchableOpacity>
@@ -16,7 +21,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0A66C2', // Dark gray header for better contrast
+    // backgroundColor: P.primary, // Dark gray header for better contrast
     padding: 10,
     borderRadius: 5,
   },

@@ -26,6 +26,7 @@ import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+import usePalette from '../../hooks/usePalette';
 import azureAIService from '../../services/AzureAIService';
 import VoiceRecordingService from '../../services/VoiceRecordingService';
 
@@ -36,10 +37,10 @@ import {
 import styles from '../../styles/styles';
 
 const {width, height} = Dimensions.get('window');
-const PRIMARY_COLOR = '#0A66C2';
 
 // Message bubble component
 const MessageBubble = React.memo(({item, index}) => {
+  const P = usePalette();
   const isUser = item.from === 'user';
   const slideAnim = useRef(new Animated.Value(isUser ? 50 : -50)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -72,7 +73,7 @@ const MessageBubble = React.memo(({item, index}) => {
       {!isUser && (
         <View style={styles.AIChat_avatarContainer}>
           <LinearGradient
-            colors={['#0A66C2', '#0765A2']}
+            colors={[P.primary, '#0765A2']}
             style={styles.AIChat_avatar}>
             <Icon name="robot-excited" size={22} color="#fff" />
           </LinearGradient>
@@ -109,7 +110,7 @@ const MessageBubble = React.memo(({item, index}) => {
       {isUser && (
         <View style={styles.AIChat_avatarContainer}>
           <LinearGradient
-            colors={['#0765A2', '#0A66C2']}
+            colors={['#0765A2', P.primary]}
             style={styles.AIChat_avatar}>
             <Icon name="account" size={22} color="#fff" />
           </LinearGradient>
@@ -126,6 +127,7 @@ const MessageBubble = React.memo(({item, index}) => {
 const AIChatbot = ({visible, onClose, serviceInstance}) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const P = usePalette();
 
   const {userData} = useSelector(s => s.user || {});
   const messages = useSelector(s => s.chatbot?.messages || []);
@@ -591,14 +593,14 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
     <View style={[styles.AIChat_messageWrapper, styles.AIChat_botWrapper]}>
       <View style={styles.AIChat_avatarContainer}>
         <LinearGradient
-          colors={['#0A66C2', '#0765A2']}
+          colors={[P.primary, '#0765A2']}
           style={styles.AIChat_avatar}>
           <Icon name="robot-excited" size={22} color="#fff" />
         </LinearGradient>
       </View>
       <View style={[styles.AIChat_bubble, styles.AIChat_typingBubble]}>
         <View style={styles.AIChat_typingContainer}>
-          <ActivityIndicator size="small" color="#0A66C2" />
+          <ActivityIndicator size="small" color={P.primary} />
           <Text style={styles.AIChat_typingText}>Dynaface is typing...</Text>
         </View>
       </View>
@@ -655,7 +657,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
             ]}>
             {/* Header */}
             <LinearGradient
-              colors={['#0A66C2', '#0765A2', '#054A8C']}
+              colors={[P.primary, '#0765A2', '#054A8C']}
               start={{x: 0, y: 0}}
               end={{x: 1, y: 1}}
               style={styles.AIChat_header}>
@@ -777,7 +779,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
                           ? ['#FF4444', '#CC0000']
                           : !voiceServiceReady || isTyping
                           ? ['#CCCCCC', '#999999']
-                          : ['#0A66C2', '#0765A2']
+                          : [P.primary, '#0765A2']
                       }
                       style={styles.AIChat_gradientButton}>
                       <Icon

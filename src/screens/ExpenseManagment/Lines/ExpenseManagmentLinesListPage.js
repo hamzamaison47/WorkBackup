@@ -31,10 +31,12 @@ import ReceiptDetailsModal from '../../../shared/ReceiptDetailsModal';
 import styles from '../../../styles/styles';
 import useNotify from '../../../hooks/useNotify';
 import useListFilters from '../../../hooks/useListFilters';
+import usePalette from '../../../hooks/usePalette';
 
 const ExpenseManagmentLinesListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette();
 
   const {
     expenseReportNumber,
@@ -285,7 +287,7 @@ const ExpenseManagmentLinesListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -296,7 +298,7 @@ const ExpenseManagmentLinesListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -307,7 +309,7 @@ const ExpenseManagmentLinesListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         customStyle: {},
       },
     };

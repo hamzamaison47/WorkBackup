@@ -13,6 +13,7 @@ import authReducer from './slices/authSlice';
 import chatbotReducer from './slices/chatbotSlice';
 import dateFormatReducer from './slices/dateFormatSlice';
 import themeReducer from './slices/themeSlice';
+import colorPaletteReducer from './slices/colorPaletteSlice';
 
 // Redux Persist configuration
 const persistConfig = {
@@ -49,10 +50,11 @@ const persistConfig = {
     'company',
     'menuItem',
     'chatbot',
-    'dateFormat', // ← add this
+    'dateFormat',
     'theme',
-  ], // Persist these reducers
-  blacklist: [], // Don't persist these reducers
+    'colorPalette',
+  ],
+  blacklist: [],
 };
 
 // Combine all reducers
@@ -67,6 +69,7 @@ const rootReducer = combineReducers({
   chatbot: chatbotReducer, // ✅ ADD THIS
   dateFormat: dateFormatReducer, // ← add this
   theme: themeReducer,
+  colorPalette: colorPaletteReducer,
 });
 
 // Create persisted reducer

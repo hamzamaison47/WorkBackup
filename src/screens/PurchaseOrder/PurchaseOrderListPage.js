@@ -28,10 +28,12 @@ import {retrieveAllPurchaseOrders} from '../../API/PurchaseOrder/retrieveAllPurc
 import {useSelector} from 'react-redux';
 import {ScrollView} from 'react-native-gesture-handler';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+import usePallete from '../../hooks/usePalette';
 
 const PurchaseOrderListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePallete();
 
   const {
     employeeId,
@@ -119,7 +121,7 @@ const PurchaseOrderListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -129,7 +131,7 @@ const PurchaseOrderListPage = () => {
         style: 'approval_dropdown',
         text: 'View Details',
         icon: 'eye',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           {
@@ -397,7 +399,7 @@ const PurchaseOrderListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>Processing...</Text>
           </View>
         </View>

@@ -29,10 +29,12 @@ import deletePurchaseRequisitionLineRecord from '../../API/PurchaseRequisitionLi
 
 import {useSelector} from 'react-redux';
 import useListFilters from '../../hooks/useListFilters';
+import usePalette from '../../hooks/usePalette';
 
 const PurchaseRequisitionLinesListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette();
 
   const {
     PurchReqId,
@@ -296,7 +298,6 @@ const PurchaseRequisitionLinesListPage = () => {
       showPageTitleRow={true}
       showSearchBar={true}
       {...f.actionPaneProps}>
-
       {/* ✅ ADD PROCESSING OVERLAY HERE */}
       {isLoading && (
         <View
@@ -323,7 +324,7 @@ const PurchaseRequisitionLinesListPage = () => {
               shadowOpacity: 0.25,
               shadowRadius: 4,
             }}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text
               style={{
                 marginTop: 15,

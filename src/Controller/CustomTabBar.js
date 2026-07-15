@@ -9,11 +9,13 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {translate as t} from '../store/utils/translate';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
+import usePalette from '../hooks/usePalette';
 import {screenMapping} from './screenMapping';
 
 export default function CustomTabBar(props) {
   // ✅ reactive theme tokens
   const T = useAppTokens();
+  const P = usePalette();
   const insets = useSafeAreaInsets();
 
   const tabBarState = props?.state;
@@ -54,7 +56,7 @@ export default function CustomTabBar(props) {
       label: item.Label || item.MenuId,
       iconFocused: iconMap[item.MenuId]?.focused || 'folder-open',
       iconUnfocused: iconMap[item.MenuId]?.unfocused || 'folder-outline',
-      color: '#0A66C2',
+      color: P.primary,
     }));
 
   const defaultHomeTab = {
@@ -62,7 +64,7 @@ export default function CustomTabBar(props) {
     label: 'Home',
     iconFocused: 'home',
     iconUnfocused: 'home-outline',
-    color: '#0A66C2',
+    color: P.primary,
   };
 
   const tabs =
@@ -124,7 +126,7 @@ export default function CustomTabBar(props) {
   const tabBarBg =
     T.pageBg === '#0F172A'
       ? '#1E293B' // dark mode — elevated surface
-      : '#0A66C2'; // light mode — brand blue
+      : P.primary; // light mode — brand blue
 
   // ✅ Active icon bg — white pill in light, subtle blue in dark
   const activeIconGradient =
@@ -133,14 +135,14 @@ export default function CustomTabBar(props) {
       : ['#ffffff', '#f0f0f0']; // light mode
 
   // ✅ Active icon color — brand blue in light, bright white in dark
-  const activeIconColor = T.pageBg === '#0F172A' ? '#93C5FD' : '#0A66C2';
+  const activeIconColor = T.pageBg === '#0F172A' ? '#93C5FD' : P.primary;
 
   // ✅ Inactive icon color — white in light, muted in dark
   const inactiveIconColor =
-    T.pageBg === '#0F172A' ? 'rgba(148, 163, 184, 0.9)' : '#ffffff';
+    T.pageBg === '#0F172A' ? 'rgba(148, 163, 184, 0.9)' : P.onPrimary;
 
   // ✅ Label colors
-  const activeLabelColor = T.pageBg === '#0F172A' ? '#93C5FD' : '#ffffff';
+  const activeLabelColor = T.pageBg === '#0F172A' ? '#93C5FD' : P.onPrimary;
   const inactiveLabelColor =
     T.pageBg === '#0F172A'
       ? 'rgba(148, 163, 184, 0.7)'
@@ -152,7 +154,7 @@ export default function CustomTabBar(props) {
         styles.container,
         {
           backgroundColor: tabBarBg,
-          borderTopColor: '#0A66C2',
+          borderTopColor: P.primary,
           paddingBottom: insets.bottom,
         },
         props.style,

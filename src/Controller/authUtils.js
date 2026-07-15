@@ -28,6 +28,8 @@ import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEn
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
 import {chatbotClearMessages} from '../store/slices/chatbotSlice';
 import {apiCache} from '../utils/apiCache';
+import {RetrieveFirstOnly} from '../API/ColorPalette/RetrieveFirstOnly';
+import {setPalette} from '../store/slices/colorPaletteSlice';
 
 // Polyfill at the top of your authUtils file
 if (typeof global.atob === 'undefined') {
@@ -279,6 +281,33 @@ export const handleSuccessfulLogin = async (
     const menus = await fetchEmployeeMenuItems(user.Person);
     setLegalEntities(legalEntities);
     setMenuItems(menus);
+
+    try {
+      const palette = await RetrieveFirstOnly();
+
+      // TEMP [PALETTE-DEBUG] — remove after diagnosis
+      console.log('[PALETTE-DEBUG] dispatch payload (SSO login):', {
+        primary: palette?.primaryColor,
+        onPrimary: palette?.onPrimaryColor,
+        selection: palette?.selectionColor,
+      });
+
+      store.dispatch(
+        setPalette({
+          primary: palette.primaryColor,
+          onPrimary: palette.onPrimaryColor,
+          selection: palette.selectionColor,
+        }),
+      );
+
+      // TEMP [PALETTE-DEBUG] — remove after diagnosis
+      console.log(
+        '[PALETTE-DEBUG] store after dispatch:',
+        store.getState().colorPalette,
+      );
+    } catch (e) {
+      console.warn('Palette hydration failed:', e);
+    }
 
     const completeUserData = {
       userName: decodedAccessToken.name,

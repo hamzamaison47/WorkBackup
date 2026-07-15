@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const CompanyDropdown = ({
   visible,
@@ -17,6 +18,7 @@ const CompanyDropdown = ({
   selectedLegalEntity,
   onSelect,
 }) => {
+  const P = usePalette();
   if (!visible) return null;
 
   const handleSelectCompany = entityName => {
@@ -66,7 +68,7 @@ const CompanyDropdown = ({
                           <Icon
                             name="check"
                             size={16}
-                            color="#0A66C2"
+                            color={P.primary}
                             style={styles.CD_CheckIcon}
                           />
                         )}

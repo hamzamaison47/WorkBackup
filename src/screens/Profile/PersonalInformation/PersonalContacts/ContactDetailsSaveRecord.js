@@ -23,6 +23,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
+import usePalette from '../../../../hooks/usePalette';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {translate as t} from '../../../../store/utils/translate';
@@ -72,6 +73,7 @@ const ContactDetailsSaveRecord = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const scrollViewRef = useRef(null);
+  const P = usePalette();
 
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
@@ -403,7 +405,7 @@ const ContactDetailsSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>

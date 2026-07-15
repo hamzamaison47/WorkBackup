@@ -14,6 +14,7 @@ import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CalendarModal from '../Leaves/CalendarModal';
 import AlertModal from '../Alert/AlertModal';
+import usePalette from '../../hooks/usePalette';
 
 import {FindIdentificationTypeRequest} from '../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
 
@@ -25,13 +26,10 @@ const IdentificationInfoModal = ({
   serviceData = {},
 }) => {
   const [identityTypes, setIdentityTypes] = useState([]); // To store the dropdown data
-
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentField, setCurrentField] = useState('');
-
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
-
   const [formData, setFormData] = useState({
     RecId: serviceData?.RecId || 0,
     Description: serviceData?.Description || '',
@@ -48,6 +46,9 @@ const IdentificationInfoModal = ({
     WorkflowOperation: serviceData?.WorkflowOperation || '',
     ApprovalStatus: serviceData?.ApprovalStatus || '',
   });
+
+  const P = usePalette();
+  const styles = createStyles(P);
 
   // Update form data when serviceData changes
   useEffect(() => {
@@ -345,83 +346,85 @@ const IdentificationInfoModal = ({
   );
 };
 
-const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-  },
-  modalContent: {
-    flex: 1,
-    backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 10,
-    padding: 20,
-    elevation: 5,
-    justifyContent: 'center',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#707070',
-  },
-  label: {
-    fontSize: 16,
-    marginTop: 10,
+// const styles = StyleSheet.create({
+const createStyles = P =>
+  StyleSheet.create({
+    modalContainer: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'center',
+    },
+    modalContent: {
+      flex: 1,
+      backgroundColor: '#fff',
+      margin: 20,
+      borderRadius: 10,
+      padding: 20,
+      elevation: 5,
+      justifyContent: 'center',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#707070',
+    },
+    label: {
+      fontSize: 16,
+      marginTop: 10,
 
-    fontWeight: 'bold',
-    color: '#8a8a8a',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 5,
+      fontWeight: 'bold',
+      color: '#8a8a8a',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 5,
+      padding: 10,
+      marginTop: 5,
 
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#707070',
-  },
-  disable: {
-    backgroundColor: '#f7f7f7',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  button: {
-    flex: 1,
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  submitButton: {
-    backgroundColor: '#0A66C2',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-  },
-  dateText: {
-    color: '#555',
-  },
-});
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#707070',
+    },
+    disable: {
+      backgroundColor: '#f7f7f7',
+    },
+    modalFooter: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 20,
+    },
+    button: {
+      flex: 1,
+      backgroundColor: '#007bff',
+      padding: 10,
+      borderRadius: 5,
+      marginHorizontal: 5,
+      alignItems: 'center',
+    },
+    submitButton: {
+      backgroundColor: P.primary,
+    },
+    buttonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    dateSelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: '#ddd',
+      borderRadius: 5,
+      padding: 10,
+    },
+    dateText: {
+      color: '#555',
+    },
+  });
 
 export default IdentificationInfoModal;

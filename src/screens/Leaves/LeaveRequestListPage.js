@@ -29,6 +29,7 @@ import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 import {RetrieveAllLeaves} from '../../API/Leaves/RetrieveAllLeaves';
 import DeleteLeaveRequest from '../../API/Leaves/deleteLeaveRequest';
@@ -40,6 +41,7 @@ import useNotify from '../../hooks/useNotify';
 import useListFilters from '../../hooks/useListFilters';
 
 const LeaveRequestListPage = () => {
+  const P = usePalette();
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -390,7 +392,7 @@ const LeaveRequestListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft && !isRejected,
         customStyle:
           !isDraft && !isRejected ? {backgroundColor: '#BDBDBD'} : {},
@@ -402,7 +404,7 @@ const LeaveRequestListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -413,7 +415,7 @@ const LeaveRequestListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -423,7 +425,7 @@ const LeaveRequestListPage = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           // ── Submit action: only on Draft or Rejected ──
@@ -728,7 +730,7 @@ const LeaveRequestListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

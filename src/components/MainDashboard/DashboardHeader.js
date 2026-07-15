@@ -48,15 +48,15 @@ const DashboardHeader = ({
   isLoading,
   onProfilePress,
 }) => {
-  console.log('here is the user data', userData);
-  console.log('[DashboardHeader] location fields:', {
-    location: userData?.location,
-    workLocation: userData?.workLocation,
-    OriginalHireDate: userData?.OriginalHireDate,
-    // dump everything so you can see all available keys
-    allKeys: userData ? Object.keys(userData) : 'userData is null/undefined',
-    fullData: userData,
-  });
+  // console.log('here is the user data', userData);
+  // console.log('[DashboardHeader] location fields:', {
+  //   location: userData?.location,
+  //   workLocation: userData?.workLocation,
+  //   OriginalHireDate: userData?.OriginalHireDate,
+  //   // dump everything so you can see all available keys
+  //   allKeys: userData ? Object.keys(userData) : 'userData is null/undefined',
+  //   fullData: userData,
+  // });
   // ✅ useAppTokens at top — reactive
   const T = useAppTokens();
 

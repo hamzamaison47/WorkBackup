@@ -544,7 +544,7 @@
 //       {isActionLoading && (
 //         <View style={styles.DSR_ProcessingOverlay}>
 //           <View style={styles.DSR_ProcessingContainer}>
-//             <ActivityIndicator size="large" color="#0A66C2" />
+//             <ActivityIndicator size="large" color={P.primary} />
 //             <Text style={styles.DSR_ProcessingText}>Processing...</Text>
 //           </View>
 //         </View>
@@ -961,10 +961,12 @@ import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowIt
 import useListFilters from '../../hooks/useListFilters';
 import ListFilterBar from '../../components/Filters/ListFilterBar';
 import styles from '../../styles/styles';
+import usePallete from '../../hooks/usePalette';
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePallete();
 
   const {userData: routeUserData} = route.params || {};
   const reduxUserData = useSelector(state => state.user.userData);
@@ -1283,7 +1285,7 @@ const WorkItemsAssignedToMePage = () => {
       icon: 'paperclip',
       iconSize: 20,
       iconColor: '#fff',
-      backgroundColor: '#0A66C2',
+      backgroundColor: P.primary,
       disabled: false,
     },
     approval: {
@@ -1291,7 +1293,7 @@ const WorkItemsAssignedToMePage = () => {
       position: 'bottom',
       style: 'approval_dropdown',
       text: 'Approval',
-      textColor: '#0A66C2',
+      textColor: P.primary,
       disabled: isActionLoading,
       actions:
         Item.workflowWorkItemType === 'WorkItem'
@@ -1425,7 +1427,7 @@ const WorkItemsAssignedToMePage = () => {
       {isActionLoading && (
         <View style={styles.DSR_ProcessingOverlay}>
           <View style={styles.DSR_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DSR_ProcessingText}>Processing...</Text>
           </View>
         </View>

@@ -3,6 +3,7 @@ import React, {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AlertDeleteModal from '../Alert/AlertDeleteModal';
+import usePalette from '../../hooks/usePalette';
 
 const IdentificationDetailsSection = ({
   IdentityrRows,
@@ -15,6 +16,8 @@ const IdentificationDetailsSection = ({
   const [selectedRecId, setSelectedRecId] = useState(null); // State to store the selected RecId
   const [selectedIdentificationType, setSelectedIdentificationType] =
     useState(null); // State to store the selected RecId
+  const P = usePalette();
+  const styles = createStyles(P);
 
   useEffect(() => {
     if (IdentityrRows) {
@@ -175,84 +178,87 @@ const IdentificationDetailsSection = ({
   );
 };
 
-const styles = StyleSheet.create({
-  detailsContainer: {
-    padding: 16,
-    backgroundColor: '#bddeff',
-  },
-  detailsContainerBorder: {
-    padding: 16,
-    marginTop: 16,
-    backgroundColor: '#cce6ff',
-    borderRadius: 5,
-    elevation: 3,
-  },
-  textContainer: {
-    marginBottom: 16,
-  },
-  textContainers: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  cardTextHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333333',
-  },
-  insideCardTextHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#333333',
-    // marginVertical: 5,
-    flexShrink: 1,
-  },
-  cardSideTextHeading: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#808080',
-    flexShrink: 0,
-    width: '30%',
-  },
-  cardText: {
-    fontSize: 14,
-    color: '#808080',
-    flexShrink: 1,
-  },
-  iconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  editIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-    borderRadius: 25,
-    height: 30,
-    width: 30,
-    alignSelf: 'flex-end',
-    marginLeft: 5,
-  },
-  deleteIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ff292c',
-    borderRadius: 25,
-    height: 30,
-    width: 30,
-    alignSelf: 'flex-end',
-    marginRight: 5,
-  },
-  createIconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0A66C2',
-    borderRadius: 5,
-    padding: 8,
-    marginTop: 15,
-  },
-});
+// const styles = StyleSheet.create({
+
+const createStyles = P =>
+  StyleSheet.create({
+    detailsContainer: {
+      padding: 16,
+      backgroundColor: '#bddeff',
+    },
+    detailsContainerBorder: {
+      padding: 16,
+      marginTop: 16,
+      backgroundColor: '#cce6ff',
+      borderRadius: 5,
+      elevation: 3,
+    },
+    textContainer: {
+      marginBottom: 16,
+    },
+    textContainers: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+    },
+    cardTextHeading: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#333333',
+    },
+    insideCardTextHeading: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#333333',
+      // marginVertical: 5,
+      flexShrink: 1,
+    },
+    cardSideTextHeading: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#808080',
+      flexShrink: 0,
+      width: '30%',
+    },
+    cardText: {
+      fontSize: 14,
+      color: '#808080',
+      flexShrink: 1,
+    },
+    iconsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    editIconContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: P.primary,
+      borderRadius: 25,
+      height: 30,
+      width: 30,
+      alignSelf: 'flex-end',
+      marginLeft: 5,
+    },
+    deleteIconContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#ff292c',
+      borderRadius: 25,
+      height: 30,
+      width: 30,
+      alignSelf: 'flex-end',
+      marginRight: 5,
+    },
+    createIconContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: P.primary,
+      borderRadius: 5,
+      padding: 8,
+      marginTop: 15,
+    },
+  });
 
 export default IdentificationDetailsSection;

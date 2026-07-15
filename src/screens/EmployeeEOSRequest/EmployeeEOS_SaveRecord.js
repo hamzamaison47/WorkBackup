@@ -37,6 +37,7 @@ import {RetrieveEmployeeReporteesEmpInfo} from '../../API/EmploymentInformation/
 import {CreateEOSRequest} from '../../API/EmployeeEOSRequest/CreateEOSRequest';
 import SubmitEOSRequest from '../../API/EmployeeEOSRequest/SubmitEOSRequest';
 import useNotify from '../../hooks/useNotify';
+import usePalette from '../../hooks/usePalette';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = raw => {
@@ -80,6 +81,7 @@ const EmployeeEOS_SaveRecord = () => {
   const scrollRef = useRef(null);
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette();
 
   const {
     employeeId,
@@ -316,14 +318,14 @@ const EmployeeEOS_SaveRecord = () => {
       showPageTitleRow={true}>
       {isLoading ? (
         <View style={styles.DLP_LoadingContainer}>
-          <ActivityIndicator size="large" color="#0A66C2" />
+          <ActivityIndicator size="large" color={P.primary} />
         </View>
       ) : (
         <SafeAreaView style={styles.DSR_SafeArea}>
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>Processing...</Text>
               </View>
             </View>
@@ -441,7 +443,7 @@ const EmployeeEOS_SaveRecord = () => {
                     : 'Select Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
 
             {/* Reason Code */}

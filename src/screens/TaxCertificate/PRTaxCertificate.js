@@ -21,10 +21,12 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
 import styles from '../../styles/styles';
+import usePallete from '../../hooks/usePalette';
 
 const PRTaxCertificate = () => {
   const navigation = useNavigation();
   const {userData} = useSelector(state => state.user);
+  const P = usePallete();
 
   const [loading, setLoading] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -179,7 +181,7 @@ const PRTaxCertificate = () => {
             <Icon
               name="file-pdf-o"
               size={50}
-              color="#0A66C2"
+              color={P.primary}
               style={styles.TCert_Icon}
             />
             <Text style={styles.TCert_ScreenTitle}>Email Tax Certificate</Text>
@@ -207,7 +209,7 @@ const PRTaxCertificate = () => {
               activeOpacity={0.7}
               disabled={sendingEmail}>
               <LinearGradient
-                colors={['#0A66C2', '#0A66C2']}
+                colors={[P.primary, P.primary]}
                 style={styles.TCert_ButtonContent}>
                 {sendingEmail ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />

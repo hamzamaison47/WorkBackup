@@ -9,8 +9,7 @@ import {
   conditionalScale,
   conditionalFontScale,
 } from '../../store/utils/scaling';
-
-const BLUE = '#0A66C2';
+import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
 
 const MainPageHeader = ({
   onToggleDrawer,
@@ -18,7 +17,7 @@ const MainPageHeader = ({
   onCount,
   onHeaderMenuPress,
   isBack = false,
-  headerBg = '#0A66C2',
+  headerBg = DEFAULT_PALETTE.primary,
   topInset = 0,
 }) => ({
   headerTitle: () => null,
@@ -52,7 +51,7 @@ const MainPageHeader = ({
           color="#fff"
         />
         {onCount > 0 && (
-          <View style={S.badge}>
+          <View style={[S.badge, {borderColor: headerBg}]}>
             <Text style={S.badgeText}>{onCount > 99 ? '99+' : onCount}</Text>
           </View>
         )}
@@ -126,7 +125,6 @@ const S = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: conditionalScale(2, 2, 3, 3),
     borderWidth: 1.5,
-    borderColor: BLUE,
   },
   badgeText: {
     fontSize: conditionalFontScale(7, 8, 8, 9),

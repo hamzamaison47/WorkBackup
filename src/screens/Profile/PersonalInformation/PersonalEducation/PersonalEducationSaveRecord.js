@@ -41,6 +41,7 @@ import useNotify from '../../../../hooks/useNotify';
 
 import styles from '../../../../styles/styles';
 import {conditionalVerticalScale} from '../../../../store/utils/scaling';
+import usePalette from '../../../../hooks/usePalette';
 
 /* ---------- initial form ---------- */
 const createInitialFormData = (
@@ -76,6 +77,7 @@ const PersonalEducationSaveRecord = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const scrollViewRef = useRef(null);
+  const P = usePalette();
 
   const reduxUser = useSelector(state => state.user.userData);
   const routeUser = route.params?.userData;
@@ -469,7 +471,7 @@ const PersonalEducationSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -584,7 +586,7 @@ const PersonalEducationSaveRecord = () => {
                     : 'Select Start Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
 
             <Text style={styles.DSR_Label}>
@@ -600,7 +602,7 @@ const PersonalEducationSaveRecord = () => {
                     : 'Select End Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
 
             <Text style={styles.DSR_Label}>

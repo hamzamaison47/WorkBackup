@@ -1,6 +1,6 @@
 /* eslint-disable curly */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState, useCallback, useRef} from 'react';
+import React, {useState, useCallback, useRef, useMemo} from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import usePalette from '../hooks/usePalette';
 
 // ─────────────────────────────────────────────────────────────
 // SORT OPTIONS – default options, can be extended via props
@@ -131,6 +132,10 @@ const SearchFilterBar = ({
 
   const searchAnim = useRef(new Animated.Value(0)).current;
 
+  // ── Palette-driven styles ──────────────────────────────────
+  const P = usePalette();
+  const S = useMemo(() => makeStyles(P), [P]);
+
   // ── Derived: available labels from first record ────────────
   const availableLabels = React.useMemo(
     () => (data.length > 0 ? extractLabels(data[0]) : []),
@@ -241,28 +246,27 @@ const SearchFilterBar = ({
 
   // ── Render ─────────────────────────────────────────────────
   return (
-    <View style={sfStyles.wrapper}>
+    <View style={S.wrapper}>
       {/* ── TOP ROW: icon buttons ─────────────────────────── */}
-      <View style={[sfStyles.row, isRTL && sfStyles.rowRTL]}>
+      <View style={[S.row, isRTL && S.rowRTL]}>
         {/* Search button + expanding input */}
-        <View style={sfStyles.searchGroup}>
+        <View style={S.searchGroup}>
           <TouchableOpacity
-            style={[sfStyles.iconBtn, searchExpanded && sfStyles.iconBtnActive]}
+            style={[S.iconBtn, searchExpanded && S.iconBtnActive]}
             onPress={handleSearchToggle}
             activeOpacity={0.7}>
             <FontAwesome
               name="search"
               size={16}
-              color={searchExpanded ? '#fff' : '#0A66C2'}
+              color={searchExpanded ? '#fff' : P.primary}
             />
           </TouchableOpacity>
 
           {/* Animated expanding search input */}
-          <Animated.View
-            style={[sfStyles.searchInputWrap, {width: searchWidth}]}>
+          <Animated.View style={[S.searchInputWrap, {width: searchWidth}]}>
             {searchExpanded && (
               <TextInput
-                style={sfStyles.searchInput}
+                style={S.searchInput}
                 placeholder="Search…"
                 placeholderTextColor="#999"
                 value={searchText}
@@ -280,40 +284,34 @@ const SearchFilterBar = ({
 
         {/* Filter button */}
         <TouchableOpacity
-          style={[
-            sfStyles.iconBtn,
-            activeFilterCount > 0 && sfStyles.iconBtnActive,
-          ]}
+          style={[S.iconBtn, activeFilterCount > 0 && S.iconBtnActive]}
           onPress={() => setFilterModalVisible(true)}
           activeOpacity={0.7}>
           <FontAwesome5
             name="sliders-h"
             size={15}
-            color={activeFilterCount > 0 ? '#fff' : '#0A66C2'}
+            color={activeFilterCount > 0 ? '#fff' : P.primary}
           />
           {activeFilterCount > 0 && (
-            <View style={sfStyles.badge}>
-              <Text style={sfStyles.badgeText}>{activeFilterCount}</Text>
+            <View style={S.badge}>
+              <Text style={S.badgeText}>{activeFilterCount}</Text>
             </View>
           )}
         </TouchableOpacity>
 
         {/* Sort button */}
         <TouchableOpacity
-          style={[
-            sfStyles.iconBtn,
-            activeSortCount > 0 && sfStyles.iconBtnActive,
-          ]}
+          style={[S.iconBtn, activeSortCount > 0 && S.iconBtnActive]}
           onPress={() => setSortModalVisible(true)}
           activeOpacity={0.7}>
           <FontAwesome5
             name="sort-amount-down"
             size={15}
-            color={activeSortCount > 0 ? '#fff' : '#0A66C2'}
+            color={activeSortCount > 0 ? '#fff' : P.primary}
           />
           {activeSortCount > 0 && (
-            <View style={sfStyles.badge}>
-              <Text style={sfStyles.badgeText}>1</Text>
+            <View style={S.badge}>
+              <Text style={S.badgeText}>1</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -324,21 +322,21 @@ const SearchFilterBar = ({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={sfStyles.chipsRow}
-          contentContainerStyle={sfStyles.chipsContent}>
+          style={S.chipsRow}
+          contentContainerStyle={S.chipsContent}>
           {/* Filter chips */}
           {selectedFilters.map(fk => {
             const lbl = availableLabels.find(l => l.valueKey === fk);
             return (
               <TouchableOpacity
                 key={fk}
-                style={sfStyles.chip}
+                style={S.chip}
                 onPress={() => toggleFilter(fk)}>
-                <Text style={sfStyles.chipText}>{lbl?.label || fk}</Text>
+                <Text style={S.chipText}>{lbl?.label || fk}</Text>
                 <FontAwesome
                   name="times"
                   size={10}
-                  color="#0A66C2"
+                  color={P.primary}
                   style={{marginLeft: 4}}
                 />
               </TouchableOpacity>
@@ -347,22 +345,20 @@ const SearchFilterBar = ({
 
           {/* Sort chip */}
           {sortKey && (
-            <TouchableOpacity
-              style={[sfStyles.chip, sfStyles.chipSort]}
-              onPress={clearSort}>
+            <TouchableOpacity style={[S.chip, S.chipSort]} onPress={clearSort}>
               <FontAwesome5
                 name={sortDir === 'asc' ? 'sort-alpha-down' : 'sort-alpha-up'}
                 size={10}
-                color="#0A66C2"
+                color={P.primary}
                 style={{marginRight: 4}}
               />
-              <Text style={sfStyles.chipText}>
+              <Text style={S.chipText}>
                 {sortOptions.find(o => o.key === sortKey)?.label || sortKey}
               </Text>
               <FontAwesome
                 name="times"
                 size={10}
-                color="#0A66C2"
+                color={P.primary}
                 style={{marginLeft: 4}}
               />
             </TouchableOpacity>
@@ -370,14 +366,12 @@ const SearchFilterBar = ({
 
           {/* Clear all */}
           <TouchableOpacity
-            style={[sfStyles.chip, sfStyles.chipClear]}
+            style={[S.chip, S.chipClear]}
             onPress={() => {
               clearFilters();
               clearSort();
             }}>
-            <Text style={[sfStyles.chipText, {color: '#e53935'}]}>
-              Clear all
-            </Text>
+            <Text style={[S.chipText, {color: '#e53935'}]}>Clear all</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -389,21 +383,17 @@ const SearchFilterBar = ({
         animationType="slide"
         onRequestClose={() => setFilterModalVisible(false)}>
         <TouchableOpacity
-          style={sfStyles.modalOverlay}
+          style={S.modalOverlay}
           activeOpacity={1}
           onPress={() => setFilterModalVisible(false)}>
-          <View
-            style={sfStyles.modalSheet}
-            onStartShouldSetResponder={() => true}>
+          <View style={S.modalSheet} onStartShouldSetResponder={() => true}>
             {/* Header */}
-            <View style={sfStyles.modalHeader}>
-              <Text style={sfStyles.modalTitle}>Filter by Labels</Text>
-              <View style={sfStyles.modalHeaderRight}>
+            <View style={S.modalHeader}>
+              <Text style={S.modalTitle}>Filter by Labels</Text>
+              <View style={S.modalHeaderRight}>
                 {activeFilterCount > 0 && (
-                  <TouchableOpacity
-                    onPress={clearFilters}
-                    style={sfStyles.clearBtn}>
-                    <Text style={sfStyles.clearBtnText}>Clear</Text>
+                  <TouchableOpacity onPress={clearFilters} style={S.clearBtn}>
+                    <Text style={S.clearBtnText}>Clear</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
@@ -412,7 +402,7 @@ const SearchFilterBar = ({
               </View>
             </View>
 
-            <Text style={sfStyles.modalSubtitle}>
+            <Text style={S.modalSubtitle}>
               Select labels to show only records that have values for those
               fields.
             </Text>
@@ -425,31 +415,28 @@ const SearchFilterBar = ({
                 const isSelected = selectedFilters.includes(item.valueKey);
                 return (
                   <TouchableOpacity
-                    style={[
-                      sfStyles.filterItem,
-                      isSelected && sfStyles.filterItemActive,
-                    ]}
+                    style={[S.filterItem, isSelected && S.filterItemActive]}
                     onPress={() => toggleFilter(item.valueKey)}>
                     <Text
                       style={[
-                        sfStyles.filterItemText,
-                        isSelected && sfStyles.filterItemTextActive,
+                        S.filterItemText,
+                        isSelected && S.filterItemTextActive,
                       ]}>
                       {item.label}
                     </Text>
                     {isSelected && (
-                      <FontAwesome name="check" size={14} color="#0A66C2" />
+                      <FontAwesome name="check" size={14} color={P.primary} />
                     )}
                   </TouchableOpacity>
                 );
               }}
-              style={sfStyles.filterList}
+              style={S.filterList}
             />
 
             <TouchableOpacity
-              style={sfStyles.applyBtn}
+              style={S.applyBtn}
               onPress={() => setFilterModalVisible(false)}>
-              <Text style={sfStyles.applyBtnText}>
+              <Text style={S.applyBtnText}>
                 Apply{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
               </Text>
             </TouchableOpacity>
@@ -464,21 +451,17 @@ const SearchFilterBar = ({
         animationType="slide"
         onRequestClose={() => setSortModalVisible(false)}>
         <TouchableOpacity
-          style={sfStyles.modalOverlay}
+          style={S.modalOverlay}
           activeOpacity={1}
           onPress={() => setSortModalVisible(false)}>
-          <View
-            style={sfStyles.modalSheet}
-            onStartShouldSetResponder={() => true}>
+          <View style={S.modalSheet} onStartShouldSetResponder={() => true}>
             {/* Header */}
-            <View style={sfStyles.modalHeader}>
-              <Text style={sfStyles.modalTitle}>Sort Records</Text>
-              <View style={sfStyles.modalHeaderRight}>
+            <View style={S.modalHeader}>
+              <Text style={S.modalTitle}>Sort Records</Text>
+              <View style={S.modalHeaderRight}>
                 {sortKey && (
-                  <TouchableOpacity
-                    onPress={clearSort}
-                    style={sfStyles.clearBtn}>
-                    <Text style={sfStyles.clearBtnText}>Clear</Text>
+                  <TouchableOpacity onPress={clearSort} style={S.clearBtn}>
+                    <Text style={S.clearBtnText}>Clear</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => setSortModalVisible(false)}>
@@ -487,7 +470,7 @@ const SearchFilterBar = ({
               </View>
             </View>
 
-            <Text style={sfStyles.modalSubtitle}>
+            <Text style={S.modalSubtitle}>
               Tap a field to sort. Tap again to reverse direction.
             </Text>
 
@@ -496,16 +479,10 @@ const SearchFilterBar = ({
               return (
                 <TouchableOpacity
                   key={opt.key}
-                  style={[
-                    sfStyles.sortItem,
-                    isActive && sfStyles.sortItemActive,
-                  ]}
+                  style={[S.sortItem, isActive && S.sortItemActive]}
                   onPress={() => handleSortSelect(opt)}>
                   <Text
-                    style={[
-                      sfStyles.sortItemText,
-                      isActive && sfStyles.sortItemTextActive,
-                    ]}>
+                    style={[S.sortItemText, isActive && S.sortItemTextActive]}>
                     {opt.label}
                   </Text>
                   {isActive && (
@@ -514,7 +491,7 @@ const SearchFilterBar = ({
                         sortDir === 'asc' ? 'sort-alpha-down' : 'sort-alpha-up'
                       }
                       size={14}
-                      color="#0A66C2"
+                      color={P.primary}
                     />
                   )}
                 </TouchableOpacity>
@@ -522,12 +499,12 @@ const SearchFilterBar = ({
             })}
 
             {/* A-Z / 0-9 quick options */}
-            <View style={sfStyles.quickSortRow}>
-              <Text style={sfStyles.quickSortLabel}>Quick Sort Direction:</Text>
+            <View style={S.quickSortRow}>
+              <Text style={S.quickSortLabel}>Quick Sort Direction:</Text>
               <TouchableOpacity
                 style={[
-                  sfStyles.quickSortBtn,
-                  sortDir === 'asc' && sfStyles.quickSortBtnActive,
+                  S.quickSortBtn,
+                  sortDir === 'asc' && S.quickSortBtnActive,
                 ]}
                 onPress={() => {
                   if (sortKey) {
@@ -543,16 +520,16 @@ const SearchFilterBar = ({
                 }}>
                 <Text
                   style={[
-                    sfStyles.quickSortBtnText,
-                    sortDir === 'asc' && sfStyles.quickSortBtnTextActive,
+                    S.quickSortBtnText,
+                    sortDir === 'asc' && S.quickSortBtnTextActive,
                   ]}>
                   A → Z / 0 → 9
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
-                  sfStyles.quickSortBtn,
-                  sortDir === 'desc' && sfStyles.quickSortBtnActive,
+                  S.quickSortBtn,
+                  sortDir === 'desc' && S.quickSortBtnActive,
                 ]}
                 onPress={() => {
                   if (sortKey) {
@@ -568,8 +545,8 @@ const SearchFilterBar = ({
                 }}>
                 <Text
                   style={[
-                    sfStyles.quickSortBtnText,
-                    sortDir === 'desc' && sfStyles.quickSortBtnTextActive,
+                    S.quickSortBtnText,
+                    sortDir === 'desc' && S.quickSortBtnTextActive,
                   ]}>
                   Z → A / 9 → 0
                 </Text>
@@ -577,9 +554,9 @@ const SearchFilterBar = ({
             </View>
 
             <TouchableOpacity
-              style={sfStyles.applyBtn}
+              style={S.applyBtn}
               onPress={() => setSortModalVisible(false)}>
-              <Text style={sfStyles.applyBtnText}>Done</Text>
+              <Text style={S.applyBtnText}>Done</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -591,271 +568,272 @@ const SearchFilterBar = ({
 // ─────────────────────────────────────────────────────────────
 // STYLES
 // ─────────────────────────────────────────────────────────────
-const sfStyles = StyleSheet.create({
-  wrapper: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
-  },
+const makeStyles = P =>
+  StyleSheet.create({
+    wrapper: {
+      backgroundColor: '#fff',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: '#e8e8e8',
+    },
 
-  // Row
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rowRTL: {
-    flexDirection: 'row-reverse',
-  },
+    // Row
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    rowRTL: {
+      flexDirection: 'row-reverse',
+    },
 
-  // Search group
-  searchGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
+    // Search group
+    searchGroup: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
 
-  // Icon button
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#0A66C2',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBtnActive: {
-    backgroundColor: '#0A66C2',
-    borderColor: '#0A66C2',
-  },
+    // Icon button
+    iconBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      borderWidth: 1.5,
+      borderColor: P.primary,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconBtnActive: {
+      backgroundColor: P.primary,
+      borderColor: P.primary,
+    },
 
-  // Badge
-  badge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#e53935',
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '700',
-  },
+    // Badge
+    badge: {
+      position: 'absolute',
+      top: -5,
+      right: -5,
+      backgroundColor: '#e53935',
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 3,
+    },
+    badgeText: {
+      color: '#fff',
+      fontSize: 9,
+      fontWeight: '700',
+    },
 
-  // Search input
-  searchInputWrap: {
-    overflow: 'hidden',
-    height: 36,
-    marginLeft: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#0A66C2',
-    paddingHorizontal: 10,
-    color: '#222',
-    fontSize: 14,
-    backgroundColor: '#f5f9ff',
-  },
+    // Search input
+    searchInputWrap: {
+      overflow: 'hidden',
+      height: 36,
+      marginLeft: 8,
+    },
+    searchInput: {
+      flex: 1,
+      height: 36,
+      borderRadius: 8,
+      borderWidth: 1.5,
+      borderColor: P.primary,
+      paddingHorizontal: 10,
+      color: '#222',
+      fontSize: 14,
+      backgroundColor: '#f5f9ff',
+    },
 
-  // Chips
-  chipsRow: {
-    marginTop: 8,
-  },
-  chipsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingRight: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e8f0fe',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: '#c5d8fb',
-  },
-  chipSort: {
-    backgroundColor: '#e8f5e9',
-    borderColor: '#c8e6c9',
-  },
-  chipClear: {
-    backgroundColor: '#fce4ec',
-    borderColor: '#f8bbd0',
-  },
-  chipText: {
-    fontSize: 12,
-    color: '#0A66C2',
-    fontWeight: '500',
-  },
+    // Chips
+    chipsRow: {
+      marginTop: 8,
+    },
+    chipsContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingRight: 8,
+    },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#e8f0fe',
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderWidth: 1,
+      borderColor: '#c5d8fb',
+    },
+    chipSort: {
+      backgroundColor: '#e8f5e9',
+      borderColor: '#c8e6c9',
+    },
+    chipClear: {
+      backgroundColor: '#fce4ec',
+      borderColor: '#f8bbd0',
+    },
+    chipText: {
+      fontSize: 12,
+      color: P.primary,
+      fontWeight: '500',
+    },
 
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
-  },
-  modalSheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    paddingBottom: 32,
-    paddingHorizontal: 16,
-    maxHeight: '75%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  modalHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111',
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: '#777',
-    marginBottom: 12,
-  },
-  clearBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: '#fce4ec',
-    borderRadius: 6,
-  },
-  clearBtnText: {
-    color: '#e53935',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+    // Modal
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalSheet: {
+      backgroundColor: '#fff',
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingTop: 16,
+      paddingBottom: 32,
+      paddingHorizontal: 16,
+      maxHeight: '75%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 6,
+    },
+    modalHeaderRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    modalTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: '#111',
+    },
+    modalSubtitle: {
+      fontSize: 12,
+      color: '#777',
+      marginBottom: 12,
+    },
+    clearBtn: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: '#fce4ec',
+      borderRadius: 6,
+    },
+    clearBtnText: {
+      color: '#e53935',
+      fontSize: 13,
+      fontWeight: '600',
+    },
 
-  // Filter list
-  filterList: {
-    maxHeight: 320,
-  },
-  filterItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginBottom: 6,
-    backgroundColor: '#f5f5f5',
-  },
-  filterItemActive: {
-    backgroundColor: '#e8f0fe',
-    borderWidth: 1.5,
-    borderColor: '#0A66C2',
-  },
-  filterItemText: {
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '500',
-  },
-  filterItemTextActive: {
-    color: '#0A66C2',
-    fontWeight: '600',
-  },
+    // Filter list
+    filterList: {
+      maxHeight: 320,
+    },
+    filterItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      marginBottom: 6,
+      backgroundColor: '#f5f5f5',
+    },
+    filterItemActive: {
+      backgroundColor: '#e8f0fe',
+      borderWidth: 1.5,
+      borderColor: P.primary,
+    },
+    filterItemText: {
+      fontSize: 14,
+      color: '#444',
+      fontWeight: '500',
+    },
+    filterItemTextActive: {
+      color: P.primary,
+      fontWeight: '600',
+    },
 
-  // Sort list
-  sortItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginBottom: 6,
-    backgroundColor: '#f5f5f5',
-  },
-  sortItemActive: {
-    backgroundColor: '#e8f0fe',
-    borderWidth: 1.5,
-    borderColor: '#0A66C2',
-  },
-  sortItemText: {
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '500',
-  },
-  sortItemTextActive: {
-    color: '#0A66C2',
-    fontWeight: '600',
-  },
+    // Sort list
+    sortItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      marginBottom: 6,
+      backgroundColor: '#f5f5f5',
+    },
+    sortItemActive: {
+      backgroundColor: '#e8f0fe',
+      borderWidth: 1.5,
+      borderColor: P.primary,
+    },
+    sortItemText: {
+      fontSize: 14,
+      color: '#444',
+      fontWeight: '500',
+    },
+    sortItemTextActive: {
+      color: P.primary,
+      fontWeight: '600',
+    },
 
-  // Quick sort
-  quickSortRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 10,
-    marginBottom: 4,
-    flexWrap: 'wrap',
-  },
-  quickSortLabel: {
-    fontSize: 13,
-    color: '#555',
-    fontWeight: '500',
-    marginRight: 4,
-  },
-  quickSortBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: '#ccc',
-    backgroundColor: '#f5f5f5',
-  },
-  quickSortBtnActive: {
-    backgroundColor: '#0A66C2',
-    borderColor: '#0A66C2',
-  },
-  quickSortBtnText: {
-    fontSize: 12,
-    color: '#555',
-    fontWeight: '500',
-  },
-  quickSortBtnTextActive: {
-    color: '#fff',
-  },
+    // Quick sort
+    quickSortRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 10,
+      marginBottom: 4,
+      flexWrap: 'wrap',
+    },
+    quickSortLabel: {
+      fontSize: 13,
+      color: '#555',
+      fontWeight: '500',
+      marginRight: 4,
+    },
+    quickSortBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: '#ccc',
+      backgroundColor: '#f5f5f5',
+    },
+    quickSortBtnActive: {
+      backgroundColor: P.primary,
+      borderColor: P.primary,
+    },
+    quickSortBtnText: {
+      fontSize: 12,
+      color: '#555',
+      fontWeight: '500',
+    },
+    quickSortBtnTextActive: {
+      color: '#fff',
+    },
 
-  // Apply button
-  applyBtn: {
-    marginTop: 14,
-    backgroundColor: '#0A66C2',
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: 'center',
-  },
-  applyBtnText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-});
+    // Apply button
+    applyBtn: {
+      marginTop: 14,
+      backgroundColor: P.primary,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: 'center',
+    },
+    applyBtnText: {
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: '700',
+    },
+  });
 
 export default SearchFilterBar;

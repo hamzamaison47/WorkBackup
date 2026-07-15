@@ -17,6 +17,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {useSelector} from 'react-redux';
 import {getActiveConfig} from '../../../../Controller/secureConfig';
 import {translate as t} from '../../../../store/utils/translate';
+import usePallete from '../../../../hooks/usePalette';
 
 import {
   checkBiometricAvailability,
@@ -53,6 +54,7 @@ const BiometricSettings = () => {
   const navigation = useNavigation();
   const userData = useSelector(state => state.user.userData);
   const currentLanguage = useSelector(state => state.language.currentLanguage);
+  const P = usePallete();
 
   useEffect(() => {
     initializeBiometricSettings();
@@ -576,7 +578,7 @@ const BiometricSettings = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.Biometric_scrollContent}>
           <LinearGradient
-            colors={['#0A66C2', '#0A66C2']}
+            colors={[P.primary, P.primary]}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}
             style={styles.Biometric_headerContainer}>

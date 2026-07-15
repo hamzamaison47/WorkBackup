@@ -34,11 +34,13 @@ import styles from '../../styles/styles';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../components/Buttons/SaveRecordButtons';
+import usePalette from '../../hooks/usePalette';
 
 const PurchaseRequisitionSaveRecord = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
+  const P = usePalette();
 
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
@@ -340,7 +342,7 @@ const PurchaseRequisitionSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={P.primary} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -389,7 +391,7 @@ const PurchaseRequisitionSaveRecord = () => {
                     : formatDate(new Date())}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
 
             {/* FIELD 4 */}
@@ -404,7 +406,7 @@ const PurchaseRequisitionSaveRecord = () => {
                     : formatDate(new Date())}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
           </ScrollView>
 

@@ -32,11 +32,13 @@ import {DeletBankAccount} from '../../../../API/PersonalInformation/BankAccounts
 import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAccounts/BankAccountSubmit';
 import useNotify from '../../../../hooks/useNotify';
 import useListFilters from '../../../../hooks/useListFilters';
+import usePalette from '../../../../hooks/usePalette';
 
 const BankAccountListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
+  const P = usePalette();
 
   const {
     employeeId,
@@ -250,7 +252,7 @@ const BankAccountListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isEditable, // ← use isEditable
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -261,7 +263,7 @@ const BankAccountListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isEditable, // ← use isEditable
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -486,7 +488,7 @@ const BankAccountListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

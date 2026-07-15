@@ -14,6 +14,7 @@ import DynamicRequestCard, {
   BUTTON_TYPES,
 } from '../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+import usePalette from '../../hooks/usePalette';
 
 import {RetrieveAllHrPolicies} from '../../API/HRPolicies/RetrieveAllHrPolicies';
 import styles from '../../styles/styles';
@@ -59,6 +60,7 @@ const HrPoliciesScreen = ({navigation}) => {
 
   const {userData} = useSelector(state => state.user);
   const {selectedLegalEntity} = useSelector(state => state.company);
+  const P = usePalette();
 
   // ───────────── Fetch Policies ─────────────
   const fetchPolicies = useCallback(async () => {
@@ -113,7 +115,7 @@ const HrPoliciesScreen = ({navigation}) => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
       },
     };

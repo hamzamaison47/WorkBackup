@@ -1,6 +1,6 @@
 // export default NotificationPanel;
 /* eslint-disable curly */
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useMemo} from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import {
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {updateNotificationByRecID} from '../../API/Notification/UpdateNotificationByRecID';
+import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
+import usePalette from '../../hooks/usePalette';
 
 // ─── AppComponents imports ────────────────────────────────────────────────────
 import {
@@ -35,8 +37,8 @@ const PANEL_WIDTH = SCREEN_WIDTH * 0.88;
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const T = {
-  navy: '#0A66C2',
-  blue: '#0A66C2',
+  navy: DEFAULT_PALETTE.primary,
+  blue: DEFAULT_PALETTE.primary,
   blueSoft: '#E8F1FB',
   blueLight: '#C8DEFA',
   accent: '#3B82F6',
@@ -89,10 +91,25 @@ const TYPE_CONFIG = {
     label: 'Error',
   },
   Delete: {icon: 'trash', color: '#DC2626', bg: '#FEE2E2', label: 'Deleted'},
-  Firebase: {icon: 'bell', color: '#0A66C2', bg: '#E8F1FB', label: 'Push'},
-  Info: {icon: 'info-circle', color: '#0A66C2', bg: '#E8F1FB', label: 'Info'},
+  Firebase: {
+    icon: 'bell',
+    color: DEFAULT_PALETTE.primary,
+    bg: '#E8F1FB',
+    label: 'Push',
+  },
+  Info: {
+    icon: 'info-circle',
+    color: DEFAULT_PALETTE.primary,
+    bg: '#E8F1FB',
+    label: 'Info',
+  },
 
-  default: {icon: 'bell', color: '#0A66C2', bg: '#E8F1FB', label: 'System'},
+  default: {
+    icon: 'bell',
+    color: DEFAULT_PALETTE.primary,
+    bg: '#E8F1FB',
+    label: 'System',
+  },
 };
 
 const getTypeConfig = type => TYPE_CONFIG[type] || TYPE_CONFIG.default;
@@ -115,6 +132,10 @@ const NotificationPanel = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [processedNotifications, setProcessedNotifications] = useState([]);
   const [expandedItems, setExpandedItems] = useState({});
+
+  const P = usePalette();
+  // T is a stable module-level token object, so only P drives re-memoization.
+  const S = useMemo(() => makeStyles(P, T), [P]);
 
   const toggleExpand = recId => {
     setExpandedItems(prev => ({...prev, [recId]: !prev[recId]}));
@@ -256,6 +277,8 @@ const NotificationPanel = ({
   // ── Render helpers ─────────────────────────────────────────────────────────
   const renderItem = ({item, index}) => {
     const cfg = item.typeConfig;
+    const cfgColor =
+      cfg.color === DEFAULT_PALETTE.primary ? P.primary : cfg.color;
     const isLoading = loadingStates[item.RecId];
 
     return (
@@ -265,41 +288,41 @@ const NotificationPanel = ({
           onPress={() => handleMarkAsRead(item)}
           disabled={item.isRead || isLoading}
           style={[
-            styles.notifItem,
-            item.isToday && styles.notifItemToday,
-            item.isRead && styles.notifItemRead,
+            S.notifItem,
+            item.isToday && S.notifItemToday,
+            item.isRead && S.notifItemRead,
           ]}>
           {/* Unread accent bar */}
-          {!item.isRead && <View style={styles.unreadBar} />}
+          {!item.isRead && <View style={S.unreadBar} />}
 
           {/* Icon Badge */}
-          <View style={[styles.iconWrap, {backgroundColor: cfg.bg}]}>
-            <FontAwesome name={cfg.icon} size={16} color={cfg.color} />
+          <View style={[S.iconWrap, {backgroundColor: cfg.bg}]}>
+            <FontAwesome name={cfg.icon} size={16} color={cfgColor} />
           </View>
 
           {/* Body */}
-          <View style={styles.notifBody}>
-            <View style={styles.notifTopRow}>
-              <View style={[styles.typePill, {backgroundColor: cfg.bg}]}>
-                <Text style={[styles.typePillText, {color: cfg.color}]}>
+          <View style={S.notifBody}>
+            <View style={S.notifTopRow}>
+              <View style={[S.typePill, {backgroundColor: cfg.bg}]}>
+                <Text style={[S.typePillText, {color: cfgColor}]}>
                   {cfg.label}
                 </Text>
               </View>
-              <Text style={styles.notifTime}>
+              <Text style={S.notifTime}>
                 {formatTime(item.CreatedDateTime)}
               </Text>
             </View>
 
             {/* Title for Firebase notifications */}
             {item.NotificationTitle ? (
-              <Text style={styles.notifTitle} numberOfLines={1}>
+              <Text style={S.notifTitle} numberOfLines={1}>
                 {item.NotificationTitle}
               </Text>
             ) : null}
 
             {/* Expandable message text */}
             <Text
-              style={[styles.notifText, !item.isRead && styles.notifTextUnread]}
+              style={[S.notifText, !item.isRead && S.notifTextUnread]}
               numberOfLines={expandedItems[item.RecId] ? undefined : 3}>
               {item.notificationText}
             </Text>
@@ -309,8 +332,8 @@ const NotificationPanel = ({
               <TouchableOpacity
                 onPress={() => toggleExpand(item.RecId)}
                 hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
-                style={styles.showMoreBtn}>
-                <Text style={[styles.showMoreText, {color: cfg.color}]}>
+                style={S.showMoreBtn}>
+                <Text style={[S.showMoreText, {color: cfgColor}]}>
                   {expandedItems[item.RecId] ? 'Show less ▲' : 'Show more ▼'}
                 </Text>
               </TouchableOpacity>
@@ -319,16 +342,16 @@ const NotificationPanel = ({
 
           {/* Read toggle */}
           <TouchableOpacity
-            style={styles.readToggle}
+            style={S.readToggle}
             onPress={() => handleMarkAsRead(item)}
             disabled={item.isRead || isLoading}>
             {isLoading ? (
-              <ActivityIndicator size="small" color={T.blue} />
+              <ActivityIndicator size="small" color={P.primary} />
             ) : (
               <View
                 style={[
-                  styles.readDot,
-                  item.isRead ? styles.readDotDone : styles.readDotPending,
+                  S.readDot,
+                  item.isRead ? S.readDotDone : S.readDotPending,
                 ]}>
                 {item.isRead && (
                   <Ionicons name="checkmark" size={10} color="#fff" />
@@ -339,23 +362,21 @@ const NotificationPanel = ({
         </TouchableOpacity>
 
         {/* Subtle divider between items (not after last) */}
-        <View style={styles.itemDivider} />
+        <View style={S.itemDivider} />
       </Animated.View>
     );
   };
 
   const renderSectionLabel = (title, count, isToday) => (
-    <View style={styles.sectionLabel}>
-      <View style={styles.sectionLabelLeft}>
-        <View style={[styles.sectionDot, isToday && styles.sectionDotToday]} />
-        <Text
-          style={[styles.sectionTitle, isToday && styles.sectionTitleToday]}>
+    <View style={S.sectionLabel}>
+      <View style={S.sectionLabelLeft}>
+        <View style={[S.sectionDot, isToday && S.sectionDotToday]} />
+        <Text style={[S.sectionTitle, isToday && S.sectionTitleToday]}>
           {title}
         </Text>
       </View>
-      <View style={[styles.countPill, isToday && styles.countPillToday]}>
-        <Text
-          style={[styles.countPillText, isToday && styles.countPillTextToday]}>
+      <View style={[S.countPill, isToday && S.countPillToday]}>
+        <Text style={[S.countPillText, isToday && S.countPillTextToday]}>
           {count}
         </Text>
       </View>
@@ -372,7 +393,7 @@ const NotificationPanel = ({
       statusBarTranslucent
       onRequestClose={onClose}>
       {/* Dimmed backdrop */}
-      <Animated.View style={[styles.backdrop, {opacity: fadeAnim}]}>
+      <Animated.View style={[S.backdrop, {opacity: fadeAnim}]}>
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
           activeOpacity={1}
@@ -381,21 +402,19 @@ const NotificationPanel = ({
       </Animated.View>
 
       {/* Sliding panel */}
-      <Animated.View
-        style={[styles.panel, {transform: [{translateX: slideAnim}]}]}>
+      <Animated.View style={[S.panel, {transform: [{translateX: slideAnim}]}]}>
         {/* ── Header ─────────────────────────────────────────────────────── */}
-        <Animated.View
-          style={[styles.header, {transform: [{scale: headerScale}]}]}>
-          <View style={styles.headerTop}>
+        <Animated.View style={[S.header, {transform: [{scale: headerScale}]}]}>
+          <View style={S.headerTop}>
             {/* Close */}
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <TouchableOpacity onPress={onClose} style={S.closeBtn}>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
 
             {/* Title block */}
-            <View style={styles.headerCenter}>
-              <Text style={styles.headerTitle}>Notifications</Text>
-              <Text style={styles.headerSub}>
+            <View style={S.headerCenter}>
+              <Text style={S.headerTitle}>Notifications</Text>
+              <Text style={S.headerSub}>
                 {processedNotifications.length > 0
                   ? `${processedNotifications.length} notification${
                       processedNotifications.length > 1 ? 's' : ''
@@ -410,8 +429,8 @@ const NotificationPanel = ({
               disabled={processedNotifications.length === 0}
               activeOpacity={0.75}
               style={[
-                styles.clearBtn,
-                processedNotifications.length === 0 && styles.clearBtnDisabled,
+                S.clearBtn,
+                processedNotifications.length === 0 && S.clearBtnDisabled,
               ]}>
               <Ionicons
                 name="trash-outline"
@@ -424,9 +443,8 @@ const NotificationPanel = ({
               />
               <Text
                 style={[
-                  styles.clearBtnText,
-                  processedNotifications.length === 0 &&
-                    styles.clearBtnTextDisabled,
+                  S.clearBtnText,
+                  processedNotifications.length === 0 && S.clearBtnTextDisabled,
                 ]}>
                 Clear
               </Text>
@@ -436,35 +454,35 @@ const NotificationPanel = ({
 
         {/* ── List ───────────────────────────────────────────────────────── */}
         <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          style={S.scroll}
+          contentContainerStyle={S.scrollContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={T.blue}
-              colors={[T.blue]}
+              tintColor={P.primary}
+              colors={[P.primary]}
             />
           }>
           {processedNotifications.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <View style={styles.emptyIconCircle}>
+            <View style={S.emptyWrap}>
+              <View style={S.emptyIconCircle}>
                 <Ionicons
                   name="notifications-off-outline"
                   size={36}
                   color={T.textMute}
                 />
               </View>
-              <Text style={styles.emptyTitle}>No notifications yet</Text>
-              <Text style={styles.emptySubtitle}>
+              <Text style={S.emptyTitle}>No notifications yet</Text>
+              <Text style={S.emptySubtitle}>
                 You're all caught up. New notifications will appear here.
               </Text>
             </View>
           ) : (
             <>
               {todayList.length > 0 && (
-                <AnimatedCard delay={0} style={styles.sectionCard}>
+                <AnimatedCard delay={0} style={S.sectionCard}>
                   {renderSectionLabel('Today', todayList.length, true)}
                   <FlatList
                     data={todayList}
@@ -476,7 +494,7 @@ const NotificationPanel = ({
               )}
 
               {olderList.length > 0 && (
-                <AnimatedCard delay={60} style={styles.sectionCard}>
+                <AnimatedCard delay={60} style={S.sectionCard}>
                   {renderSectionLabel('Earlier', olderList.length, false)}
                   <FlatList
                     data={olderList}
@@ -497,304 +515,305 @@ const NotificationPanel = ({
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  // Backdrop
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(13, 27, 62, 0.45)',
-  },
+const makeStyles = (palette, T) =>
+  StyleSheet.create({
+    // Backdrop
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(13, 27, 62, 0.45)',
+    },
 
-  // Panel
-  panel: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: PANEL_WIDTH,
-    backgroundColor: T.surfaceAlt,
-    shadowColor: T.navy,
-    shadowOffset: {width: -4, height: 0},
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 24,
-  },
+    // Panel
+    panel: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: PANEL_WIDTH,
+      backgroundColor: T.surfaceAlt,
+      shadowColor: palette.primary,
+      shadowOffset: {width: -4, height: 0},
+      shadowOpacity: 0.18,
+      shadowRadius: 20,
+      elevation: 24,
+    },
 
-  // Header
-  header: {
-    backgroundColor: T.navy,
-    paddingTop: (StatusBar.currentHeight || 44) + 10,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  headerCenter: {flex: 1},
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.2,
-  },
-  headerSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.6)',
-    marginTop: 1,
-    fontWeight: '500',
-  },
-  bellWrap: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bellBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -4,
-    backgroundColor: T.unreadDot,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 3,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: T.navy,
-  },
-  bellBadgeText: {fontSize: 9, color: '#fff', fontWeight: '700'},
+    // Header
+    header: {
+      backgroundColor: palette.primary,
+      paddingTop: (StatusBar.currentHeight || 44) + 10,
+      paddingHorizontal: 16,
+      paddingBottom: 14,
+    },
+    headerTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 14,
+    },
+    closeBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: 'rgba(255,255,255,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    headerCenter: {flex: 1},
+    headerTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: '#fff',
+      letterSpacing: 0.2,
+    },
+    headerSub: {
+      fontSize: 12,
+      color: 'rgba(255,255,255,0.6)',
+      marginTop: 1,
+      fontWeight: '500',
+    },
+    bellWrap: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    bellBadge: {
+      position: 'absolute',
+      top: -2,
+      right: -4,
+      backgroundColor: T.unreadDot,
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      paddingHorizontal: 3,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: palette.primary,
+    },
+    bellBadgeText: {fontSize: 9, color: '#fff', fontWeight: '700'},
 
-  // Mark all button
-  markAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 5,
-  },
-  markAllBtnDisabled: {backgroundColor: 'rgba(255,255,255,0.25)'},
-  markAllText: {fontSize: 12, color: T.blue, fontWeight: '600'},
-  markAllTextDisabled: {color: T.textMute},
+    // Mark all button
+    markAllBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: 'rgba(255,255,255,0.95)',
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      gap: 5,
+    },
+    markAllBtnDisabled: {backgroundColor: 'rgba(255,255,255,0.25)'},
+    markAllText: {fontSize: 12, color: palette.primary, fontWeight: '600'},
+    markAllTextDisabled: {color: T.textMute},
 
-  // Scroll
-  scroll: {flex: 1},
-  scrollContent: {padding: 12, paddingTop: 14},
+    // Scroll
+    scroll: {flex: 1},
+    scrollContent: {padding: 12, paddingTop: 14},
 
-  // Section card (uses AnimatedCard from AppComponents)
-  sectionCard: {
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
-    shadowColor: T.shadow,
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+    // Section card (uses AnimatedCard from AppComponents)
+    sectionCard: {
+      marginBottom: 12,
+      borderRadius: 16,
+      overflow: 'hidden',
+      backgroundColor: T.surface,
+      borderWidth: 1,
+      borderColor: T.border,
+      shadowColor: T.shadow,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 1,
+      shadowRadius: 8,
+      elevation: 3,
+    },
 
-  // Section label
-  sectionLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: T.border,
-    backgroundColor: T.surfaceAlt,
-  },
-  sectionLabelLeft: {flexDirection: 'row', alignItems: 'center', gap: 7},
-  sectionDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: T.textMute,
-  },
-  sectionDotToday: {backgroundColor: T.blue},
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: T.textSub,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  sectionTitleToday: {color: T.blue},
-  countPill: {
-    backgroundColor: T.border,
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  countPillToday: {backgroundColor: T.blueSoft},
-  countPillText: {fontSize: 11, fontWeight: '700', color: T.textSub},
-  countPillTextToday: {color: T.blue},
+    // Section label
+    sectionLabel: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: T.border,
+      backgroundColor: T.surfaceAlt,
+    },
+    sectionLabelLeft: {flexDirection: 'row', alignItems: 'center', gap: 7},
+    sectionDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: T.textMute,
+    },
+    sectionDotToday: {backgroundColor: palette.primary},
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: T.textSub,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+    },
+    sectionTitleToday: {color: palette.primary},
+    countPill: {
+      backgroundColor: T.border,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    countPillToday: {backgroundColor: T.blueSoft},
+    countPillText: {fontSize: 11, fontWeight: '700', color: T.textSub},
+    countPillTextToday: {color: palette.primary},
 
-  // Notification item
-  notifItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    backgroundColor: T.surface,
-    position: 'relative',
-  },
-  notifItemToday: {backgroundColor: '#FAFCFF'},
-  notifItemRead: {opacity: 0.75},
+    // Notification item
+    notifItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      backgroundColor: T.surface,
+      position: 'relative',
+    },
+    notifItemToday: {backgroundColor: '#FAFCFF'},
+    notifItemRead: {opacity: 0.75},
 
-  unreadBar: {
-    position: 'absolute',
-    left: 0,
-    top: 10,
-    bottom: 10,
-    width: 3,
-    borderRadius: 2,
-    backgroundColor: T.blue,
-  },
+    unreadBar: {
+      position: 'absolute',
+      left: 0,
+      top: 10,
+      bottom: 10,
+      width: 3,
+      borderRadius: 2,
+      backgroundColor: palette.primary,
+    },
 
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 11,
-    flexShrink: 0,
-  },
+    iconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 11,
+      flexShrink: 0,
+    },
 
-  notifBody: {flex: 1, marginRight: 8},
-  notifTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  typePill: {
-    borderRadius: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-  },
-  typePillText: {fontSize: 10, fontWeight: '700', letterSpacing: 0.3},
+    notifBody: {flex: 1, marginRight: 8},
+    notifTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    typePill: {
+      borderRadius: 6,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+    },
+    typePillText: {fontSize: 10, fontWeight: '700', letterSpacing: 0.3},
 
-  notifTime: {fontSize: 10, color: T.textMute, fontWeight: '500'},
-  notifText: {
-    fontSize: 12.5,
-    color: T.textSub,
-    lineHeight: 17,
-    fontWeight: '400',
-  },
-  notifTextUnread: {color: T.text, fontWeight: '600'},
+    notifTime: {fontSize: 10, color: T.textMute, fontWeight: '500'},
+    notifText: {
+      fontSize: 12.5,
+      color: T.textSub,
+      lineHeight: 17,
+      fontWeight: '400',
+    },
+    notifTextUnread: {color: T.text, fontWeight: '600'},
 
-  // Read dot toggle
-  readToggle: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  readDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  readDotPending: {
-    borderWidth: 2,
-    borderColor: T.blueLight,
-    backgroundColor: 'transparent',
-  },
-  readDotDone: {backgroundColor: T.success},
+    // Read dot toggle
+    readToggle: {
+      width: 28,
+      height: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    readDot: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    readDotPending: {
+      borderWidth: 2,
+      borderColor: T.blueLight,
+      backgroundColor: 'transparent',
+    },
+    readDotDone: {backgroundColor: T.success},
 
-  // Item divider
-  itemDivider: {
-    height: 1,
-    backgroundColor: T.border,
-    marginLeft: 65, // aligns with text, skips icon area
-    opacity: 0.6,
-  },
+    // Item divider
+    itemDivider: {
+      height: 1,
+      backgroundColor: T.border,
+      marginLeft: 65, // aligns with text, skips icon area
+      opacity: 0.6,
+    },
 
-  // Empty state
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 24,
-  },
-  emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: T.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: T.text,
-    marginBottom: 6,
-  },
-  emptySubtitle: {
-    fontSize: 12.5,
-    color: T.textMute,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  notifTitle: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: T.text,
-    marginBottom: 3,
-  },
-  showMoreBtn: {
-    marginTop: 4,
-    alignSelf: 'flex-start',
-  },
-  showMoreText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.1,
-  },
-  clearBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 20,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-  },
-  clearBtnDisabled: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  clearBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  clearBtnTextDisabled: {
-    color: 'rgba(255,255,255,0.3)',
-  },
-});
+    // Empty state
+    emptyWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+      paddingHorizontal: 24,
+    },
+    emptyIconCircle: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: T.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: T.text,
+      marginBottom: 6,
+    },
+    emptySubtitle: {
+      fontSize: 12.5,
+      color: T.textMute,
+      textAlign: 'center',
+      lineHeight: 18,
+    },
+    notifTitle: {
+      fontSize: 12.5,
+      fontWeight: '700',
+      color: T.text,
+      marginBottom: 3,
+    },
+    showMoreBtn: {
+      marginTop: 4,
+      alignSelf: 'flex-start',
+    },
+    showMoreText: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.1,
+    },
+    clearBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      borderRadius: 20,
+      paddingHorizontal: 11,
+      paddingVertical: 6,
+    },
+    clearBtnDisabled: {
+      backgroundColor: 'rgba(255,255,255,0.06)',
+    },
+    clearBtnText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#fff',
+    },
+    clearBtnTextDisabled: {
+      color: 'rgba(255,255,255,0.3)',
+    },
+  });
 
 // ─── Time formatter ───────────────────────────────────────────────────────────
 const formatTime = dateString => {

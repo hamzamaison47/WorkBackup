@@ -1,4 +1,9 @@
 {
+  "modals": {
+    "confirm": "تصدیق کریں",
+    "confirmDeletion": "حذف کی تصدیق کریں",
+    "deleting": "حذف ہو رہا ہے..."
+  },
   "profile": {
     "title": "پروفائل",
     "personalInfo": "ذاتی معلومات",

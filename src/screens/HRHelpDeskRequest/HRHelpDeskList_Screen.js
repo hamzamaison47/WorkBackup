@@ -35,6 +35,7 @@ import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import useNotify from '../../hooks/useNotify';
 import useListFilters from '../../hooks/useListFilters';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const HRHelpDeskListScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +55,7 @@ const HRHelpDeskListScreen = () => {
 
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette(); // Custom hook to get the color palette
   const isRTL = I18nManager.isRTL;
 
   const {selectedLegalEntity} = useSelector(state => state.company);
@@ -480,7 +482,7 @@ const HRHelpDeskListScreen = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -491,7 +493,7 @@ const HRHelpDeskListScreen = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -502,7 +504,7 @@ const HRHelpDeskListScreen = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -512,7 +514,7 @@ const HRHelpDeskListScreen = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           ...(isDraft || isRejected
@@ -582,7 +584,7 @@ const HRHelpDeskListScreen = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

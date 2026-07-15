@@ -5,6 +5,8 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -24,7 +26,7 @@ export const AppTokens = {
   footerText: '#CBD5E1',
 
   // Brand palette
-  blue: '#0A66C2',
+  blue: DEFAULT_PALETTE.primary,
   blueBg: '#E8F1FB',
   indigo: '#6366F1',
   indigoBg: '#EDEFFD',

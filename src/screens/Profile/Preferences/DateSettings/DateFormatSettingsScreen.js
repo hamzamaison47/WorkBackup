@@ -26,9 +26,13 @@ import {
   TIMEZONE_OPTIONS,
 } from '../../../../store/slices/dateFormatSlice';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
+import usePalette from '../../../../hooks/usePalette';
 
 const DateFormatSettingsScreen = () => {
   const dispatch = useDispatch();
+  const P = usePalette();
+  const styles = createStyles(P);
+
   const selectedFormat = useSelector(selectDateFormat);
   const selectedTimeFormat = useSelector(selectTimeFormat);
   const selectedTimezone = useSelector(selectTimezone);
@@ -63,7 +67,7 @@ const DateFormatSettingsScreen = () => {
           <MaterialCommunityIcons
             name={iconName}
             size={12}
-            color={isSelected ? '#0A66C2' : '#9ca3af'}
+            color={isSelected ? P.primary : '#9ca3af'}
           />
           <Text
             style={[
@@ -75,7 +79,11 @@ const DateFormatSettingsScreen = () => {
         </View>
       </View>
       {isSelected && (
-        <MaterialCommunityIcons name="check-circle" size={22} color="#0A66C2" />
+        <MaterialCommunityIcons
+          name="check-circle"
+          size={22}
+          color={P.primary}
+        />
       )}
     </TouchableOpacity>
   );
@@ -93,7 +101,7 @@ const DateFormatSettingsScreen = () => {
         contentContainerStyle={styles.scrollContent}>
         {/* ── Header Banner ── */}
         <LinearGradient
-          colors={['#0A66C2', '#0A66C2']}
+          colors={[P.primary, P.primary]}
           start={{x: 0, y: 0}}
           end={{x: 1, y: 1}}
           style={styles.headerContainer}>
@@ -113,7 +121,7 @@ const DateFormatSettingsScreen = () => {
               <MaterialCommunityIcons
                 name="calendar"
                 size={13}
-                color="#0A66C2"
+                color={P.primary}
               />
               <Text style={styles.currentBadgeText} numberOfLines={1}>
                 {selectedFormat.label}
@@ -124,7 +132,7 @@ const DateFormatSettingsScreen = () => {
               <MaterialCommunityIcons
                 name="clock-outline"
                 size={13}
-                color="#0A66C2"
+                color={P.primary}
               />
               <Text style={styles.currentBadgeText} numberOfLines={1}>
                 {selectedTimeFormat.label}
@@ -132,7 +140,11 @@ const DateFormatSettingsScreen = () => {
             </View>
             <View style={styles.badgeDivider} />
             <View style={styles.currentBadge}>
-              <MaterialCommunityIcons name="earth" size={13} color="#0A66C2" />
+              <MaterialCommunityIcons
+                name="earth"
+                size={13}
+                color={P.primary}
+              />
               <Text style={styles.currentBadgeText} numberOfLines={1}>
                 {selectedTimezone.label}
               </Text>
@@ -146,7 +158,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="calendar-month"
               size={16}
-              color="#0A66C2"
+              color={P.primary}
             />
             <Text style={styles.sectionLabel}>DATE FORMAT</Text>
           </View>
@@ -168,7 +180,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="clock-outline"
               size={16}
-              color="#0A66C2"
+              color={P.primary}
             />
             <Text style={styles.sectionLabel}>TIME FORMAT</Text>
           </View>
@@ -187,7 +199,7 @@ const DateFormatSettingsScreen = () => {
         {/* ── Timezone ── */}
         <View style={styles.optionsSection}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="earth" size={16} color="#0A66C2" />
+            <MaterialCommunityIcons name="earth" size={16} color={P.primary} />
             <Text style={styles.sectionLabel}>TIME ZONE</Text>
           </View>
 
@@ -200,7 +212,7 @@ const DateFormatSettingsScreen = () => {
                 <MaterialCommunityIcons
                   name="earth"
                   size={20}
-                  color="#0A66C2"
+                  color={P.primary}
                 />
               </View>
               <View style={styles.timezoneSelectorTextWrap}>
@@ -217,7 +229,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="chevron-right"
               size={20}
-              color="#0A66C2"
+              color={P.primary}
             />
           </TouchableOpacity>
         </View>
@@ -227,7 +239,7 @@ const DateFormatSettingsScreen = () => {
           <MaterialCommunityIcons
             name="information-outline"
             size={18}
-            color="#0A66C2"
+            color={P.primary}
           />
           <Text style={styles.infoText}>
             Changes apply immediately to all date and time fields across the app
@@ -334,7 +346,7 @@ const DateFormatSettingsScreen = () => {
                       <MaterialCommunityIcons
                         name="check-circle"
                         size={20}
-                        color="#0A66C2"
+                        color={P.primary}
                       />
                     )}
                   </TouchableOpacity>
@@ -349,239 +361,240 @@ const DateFormatSettingsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  scrollContent: {paddingBottom: 32},
+const createStyles = P =>
+  StyleSheet.create({
+    scrollContent: {paddingBottom: 32},
 
-  // Header
-  headerContainer: {
-    margin: 16,
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-  },
-  headerIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 6,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  currentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-    maxWidth: 110,
-  },
-  badgeDivider: {width: 1, height: 16, backgroundColor: '#d1d5db'},
-  currentBadgeText: {fontSize: 11, fontWeight: '600', color: '#0A66C2'},
+    // Header
+    headerContainer: {
+      margin: 16,
+      borderRadius: 16,
+      padding: 24,
+      alignItems: 'center',
+    },
+    headerIconContainer: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 12,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#fff',
+      marginBottom: 6,
+    },
+    headerSubtitle: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.85)',
+      textAlign: 'center',
+      lineHeight: 18,
+      marginBottom: 16,
+    },
+    badgeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      borderRadius: 20,
+      paddingHorizontal: 6,
+      paddingVertical: 4,
+    },
+    currentBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      gap: 4,
+      maxWidth: 110,
+    },
+    badgeDivider: {width: 1, height: 16, backgroundColor: '#d1d5db'},
+    currentBadgeText: {fontSize: 11, fontWeight: '600', color: P.primary},
 
-  // Section
-  optionsSection: {paddingHorizontal: 16, marginTop: 8},
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
-    marginLeft: 2,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0A66C2',
-    letterSpacing: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 16,
-    marginVertical: 16,
-  },
+    // Section
+    optionsSection: {paddingHorizontal: 16, marginTop: 8},
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 10,
+      marginLeft: 2,
+    },
+    sectionLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: P.primary,
+      letterSpacing: 1,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: '#e5e7eb',
+      marginHorizontal: 16,
+      marginVertical: 16,
+    },
 
-  // Option Card
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: '#f3f4f6',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-    gap: 12,
-  },
-  optionCardSelected: {borderColor: '#0A66C2', backgroundColor: '#EBF3FB'},
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioSelected: {borderColor: '#0A66C2'},
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#0A66C2',
-  },
-  optionContent: {flex: 1},
-  optionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 4,
-  },
-  optionLabelSelected: {color: '#0A66C2'},
-  exampleRow: {flexDirection: 'row', alignItems: 'center', gap: 4},
-  optionExample: {fontSize: 12, color: '#9ca3af'},
-  optionExampleSelected: {color: '#0A66C2'},
+    // Option Card
+    optionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 10,
+      borderWidth: 2,
+      borderColor: '#f3f4f6',
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 2,
+      gap: 12,
+    },
+    optionCardSelected: {borderColor: P.primary, backgroundColor: '#EBF3FB'},
+    radio: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: '#d1d5db',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioSelected: {borderColor: P.primary},
+    radioDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      backgroundColor: P.primary,
+    },
+    optionContent: {flex: 1},
+    optionLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: '#374151',
+      marginBottom: 4,
+    },
+    optionLabelSelected: {color: P.primary},
+    exampleRow: {flexDirection: 'row', alignItems: 'center', gap: 4},
+    optionExample: {fontSize: 12, color: '#9ca3af'},
+    optionExampleSelected: {color: P.primary},
 
-  // Timezone Selector Button
-  timezoneSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#EBF3FB',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#0A66C2',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  timezoneSelectorLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  timezoneIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timezoneSelectorTextWrap: {flex: 1},
-  timezoneSelectorLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0A66C2',
-  },
-  timezoneSelectorOffset: {fontSize: 12, color: '#6b7280', marginTop: 2},
+    // Timezone Selector Button
+    timezoneSelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: '#EBF3FB',
+      borderRadius: 14,
+      padding: 16,
+      borderWidth: 2,
+      borderColor: P.primary,
+      shadowColor: '#000',
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    timezoneSelectorLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      flex: 1,
+    },
+    timezoneIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: '#fff',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    timezoneSelectorTextWrap: {flex: 1},
+    timezoneSelectorLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: P.primary,
+    },
+    timezoneSelectorOffset: {fontSize: 12, color: '#6b7280', marginTop: 2},
 
-  // Info
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#EBF3FB',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 14,
-    gap: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: '#0A66C2',
-  },
-  infoText: {flex: 1, fontSize: 12, color: '#0A66C2', lineHeight: 18},
+    // Info
+    infoCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      backgroundColor: '#EBF3FB',
+      marginHorizontal: 16,
+      marginTop: 16,
+      borderRadius: 12,
+      padding: 14,
+      gap: 10,
+      borderLeftWidth: 3,
+      borderLeftColor: P.primary,
+    },
+    infoText: {flex: 1, fontSize: 12, color: P.primary, lineHeight: 18},
 
-  // Modal
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: '80%',
-    paddingBottom: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  modalTitle: {fontSize: 17, fontWeight: '700', color: '#111827'},
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    margin: 16,
-    marginBottom: 8,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
-  searchInput: {flex: 1, fontSize: 14, color: '#111827', padding: 0},
-  tzCount: {
-    fontSize: 11,
-    color: '#9ca3af',
-    marginHorizontal: 20,
-    marginBottom: 8,
-  },
+    // Modal
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalContainer: {
+      backgroundColor: '#fff',
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      height: '80%',
+      paddingBottom: 20,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f3f4f6',
+    },
+    modalTitle: {fontSize: 17, fontWeight: '700', color: '#111827'},
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#f9fafb',
+      margin: 16,
+      marginBottom: 8,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      gap: 8,
+      borderWidth: 1,
+      borderColor: '#e5e7eb',
+    },
+    searchInput: {flex: 1, fontSize: 14, color: '#111827', padding: 0},
+    tzCount: {
+      fontSize: 11,
+      color: '#9ca3af',
+      marginHorizontal: 20,
+      marginBottom: 8,
+    },
 
-  // Timezone List
-  tzList: {flex: 1},
-  tzItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    height: 57,
-  },
-  tzItemSelected: {backgroundColor: '#EBF3FB'},
-  tzItemLeft: {flex: 1},
-  tzItemLabel: {fontSize: 14, fontWeight: '500', color: '#374151'},
-  tzItemLabelSelected: {color: '#0A66C2', fontWeight: '600'},
-  tzItemOffset: {fontSize: 12, color: '#9ca3af', marginTop: 2},
-  tzSeparator: {
-    height: 1,
-    backgroundColor: '#f3f4f6',
-    marginHorizontal: 20,
-  },
-});
+    // Timezone List
+    tzList: {flex: 1},
+    tzItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      height: 57,
+    },
+    tzItemSelected: {backgroundColor: '#EBF3FB'},
+    tzItemLeft: {flex: 1},
+    tzItemLabel: {fontSize: 14, fontWeight: '500', color: '#374151'},
+    tzItemLabelSelected: {color: P.primary, fontWeight: '600'},
+    tzItemOffset: {fontSize: 12, color: '#9ca3af', marginTop: 2},
+    tzSeparator: {
+      height: 1,
+      backgroundColor: '#f3f4f6',
+      marginHorizontal: 20,
+    },
+  });
 
 export default DateFormatSettingsScreen;

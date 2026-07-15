@@ -32,6 +32,8 @@ import {
   initializeLegalEntity,
 } from '../store/slices/companySlice';
 import {setMenuItems} from '../store/slices/menuItemSlice';
+import {setPalette} from '../store/slices/colorPaletteSlice';
+import {RetrieveFirstOnly} from '../API/ColorPalette/RetrieveFirstOnly';
 import {
   authenticateWithBiometrics,
   getBiometricCredentials,
@@ -186,14 +188,36 @@ const LoginScreen = () => {
         dispatch(setUserData(completeUserData));
         await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
 
-        console.log(`Fetching legal entities for employee: ${user.EmployeeId}`);
+        // console.log(`Fetching legal entities for employee: ${user.EmployeeId}`);
         const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
 
-        console.log(`Fetching menu items for person: ${user.Person}`);
+        // console.log(`Fetching menu items for person: ${user.Person}`);
         const menus = await fetchEmployeeMenuItems(user.Person);
+        // console.log(`Fetching menus for person: ${menus}`);
 
         dispatch(setLegalEntities(legalEntities));
         dispatch(setMenuItems(menus));
+
+        try {
+          const palette = await RetrieveFirstOnly();
+
+          // TEMP [PALETTE-DEBUG] — remove after diagnosis
+          console.log('[PALETTE-DEBUG] dispatch payload (biometric login):', {
+            primary: palette?.primaryColor,
+            onPrimary: palette?.onPrimaryColor,
+            selection: palette?.selectionColor,
+          });
+
+          dispatch(
+            setPalette({
+              primary: palette?.primaryColor,
+              onPrimary: palette?.onPrimaryColor,
+              selection: palette?.selectionColor,
+            }),
+          );
+        } catch (e) {
+          console.warn('Palette hydration failed:', e);
+        }
 
         console.log('Biometric login successful for:', email);
         return true;

@@ -17,6 +17,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
+import usePallete from '../../../../hooks/usePalette';
 
 // Components
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
@@ -36,6 +37,7 @@ import styles from '../../../../styles/styles';
 const ContactDetailsListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePallete();
 
   const reduxUserData = useSelector(state => state.user.userData);
   const effectiveUserData = reduxUserData;
@@ -202,7 +204,7 @@ const ContactDetailsListPage = () => {
       icon: 'edit',
       iconSize: 20,
       iconColor: '#fff',
-      backgroundColor: '#0A66C2', // Add this line
+      backgroundColor: P.primary, // Add this line
     },
     // delete: {
     //   show: true,
@@ -211,7 +213,7 @@ const ContactDetailsListPage = () => {
     //   icon: 'trash',
     //   iconSize: 20,
     //   iconColor: '#fff',
-    //   backgroundColor: '#0A66C2', // Add this line
+    //   backgroundColor: P.primary, // Add this line
     // },
   });
 
@@ -302,7 +304,7 @@ const ContactDetailsListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

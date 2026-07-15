@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Dropdown} from 'react-native-element-dropdown';
+import usePalette from '../../hooks/usePalette';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
@@ -34,6 +35,7 @@ const ESSOPDMedicalExpense_SaveRecord = () => {
   const navigation = useNavigation();
   const scrollRef = useRef(null);
   const today = new Date().toISOString().split('T')[0];
+  const P = usePalette();
 
   /** ✅ Dropdown Data */
   const relationData = [
@@ -217,7 +219,7 @@ const ESSOPDMedicalExpense_SaveRecord = () => {
               }}>
               <TouchableOpacity
                 style={{
-                  backgroundColor: '#0A66C2',
+                  backgroundColor: P.primary,
                   padding: 12,
                   borderRadius: 50,
                   marginRight: 10,

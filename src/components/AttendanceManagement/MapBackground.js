@@ -13,14 +13,17 @@
 //              android:value="YOUR_KEY"/> in AndroidManifest.xml
 //   iOS:     call GMSServices.provideAPIKey("YOUR_KEY") in AppDelegate.swift
 // ─────────────────────────────────────────────
-import React, {useRef, useEffect} from 'react';
+import React, {useRef, useEffect, useMemo} from 'react';
 import {View, Text, StyleSheet, Animated} from 'react-native';
 import MapView, {Marker, Circle, PROVIDER_GOOGLE} from 'react-native-maps';
+import usePalette from '../../hooks/usePalette';
 
 // ── Pulse animation around user dot ──────────
 const PulseDot = () => {
   const pulse = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(0.6)).current;
+  const P = usePalette();
+  const S = useMemo(() => makeStyles(P), [P]);
 
   useEffect(() => {
     Animated.loop(
@@ -54,31 +57,35 @@ const PulseDot = () => {
   }, []);
 
   return (
-    <View style={styles.dotWrap}>
+    <View style={S.dotWrap}>
       <Animated.View
-        style={[styles.pulseRing, {transform: [{scale: pulse}], opacity}]}
+        style={[S.pulseRing, {transform: [{scale: pulse}], opacity}]}
       />
-      <View style={styles.coreDot} />
+      <View style={S.coreDot} />
     </View>
   );
 };
 
 // ── No-location placeholder ───────────────────
-const NoLocationPlaceholder = ({reason}) => (
-  <View style={styles.placeholder}>
-    <Text style={styles.placeholderIcon}>📍</Text>
-    <Text style={styles.placeholderTitle}>
-      {reason === 'denied'
-        ? 'Location Access Denied'
-        : 'Location Not Configured'}
-    </Text>
-    <Text style={styles.placeholderSub}>
-      {reason === 'denied'
-        ? 'Enable location permission in Settings to see the map.'
-        : 'No radius or office location has been set yet.'}
-    </Text>
-  </View>
-);
+const NoLocationPlaceholder = ({reason}) => {
+  const P = usePalette();
+  const S = useMemo(() => makeStyles(P), [P]);
+  return (
+    <View style={S.placeholder}>
+      <Text style={S.placeholderIcon}>📍</Text>
+      <Text style={S.placeholderTitle}>
+        {reason === 'denied'
+          ? 'Location Access Denied'
+          : 'Location Not Configured'}
+      </Text>
+      <Text style={S.placeholderSub}>
+        {reason === 'denied'
+          ? 'Enable location permission in Settings to see the map.'
+          : 'No radius or office location has been set yet.'}
+      </Text>
+    </View>
+  );
+};
 
 // ── Main component ────────────────────────────
 const MapBackground = ({
@@ -88,6 +95,8 @@ const MapBackground = ({
   withinRadius,
 }) => {
   const mapRef = useRef(null);
+  const P = usePalette();
+  const S = useMemo(() => makeStyles(P), [P]);
 
   // Smoothly pan to user when coords arrive or update
   useEffect(() => {
@@ -106,7 +115,7 @@ const MapBackground = ({
 
   if (permissionStatus === 'denied') {
     return (
-      <View style={styles.fill}>
+      <View style={S.fill}>
         <NoLocationPlaceholder reason="denied" />
       </View>
     );
@@ -114,7 +123,7 @@ const MapBackground = ({
 
   if (permissionStatus === 'granted' && !userCoords && !locationConfig) {
     return (
-      <View style={styles.fill}>
+      <View style={S.fill}>
         <NoLocationPlaceholder reason="notConfigured" />
       </View>
     );
@@ -146,7 +155,7 @@ const MapBackground = ({
   return (
     <MapView
       ref={mapRef}
-      style={styles.fill}
+      style={S.fill}
       provider={PROVIDER_GOOGLE} // ← Google Maps tile engine
       initialRegion={initialRegion}
       showsUserLocation={false} // we render our own PulseDot
@@ -183,8 +192,8 @@ const MapBackground = ({
           }}
           anchor={{x: 0.5, y: 0.5}}
           flat>
-          <View style={styles.officePinOuter}>
-            <View style={styles.officePinInner} />
+          <View style={S.officePinOuter}>
+            <View style={S.officePinInner} />
           </View>
         </Marker>
       )}
@@ -207,67 +216,68 @@ const MapBackground = ({
 
 export default MapBackground;
 
-const styles = StyleSheet.create({
-  fill: {...StyleSheet.absoluteFillObject},
+const makeStyles = P =>
+  StyleSheet.create({
+    fill: {...StyleSheet.absoluteFillObject},
 
-  dotWrap: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#0A66C2',
-  },
-  coreDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#0A66C2',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
+    dotWrap: {
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pulseRing: {
+      position: 'absolute',
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: P.primary,
+    },
+    coreDot: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: P.primary,
+      borderWidth: 2,
+      borderColor: '#fff',
+    },
 
-  officePinOuter: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(232,137,12,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#E8890C',
-  },
-  officePinInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#E8890C',
-  },
+    officePinOuter: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: 'rgba(232,137,12,0.3)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: '#E8890C',
+    },
+    officePinInner: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#E8890C',
+    },
 
-  placeholder: {
-    flex: 1,
-    backgroundColor: '#eef2f5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  placeholderIcon: {fontSize: 48, marginBottom: 16},
-  placeholderTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  placeholderSub: {
-    fontSize: 13,
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
+    placeholder: {
+      flex: 1,
+      backgroundColor: '#eef2f5',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 32,
+    },
+    placeholderIcon: {fontSize: 48, marginBottom: 16},
+    placeholderTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: '#333',
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    placeholderSub: {
+      fontSize: 13,
+      color: '#888',
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  });

@@ -1,4 +1,9 @@
 {
+  "modals": {
+    "confirm": "تأكيد",
+    "confirmDeletion": "تأكيد الحذف",
+    "deleting": "جارٍ الحذف..."
+  },
   "login": {
     "welcomeTitle": "مرحبًا بك في Dynaface",
     "welcomeSubtitle": "إدارة خدمات الموارد البشرية في أي وقت وفي أي مكان",

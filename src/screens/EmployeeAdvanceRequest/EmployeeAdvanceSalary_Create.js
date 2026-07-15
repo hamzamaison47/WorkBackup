@@ -30,11 +30,13 @@ import AlertModal from '../../components/Alert/AlertModal';
 import CalendarModal from '../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const EmployeeAdvanceSalary_Create = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
+  const P = usePalette();
 
   const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
@@ -253,7 +255,7 @@ const EmployeeAdvanceSalary_Create = () => {
         {isProcessing && (
           <View style={styles.DSR_ProcessingOverlay}>
             <View style={styles.DSR_ProcessingContainer}>
-              <ActivityIndicator size="large" color="#0A66C2" />
+              <ActivityIndicator size="large" color={P.primary} />
               <Text style={styles.DSR_ProcessingText}>
                 {t('common.processing') || 'Processing...'}
               </Text>
@@ -311,7 +313,7 @@ const EmployeeAdvanceSalary_Create = () => {
                   : 'Select Payment Date'}
               </Text>
             </View>
-            <Icon name="calendar" size={20} color="#0A66C2" />
+            <Icon name="calendar" size={20} color={P.primary} />
           </TouchableOpacity>
 
           {/* ── 4. Advance Type Code (read-only) ── */}
@@ -388,7 +390,9 @@ const EmployeeAdvanceSalary_Create = () => {
           <TouchableOpacity
             style={[
               localStyles.btn,
-              localStyles.createBtn,
+              // localStyles.createBtn,
+              // isProcessing && {opacity: 0.6},
+              {backgroundColor: P.primary},
               isProcessing && {opacity: 0.6},
             ]}
             onPress={handleCreate}
@@ -449,9 +453,9 @@ const localStyles = StyleSheet.create({
     color: '#555',
     fontWeight: '500',
   },
-  createBtn: {
-    backgroundColor: '#0A66C2',
-  },
+  // createBtn: {
+  //   backgroundColor: P.primary,
+  // },
   createText: {
     fontSize: 15,
     color: '#fff',

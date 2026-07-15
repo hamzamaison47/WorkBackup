@@ -13,6 +13,7 @@ import {
   useRoute,
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
+import usePalette from '../../hooks/usePalette';
 
 import {retrieveAllESSEmployeeTask} from '../../API/ESSEmployeeTask/retrieveAllESSEmployeeTask';
 import {updateESSEmployeeTask} from '../../API/ESSEmployeeTask/UpdateESSEmployeeTask';
@@ -28,6 +29,7 @@ const ESSEmployeeTask_ListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
+  const P = usePalette();
 
   const reduxUserData = useSelector(state => state.user.userData);
   const {employeeId, userData: routeUserData} = route.params || {};
@@ -191,7 +193,7 @@ const ESSEmployeeTask_ListPage = () => {
         style: 'approval_dropdown',
         text: 'Change Status',
         icon: 'check-square-o',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           {key: 'In progress', label: 'In progress', icon: 'play'},

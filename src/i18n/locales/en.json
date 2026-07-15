@@ -1,4 +1,9 @@
 {
+  "modals": {
+    "confirm": "Confirm",
+    "confirmDeletion": "Confirm Deletion",
+    "deleting": "Deleting..."
+  },
   "login": {
     "welcomeTitle": "Welcome to Dynaface",
     "welcomeSubtitle": "Secure Mobile Gateway!\nYour Ultimate Companion for seamless access to D365.",

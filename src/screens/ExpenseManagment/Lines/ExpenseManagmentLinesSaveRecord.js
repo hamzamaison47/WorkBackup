@@ -39,6 +39,7 @@ import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../components/Buttons/SaveRecordButtons';
 import styles from '../../../styles/styles';
+import usePalette from '../../../hooks/usePalette';
 
 const ExpenseManagmentLinesSaveRecord = () => {
   const route = useRoute();
@@ -49,6 +50,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
   const {selectedLegalEntity, defaultLegalEntity} = useSelector(
     state => state.company,
   );
+  const P = usePalette();
   const isRTL = useSelector(state => state.language.isRTL);
 
   const effectiveUserData = route.params?.userData || userData || {};
@@ -689,7 +691,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <ActivityIndicator size="large" color={P.primary} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -715,7 +717,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
                       : 'Select Transaction Date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
+                <Icon name="calendar" size={20} color={P.primary} />
               </TouchableOpacity>
 
               <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>

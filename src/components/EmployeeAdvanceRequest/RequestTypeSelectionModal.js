@@ -2,8 +2,10 @@ import React from 'react';
 import {View, Text, Modal, TouchableOpacity, Pressable} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const RequestTypeSelectionModal = ({visible, onClose, onSelectType}) => {
+  const P = usePalette();
   const requestTypes = [
     {
       type: 'Loan',
@@ -19,7 +21,7 @@ const RequestTypeSelectionModal = ({visible, onClose, onSelectType}) => {
       title: 'Advance Salary',
       description: 'Create an advance salary request',
       icon: 'cash-outline',
-      color: '#0A66C2',
+      color: P.primary,
     },
   ];
 

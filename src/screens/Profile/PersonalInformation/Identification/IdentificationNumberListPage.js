@@ -35,6 +35,7 @@ import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import useNotify from '../../../../hooks/useNotify';
 import useListFilters from '../../../../hooks/useListFilters';
 import styles from '../../../../styles/styles';
+import usePalette from '../../../../hooks/usePalette';
 
 // D365 boundary dates — defined at module level, not inside render
 const D365_MAX_DATE = '2154-12-31T12:00:00';
@@ -44,6 +45,7 @@ const IdentificationNumberListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const isRTL = I18nManager.isRTL;
+  const P = usePalette();
 
   const {
     employeeId,
@@ -90,7 +92,7 @@ const IdentificationNumberListPage = () => {
         employeeId: effectiveEmployeeId,
       });
 
-      console.log('here is the data for identification', data);
+      // console.log('here is the data for identification', data);
 
       // Sort newest record on top
       data.sort(
@@ -296,7 +298,7 @@ const IdentificationNumberListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: isHCMRecord ? !item.canEdit : !isDraft,
         customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -307,7 +309,7 @@ const IdentificationNumberListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !(isDraft || isCancelled),
         customStyle: !(isDraft || isCancelled)
           ? {backgroundColor: '#BDBDBD'}
@@ -320,7 +322,7 @@ const IdentificationNumberListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -330,7 +332,7 @@ const IdentificationNumberListPage = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           // Submit: only on Draft or Rejected
@@ -620,7 +622,7 @@ const IdentificationNumberListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

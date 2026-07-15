@@ -3,16 +3,11 @@ import {
   Text,
   FlatList,
   View,
-  RefreshControl,
   I18nManager,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import {
-  useNavigation,
-  useFocusEffect,
-  useRoute,
-} from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 
 import {retrieveAssigned} from '../../API/ESSEmployeeCourse/retrieveAssigned';
@@ -22,10 +17,12 @@ import {retrieveConfirmCourses} from '../../API/ESSEmployeeCourse/retrieveConfir
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import DynamicRequestCard from '../../components/DynamicRequestCard';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
-import AlertModal from '../../components/Alert/AlertModal';
+import usePalette from '../../hooks/usePalette';
 
 const ESSEmployeeCourse_ListPage = () => {
   const isRTL = I18nManager.isRTL;
+  const P = usePalette();
+  const styles = createStyles(P);
 
   // ✅ Adjust this if your Redux slice is different
   const {userData} = useSelector(state => state.user);
@@ -201,43 +198,45 @@ const ESSEmployeeCourse_ListPage = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  tabButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-    borderRadius: 20,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 5,
-  },
-  activeTab: {
-    backgroundColor: '#0A66C2',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  activeText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  listContainer: {
-    paddingBottom: 20,
-  },
-  noDataContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 50,
-  },
-  noDataText: {
-    fontSize: 16,
-    color: '#555',
-  },
-});
+// const styles = StyleSheet.create({
+const createStyles = P =>
+  StyleSheet.create({
+    tabContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginBottom: 10,
+    },
+    tabButton: {
+      paddingVertical: 10,
+      paddingHorizontal: 25,
+      borderRadius: 20,
+      backgroundColor: '#e0e0e0',
+      marginHorizontal: 5,
+    },
+    activeTab: {
+      backgroundColor: P.primary,
+    },
+    tabText: {
+      fontSize: 14,
+      color: '#333',
+    },
+    activeText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    listContainer: {
+      paddingBottom: 20,
+    },
+    noDataContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 50,
+    },
+    noDataText: {
+      fontSize: 16,
+      color: '#555',
+    },
+  });
 
 export default ESSEmployeeCourse_ListPage;

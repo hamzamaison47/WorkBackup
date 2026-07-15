@@ -58,7 +58,7 @@ const MasterService = () => {
       );
     }
 
-    console.log('🚀 MasterService: Initializing all services...');
+    // console.log('🚀 MasterService: Initializing all services...');
 
     // ========================================
     // STEP 2: Initialize each service
@@ -66,7 +66,7 @@ const MasterService = () => {
     try {
       // Initialize LeaveService
 
-      console.log('  ✅ LeaveService initialized');
+      // console.log('  ✅ LeaveService initialized');
 
       // TODO: Uncomment when AdvanceService is ready
       // advanceService.initialize(userData);

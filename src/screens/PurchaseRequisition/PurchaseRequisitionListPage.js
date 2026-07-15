@@ -34,12 +34,14 @@ import {useSelector} from 'react-redux';
 import {ScrollView} from 'react-native-gesture-handler';
 import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 import useListFilters from '../../hooks/useListFilters';
+import usePalette from '../../hooks/usePalette';
 
 // ── Height of your custom tab navigator — adjust if needed ──
 
 const PurchaseRequisitionListPage = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const P = usePalette();
 
   const {
     employeeId,
@@ -148,7 +150,7 @@ const PurchaseRequisitionListPage = () => {
         icon: 'edit',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -159,7 +161,7 @@ const PurchaseRequisitionListPage = () => {
         icon: 'trash',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -170,7 +172,7 @@ const PurchaseRequisitionListPage = () => {
         icon: 'paperclip',
         iconSize: 20,
         iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
       },
@@ -180,7 +182,7 @@ const PurchaseRequisitionListPage = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: P.primary,
         disabled: false,
         actions: [
           // Submit: only on Draft or Rejected
@@ -609,7 +611,7 @@ const PurchaseRequisitionListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={P.primary} />
             <Text style={styles.DLP_ProcessingText}>Processing...</Text>
           </View>
         </View>

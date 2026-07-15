@@ -251,10 +251,10 @@ const LeaveService = () => {
 
     setIsInitialized(true);
     setError(null);
-    console.log(
-      '✅ LeaveService initialized:',
-      userContextRef.current.employeeId,
-    );
+    // console.log(
+    //   '✅ LeaveService initialized:',
+    //   userContextRef.current.employeeId,
+    // );
   }, []);
 
   const enforceUserContext = useCallback(
@@ -1616,8 +1616,8 @@ const LeaveService = () => {
           }
         }
 
-        console.log('🔧 Executing:', functionName);
-        console.log('👤 User:', userContextRef.current?.employeeId);
+        // console.log('🔧 Executing:', functionName);
+        // console.log('👤 User:', userContextRef.current?.employeeId);
 
         const result = await availableFunctions[functionName](processedParams);
         return result;

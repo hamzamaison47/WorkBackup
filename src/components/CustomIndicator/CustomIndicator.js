@@ -3,17 +3,21 @@
 import React, {useEffect, useRef} from 'react';
 import {View, Animated, Dimensions} from 'react-native';
 import styles from '../../styles/styles';
+import usePalette from '../../hooks/usePalette';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
 const CustomIndicator = ({
   dotCount = 3,
   animationDuration = 1000,
-  dotColor = '#0A66C2',
+  dotColor,
   dotSize = screenWidth * 0.025,
   spacing = screenWidth * 0.02,
   containerHeight = screenHeight * 0.05,
 }) => {
+  const P = usePalette();
+  const resolvedDotColor = dotColor || P.primary;
+
   // Store animations in refs to persist between renders
   const animationsRef = useRef([]);
   const animationLoopsRef = useRef([]);
@@ -108,7 +112,7 @@ const CustomIndicator = ({
               height: dotSize,
               borderRadius: dotSize / 2,
               marginHorizontal: spacing / 2,
-              backgroundColor: dotColor,
+              backgroundColor: resolvedDotColor,
               transform: [{scale: anim.scale}],
               opacity: anim.opacity,
             }}

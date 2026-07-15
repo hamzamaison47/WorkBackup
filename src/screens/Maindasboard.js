@@ -61,10 +61,10 @@ const MainDashboard = () => {
     state => state.company.selectedLegalEntity,
   );
 
-  console.log('[MainDashboard] userData:', {
-    allKeys: userData ? Object.keys(userData) : 'null/undefined',
-    fullData: userData,
-  });
+  // console.log('[MainDashboard] userData:', {
+  //   allKeys: userData ? Object.keys(userData) : 'null/undefined',
+  //   fullData: userData,
+  // });
 
   const {dynamicMenus, handleCardPress} = useMenuBuilder(
     userData,
