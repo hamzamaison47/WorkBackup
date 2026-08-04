@@ -13,12 +13,17 @@ import {
   StyleSheet,
   StatusBar,
   RefreshControl,
+  Platform,
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   formatDate,
   formatTime,
 } from '../../screens/AttendanceManagement/helpers';
 import useAttendanceTheme from './useAttendanceTheme';
+
+// Base breathing room under the Confirm button, before any system inset.
+const FOOTER_PAD_BOTTOM = 16;
 
 const ConfirmSheet = ({
   title,
@@ -36,8 +41,16 @@ const ConfirmSheet = ({
 }) => {
   const {C, R, Sh, isDark} = useAttendanceTheme();
   const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
+  const insets = useSafeAreaInsets();
   const now = new Date();
   const btnColor = confirmColor ?? C.amber;
+
+  // The sticky footer sits outside the ScrollView, so nothing pushes it clear
+  // of the Android system nav bar. RN's SafeAreaView (below) is a no-op on
+  // Android but already applies the bottom inset on iOS — so only add the
+  // inset on Android, otherwise iOS double-pads above the home indicator.
+  const footerPadBottom =
+    FOOTER_PAD_BOTTOM + (Platform.OS === 'android' ? insets.bottom : 0);
 
   return (
     <SafeAreaView style={S.screen}>
@@ -88,7 +101,7 @@ const ConfirmSheet = ({
       </ScrollView>
 
       {/* Confirm button */}
-      <View style={S.footer}>
+      <View style={[S.footer, {paddingBottom: footerPadBottom}]}>
         <TouchableOpacity
           style={[
             S.confirmBtn,
@@ -172,7 +185,7 @@ const makeStyles = (C, R, Sh) =>
 
     footer: {
       paddingHorizontal: 16,
-      paddingBottom: 16,
+      paddingBottom: FOOTER_PAD_BOTTOM, // overridden inline with the safe-area inset
       paddingTop: 8,
       backgroundColor: C.surface,
       borderTopWidth: 1,

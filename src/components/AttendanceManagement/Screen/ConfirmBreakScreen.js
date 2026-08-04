@@ -33,6 +33,7 @@ import {
 } from '../../../screens/AttendanceManagement/helpers';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
 import {ACTION_TYPES} from './attendanceActionHelpers';
+import {runBiometricGate} from './biometricGate';
 import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE_MAP = {
@@ -106,6 +107,18 @@ const ConfirmBreakScreen = ({
 
   const handleConfirmPress = useCallback(async () => {
     if (isProcessing) return;
+
+    // Biometric gate — runs ONLY on Confirm, before any processing UI, so the
+    // system dialog never appears over a spinner. Gates on the token's fence
+    // (the one prepare() validated and confirm() will submit against).
+    const gate = await runBiometricGate(
+      validationToken?.matchedFence ?? clockInFence ?? matchedFence,
+    );
+    if (!gate.ok) {
+      Alert.alert('Biometric Verification Required', gate.message);
+      return;
+    }
+
     setProcessingLabel(isBreakEnd ? 'Ending break…' : 'Starting break…');
     setIsProcessing(true);
     try {
@@ -133,6 +146,7 @@ const ConfirmBreakScreen = ({
     isProcessing,
     isBreakEnd,
     validationToken,
+    matchedFence,
     generationType,
     userData?.Person,
     clockInFence,

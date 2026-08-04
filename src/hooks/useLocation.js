@@ -26,6 +26,52 @@ export const haversineDistance = (lat1, lon1, lat2, lon2) => {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
+// ── Timeout-safe position read ────────────────────────────
+// The @react-native-community/geolocation Play-Services path (Android,
+// locationProvider:'auto') IGNORES the native `timeout` option entirely, so a
+// hung fix never settles the JS promise. We race the native callback against a
+// JS-side timer so this ALWAYS settles — resolve with a position, or reject
+// with a clear timeout error. Treat the library's own `timeout` as
+// non-functional; the JS race is the real guarantee. This is the single entry
+// point every foreground coordinate read in the attendance module must use.
+export const getFreshPositionWithTimeout = (options = {}) => {
+  const jsTimeout =
+    typeof options.timeout === 'number' ? options.timeout : 15_000;
+
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let timer = null;
+
+    const finish = (fn, arg) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      fn(arg);
+    };
+
+    timer = setTimeout(
+      () => finish(reject, new Error('Location request timed out.')),
+      jsTimeout,
+    );
+
+    Geolocation.getCurrentPosition(
+      pos => finish(resolve, pos),
+      err =>
+        finish(
+          reject,
+          err instanceof Error
+            ? err
+            : // Preserve the native error code (e.g. 1 = PERMISSION_DENIED)
+              // so callers branching on it keep working.
+              Object.assign(new Error(err?.message || 'Location unavailable'), {
+                code: err?.code,
+              }),
+        ),
+      options,
+    );
+  });
+};
+
 // ── S1–S5: Multi-reason spoofing detection ────────────────
 const checkSpoofing = (position, prevPosition) => {
   const {accuracy, speed, latitude, longitude} = position.coords;
@@ -118,52 +164,50 @@ const useLocation = () => {
     }
 
     // ── iOS: First try getting position directly ──
-    // If permission already granted this will succeed immediately
-    return new Promise(resolve => {
-      Geolocation.getCurrentPosition(
-        () => {
-          // Position obtained = permission already granted
-          console.log('✅ iOS: location permission already granted');
-          resolve(true);
-        },
-        error => {
-          console.log('📍 iOS location check:', error.code, error.message);
+    // If permission already granted this will succeed immediately.
+    // Routed through getFreshPositionWithTimeout so a hung Play-Services fix
+    // can't stall mount — on timeout it rejects with code undefined and falls
+    // through to the "assume granted" branch, matching prior behaviour.
+    try {
+      await getFreshPositionWithTimeout({
+        enableHighAccuracy: false,
+        timeout: 3000,
+        maximumAge: 60000,
+      });
+      console.log('✅ iOS: location permission already granted');
+      return true;
+    } catch (error) {
+      console.log('📍 iOS location check:', error?.code, error?.message);
 
-          if (error.code === 1) {
-            // PERMISSION_DENIED — request it
-            Geolocation.requestAuthorization(
-              status => {
-                // status is a string: 'authorizedWhenInUse', 'authorizedAlways',
-                // 'whenInUse', 'always', 'denied', 'restricted'
-                console.log('📍 iOS auth status received:', status);
-                const isGranted =
-                  status === 'authorizedWhenInUse' ||
-                  status === 'authorizedAlways' ||
-                  status === 'whenInUse' ||
-                  status === 'always' ||
-                  status === 'granted';
-                console.log('📍 iOS permission granted:', isGranted);
-                resolve(isGranted);
-              },
-              err => {
-                console.warn('📍 iOS requestAuthorization error:', err);
-                resolve(false);
-              },
-            );
-          } else {
-            // Timeout or other error — permission likely granted
-            // but GPS just took too long
-            console.log('📍 iOS: assuming granted, error code:', error.code);
-            resolve(true);
-          }
-        },
-        {
-          enableHighAccuracy: false,
-          timeout: 3000,
-          maximumAge: 60000,
-        },
-      );
-    });
+      if (error?.code === 1) {
+        // PERMISSION_DENIED — request it
+        return new Promise(resolve => {
+          Geolocation.requestAuthorization(
+            status => {
+              // status is a string: 'authorizedWhenInUse', 'authorizedAlways',
+              // 'whenInUse', 'always', 'denied', 'restricted'
+              console.log('📍 iOS auth status received:', status);
+              const isGranted =
+                status === 'authorizedWhenInUse' ||
+                status === 'authorizedAlways' ||
+                status === 'whenInUse' ||
+                status === 'always' ||
+                status === 'granted';
+              console.log('📍 iOS permission granted:', isGranted);
+              resolve(isGranted);
+            },
+            err => {
+              console.warn('📍 iOS requestAuthorization error:', err);
+              resolve(false);
+            },
+          );
+        });
+      }
+
+      // Timeout or other error — permission likely granted but GPS was slow
+      console.log('📍 iOS: assuming granted, error code:', error?.code);
+      return true;
+    }
   }, []);
 
   const startWatching = useCallback(() => {
@@ -272,13 +316,8 @@ const useLocation = () => {
     async (eventLabel = 'EVENT') => {
       let gpsCoords = userCoords;
 
-      const tryGetPosition = options =>
-        new Promise((resolve, reject) =>
-          Geolocation.getCurrentPosition(resolve, reject, options),
-        );
-
       try {
-        const pos = await tryGetPosition({
+        const pos = await getFreshPositionWithTimeout({
           enableHighAccuracy: true,
           timeout: 15000,
           maximumAge: 5000,
@@ -296,7 +335,7 @@ const useLocation = () => {
           '— trying low accuracy',
         );
         try {
-          const pos = await tryGetPosition({
+          const pos = await getFreshPositionWithTimeout({
             enableHighAccuracy: false,
             timeout: 15000,
             maximumAge: 30000,

@@ -15,7 +15,6 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useSelector} from 'react-redux';
 import ConfirmSheet from '../ConfirmSheet';
 import {NoteRow, CheckboxRow} from '../FormRow';
@@ -32,6 +31,7 @@ import {
   getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
+import {runBiometricGate} from './biometricGate';
 import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE = 'ClockOut';
@@ -50,8 +50,13 @@ const ConfirmClockOutScreen = ({
   const [processingLabel, setProcessingLabel] = useState('Processing...');
   const [sessionSummary, setSessionSummary] = useState(null);
 
-  const {matchedFence, clockInFence, locationError, locationLoading} =
-    useGeofence();
+  const {
+    matchedFence,
+    clockInFence,
+    locationError,
+    locationLoading,
+    recordClockInFence,
+  } = useGeofence();
   const {spoofingDetected} = useLocation();
   const {userData} = useSelector(s => s.user);
 
@@ -83,6 +88,18 @@ const ConfirmClockOutScreen = ({
 
   const handleConfirmPress = useCallback(async () => {
     if (isProcessing) return;
+
+    // Biometric gate — runs ONLY on Confirm, before any processing UI, so the
+    // system dialog never appears over a spinner. Gates on the token's fence
+    // (the one prepare() validated and confirm() will submit against).
+    const gate = await runBiometricGate(
+      validationToken?.matchedFence ?? clockInFence ?? matchedFence,
+    );
+    if (!gate.ok) {
+      Alert.alert('Biometric Verification Required', gate.message);
+      return;
+    }
+
     setProcessingLabel('Clocking out…');
     setIsProcessing(true);
     try {
@@ -97,7 +114,10 @@ const ConfirmClockOutScreen = ({
         spoofingDetected,
       });
 
-      await AsyncStorage.removeItem('@attendance_clock_in_fence');
+      // Clear BOTH the persisted key and the in-memory context fence together,
+      // so clock-out/break validation can't keep matching against last
+      // session's fence (clockInFence ?? matchedFence) until a cold start.
+      await recordClockInFence(null);
       await onConfirm(note, endWorkDay);
     } catch (error) {
       Alert.alert(
@@ -110,12 +130,14 @@ const ConfirmClockOutScreen = ({
   }, [
     isProcessing,
     validationToken,
+    matchedFence,
     userData?.Person,
     clockInFence,
     spoofingDetected,
     note,
     endWorkDay,
     onConfirm,
+    recordClockInFence,
   ]);
 
   const displayFence =

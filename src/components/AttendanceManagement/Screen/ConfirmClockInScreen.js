@@ -29,6 +29,7 @@ import {
   formatDateShort,
 } from '../../../screens/AttendanceManagement/helpers';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
+import {runBiometricGate} from './biometricGate';
 import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE = 'ClockIn';
@@ -53,6 +54,18 @@ const ConfirmClockInScreen = ({
 
   const handleConfirmPress = useCallback(async () => {
     if (isProcessing) return;
+
+    // Biometric gate — runs ONLY on Confirm, before any processing UI, so the
+    // system dialog never appears over a spinner. Gates on the token's fence
+    // (the one prepare() validated and confirm() will submit against).
+    const gate = await runBiometricGate(
+      validationToken?.matchedFence ?? matchedFence,
+    );
+    if (!gate.ok) {
+      Alert.alert('Biometric Verification Required', gate.message);
+      return;
+    }
+
     setProcessingLabel('Clocking in…');
     setIsProcessing(true);
     try {
@@ -79,6 +92,7 @@ const ConfirmClockInScreen = ({
   }, [
     isProcessing,
     validationToken,
+    matchedFence,
     userData?.Person,
     clockInFence,
     spoofingDetected,

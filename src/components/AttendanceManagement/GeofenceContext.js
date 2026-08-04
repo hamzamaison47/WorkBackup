@@ -10,29 +10,40 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import {Platform, PermissionsAndroid} from 'react-native';
+import {Platform, PermissionsAndroid, AppState} from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import NetInfo from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveByPerson} from '../../API/AttendanceManagement/RetrieveByPerson';
-import {haversineDistance} from '../../hooks/useLocation';
+import {
+  haversineDistance,
+  getFreshPositionWithTimeout,
+} from '../../hooks/useLocation';
 
 const SOFT_BUFFER_METRES = 15;
 const CLOCK_IN_FENCE_KEY = '@attendance_clock_in_fence';
+
+// Watch is re-armed after a fatal/availability-lost error, but never more than
+// once per this interval — prevents a dead provider from tight-looping restarts.
+const WATCH_REARM_DELAY_MS = 3000;
+const WATCH_OPTIONS = {
+  enableHighAccuracy: true,
+  distanceFilter: 10,
+  interval: 5000, // Android only
+  fastestInterval: 2000, // Android only
+  timeout: 20000, // ← iOS required
+  maximumAge: 10000, // ← iOS required
+  useSignificantChanges: false, // ← iOS required
+};
 
 const isActiveFlag = val => {
   const s = String(val).trim().toLowerCase();
   return s === '1' || s === 'yes' || s === 'true';
 };
 
-const tryPos = options =>
-  new Promise((resolve, reject) =>
-    Geolocation.getCurrentPosition(resolve, reject, options),
-  );
-
 const fetchFreshCoords = async () => {
   try {
-    const p = await tryPos({
+    const p = await getFreshPositionWithTimeout({
       enableHighAccuracy: true,
       timeout: 15000,
       maximumAge: 5000,
@@ -45,7 +56,7 @@ const fetchFreshCoords = async () => {
     };
   } catch {
     try {
-      const p = await tryPos({
+      const p = await getFreshPositionWithTimeout({
         enableHighAccuracy: false,
         timeout: 15000,
         maximumAge: 30000,
@@ -73,48 +84,132 @@ export const isUnknownSsid = ssid =>
   ssid === '0x' ||
   ssid === '"<unknown ssid>"';
 
+// Android returns a placeholder MAC for BSSID (and iOS for missing perms) when
+// Location permission is not granted / Location Services are off. A placeholder
+// BSSID must never be treated as a real MAC — otherwise it either "matches"
+// nothing (false mismatch) or, worse, could collide. Treat it as "unavailable".
+export const isPlaceholderBssid = bssid => {
+  const b = normalizeNet(bssid);
+  return (
+    b.length === 0 || b === '02:00:00:00:00:00' || b === '00:00:00:00:00:00'
+  );
+};
+
+// A fence-side value counts as "configured" only if it is a non-empty string.
+// Mirrors the [] guard historically used for BSSID so all checks agree on
+// whether a signal is actually set on the fence entry.
+const isConfiguredValue = v =>
+  v != null &&
+  !(Array.isArray(v) && v.length === 0) &&
+  normalizeNet(v).length > 0;
+
+// ─────────────────────────────────────────────
+// checkNetworkMatch — SSID is authoritative; BSSID NEVER blocks
+//
+// Office WiFi here is multi-AP / roaming: a single SSID ("MAISON") is served by
+// many access points, each with its own BSSID. AX stores only ONE AP's BSSID, so
+// any employee associated with a different AP on the same network has a real but
+// non-matching BSSID. BSSID equality is therefore useless as a blocking
+// condition — it produces constant false rejections — and is demoted to an
+// optional, log-only corroborator. It is REMOVED from every pass/fail decision.
+//
+// Rule:
+//   • Empty allowed-networks list → validation skipped (PASS).
+//   • For each allowed net: if the device SSID is real (not '<unknown ssid>' /
+//     empty) AND equals net.NetworkName (case-insensitive) → MATCH. A BSSID
+//     mismatch does NOT block; if BSSID also matches we just log 'BSSID+SSID'.
+//   • If NOTHING matched by SSID AND the device SSID was unreadable, fall back
+//     to public IP: device publicIp == an allowed net.NetworkID → MATCH.
+//   • Else REJECT. A cleanly-read SSID that matches no allowed name is REJECTED
+//     WITHOUT consulting public IP (preserves the MAISON-5G reject).
+//
+// Returns: {networkRequired, networkMatched, networkFailReason, matchedSignal,
+//   matchedNetwork}. matchedSignal ∈ 'SSID' | 'BSSID+SSID' | 'NetworkID-fallback'.
+// ─────────────────────────────────────────────
 export const checkNetworkMatch = (
   fenceNetworks,
   wifiSsid,
   wifiBssid,
   isWifi,
+  publicIp = null,
 ) => {
   if (!fenceNetworks || fenceNetworks.length === 0)
     return {
       networkRequired: false,
       networkMatched: true,
       networkFailReason: null,
-    };
-
-  if (!isWifi)
-    return {
-      networkRequired: true,
-      networkMatched: false,
-      networkFailReason: 'NOT_ON_WIFI',
-    };
-
-  if (isUnknownSsid(wifiSsid))
-    return {
-      networkRequired: true,
-      networkMatched: false,
-      networkFailReason: 'SSID_UNAVAILABLE',
+      matchedSignal: null,
+      matchedNetwork: null,
     };
 
   const deviceSsid = normalizeNet(wifiSsid);
   const deviceBssid = normalizeNet(wifiBssid);
+  const devicePublicIp = normalizeNet(publicIp);
 
-  const matched = fenceNetworks.some(net => {
-    const ssidMatch =
-      net.NetworkName && normalizeNet(net.NetworkName) === deviceSsid;
-    const bssidMatch =
-      !net.BSSID || (deviceBssid && normalizeNet(net.BSSID) === deviceBssid);
-    return ssidMatch && bssidMatch;
-  });
+  // Is the device's SSID readable on THIS read? (The one gate that matters.)
+  const ssidReal = isWifi && !isUnknownSsid(wifiSsid);
+  // BSSID readability is used ONLY to decorate the log — never to decide.
+  const bssidReal = isWifi && !isPlaceholderBssid(wifiBssid);
+
+  // ── Primary pass: SSID name match (authoritative). BSSID never blocks. ─────
+  let matchedNetwork = null;
+  let matchedSignal = null;
+  if (ssidReal) {
+    for (const net of fenceNetworks) {
+      if (
+        isConfiguredValue(net.NetworkName) &&
+        normalizeNet(net.NetworkName) === deviceSsid
+      ) {
+        matchedNetwork = net;
+        // BSSID is a non-blocking corroborator: note it if it happens to agree.
+        const bssidAgrees =
+          bssidReal &&
+          isConfiguredValue(net.BSSID) &&
+          normalizeNet(net.BSSID) === deviceBssid;
+        matchedSignal = bssidAgrees ? 'BSSID+SSID' : 'SSID';
+        break;
+      }
+    }
+  }
+
+  // ── Fallback: public IP, ONLY when the SSID was unreadable ────────────────
+  if (!matchedNetwork && !ssidReal && devicePublicIp.length > 0) {
+    for (const net of fenceNetworks) {
+      if (
+        isConfiguredValue(net.NetworkID) &&
+        normalizeNet(net.NetworkID) === devicePublicIp
+      ) {
+        matchedNetwork = net;
+        matchedSignal = 'NetworkID-fallback';
+        break;
+      }
+    }
+  }
+
+  if (matchedNetwork)
+    return {
+      networkRequired: true,
+      networkMatched: true,
+      networkFailReason: null,
+      matchedSignal,
+      matchedNetwork,
+    };
+
+  // Nothing matched. Pick the clearest reason for the user.
+  //   • SSID unreadable → couldn't read the network (retryable) — or NOT_ON_WIFI
+  //     if we aren't on WiFi at all.
+  //   • SSID readable but matches no allowed name → on a real, non-allowed net.
+  let networkFailReason;
+  if (!ssidReal)
+    networkFailReason = isWifi ? 'NETWORK_UNAVAILABLE' : 'NOT_ON_WIFI';
+  else networkFailReason = 'NETWORK_MISMATCH';
 
   return {
     networkRequired: true,
-    networkMatched: matched,
-    networkFailReason: matched ? null : 'NETWORK_MISMATCH',
+    networkMatched: false,
+    networkFailReason,
+    matchedSignal: null,
+    matchedNetwork: null,
   };
 };
 
@@ -127,8 +222,11 @@ export const buildNetworkErrorMessage = (fence, failReason) => {
     return `This location requires office WiFi.\nRequired network: ${
       names || 'office WiFi'
     }`;
-  if (failReason === 'SSID_UNAVAILABLE')
-    return 'Unable to read WiFi network name. Ensure Location permission is granted and Location Services are enabled.';
+  // "Couldn't determine the network" — distinct from "wrong network". This is a
+  // read/permission problem, not a policy violation, so the message points at
+  // the fix (permission + location services) and invites a retry.
+  if (failReason === 'SSID_UNAVAILABLE' || failReason === 'NETWORK_UNAVAILABLE')
+    return 'Unable to determine your network. Ensure Location permission is granted and Location Services are on, then try again.';
   return `Wrong WiFi network.\nPlease connect to: ${
     names || 'required office network'
   }`;
@@ -162,6 +260,10 @@ export const GeofenceProvider = ({children, person}) => {
   const latestCoordsRef = useRef(null);
   const wifiInfoRef = useRef(wifiInfo);
   const inflightRefreshRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const rearmTimerRef = useRef(null);
+  const startWatchRef = useRef(null);
+  const appStateRef = useRef(AppState.currentState);
 
   useEffect(() => {
     wifiInfoRef.current = wifiInfo;
@@ -226,48 +328,46 @@ export const GeofenceProvider = ({children, person}) => {
     }
 
     // ── iOS FIX: Check if already granted first ──────────────
-    // requestAuthorization returns a STATUS STRING not true/false
-    return new Promise(resolve => {
-      Geolocation.getCurrentPosition(
-        () => {
-          // Can get position = permission already granted
-          console.log('✅ GeofenceContext: iOS location already granted');
-          resolve(true);
-        },
-        error => {
-          console.log(
-            '📍 GeofenceContext iOS check:',
-            error.code,
-            error.message,
+    // requestAuthorization returns a STATUS STRING not true/false.
+    // Routed through getFreshPositionWithTimeout so a hung Play-Services fix
+    // can't stall mount — on timeout it rejects with code undefined and falls
+    // through to the "assume granted" branch, matching prior behaviour.
+    try {
+      await getFreshPositionWithTimeout({
+        enableHighAccuracy: false,
+        timeout: 3000,
+        maximumAge: 60000,
+      });
+      // Can get position = permission already granted
+      console.log('✅ GeofenceContext: iOS location already granted');
+      return true;
+    } catch (error) {
+      console.log('📍 GeofenceContext iOS check:', error?.code, error?.message);
+      if (error?.code === 1) {
+        // PERMISSION_DENIED — need to request it
+        return new Promise(resolve => {
+          Geolocation.requestAuthorization(
+            status => {
+              console.log('📍 GeofenceContext iOS auth status:', status);
+              const isGranted =
+                status === 'authorizedWhenInUse' ||
+                status === 'authorizedAlways' ||
+                status === 'whenInUse' ||
+                status === 'always' ||
+                status === 'granted';
+              resolve(isGranted);
+            },
+            () => resolve(false),
           );
-          if (error.code === 1) {
-            // PERMISSION_DENIED — need to request it
-            Geolocation.requestAuthorization(
-              status => {
-                console.log('📍 GeofenceContext iOS auth status:', status);
-                const isGranted =
-                  status === 'authorizedWhenInUse' ||
-                  status === 'authorizedAlways' ||
-                  status === 'whenInUse' ||
-                  status === 'always' ||
-                  status === 'granted';
-                resolve(isGranted);
-              },
-              () => resolve(false),
-            );
-          } else {
-            // Timeout or other error — permission likely granted
-            // GPS just took too long on first try
-            console.log(
-              '📍 GeofenceContext iOS: assuming granted, error:',
-              error.code,
-            );
-            resolve(true);
-          }
-        },
-        {enableHighAccuracy: false, timeout: 3000, maximumAge: 60000},
+        });
+      }
+      // Timeout or other error — permission likely granted, GPS just slow
+      console.log(
+        '📍 GeofenceContext iOS: assuming granted, error:',
+        error?.code,
       );
-    });
+      return true;
+    }
   }, []);
 
   // ── enrichFences ──────────────────────────────────────────
@@ -363,6 +463,56 @@ export const GeofenceProvider = ({children, person}) => {
     [enrichFences],
   );
 
+  // ── Watch lifecycle (single source of truth = watchId.current) ────────────
+  const stopWatch = useCallback(() => {
+    if (watchId.current !== null) {
+      Geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    }
+  }, []);
+
+  const startWatch = useCallback(() => {
+    // Never run two watches at once — re-arming must not leak subscriptions.
+    if (watchId.current !== null) return;
+
+    watchId.current = Geolocation.watchPosition(
+      pos => {
+        if (!isMountedRef.current) return;
+        const newCoords = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          timestamp: pos.timestamp,
+        };
+        setCoords(newCoords);
+        latestCoordsRef.current = newCoords;
+        reEnrichWithCoords(newCoords);
+      },
+      err => {
+        console.warn('📍 watchPosition error:', err?.message);
+        if (!isMountedRef.current) return;
+        setLocationError('GPS signal lost. Please check location services.');
+        // The subscription is dead / GPS availability was lost. Tear it down
+        // and re-arm — otherwise a one-off error leaves the watch silent for
+        // the whole session. Coalesced via rearmTimerRef so a burst of errors
+        // can only restart the watch once per WATCH_REARM_DELAY_MS.
+        stopWatch();
+        if (rearmTimerRef.current) return;
+        rearmTimerRef.current = setTimeout(() => {
+          rearmTimerRef.current = null;
+          if (isMountedRef.current) startWatchRef.current?.();
+        }, WATCH_REARM_DELAY_MS);
+      },
+      WATCH_OPTIONS,
+    );
+  }, [reEnrichWithCoords, stopWatch]);
+
+  // Keep a ref to the latest startWatch so the error handler (captured inside a
+  // long-lived native subscription) can re-arm without a stale closure.
+  useEffect(() => {
+    startWatchRef.current = startWatch;
+  }, [startWatch]);
+
   const resetFenceState = useCallback(errorMessage => {
     setAllFences([]);
     setMatchedFence(null);
@@ -422,61 +572,59 @@ export const GeofenceProvider = ({children, person}) => {
     }
   }, [person, enrichFences, resetFenceState]);
 
-  // Deduplicated refresh
-  const refresh = useCallback(async () => {
+  // Deduplicated refresh.
+  // Cleanup is attached to the promise itself via .finally() rather than to a
+  // single caller's await, so the in-flight ref is released the moment the
+  // refresh settles — success, failure, or timeout — no matter who (if anyone)
+  // is still awaiting it. This is what prevents a wedged ref from permanently
+  // disabling pull-to-refresh for the rest of the session. Belt-and-suspenders
+  // with Task 1: the timeout-safe reads guarantee _doRefresh always settles,
+  // and this guarantees the ref clears even if something unexpected throws.
+  const refresh = useCallback(() => {
     if (inflightRefreshRef.current) return inflightRefreshRef.current;
-    inflightRefreshRef.current = _doRefresh();
-    try {
-      return await inflightRefreshRef.current;
-    } finally {
+    const p = _doRefresh().finally(() => {
       inflightRefreshRef.current = null;
-    }
+    });
+    inflightRefreshRef.current = p;
+    return p;
   }, [_doRefresh]);
+
+  // ── Foreground re-sync ────────────────────────────────────
+  // The GeofenceProvider mounts once per session and never remounts on
+  // screen re-entry, so nothing otherwise recovers a watch the OS paused/killed
+  // while backgrounded. On every background/inactive → active transition, force
+  // a fresh watch and a fresh refresh so coords can't stay frozen at the value
+  // captured before the app was backgrounded.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', next => {
+      const prev = appStateRef.current;
+      appStateRef.current = next;
+      if (/inactive|background/.test(prev) && next === 'active') {
+        // Nudge NetInfo's process-level cache toward truth on foreground so a
+        // network switch made while backgrounded is more likely reflected by
+        // the time the user punches (Task 4 mitigation).
+        if (NetInfo.refresh) NetInfo.refresh().catch(() => {});
+        stopWatch();
+        startWatchRef.current?.();
+        refresh().catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, [stopWatch, refresh]);
 
   // ── Mount ─────────────────────────────────────────────────
   useEffect(() => {
-    let mounted = true;
+    isMountedRef.current = true;
     (async () => {
       const granted = await requestPermission();
-      if (!mounted) return;
+      if (!isMountedRef.current) return;
       if (!granted) {
         setPermissionStatus('denied');
         return;
       }
 
       setPermissionStatus('granted');
-
-      // ── watchPosition with iOS-required options ────────────
-      watchId.current = Geolocation.watchPosition(
-        pos => {
-          if (!mounted) return;
-          const newCoords = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            timestamp: pos.timestamp,
-          };
-          setCoords(newCoords);
-          latestCoordsRef.current = newCoords;
-          reEnrichWithCoords(newCoords);
-        },
-        err => {
-          console.warn('📍 watchPosition error:', err.message);
-          if (mounted)
-            setLocationError(
-              'GPS signal lost. Please check location services.',
-            );
-        },
-        {
-          enableHighAccuracy: true,
-          distanceFilter: 10,
-          interval: 5000, // Android only
-          fastestInterval: 2000, // Android only
-          timeout: 20000, // ← iOS required
-          maximumAge: 10000, // ← iOS required
-          useSignificantChanges: false, // ← iOS required
-        },
-      );
+      startWatch();
 
       try {
         await refresh();
@@ -489,11 +637,12 @@ export const GeofenceProvider = ({children, person}) => {
     });
 
     return () => {
-      mounted = false;
-      if (watchId.current !== null) {
-        Geolocation.clearWatch(watchId.current);
-        watchId.current = null;
+      isMountedRef.current = false;
+      if (rearmTimerRef.current) {
+        clearTimeout(rearmTimerRef.current);
+        rearmTimerRef.current = null;
       }
+      stopWatch();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

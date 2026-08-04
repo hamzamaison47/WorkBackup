@@ -19,6 +19,10 @@ import {
 import {useGeofence} from './GeofenceContext';
 import useAttendanceTheme from './useAttendanceTheme';
 
+// A coordinate older than this is shown as "last known", not "GPS active" — so
+// the badge never implies a fresh fix when the watch has gone quiet.
+const GPS_FRESH_MS = 60_000;
+
 const fmtDist = m =>
   m == null ? '—' : m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
 
@@ -216,6 +220,11 @@ const LocationPickerModal = ({visible, onClose}) => {
 
   const matchedId = matchedFence?.GeoFenceID ?? null;
 
+  // Freshness of the current fix — gates the "GPS active" badge below so a
+  // stale last-known coordinate is presented honestly instead of as live.
+  const coordsAgeMs = coords?.timestamp ? Date.now() - coords.timestamp : null;
+  const coordsFresh = coordsAgeMs != null && coordsAgeMs < GPS_FRESH_MS;
+
   return (
     <Modal
       visible={visible}
@@ -243,12 +252,16 @@ const LocationPickerModal = ({visible, onClose}) => {
           )}
         </View>
 
-        {/* GPS accuracy badge */}
+        {/* GPS accuracy badge — green/"active" only when the fix is recent;
+            otherwise a muted "last known · updating…" so we never claim a live
+            fix while the watch is re-arming. */}
         {coords && !locationLoading && (
-          <View style={S.gpsBadge}>
-            <View style={S.gpsDot} />
-            <Text style={S.gpsTxt}>
-              GPS active · ±{Math.round(coords.accuracy ?? 0)} m accuracy
+          <View style={[S.gpsBadge, !coordsFresh && S.gpsBadgeStale]}>
+            <View style={[S.gpsDot, !coordsFresh && S.gpsDotStale]} />
+            <Text style={[S.gpsTxt, !coordsFresh && S.gpsTxtStale]}>
+              {coordsFresh
+                ? `GPS active · ±${Math.round(coords.accuracy ?? 0)} m accuracy`
+                : 'Last known location · updating…'}
               {coords.latitude
                 ? `  ·  ${coords.latitude.toFixed(
                     4,
@@ -399,6 +412,9 @@ const makeStyles = (C, R, Sh) =>
     },
     gpsDot: {width: 7, height: 7, borderRadius: 4, backgroundColor: C.greenMid},
     gpsTxt: {fontSize: 11, color: C.greenDark, fontWeight: '500'},
+    gpsBadgeStale: {backgroundColor: C.surfaceAlt},
+    gpsDotStale: {backgroundColor: C.inkFaint},
+    gpsTxtStale: {color: C.inkMuted},
 
     banner: {
       flexDirection: 'row',
