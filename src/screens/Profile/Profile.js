@@ -14,6 +14,9 @@ import LogoutAlertModal from '../../components/Alert/LogoutAlertModal';
 // API
 import {ProfilePicture} from '../../API/PersonalInformation/ProfilePicture/ProfilePicture';
 
+// Auth
+import {handleLogoutauth} from '../../Controller/authUtils';
+
 // Utils
 import {conditionalFontScale} from '../../store/utils/scaling';
 
@@ -72,7 +75,9 @@ const Profile = ({navigation}) => {
 
   const confirmLogout = () => {
     setModalVisible(false);
-    navigation.navigate('Login');
+    // Was navigate('Login') with no teardown — the previous user's entire
+    // store survived into the next sign-in.
+    handleLogoutauth(navigation);
   };
 
   const getUserInitials = () => {

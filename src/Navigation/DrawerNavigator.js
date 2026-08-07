@@ -223,7 +223,10 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
 };
 
 // Main Custom Drawer Content
-const CustomDrawerContent = props => {
+// Named export so the logout path can be exercised directly in tests. This is
+// the call site that shipped broken (handleLogoutauth(userData.Provider)) and
+// looked like it worked, so it gets a regression test.
+export const CustomDrawerContent = props => {
   const T = useAppTokens();
   const [modalVisible, setModalVisible] = useState(false);
   const [activeRoute, setActiveRoute] = useState('MainDashboard');
@@ -291,8 +294,8 @@ const CustomDrawerContent = props => {
   const handleLogout = () => setModalVisible(true);
   const confirmLogout = () => {
     setModalVisible(false);
-    handleLogoutauth(userData.Provider);
-    props.navigation.navigate('Login');
+    // handleLogoutauth owns the navigation reset — no navigate() after it.
+    handleLogoutauth(props.navigation);
   };
   const cancelLogout = () => setModalVisible(false);
 

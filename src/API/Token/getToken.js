@@ -23,7 +23,7 @@ export const getToken = async () => {
     const userData = storeState.user.userData;
     const refreshToken = storeState.auth.refreshToken;
     const accessToken = storeState.auth.accessToken;
-
+    console.log('=-=-=-=-=-=-==-=-=-=-=-==-=', userData);
     // ✅ CHANGED: For Dynamics API calls, ALWAYS use Azure AD tokens
     // Try to refresh Azure token if available
     if (userData?.isDynamicsUser === 'Yes' && refreshToken && accessToken) {

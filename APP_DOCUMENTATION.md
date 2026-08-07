@@ -77,7 +77,6 @@ Primary stack screens:
 - `SplashScreen`
 - `Login`
 - `DrawerNavigator`
-- `RequestForRegistration`
 - `CreateAttendanceScreen`
 - `ConfigSelectionScreen`
 - `QRSetupScreen`

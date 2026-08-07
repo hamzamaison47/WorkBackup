@@ -45,6 +45,12 @@ import {
   handleLogin,
 } from '../Controller/authUtils';
 import {
+  LOGIN_ERROR,
+  loginError,
+  describeLoginError,
+  describeMissingEmployeeFields,
+} from '../Controller/authErrors';
+import {
   getActiveConfigData,
   getActiveConfig,
   saveConfig,
@@ -132,117 +138,92 @@ const LoginScreen = () => {
   const [onDialogConfirm, setOnDialogConfirm] = useState(null);
 
   // ── Load user data (biometric path) ───────────────────────
+  // Errors propagate as-is; both callers run them through describeLoginError()
+  // so the user sees the specific cause rather than a catch-all message.
   const loadUserDataFromBiometric = useCallback(
     async (email, provider) => {
+      console.log(`Loading user data for: ${email} (${provider})`);
+
+      // fetchUserInfo() now throws the real cause (network, auth, server,
+      // config) instead of returning [], so an empty result here means the
+      // saved biometric account genuinely has no Dynamics record anymore.
+      const userInfo = await fetchUserInfo(email);
+
+      if (!userInfo || !Array.isArray(userInfo) || userInfo.length === 0) {
+        throw loginError(LOGIN_ERROR.BIOMETRIC_STALE, email);
+      }
+
+      const user = userInfo[0];
+
+      if (!user.EmployeeName || !user.EmployeeId || user.WorkerRecId === 0) {
+        throw loginError(
+          LOGIN_ERROR.INCOMPLETE_PROFILE,
+          describeMissingEmployeeFields(user),
+        );
+      }
+
+      const completeUserData = {
+        userName: user.EmployeeName,
+        employeeName: user.EmployeeName,
+        employeeId: user.EmployeeId,
+        WorkerRecId: user.WorkerRecId,
+        email: email,
+        jobId: user.JobId,
+        department: user.Department,
+        defaultLegalEntity: user.DefaultLegalEntity,
+        PositionDescription: user.PositionDescription,
+        CreatedBy: user.CreatedBy,
+        CreatedDateTime: user.CreatedDateTime,
+        DataAreaId: user.DataAreaId,
+        IsEnrolledInPayroll: user.IsEnrolledInPayroll,
+        JobDescription: user.JobDescription,
+        ModifiedBy: user.ModifiedBy,
+        ModifiedDateTime: user.ModifiedDateTime,
+        OriginalHireDate: user.OriginalHireDate,
+        Partition: user.Partition,
+        Person: user.Person,
+        Positionid: user.Positionid,
+        RecId: user.RecId,
+        isDynamicsUser: user.isDynamicsUser,
+        employeeFullInfo: user,
+      };
+
+      dispatch(setUserData(completeUserData));
+      await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
+
+      // console.log(`Fetching legal entities for employee: ${user.EmployeeId}`);
+      const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+
+      // console.log(`Fetching menu items for person: ${user.Person}`);
+      const menus = await fetchEmployeeMenuItems(user.Person);
+      // console.log(`Fetching menus for person: ${menus}`);
+
+      dispatch(setLegalEntities(legalEntities));
+      dispatch(setMenuItems(menus));
+
       try {
-        console.log(`Loading user data for: ${email} (${provider})`);
+        const palette = await RetrieveFirstOnly();
 
-        const userInfo = await fetchUserInfo(email);
+        // TEMP [PALETTE-DEBUG] — remove after diagnosis
+        console.log('[PALETTE-DEBUG] dispatch payload (biometric login):', {
+          primary: palette?.primaryColor,
+          onPrimary: palette?.onPrimaryColor,
+          selection: palette?.selectionColor,
+        });
 
-        if (!userInfo || !Array.isArray(userInfo) || userInfo.length === 0) {
-          throw new Error(
-            `User Not Found\nNo user account found for email: ${email}\nPossible causes:\n• User not configured in Dynamics\n• Email address mismatch\n• Dynamics VM is down\n• Database connection issue\nPlease contact your administrator.`,
-          );
-        }
-
-        const user = userInfo[0];
-
-        if (!user.EmployeeName || !user.EmployeeId || user.WorkerRecId === 0) {
-          throw new Error(
-            `Invalid User Data\nUser account exists but is incomplete:\n• Employee Name: ${
-              user.EmployeeName || 'Missing'
-            }\n• Employee ID: ${
-              user.EmployeeId || 'Missing'
-            }\n• Worker Record ID: ${
-              user.WorkerRecId || '0 (Invalid)'
-            }\nPossible causes:\n• Incomplete user setup in Dynamics\n• User account not properly configured\n• Data synchronization issue\nPlease contact your administrator.`,
-          );
-        }
-
-        const completeUserData = {
-          userName: user.EmployeeName,
-          employeeName: user.EmployeeName,
-          employeeId: user.EmployeeId,
-          WorkerRecId: user.WorkerRecId,
-          email: email,
-          jobId: user.JobId,
-          department: user.Department,
-          defaultLegalEntity: user.DefaultLegalEntity,
-          PositionDescription: user.PositionDescription,
-          CreatedBy: user.CreatedBy,
-          CreatedDateTime: user.CreatedDateTime,
-          DataAreaId: user.DataAreaId,
-          IsEnrolledInPayroll: user.IsEnrolledInPayroll,
-          JobDescription: user.JobDescription,
-          ModifiedBy: user.ModifiedBy,
-          ModifiedDateTime: user.ModifiedDateTime,
-          OriginalHireDate: user.OriginalHireDate,
-          Partition: user.Partition,
-          Person: user.Person,
-          Positionid: user.Positionid,
-          RecId: user.RecId,
-          isDynamicsUser: user.isDynamicsUser,
-          employeeFullInfo: user,
-        };
-
-        dispatch(setUserData(completeUserData));
-        await dispatch(initializeLegalEntity(user.DefaultLegalEntity));
-
-        // console.log(`Fetching legal entities for employee: ${user.EmployeeId}`);
-        const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
-
-        // console.log(`Fetching menu items for person: ${user.Person}`);
-        const menus = await fetchEmployeeMenuItems(user.Person);
-        // console.log(`Fetching menus for person: ${menus}`);
-
-        dispatch(setLegalEntities(legalEntities));
-        dispatch(setMenuItems(menus));
-
-        try {
-          const palette = await RetrieveFirstOnly();
-
-          // TEMP [PALETTE-DEBUG] — remove after diagnosis
-          console.log('[PALETTE-DEBUG] dispatch payload (biometric login):', {
+        dispatch(
+          setPalette({
             primary: palette?.primaryColor,
             onPrimary: palette?.onPrimaryColor,
             selection: palette?.selectionColor,
-          });
-
-          dispatch(
-            setPalette({
-              primary: palette?.primaryColor,
-              onPrimary: palette?.onPrimaryColor,
-              selection: palette?.selectionColor,
-            }),
-          );
-        } catch (e) {
-          console.warn('Palette hydration failed:', e);
-        }
-
-        console.log('Biometric login successful for:', email);
-        return true;
-      } catch (error) {
-        console.error('Error loading user data from biometric:', error);
-
-        if (error.message && error.message.includes('\n')) {
-          throw error;
-        }
-
-        let errorMessage = 'User Data Load Failed\n';
-        if (error.message) {
-          errorMessage += error.message;
-        } else {
-          errorMessage += 'Could not load user information from Dynamics.';
-        }
-        errorMessage += '\nPossible causes:\n';
-        errorMessage += '• Dynamics VM is down or unreachable\n';
-        errorMessage += '• Network connection issue\n';
-        errorMessage += '• User account not found in system\n';
-        errorMessage += '• Database query timeout\n';
-        errorMessage += 'Please try again or contact your administrator.';
-
-        throw new Error(errorMessage);
+          }),
+        );
+      } catch (e) {
+        console.warn('Palette hydration failed:', e);
       }
+
+      console.log('Biometric login successful for:', email);
+      return true;
     },
     [dispatch],
   );
@@ -309,12 +290,13 @@ const LoginScreen = () => {
       } catch (error) {
         if (cancelled) return;
         console.error('Auto-login error:', error);
-        setAlertMessage(
-          `Auto-Login Failed\n${
-            error.message ||
-            'An unexpected error occurred during automatic login.'
-          }\nPlease login manually.`,
-        );
+
+        const {kind, message} = describeLoginError(error);
+
+        // The user dismissing the biometric prompt is not a failure
+        if (kind === LOGIN_ERROR.CANCELLED) return;
+
+        setAlertMessage(`${message}\n\nYou can also sign in manually.`);
         setAlertModal(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -379,37 +361,9 @@ const LoginScreen = () => {
         setDialogVisible,
         setDialogMessage,
         setAlertModal,
-        message => {
-          let errorMessage = message;
-
-          if (message.includes('Network') || message.includes('network')) {
-            errorMessage = `Network Error\n${message}\nPossible causes:\n• No internet connection\n• Server is unreachable\n• Firewall blocking access`;
-          } else if (
-            message.includes('401') ||
-            message.includes('Unauthorized')
-          ) {
-            errorMessage = `Authentication Failed\n${message}\nPossible causes:\n• Invalid credentials\n• Session expired\n• Account not authorized`;
-          } else if (message.includes('404') || message.includes('Not Found')) {
-            errorMessage = `Server Error\n${message}\nPossible causes:\n• Dynamics VM is down\n• API endpoint not found\n• Configuration is incorrect`;
-          } else if (
-            message.includes('500') ||
-            message.includes('Internal Server')
-          ) {
-            errorMessage = `Dynamics Server Error\n${message}\nPossible causes:\n• Dynamics VM is down or restarting\n• Database connection issue\n• Server maintenance in progress`;
-          } else if (
-            message.includes('timeout') ||
-            message.includes('Timeout')
-          ) {
-            errorMessage = `Connection Timeout\n${message}\nPossible causes:\n• Slow internet connection\n• Dynamics server not responding\n• Request taking too long`;
-          } else if (
-            !message.includes('Error') &&
-            !message.includes('Failed')
-          ) {
-            errorMessage = `${message}`;
-          }
-
-          setAlertMessage(errorMessage);
-        },
+        // handleLogin already classifies the failure via describeLoginError(),
+        // so the message arrives final — no keyword sniffing or re-wrapping.
+        setAlertMessage,
         legalEntity => dispatch(initializeLegalEntity(legalEntity)),
         list => dispatch(setLegalEntities(list)),
         menus => dispatch(setMenuItems(menus)),
@@ -420,18 +374,10 @@ const LoginScreen = () => {
     } catch (error) {
       console.error('Error in handleProviderLogin:', error);
 
-      let errorMessage = 'Login Error\n';
-      if (error.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'An unexpected error occurred during login.';
-      }
-      errorMessage += '\nPlease check:\n';
-      errorMessage += '• Your internet connection\n';
-      errorMessage += '• Dynamics VM status\n';
-      errorMessage += '• Configuration settings';
+      const {kind, message} = describeLoginError(error);
+      if (kind === LOGIN_ERROR.CANCELLED) return;
 
-      setAlertMessage(errorMessage);
+      setAlertMessage(message);
       setAlertModal(true);
     }
   };
@@ -500,19 +446,12 @@ const LoginScreen = () => {
     } catch (error) {
       console.error('Biometric login error:', error);
 
-      let errorMessage = 'Biometric Login Failed\n';
-      if (error.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'An unexpected error occurred.';
-      }
-      errorMessage += '\nPossible solutions:\n';
-      errorMessage += '• Try logging in manually\n';
-      errorMessage += '• Check your internet connection\n';
-      errorMessage += '• Verify Dynamics VM is running\n';
-      errorMessage += '• Re-configure biometric authentication';
+      const {kind, message} = describeLoginError(error);
+      if (kind === LOGIN_ERROR.CANCELLED) return;
 
-      setAlertMessage(errorMessage);
+      setAlertMessage(
+        `${message}\n\nYou can also sign in with Microsoft or Google.`,
+      );
       setAlertModal(true);
     } finally {
       setLoading(false);
@@ -563,13 +502,11 @@ const LoginScreen = () => {
         setDialogVisible,
         setDialogMessage,
         setAlertModal,
+        // Message is already classified by handleLogin — just clear the
+        // overlay and show it verbatim.
         message => {
           setAttendanceLoading(false);
-          let errorMessage = message;
-          if (!message.includes('Error') && !message.includes('Failed')) {
-            errorMessage = `${message}`;
-          }
-          setAlertMessage(errorMessage);
+          setAlertMessage(message);
         },
         legalEntity => dispatch(initializeLegalEntity(legalEntity)),
         list => dispatch(setLegalEntities(list)),
@@ -581,11 +518,11 @@ const LoginScreen = () => {
     } catch (error) {
       console.error('Attendance login error:', error);
       setAttendanceLoading(false);
-      setAlertMessage(
-        `Attendance Login Failed\n${
-          error.message || 'An unexpected error occurred.'
-        }\nPlease check your internet connection and try again.`,
-      );
+
+      const {kind, message} = describeLoginError(error);
+      if (kind === LOGIN_ERROR.CANCELLED) return;
+
+      setAlertMessage(message);
       setAlertModal(true);
     }
   };
@@ -732,7 +669,10 @@ const LoginScreen = () => {
         </View>
       )}
 
-      {/* PopupDialog — kept for handleLogin's dialog flow */}
+      {/* RETIRED: this confirm dialog existed only to ask "Would you like to
+          create an account?" and route to RequestForRegistration. Login
+          failures are now reported through AlertModal with a specific cause,
+          so nothing sets dialogVisible and this could never appear.
       <PopupDialog
         visible={dialogVisible}
         onTouchOutside={() => setDialogVisible(false)}
@@ -759,6 +699,7 @@ const LoginScreen = () => {
           </TouchableOpacity>
         </View>
       </PopupDialog>
+      */}
 
       <AlertModal
         visible={alertModal}

@@ -239,6 +239,40 @@ export const resumeAttendanceService = async savedState => {
 };
 
 /**
+ * resetAttendanceServiceState
+ * Teardown entry point for logout / login / cold start — see
+ * src/Controller/sessionUtils.js.
+ *
+ * Deliberately NOT stopAttendanceService(): that one returns early on iOS and
+ * whenever the native module is missing, which would leave _isRunning and the
+ * clock-in epoch describing the PREVIOUS user's shift in module memory. The
+ * JS-side mirror is zeroed unconditionally here; the native stop is best-effort
+ * on top of it.
+ */
+export const resetAttendanceServiceState = async () => {
+  _isRunning = false;
+  _isOnBreak = false;
+  _clockInEpoch = 0;
+  _breakStartEpoch = 0;
+  _totalBreakMs = 0;
+
+  await clearPersistedFSState();
+
+  if (Platform.OS === 'android' && AttendanceService) {
+    try {
+      AttendanceService.stopService();
+    } catch (err) {
+      if (__DEV__) {
+        console.error(
+          '[AttendanceForegroundService] stopService during reset failed:',
+          err,
+        );
+      }
+    }
+  }
+};
+
+/**
  * isServiceRunning — synchronous status check
  */
 export const isServiceRunning = () => _isRunning;

@@ -1,19 +1,8 @@
 import {configureStore} from '@reduxjs/toolkit';
 import {persistStore, persistReducer} from 'redux-persist';
-import {combineReducers} from '@reduxjs/toolkit';
 import RNFS from 'react-native-fs';
 
-import companyReducer from './slices/companySlice';
-import userReducer from './slices/userSlice';
-import menuItemReducer from './slices/menuItemSlice';
-import languageReducer from './slices/languageSlice';
-import biometricReducer from './slices/biometricSlice';
-import firebaseReducer from './slices/firebaseSlice';
-import authReducer from './slices/authSlice';
-import chatbotReducer from './slices/chatbotSlice';
-import dateFormatReducer from './slices/dateFormatSlice';
-import themeReducer from './slices/themeSlice';
-import colorPaletteReducer from './slices/colorPaletteSlice';
+import rootReducer from './rootReducer';
 
 // Redux Persist configuration
 const persistConfig = {
@@ -57,22 +46,9 @@ const persistConfig = {
   blacklist: [],
 };
 
-// Combine all reducers
-const rootReducer = combineReducers({
-  company: companyReducer,
-  user: userReducer,
-  menuItem: menuItemReducer,
-  language: languageReducer,
-  biometric: biometricReducer,
-  firebase: firebaseReducer,
-  auth: authReducer,
-  chatbot: chatbotReducer, // ✅ ADD THIS
-  dateFormat: dateFormatReducer, // ← add this
-  theme: themeReducer,
-  colorPalette: colorPaletteReducer,
-});
-
 // Create persisted reducer
+// rootReducer wraps combineReducers to handle RESET_APP_STATE — see
+// ./rootReducer.js for the preserve list.
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 // Configure store with persisted reducer

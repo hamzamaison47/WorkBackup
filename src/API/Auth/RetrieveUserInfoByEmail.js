@@ -8,19 +8,13 @@ const RetrieveUserInfoByEmail = async ({email}) => {
   try {
     // Get configuration from secure storage
     const config = await getActiveConfigData();
-    console.log(
-      '🔍 Full active config keys:',
-      JSON.stringify(Object.keys(config || {})),
-    );
-    console.log('🔍 Full active config:', JSON.stringify(config));
-
-    // console.log({config});
 
     if (!config || !config.resource) {
       throw new Error('No configuration found. Please scan QR code first.');
     }
 
     const accessToken = await getToken();
+    console.log(accessToken);
     const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
       <soapenv:Header>

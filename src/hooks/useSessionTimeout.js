@@ -2,11 +2,8 @@ import {useState, useEffect, useRef} from 'react';
 import {AppState} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
-import {
-  setLastBackgroundTime,
-  clearAuthTokens,
-} from '../store/slices/authSlice';
-import {clearUserData} from '../store/slices/userSlice';
+import {setLastBackgroundTime} from '../store/slices/authSlice';
+import {handleLogoutauth} from '../Controller/authUtils';
 
 const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
@@ -22,13 +19,9 @@ const useSessionTimeout = () => {
 
   const handleOkPress = () => {
     setShowModal(false);
-    // Clear auth tokens and user data from Redux
-    dispatch(clearAuthTokens());
-    dispatch(clearUserData());
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'Login'}],
-    });
+    // Session expiry IS a logout. This used to clear 2 of 11 slices, leaving
+    // menus, company, firebase identity, chatbot and the API cache behind.
+    handleLogoutauth(navigation);
   };
 
   useEffect(() => {

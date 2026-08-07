@@ -5,7 +5,9 @@ import SplashScreens from '../screens/SplashScreens';
 import LoginScreen from '../screens/LoginScreen';
 import DrawerNavigator from './DrawerNavigator';
 import QRSetupScreen from '../screens/Setup/QRSetupScreen';
-import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
+// RETIRED: self-service registration is no longer offered in the app.
+// Accounts are provisioned in Dynamics by HR/admin instead.
+// import RequestForRegistration from '../screens/RequestForRegistration/RequestForRegistration';
 import ConfigSelectionScreen from '../screens/Setup/ConfigSelectionScreen';
 import CreateAttendanceScreen from '../screens/Attendance/CreateAttendanceScreen';
 import SettingsScreen from '../screens/Settings/Settingsscreen';
@@ -62,6 +64,8 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
+      {/* RETIRED: the RequestForRegistration route is unregistered, so nothing
+          can navigate to it. Unregistered users are now told to contact HR.
       <Stack.Screen
         name="RequestForRegistration"
         options={{headerShown: false}}>
@@ -71,6 +75,7 @@ const AppNavigator = () => {
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>
+      */}
       <Stack.Screen
         name="CreateAttendanceScreen"
         options={{

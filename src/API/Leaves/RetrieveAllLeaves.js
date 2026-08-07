@@ -15,6 +15,7 @@ const RetrieveAllLeaves = async ({employeeId}) => {
     }
 
     const token = await getToken();
+    console.log('Leave Request Retrieve token', token);
 
     const soapBody = `
       <findByEmployee xmlns="http://tempuri.org">

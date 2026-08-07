@@ -14,7 +14,7 @@ import {
   StyleSheet,
   BackHandler,
 } from 'react-native';
-import {useSelector, useDispatch} from 'react-redux';
+import {useSelector} from 'react-redux';
 import {
   useFocusEffect,
   useNavigation,
@@ -46,7 +46,6 @@ const {width} = Dimensions.get('window');
 const AttendanceManagement = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const dispatch = useDispatch();
 
   const isFromTab = route?.params?.fromTab === true;
   const fromLogin = route?.params?.fromLogin === true;
@@ -138,7 +137,7 @@ const AttendanceManagement = () => {
 
   const confirmLogout = () => {
     setLogoutModalVisible(false);
-    handleLogoutauth(navigation, dispatch);
+    handleLogoutauth(navigation);
   };
 
   useFocusEffect(

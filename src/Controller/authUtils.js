@@ -12,24 +12,25 @@ import {
   setAccessToken,
   setIdToken,
   setRefreshToken,
-  clearAuthTokens,
 } from '../store/slices/authSlice';
 import {
   setFirebaseUserData,
-  clearFirebaseData,
   setFirebaseInitialized,
 } from '../store/slices/firebaseSlice';
-import {clearBiometric} from '../store/slices/biometricSlice';
-import {setSkipLoginAfterRestart} from '../store/slices/languageSlice';
-import {clearUserData} from '../store/slices/userSlice';
+import {setUserData as setUserDataAction} from '../store/slices/userSlice';
+import {clearSession} from './sessionUtils';
 
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
-import {chatbotClearMessages} from '../store/slices/chatbotSlice';
-import {apiCache} from '../utils/apiCache';
 import {RetrieveFirstOnly} from '../API/ColorPalette/RetrieveFirstOnly';
 import {setPalette} from '../store/slices/colorPaletteSlice';
+import {
+  LOGIN_ERROR,
+  loginError,
+  describeLoginError,
+  describeMissingEmployeeFields,
+} from './authErrors';
 
 // Polyfill at the top of your authUtils file
 if (typeof global.atob === 'undefined') {
@@ -39,113 +40,28 @@ if (typeof global.btoa === 'undefined') {
   global.btoa = btoa;
 }
 
-// export const handleLogoutauth = async (navigation, dispatch) => {
-//   try {
-//     // Clear AsyncStorage tokens
-//     await AsyncStorage.multiRemove(['accessToken', 'idToken', 'refreshToken']);
-
-//     // Clear Redux store
-//     dispatch(setUserData(null)); // Clear user data
-//     dispatch(setLegalEntities([])); // Clear legal entities
-//     dispatch(setMenuItems([])); // Clear menu items
-
-//     // Clear accounts list but keep biometric credentials
-//     // This ensures only current logged-in account shows in BiometricSettings
-//     try {
-//       const AsyncStorage = (
-//         await import('@react-native-async-storage/async-storage')
-//       ).default;
-
-//       // Clear only the accounts list - biometric credentials stay in Keychain
-//       await AsyncStorage.removeItem('accounts_list');
-
-//       // // Clear any biometric credentials
-//       // try {
-//       //   const {disableBiometric} = await import(
-//       //     '../store/utils/biometricUtils'
-//       //   );
-//       //   await disableBiometric();
-//       // } catch (error) {
-//       //   console.log('Error clearing biometric credentials:', error);
-//       // }
-
-//       // console.log('Logged out - Accounts list cleared');
-//     } catch (error) {
-//       console.log('Error clearing accounts list:', error);
-//     }
-
-//     // Navigate to Login screen
-//     navigation.reset({
-//       index: 0,
-//       routes: [{name: 'Login'}],
-//     });
-//   } catch (error) {
-//     console.error('Logout error:', error);
-//     // Fallback navigation
-//     navigation.reset({
-//       index: 0,
-//       routes: [{name: 'Login'}],
-//     });
-//   }
-// };
-// export const handleLogoutauth = async (navigation, dispatch) => {
-//   try {
-//     // Cleanup Firebase service
-//     await firebaseService.cleanup();
-
-//     // Clear Redux store - all state management now via Redux
-//     dispatch(clearAuthTokens());
-//     dispatch(clearUserData()); // ← fixed: was setUserData(null) — never imported
-//     dispatch(clearFirebaseData());
-//     dispatch(clearBiometric());
-//     dispatch(setSkipLoginAfterRestart(false));
-
-//     console.log('User logged out and Redux state cleared');
-
-//     // Navigate to Login screen and reset the stack
-//     navigation.reset({
-//       index: 0,
-//       routes: [{name: 'Login'}],
-//     });
-//   } catch (error) {
-//     console.error('Logout error:', error);
-//     navigation.reset({
-//       index: 0,
-//       routes: [{name: 'Login'}],
-//     });
-//   }
-// };
-
-export const handleLogoutauth = async (navigation, dispatch) => {
+/**
+ * The one logout. Every entry point must route through this.
+ *
+ * Takes ONLY navigation. The old (navigation, dispatch) signature is what let
+ * DrawerNavigator call `handleLogoutauth(userData.Provider)` and fail silently
+ * — teardown threw on the undefined dispatch, the catch threw again on the
+ * undefined navigation, and the caller's own navigate() made it look like a
+ * clean logout. With no dispatch to get wrong, that class of bug is gone:
+ * clearSession() reaches the store through the imported singleton.
+ *
+ * Navigation happens in `finally`, so the user always lands on Login even if
+ * teardown fails — but clearSession() itself never throws, and isolates each
+ * step, so a partial failure still wipes everything it can.
+ */
+export const handleLogoutauth = async navigation => {
   try {
-    // 1. 🧹 WIPE THE API CACHE FIRST
-    // This ensures no cached attendance/profile data remains in memory
-    apiCache.clear();
-    console.log('API Cache cleared successfully');
-
-    // 2. Cleanup Firebase service
-    await firebaseService.cleanup();
-
-    // 3. Clear Redux store
-    dispatch(clearAuthTokens());
-    dispatch(clearUserData());
-    dispatch(clearFirebaseData());
-    dispatch(clearBiometric());
-    dispatch(setSkipLoginAfterRestart(false));
-
-    // ✅ Add this: Clear chatbot history so the new user starts fresh
-    dispatch(chatbotClearMessages());
-
-    console.log('User logged out and Redux state cleared');
-
-    // 4. Navigate to Login screen and reset the stack
-    navigation.reset({
-      index: 0,
-      routes: [{name: 'Login'}],
-    });
+    await clearSession();
+    console.log('User logged out — session cleared');
   } catch (error) {
     console.error('Logout error:', error);
-    navigation.reset({
+  } finally {
+    navigation?.reset?.({
       index: 0,
       routes: [{name: 'Login'}],
     });
@@ -173,7 +89,7 @@ export const handleLogin = async (
     const scan = await getActiveConfigData();
     if (!scan || Object.keys(scan).length === 0) {
       setAlertMessage(
-        'Login failed\nPlease setup your environment configuration first',
+        describeLoginError(loginError(LOGIN_ERROR.NO_CONFIG)).message,
       );
 
       if (setOnAlertConfirm) {
@@ -195,6 +111,13 @@ export const handleLogin = async (
     const result = await authorize(config);
 
     if (result) {
+      // Wipe the outgoing user BEFORE the new tokens land. Ordering is load
+      // bearing: clearSession() after these dispatches would delete the
+      // credentials we just obtained. Doing it here also means a login that
+      // fails later (unregistered email, incomplete profile, network) cannot
+      // leave the previous user's record sitting alongside the new tokens.
+      await clearSession();
+
       const tokenToUse =
         provider === 'Azure' ? result.accessToken : result.idToken;
 
@@ -221,28 +144,47 @@ export const handleLogin = async (
     }
   } catch (error) {
     console.error('Login error details:', error);
-    console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
 
-    setAlertMessage(`Login failed: ${error.message}. Please try again.`);
+    const {kind, message} = describeLoginError(error);
+
+    // Backing out of the Microsoft/Google sheet is a deliberate user action,
+    // not a failure — returning to the login screen is feedback enough.
+    if (kind === LOGIN_ERROR.CANCELLED) {
+      return;
+    }
+
+    // The login got far enough to write an identity into the store before it
+    // failed. Leaving that behind is how a half-session survives to the next
+    // attempt — and how the app's own state stops matching who is signed in.
+    await clearSession();
+
+    setAlertMessage(message);
     setAlertModal(true);
   } finally {
     setLoading(false);
   }
 };
 
+/**
+ * NOTE: setDialogVisible / setDialogMessage / setOnDialogConfirm are no longer
+ * used. They drove the "Would you like to create an account?" confirm dialog,
+ * which navigated to the now-retired RequestForRegistration screen. Failures
+ * are thrown instead and surfaced as alerts by handleLogin's catch block.
+ * The parameters are kept so the positional call sites stay valid.
+ */
 export const handleSuccessfulLogin = async (
   accessToken,
   authResult,
   setUserData,
   navigation,
-  setDialogVisible,
-  setDialogMessage,
+  setDialogVisible, // retired — see note above
+  setDialogMessage, // retired — see note above
   initializeLegalEntity,
   setLegalEntities,
   setMenuItems,
   provider,
-  setOnDialogConfirm,
+  setOnDialogConfirm, // retired — see note above
 ) => {
   try {
     const decodedAccessToken = jwtDecode(accessToken);
@@ -251,62 +193,23 @@ export const handleSuccessfulLogin = async (
     const userEmailOrUPN =
       provider === 'Azure' ? decodedAccessToken.upn : decodedAccessToken.email;
 
+    // fetchUserInfo() throws on any transport/config/server failure, so an
+    // empty result here really does mean "no employee record for this email".
     const userInfo = await fetchUserInfo(userEmailOrUPN);
 
-    if (
-      !userInfo.length ||
-      !userInfo[0].EmployeeName ||
-      !userInfo[0].EmployeeId ||
-      userInfo[0].WorkerRecId === 0
-    ) {
-      setDialogMessage(
-        "Incorrect Login Details.\nYour email isn't registered in our system. Would you like to create an account?",
-      );
-
-      if (setOnDialogConfirm) {
-        setOnDialogConfirm(
-          () => () => navigation.navigate('RequestForRegistration'),
-        );
-      }
-
-      setDialogVisible(true);
-      return;
+    if (!userInfo.length) {
+      throw loginError(LOGIN_ERROR.NOT_REGISTERED, userEmailOrUPN);
     }
 
     const user = userInfo[0];
 
-    await initializeLegalEntity(user.DefaultLegalEntity);
-
-    const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
-    const menus = await fetchEmployeeMenuItems(user.Person);
-    setLegalEntities(legalEntities);
-    setMenuItems(menus);
-
-    try {
-      const palette = await RetrieveFirstOnly();
-
-      // TEMP [PALETTE-DEBUG] — remove after diagnosis
-      console.log('[PALETTE-DEBUG] dispatch payload (SSO login):', {
-        primary: palette?.primaryColor,
-        onPrimary: palette?.onPrimaryColor,
-        selection: palette?.selectionColor,
-      });
-
-      store.dispatch(
-        setPalette({
-          primary: palette.primaryColor,
-          onPrimary: palette.onPrimaryColor,
-          selection: palette.selectionColor,
-        }),
+    // The record exists but Dynamics left required fields empty. Distinct from
+    // "not registered" — self-registration would not fix this, HR must.
+    if (!user.EmployeeName || !user.EmployeeId || user.WorkerRecId === 0) {
+      throw loginError(
+        LOGIN_ERROR.INCOMPLETE_PROFILE,
+        describeMissingEmployeeFields(user),
       );
-
-      // TEMP [PALETTE-DEBUG] — remove after diagnosis
-      console.log(
-        '[PALETTE-DEBUG] store after dispatch:',
-        store.getState().colorPalette,
-      );
-    } catch (e) {
-      console.warn('Palette hydration failed:', e);
     }
 
     const completeUserData = {
@@ -335,17 +238,58 @@ export const handleSuccessfulLogin = async (
       employeeFullInfo: user,
     };
 
+    // Identity must be IN THE STORE before any further service call.
+    // getToken() reads store.getState().user.userData.isDynamicsUser to decide
+    // between a delegated user token and a client-credentials app token. While
+    // that is null every call silently runs as the app's service principal —
+    // which is how an employee with no D365 user record still got menus back.
+    //
+    // The setUserData prop is the screen's local React state and does NOT
+    // reach the store, so it cannot be relied on here. Dispatch explicitly,
+    // then call the prop so the screen stays in sync.
+    store.dispatch(setUserDataAction(completeUserData));
     setUserData(completeUserData);
 
-    console.log('Clearing previous Firebase data before setting new user data');
-    store.dispatch(clearFirebaseData());
-    store.dispatch(chatbotClearMessages());
+    await initializeLegalEntity(user.DefaultLegalEntity);
 
-    console.log(
-      'Setting Firebase user data for:',
-      userEmailOrUPN,
-      user.EmployeeId,
-    );
+    // const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+    // const menus = await fetchEmployeeMenuItems(user.Person);
+    // setLegalEntities(legalEntities);
+    // setMenuItems(menus);
+
+    const legalEntities = await fetchEmployeeLegalEntities(user.EmployeeId);
+    const menus = await fetchEmployeeMenuItems(user.Person);
+
+    // No menus means either D365 rejected the delegated token (the user has
+    // no D365 user record) or the account genuinely has nothing assigned.
+    // Either way there is no usable app behind this login — stop here rather
+    // than dropping the user into an empty shell. fetchEmployeeMenuItems
+    // swallows its errors and returns [], so this is the only signal we get.
+    if (!menus.length) {
+      throw loginError(LOGIN_ERROR.NO_ACCESS, userEmailOrUPN);
+    }
+
+    setLegalEntities(legalEntities);
+    setMenuItems(menus);
+
+    try {
+      const palette = await RetrieveFirstOnly();
+
+      store.dispatch(
+        setPalette({
+          primary: palette.primaryColor,
+          onPrimary: palette.onPrimaryColor,
+          selection: palette.selectionColor,
+        }),
+      );
+    } catch (e) {
+      console.warn('Palette hydration failed:', e);
+    }
+
+    // The previous user's Firebase and chatbot state is already gone —
+    // handleLogin ran clearSession() before this point. Clearing again here
+    // would be a no-op that implies teardown is this function's job.
+
     store.dispatch(
       setFirebaseUserData({
         userEmail: userEmailOrUPN,
@@ -357,15 +301,9 @@ export const handleSuccessfulLogin = async (
     store.dispatch(setFirebaseInitialized(true));
 
     try {
-      console.log('Starting Firebase device registration...');
       const registrationResult = await firebaseService.syncDeviceAfterLogin();
 
-      if (registrationResult.success) {
-        console.log(
-          'Firebase registration successful:',
-          registrationResult.message,
-        );
-      } else {
+      if (!registrationResult.success) {
         console.warn(
           'Firebase registration warning:',
           registrationResult.message,
@@ -393,17 +331,26 @@ export const handleSuccessfulLogin = async (
   }
 };
 
+/**
+ * Looks up the Dynamics employee record for an email.
+ *
+ * Errors are deliberately NOT swallowed here. Returning [] on failure is what
+ * made every network/server/config problem surface as "your email isn't
+ * registered" — an empty array must mean exactly one thing: Dynamics has no
+ * employee record for this address.
+ */
 export const fetchUserInfo = async email => {
   try {
+    // No email claim on the token — a sign-in/scope problem, not a missing user
     if (!email) {
       console.error('Invalid email input:', email);
-      return [];
+      throw loginError(LOGIN_ERROR.NO_EMAIL_CLAIM);
     }
 
     const data = await RetrieveUserInfoByEmail({email});
     if (!data || !Array.isArray(data)) {
       console.error('Unexpected user data format:', data);
-      return [];
+      throw loginError(LOGIN_ERROR.BAD_RESPONSE);
     }
 
     return data.map(item => ({

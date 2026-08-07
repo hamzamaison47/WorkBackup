@@ -18,13 +18,14 @@ import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
-import AIChatbot from '../components/AIChatbot/AIChatbot';
-import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
+// import AIChatbot from '../components/AIChatbot/AIChatbot';
+// import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
 import QuickAccessSheet, {
   QuickAccessButton,
 } from '../components/MainDashboard/QuickAccessSheet';
 
 import MasterService from '../services/MasterService';
+import {handleLogoutauth} from '../Controller/authUtils';
 import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {useDashboardDimensions} from '../hooks/useDashboardDimensions';
 import {useDashboardData} from '../hooks/useDashboardData';
@@ -126,12 +127,14 @@ const MainDashboard = () => {
 
   const confirmLogout = () => {
     setModalVisible(false);
-    navigation.reset({index: 0, routes: [{name: 'Login'}]});
+    // Reached via the hardware back button (useFocusEffect above), so this is
+    // an easy path to hit. Was a bare navigation.reset() with no teardown.
+    handleLogoutauth(navigation);
   };
 
   const cancelLogout = () => setModalVisible(false);
 
-  const [chatVisible, setChatVisible] = useState(false);
+  // const [chatVisible, setChatVisible] = useState(false);
 
   return (
     <>

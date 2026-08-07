@@ -13,7 +13,9 @@ const RetrieveEmployeeMenuItems = async ({person}) => {
       throw new Error('No configuration found. Please scan QR code first.');
     }
 
+    console.log('menu item api');
     const token = await getToken();
+    console.log('menu item token', token);
 
     const soapBody = `
       <retrieveUserMenuItems xmlns="http://tempuri.org">
@@ -50,7 +52,7 @@ const RetrieveEmployeeMenuItems = async ({person}) => {
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveUserMenuItemsResponse']?.[
         'result'
       ];
-    console.log('Menu Item Result :', result);
+    // console.log('Menu Item Result :', result);
     if (!result || Object.keys(result).length === 0) {
       console.log('No menu items returned from backend');
       return [];

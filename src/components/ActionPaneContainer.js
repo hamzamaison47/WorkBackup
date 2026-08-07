@@ -26,10 +26,7 @@ import {
   clearInAppNotifications,
 } from '../store/slices/firebaseSlice';
 
-import {
-  setSelectedLegalEntity,
-  resetCompanyState,
-} from '../store/slices/companySlice';
+import {setSelectedLegalEntity} from '../store/slices/companySlice';
 import {setMenuItems} from '../store/slices/menuItemSlice';
 
 import AlertModal from './Alert/AlertModal';
@@ -42,7 +39,10 @@ import SearchBar from './SearchBar';
 import FilterPanel from './Filters/FilterPanel';
 
 import CustomTabBar from '../Controller/CustomTabBar';
-import {fetchEmployeeMenuItemsByCompany} from '../Controller/authUtils';
+import {
+  fetchEmployeeMenuItemsByCompany,
+  handleLogoutauth,
+} from '../Controller/authUtils';
 import {RetrieveEmployeeNotification} from '../API/Notification/RetriveEmployeeNotification';
 import styles from '../styles/styles';
 
@@ -601,7 +601,6 @@ const ActionPaneContainer = ({
   filterCounts = {},
   headerFilter = null,
 }) => {
-  const [modalVisible, setModalVisible] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [notificationVisible, setNotificationVisible] = useState(false);
@@ -611,6 +610,12 @@ const ActionPaneContainer = ({
   const [activeTab, setActiveTab] = useState('MainDashboard');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [headerMenuVisible, setHeaderMenuVisible] = useState(false);
+
+  // Logout confirmation owns its own flag. It used to share `modalVisible`
+  // with closeAllOverlays(), which meant opening the dialog was a close
+  // immediately followed by an open on the same state.
+  const [logoutVisible, setLogoutVisible] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -656,7 +661,7 @@ const ActionPaneContainer = ({
   const closeAllOverlays = useCallback(() => {
     setDropdownVisible(false);
     setNotificationVisible(false);
-    setModalVisible(false);
+    setHeaderMenuVisible(false);
     navigation.closeDrawer?.();
   }, [navigation]);
 
@@ -693,28 +698,53 @@ const ActionPaneContainer = ({
   }, [userData?.employeeId]);
 
   useEffect(() => {
+    // Stop polling the moment logout starts — otherwise a request fired with
+    // the outgoing user's employeeId can land after the state reset.
+    if (loggingOut) {
+      return undefined;
+    }
     const interval = setInterval(fetchNotifications, 30000);
     fetchNotifications();
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, [fetchNotifications, loggingOut]);
 
   const toggleDrawer = useCallback(() => {
     closeAllOverlays();
     navigation.toggleDrawer?.();
   }, [closeAllOverlays, navigation]);
+
   const toggleNotification = () => {
     setDropdownVisible(false);
     setNotificationVisible(prev => !prev);
   };
+
   const handleLogout = () => {
     closeAllOverlays();
-    setModalVisible(true);
+    setLogoutVisible(true);
   };
-  const confirmLogout = () => {
-    dispatch(resetCompanyState());
-    setModalVisible(false);
-    navigation.navigate('Login');
+
+  const confirmLogout = async () => {
+    if (loggingOut) {
+      return;
+    }
+    setLoggingOut(true);
+    setLogoutVisible(false);
+    closeAllOverlays();
+
+    try {
+      // Clears the API cache, tears down Firebase, wipes every Redux slice
+      // except biometric enrolment and device preferences, drops the
+      // attendance state held outside Redux, and resets the nav stack to
+      // Login. Single source of truth for teardown — do not clear slices
+      // piecemeal here, or the next sign-in inherits whatever was missed.
+      await handleLogoutauth(navigation);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
+
   const handleTabPress = tabName => {
     setActiveTab(tabName);
     navigation.navigate(tabName, {userData});
@@ -836,11 +866,11 @@ const ActionPaneContainer = ({
         onPress={() => setAlertModal(false)}
       />
       <LogoutAlertModal
-        visible={modalVisible}
+        visible={logoutVisible}
         heading={t('profile.logoutConfirm')}
         text={t('profile.logoutConfirm')}
         onConfirm={confirmLogout}
-        onCancel={() => setModalVisible(false)}
+        onCancel={() => setLogoutVisible(false)}
       />
       <NotificationPanel
         visible={notificationVisible}

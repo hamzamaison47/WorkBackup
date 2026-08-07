@@ -1,5 +1,7 @@
 module.exports = {
   preset: 'react-native',
+  setupFiles: ['<rootDir>/__tests__/setup/nativeMocks.js'],
+  testPathIgnorePatterns: ['<rootDir>/__tests__/setup/'],
   moduleNameMapper: {
     '@react-native-community/netinfo':
       '<rootDir>/node_modules/@react-native-community/netinfo/jest/netinfo-mock.js',
