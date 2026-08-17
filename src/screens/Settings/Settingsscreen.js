@@ -215,14 +215,14 @@ const SettingsScreen = ({navigation: navProp}) => {
         {/* ── GENERAL ──────────────────────────────────────────────────── */}
         <AnimatedCard delay={0}>
           <CardHeading label="GENERAL" />
-          <SettingRow
+          {/* <SettingRow
             icon="globe"
             iconColor={AppTokens.blue}
             iconBg={AppTokens.blueBg}
             title={t('profile.language') || 'Language'}
             subtitle={`Current: ${langLabel}`}
             onPress={() => setLanguageModalVisible(true)}
-          />
+          /> */}
           <SettingRow
             icon={isDark ? 'moon' : 'sun'}
             iconColor={isDark ? AppTokens.purple : AppTokens.amber}
@@ -232,7 +232,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             rightElement={ThemeToggle}
             isLast
           />
-          <SettingRow
+          {/* <SettingRow
             icon="clock"
             iconColor={AppTokens.indigo}
             iconBg={AppTokens.indigoBg}
@@ -240,7 +240,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             subtitle="Manage your date & time format preferences."
             onPress={() => navigation.navigate('DateFormatSettingsScreen')}
             isLast
-          />
+          /> */}
           {/* {!!accessToken && (
             <SettingRow
               icon="calendar"

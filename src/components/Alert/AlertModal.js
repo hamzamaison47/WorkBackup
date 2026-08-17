@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import {useSelector} from 'react-redux';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import {translate as t} from '../../store/utils/translate';
 import styles from '../../styles/styles';
@@ -37,25 +38,25 @@ const AlertModal = ({
   const getAlertConfig = () => {
     const configs = {
       info: {
-        icon: 'information-outline',
+        icon: 'information',
         iconColor: P.primary,
         primaryColor: P.primary,
         iconBg: '#E3F2FD',
       },
       success: {
-        icon: 'check-circle-outline',
+        icon: 'check-circle',
         iconColor: '#10B981',
         primaryColor: '#10B981',
         iconBg: '#ECFDF5',
       },
       warning: {
-        icon: 'alert-outline',
+        icon: 'alert-circle',
         iconColor: '#F59E0B',
         primaryColor: '#F59E0B',
         iconBg: '#FEF3E7',
       },
       error: {
-        icon: 'close-circle-outline',
+        icon: 'close-circle',
         iconColor: '#DC2626',
         primaryColor: '#DC2626',
         iconBg: '#FEF2F2',
@@ -161,6 +162,24 @@ const AlertModal = ({
                   transform: [{translateY: translateYAnim}, {scale: scaleAnim}],
                 },
               ]}>
+              {/* Icon Section */}
+              <View style={styles.Alert_iconContainer}>
+                <Animated.View
+                  style={[
+                    styles.Alert_iconBackground,
+                    {
+                      backgroundColor: alertConfig.iconBg,
+                      transform: [{scale: pulseAnim}],
+                    },
+                  ]}>
+                  <MaterialCommunityIcons
+                    name={finalIconName}
+                    size={styles.Alert_iconSize}
+                    color={alertConfig.iconColor}
+                  />
+                </Animated.View>
+              </View>
+
               {/* Content Section */}
               <View style={styles.Alert_contentContainer}>
                 <Text style={styles.Alert_heading}>{heading}</Text>

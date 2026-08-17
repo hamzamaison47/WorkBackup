@@ -4260,6 +4260,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
 
+  Alert_iconContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+  },
+
+  Alert_iconBackground: {
+    width: conditionalScale(56, 60, 64, 72),
+    height: conditionalScale(56, 60, 64, 72),
+    borderRadius: conditionalScale(28, 30, 32, 36),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  Alert_iconSize: conditionalFontScale(26, 28, 30, 34),
+
   Alert_modalContainer: {
     backgroundColor: '#ffffff',
     borderRadius: borderRadius.xl,
@@ -4435,6 +4450,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.md,
   },
+
+  DeleteAlert_iconContainer: {
+    alignItems: 'center',
+    marginBottom: conditionalVerticalScale(16, 20, 22, 26),
+  },
+
+  DeleteAlert_iconBackground: {
+    width: conditionalScale(56, 60, 64, 72),
+    height: conditionalScale(56, 60, 64, 72),
+    borderRadius: conditionalScale(28, 30, 32, 36),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  DeleteAlert_iconSize: conditionalFontScale(26, 28, 30, 34),
 
   DeleteAlert_modalContainer: {
     backgroundColor: '#ffffff',
@@ -9038,5 +9068,190 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
 });
+
+// styles.js — add near the bottom, before `export default styles;`
+export const getDSRStyles = tokens =>
+  StyleSheet.create({
+    DSR_SafeArea: {
+      flex: 1,
+      backgroundColor: tokens.formPageBg,
+    },
+    DSR_FormContainer: {
+      paddingHorizontal: conditionalScale(12, 14, 16, 18),
+      paddingTop: conditionalVerticalScale(8, 10, 12, 14),
+      paddingBottom: conditionalVerticalScale(80, 85, 90, 100),
+    },
+    DSR_Label: {
+      fontSize: conditionalFontScale(13, 13.5, 14, 14),
+      marginTop: conditionalVerticalScale(14, 16, 18, 20),
+      fontWeight: '600',
+      color: tokens.titleText,
+      letterSpacing: 0.2,
+    },
+    DSR_Input: {
+      borderWidth: moderateScale(1),
+      borderColor: tokens.inputBorder,
+      borderRadius: borderRadius.lg,
+      padding: conditionalScale(11, 12, 13, 14),
+      marginTop: conditionalVerticalScale(5, 6, 7, 8),
+      fontSize: conditionalFontScale(14, 14.5, 15, 15),
+      color: tokens.inputText,
+      backgroundColor: tokens.inputBg,
+    },
+    DSR_Disabled: {
+      backgroundColor: tokens.disabledBg,
+      color: tokens.disabledText,
+      borderColor: tokens.disabledBorder,
+    },
+    DSR_DateSelector: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: moderateScale(1),
+      borderColor: tokens.inputBorder,
+      borderRadius: borderRadius.lg,
+      padding: conditionalScale(11, 12, 13, 14),
+      marginTop: conditionalVerticalScale(5, 6, 7, 8),
+      backgroundColor: tokens.inputBg,
+    },
+    DSR_DateText: {
+      fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+      color: tokens.inputText,
+      letterSpacing: 0.2,
+      flex: 1,
+    },
+    DSR_DropdownPlaceholder: {
+      color: tokens.placeholderText,
+      fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    },
+    DSR_DropdownSelectedText: {
+      color: tokens.inputText,
+      fontWeight: '400',
+      fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
+    },
+    DSR_DropdownItemText: {
+      color: tokens.inputText,
+      fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
+    },
+    DSR_DropdownContainer: {
+      borderWidth: moderateScale(0.5),
+      borderColor: tokens.dropdownBorder,
+      borderRadius: borderRadius.md,
+      backgroundColor: tokens.dropdownBg,
+    },
+    DSR_DropdownItemContainer: {
+      paddingHorizontal: conditionalScale(6, 7, 8, 9),
+      paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
+      borderBottomWidth: moderateScale(1),
+      borderBottomColor: tokens.dropdownItemBorder,
+    },
+    DSR_DropdownSearchInput: {
+      color: tokens.inputText,
+      backgroundColor: tokens.dropdownBg,
+      fontSize: conditionalFontScale(10, 10.5, 11, 11.5),
+      borderBottomWidth: moderateScale(1),
+      borderBottomColor: tokens.dropdownItemBorder,
+    },
+    DSR_ProcessingOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: tokens.overlayBg,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+    },
+    DSR_ProcessingContainer: {
+      backgroundColor: tokens.cardBg,
+      borderRadius: borderRadius.xl,
+      padding: conditionalScale(22, 24, 26, 28),
+      alignItems: 'center',
+      minWidth: conditionalScale(180, 190, 200, 210),
+      borderWidth: moderateScale(1),
+      borderColor: tokens.cardDivider,
+    },
+    DSR_ProcessingText: {
+      marginTop: conditionalVerticalScale(11, 13, 15, 17),
+      fontSize: conditionalFontScale(15, 16, 17, 18),
+      fontWeight: '600',
+      color: tokens.titleText,
+      letterSpacing: 0.3,
+    },
+    SRBtn_Footer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: conditionalVerticalScale(8, 10, 12, 14),
+      paddingHorizontal: conditionalScale(6, 8, 10, 12),
+      borderTopWidth: 1,
+      borderTopColor: tokens.cardDivider,
+      backgroundColor: tokens.cardBg,
+      minHeight: conditionalVerticalScale(60, 65, 70, 70),
+      gap: conditionalScale(6, 8, 10, 12),
+      zIndex: 10,
+    },
+    SRBtn_CancelButton: {
+      borderColor: tokens.blue,
+      backgroundColor: 'transparent',
+    },
+    SRBtn_CancelButtonText: {
+      fontWeight: '600',
+      fontSize: conditionalFontScale(12, 13, 14, 15),
+      color: tokens.blue,
+      textAlign: 'center',
+      includeFontPadding: false,
+    },
+  });
+
+export const getNotDDStyles = tokens =>
+  StyleSheet.create({
+    NotDD_overlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-end',
+    },
+    NotDD_dropdownContainer: {
+      marginTop: 10,
+      marginRight: 10,
+      backgroundColor: tokens.cardBg,
+      borderRadius: 8,
+      shadowColor: tokens.shadowColor,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 4,
+      width: 300,
+    },
+    NotDD_dropdownContent: {
+      padding: 15,
+    },
+    NotDD_dropdownTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: tokens.blue,
+      marginBottom: 10,
+      textAlign: 'center',
+    },
+    NotDD_dropdownText: {
+      fontSize: 14,
+      color: tokens.titleText,
+      marginBottom: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: tokens.rowDivider,
+      paddingBottom: 5,
+    },
+    NotDD_scrollView: {
+      maxHeight: 300,
+    },
+  });
 
 export default styles;

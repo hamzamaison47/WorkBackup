@@ -144,7 +144,7 @@ const cleanObject = obj => {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(cleanObject);
-
+  console.log('here is response', cleanObject);
   return Object.fromEntries(
     Object.entries(obj).map(([key, value]) => [
       key.replace(/^[a-zA-Z0-9]+:/, ''), // strip namespace prefix

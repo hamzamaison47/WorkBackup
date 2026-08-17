@@ -24,6 +24,7 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import {translate as t} from '../../../../store/utils/translate';
 import {ContactDetails} from '../../../../API/PersonalInformation/ContactDetails/ContactDetails';
@@ -47,8 +48,8 @@ const ContactDetailsListPage = () => {
   const effectiveWorkerRecId = effectiveUserData?.WorkerRecId;
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, hide, alertModalProps} =
+    useAlertModal();
   const [isProcessing, setIsProcessing] = useState(false);
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Contact Details');
@@ -145,23 +146,21 @@ const ContactDetailsListPage = () => {
         });
 
         if (response[0].IsSuccess) {
-          notifyDelete('Record deleted successfully');
-          setAlertMessage('Record deleted successfully');
+          notifyDelete('Contact detail deleted successfully');
+          showSuccess('Contact detail deleted successfully');
           setContactsData(prev =>
             prev.filter(contact => contact.RecId !== itemToDelete.RecId),
           );
         } else {
-          setAlertMessage('Unable to delete contact.');
+          showError('Unable to delete contact.');
         }
       } catch (error) {
         console.log('Failed to delete contact:', error);
-        setAlertMessage('Failed to delete contact.');
+        showError('Failed to delete contact.');
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
-        setAlertModal(true);
-
         setTimeout(() => {
           fetchContactsData();
         }, 800);
@@ -206,20 +205,19 @@ const ContactDetailsListPage = () => {
       iconColor: '#fff',
       backgroundColor: P.primary, // Add this line
     },
-    // delete: {
-    //   show: true,
-    //   position: 'header',
-    //   style: 'icon',
-    //   icon: 'trash',
-    //   iconSize: 20,
-    //   iconColor: '#fff',
-    //   backgroundColor: P.primary, // Add this line
-    // },
+    delete: {
+      show: true,
+      position: 'header',
+      style: 'icon',
+      icon: 'trash',
+      iconSize: 20,
+      iconColor: '#fff',
+      backgroundColor: P.primary, // Add this line
+    },
   });
 
   // ✅ 🔹 EDIT LOGIC (taken from LeaveRequestListPage)
   const handleEditPress = itemData => {
-    console.log('ItemData :', itemData);
     navigation.navigate('ContactDetailsSaveRecord', {
       mode: 'edit',
       employeeId: itemData.EmployeeId || effectiveEmployeeId,
@@ -232,7 +230,7 @@ const ContactDetailsListPage = () => {
         EmployeeId: itemData.EmployeeId || effectiveEmployeeId,
         EmployeeName: itemData.EmployeeName || effectiveEmployeeName,
         WorkerRecId: itemData.WorkerRecId || effectiveWorkerRecId,
-        Type: itemData.Type,
+        Type: itemData.type || itemData.Type, // ← handle both casings
         Locator: itemData.Locator,
         LocatorExtension: itemData.LocatorExtension,
         Description: itemData.Description,
@@ -352,12 +350,7 @@ const ContactDetailsListPage = () => {
         </ScrollView>
       )}
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
 
       <AlertDeleteModal
         visible={deleteModal}

@@ -81,6 +81,7 @@ import ExpenseManagementHeaderListPage from '../Customizations/IDAP/screens/Expe
 import ExpenseManagementSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Header/ExpenseManagementSaveRecord';
 import ExpenseManagementLinesListPage from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLinesListPage';
 import ExpenseManagementLineSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLineSaveRecord';
+import {Plane, Receipt, CalendarDays, Stethoscope} from 'lucide-react-native';
 
 export const screenMapping = {
   // Tab Navigator Screens
@@ -198,10 +199,14 @@ export const iconMapping = {
   HrNewsUpdatesScreen: require('../assets/Maindashboard/news.png'),
   OutstandingAdvancesScreen: require('../assets/Maindashboard/Loan.png'),
   EmployeeAdvanceSalary_Create: require('../assets/Maindashboard/loan-approved.png'),
-  DFEmployeeLeaveRequestListPage: require('../assets/Maindashboard/calendar.png'),
-  MedicalExpenseManagmentListPage: require('../assets/Medical.png'),
-  // TODO(confirm): no dedicated Travel asset exists — reusing the requisition
-  // icon as a placeholder. Swap for a real travel icon when available.
-  TravelRequisitionListPage: require('..//assets//Maindashboard/PurchaseRequisition.png'),
-  ExpenseManagementHeaderListPage: require('../assets/Maindashboard/Expense.png'),
+  // DFEmployeeLeaveRequestListPage: require('../assets/Maindashboard/calendar.png'),
+  // MedicalExpenseManagmentListPage: require('../assets/Medical.png'),
+  // // TODO(confirm): no dedicated Travel asset exists — reusing the requisition
+  // // icon as a placeholder. Swap for a real travel icon when available.
+  // TravelRequisitionListPage: require('..//assets//Maindashboard/PurchaseRequisition.png'),
+  // ExpenseManagementHeaderListPage: require('../assets/Maindashboard/Expense.png'),
+  DFEmployeeLeaveRequestListPage: CalendarDays,
+  MedicalExpenseManagmentListPage: Stethoscope,
+  TravelRequisitionListPage: Plane,
+  ExpenseManagementHeaderListPage: Receipt,
 };

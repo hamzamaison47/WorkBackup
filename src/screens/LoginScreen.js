@@ -587,15 +587,13 @@ const LoginScreen = () => {
           {/* ── Identity section: logo + welcome text ── */}
           <View style={styles.identitySection}>
             <Image
-              source={require('../assets/cloud.png')}
+              source={require('../assets/IDAPNewLogo.jpg')}
               style={styles.mainLogo}
               resizeMode="contain"
             />
             <View style={styles.textStack}>
-              <Text style={styles.welcomeTitle}>{t('login.welcomeTitle')}</Text>
-              <Text style={styles.welcomeSubtitle}>
-                {t('login.welcomeSubtitle')}
-              </Text>
+              <Text style={styles.welcomeTitle}>IDAP360</Text>
+              <Text style={styles.welcomeSubtitle}>معمارِ پنجاب</Text>
             </View>
           </View>
 
@@ -617,7 +615,7 @@ const LoginScreen = () => {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               activeOpacity={0.8}
               style={[styles.authButton, styles.shadow]}
               onPress={() => handleProviderLogin('Google')}
@@ -629,7 +627,7 @@ const LoginScreen = () => {
               <Text style={styles.authButtonText}>
                 {t('login.signInGoogle')}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {/* Divider */}
             <View style={styles.dividerRow}>
@@ -657,9 +655,7 @@ const LoginScreen = () => {
 
           {/* ── Footer ── */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Maison Consulting and Solutions
-            </Text>
+            <Text style={styles.footerText}>IDAP</Text>
           </View>
         </View>
       ) : (
@@ -756,23 +752,24 @@ const styles = StyleSheet.create({
   },
 
   // Logo + welcome text
-  identitySection: {alignItems: 'center', marginTop: 40},
-  mainLogo: {width: 90, height: 90, marginBottom: 15},
+  identitySection: {alignItems: 'center', marginTop: 34},
+  mainLogo: {width: 180, height: 180, marginBottom: 0},
   textStack: {alignItems: 'center'},
   welcomeTitle: {
-    fontSize: 26,
+    fontSize: 34,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#0F172A',
     textAlign: 'center',
-    letterSpacing: -0.5,
+    letterSpacing: 1,
   },
   welcomeSubtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    marginTop: 6,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#334155',
+    marginTop: 8,
     textAlign: 'center',
     maxWidth: '85%',
-    lineHeight: 20,
+    lineHeight: 26,
   },
 
   // Sign-in buttons area

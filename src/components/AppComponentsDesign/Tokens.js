@@ -4,6 +4,7 @@ import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
 // ─────────────────────────────────────────────────────────────────────────────
 export const LightTokens = {
   pageBg: '#F1F5F9',
+  formPageBg: '#FFFFFF',
   cardBg: '#FFFFFF',
   cardHeadingBg: '#FAFBFC',
   cardDivider: '#F1F5F9',
@@ -15,6 +16,19 @@ export const LightTokens = {
   shadowColor: '#0F172A',
   emptyText: '#CBD5E1',
   footerText: '#CBD5E1',
+
+  // ── Added for DSR (Save Record form) screens ──
+  inputBg: '#FFFFFF',
+  inputBorder: '#E0E0E0',
+  inputText: '#1A1A1A',
+  placeholderText: '#A0A0A0',
+  disabledBg: '#F8F9FA',
+  disabledText: '#A0A0A0',
+  disabledBorder: '#F0F0F0',
+  dropdownBg: '#FFFFFF',
+  dropdownBorder: '#E0E0E0',
+  dropdownItemBorder: '#F0F0F0',
+  overlayBg: 'rgba(255, 255, 255, 0.9)',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,6 +36,7 @@ export const LightTokens = {
 // ─────────────────────────────────────────────────────────────────────────────
 export const DarkTokens = {
   pageBg: '#0F172A',
+  formPageBg: '#0F172A',
   cardBg: '#1E293B',
   cardHeadingBg: '#1A2744',
   cardDivider: '#2D3748',
@@ -33,6 +48,19 @@ export const DarkTokens = {
   shadowColor: '#000000',
   emptyText: '#475569',
   footerText: '#475569',
+
+  // ── Added for DSR (Save Record form) screens ──
+  inputBg: '#1E293B',
+  inputBorder: '#334155',
+  inputText: '#F1F5F9',
+  placeholderText: '#64748B',
+  disabledBg: '#17223A',
+  disabledText: '#64748B',
+  disabledBorder: '#263449',
+  dropdownBg: '#1E293B',
+  dropdownBorder: '#334155',
+  dropdownItemBorder: '#263449',
+  overlayBg: 'rgba(0, 0, 0, 0.85)',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -31,6 +31,7 @@ import {translate as t} from '../../../../store/utils/translate';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../components/Buttons/SaveRecordButtons';
@@ -39,6 +40,7 @@ import useNotify from '../../../../hooks/useNotify';
 import {CreateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/CreateContactDetails';
 import {UpdateContactDetails} from '../../../../API/PersonalInformation/ContactDetails/UpdateContactDetails';
 import {getContactDetailsLabels} from '../../../../API/PersonalInformation/ContactDetails/GetContactDetailsLabel';
+import useAppStyles from '../../../../hooks/useAppStyles';
 
 import styles from '../../../../styles/styles';
 
@@ -74,6 +76,7 @@ const ContactDetailsSaveRecord = () => {
   const route = useRoute();
   const scrollViewRef = useRef(null);
   const P = usePalette();
+  const styles = useAppStyles();
 
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
@@ -104,18 +107,19 @@ const ContactDetailsSaveRecord = () => {
     Locator: data?.Locator || '',
     LocatorExtension: data?.LocatorExtension || '',
     Description: data?.Description || '',
-    IsPrimary: data?.IsPrimary === 'Yes' || data?.IsPrimary === true || false,
-    IsPrivate: data?.IsPrivate === 'Yes' || data?.IsPrivate === true || false,
+    IsPrimary: data?.IsPrimary === true || data?.IsPrimary === 'true' || false,
+    IsPrivate: data?.IsPrivate === true || data?.IsPrivate === 'true' || false,
     IsMobilePhone:
-      data?.IsMobilePhone === 'Yes' || data?.IsMobilePhone === true || false,
+      data?.IsMobilePhone === true || data?.IsMobilePhone === 'true' || false,
   });
 
   /* -------  STATE  ------- */
   const [formData, setFormData] = useState(() => createInitialFormData());
   const [isLoading, setIsLoading] = useState(false);
   const [processingButton, setProcessingButton] = useState('');
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, alertModalProps} =
+    useAlertModal();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [contactDetailsLabels, setContactDetailsLabels] = useState({});
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -310,10 +314,9 @@ const ContactDetailsSaveRecord = () => {
     if (processingButton) return;
     const missing = validateForm();
     if (missing.length) {
-      setAlertMessage(
+      showWarning(
         'Please fill in the following required fields:\n' + missing.join('\n'),
       );
-      setAlertModal(true);
       return;
     }
 
@@ -329,9 +332,9 @@ const ContactDetailsSaveRecord = () => {
         Location: formData.Location || '0',
         LocatorExtension: formData.LocatorExtension || '',
         Description: formData.Description || '',
-        IsPrimary: formData.IsPrimary ? 'Yes' : 'No',
-        IsPrivate: formData.IsPrivate ? 'Yes' : 'No',
-        IsMobilePhone: formData.IsMobilePhone ? 'Yes' : 'No',
+        IsPrimary: formData.IsPrimary ? 'true' : 'false',
+        IsPrivate: formData.IsPrivate ? 'true' : 'false',
+        IsMobilePhone: formData.IsMobilePhone ? 'true' : 'false',
         RecId: formData.RecId === '' ? '0' : formData.RecId,
       };
       console.log('mode', mode);
@@ -348,13 +351,11 @@ const ContactDetailsSaveRecord = () => {
         response?.IsSuccess === true || response?.IsSuccess === 'true';
       if (isSuccess) {
         const actionText = mode === 'edit' ? 'updated' : 'created';
-        const successMsg = `Record ${actionText} successfully`;
-        notifySuccess(successMsg); // ← add
-        setAlertMessage(`Record ${actionText} successfully`);
-        setAlertModal(true);
+        const successMsg = `Contact detail ${actionText} successfully`;
+        notifySuccess(successMsg);
+        showSuccess(successMsg); // also cleaned up the duplicate string
 
         setTimeout(() => {
-          setAlertModal(false);
           clearFormData();
           navigation.navigate('ContactDetailsListPage', {
             employeeId: formData.EmployeeId,
@@ -370,14 +371,12 @@ const ContactDetailsSaveRecord = () => {
           });
         }, 1200);
       } else {
-        setAlertMessage(response?.Message || 'Operation Failed');
-        setAlertModal(true);
+        showError(response?.Message || 'Operation Failed');
       }
       return response;
     } catch (error) {
       console.error('Error in contact save:', error);
-      setAlertMessage('An error occurred while processing the request.');
-      setAlertModal(true);
+      showError('An error occurred while processing the request.');
       return {IsSuccess: false};
     } finally {
       setProcessingButton('');
@@ -529,13 +528,7 @@ const ContactDetailsSaveRecord = () => {
         </SafeAreaView>
       )}
 
-      {/* ✅ Moved OUTSIDE the loading block */}
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
     </ActionPaneContainer>
   );
 };

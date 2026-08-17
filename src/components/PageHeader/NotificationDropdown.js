@@ -9,8 +9,12 @@ import {
 } from 'react-native';
 
 import styles from '../../styles/styles';
+import useAppTokens from '../AppComponentsDesign/useAppTokens';
+import {getNotDDStyles} from '../../styles/styles';
 
 const NotificationDropdown = ({visible, notifications, onClose}) => {
+  const T = useAppTokens();
+  const styles = getNotDDStyles(T);
   if (!visible) return null;
 
   // Format notifications to display document and document type
@@ -26,7 +30,6 @@ const NotificationDropdown = ({visible, notifications, onClose}) => {
             <View style={styles.NotDD_dropdownContent}>
               <Text style={styles.NotDD_dropdownTitle}>Notifications</Text>
 
-              {/* ScrollView to allow scrolling through notifications */}
               <ScrollView style={styles.NotDD_scrollView}>
                 {formattedNotifications.map((message, index) => (
                   <TouchableOpacity

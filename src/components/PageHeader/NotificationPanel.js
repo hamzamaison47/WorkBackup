@@ -31,30 +31,31 @@ import {
   EmptyState,
   IconBadge,
 } from '../AppComponentsDesign/Appcomponents';
+import useAppTokens from '../AppComponentsDesign/useAppTokens';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 const PANEL_WIDTH = SCREEN_WIDTH * 0.88;
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
-const T = {
+const makeNotifTokens = AT => ({
   navy: DEFAULT_PALETTE.primary,
   blue: DEFAULT_PALETTE.primary,
-  blueSoft: '#E8F1FB',
-  blueLight: '#C8DEFA',
+  blueSoft: AT.blueBg,
+  blueLight: AT.blueBg,
   accent: '#3B82F6',
   success: '#10B981',
   warn: '#F59E0B',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F8FAFF',
-  border: '#E8EFF8',
-  text: '#1E293B',
-  textSub: '#64748B',
-  textMute: '#94A3B8',
+  surface: AT.cardBg,
+  surfaceAlt: AT.pageBg,
+  border: AT.cardDivider,
+  text: AT.titleText,
+  textSub: AT.subtitleText,
+  textMute: AT.emptyText,
   unreadDot: '#EF4444',
-  todayBg: '#EFF6FF',
-  todayBorder: '#BFDBFE',
-  shadow: 'rgba(10, 102, 194, 0.10)',
-};
+  todayBg: AT.cardHeadingBg,
+  todayBorder: AT.blueBg,
+  shadow: AT.shadowColor,
+});
 
 const TYPE_CONFIG = {
   // your existing ones unchanged...
@@ -134,8 +135,9 @@ const NotificationPanel = ({
   const [expandedItems, setExpandedItems] = useState({});
 
   const P = usePalette();
-  // T is a stable module-level token object, so only P drives re-memoization.
-  const S = useMemo(() => makeStyles(P, T), [P]);
+  const AT = useAppTokens();
+  const T = useMemo(() => makeNotifTokens(AT), [AT]);
+  const S = useMemo(() => makeStyles(P, T), [P, T]);
 
   const toggleExpand = recId => {
     setExpandedItems(prev => ({...prev, [recId]: !prev[recId]}));

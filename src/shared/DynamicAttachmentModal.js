@@ -73,6 +73,8 @@ const DynamicAttachmentModal = ({
   showChooseFile = true,
   showDownload = true,
   showDelete = true,
+  copyToLineIds = [],
+  showCopyToLines = true,
   showView = true,
 }) => {
   const [attachments, setAttachments] = useState([]);
@@ -104,12 +106,25 @@ const DynamicAttachmentModal = ({
       return;
     }
 
+    // ── DEBUG ──
+    console.log('[ATTACH DEBUG] loadExistingAttachments called with:', {
+      recordId,
+      tableName,
+      recordIdKey,
+    });
+
     setIsLoading(true);
     try {
       const result = await RetrieveReceipts({
         recordRefRecId: recordId,
         tableName: tableName,
       });
+
+      // ── DEBUG ──
+      console.log(
+        '[ATTACH DEBUG] RetrieveReceipts raw result:',
+        JSON.stringify(result),
+      );
 
       console.log('RetrieveReceipts', {result});
 
@@ -123,6 +138,12 @@ const DynamicAttachmentModal = ({
               isExisting: true,
             }))
           : [];
+
+        // ── DEBUG ──
+        console.log(
+          '[ATTACH DEBUG] formatted attachments:',
+          JSON.stringify(formattedAttachments),
+        );
         setAttachments(formattedAttachments);
       }
     } catch (error) {
@@ -160,6 +181,8 @@ const DynamicAttachmentModal = ({
   };
 
   const takePhoto = async () => {
+    // ── DEBUG ──
+    console.log('[ATTACH DEBUG] takePhoto called');
     try {
       const result = await launchCamera({
         mediaType: 'photo',
@@ -167,6 +190,14 @@ const DynamicAttachmentModal = ({
         maxWidth: 1024,
         maxHeight: 1024,
         includeBase64: true,
+      });
+
+      // ── DEBUG ──
+      console.log('[ATTACH DEBUG] launchCamera result:', {
+        didCancel: result.didCancel,
+        errorCode: result.errorCode,
+        errorMessage: result.errorMessage,
+        assetsCount: result.assets?.length,
       });
 
       if (result.assets && result.assets.length > 0) {
@@ -194,6 +225,104 @@ const DynamicAttachmentModal = ({
       console.error('Error taking photo:', error);
       setAlertMessage('Failed to take photo');
       setAlertModal(true);
+    }
+  };
+
+  const handleCopyToLines = async attachment => {
+    if (!attachment.docuRefRecId) {
+      setAlertMessage('Cannot copy: missing document reference');
+      setAlertModal(true);
+      return;
+    }
+
+    if (!copyToLineIds || copyToLineIds.length === 0) {
+      setAlertMessage('No other lines available to copy to');
+      setAlertModal(true);
+      return;
+    }
+
+    setProcessingAction(`copy_${attachment.id}`);
+
+    try {
+      // Fetch the source attachment's content once.
+      const result = await RetrieveAttachment({
+        docuRefRecId: attachment.docuRefRecId,
+      });
+
+      if (!result.success || !result.base64) {
+        setAlertMessage(
+          result.message || 'Unable to read attachment content to copy',
+        );
+        setAlertModal(true);
+        return;
+      }
+
+      let cleanBase64 = result.base64
+        .trim()
+        .replace(/<[^>]*>/g, '')
+        .replace(/\s/g, '');
+      if (cleanBase64.length % 4 !== 0) {
+        cleanBase64 += '='.repeat(4 - (cleanBase64.length % 4));
+      }
+
+      let fileExt = getFileExtension(attachment.name);
+      if (!fileExt && (result.fileType || attachment.type)) {
+        fileExt = (result.fileType || attachment.type).split('/')[1] || '';
+      }
+      if (fileExt && !fileExt.startsWith('.')) fileExt = '.' + fileExt;
+      if (!fileExt) fileExt = '.bin';
+
+      let successCount = 0;
+      let failCount = 0;
+
+      // Sequential, not parallel — mirrors handleSave's pacing so we don't
+      // hammer the AOS with concurrent SaveAttachmentByteArray calls.
+      for (const targetRecId of copyToLineIds) {
+        try {
+          const saveResult = await SaveAttachmentByteArray({
+            recordRefRecId: targetRecId,
+            tableName,
+            legalEntity,
+            employeeId,
+            fileName: attachment.name,
+            fileExt,
+            fileByteArray: cleanBase64,
+          });
+
+          if (saveResult.IsSuccess) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (err) {
+          console.error(
+            `Error copying attachment to line ${targetRecId}:`,
+            err,
+          );
+          failCount++;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      if (successCount > 0) {
+        notificationService.showReceiptUploadNotification(successCount);
+      }
+
+      setAlertMessage(
+        failCount === 0
+          ? `Attachment copied to ${successCount} line(s) successfully`
+          : `Copied to ${successCount} line(s), failed for ${failCount}`,
+      );
+      setAlertModal(true);
+
+      if (onSave) onSave();
+    } catch (error) {
+      console.error('Error copying attachment to lines:', error);
+      setAlertMessage(`Failed to copy attachment: ${error.message}`);
+      setAlertModal(true);
+    } finally {
+      setProcessingAction(null);
     }
   };
 
@@ -778,6 +907,31 @@ const DynamicAttachmentModal = ({
                             )}
                           </TouchableOpacity>
                         )}
+                        {/* NEW: Copy to Lines — only for already-uploaded
+                            attachments, and only when the parent screen
+                            actually has other lines to copy into. */}
+                        {showCopyToLines &&
+                          attachment.isExisting &&
+                          copyToLineIds.length > 0 && (
+                            <TouchableOpacity
+                              style={[
+                                styles.DAM_downloadButton,
+                                isAnyProcessing &&
+                                  styles.DAM_disabledActionButton,
+                              ]}
+                              onPress={() => handleCopyToLines(attachment)}
+                              disabled={isAnyProcessing}>
+                              {processingAction === `copy_${attachment.id}` ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                              ) : (
+                                <FontAwesome
+                                  name="copy"
+                                  size={iconSize.xs}
+                                  color="#fff"
+                                />
+                              )}
+                            </TouchableOpacity>
+                          )}
                         {showDownload && attachment.isExisting && (
                           <TouchableOpacity
                             style={[

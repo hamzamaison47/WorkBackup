@@ -30,7 +30,7 @@ export const TIMEZONE_OPTIONS = [
 const dateFormatSlice = createSlice({
   name: 'dateFormat',
   initialState: {
-    selectedFormat: DATE_FORMAT_OPTIONS[0],
+    selectedFormat: DATE_FORMAT_OPTIONS.find(o => o.label === 'DD/MM/YYYY'),
     selectedTimeFormat: TIME_FORMAT_OPTIONS[0],
     selectedTimezone: TIMEZONE_OPTIONS[0],
   },

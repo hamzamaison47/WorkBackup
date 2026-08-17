@@ -25,6 +25,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import {translate as t} from '../../../../store/utils/translate';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import CalendarModal from '../../../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
@@ -35,13 +36,16 @@ import {RetrieveAllEducationDisciplines} from '../../../../API/PersonalInformati
 import {CreateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonalEducationCreate';
 import {UpdateEducationDetails} from '../../../../API/PersonalInformation/Education/PersonEducationIUpdate';
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
-import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
+import {GetEducationLevels} from '../../../../API/PersonalInformation/Education/GetEducationLevels';
+import {GetInstitutions} from '../../../../API/PersonalInformation/Education/GetInstitutions';
 import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
 import useNotify from '../../../../hooks/useNotify';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 
 import styles from '../../../../styles/styles';
 import {conditionalVerticalScale} from '../../../../store/utils/scaling';
 import usePalette from '../../../../hooks/usePalette';
+import useAppStyles from '../../../../hooks/useAppStyles';
 
 /* ---------- initial form ---------- */
 const createInitialFormData = (
@@ -59,6 +63,8 @@ const createInitialFormData = (
     educationData?.EducationDisciplineId ||
     educationData?.EducationDiscipline ||
     '',
+  EducationLevelId: educationData?.EducationLevelID || '', // ← add
+  InstitutionId: educationData?.InstitutionID || '', // ← add
   Description: educationData?.Description || '',
   DurationUnit: educationData?.DurationUnit || '',
   Duration: educationData?.Duration || '',
@@ -78,6 +84,7 @@ const PersonalEducationSaveRecord = () => {
   const route = useRoute();
   const scrollViewRef = useRef(null);
   const P = usePalette();
+  const styles = useAppStyles();
 
   const reduxUser = useSelector(state => state.user.userData);
   const routeUser = route.params?.userData;
@@ -108,15 +115,17 @@ const PersonalEducationSaveRecord = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, alertModalProps} =
+    useAlertModal();
   const [educationDisciplines, setEducationDisciplines] = useState([]);
-  const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
+  // const [isWorkflowConfigured, setIsWorkflowConfigured] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [showStartDateCalendar, setShowStartDateCalendar] = useState(false);
   const [showEndDateCalendar, setShowEndDateCalendar] = useState(false);
   const [educationLabels, setEducationLabels] = useState({});
   const {notifySuccess, notifyError} = useNotify('Education Details');
+  const [educationLevels, setEducationLevels] = useState([]);
+  const [institutions, setInstitutions] = useState([]);
 
   /* ---------- helpers ---------- */
   const formatDate = date => {
@@ -138,21 +147,15 @@ const PersonalEducationSaveRecord = () => {
     }
   }, []);
 
-  const checkWorkflowConfig = useCallback(async () => {
-    try {
-      const res = await isEducationWorkflowConfigured();
-      console.log('here is the workflow resut', res);
-      setIsWorkflowConfigured(res === true || res === 1);
-    } catch (e) {
-      setIsWorkflowConfigured(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      checkWorkflowConfig();
-    }, [checkWorkflowConfig]),
-  );
+  // const checkWorkflowConfig = useCallback(async () => {
+  //   try {
+  //     const res = await isEducationWorkflowConfigured();
+  //     console.log('here is the workflow resut', res);
+  //     setIsWorkflowConfigured(res === true || res === 1);
+  //   } catch (e) {
+  //     setIsWorkflowConfigured(false);
+  //   }
+  // }, []);
 
   const convertDateFormat = date => {
     const d = new Date(date);
@@ -167,6 +170,8 @@ const PersonalEducationSaveRecord = () => {
     EducationDiscipline: Number(
       mode === 'edit' ? originalDisciplineId : formData.EducationDisciplineId,
     ),
+    EducationLevelID: data.EducationLevelId, // ← add
+    InstitutionID: data.InstitutionId, // ← add
     Description: data.Description.trim(),
     DurationUnit: data.DurationUnit,
     Duration: Number(data.Duration) || 0,
@@ -224,10 +229,13 @@ const PersonalEducationSaveRecord = () => {
   );
 
   useFocusEffect(
-    useCallback(
-      () => scrollViewRef.current?.scrollTo({y: 0, animated: false}),
-      [],
-    ),
+    useCallback(() => {
+      scrollViewRef.current?.scrollResponder?.scrollResponderScrollTo({
+        x: 0,
+        y: 0,
+        animated: false,
+      });
+    }, []),
   );
 
   useEffect(() => {
@@ -276,12 +284,15 @@ const PersonalEducationSaveRecord = () => {
         setOriginalDisciplineId(map[originalLabel] || '');
       }
     } catch {
-      setAlertMessage('Failed to fetch data.');
-      setAlertModal(true);
+      showError('Failed to fetch data.');
     } finally {
       setIsLoading(false);
     }
-  }, [educationData]); // ← only changes if initial data changes
+  }, [
+    educationData?.EducationDiscipline,
+    educationData?.EducationDisciplineId,
+    showError,
+  ]); // ← only changes if initial data changes
 
   // useFocusEffect(
   //   useCallback(() => {
@@ -297,14 +308,18 @@ const PersonalEducationSaveRecord = () => {
       const initializeScreen = async () => {
         setIsLoading(true);
         try {
-          const [labels] = await Promise.all([
+          const [labels, , levels, insts] = await Promise.all([
             fetchEducationLabels(),
             fetchDisciplines(),
+            GetEducationLevels(),
+            GetInstitutions(),
           ]);
 
           if (!isActive) return;
 
           setEducationLabels(labels);
+          setEducationLevels(levels);
+          setInstitutions(insts);
         } catch (err) {
           console.error('Error loading education screen:', err);
         } finally {
@@ -338,16 +353,14 @@ const PersonalEducationSaveRecord = () => {
   const validate = () => {
     const missing = [];
     if (!formData.EducationDisciplineId) missing.push('Education');
-    if (!formData.Description.trim()) missing.push('Description');
     if (!formData.DurationUnit) missing.push('Duration Unit');
     if (!formData.Duration) missing.push('Duration');
-    // if (!formData.StartDate) missing.push('Start Date');
-    // if (!formData.EndDate) missing.push('End Date');
+    if (!formData.StartDate) missing.push('Start Date');
+    if (!formData.EndDate) missing.push('End Date');
     if (missing.length) {
-      setAlertMessage(
+      showWarning(
         'Please fill in the following required fields:\n' + missing.join('\n'),
       );
-      setAlertModal(true);
       return false;
     }
     return true;
@@ -355,6 +368,7 @@ const PersonalEducationSaveRecord = () => {
 
   /* ---------- save / submit ---------- */
   const handleSave = async actionType => {
+    console.log('HANDLE SAVE CALLED WITH ACTION TYPE:', actionType);
     if (processingButton) return;
     if (!validate()) return;
 
@@ -382,33 +396,42 @@ const PersonalEducationSaveRecord = () => {
       if (actionType === 'submit') {
         try {
           const submitRes = await SubmitEducationRequest({recId});
+          console.log('SUBMIT RES RAW:', JSON.stringify(submitRes));
+
+          const contracts = Array.isArray(submitRes?.GeneralContract)
+            ? submitRes.GeneralContract
+            : submitRes?.GeneralContract
+            ? [submitRes.GeneralContract]
+            : [];
+          console.log('CONTRACTS:', JSON.stringify(contracts));
+
           const submitOk =
-            submitRes?.IsSuccess === true || submitRes?.IsSuccess === 'true';
-          if (!submitOk)
-            throw new Error(submitRes?.Message || 'Failed to submit request.');
+            contracts.length > 0 &&
+            contracts.every(
+              c => c.IsSuccess === true || c.IsSuccess === 'true',
+            );
+          console.log('SUBMIT OK:', submitOk);
+
+          if (!submitOk) {
+            const msg = contracts[0]?.Message || 'Failed to submit request.';
+            throw new Error(msg);
+          }
         } catch (submitErr) {
-          // make sure the user sees the submit error
-          setAlertMessage(submitErr.message || 'Failed to submit request.');
-          setAlertModal(true);
-          return; // stop the success flow
+          console.log('SUBMIT ERR CAUGHT:', submitErr?.message, submitErr);
+          showError(submitErr.message || 'Failed to submit request.');
+          return;
         }
       }
 
       /* ---- success flow ---- */
-      setAlertMessage(
-        actionType === 'submit'
-          ? 'Request created & submitted successfully.'
-          : 'Record created successfully.',
-      );
+      const actionText = mode === 'edit' ? 'updated' : 'created';
       const successMsg =
         actionType === 'submit'
-          ? 'Request created & submitted successfully.'
-          : 'Record created successfully.';
+          ? `Education detail ${actionText} & submitted successfully.`
+          : `Education detail ${actionText} successfully.`;
+      showSuccess(successMsg);
       notifySuccess(successMsg);
-      setAlertModal(true);
       setTimeout(() => {
-        setAlertModal(false);
-        /* ── same reset logic used by Cancel ── */
         if (cameFrom === 'PersonalEducationListPage') {
           navigation.reset({
             index: 0,
@@ -433,10 +456,9 @@ const PersonalEducationSaveRecord = () => {
         }
       }, 1200);
     } catch (err) {
-      setAlertMessage(
+      showError(
         err.message || 'An error occurred while processing the request.',
       );
-      setAlertModal(true);
     } finally {
       setProcessingButton('');
       setIsProcessing(false);
@@ -478,11 +500,16 @@ const PersonalEducationSaveRecord = () => {
               </View>
             </View>
           )}
-          <ScrollView
+          <KeyboardAwareScrollView
             ref={scrollViewRef}
             contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled">
+            keyboardShouldPersistTaps="handled"
+            enableOnAndroid={true}
+            enableAutomaticScroll={true}
+            extraScrollHeight={Platform.OS === 'ios' ? 30 : 80}
+            extraHeight={150}
+            keyboardOpeningTime={0}>
             <Text style={styles.DSR_Label}>
               {educationLabels?.EducationDisciplinelbl || 'Education *'}
             </Text>
@@ -521,6 +548,60 @@ const PersonalEducationSaveRecord = () => {
                 dropdownPosition="auto"
               />
             )}
+
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.EducationLevellbl || 'Education Level'}
+            </Text>
+            <Dropdown
+              style={styles.DSR_Input}
+              data={educationLevels}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Education Level"
+              value={formData.EducationLevelId}
+              onChange={item =>
+                handleInputChange('EducationLevelId', item.value)
+              }
+              search
+              searchPlaceholder="Search Education Level"
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 998},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              dropdownPosition="auto"
+            />
+
+            <Text style={styles.DSR_Label}>
+              {educationLabels?.Insitutionlbl || 'Institution'}
+            </Text>
+            <Dropdown
+              style={styles.DSR_Input}
+              data={institutions}
+              labelField="label"
+              valueField="value"
+              placeholder="Select Institution"
+              value={formData.InstitutionId}
+              onChange={item => handleInputChange('InstitutionId', item.value)}
+              search
+              searchPlaceholder="Search Institution"
+              placeholderStyle={styles.DSR_DropdownPlaceholder}
+              selectedTextStyle={styles.DSR_DropdownSelectedText}
+              itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor="#E6F0FF"
+              containerStyle={[
+                styles.DSR_DropdownContainer,
+                {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 997},
+              ]}
+              itemContainerStyle={styles.DSR_DropdownItemContainer}
+              maxHeight={280}
+              dropdownPosition="auto"
+            />
 
             <Text style={styles.DSR_Label}>
               {educationLabels?.Descriptionlbl || 'Description'}
@@ -588,10 +669,7 @@ const PersonalEducationSaveRecord = () => {
               </View>
               <Icon name="calendar" size={20} color={P.primary} />
             </TouchableOpacity>
-
-            <Text style={styles.DSR_Label}>
-              {educationLabels?.EndDatelbl || 'End Date'}
-            </Text>
+            <Text style={styles.DSR_Label}>End Date*</Text>
             <TouchableOpacity
               style={styles.DSR_DateSelector}
               onPress={() => setShowEndDateCalendar(true)}>
@@ -617,30 +695,18 @@ const PersonalEducationSaveRecord = () => {
               multiline
               numberOfLines={6}
             />
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
-          {isWorkflowConfigured ? (
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-            />
-          ) : (
-            <SaveRecordButtons
-              mode={mode}
-              processingButton={processingButton}
-              onSave={handleSave}
-              onCancel={goBack}
-              isDisabled={
-                processingButton === 'create' || processingButton === 'submit'
-              }
-              showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
-            />
-          )}
+          <SaveRecordButtons
+            mode={mode}
+            processingButton={processingButton}
+            onSave={handleSave}
+            onCancel={goBack}
+            isDisabled={
+              processingButton === 'create' || processingButton === 'submit'
+            }
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
+          />
         </SafeAreaView>
       )}
 
@@ -659,12 +725,7 @@ const PersonalEducationSaveRecord = () => {
         onClose={() => setShowEndDateCalendar(false)}
       />
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
     </ActionPaneContainer>
   );
 };

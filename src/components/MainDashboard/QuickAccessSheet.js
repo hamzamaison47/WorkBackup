@@ -119,36 +119,50 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
   const numColumns = 3;
   const cardSize = (SCREEN_WIDTH - 48) / numColumns;
 
-  const renderItem = ({item}) => (
-    <TouchableOpacity
-      style={[
-        sheet.card,
-        {
-          width: cardSize,
-          height: cardSize * 0.9,
-          // ✅ card colors react to theme
-          backgroundColor: T.cardBg,
-          borderColor: T.cardDivider,
-          shadowColor: T.shadowColor,
-        },
-      ]}
-      activeOpacity={0.75}
-      onPress={() => {
-        handleClose();
-        onCardPress(item);
-      }}>
-      <View style={[sheet.iconBox, {backgroundColor: AppTokens.blueBg}]}>
-        <Image
-          source={typeof item.icon === 'string' ? {uri: item.icon} : item.icon}
-          style={sheet.icon}
-          resizeMode="contain"
-        />
-      </View>
-      <Text style={[sheet.cardTitle, {color: T.titleText}]} numberOfLines={2}>
-        {item.title}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({item}) => {
+    const isIconComponent =
+      typeof item.icon === 'function' ||
+      (typeof item.icon === 'object' &&
+        item.icon !== null &&
+        (item.icon.$$typeof === Symbol.for('react.forward_ref') ||
+          item.icon.$$typeof === Symbol.for('react.memo')));
+
+    return (
+      <TouchableOpacity
+        style={[
+          sheet.card,
+          {
+            width: cardSize,
+            height: cardSize * 0.9,
+            backgroundColor: T.cardBg,
+            borderColor: T.cardDivider,
+            shadowColor: T.shadowColor,
+          },
+        ]}
+        activeOpacity={0.75}
+        onPress={() => {
+          handleClose();
+          onCardPress(item);
+        }}>
+        <View style={[sheet.iconBox, {backgroundColor: AppTokens.blueBg}]}>
+          {isIconComponent ? (
+            <item.icon size={26} color={P.primary} />
+          ) : (
+            <Image
+              source={
+                typeof item.icon === 'string' ? {uri: item.icon} : item.icon
+              }
+              style={sheet.icon}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+        <Text style={[sheet.cardTitle, {color: T.titleText}]} numberOfLines={2}>
+          {item.title}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   if (!visible && !isRendered.current) {
     return null;

@@ -70,33 +70,9 @@ const SubmitExpenseReportsToWorkflow = async ({
       });
       const errorParsed = parser.parse(xml);
       const fault = errorParsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
-
-      let errorMessage = 'SOAP Fault occurred';
-
-      if (fault?.faultstring) {
-        if (typeof fault.faultstring === 'string') {
-          errorMessage = fault.faultstring;
-        } else if (fault.faultstring['#text']) {
-          errorMessage = fault.faultstring['#text'];
-        }
-      } else if (fault?.detail?.Fault?.ExceptionMessage) {
-        errorMessage = fault.detail.Fault.ExceptionMessage;
-      } else if (fault?.detail?.['s:message']) {
-        errorMessage = fault.detail['s:message'];
-      }
-
-      // Check for Infolog entries with additional error details
       const infolog = errorParsed?.['s:Envelope']?.['s:Header']?.['Infolog'];
-      if (infolog?.Entries?.InfologEntry) {
-        const entries = infolog.Entries.InfologEntry;
-        const messages = Array.isArray(entries)
-          ? entries.map(e => e.Message).join('; ')
-          : entries.Message;
 
-        if (messages) {
-          errorMessage = `${errorMessage} - ${messages}`;
-        }
-      }
+      const errorMessage = extractCleanFaultMessage(fault, infolog);
 
       console.error('SOAP Fault:', fault);
 
@@ -158,8 +134,6 @@ const SubmitExpenseReportsToWorkflow = async ({
       RecId: parseInt(c['a:RecId']) || 0,
     }));
 
-    // console.log('Processed Contracts:', JSON.stringify(processed, null, 2));
-
     // Find summary (RecId = 0) and detail records
     const summary = processed.find(c => c.RecId === 0);
     const details = processed.filter(c => c.RecId !== 0);
@@ -218,17 +192,10 @@ const SubmitExpenseReportsToWorkflow = async ({
         });
         const errorParsed = parser.parse(error.response.data);
         const fault = errorParsed?.['s:Envelope']?.['s:Body']?.['s:Fault'];
+        const infolog = errorParsed?.['s:Envelope']?.['s:Header']?.['Infolog'];
 
         if (fault) {
-          if (fault?.faultstring) {
-            if (typeof fault.faultstring === 'string') {
-              errorMessage = fault.faultstring;
-            } else if (fault.faultstring['#text']) {
-              errorMessage = fault.faultstring['#text'];
-            }
-          } else if (fault?.detail?.Fault?.ExceptionMessage) {
-            errorMessage = fault.detail.Fault.ExceptionMessage;
-          }
+          errorMessage = extractCleanFaultMessage(fault, infolog);
         }
       } catch (parseErr) {
         console.error('Error parsing SOAP fault:', parseErr);
@@ -243,6 +210,37 @@ const SubmitExpenseReportsToWorkflow = async ({
         : [expenseReportNumberList],
     };
   }
+};
+
+const extractCleanFaultMessage = (fault, infolog) => {
+  // 1. Infolog entries are usually the cleanest, business-facing message.
+  if (infolog?.Entries?.InfologEntry) {
+    const entries = infolog.Entries.InfologEntry;
+    const list = Array.isArray(entries) ? entries : [entries];
+    const messages = list.map(e => e.Message).filter(Boolean);
+    if (messages.length) return messages.join('; ');
+  }
+
+  // 2. detail.Fault.ExceptionMessage is the structured, clean message.
+  if (fault?.detail?.Fault?.ExceptionMessage) {
+    return fault.detail.Fault.ExceptionMessage;
+  }
+  if (fault?.detail?.['s:message']) {
+    return fault.detail['s:message'];
+  }
+
+  // 3. Fall back to faultstring, but strip the verbose preamble if present —
+  // D365 wraps the real message as "...Message: <actual message>".
+  let raw = fault?.faultstring;
+  if (raw && typeof raw !== 'string' && raw['#text']) raw = raw['#text'];
+
+  if (typeof raw === 'string') {
+    const messageLineMatch = raw.match(/Message:\s*(.+)$/s);
+    if (messageLineMatch) return messageLineMatch[1].trim();
+    return raw;
+  }
+
+  return 'SOAP Fault occurred';
 };
 
 // XML escape to prevent breaking

@@ -163,31 +163,6 @@ const Profile = ({navigation}) => {
             </View>
           </AnimatedCard>
 
-          {/* ── Contact card ─────────────────────────────────────────────── */}
-          <AnimatedCard delay={CARD_STAGGER}>
-            <CardHeading label="CONTACT DETAILS" />
-            <View style={styles.Prf_emailRow}>
-              {/* ✅ blueBg instead of hardcoded */}
-              <View
-                style={[
-                  styles.Prf_emailIconBadge,
-                  {backgroundColor: AppTokens.blueBg},
-                ]}>
-                <FeatherIcon
-                  name="mail"
-                  size={conditionalFontScale(15, 15, 16, 16)}
-                  color={AppTokens.blue}
-                />
-              </View>
-              {/* ✅ titleText instead of hardcoded */}
-              <Text
-                style={[styles.Prf_emailValue, {color: T.titleText}]}
-                numberOfLines={1}>
-                {userData?.email ?? '—'}
-              </Text>
-            </View>
-          </AnimatedCard>
-
           {/* ── General card ─────────────────────────────────────────────── */}
           <AnimatedCard delay={CARD_STAGGER * 2}>
             <CardHeading label="GENERAL" />

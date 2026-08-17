@@ -26,11 +26,15 @@ import SubmitBankAccountRecord from '../../../../API/PersonalInformation/BankAcc
 import {GetBankAccountLabels} from '../../../../API/PersonalInformation/BankAccounts/GetBankAccountLabel';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
-import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../../../components/Buttons/SaveRecordButtons';
 import useNotify from '../../../../hooks/useNotify';
 import usePalette from '../../../../hooks/usePalette';
+import useAppStyles from '../../../../hooks/useAppStyles';
 
 import styles from '../../../../styles/styles';
 
@@ -39,6 +43,7 @@ const BankAccountSaveRecord = () => {
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
   const P = usePalette();
+  const styles = useAppStyles();
 
   const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
@@ -63,9 +68,8 @@ const BankAccountSaveRecord = () => {
     originalCameFrom = null,
   } = route.params || {};
 
-  // State declarations
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, alertModalProps} =
+    useAlertModal();
   const [processingButton, setProcessingButton] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -208,7 +212,6 @@ const BankAccountSaveRecord = () => {
           // 🔹 CREATE MODE
           if (mode === 'create') {
             setFormData(createInitialFormData());
-            setAlertMessage('');
           }
 
           // 🔹 EDIT MODE
@@ -229,8 +232,7 @@ const BankAccountSaveRecord = () => {
           }
         } catch (error) {
           console.error('Error initializing Bank Account form:', error);
-          setAlertMessage('Failed to load screen');
-          setAlertModal(true);
+          showError('Failed to load screen');
         } finally {
           if (isActive) setIsLoading(false);
         }
@@ -276,10 +278,9 @@ const BankAccountSaveRecord = () => {
     if (!formData.AccountNum && !formData.BankIBAN)
       missing.push('Either Bank Account Number or IBAN must be filled');
     if (missing.length) {
-      setAlertMessage(
+      showWarning(
         'Please fill in the following required fields:\n' + missing.join('\n'),
       );
-      setAlertModal(true);
       return false;
     }
     return true;
@@ -292,8 +293,7 @@ const BankAccountSaveRecord = () => {
         data.WorkerRecId === '0' ||
         data.WorkerRecId === 0
       ) {
-        setAlertMessage('Worker ID is missing. Please go back and try again.');
-        setAlertModal(true);
+        showError('Worker ID is missing. Please go back and try again.');
         return {success: false};
       }
       const bankaccountsdata = {
@@ -346,21 +346,17 @@ const BankAccountSaveRecord = () => {
 
         const successMsg = `Record ${actionText}${submitText} successfully`;
         notifySuccess(successMsg); // ← add
-        setAlertMessage(`Record ${actionText}${submitText} successfully`);
-        setAlertModal(true);
-
+        showSuccess(`Record ${actionText}${submitText} successfully`);
         return {success: true, recId: response?.RecId};
       } else {
         const errorMessage = response?.Message || 'Failed to process request';
-        setAlertMessage(errorMessage);
-        setAlertModal(true);
+        showError(errorMessage);
         return {success: false, message: errorMessage};
       }
     } catch (error) {
       console.error('Error in handleAction:', error);
       const errorMessage = error.message || 'Failed to process request';
-      setAlertMessage(errorMessage);
-      setAlertModal(true);
+      showError(errorMessage);
       return {success: false, message: 'Network or server error'};
     }
   };
@@ -376,10 +372,9 @@ const BankAccountSaveRecord = () => {
       missing.push('Either Bank Account Number or IBAN');
     }
     if (missing.length) {
-      setAlertMessage(
+      showWarning(
         'Please fill in the following required fields:\n' + missing.join('\n'),
       );
-      setAlertModal(true);
       return false;
     }
 
@@ -396,8 +391,6 @@ const BankAccountSaveRecord = () => {
       if (result.success) {
         // Clear form data after successful operation
         setTimeout(() => {
-          setAlertModal(false);
-
           // Clear the form data
           clearFormData();
 
@@ -418,8 +411,7 @@ const BankAccountSaveRecord = () => {
       }
     } catch (error) {
       console.error('Error saving bank account record:', error);
-      setAlertMessage('Failed to save record. Please try again.');
-      setAlertModal(true);
+      showError('Failed to save record. Please try again.');
     } finally {
       setProcessingButton('');
       setIsProcessing(false);
@@ -550,17 +542,12 @@ const BankAccountSaveRecord = () => {
             isDisabled={
               processingButton === 'create' || processingButton === 'submit'
             }
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
           />
         </SafeAreaView>
       )}
 
-      {/* ✅ Moved OUTSIDE the loading block */}
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
     </ActionPaneContainer>
   );
 };

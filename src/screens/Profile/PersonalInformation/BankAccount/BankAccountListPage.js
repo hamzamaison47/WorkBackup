@@ -19,6 +19,7 @@ import {
 import {useSelector} from 'react-redux';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
@@ -59,8 +60,8 @@ const BankAccountListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [banksaccountdata, setbankaccountdata] = useState([]);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, hide, alertModalProps} =
+    useAlertModal();
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -82,14 +83,13 @@ const BankAccountListPage = () => {
         employeeId: effectiveEmployeeId,
       });
 
-      console.log('object', BankAccountData);
+      console.log('HEUEHIUEFHUIEFHUIFH', BankAccountData);
       // Fix: sort using RecId (uppercase) — recId (lowercase) may be undefined
       BankAccountData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
 
       setbankaccountdata(BankAccountData);
     } catch (error) {
-      setAlertMessage('Failed to fetch data.');
-      setAlertModal(true);
+      showError('Failed to fetch data');
     } finally {
       setIsLoading(false);
     }
@@ -269,7 +269,7 @@ const BankAccountListPage = () => {
       },
       // ...approval button also needs updating:
       approval: {
-        show: isEditable || isRejected, // ← use isEditable
+        show: false,
         // ...
         actions: [
           {
@@ -357,27 +357,25 @@ const BankAccountListPage = () => {
 
       try {
         const response = await DeletBankAccount({
-          recordsRecId: [itemToDelete.RecId],
+          recordsRecId: [itemToDelete.recId], // lowercase — this is the one that's always populated
         });
 
         if (response[0].IsSuccess) {
           notifyDelete('Record deleted successfully');
-          setAlertMessage('Record deleted successfully');
+          showSuccess('Record deleted successfully');
           setbankaccountdata(prev =>
             prev.filter(bank => bank.RecId !== itemToDelete.RecId),
           );
         } else {
-          setAlertMessage('Unable to delete record. Please try again.');
+          showError('Unable to delete record. Please try again.');
         }
       } catch (error) {
-        setAlertMessage('Failed to delete record');
+        showError('Failed to delete record');
         console.log('Delete Bank Account response', error);
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
-        setAlertModal(true);
-
         setTimeout(() => {
           fetchBankAccountData();
         }, 800);
@@ -399,8 +397,7 @@ const BankAccountListPage = () => {
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
           notifySuccess('Request submitted successfully');
-          setAlertMessage('Request submitted successfully');
-          setAlertModal(true);
+          showSuccess('Request submitted successfully');
           setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {
@@ -415,13 +412,11 @@ const BankAccountListPage = () => {
             resObj && resObj.Message
               ? resObj.Message
               : 'Failed to submit request';
-          setAlertMessage(errorMessage);
-          setAlertModal(true);
+          showError(errorMessage);
         }
       } catch (error) {
         console.error('Submit error:', error);
-        setAlertMessage('Failed to submit request');
-        setAlertModal(true);
+        showError('Failed to submit request');
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemData.RecId, 'submit', false);
@@ -434,8 +429,7 @@ const BankAccountListPage = () => {
       setSelectedBankItem(itemData);
       setAttachmentModalVisible(true);
     } catch (error) {
-      setAlertMessage('Failed to open attachments');
-      setAlertModal(true);
+      showError('Failed to open attachments');
     }
   };
 
@@ -571,12 +565,7 @@ const BankAccountListPage = () => {
         showDelete={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
       />
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
       <AlertDeleteModal
         visible={deleteModal}
         heading="Confirm Deletion"

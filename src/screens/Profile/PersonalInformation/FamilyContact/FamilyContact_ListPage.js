@@ -19,6 +19,7 @@ import {
 import {useSelector} from 'react-redux';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
@@ -57,8 +58,8 @@ const FamilyContact_ListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [familycontactsdata, setfamilycontactsdata] = useState([]);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, hide, alertModalProps} =
+    useAlertModal();
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
   const [deleteModal, setDeleteModal] = useState(false);
@@ -81,8 +82,7 @@ const FamilyContact_ListPage = () => {
       FamilyContactData.sort((a, b) => (b.RecId || 0) - (a.RecId || 0));
       setfamilycontactsdata(FamilyContactData);
     } catch (error) {
-      setAlertMessage('Failed to fetch data.');
-      setAlertModal(true);
+      showError('Failed to fetch data.');
     } finally {
       setIsLoading(false);
     }
@@ -164,8 +164,7 @@ const FamilyContact_ListPage = () => {
       setSelectedContactItem(itemData);
       setAttachmentModalVisible(true);
     } catch (error) {
-      setAlertMessage('Failed to open attachments');
-      setAlertModal(true);
+      showError('Failed to open attachments');
     }
   };
 
@@ -207,7 +206,7 @@ const FamilyContact_ListPage = () => {
   };
 
   const getButtonConfig = item => {
-    const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
+    // const isDraft = getStatusLabel(item.WFStatus) === 'Draft';
 
     return {
       edit: {
@@ -218,8 +217,8 @@ const FamilyContact_ListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: P.primary,
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        // disabled: !isDraft,
+        // customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
         show: true,
@@ -229,20 +228,20 @@ const FamilyContact_ListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: P.primary,
-        disabled: !isDraft,
-        customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
+        // disabled: !isDraft,
+        // customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
-      attachment: {
-        show: true,
-        position: 'header',
-        style: 'icon',
-        icon: 'paperclip',
-        iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: P.primary,
-        disabled: false,
-        customStyle: {},
-      },
+      // attachment: {
+      //   show: true,
+      //   position: 'header',
+      //   style: 'icon',
+      //   icon: 'paperclip',
+      //   iconSize: 20,
+      //   iconColor: '#fff',
+      //   backgroundColor: P.primary,
+      //   disabled: false,
+      //   customStyle: {},
+      // },
     };
   };
 
@@ -326,23 +325,21 @@ const FamilyContact_ListPage = () => {
         });
 
         if (response?.[0]?.IsSuccess) {
-          notifyDelete('Record deleted successfully');
-          setAlertMessage('Record deleted successfully');
+          notifyDelete('Personal contact deleted successfully');
+          showSuccess('Personal contact detail deleted successfully');
           setfamilycontactsdata(prev =>
             prev.filter(c => c.RecId !== itemToDelete.RecId),
           );
         } else {
-          setAlertMessage('Unable to delete record. Please try again.');
+          showError('Unable to delete record. Please try again.');
         }
       } catch (error) {
         console.log('Delete error:', error);
-        setAlertMessage('Failed to delete record');
+        showError('Failed to delete record');
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
-        setAlertModal(true);
-
         setTimeout(() => {
           fetchFamilyContactsData();
         }, 800);
@@ -511,12 +508,7 @@ const FamilyContact_ListPage = () => {
         showDelete={getStatusLabel(selectedContactItem?.WFStatus) === 'Draft'}
       />
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
 
       <AlertDeleteModal
         visible={deleteModal}

@@ -34,7 +34,7 @@ const MainPageHeader = ({
           color="#fff"
         />
       </TouchableOpacity>
-      <Text style={S.titleText}>Dynaface</Text>
+      <Text style={S.titleText}>IDAP360</Text>
     </View>
   ),
 

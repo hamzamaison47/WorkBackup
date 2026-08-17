@@ -14,6 +14,7 @@ import {ProfilePicture} from '../API/PersonalInformation/ProfilePicture/ProfileP
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import usePalette from '../hooks/usePalette';
 
 import {
   conditionalScale,
@@ -22,56 +23,76 @@ import {
 
 const Drawer = createDrawerNavigator();
 
-// Compact Drawer Item with original icon colors
+// Compact Drawer Item — fully theme-reactive via T (useAppTokens), so colors
+// flip correctly between light/dark instead of using the static AppTokens
+// export.
 const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
   const T = useAppTokens();
+  const P = usePalette();
+
+  const renderIcon = () => {
+    const iconSize = 20;
+    const color = isActive ? '#FFFFFF' : P.primary;
+
+    if (typeof icon === 'string') {
+      return (
+        <Ionicons
+          name={icon}
+          size={iconSize}
+          color={isActive ? '#FFFFFF' : P.primary}
+        />
+      );
+    }
+
+    if (typeof icon === 'function' || (icon && icon.$$typeof)) {
+      const IconComponent = icon;
+      return <IconComponent size={iconSize} color={color} />;
+    }
+
+    return (
+      <Image
+        source={icon}
+        style={{
+          width: conditionalScale(18, 19, 20, 20),
+          height: conditionalScale(18, 19, 20, 20),
+        }}
+        resizeMode="contain"
+      />
+    );
+  };
 
   return (
     <TouchableOpacity
-      style={[
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingVertical: conditionalVerticalScale(8, 9, 10, 10),
-          paddingHorizontal: conditionalScale(14, 15, 16, 16),
-          marginHorizontal: conditionalScale(12, 14, 16, 16),
-          marginVertical: conditionalVerticalScale(1, 1, 2, 2),
-          borderRadius: conditionalScale(8, 9, 10, 10),
-          backgroundColor: isActive ? T.blue : 'transparent',
-        },
-      ]}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: conditionalVerticalScale(8, 9, 10, 10),
+        paddingHorizontal: conditionalScale(14, 15, 16, 16),
+        marginHorizontal: conditionalScale(12, 14, 16, 16),
+        marginVertical: conditionalVerticalScale(1, 1, 2, 2),
+        borderRadius: conditionalScale(8, 9, 10, 10),
+        backgroundColor: isActive ? T.blue : 'transparent',
+      }}
       onPress={onPress}
       activeOpacity={0.7}>
       <View
         style={{
-          marginRight: conditionalScale(12, 13, 14, 14),
-          width: conditionalScale(20, 21, 22, 22),
+          width: conditionalScale(32, 34, 36, 36),
+          height: conditionalScale(32, 34, 36, 36),
+          borderRadius: conditionalScale(9, 10, 10, 10),
+          backgroundColor: isActive ? 'rgba(255,255,255,0.18)' : T.blueBg,
           alignItems: 'center',
+          justifyContent: 'center',
+          marginRight: conditionalScale(12, 13, 14, 14),
         }}>
-        {typeof icon === 'string' ? (
-          <Ionicons
-            name={icon}
-            size={18}
-            color={isActive ? '#FFFFFF' : undefined} // Keep original color when inactive
-          />
-        ) : (
-          <Image
-            source={icon}
-            style={{
-              width: conditionalScale(18, 19, 20, 20),
-              height: conditionalScale(18, 19, 20, 20),
-              // No tintColor - keep original image colors
-            }}
-            resizeMode="contain"
-          />
-        )}
+        {renderIcon()}
       </View>
       <Text
         style={{
           flex: 1,
           fontSize: conditionalScale(13, 14, 14, 14),
           fontWeight: isActive ? '500' : '400',
-          color: isActive ? '#FFFFFF' : '#1E293B',
+          color: isActive ? '#FFFFFF' : T.titleText,
           letterSpacing: 0.2,
         }}
         numberOfLines={2}>
@@ -81,7 +102,9 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
   );
 };
 
-// Complete Header with Logo, Title, Profile Picture and Name
+// Header stays on brand blue in both themes (same as QuickAccessSheet's
+// header) — white text/circle keep proper contrast against it regardless of
+// theme, so those specific colors are intentionally NOT theme-reactive.
 const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
   const T = useAppTokens();
 
@@ -105,7 +128,6 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
         borderBottomRightRadius: conditionalScale(16, 18, 20, 20),
         marginBottom: conditionalVerticalScale(8, 10, 12, 12),
       }}>
-      {/* Logo and Title Section */}
       <View
         style={{
           flexDirection: 'row',
@@ -115,7 +137,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
           paddingHorizontal: conditionalScale(20, 22, 24, 24),
         }}>
         <Image
-          source={require('../assets/cloud.png')}
+          source={require('../assets/IDAPNewLogo.jpg')}
           style={{
             width: conditionalScale(32, 34, 36, 36),
             height: conditionalScale(32, 34, 36, 36),
@@ -130,11 +152,10 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
             color: '#FFFFFF',
             letterSpacing: 0.3,
           }}>
-          Dynaface
+          IDAP360
         </Text>
       </View>
 
-      {/* Profile Section */}
       <TouchableOpacity
         onPress={onPressProfile}
         activeOpacity={0.7}
@@ -144,7 +165,6 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
           paddingVertical: conditionalVerticalScale(14, 16, 18, 18),
           paddingHorizontal: conditionalScale(20, 22, 24, 24),
         }}>
-        {/* Profile Picture */}
         <View
           style={{
             position: 'relative',
@@ -163,10 +183,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
             {profilePictureUrl ? (
               <Image
                 source={{uri: profilePictureUrl}}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                }}
+                style={{width: '100%', height: '100%'}}
                 resizeMode="cover"
               />
             ) : (
@@ -180,7 +197,6 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
               </Text>
             )}
           </View>
-          {/* Online indicator */}
           <View
             style={{
               position: 'absolute',
@@ -196,7 +212,6 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
           />
         </View>
 
-        {/* User Info */}
         <View style={{flex: 1}}>
           <Text
             style={{
@@ -222,10 +237,6 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
   );
 };
 
-// Main Custom Drawer Content
-// Named export so the logout path can be exercised directly in tests. This is
-// the call site that shipped broken (handleLogoutauth(userData.Provider)) and
-// looked like it worked, so it gets a regression test.
 export const CustomDrawerContent = props => {
   const T = useAppTokens();
   const [modalVisible, setModalVisible] = useState(false);
@@ -235,7 +246,6 @@ export const CustomDrawerContent = props => {
   const userData = useSelector(state => state.user.userData);
   const {menuItems} = useSelector(state => state.menuItem);
 
-  // Track active route
   useEffect(() => {
     const unsubscribe = props.navigation.addListener('state', e => {
       const state = e.data.state;
@@ -262,7 +272,6 @@ export const CustomDrawerContent = props => {
     return unsubscribe;
   }, [props.navigation]);
 
-  // Load profile picture
   useEffect(() => {
     const loadProfilePicture = async () => {
       if (!userData?.employeeId) {
@@ -294,7 +303,6 @@ export const CustomDrawerContent = props => {
   const handleLogout = () => setModalVisible(true);
   const confirmLogout = () => {
     setModalVisible(false);
-    // handleLogoutauth owns the navigation reset — no navigate() after it.
     handleLogoutauth(props.navigation);
   };
   const cancelLogout = () => setModalVisible(false);
@@ -306,7 +314,6 @@ export const CustomDrawerContent = props => {
     [props.navigation],
   );
 
-  // Filter and deduplicate menu items
   const filteredMenuItems = menuItems.filter(item => {
     return (
       screenMapping[item.MenuId] &&
@@ -320,7 +327,6 @@ export const CustomDrawerContent = props => {
       !!it?.MenuId && arr.findIndex(x => x.MenuId === it.MenuId) === idx,
   );
 
-  // Split into two sections only: Main and Settings
   const mainMenuItems = uniqueMenuItems.filter(
     item =>
       item.MenuId !== 'MainDashboard' &&
@@ -333,22 +339,19 @@ export const CustomDrawerContent = props => {
   );
 
   return (
-    <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
-      {/* Complete Header */}
+    <View style={{flex: 1, backgroundColor: T.pageBg}}>
       <DrawerHeader
         userData={userData}
         profilePictureUrl={profilePictureUrl}
         onPressProfile={() => navigateToScreen('Profile')}
       />
 
-      {/* Scrollable Menu Items */}
       <DrawerContentScrollView
         {...props}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingVertical: conditionalVerticalScale(8, 10, 12, 12),
         }}>
-        {/* Dashboard Item */}
         <CustomDrawerItem
           label="Dashboard"
           icon="grid-outline"
@@ -356,7 +359,6 @@ export const CustomDrawerContent = props => {
           onPress={() => navigateToScreen('MainDashboard')}
         />
 
-        {/* Main Menu Section */}
         {mainMenuItems.length > 0 && (
           <>
             <View
@@ -369,7 +371,7 @@ export const CustomDrawerContent = props => {
                 style={{
                   fontSize: conditionalScale(10, 11, 11, 11),
                   fontWeight: '600',
-                  color: '#94A3B8',
+                  color: T.subtitleText,
                   letterSpacing: 0.8,
                   textTransform: 'uppercase',
                 }}>
@@ -409,7 +411,6 @@ export const CustomDrawerContent = props => {
           </>
         )}
 
-        {/* Settings Section - Only second section */}
         {settingsMenuItems.length > 0 && (
           <>
             <View
@@ -422,7 +423,7 @@ export const CustomDrawerContent = props => {
                 style={{
                   fontSize: conditionalScale(10, 11, 11, 11),
                   fontWeight: '600',
-                  color: '#94A3B8',
+                  color: T.subtitleText,
                   letterSpacing: 0.8,
                   textTransform: 'uppercase',
                 }}>
@@ -441,25 +442,15 @@ export const CustomDrawerContent = props => {
           </>
         )}
 
-        {/* Footer Text */}
         <View
           style={{
             paddingTop: conditionalVerticalScale(24, 28, 32, 36),
             paddingBottom: conditionalVerticalScale(16, 18, 20, 20),
             alignItems: 'center',
-          }}>
-          {/* <Text
-            style={{
-              fontSize: conditionalScale(9, 10, 10, 10),
-              color: '#CBD5E1',
-              textAlign: 'center',
-            }}>
-            All rights reserved
-          </Text> */}
-        </View>
+          }}
+        />
       </DrawerContentScrollView>
 
-      {/* Logout Modal */}
       <LogoutAlertModal
         visible={modalVisible}
         heading="Sign Out"
@@ -471,7 +462,6 @@ export const CustomDrawerContent = props => {
   );
 };
 
-// Drawer Navigator Component
 const DrawerNavigator = () => {
   const userData = useSelector(state => state.user.userData);
   const {menuItems} = useSelector(state => state.menuItem);
@@ -491,13 +481,9 @@ const DrawerNavigator = () => {
       screenOptions={{
         drawerStyle: {
           width: conditionalScale(280, 300, 320, 340),
-          backgroundColor: '#FFFFFF',
+          backgroundColor: T.pageBg,
         },
         headerShown: true,
-        // Android edge-to-edge: reserve the status-bar strip on the drawer's
-        // default header too, so it isn't squeezed under the status bar before
-        // per-screen MainPageHeader overrides run (and for any drawer screen that
-        // doesn't route through it). iOS keeps its existing height unchanged.
         ...(Platform.OS === 'android' && {headerStatusBarHeight: insets.top}),
         headerStyle: {
           backgroundColor: T.blue,

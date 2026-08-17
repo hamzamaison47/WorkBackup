@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {useSelector} from 'react-redux';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {translate as t} from '../../store/utils/translate';
 import styles from '../../styles/styles';
 
@@ -31,7 +32,7 @@ const AlertDeleteModal = ({
 
   // Delete alert configuration
   const deleteConfig = {
-    icon: 'alert-circle-outline',
+    icon: 'trash-can',
     iconColor: '#DC2626',
     primaryColor: '#DC2626',
     iconBg: '#FEF2F2',
@@ -40,7 +41,6 @@ const AlertDeleteModal = ({
 
   useEffect(() => {
     if (visible) {
-      // Open animation
       Animated.parallel([
         Animated.timing(overlayOpacityAnim, {
           toValue: 1,
@@ -61,7 +61,6 @@ const AlertDeleteModal = ({
         }),
       ]).start();
     } else {
-      // Close animation
       Animated.parallel([
         Animated.timing(overlayOpacityAnim, {
           toValue: 0,
@@ -82,7 +81,6 @@ const AlertDeleteModal = ({
     }
   }, [visible]);
 
-  // Shake animation for attention
   const startShakeAnimation = () => {
     Animated.sequence([
       Animated.timing(shakeAnim, {
@@ -111,8 +109,6 @@ const AlertDeleteModal = ({
   const handleDeletePress = () => {
     if (!isProcessing) {
       onPress && onPress();
-      // Note: The modal will remain open until the parent component
-      // sets isProcessing to false and then calls onCancel
     }
   };
 
@@ -141,12 +137,7 @@ const AlertDeleteModal = ({
       statusBarTranslucent={true}>
       <TouchableWithoutFeedback onPress={handleOverlayPress}>
         <Animated.View
-          style={[
-            styles.DeleteAlert_overlay,
-            {
-              opacity: overlayOpacityAnim,
-            },
-          ]}>
+          style={[styles.DeleteAlert_overlay, {opacity: overlayOpacityAnim}]}>
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
@@ -159,6 +150,21 @@ const AlertDeleteModal = ({
                   ],
                 },
               ]}>
+              {/* Icon Section */}
+              <View style={styles.DeleteAlert_iconContainer}>
+                <View
+                  style={[
+                    styles.DeleteAlert_iconBackground,
+                    {backgroundColor: deleteConfig.iconBg},
+                  ]}>
+                  <MaterialCommunityIcons
+                    name={deleteConfig.icon}
+                    size={styles.DeleteAlert_iconSize}
+                    color={deleteConfig.iconColor}
+                  />
+                </View>
+              </View>
+
               {/* Content Section */}
               <View style={styles.DeleteAlert_contentContainer}>
                 <Text style={styles.DeleteAlert_heading}>{heading}</Text>

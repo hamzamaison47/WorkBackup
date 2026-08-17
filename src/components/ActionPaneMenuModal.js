@@ -21,6 +21,7 @@ import {
   conditionalFontScale,
   borderRadius,
 } from '../store/utils/scaling';
+import useAppTokens from './AppComponentsDesign/useAppTokens';
 
 const STAGGER = 45;
 const SLIDE_DUR = 280;
@@ -54,12 +55,12 @@ const AnimatedRow = ({children, delay = 0, style}) => {
 };
 
 // ─── Section label ─────────────────────────────────────────────────────────
-const SectionLabel = ({label}) => (
+const SectionLabel = ({label, styles}) => (
   <Text style={styles.sectionLabel}>{label}</Text>
 );
 
 // ─── Icon badge ────────────────────────────────────────────────────────────
-const IconBadge = ({name, color, bgColor, lib = 'ion'}) => (
+const IconBadge = ({name, color, bgColor, lib = 'ion', styles}) => (
   <View style={[styles.iconBadge, {backgroundColor: bgColor}]}>
     {lib === 'ion' ? (
       <Ionicons
@@ -86,9 +87,16 @@ const MenuRow = ({
   sub,
   onPress,
   lib = 'ion',
+  styles,
 }) => (
   <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-    <IconBadge name={iconName} color={iconColor} bgColor={iconBg} lib={lib} />
+    <IconBadge
+      name={iconName}
+      color={iconColor}
+      bgColor={iconBg}
+      lib={lib}
+      styles={styles}
+    />
     <View style={styles.rowTextBlock}>
       <Text style={styles.rowLabel}>{label}</Text>
       {sub ? (
@@ -114,6 +122,8 @@ const ActionPaneMenuModal = ({
   const {menuItems} = useSelector(state => state.menuItem);
   const {userData} = useSelector(state => state.user);
   const P = usePalette();
+  const T = useAppTokens();
+  const styles = createStyles(T);
 
   const [companyOpen, setCompanyOpen] = useState(false);
 
@@ -294,7 +304,7 @@ const ActionPaneMenuModal = ({
           contentContainerStyle={styles.body}>
           {/* ACCOUNT */}
           <AnimatedRow delay={STAGGER}>
-            <SectionLabel label="ACCOUNT" />
+            <SectionLabel label="ACCOUNT" styles={styles} />
             <MenuRow
               iconName="person-outline"
               iconColor={P.primary}
@@ -302,6 +312,7 @@ const ActionPaneMenuModal = ({
               label="My Profile"
               sub="View and edit your information"
               onPress={() => goTo('Profile')}
+              styles={styles}
             />
             <MenuRow
               iconName="settings-outline"
@@ -310,13 +321,14 @@ const ActionPaneMenuModal = ({
               label="Settings"
               sub="Language · Security · Date & Time"
               onPress={() => goTo('SettingsScreen')}
+              styles={styles}
             />
           </AnimatedRow>
 
           {/* ORGANIZATION */}
           <AnimatedRow delay={STAGGER * 2}>
             <View style={styles.sectionGap} />
-            <SectionLabel label="ORGANIZATION" />
+            <SectionLabel label="ORGANIZATION" styles={styles} />
 
             {/* Company accordion trigger */}
             <TouchableOpacity
@@ -327,6 +339,7 @@ const ActionPaneMenuModal = ({
                 name="business-outline"
                 color="#0D9488"
                 bgColor="#CCFBF1"
+                styles={styles}
               />
               <View style={styles.rowTextBlock}>
                 <Text style={styles.rowLabel}>Switch Company</Text>
@@ -404,7 +417,7 @@ const ActionPaneMenuModal = ({
           {headerMenus.length > 0 && (
             <AnimatedRow delay={STAGGER * 3}>
               <View style={styles.sectionGap} />
-              <SectionLabel label="MODULES" />
+              <SectionLabel label="MODULES" styles={styles} />
               {headerMenus.map(item => (
                 <MenuRow
                   key={item.MenuId}
@@ -413,6 +426,7 @@ const ActionPaneMenuModal = ({
                   iconBg="#FEF3C7"
                   label={item.Label || item.MenuId}
                   onPress={() => handleMenuPress(item)}
+                  styles={styles}
                 />
               ))}
             </AnimatedRow>
@@ -447,195 +461,189 @@ const ActionPaneMenuModal = ({
   );
 };
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.52)',
-  },
-  panel: {
-    position: 'absolute',
-    top: conditionalVerticalScale(52, 56, 60, 62),
-    right: conditionalScale(10, 12, 14, 14),
-    width: conditionalScale(238, 248, 260, 260),
-    backgroundColor: '#FFFFFF',
-    borderRadius: conditionalScale(14, 15, 16, 16),
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 0.2,
-    shadowRadius: 28,
-    elevation: 18,
-    overflow: 'hidden',
-  },
-  brandStripe: {height: 3},
+const createStyles = T =>
+  StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(15, 23, 42, 0.52)',
+    },
+    panel: {
+      position: 'absolute',
+      top: conditionalVerticalScale(52, 56, 60, 62),
+      right: conditionalScale(10, 12, 14, 14),
+      width: conditionalScale(238, 248, 260, 260),
+      backgroundColor: T.cardBg,
+      borderRadius: conditionalScale(14, 15, 16, 16),
+      shadowColor: T.shadowColor,
+      shadowOffset: {width: 0, height: 10},
+      shadowOpacity: 0.2,
+      shadowRadius: 28,
+      elevation: 18,
+      overflow: 'hidden',
+    },
+    brandStripe: {height: 3},
 
-  // User card
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: conditionalScale(12, 13, 14, 14),
-    paddingTop: conditionalVerticalScale(12, 13, 14, 14),
-    paddingBottom: conditionalVerticalScale(10, 11, 12, 12),
-  },
-  avatarCircle: {
-    width: conditionalScale(38, 40, 42, 42),
-    height: conditionalScale(38, 40, 42, 42),
-    borderRadius: conditionalScale(19, 20, 21, 21),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: conditionalScale(9, 10, 10, 10),
-  },
-  avatarText: {
-    fontSize: conditionalFontScale(13, 14, 15, 15),
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  userInfo: {flex: 1},
-  userName: {
-    fontSize: conditionalFontScale(13, 13, 14, 14),
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.2,
-  },
-  userMeta: {
-    fontSize: conditionalFontScale(9, 9, 10, 10),
-    color: '#94A3B8',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  closeBtn: {
-    width: conditionalScale(26, 28, 30, 30),
-    height: conditionalScale(26, 28, 30, 30),
-    borderRadius: conditionalScale(13, 14, 15, 15),
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    userCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: conditionalScale(12, 13, 14, 14),
+      paddingTop: conditionalVerticalScale(12, 13, 14, 14),
+      paddingBottom: conditionalVerticalScale(10, 11, 12, 12),
+    },
+    avatarCircle: {
+      width: conditionalScale(38, 40, 42, 42),
+      height: conditionalScale(38, 40, 42, 42),
+      borderRadius: conditionalScale(19, 20, 21, 21),
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: conditionalScale(9, 10, 10, 10),
+    },
+    avatarText: {
+      fontSize: conditionalFontScale(13, 14, 15, 15),
+      fontWeight: '800',
+      color: '#FFFFFF',
+      letterSpacing: 0.5,
+    },
+    userInfo: {flex: 1},
+    userName: {
+      fontSize: conditionalFontScale(13, 13, 14, 14),
+      fontWeight: '700',
+      color: T.titleText,
+      letterSpacing: -0.2,
+    },
+    userMeta: {
+      fontSize: conditionalFontScale(9, 9, 10, 10),
+      color: T.subtitleText,
+      fontWeight: '500',
+      marginTop: 2,
+    },
+    closeBtn: {
+      width: conditionalScale(26, 28, 30, 30),
+      height: conditionalScale(26, 28, 30, 30),
+      borderRadius: conditionalScale(13, 14, 15, 15),
+      backgroundColor: T.cardHeadingBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // Dividers
-  hairline: {height: 1, backgroundColor: '#F1F5F9'},
-  footerHairline: {height: 1, backgroundColor: '#FEE2E2'},
+    hairline: {height: 1, backgroundColor: T.cardDivider},
+    footerHairline: {height: 1, backgroundColor: T.cardDivider},
 
-  // Body
-  body: {
-    paddingTop: conditionalVerticalScale(6, 7, 8, 8),
-    paddingBottom: conditionalVerticalScale(2, 3, 4, 4),
-  },
-  sectionGap: {height: conditionalVerticalScale(4, 5, 6, 6)},
-  sectionLabel: {
-    fontSize: conditionalFontScale(9, 9, 10, 10),
-    fontWeight: '700',
-    color: '#94A3B8',
-    letterSpacing: 1,
-    paddingHorizontal: conditionalScale(14, 15, 16, 16),
-    paddingTop: conditionalVerticalScale(4, 5, 6, 6),
-    paddingBottom: conditionalVerticalScale(2, 3, 3, 3),
-  },
+    body: {
+      paddingTop: conditionalVerticalScale(6, 7, 8, 8),
+      paddingBottom: conditionalVerticalScale(2, 3, 4, 4),
+    },
+    sectionGap: {height: conditionalVerticalScale(4, 5, 6, 6)},
+    sectionLabel: {
+      fontSize: conditionalFontScale(9, 9, 10, 10),
+      fontWeight: '700',
+      color: T.subtitleText,
+      letterSpacing: 1,
+      paddingHorizontal: conditionalScale(14, 15, 16, 16),
+      paddingTop: conditionalVerticalScale(4, 5, 6, 6),
+      paddingBottom: conditionalVerticalScale(2, 3, 3, 3),
+    },
 
-  // Rows
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: conditionalScale(10, 11, 12, 12),
-    paddingVertical: conditionalVerticalScale(8, 9, 10, 10),
-    borderRadius: conditionalScale(10, 10, 10, 10),
-    marginHorizontal: conditionalScale(6, 7, 8, 8),
-    marginVertical: conditionalVerticalScale(1, 1, 2, 2),
-  },
-  rowActive: {backgroundColor: '#F0F9FF'},
-  rowTextBlock: {flex: 1, marginLeft: conditionalScale(9, 9, 10, 10)},
-  rowLabel: {
-    fontSize: conditionalFontScale(12, 12, 13, 13),
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  rowSub: {
-    fontSize: conditionalFontScale(9, 9, 10, 10),
-    color: '#94A3B8',
-    fontWeight: '400',
-    marginTop: 1,
-  },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: conditionalScale(10, 11, 12, 12),
+      paddingVertical: conditionalVerticalScale(8, 9, 10, 10),
+      borderRadius: conditionalScale(10, 10, 10, 10),
+      marginHorizontal: conditionalScale(6, 7, 8, 8),
+      marginVertical: conditionalVerticalScale(1, 1, 2, 2),
+    },
+    rowActive: {backgroundColor: T.blueBg},
+    rowTextBlock: {flex: 1, marginLeft: conditionalScale(9, 9, 10, 10)},
+    rowLabel: {
+      fontSize: conditionalFontScale(12, 12, 13, 13),
+      fontWeight: '600',
+      color: T.titleText,
+    },
+    rowSub: {
+      fontSize: conditionalFontScale(9, 9, 10, 10),
+      color: T.subtitleText,
+      fontWeight: '400',
+      marginTop: 1,
+    },
 
-  // Icon badge
-  iconBadge: {
-    width: conditionalScale(30, 31, 32, 32),
-    height: conditionalScale(30, 31, 32, 32),
-    borderRadius: conditionalScale(8, 9, 9, 9),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    iconBadge: {
+      width: conditionalScale(30, 31, 32, 32),
+      height: conditionalScale(30, 31, 32, 32),
+      borderRadius: conditionalScale(8, 9, 9, 9),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // Submenu
-  submenu: {
-    overflow: 'hidden',
-    marginHorizontal: conditionalScale(6, 7, 8, 8),
-    borderRadius: conditionalScale(8, 9, 10, 10),
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginBottom: conditionalVerticalScale(2, 3, 4, 4),
-  },
-  submenuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: conditionalVerticalScale(9, 10, 11, 11),
-    paddingRight: conditionalScale(12, 13, 14, 14),
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F7',
-  },
-  submenuRowSelected: {backgroundColor: '#F0FDFA'},
-  submenuStripe: {
-    width: 3,
-    alignSelf: 'stretch',
-    borderRadius: 2,
-    marginRight: conditionalScale(8, 9, 10, 10),
-  },
-  submenuText: {
-    flex: 1,
-    fontSize: conditionalFontScale(11, 11, 12, 12),
-    fontWeight: '600',
-    color: '#475569',
-  },
-  submenuTextSelected: {color: '#0D9488', fontWeight: '700'},
-  checkCircle: {
-    width: conditionalScale(16, 17, 18, 18),
-    height: conditionalScale(16, 17, 18, 18),
-    borderRadius: conditionalScale(9, 9, 9, 9),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: conditionalScale(4, 5, 6, 6),
-  },
-  emptyText: {
-    textAlign: 'center',
-    fontSize: conditionalFontScale(10, 11, 11, 11),
-    color: '#CBD5E1',
-    paddingVertical: conditionalVerticalScale(10, 12, 14, 14),
-  },
+    submenu: {
+      overflow: 'hidden',
+      marginHorizontal: conditionalScale(6, 7, 8, 8),
+      borderRadius: conditionalScale(8, 9, 10, 10),
+      backgroundColor: T.cardHeadingBg,
+      borderWidth: 1,
+      borderColor: T.cardDivider,
+      marginBottom: conditionalVerticalScale(2, 3, 4, 4),
+    },
+    submenuRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: conditionalVerticalScale(9, 10, 11, 11),
+      paddingRight: conditionalScale(12, 13, 14, 14),
+      borderBottomWidth: 1,
+      borderBottomColor: T.rowDivider,
+    },
+    submenuRowSelected: {backgroundColor: '#F0FDFA'},
+    submenuStripe: {
+      width: 3,
+      alignSelf: 'stretch',
+      borderRadius: 2,
+      marginRight: conditionalScale(8, 9, 10, 10),
+    },
+    submenuText: {
+      flex: 1,
+      fontSize: conditionalFontScale(11, 11, 12, 12),
+      fontWeight: '600',
+      color: T.subtitleText,
+    },
+    submenuTextSelected: {color: '#0D9488', fontWeight: '700'},
+    checkCircle: {
+      width: conditionalScale(16, 17, 18, 18),
+      height: conditionalScale(16, 17, 18, 18),
+      borderRadius: conditionalScale(9, 9, 9, 9),
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: conditionalScale(4, 5, 6, 6),
+    },
+    emptyText: {
+      textAlign: 'center',
+      fontSize: conditionalFontScale(10, 11, 11, 11),
+      color: T.emptyText,
+      paddingVertical: conditionalVerticalScale(10, 12, 14, 14),
+    },
 
-  // Logout
-  logoutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: conditionalScale(12, 13, 14, 14),
-    paddingVertical: conditionalVerticalScale(11, 12, 13, 13),
-    backgroundColor: '#FFF8F8',
-  },
-  logoutIconWrap: {
-    width: conditionalScale(30, 31, 32, 32),
-    height: conditionalScale(30, 31, 32, 32),
-    borderRadius: conditionalScale(8, 9, 9, 9),
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: conditionalScale(9, 9, 10, 10),
-  },
-  logoutLabel: {
-    flex: 1,
-    fontSize: conditionalFontScale(12, 12, 13, 13),
-    fontWeight: '700',
-    color: '#DC2626',
-    letterSpacing: 0.1,
-  },
-});
+    logoutRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: conditionalScale(12, 13, 14, 14),
+      paddingVertical: conditionalVerticalScale(11, 12, 13, 13),
+      backgroundColor: T.cardHeadingBg,
+    },
+    logoutIconWrap: {
+      width: conditionalScale(30, 31, 32, 32),
+      height: conditionalScale(30, 31, 32, 32),
+      borderRadius: conditionalScale(8, 9, 9, 9),
+      backgroundColor: '#FEE2E2',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: conditionalScale(9, 9, 10, 10),
+    },
+    logoutLabel: {
+      flex: 1,
+      fontSize: conditionalFontScale(12, 12, 13, 13),
+      fontWeight: '700',
+      color: '#DC2626',
+      letterSpacing: 0.1,
+    },
+  });
 
 export default ActionPaneMenuModal;

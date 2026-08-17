@@ -631,7 +631,10 @@ const ActionPaneContainer = ({
   const inAppNotifications = useSelector(
     state => state.firebase.inAppNotifications,
   );
-  const allNotifications = [...inAppNotifications, ...notifications];
+  const allNotifications = React.useMemo(
+    () => [...inAppNotifications, ...notifications],
+    [inAppNotifications, notifications],
+  );
   const totalUnreadCount =
     inAppNotifications.filter(n => n.NotificationActivityStatus === 'Unread')
       .length + notificationCount;
@@ -696,6 +699,19 @@ const ActionPaneContainer = ({
       console.error('Error fetching notifications:', err);
     }
   }, [userData?.employeeId]);
+
+  const handleNotificationClose = useCallback(() => {
+    setNotificationVisible(false);
+  }, []);
+
+  const handleMarkLocalRead = useCallback(
+    recId => dispatch(markInAppNotificationRead(recId)),
+    [dispatch],
+  );
+
+  const handleClearAllNotifications = useCallback(() => {
+    dispatch(clearInAppNotifications());
+  }, [dispatch]);
 
   useEffect(() => {
     // Stop polling the moment logout starts — otherwise a request fired with
@@ -875,13 +891,11 @@ const ActionPaneContainer = ({
       <NotificationPanel
         visible={notificationVisible}
         notifications={allNotifications}
-        onClose={() => setNotificationVisible(false)}
+        onClose={handleNotificationClose}
         onRefresh={fetchNotifications}
         employeeId={userData?.employeeId}
-        onMarkLocalRead={(
-          recId, // 👈 ADD this prop
-        ) => dispatch(markInAppNotificationRead(recId))}
-        onClearAll={() => dispatch(clearInAppNotifications())}
+        onMarkLocalRead={handleMarkLocalRead}
+        onClearAll={handleClearAllNotifications}
       />
       <ActionPaneMenuModal
         visible={headerMenuVisible}

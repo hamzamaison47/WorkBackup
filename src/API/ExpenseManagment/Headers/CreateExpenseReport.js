@@ -18,6 +18,8 @@ const CreateExpenseReport = async ({
 
     const token = await getToken();
 
+    console.log('here is the data', expenseReportFields);
+
     // Sort fields to match .NET order: Purpose first, then Location
     const sortedFields = [...expenseReportFields].sort((a, b) => {
       const order = {Purpose: 1, Location: 2};

@@ -24,6 +24,7 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import {translate as t} from '../../../../store/utils/translate';
@@ -59,8 +60,8 @@ const PersonalEducationListPage = () => {
   /* ---------- state ---------- */
   const [isLoading, setIsLoading] = useState(false);
   const [educationData, setEducationData] = useState([]);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, hide, alertModalProps} =
+    useAlertModal();
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
@@ -88,8 +89,7 @@ const PersonalEducationListPage = () => {
       setEducationData(data);
     } catch (error) {
       console.log('Failed to fetch education details:', error);
-      setAlertMessage('Failed to fetch data.');
-      setAlertModal(true);
+      showError('Failed to fetch data.');
     } finally {
       setIsLoading(false);
     }
@@ -369,22 +369,21 @@ const PersonalEducationListPage = () => {
           recordsRecId: [itemToDelete.RecId],
         });
         if (response[0]?.IsSuccess) {
-          notifyDelete('Record deleted successfully.');
-          setAlertMessage('Record deleted successfully.');
+          notifyDelete('Education detail deleted successfully.');
+          showSuccess('Education detail deleted successfully.');
           setEducationData(prev =>
             prev.filter(ed => ed.RecId !== itemToDelete.RecId),
           );
         } else {
-          setAlertMessage('Failed to delete record.');
+          showError('Failed to delete record.');
         }
       } catch (error) {
         console.error('DeleteEducationDetails error:', error);
-        setAlertMessage('Failed to delete record');
+        showError('Failed to delete record');
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
-        setAlertModal(true);
 
         setTimeout(() => {
           fetchEducationData();
@@ -403,27 +402,29 @@ const PersonalEducationListPage = () => {
         recId: itemData.RecId,
       });
 
-      const res = Array.isArray(response) ? response[0] : response;
+      const contracts = Array.isArray(response?.GeneralContract)
+        ? response.GeneralContract
+        : response?.GeneralContract
+        ? [response.GeneralContract]
+        : [];
+
+      const res = contracts[0];
 
       if (String(res?.IsSuccess).toLowerCase() === 'true') {
         notifySuccess('Request submitted successfully.');
-        setAlertMessage('Request submitted successfully.');
-        setAlertModal(true);
+        showSuccess('Request submitted successfully.');
         setHighlightedRecId(itemData.RecId);
 
         setTimeout(() => setHighlightedRecId(null), 3000);
         setTimeout(() => fetchEducationData(), 1000);
       } else {
-        setAlertMessage(res?.Message || 'Failed to submit request.');
-        setAlertModal(true);
+        showError(res?.Message || 'Failed to submit request.');
       }
     } catch (error) {
       console.error('Submit error:', error);
-      setAlertMessage('Failed to submit request.');
-      setAlertModal(true);
+      showError('Failed to submit request.');
     } finally {
       setIsProcessing(false);
-      // Fix: use RecId (uppercase) consistently
       setButtonProcessing(itemData.RecId, 'submit', false);
     }
   };
@@ -434,8 +435,7 @@ const PersonalEducationListPage = () => {
       setSelectedEducationItem(itemData);
       setAttachmentModalVisible(true);
     } catch (error) {
-      setAlertMessage('Failed to open attachments');
-      setAlertModal(true);
+      showError('Failed to open attachments');
     }
   };
 
@@ -457,6 +457,19 @@ const PersonalEducationListPage = () => {
         key: 'Duration',
         label: educationData[0]?.Durationlbl || 'Duration',
         type: 'number',
+      },
+      // Note: keys/labels here mirror the WSDL's HcmPersonEducationSvcContract
+      // exactly — including "Insitutionlbl" (missing the "t"), which is the
+      // WSDL's own spelling, not a typo introduced here.
+      {
+        key: 'EducationLevelID',
+        label: educationData[0]?.EducationLevellbl || 'Education Level',
+        type: 'text',
+      },
+      {
+        key: 'InstitutionID',
+        label: educationData[0]?.Insitutionlbl || 'Institution',
+        type: 'text',
       },
       {key: 'ApprovalStatus', label: '', type: 'status'},
     ],
@@ -504,7 +517,7 @@ const PersonalEducationListPage = () => {
       pageTitle="Education Details"
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={isWorkflowEnabled}
+      showFloatingButton={true}
       isHeaderActive={true}
       showTabNavigator={true}
       onFloatingButtonPress={handleCreateEducation}
@@ -606,12 +619,7 @@ const PersonalEducationListPage = () => {
         }
       />
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
 
       <AlertDeleteModal
         visible={deleteModal}

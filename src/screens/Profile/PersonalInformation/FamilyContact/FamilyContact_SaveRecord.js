@@ -31,6 +31,7 @@ import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import CalendarModal from '../../../../components/Leaves/CalendarModal';
 import {BUTTON_TYPES} from '../../../../components/Buttons/SaveRecordButtons';
 
@@ -43,6 +44,7 @@ import useNotify from '../../../../hooks/useNotify';
 import styles from '../../../../styles/styles';
 import usePalette from '../../../../hooks/usePalette';
 import {borderRadius, spacing} from '../../../../store/utils/scaling';
+import useAppStyles from '../../../../hooks/useAppStyles';
 
 const FamilyContact_SaveRecord = () => {
   const route = useRoute();
@@ -51,6 +53,7 @@ const FamilyContact_SaveRecord = () => {
   const isRTL = useSelector(state => state.language.isRTL);
   const userData = useSelector(state => state.user.userData);
   const P = usePalette();
+  const styles = useAppStyles();
 
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
@@ -116,8 +119,8 @@ const FamilyContact_SaveRecord = () => {
 
   const [relationshipTypes, setRelationshipTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, alertModalProps} =
+    useAlertModal();
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showBeneficiaryFromCalendar, setShowBeneficiaryFromCalendar] =
@@ -215,7 +218,6 @@ const FamilyContact_SaveRecord = () => {
 
           if (mode === 'create') {
             setFormData(createInitialFormData());
-            setAlertMessage('');
           } else if (mode === 'edit' && familyContactDataSet?.RecId) {
             console.log('Edit Data :', familyContactDataSet);
             const fullName = familyContactDataSet.Name || '';
@@ -268,8 +270,7 @@ const FamilyContact_SaveRecord = () => {
           }
         } catch (error) {
           console.error('Error initializing Family Contact form:', error);
-          setAlertMessage('Failed to load screen');
-          setAlertModal(true);
+          showError('Failed to load screen');
         } finally {
           if (isActive) setIsLoading(false);
         }
@@ -286,6 +287,7 @@ const FamilyContact_SaveRecord = () => {
       employeeId,
       employeeName,
       WorkerRecId,
+      showError,
       fetchPersonalContactsLabels,
       createInitialFormData,
       toBoolean,
@@ -435,14 +437,13 @@ const FamilyContact_SaveRecord = () => {
     if (!formData.firstName.trim()) missing.push('First Name');
     if (!formData.relationship) missing.push('Relationship');
     if (missing.length) {
-      setAlertMessage(
+      showWarning(
         'Please fill in the following required fields:\n' + missing.join('\n'),
       );
-      setAlertModal(true);
       return false;
     }
     return true;
-  }, [formData.firstName, formData.relationship]);
+  }, [formData.firstName, formData.relationship, showWarning]);
 
   const handleAction = useCallback(
     async (mode, data) => {
@@ -506,18 +507,16 @@ const FamilyContact_SaveRecord = () => {
 
         if (response.IsSuccess === 'true') {
           const actionText = mode === 'edit' ? 'updated' : 'created';
-          const successMsg = `Record ${actionText} successfully`;
-          notifyError(response.Message);
-          setAlertMessage(`Record ${actionText} successfully`);
-          setAlertModal(true);
+          const successMsg = `Personal contact ${actionText} successfully`;
+          notifySuccess(successMsg);
+          showSuccess(successMsg);
           return {
             success: true,
             recId: response.RecId || contract.RecId,
           };
         } else if (response.IsSuccess === 'false') {
           const actionText = mode === 'edit' ? 'updated' : 'created';
-          setAlertMessage(response.Message);
-          setAlertModal(true);
+          showError(response.Message);
           return {
             success: false,
             recId: 0,
@@ -525,12 +524,11 @@ const FamilyContact_SaveRecord = () => {
         }
       } catch (error) {
         console.error('Error in handleAction:', error);
-        setAlertMessage('Failed to process request.');
-        setAlertModal(true);
+        showError('Failed to process request.');
         return {success: false};
       }
     },
-    [notifyError],
+    [notifySuccess, showError, showSuccess],
   );
 
   const handleSave = useCallback(
@@ -548,7 +546,6 @@ const FamilyContact_SaveRecord = () => {
         );
         if (result.success) {
           setTimeout(() => {
-            setAlertModal(false);
             setFormData(createInitialFormData());
             navigation.navigate('FamilyContact_ListPage', {
               employeeId: formData.employeeId,
@@ -742,58 +739,6 @@ const FamilyContact_SaveRecord = () => {
                 />
               </View>
 
-              {formData.isBeneficiary && (
-                <View style={styles.DSR_ExpandableContent}>
-                  {/* Valid From */}
-                  <Text
-                    style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                    {PersonalContactsLabelData?.BeneficiaryFromDatelbl ||
-                      'Valid From'}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.DSR_DateSelector}
-                    onPress={() => setShowBeneficiaryFromCalendar(true)}>
-                    <Text style={styles.DSR_DateText}>
-                      {formData.beneficiaryValidFrom
-                        ? formatDisplayDate(formData.beneficiaryValidFrom)
-                        : 'Select Date'}
-                    </Text>
-                    <Icon name="calendar" size={20} color="#04739cff" />
-                  </TouchableOpacity>
-
-                  {/* Valid To */}
-                  <Text
-                    style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-                    {PersonalContactsLabelData?.BeneficiaryToDatelbl ||
-                      'Valid To'}
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.DSR_Input,
-                      {
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        paddingHorizontal: 12,
-                      },
-                    ]}
-                    onPress={() => setShowBeneficiaryToCalendar(true)}>
-                    <Text
-                      style={{
-                        color: formData.beneficiaryValidTo ? '#000' : '#888',
-                        fontSize: 16,
-                      }}>
-                      {formData.beneficiaryValidTo === D365_MAX_DATETIME
-                        ? 'Never'
-                        : formData.beneficiaryValidTo
-                        ? formatDisplayDate(formData.beneficiaryValidTo)
-                        : 'Select Date'}
-                    </Text>
-                    <Icon name="calendar" size={20} color="#04739cff" />
-                  </TouchableOpacity>
-                </View>
-              )}
-
               {formData.relationship !== 'FamilyContact' &&
                 formData.relationship !== 'OtherContact' && (
                   <View>
@@ -832,76 +777,6 @@ const FamilyContact_SaveRecord = () => {
                           borderTopWidth: 1,
                           borderTopColor: '#e0e0e0',
                         }}>
-                        {/* Valid From */}
-                        <Text
-                          style={[
-                            styles.DSR_Label,
-                            isRTL && {textAlign: 'left'},
-                          ]}>
-                          {PersonalContactsLabelData?.dependentValidFromlbl ||
-                            'Valid From'}
-                        </Text>
-                        <TouchableOpacity
-                          style={[
-                            styles.DSR_Input,
-                            {
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              paddingHorizontal: 12,
-                            },
-                          ]}
-                          onPress={() => setShowDependentFromCalendar(true)}>
-                          <Text
-                            style={{
-                              color: formData.dependentValidFrom
-                                ? '#000'
-                                : '#888',
-                              fontSize: 16,
-                            }}>
-                            {formData.dependentValidFrom
-                              ? formatDisplayDate(formData.dependentValidFrom)
-                              : 'Select Date'}
-                          </Text>
-                          <Icon name="calendar" size={20} color="#04739cff" />
-                        </TouchableOpacity>
-
-                        {/* Valid To */}
-                        <Text
-                          style={[
-                            styles.DSR_Label,
-                            isRTL && {textAlign: 'left'},
-                          ]}>
-                          {PersonalContactsLabelData?.depndentValidTolbl ||
-                            'Valid To'}
-                        </Text>
-                        <TouchableOpacity
-                          style={[
-                            styles.DSR_Input,
-                            {
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              paddingHorizontal: 12,
-                            },
-                          ]}
-                          onPress={() => setShowDependentToCalendar(true)}>
-                          <Text
-                            style={{
-                              color: formData.dependentValidTo
-                                ? '#000'
-                                : '#888',
-                              fontSize: 16,
-                            }}>
-                            {formData.dependentValidTo === D365_MAX_DATETIME
-                              ? 'Never'
-                              : formData.dependentValidTo
-                              ? formatDisplayDate(formData.dependentValidTo)
-                              : 'Select Date'}
-                          </Text>
-                          <Icon name="calendar" size={20} color="#04739cff" />
-                        </TouchableOpacity>
-
                         {/* Gender Dropdown */}
                         <Text
                           style={[
@@ -1069,13 +944,7 @@ const FamilyContact_SaveRecord = () => {
         maxDate={today}
       />
 
-      {/* ✅ AlertModal outside the loading block */}
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
     </ActionPaneContainer>
   );
 };

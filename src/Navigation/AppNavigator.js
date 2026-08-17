@@ -16,6 +16,7 @@ import OutlookCalendarScreen from '../screens/Settings/OutlookCalendarScreen';
 import PurchaseOrderListPage from '../screens/PurchaseOrder/PurchaseOrderListPage';
 import HRHelpDeskListScreen from '../screens/HRHelpDeskRequest/HRHelpDeskList_Screen';
 import HRHelpDeskSaveScreen from '../screens/HRHelpDeskRequest/HRHelpDeskSave_Screen';
+import TravelRequisitionSiteSurveyReport from '../Customizations/IDAP/screens/ExpenseManagement/Lines/TravelRequisitionSiteSurveyReport';
 
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
@@ -159,6 +160,19 @@ const AppNavigator = () => {
         {() => (
           <ScreenWithSessionTimeout>
             <HRHelpDeskListScreen />
+          </ScreenWithSessionTimeout>
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen
+        name="TravelRequisitionSiteSurveyReport"
+        options={{
+          title: 'Site Survey Report',
+          headerBackTitle: 'Back',
+        }}>
+        {() => (
+          <ScreenWithSessionTimeout>
+            <TravelRequisitionSiteSurveyReport />
           </ScreenWithSessionTimeout>
         )}
       </Stack.Screen>

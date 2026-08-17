@@ -962,11 +962,14 @@ import useListFilters from '../../hooks/useListFilters';
 import ListFilterBar from '../../components/Filters/ListFilterBar';
 import styles from '../../styles/styles';
 import usePallete from '../../hooks/usePalette';
+import {useDispatch} from 'react-redux';
+import {setPendingWorkItemsCount} from '../../store/slices/workItemsSlice';
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const P = usePallete();
+  const dispatch = useDispatch();
 
   const {userData: routeUserData} = route.params || {};
   const reduxUserData = useSelector(state => state.user.userData);
@@ -1065,6 +1068,11 @@ const WorkItemsAssignedToMePage = () => {
       });
 
       setRawData(formattedData);
+
+      const pendingCount = formattedData.filter(
+        item => item.workflowWorkItemType === 'WorkItem',
+      ).length;
+      dispatch(setPendingWorkItemsCount(pendingCount));
     } catch (error) {
       setAlertMessage('Failed to fetch work items.');
       setAlertModal(true);
@@ -1209,7 +1217,15 @@ const WorkItemsAssignedToMePage = () => {
 
       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
 
-      setAlertMessage(`Workitem ${actionType}d`);
+      const PAST_TENSE = {
+        Approve: 'Approved',
+        Reject: 'Rejected',
+        RequestChange: 'Change requested',
+        Delegate: 'Delegated',
+        Recall: 'Recalled',
+        Resubmit: 'Resubmitted',
+      };
+      setAlertMessage(`Workitem ${PAST_TENSE[actionType] || `${actionType}d`}`);
       setAlertModal(true);
       await fetchWorkItems();
     } catch (error) {

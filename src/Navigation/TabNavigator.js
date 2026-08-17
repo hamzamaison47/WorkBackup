@@ -25,6 +25,9 @@ const Tab = createBottomTabNavigator();
 const TabNavigator = () => {
   const currentLanguage = useSelector(state => state.language.currentLanguage);
   const {menuItems} = useSelector(state => state.menuItem);
+  const pendingWorkItemsCount = useSelector(
+    state => state.workItems.pendingCount,
+  );
 
   const footerTabs = menuItems.filter(
     item =>
@@ -88,7 +91,14 @@ const TabNavigator = () => {
               key={`${item.MenuId}-${item.Sequence ?? idx}`}
               name={item.MenuId}
               component={ScreenComponent}
-              options={{tabBarLabel: item.Label || item.MenuId}}
+              options={{
+                tabBarLabel: item.Label || item.MenuId,
+                tabBarBadge:
+                  item.MenuId === 'WorkItemAssigned' &&
+                  pendingWorkItemsCount > 0
+                    ? pendingWorkItemsCount
+                    : undefined,
+              }}
             />
           );
         })

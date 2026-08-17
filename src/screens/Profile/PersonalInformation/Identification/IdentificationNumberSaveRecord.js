@@ -15,6 +15,7 @@ import {
   Platform,
   ActivityIndicator,
   Keyboard,
+  Switch,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,6 +23,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 import {useSelector} from 'react-redux';
+import {spacing} from '../../../../store/utils/scaling';
 import {Dropdown} from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {translate as t} from '../../../../store/utils/translate';
@@ -33,12 +35,16 @@ import {SubmitIdentificationRequest} from '../../../../API/PersonalInformation/I
 import {FindIdentificationTypeRequest} from '../../../../API/PersonalInformation/Identification/FindIdentificationTypeRequest';
 import {getpersonalContactsLabels} from '../../../../API/PersonalInformation/Identification/GetIdentificationLabels';
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import CalendarModal from '../../../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
-import SaveRecordButtons from '../../../../components/Buttons/SaveRecordButtons';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import useNotify from '../../../../hooks/useNotify';
 import styles from '../../../../styles/styles';
+import SaveRecordButtons, {
+  BUTTON_TYPES,
+} from '../../../../components/Buttons/SaveRecordButtons';
+import useAppStyles from '../../../../hooks/useAppStyles';
 
 const IdentificationNumberSaveRecord = () => {
   const route = useRoute();
@@ -48,6 +54,7 @@ const IdentificationNumberSaveRecord = () => {
   const userData = useSelector(state => state.user.userData);
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
+  const styles = useAppStyles();
 
   const {
     mode = 'create',
@@ -66,8 +73,8 @@ const IdentificationNumberSaveRecord = () => {
   const [identTypes, setIdentTypes] = useState([]);
   const [showIssuePicker, setShowIssuePicker] = useState(false);
   const [showExpirationPicker, setShowExpirationPicker] = useState(false);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, alertModalProps} =
+    useAlertModal();
   const [processingButton, setProcessingButton] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +100,7 @@ const IdentificationNumberSaveRecord = () => {
     IssueDate: '',
     ExpirationDate: '',
     WorkflowOperation: '',
+    IsPrimary: false,
   });
 
   const [formData, setFormData] = useState(() => createInitialFormData());
@@ -246,7 +254,6 @@ const IdentificationNumberSaveRecord = () => {
           // 🔹 CREATE MODE
           if (mode === 'create') {
             setFormData(createInitialFormData());
-            setAlertMessage('');
           }
 
           // 🔹 EDIT MODE
@@ -257,12 +264,15 @@ const IdentificationNumberSaveRecord = () => {
               employeeId: identityData.employeeId || employeeId,
               employeeName: identityData.employeeName || employeeName,
               WorkerRecId: identityData.WorkerRecId || WorkerRecId,
+              IsPrimary:
+                identityData.IsPrimary === true ||
+                identityData.IsPrimary === 'true' ||
+                identityData.IsPrimary === 'Yes',
             });
           }
         } catch (error) {
           console.error('Error initializing Identification form:', error);
-          setAlertMessage('Failed to fetch data');
-          setAlertModal(true);
+          showError('Failed to fetch data');
         } finally {
           if (isActive) setIsLoading(false);
         }
@@ -350,8 +360,7 @@ const IdentificationNumberSaveRecord = () => {
     // if (!formData.IssueDate) missing.push('Issue Date');
     // if (!formData.ExpirationDate) missing.push('Expiration Date');
     if (missing.length > 0) {
-      setAlertMessage('Please fill in:\n' + missing.join('\n'));
-      setAlertModal(true);
+      showWarning('Please fill in:\n' + missing.join('\n'));
       return false;
     }
     return true;
@@ -368,7 +377,7 @@ const IdentificationNumberSaveRecord = () => {
         IdentificationNumber: data.IdentificationNumber,
         IdentificationType: data.IdentificationType,
         IdentificationTypeId: data.IdentificationTypeId || null,
-        IsPrimary: data.IsPrimary === undefined ? 'No' : data.IsPrimary,
+        IsPrimary: data.IsPrimary ? 'Yes' : 'No',
         IssuingAgency: data.IssuingAgency || 0,
         IssuingAgencyId: data.IssuingAgencyId || '',
         PersonIdentificationNumberRecVersion:
@@ -400,37 +409,34 @@ const IdentificationNumberSaveRecord = () => {
         let textSubmit;
         if (submitResult?.IsSuccess === 'true') {
           textSubmit = actionType === 'submit' ? ' and Submitted' : '';
-          setAlertMessage(
+          showSuccess(
             `${contract.IdentificationTypeId} is ${textAction}${textSubmit} successfully`,
           );
         } else if (submitResult?.IsSuccess === 'false') {
           textSubmit = actionType === 'submit' ? ' but not Submitted' : '';
-          setAlertMessage(
+          showError(
             `${contract.IdentificationTypeId} is ${textAction}${textSubmit}`,
           );
         }
 
-        const finalMsg = `Record ${textAction} successfully`;
+        const finalMsg = `Identification number ${textAction} successfully`;
         notifySuccess(finalMsg);
-        setAlertMessage(`Record ${textAction} successfully`);
-        setAlertModal(true);
+        showSuccess(finalMsg);
         return {success: true, recId: response.RecId || contract.RecId};
       } else if (response?.IsSuccess === 'false') {
         const textAction = modalMode === 'create' ? 'Creating' : 'Updating';
-        setAlertMessage(
+        showError(
           response?.Message
             ? response?.Message
             : `Error in ${textAction} Record`,
         );
-        setAlertModal(true);
         return {success: false, recId: 0};
       } else {
         throw new Error('No response from server');
       }
     } catch (error) {
       console.error('Error in handleAction:', error);
-      setAlertMessage('Failed to process request.');
-      setAlertModal(true);
+      showError('Failed to process request.');
       return {success: false};
     }
   };
@@ -452,7 +458,6 @@ const IdentificationNumberSaveRecord = () => {
       console.log('Resut', result);
       if (result.success) {
         setTimeout(() => {
-          setAlertModal(false);
           setFormData(createInitialFormData());
           navigation.navigate('IdentificationNumberListPage', {
             employeeId: formData.employeeId,
@@ -508,12 +513,12 @@ const IdentificationNumberSaveRecord = () => {
             ref={scrollViewRef}
             contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}>
-            <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
+            {/* <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
               {PersonalContactsLabelData?.employeeNamelbl || 'Employee Name'}
-            </Text>
-            <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+            </Text> */}
+            {/* <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
               {formData.employeeName}
-            </Text>
+            </Text> */}
 
             {/*<Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
                 {PersonalContactsLabelData?.IdentificationTypelbl ||
@@ -574,6 +579,19 @@ const IdentificationNumberSaveRecord = () => {
               placeholderTextColor="#888"
               multiline
             />
+
+            {/* ← add this block */}
+            <View style={[styles.DSR_SwitchRow, {marginTop: spacing.lg}]}>
+              <Text style={styles.DSR_SwitchLabel}>
+                {PersonalContactsLabelData?.IsPrimarylbl || 'Is Primary'}
+              </Text>
+              <Switch
+                value={!!formData.IsPrimary}
+                onValueChange={val => handleInputChange('IsPrimary', val)}
+                trackColor={{false: '#767577', true: '#81b0ff'}}
+                thumbColor={formData.IsPrimary ? P.primary : '#f4f3f4'}
+              />
+            </View>
 
             {/* <Text style={styles.DSR_Label}>Issuing Agency</Text>
               <TextInput
@@ -674,11 +692,10 @@ const IdentificationNumberSaveRecord = () => {
           <SaveRecordButtons
             mode={mode}
             processingButton={processingButton}
-            onSave={handleSave}
+            onSave={() => handleSave(mode === 'edit' ? 'update' : 'create')}
             onCancel={goBack}
-            isDisabled={
-              processingButton === 'create' || processingButton === 'submit'
-            }
+            isDisabled={processingButton === 'create'}
+            showButtons={[BUTTON_TYPES.CREATE, BUTTON_TYPES.CANCEL]}
           />
         </SafeAreaView>
       )}
@@ -698,12 +715,7 @@ const IdentificationNumberSaveRecord = () => {
         onClose={() => setShowExpirationDateCalendar(false)}
       />
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
     </ActionPaneContainer>
   );
 };

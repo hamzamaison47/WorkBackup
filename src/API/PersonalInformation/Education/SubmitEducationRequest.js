@@ -43,13 +43,13 @@ const SubmitEducationRequest = async ({recId}) => {
     const token = await getToken();
 
     const soapBody = `
-      <submitESSPersonEducationByRecId xmlns="http://tempuri.org">
-        <_recId>${recId}</_recId>
-      </submitESSPersonEducationByRecId>`;
+      <submitESSPersonEducation xmlns="http://tempuri.org">
+        <_requestList xmlns:a="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+          <a:long>${recId}</a:long>
+        </_requestList>
+      </submitESSPersonEducation>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-
-    // console.log('SOAP ENVELOPE IN SUBMIT REQUEST', soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/EssWorkflowSvcGroup`,
@@ -59,7 +59,7 @@ const SubmitEducationRequest = async ({recId}) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'text/xml;charset=utf-8',
           SOAPAction:
-            'http://tempuri.org/ESSWorkflowSvc/submitESSPersonEducationByRecId',
+            'http://tempuri.org/ESSWorkflowSvc/submitESSPersonEducation',
         },
         responseType: 'text',
       },
@@ -75,17 +75,13 @@ const SubmitEducationRequest = async ({recId}) => {
 
     const parsed = parser.parse(xml);
 
-    // console.log('Parsed SOAP ENVELOPE IN SUBMIT REQUEST', parsed);
-
     const result =
       parsed?.['s:Envelope']?.['s:Body']?.[
-        'submitESSPersonEducationByRecIdResponse'
+        'submitESSPersonEducationResponse'
       ]?.['result'] ||
       parsed?.['soap:Envelope']?.['soap:Body']?.[
-        'submitESSPersonEducationByRecIdResponse'
+        'submitESSPersonEducationResponse'
       ]?.['result'];
-
-    // console.log('Result SOAP ENVELOPE IN SUBMIT REQUEST', result);
 
     if (!result) {
       console.log('No result found in Submit SOAP response');
@@ -99,24 +95,20 @@ const SubmitEducationRequest = async ({recId}) => {
 
       return Object.fromEntries(
         Object.entries(obj).map(([key, value]) => [
-          key.replace(/^[a-zA-Z0-9]+:/, ''), // strip ns prefix
+          key.replace(/^[a-zA-Z0-9]+:/, ''),
           typeof value === 'object' ? cleanObject(value) : value,
         ]),
       );
     };
 
     const cleanedResult = cleanObject(result);
-
-    // console.log(
-    //   'Cleaned Result SOAP ENVELOPE IN SUBMIT REQUEST',
-    //   cleanedResult,
-    // );
+    console.log('here is the resulttttttttttttttttt', cleanedResult);
 
     return cleanedResult;
   } catch (error) {
     console.error(
-      'Failed to submit education request:',
-      error.response?.data || error.message,
+      'Failed to submit education request. Raw fault:',
+      JSON.stringify(error.response?.data, null, 2),
     );
     throw error;
   }

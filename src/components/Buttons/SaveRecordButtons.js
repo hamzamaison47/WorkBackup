@@ -1,6 +1,7 @@
 /* eslint-disable curly */
 import React from 'react';
 import {View, Text, Pressable} from 'react-native';
+import useAppStyles from '../../hooks/useAppStyles';
 import styles from '../../styles/styles';
 
 // Button type constants
@@ -18,6 +19,7 @@ const SaveRecordButtons = ({
   isDisabled = false,
   showButtons = [BUTTON_TYPES.CREATE, BUTTON_TYPES.SUBMIT, BUTTON_TYPES.CANCEL],
 }) => {
+  const styles = useAppStyles();
   const handleCreatePress = () => {
     if (!isDisabled && processingButton === '') {
       onSave?.('create');

@@ -304,14 +304,6 @@ const DynamicRequestCard = ({
     switch (fieldType) {
       case 'date':
       case 'datetime': {
-        // If value is already a formatted date string (not a Date object or ISO string),
-        // return it as-is to avoid double formatting
-        if (
-          typeof value === 'string' &&
-          /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)
-        ) {
-          return value; // Already formatted as MM/DD/YYYY or similar
-        }
         return formatDateValue(
           value,
           selectedFormat,

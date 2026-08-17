@@ -139,7 +139,7 @@ const MainDashboard = () => {
   return (
     <>
       <ActionPaneContainer
-        pageTitle="Dynaface"
+        pageTitle="IDAP360"
         showPageTitleRow={false}
         isBackButton={false}
         showFooter={false}

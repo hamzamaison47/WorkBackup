@@ -30,6 +30,7 @@ import CustomIndicator from '../../../../components/CustomIndicator/CustomIndica
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import AlertModal from '../../../../components/Alert/AlertModal';
+import useAlertModal from '../../../../hooks/useAlertModal';
 import DynamicRequestCard from '../../../../components/DynamicRequestCard';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import useNotify from '../../../../hooks/useNotify';
@@ -66,8 +67,8 @@ const IdentificationNumberListPage = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [identificationsData, setIdentificationsData] = useState([]);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
+  const {showSuccess, showError, showWarning, hide, alertModalProps} =
+    useAlertModal();
   const [workflowEnabled, setWorkflowEnabled] = useState(false);
   const [highlightedRecId, setHighlightedRecId] = useState(null);
   const [processingButtons, setProcessingButtons] = useState({});
@@ -119,8 +120,7 @@ const IdentificationNumberListPage = () => {
       setIdentificationsData(dataWithPermissions);
     } catch (error) {
       console.error('Failed to fetch identification data:', error);
-      setAlertMessage('Failed to fetch data');
-      setAlertModal(true);
+      showError('Failed to fetch data');
     } finally {
       setIsLoading(false);
     }
@@ -212,11 +212,10 @@ const IdentificationNumberListPage = () => {
       navigation.navigate('WorkflowHistoryScreen', {
         recId: recId,
         tableId: tableId,
-        cameFrom: 'IdentificationListPage',
+        cameFrom: 'IdentificationNumberListPage',
       });
     } catch (error) {
-      setAlertMessage('Failed to load workflow history.');
-      setAlertModal(true);
+      showError('Failed to load workflow history.');
     } finally {
       setIsProcessing(false);
     }
@@ -292,7 +291,7 @@ const IdentificationNumberListPage = () => {
 
     return {
       edit: {
-        show: workflowEnabled,
+        show: true,
         position: 'header',
         style: 'icon',
         icon: 'edit',
@@ -303,7 +302,7 @@ const IdentificationNumberListPage = () => {
         customStyle: !item.canEdit ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
-        show: workflowEnabled,
+        show: true,
         position: 'header',
         style: 'icon',
         icon: 'trash',
@@ -316,7 +315,7 @@ const IdentificationNumberListPage = () => {
           : {},
       },
       attachment: {
-        show: true,
+        show: false,
         position: 'header',
         style: 'icon',
         icon: 'paperclip',
@@ -456,23 +455,21 @@ const IdentificationNumberListPage = () => {
         });
 
         if (response[0].IsSuccess) {
-          notifyDelete('Record deleted successfully');
-          setAlertMessage('Record deleted successfully');
+          notifyDelete('Identification number deleted successfully');
+          showSuccess('Identification number deleted successfully');
           setIdentificationsData(prev =>
             prev.filter(item => item.RecId !== itemToDelete.RecId),
           );
         } else {
-          setAlertMessage('Unable to delete record. Please try again.');
+          showError('Unable to delete record. Please try again.');
         }
       } catch (error) {
-        setAlertMessage('Failed to delete record');
+        showError('Failed to delete record');
         console.log('Delete Identification Request response', error);
       } finally {
         setIsProcessing(false);
         setButtonProcessing(itemToDelete.RecId, 'delete', false);
         setItemToDelete(null);
-        setAlertModal(true);
-
         setTimeout(() => {
           fetchIdentifications();
         }, 800);
@@ -493,9 +490,8 @@ const IdentificationNumberListPage = () => {
         const resObj = Array.isArray(response) ? response[0] : response;
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
-          notifySuccess('Request submitted successfully');
-          setAlertMessage('Request submitted successfully');
-          setAlertModal(true);
+          notifySuccess('Identification record submitted successfully');
+          showSuccess('Identification record submitted successfully');
           setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {
@@ -510,13 +506,11 @@ const IdentificationNumberListPage = () => {
             resObj && resObj.Message
               ? resObj.Message
               : 'Failed to submit request';
-          setAlertMessage(errorMessage);
-          setAlertModal(true);
+          showError(errorMessage);
         }
       } catch (error) {
         console.error('Submit error:', error);
-        setAlertMessage('Failed to submit request');
-        setAlertModal(true);
+        showError('Failed to submit request');
       } finally {
         setIsProcessing(false);
         // Fix: use RecId (uppercase) consistently
@@ -530,8 +524,7 @@ const IdentificationNumberListPage = () => {
       setSelectedIdentityItem(itemData);
       setAttachmentModalVisible(true);
     } catch (error) {
-      setAlertMessage('Failed to open attachments');
-      setAlertModal(true);
+      showError('Failed to open attachments');
     }
   };
 
@@ -611,7 +604,7 @@ const IdentificationNumberListPage = () => {
       pageTitle="My Identification Numbers"
       isBackButton={false}
       showFooter={true}
-      showFloatingButton={workflowEnabled}
+      showFloatingButton={true}
       isHeaderActive={true}
       onBackPress={handleGoBack}
       onRefresh={handleRefresh}
@@ -723,12 +716,7 @@ const IdentificationNumberListPage = () => {
         }}
       />
 
-      <AlertModal
-        visible={alertModal}
-        heading="Alert"
-        text={alertMessage}
-        onPress={() => setAlertModal(false)}
-      />
+      <AlertModal {...alertModalProps} />
     </ActionPaneContainer>
   );
 };
