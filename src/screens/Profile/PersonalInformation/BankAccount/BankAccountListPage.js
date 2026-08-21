@@ -361,8 +361,8 @@ const BankAccountListPage = () => {
         });
 
         if (response[0].IsSuccess) {
-          notifyDelete('Record deleted successfully');
-          showSuccess('Record deleted successfully');
+          notifyDelete('Bank account record deleted successfully');
+          showSuccess('Bank account record deleted successfully');
           setbankaccountdata(prev =>
             prev.filter(bank => bank.RecId !== itemToDelete.RecId),
           );
@@ -396,8 +396,8 @@ const BankAccountListPage = () => {
         const resObj = Array.isArray(response) ? response[0] : response;
 
         if (resObj && String(resObj.IsSuccess).toLowerCase() === 'true') {
-          notifySuccess('Request submitted successfully');
-          showSuccess('Request submitted successfully');
+          notifySuccess('Bank account record submitted successfully');
+          showSuccess('Bank account record submitted successfully');
           setHighlightedRecId(itemData.RecId);
 
           setTimeout(() => {

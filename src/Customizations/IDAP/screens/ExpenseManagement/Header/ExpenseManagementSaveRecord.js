@@ -399,19 +399,19 @@ const ExpenseManagementSaveRecord = () => {
       missing.push('Location');
     }
     if (!formData.DateFrom) {
-      nextErrors.DateFrom = 'Date From is required';
-      missing.push('Date From');
+      nextErrors.DateFrom = 'Date from is required';
+      missing.push('Date from');
     }
     if (!formData.DateTo) {
-      nextErrors.DateTo = 'Date To is required';
-      missing.push('Date To');
+      nextErrors.DateTo = 'Date to is required';
+      missing.push('Date to');
     }
 
     if (formData.DateFrom && formData.DateTo) {
       const from = new Date(formData.DateFrom);
       const to = new Date(formData.DateTo);
       if (to.getTime() < from.getTime()) {
-        nextErrors.DateTo = 'Date To cannot be earlier than Date From';
+        nextErrors.DateTo = 'Date to cannot be earlier than Date from';
         dateIssues.push(nextErrors.DateTo);
       }
     }
@@ -537,6 +537,10 @@ const ExpenseManagementSaveRecord = () => {
       if (result.success) {
         const savedForm = formData;
 
+        // Keep the button disabled / overlay up through this delay — clearing
+        // processingButton here would let a second tap fire another
+        // create/update against the same data before navigation actually
+        // happens.
         setTimeout(() => {
           hide();
           clearAllStates();
@@ -561,6 +565,7 @@ const ExpenseManagementSaveRecord = () => {
             ],
           });
         }, 1500);
+        return;
       }
     } catch (error) {
       console.error('Error saving expense header:', error);
@@ -580,7 +585,7 @@ const ExpenseManagementSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={isEditMode ? 'Edit Expense Report' : 'Create Expense Report'}
+      pageTitle={isEditMode ? 'Edit Expense Report' : 'New expense report'}
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -692,8 +697,8 @@ const ExpenseManagementSaveRecord = () => {
                     {formData.DateTo
                       ? formatDate(formData.DateTo)
                       : formData.DateFrom
-                      ? 'Select Date to'
-                      : 'Select Date from first'}
+                      ? 'Select date to'
+                      : 'Select date from first'}
                   </Text>
                 </View>
                 <Icon name="calendar" size={20} color={P.primary} />

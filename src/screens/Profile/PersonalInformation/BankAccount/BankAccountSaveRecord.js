@@ -7,11 +7,11 @@ import {
   Text,
   TextInput,
   Keyboard,
-  ScrollView,
   SafeAreaView,
   BackHandler,
   ActivityIndicator,
 } from 'react-native';
+import {KeyboardAwareScrollView} from 'react-native-keyboard-aware-scroll-view';
 import {
   useNavigation,
   useRoute,
@@ -159,7 +159,7 @@ const BankAccountSaveRecord = () => {
     React.useCallback(() => {
       // Scroll to top when screen comes into focus
       if (scrollViewRef.current) {
-        scrollViewRef.current.scrollTo({y: 0, animated: false});
+        scrollViewRef.current.scrollToPosition(0, 0, false);
       }
     }, []),
   );
@@ -344,9 +344,11 @@ const BankAccountSaveRecord = () => {
           submitText = actionType === 'submit' ? ' but not Submitted' : '';
         }
 
-        const successMsg = `Record ${actionText}${submitText} successfully`;
-        notifySuccess(successMsg); // ← add
-        showSuccess(`Record ${actionText}${submitText} successfully`);
+        const successMsg = `Bank account record ${actionText}${submitText} successfully`;
+        notifySuccess(successMsg);
+        showSuccess(
+          `Bank account record ${actionText}${submitText} successfully`,
+        );
         return {success: true, recId: response?.RecId};
       } else {
         const errorMessage = response?.Message || 'Failed to process request';
@@ -446,12 +448,16 @@ const BankAccountSaveRecord = () => {
               </View>
             </View>
           )}
-          <ScrollView
+          <KeyboardAwareScrollView
             ref={scrollViewRef}
             contentContainerStyle={styles.DSR_FormContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled={true}>
+            nestedScrollEnabled={true}
+            enableOnAndroid={true}
+            enableAutomaticScroll={true}
+            extraScrollHeight={20}
+            keyboardOpeningTime={0}>
             {/* <Text style={styles.DSR_Label}>Account identification *</Text>
               <TextInput */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
@@ -461,7 +467,7 @@ const BankAccountSaveRecord = () => {
               style={styles.DSR_Input}
               value={formData.AccountId}
               onChangeText={text => handleInputChange('AccountId', text)}
-              placeholder="Enter Account ID"
+              placeholder="Enter Account Id"
               placeholderTextColor="#888"
               maxLength={10}
             />
@@ -473,7 +479,7 @@ const BankAccountSaveRecord = () => {
               style={styles.DSR_Input}
               value={formData.Name}
               onChangeText={text => handleInputChange('Name', text)}
-              placeholder="Enter Name"
+              placeholder="Enter name"
               placeholderTextColor="#888"
             />
 
@@ -484,7 +490,7 @@ const BankAccountSaveRecord = () => {
               style={styles.DSR_Input}
               value={formData.AccountNum}
               onChangeText={text => handleInputChange('AccountNum', text)}
-              placeholder="Enter Account Number"
+              placeholder="Enter Account number"
               placeholderTextColor="#888"
               keyboardType="numeric"
             />
@@ -507,7 +513,7 @@ const BankAccountSaveRecord = () => {
               style={styles.DSR_Input}
               value={formData.BranchNumber}
               onChangeText={text => handleInputChange('BranchNumber', text)}
-              placeholder="Enter Branch Number"
+              placeholder="Enter Branch number"
               placeholderTextColor="#888"
             />
 
@@ -518,7 +524,7 @@ const BankAccountSaveRecord = () => {
               style={styles.DSR_Input}
               value={formData.BranchName}
               onChangeText={text => handleInputChange('BranchName', text)}
-              placeholder="Enter Branch Name"
+              placeholder="Enter Branch name"
               placeholderTextColor="#888"
             />
 
@@ -529,10 +535,10 @@ const BankAccountSaveRecord = () => {
               style={styles.DSR_Input}
               value={formData.AccountHolder}
               onChangeText={text => handleInputChange('AccountHolder', text)}
-              placeholder="Enter Account Holder"
+              placeholder="Enter Account holder"
               placeholderTextColor="#888"
             />
-          </ScrollView>
+          </KeyboardAwareScrollView>
 
           <SaveRecordButtons
             mode={mode}

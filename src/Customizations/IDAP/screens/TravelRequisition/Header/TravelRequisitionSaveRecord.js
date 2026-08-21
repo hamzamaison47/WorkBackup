@@ -36,7 +36,7 @@ import ActionPaneContainer from '../../../../../components/ActionPaneContainer';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../../components/Buttons/SaveRecordButtons';
-import {AppTokens} from '../../../../../components/AppComponentsDesign/Appcomponents';
+import {AppTokens} from '../../../../../components/AppComponentsDesign/Tokens';
 import styles from '../../../../../styles/styles';
 import useNotify from '../../../../../hooks/useNotify';
 import usePalette from '../../../../../hooks/usePalette';
@@ -343,7 +343,7 @@ const TravelRequisitionSaveRecord = () => {
     }
     if (!formData.ToDate) {
       nextErrors.ToDate = 'Travel to date is required';
-      missing.push('Travel to tate');
+      missing.push('Travel to date');
     }
 
     let dateOrderError = null;
@@ -479,7 +479,7 @@ const TravelRequisitionSaveRecord = () => {
   return (
     <ActionPaneContainer
       pageTitle={
-        isEditMode ? 'Edit Travel Requisition' : 'Create Travel Requisition'
+        isEditMode ? 'Edit travel requisition' : 'New travel requisition'
       }
       isBackButton={true}
       showFooter={false}
@@ -535,7 +535,7 @@ const TravelRequisitionSaveRecord = () => {
               />
               {renderError('Description')}
 
-              <Text style={styles.DSR_Label}>Travel type *</Text>
+              <Text style={styles.DSR_Label}>Travel type</Text>
               <Dropdown
                 style={styles.DSR_Input}
                 data={TRAVEL_TYPE_OPTIONS}

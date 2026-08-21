@@ -41,7 +41,7 @@ import ActionPaneContainer from '../../../../../components/ActionPaneContainer';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../../components/Buttons/SaveRecordButtons';
-import {AppTokens} from '../../../../../components/AppComponentsDesign/Appcomponents';
+import {AppTokens} from '../../../../../components/AppComponentsDesign/Tokens';
 import styles from '../../../../../styles/styles';
 import useNotify from '../../../../../hooks/useNotify';
 import usePalette from '../../../../../hooks/usePalette';
@@ -751,61 +751,117 @@ const ExpenseManagementLineSaveRecord = () => {
     DateTo: 'Per diem to date',
   };
 
+  // const validate = () => {
+  //   const nextErrors = {};
+
+  //   if (!formData.CostType)
+  //     nextErrors.CostType = 'Expense category is required';
+  //   if (!formData.ExchangeCode)
+  //     nextErrors.ExchangeCode = 'Currency is required';
+  //   if (!formData.Transaction)
+  //     nextErrors.Transaction = 'Transaction date is required';
+
+  //   groupRequired.forEach(field => {
+  //     // ClaimedAmount is derived (non-editable) for mileage/perDiem — it's
+  //     // not user-required there even though 'standard' requires it.
+  //     if (field === 'ClaimedAmount' && !isClaimedAmountEditable) return;
+
+  //     const raw = formData[field];
+  //     if (raw === '' || raw === null || raw === undefined) {
+  //       nextErrors[field] = `${FIELD_LABELS[field] || field} is required`;
+  //     }
+  //   });
+
+  //   if (
+  //     isFieldVisible('ClaimedAmount') &&
+  //     isClaimedAmountEditable &&
+  //     !nextErrors.ClaimedAmount
+  //   ) {
+  //     const num = parseFloat(formData.ClaimedAmount);
+  //     if (isNaN(num)) {
+  //       nextErrors.ClaimedAmount = 'Claimed amount must be a valid number';
+  //     } else if (num < 0) {
+  //       nextErrors.ClaimedAmount = 'Claimed amount cannot be negative';
+  //     }
+  //   }
+
+  //   if (isFieldVisible('Mileage') && !nextErrors.Mileage) {
+  //     const num = parseFloat(formData.Mileage);
+  //     if (isNaN(num)) {
+  //       nextErrors.Mileage = 'Mileage must be a valid number';
+  //     } else if (num < 0) {
+  //       nextErrors.Mileage = 'Mileage cannot be negative';
+  //     }
+  //   }
+
+  //   if (
+  //     isFieldVisible('DepartureDateTime') &&
+  //     isFieldVisible('ArrivalDateTime') &&
+  //     formData.DepartureDateTime &&
+  //     formData.ArrivalDateTime
+  //   ) {
+  //     const departure = parseLocalDateTime(formData.DepartureDateTime);
+  //     const arrival = parseLocalDateTime(formData.ArrivalDateTime);
+  //     if (departure && arrival && arrival.getTime() < departure.getTime()) {
+  //       nextErrors.ArrivalDateTime = 'Arrival cannot be earlier than departure';
+  //     }
+  //   }
+
+  //   if (
+  //     isFieldVisible('DateFrom') &&
+  //     isFieldVisible('DateTo') &&
+  //     formData.DateFrom &&
+  //     formData.DateTo &&
+  //     !nextErrors.DateFrom &&
+  //     !nextErrors.DateTo
+  //   ) {
+  //     const from = parseLocalDateTime(formData.DateFrom);
+  //     const to = parseLocalDateTime(formData.DateTo);
+  //     if (from && to && to.getTime() < from.getTime()) {
+  //       nextErrors.DateTo = 'Per diem to date cannot be earlier than from date';
+  //     }
+  //   }
+
+  //   setErrors(nextErrors);
+  //   return Object.keys(nextErrors).length === 0;
+  // };
+
+  // const formatThousands = value => {
+  //   if (value === '' || value === null || value === undefined) return '';
+  //   const [intPart, decPart] = String(value).split('.');
+  //   const sign = intPart.startsWith('-') ? '-' : '';
+  //   const digitsOnly = intPart.replace('-', '');
+  //   const formattedInt = digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  //   return decPart !== undefined
+  //     ? `${sign}${formattedInt}.${decPart}`
+  //     : `${sign}${formattedInt}`;
+  // };
+
   const validate = () => {
     const nextErrors = {};
+    const missing = [];
 
-    if (!formData.CostType)
+    if (!formData.CostType) {
       nextErrors.CostType = 'Expense category is required';
-    if (!formData.ExchangeCode)
-      nextErrors.ExchangeCode = 'Currency is required';
-    if (!formData.Transaction)
-      nextErrors.Transaction = 'Transaction date is required';
+      missing.push('Expense category');
+    }
+
+    if (isFieldVisible('ClaimedAmount') && isClaimedAmountEditable) {
+      const raw = formData.ClaimedAmount;
+      if (raw === '' || raw === null || raw === undefined) {
+        nextErrors.ClaimedAmount = 'Claimed amount is required';
+        missing.push('Claimed amount');
+      }
+    }
 
     groupRequired.forEach(field => {
-      // ClaimedAmount is derived (non-editable) for mileage/perDiem — it's
-      // not user-required there even though 'standard' requires it.
-      if (field === 'ClaimedAmount' && !isClaimedAmountEditable) return;
-
+      if (field === 'ClaimedAmount') return; // already handled above
       const raw = formData[field];
       if (raw === '' || raw === null || raw === undefined) {
         nextErrors[field] = `${FIELD_LABELS[field] || field} is required`;
+        missing.push(FIELD_LABELS[field] || field);
       }
     });
-
-    if (
-      isFieldVisible('ClaimedAmount') &&
-      isClaimedAmountEditable &&
-      !nextErrors.ClaimedAmount
-    ) {
-      const num = parseFloat(formData.ClaimedAmount);
-      if (isNaN(num)) {
-        nextErrors.ClaimedAmount = 'Claimed amount must be a valid number';
-      } else if (num < 0) {
-        nextErrors.ClaimedAmount = 'Claimed amount cannot be negative';
-      }
-    }
-
-    if (isFieldVisible('Mileage') && !nextErrors.Mileage) {
-      const num = parseFloat(formData.Mileage);
-      if (isNaN(num)) {
-        nextErrors.Mileage = 'Mileage must be a valid number';
-      } else if (num < 0) {
-        nextErrors.Mileage = 'Mileage cannot be negative';
-      }
-    }
-
-    if (
-      isFieldVisible('DepartureDateTime') &&
-      isFieldVisible('ArrivalDateTime') &&
-      formData.DepartureDateTime &&
-      formData.ArrivalDateTime
-    ) {
-      const departure = parseLocalDateTime(formData.DepartureDateTime);
-      const arrival = parseLocalDateTime(formData.ArrivalDateTime);
-      if (departure && arrival && arrival.getTime() < departure.getTime()) {
-        nextErrors.ArrivalDateTime = 'Arrival cannot be earlier than departure';
-      }
-    }
 
     if (
       isFieldVisible('DateFrom') &&
@@ -819,13 +875,16 @@ const ExpenseManagementLineSaveRecord = () => {
       const to = parseLocalDateTime(formData.DateTo);
       if (from && to && to.getTime() < from.getTime()) {
         nextErrors.DateTo = 'Per diem to date cannot be earlier than from date';
+        missing.push('Valid per diem date range');
       }
     }
 
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return {valid: Object.keys(nextErrors).length === 0, missing};
   };
 
+  // Live input display — used ONLY inside editable TextInputs (ClaimedAmount,
+  // Mileage). Must NOT force decimals or it fights the user while typing.
   const formatThousands = value => {
     if (value === '' || value === null || value === undefined) return '';
     const [intPart, decPart] = String(value).split('.');
@@ -837,6 +896,21 @@ const ExpenseManagementLineSaveRecord = () => {
       : `${sign}${formattedInt}`;
   };
 
+  // Read-only display — used for disabled/derived text (Claimed Amount when
+  // disabled, Transaction Amount mirror, Amount in PKR). Safe to force 2
+  // decimals here since nothing is being typed into these.
+  const formatDisplayAmount = value => {
+    if (value === '' || value === null || value === undefined) return '';
+    const num = parseFloat(value);
+    if (isNaN(num)) return '';
+    const fixed = num.toFixed(2);
+    const [intPart, decPart] = fixed.split('.');
+    const sign = intPart.startsWith('-') ? '-' : '';
+    const digitsOnly = intPart.replace('-', '');
+    const formattedInt = digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return `${sign}${formattedInt}.${decPart}`;
+  };
+
   const handleSave = async actionType => {
     if (processingButton) return;
     if (isCalculatingPKR) {
@@ -844,8 +918,13 @@ const ExpenseManagementLineSaveRecord = () => {
       return;
     }
 
-    if (!validate()) {
-      showWarning('Please correct the highlighted fields before saving.');
+    const {valid, missing} = validate();
+    if (!valid) {
+      showWarning(
+        missing.length > 0
+          ? `Please fill the following required fields:\n${missing.join('\n')}`
+          : 'Please correct the highlighted fields before saving.',
+      );
       return;
     }
 
@@ -962,7 +1041,7 @@ const ExpenseManagementLineSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={isEdit ? 'Edit Expense Line' : 'Create Expense Line'}
+      pageTitle={isEdit ? 'Edit Expense Line' : 'New Expense line'}
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -1032,7 +1111,7 @@ const ExpenseManagementLineSaveRecord = () => {
               {renderError('CostType')}
 
               {/* Transaction date — editable except for Per Diem, where it's forced to today */}
-              <Text style={styles.DSR_Label}>Transaction date *</Text>
+              <Text style={styles.DSR_Label}>Transaction date</Text>
               {isTransactionEditable ? (
                 <>
                   <TouchableOpacity
@@ -1076,7 +1155,7 @@ const ExpenseManagementLineSaveRecord = () => {
                     </>
                   ) : (
                     <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
-                      {formatThousands(formData.ClaimedAmount) || '0.00'}
+                      {formatDisplayAmount(formData.ClaimedAmount) || '0.00'}
                     </Text>
                   )}
                 </>
@@ -1088,7 +1167,7 @@ const ExpenseManagementLineSaveRecord = () => {
                   <>
                     <Text style={styles.DSR_Label}>Claimed amount</Text>
                     <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
-                      {formatThousands(formData.ClaimedAmount) || '0.00'}
+                      {formatDisplayAmount(formData.ClaimedAmount) || '0.00'}
                     </Text>
                   </>
                 )}
@@ -1098,7 +1177,7 @@ const ExpenseManagementLineSaveRecord = () => {
                 <>
                   <Text style={styles.DSR_Label}>Claimed amount</Text>
                   <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
-                    {formatThousands(formData.ClaimedAmount) || '0.00'}
+                    {formatDisplayAmount(formData.ClaimedAmount) || '0.00'}
                   </Text>
                 </>
               )}
@@ -1113,7 +1192,7 @@ const ExpenseManagementLineSaveRecord = () => {
                 <>
                   <Text style={styles.DSR_Label}>Transaction amount</Text>
                   <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
-                    {formatThousands(formData.ClaimedAmount) || '0.00'}
+                    {formatDisplayAmount(formData.ClaimedAmount) || '0.00'}
                   </Text>
                 </>
               )}
@@ -1135,7 +1214,7 @@ const ExpenseManagementLineSaveRecord = () => {
               )}
 
               {/* Currency — locked to PKR for mileage/perDiem; editable otherwise */}
-              <Text style={styles.DSR_Label}>Currency *</Text>
+              <Text style={styles.DSR_Label}>Currency</Text>
               {showCurrency ? (
                 <Dropdown
                   style={styles.DSR_Input}
@@ -1192,7 +1271,7 @@ const ExpenseManagementLineSaveRecord = () => {
               <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
                 {isCalculatingPKR
                   ? 'Calculating...'
-                  : formatThousands(formData.AmountInPKR) || '0.00'}
+                  : formatDisplayAmount(formData.AmountInPKR) || '0.00'}
               </Text>
 
               {/* Departure Location — editable */}

@@ -50,7 +50,7 @@ const extractInfologMessages = parsed => {
     .filter(Boolean);
 };
 
-const SubmitExpenseManagementHeader = async ({recId}) => {
+const SubmitExpenseManagementHeader = async ({recId, comment = ''}) => {
   try {
     const config = await getActiveConfigData();
     if (!config?.resource) {
@@ -63,9 +63,18 @@ const SubmitExpenseManagementHeader = async ({recId}) => {
 
     const token = await getToken();
 
+    const escapeXml = str =>
+      String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
     const soapBody =
       `<submitExpenseHeaderbyRecId xmlns="http://tempuri.org">` +
       `<_recId>${recId}</_recId>` +
+      `<_workflowComment>${escapeXml(comment)}</_workflowComment>` +
       `</submitExpenseHeaderbyRecId>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

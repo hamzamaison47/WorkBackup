@@ -45,6 +45,7 @@ import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../components/Buttons/SaveRecordButtons';
 import useAppStyles from '../../../../hooks/useAppStyles';
+import useAppTokens from '../../../../components/AppComponentsDesign/useAppTokens';
 
 const IdentificationNumberSaveRecord = () => {
   const route = useRoute();
@@ -55,7 +56,7 @@ const IdentificationNumberSaveRecord = () => {
   const routeUserData = route.params?.userData;
   const effectiveUserData = routeUserData || userData || {};
   const styles = useAppStyles();
-
+  const T = useAppTokens(); // ← add
   const {
     mode = 'create',
     identityData = {},
@@ -551,9 +552,10 @@ const IdentificationNumberSaveRecord = () => {
                 }))
               }
               placeholderStyle={styles.DSR_DropdownPlaceholder}
-              placeholderTextColor="#888"
+              placeholderTextColor={T.placeholderText}
               selectedTextStyle={styles.DSR_DropdownSelectedText}
               itemTextStyle={styles.DSR_DropdownItemText}
+              activeColor={`${P.primary}22`}
             />
 
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
@@ -588,8 +590,9 @@ const IdentificationNumberSaveRecord = () => {
               <Switch
                 value={!!formData.IsPrimary}
                 onValueChange={val => handleInputChange('IsPrimary', val)}
-                trackColor={{false: '#767577', true: '#81b0ff'}}
-                thumbColor={formData.IsPrimary ? P.primary : '#f4f3f4'}
+                trackColor={{false: T.inputBorder, true: `${P.primary}80`}}
+                thumbColor={formData.IsPrimary ? P.primary : T.cardBg}
+                ios_backgroundColor={T.inputBorder}
               />
             </View>
 

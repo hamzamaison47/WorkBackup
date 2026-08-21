@@ -169,7 +169,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
     const currentMenuItem = menuItems.find(
       item => item.MenuId === 'DFEmployeeLeaveRequestSaveRecord',
     );
-    const baseLabel = currentMenuItem?.Label || 'Leave Request';
+    const baseLabel = currentMenuItem?.Label || 'Leave request';
 
     if (mode === 'create') return `Create ${baseLabel}`;
     if (mode === 'edit') return `Update ${baseLabel}`;
@@ -554,14 +554,14 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
             keyboardOpensCalledOnce={true}>
             {/* Leave Type */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              Leave Type *
+              Leave type *
             </Text>
             <Dropdown
               style={[styles.DSR_Input, isRTL && {textAlign: 'left'}]}
               data={leaveTypeOptions}
               labelField="label"
               valueField="value"
-              placeholder="Select Leave Type"
+              placeholder="Select leave type"
               value={formData.leaveType}
               onChange={handleLeaveTypeChange}
               placeholderStyle={[
@@ -621,7 +621,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
 
             {/* From Date */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              From Date *
+              From date *
             </Text>
             <TouchableOpacity
               style={[styles.DSR_DateSelector, isRTL && {flexDirection: 'row'}]}
@@ -638,7 +638,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
                   ]}>
                   {formData.fromDate
                     ? formatDate(formData.fromDate)
-                    : 'Select From Date'}
+                    : 'Select From date'}
                 </Text>
               </View>
               <Icon name="calendar" size={20} color="#0A66C2" />
@@ -646,7 +646,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
 
             {/* To Date — disabled when short leave is active */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              To Date {formData.isShortLeave ? '' : '*'}
+              To date {formData.isShortLeave ? '' : '*'}
             </Text>
             <TouchableOpacity
               style={[
@@ -671,7 +671,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
                     ? formatDate(formData.fromDate)
                     : formData.toDate
                     ? formatDate(formData.toDate)
-                    : 'Select To Date'}
+                    : 'Select to date'}
                 </Text>
               </View>
               <Icon
@@ -683,17 +683,18 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
 
             {/* Short Leave Toggle */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              Short Leave
+              Short leave
             </Text>
             <Switch
               value={formData.isShortLeave}
-              disabled={!isShortLeaveType(formData.leaveType)}
+              disabled={
+                !isShortLeaveType(formData.leaveType) || formData.isAdjustment
+              }
               onValueChange={value => {
                 setFormData(prev => ({
                   ...prev,
                   isShortLeave: value,
                   shortLeaveType: value ? prev.shortLeaveType : '',
-                  // Clear toDate when switching to short leave
                   toDate: value ? '' : prev.toDate,
                 }));
               }}
@@ -704,7 +705,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
 
             {/* Short Leave Type Dropdown */}
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
-              Short Leave Type {formData.isShortLeave ? '*' : ''}
+              Short leave type {formData.isShortLeave ? '*' : ''}
             </Text>
             <Dropdown
               style={[
@@ -715,7 +716,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
               data={shortLeaveTypeOptions}
               labelField="label"
               valueField="value"
-              placeholder="Select Short Leave Type"
+              placeholder="Select short leave type"
               value={formData.shortLeaveType}
               disable={!formData.isShortLeave}
               onChange={item => {
@@ -836,13 +837,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
               value={formData.isAdjustment}
               disabled={formData.isShortLeave}
               onValueChange={value => {
-                setFormData(prev => ({
-                  ...prev,
-                  isShortLeave: value,
-                  shortLeaveType: value ? prev.shortLeaveType : '',
-                  toDate: value ? '' : prev.toDate,
-                  isAdjustment: value ? false : prev.isAdjustment, // clear when short leave turns on
-                }));
+                setFormData(prev => ({...prev, isAdjustment: value}));
               }}
               trackColor={{false: '#BDBDBD', true: '#0A66C2'}}
               thumbColor="#fff"
@@ -864,7 +859,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
               ]}
               value={formData.note}
               onChangeText={text => handleInputChange('note', text)}
-              placeholder="Enter Notes"
+              placeholder="Enter notes"
               placeholderTextColor="#888"
               multiline
               numberOfLines={4}

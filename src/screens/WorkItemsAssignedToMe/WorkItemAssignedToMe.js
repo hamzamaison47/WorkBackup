@@ -1,7 +1,936 @@
+// // /* eslint-disable react-native/no-inline-styles */
+// // /* eslint-disable react-hooks/exhaustive-deps */
+// // /* eslint-disable curly */
+// // import React, {useState, useCallback} from 'react';
+// // import {
+// //   Text,
+// //   FlatList,
+// //   BackHandler,
+// //   RefreshControl,
+// //   ScrollView,
+// //   View,
+// //   TouchableOpacity,
+// //   ActivityIndicator,
+// //   TouchableWithoutFeedback,
+// // } from 'react-native';
+// // import {
+// //   useNavigation,
+// //   useRoute,
+// //   useFocusEffect,
+// // } from '@react-navigation/native';
+// // import FontAwesome from 'react-native-vector-icons/FontAwesome';
+
+// // import {useSelector} from 'react-redux';
+// // import ActionPaneContainer from '../../components/ActionPaneContainer';
+// // import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+// // import AlertModal from '../../components/Alert/AlertModal';
+
+// // import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
+// // import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+// // import styles from '../../styles/styles';
+// // import {StyleSheet} from 'react-native';
+
+// // const WorkItemsAssignedToMePage = () => {
+// //   const navigation = useNavigation();
+// //   const route = useRoute();
+
+// //   const {userData: routeUserData} = route.params || {};
+// //   const reduxUserData = useSelector(state => state.user.userData);
+// //   const effectiveUserData = routeUserData || reduxUserData;
+
+// //   const [tableData, setTableData] = useState([]);
+// //   const [isLoading, setIsLoading] = useState(false);
+// //   const [isActionLoading, setIsActionLoading] = useState(false);
+// //   const [refreshing, setRefreshing] = useState(false);
+// //   const [alertModal, setAlertModal] = useState(false);
+// //   const [alertMessage, setAlertMessage] = useState('');
+// //   const [processingAction, setProcessingAction] = useState('');
+// //   const [isProcessing, setIsProcessing] = useState(false);
+
+// //   const [selectionMode, setSelectionMode] = useState(false);
+// //   const [selectedRecIds, setSelectedRecIds] = useState([]);
+
+// //   // New state for tabs
+// //   const [activeTab, setActiveTab] = useState('All');
+
+// //   // State for managing menu visibility
+// //   const [menuVisible, setMenuVisible] = useState(null);
+
+// //   /* ==============================
+// //      Fetch Data
+// //   ============================== */
+
+// //   const fetchWorkItems = useCallback(async () => {
+// //     if (!effectiveUserData?.email) return;
+
+// //     setIsLoading(true);
+// //     try {
+// //       const data = await RetrieveByEmail({
+// //         email: effectiveUserData.email,
+// //       });
+
+// //       // const formattedData = (data || []).map((item, index) => {
+// //       //   // Parse Document string: "Purchase requisition: 007488, NewTest"
+// //       //   const documentStr = item.Document || '';
+
+// //       //   // Extract document number (007488)
+// //       //   const numberMatch = documentStr.match(/:?\s*(\d+)/);
+// //       //   const documentNumber = numberMatch ? numberMatch[1] : '';
+
+// //       //   // Extract document type (Purchase requisition)
+// //       //   const typeMatch = documentStr.match(/^([^:]+)/);
+// //       //   let documentType = typeMatch ? typeMatch[1].trim() : '';
+// //       //   // Capitalize first letter of each word
+// //       //   documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+// //       //   // Extract requester (NewTest)
+// //       //   const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+// //       //   const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
+// //       const formattedData = (data || []).map((item, index) => {
+// //         const documentStr = item.Document || '';
+
+// //         // Extract the document ID (everything after ':' and before ',')
+// //         const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
+// //         const documentId = documentIdMatch
+// //           ? documentIdMatch[1].trim()
+// //           : documentStr;
+
+// //         // Extract requester (after last comma)
+// //         const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+// //         const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
+// //         // Get document type from API if exists
+// //         let documentType = item.DocumentType || '';
+// //         documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+// //         return {
+// //           id: item.workflowWorkItemRecId ?? index,
+// //           recId: item.workflowWorkItemRecId,
+// //           documentId: documentId, // USMF-00060
+// //           documentType: documentType, // Employee Leave Requests
+// //           requester: requester,
+// //           ContextTableId: item.ContextTableId,
+// //           ContextRecId: item.ContextRecId,
+// //         };
+// //       });
+
+// //       console.log('here is log', data);
+
+// //       setTableData(formattedData);
+// //     } catch (error) {
+// //       setAlertMessage('Failed to fetch work items.');
+// //       setAlertModal(true);
+// //     } finally {
+// //       setIsLoading(false);
+// //       setRefreshing(false);
+// //     }
+// //   }, [effectiveUserData?.email]);
+
+// //   const handleRefresh = () => {
+// //     fetchWorkItems();
+// //   };
+
+// //   useFocusEffect(
+// //     useCallback(() => {
+// //       fetchWorkItems();
+// //     }, [fetchWorkItems]),
+// //   );
+
+// //   /* ==============================
+// //      Back Handling
+// //   ============================== */
+
+// //   useFocusEffect(
+// //     useCallback(() => {
+// //       const onBackPress = () => {
+// //         if (selectionMode) {
+// //           exitSelectionMode();
+// //           return true;
+// //         }
+// //         navigation.goBack();
+// //         return true;
+// //       };
+
+// //       BackHandler.addEventListener('hardwareBackPress', onBackPress);
+// //       return () =>
+// //         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+// //     }, [selectionMode]),
+// //   );
+
+// //   /* ==============================
+// //      Selection Logic
+// //   ============================== */
+
+// //   const enterSelectionMode = recId => {
+// //     setSelectionMode(true);
+// //     setSelectedRecIds([recId]);
+// //   };
+
+// //   const exitSelectionMode = () => {
+// //     setSelectionMode(false);
+// //     setSelectedRecIds([]);
+// //   };
+
+// //   const toggleSelection = recId => {
+// //     setSelectedRecIds(prev =>
+// //       prev.includes(recId) ? prev.filter(id => id !== recId) : [...prev, recId],
+// //     );
+// //   };
+
+// //   const selectAll = () => {
+// //     const currentData = getFilteredData();
+// //     if (selectedRecIds.length === currentData.length) {
+// //       setSelectedRecIds([]);
+// //     } else {
+// //       setSelectedRecIds(currentData.map(item => item.recId));
+// //     }
+// //   };
+
+// //   /* ==============================
+// //      Tab Filter Logic
+// //   ============================== */
+
+// //   const getFilteredData = () => {
+// //     switch (activeTab) {
+// //       case 'All':
+// //         return tableData;
+// //       case 'Approved':
+// //         return [];
+// //       case 'Rejected':
+// //         return [];
+// //       default:
+// //         return tableData;
+// //     }
+// //   };
+
+// //   /* ==============================
+// //      Single Item Actions
+// //   ============================== */
+
+// //   // const handleSingleAction = async (recId, actionType) => {
+// //   //   if (isActionLoading) return;
+
+// //   //   try {
+// //   //     setIsActionLoading(true);
+
+// //   //     const response = await WorkflowItemAction({
+// //   //       recId: [recId],
+// //   //       action: actionType,
+// //   //     });
+
+// //   //     if (response?.IsSuccess) {
+// //   //       fetchWorkItems();
+// //   //     } else {
+// //   //       setAlertMessage(`Failed to ${actionType}`);
+// //   //     }
+// //   //   } catch {
+// //   //     setAlertMessage(`Error during ${actionType}`);
+// //   //   } finally {
+// //   //     setIsActionLoading(false);
+// //   //     setAlertModal(true);
+// //   //   }
+// //   // };
+
+// //   // const handleSingleAction = async (recId, actionType) => {
+// //   //   if (isActionLoading) return;
+
+// //   //   try {
+// //   //     setIsActionLoading(true);
+// //   //     setProcessingAction(actionType.toLowerCase()); // 'approve' or 'reject'
+
+// //   //     const response = await WorkflowItemAction({
+// //   //       recId: [recId],
+// //   //       action: actionType,
+// //   //     });
+
+// //   //     if (response?.IsSuccess) {
+// //   //       setAlertMessage(`${actionType} successful`);
+// //   //       await fetchWorkItems(); // ✅ IMPORTANT
+// //   //     } else {
+// //   //       setAlertMessage(`Failed to ${actionType}`);
+// //   //       setAlertModal(true);
+// //   //     }
+// //   //   } catch {
+// //   //     setAlertMessage(`Error during ${actionType}`);
+// //   //     setAlertModal(true);
+// //   //   } finally {
+// //   //     setIsActionLoading(false);
+// //   //     setProcessingAction('');
+// //   //   }
+// //   // };
+
+// //   const handleSingleAction = async (recId, actionType) => {
+// //     if (isActionLoading) return;
+
+// //     try {
+// //       setIsActionLoading(true);
+// //       setProcessingAction(actionType.toLowerCase());
+
+// //       const response = await WorkflowItemAction({
+// //         recId: [recId],
+// //         action: actionType,
+// //       });
+
+// //       if (!response?.IsSuccess) {
+// //         throw new Error(`Failed to ${actionType}`);
+// //       }
+
+// //       setAlertMessage(`${actionType} successful`);
+// //       await fetchWorkItems(); // wait for refresh
+// //     } catch (error) {
+// //       setAlertMessage(error.message || `Error during ${actionType}`);
+// //       setAlertModal(true);
+// //     } finally {
+// //       setIsActionLoading(false);
+// //       setProcessingAction('');
+// //     }
+// //   };
+
+// //   /* ==============================
+// //      Bulk Action
+// //   ============================== */
+
+// //   const handleViewHistory = (ContextRecId, contextTableId) => {
+// //     setMenuVisible(null);
+// //     console.log('recId:', ContextRecId, 'tableId:', contextTableId);
+// //     // Should now log: recId: 68719507682  tableId: 66621
+// //     navigation.navigate('WorkflowHistoryScreen', {
+// //       recId: ContextRecId,
+// //       tableId: contextTableId,
+// //     });
+// //   };
+
+// //   // const handleBulkAction = async actionType => {
+// //   //   if (selectedRecIds.length === 0 || isActionLoading) return;
+
+// //   //   try {
+// //   //     setIsActionLoading(true);
+
+// //   //     const response = await WorkflowItemAction({
+// //   //       recId: selectedRecIds,
+// //   //       action: actionType,
+// //   //     });
+
+// //   //     if (response?.IsSuccess) {
+// //   //       setAlertMessage(
+// //   //         `${actionType} successful for ${selectedRecIds.length} item(s)`,
+// //   //       );
+// //   //       exitSelectionMode();
+// //   //       fetchWorkItems();
+// //   //     } else {
+// //   //       setAlertMessage(`Failed to ${actionType}`);
+// //   //     }
+// //   //   } catch {
+// //   //     setAlertMessage(`Error during ${actionType}`);
+// //   //   } finally {
+// //   //     setIsActionLoading(false);
+// //   //     setAlertModal(true);
+// //   //   }
+// //   // };
+
+// //   const handleBulkAction = async actionType => {
+// //     if (selectedRecIds.length === 0 || isActionLoading) return;
+
+// //     try {
+// //       setIsActionLoading(true);
+// //       setProcessingAction('bulk');
+
+// //       const response = await WorkflowItemAction({
+// //         recId: selectedRecIds,
+// //         action: actionType,
+// //       });
+
+// //       if (!response?.IsSuccess) {
+// //         throw new Error(`Failed to ${actionType}`);
+// //       }
+
+// //       setAlertMessage(
+// //         `${actionType} successful for ${selectedRecIds.length} item(s)`,
+// //       );
+
+// //       exitSelectionMode();
+
+// //       await fetchWorkItems(); // ✅ IMPORTANT — wait for refresh
+// //     } catch (error) {
+// //       setAlertMessage(error.message || `Error during ${actionType}`);
+// //       setAlertModal(true);
+// //     } finally {
+// //       setIsActionLoading(false);
+// //       setProcessingAction('');
+// //     }
+// //   };
+
+// //   /* ==============================
+// //      Render Card
+// //   ============================== */
+
+// //   const renderWorkItemCard = ({item}) => {
+// //     const isSelected = selectedRecIds.includes(item.recId);
+// //     const isMenuOpen = menuVisible === item.recId;
+
+// //     return (
+// //       <View style={cardStyles.container}>
+// //         {/* Selection Overlay for long press */}
+// //         <TouchableOpacity
+// //           activeOpacity={0.9}
+// //           onLongPress={() => enterSelectionMode(item.recId)}
+// //           onPress={() => (selectionMode ? toggleSelection(item.recId) : null)}
+// //           style={cardStyles.touchableArea}>
+// //           {/* Selection Checkbox - Only visible in selection mode */}
+// //           {selectionMode && (
+// //             <View style={cardStyles.checkboxContainer}>
+// //               <View
+// //                 style={[
+// //                   cardStyles.checkbox,
+// //                   isSelected && cardStyles.checkboxSelected,
+// //                 ]}>
+// //                 {isSelected && <Text style={cardStyles.checkmark}>✓</Text>}
+// //               </View>
+// //             </View>
+// //           )}
+
+// //           {/* Card Content */}
+// //           <View
+// //             style={[cardStyles.card, isSelected && cardStyles.cardSelected]}>
+// //             {/* Top Row - Document Number and Action Buttons */}
+// //             <View style={cardStyles.topRow}>
+// //               <View style={cardStyles.documentNumberContainer}>
+// //                 <Text style={cardStyles.documentNumber}>{item.documentId}</Text>
+// //               </View>
+
+// //               {/* Action Buttons - Only show when not in selection mode */}
+// //               {!selectionMode && (
+// //                 <View style={cardStyles.actionButtons}>
+// //                   <TouchableOpacity
+// //                     style={[cardStyles.actionButton, cardStyles.approveButton]}
+// //                     onPress={() => handleSingleAction(item.recId, 'Approve')}
+// //                     disabled={isActionLoading}>
+// //                     <Text style={cardStyles.approveButtonText}>Approve</Text>
+// //                   </TouchableOpacity>
+
+// //                   <TouchableOpacity
+// //                     style={[cardStyles.actionButton, cardStyles.rejectButton]}
+// //                     onPress={() => handleSingleAction(item.recId, 'Reject')}
+// //                     disabled={isActionLoading}>
+// //                     <Text style={cardStyles.rejectButtonText}>Reject</Text>
+// //                   </TouchableOpacity>
+
+// //                   {/* Three Dots Menu */}
+// //                   {/* <TouchableOpacity
+// //                     style={cardStyles.menuButton}
+// //                     onPress={() =>
+// //                       setMenuVisible(isMenuOpen ? null : item.recId)
+// //                     }>
+// //                     <Text style={cardStyles.menuDots}>⋮</Text>
+// //                   </TouchableOpacity> */}
+// //                   <TouchableOpacity
+// //                     style={cardStyles.menuButton}
+// //                     onPress={() =>
+// //                       setMenuVisible(isMenuOpen ? null : item.recId)
+// //                     }>
+// //                     <FontAwesome name="ellipsis-v" size={18} color="#666666" />
+// //                   </TouchableOpacity>
+// //                 </View>
+// //               )}
+// //             </View>
+
+// //             {/* Title */}
+// //             <Text style={cardStyles.title}>{item.documentType}</Text>
+
+// //             {/* Requester Info */}
+// //             {item.requester ? (
+// //               <View style={cardStyles.requesterContainer}>
+// //                 <Text style={cardStyles.requesterLabel}>Requester</Text>
+// //                 <Text style={cardStyles.requesterValue}>{item.requester}</Text>
+// //               </View>
+// //             ) : null}
+// //           </View>
+
+// //           {/* Dropdown Menu */}
+// //           {isMenuOpen && (
+// //             <View style={cardStyles.menuContainer}>
+// //               <TouchableOpacity
+// //                 style={cardStyles.menuItem}
+// //                 onPress={() =>
+// //                   handleViewHistory(item.ContextRecId, item.ContextTableId)
+// //                 }>
+// //                 <Text style={cardStyles.menuItemText}>View History</Text>
+// //               </TouchableOpacity>
+// //             </View>
+// //           )}
+// //         </TouchableOpacity>
+// //       </View>
+// //     );
+// //   };
+
+// //   /* ==============================
+// //      Render Tabs
+// //   ============================== */
+
+// //   const renderTabs = () => {
+// //     const tabs = [
+// //       {key: 'All', label: 'All', count: tableData.length},
+// //       {key: 'Approved', label: 'Approved', count: 0},
+// //       {key: 'Rejected', label: 'Rejected', count: 0},
+// //     ];
+
+// //     return (
+// //       <View style={tabStyles.container}>
+// //         <ScrollView
+// //           horizontal
+// //           showsHorizontalScrollIndicator={false}
+// //           contentContainerStyle={tabStyles.scrollContent}>
+// //           {tabs.map(tab => (
+// //             <TouchableOpacity
+// //               key={tab.key}
+// //               style={[
+// //                 tabStyles.tab,
+// //                 activeTab === tab.key && tabStyles.activeTab,
+// //               ]}
+// //               onPress={() => {
+// //                 setActiveTab(tab.key);
+// //                 exitSelectionMode();
+// //               }}>
+// //               <Text
+// //                 style={[
+// //                   tabStyles.tabText,
+// //                   activeTab === tab.key && tabStyles.activeTabText,
+// //                 ]}>
+// //                 {tab.label}
+// //               </Text>
+// //               {tab.count > 0 && (
+// //                 <View
+// //                   style={[
+// //                     tabStyles.badge,
+// //                     activeTab === tab.key && tabStyles.activeBadge,
+// //                   ]}>
+// //                   <Text
+// //                     style={[
+// //                       tabStyles.badgeText,
+// //                       activeTab === tab.key && tabStyles.activeBadgeText,
+// //                     ]}>
+// //                     {tab.count}
+// //                   </Text>
+// //                 </View>
+// //               )}
+// //             </TouchableOpacity>
+// //           ))}
+// //         </ScrollView>
+// //       </View>
+// //     );
+// //   };
+
+// //   /* ==============================
+// //      UI
+// //   ============================== */
+
+// //   const filteredData = getFilteredData();
+
+// //   return (
+// //     <ActionPaneContainer
+// //       pageTitle={
+// //         selectionMode ? `${selectedRecIds.length} selected` : 'Work Items'
+// //       }
+// //       isBackButton={false}
+// //       showFooter={false}
+// //       showFloatingButton={false}
+// //       isHeaderActive={true}
+// //       showTabNavigator={false}
+// //       onRefresh={handleRefresh}>
+// //       {/* Tabs */}
+// //       {renderTabs()}
+
+// //       {isActionLoading && (
+// //         <View style={styles.DSR_ProcessingOverlay}>
+// //           <View style={styles.DSR_ProcessingContainer}>
+// //             <ActivityIndicator size="large" color={P.primary} />
+// //             <Text style={styles.DSR_ProcessingText}>Processing...</Text>
+// //           </View>
+// //         </View>
+// //       )}
+
+// //       {/* Bulk Toolbar */}
+// //       {selectionMode && (
+// //         <View style={styles.BulkToolbar_Container}>
+// //           <View style={bulkToolbarStyles.actionRow}>
+// //             <TouchableOpacity
+// //               disabled={isActionLoading}
+// //               onPress={() => handleBulkAction('Approve')}
+// //               style={bulkToolbarStyles.approveButton}>
+// //               {isActionLoading ? (
+// //                 <ActivityIndicator color="#2E7D32" size="small" />
+// //               ) : (
+// //                 <Text style={bulkToolbarStyles.approveText}>Approve All</Text>
+// //               )}
+// //             </TouchableOpacity>
+
+// //             <TouchableOpacity
+// //               disabled={isActionLoading}
+// //               onPress={() => handleBulkAction('Reject')}
+// //               style={bulkToolbarStyles.rejectButton}>
+// //               {isActionLoading ? (
+// //                 <ActivityIndicator color="#C62828" size="small" />
+// //               ) : (
+// //                 <Text style={bulkToolbarStyles.rejectText}>Reject All</Text>
+// //               )}
+// //             </TouchableOpacity>
+// //           </View>
+
+// //           <View style={bulkToolbarStyles.controlRow}>
+// //             <TouchableOpacity
+// //               onPress={selectAll}
+// //               style={bulkToolbarStyles.textButton}>
+// //               <Text style={bulkToolbarStyles.primaryButtonText}>
+// //                 {selectedRecIds.length === filteredData.length
+// //                   ? 'Unselect all'
+// //                   : 'Select all'}
+// //               </Text>
+// //             </TouchableOpacity>
+
+// //             <TouchableOpacity
+// //               onPress={exitSelectionMode}
+// //               style={bulkToolbarStyles.textButton}>
+// //               <Text style={bulkToolbarStyles.secondaryButtonText}>Cancel</Text>
+// //             </TouchableOpacity>
+// //           </View>
+// //         </View>
+// //       )}
+
+// //       {isLoading ? (
+// //         <CustomIndicator />
+// //       ) : filteredData.length > 0 ? (
+// //         <TouchableWithoutFeedback onPress={() => setMenuVisible(null)}>
+// //           <View style={{flex: 1}}>
+// //             <FlatList
+// //               data={filteredData}
+// //               renderItem={renderWorkItemCard}
+// //               keyExtractor={item => item.recId?.toString()}
+// //               contentContainerStyle={cardStyles.listContainer}
+// //               showsVerticalScrollIndicator={false}
+// //               refreshControl={
+// //                 <RefreshControl
+// //                   refreshing={refreshing}
+// //                   onRefresh={fetchWorkItems}
+// //                 />
+// //               }
+// //             />
+// //           </View>
+// //         </TouchableWithoutFeedback>
+// //       ) : (
+// //         <ScrollView
+// //           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
+// //           <Text style={styles.LReqLP_NoDataText}>
+// //             {activeTab === 'All'
+// //               ? 'No work items found'
+// //               : `No ${activeTab.toLowerCase()} items found`}
+// //           </Text>
+// //         </ScrollView>
+// //       )}
+
+// //       <AlertModal
+// //         visible={alertModal}
+// //         heading="Alert"
+// //         text={alertMessage}
+// //         onPress={() => setAlertModal(false)}
+// //       />
+// //     </ActionPaneContainer>
+// //   );
+// // };
+
+// // export default WorkItemsAssignedToMePage;
+
+// // /* ==============================
+// //      Styles
+// //   ============================== */
+
+// // const cardStyles = StyleSheet.create({
+// //   listContainer: {
+// //     padding: 16,
+// //     paddingBottom: 24,
+// //   },
+// //   container: {
+// //     marginBottom: 12,
+// //     position: 'relative',
+// //   },
+// //   touchableArea: {
+// //     position: 'relative',
+// //   },
+// //   card: {
+// //     backgroundColor: '#FFFFFF',
+// //     borderRadius: 14,
+// //     padding: 16,
+// //     shadowColor: '#000',
+// //     shadowOffset: {width: 0, height: 2},
+// //     shadowOpacity: 0.05,
+// //     shadowRadius: 8,
+// //     elevation: 2,
+// //     borderWidth: 1,
+// //     borderColor: '#F0F0F0',
+// //   },
+// //   cardSelected: {
+// //     backgroundColor: '#F8F9FF',
+// //     borderColor: '#0066CC',
+// //     borderWidth: 1.5,
+// //   },
+// //   topRow: {
+// //     flexDirection: 'row',
+// //     justifyContent: 'space-between',
+// //     alignItems: 'center',
+// //     marginBottom: 12,
+// //   },
+// //   documentNumberContainer: {
+// //     backgroundColor: '#F5F7FA',
+// //     paddingHorizontal: 10,
+// //     paddingVertical: 4,
+// //     borderRadius: 6,
+// //   },
+// //   documentNumber: {
+// //     fontSize: 15,
+// //     fontWeight: '600',
+// //     color: '#1A1A1A',
+// //     letterSpacing: 0.2,
+// //   },
+// //   actionButtons: {
+// //     flexDirection: 'row',
+// //     alignItems: 'center',
+// //     gap: 8,
+// //   },
+// //   actionButton: {
+// //     paddingHorizontal: 12,
+// //     paddingVertical: 6,
+// //     borderRadius: 6,
+// //     borderWidth: 1,
+// //   },
+// //   approveButton: {
+// //     backgroundColor: '#FFFFFF',
+// //     borderColor: '#2E7D32',
+// //   },
+// //   rejectButton: {
+// //     backgroundColor: '#FFFFFF',
+// //     borderColor: '#C62828',
+// //   },
+// //   approveButtonText: {
+// //     color: '#2E7D32',
+// //     fontSize: 13,
+// //     fontWeight: '500',
+// //   },
+// //   rejectButtonText: {
+// //     color: '#C62828',
+// //     fontSize: 13,
+// //     fontWeight: '500',
+// //   },
+// //   menuButton: {
+// //     padding: 4,
+// //     marginLeft: 4,
+// //   },
+// //   menuDots: {
+// //     fontSize: 18,
+// //     color: '#666666',
+// //     letterSpacing: 1,
+// //   },
+// //   title: {
+// //     fontSize: 16,
+// //     fontWeight: '500',
+// //     color: '#333333',
+// //     marginBottom: 12,
+// //   },
+// //   requesterContainer: {
+// //     flexDirection: 'row',
+// //     alignItems: 'center',
+// //     paddingTop: 8,
+// //     borderTopWidth: 1,
+// //     borderTopColor: '#F0F0F0',
+// //   },
+// //   requesterLabel: {
+// //     fontSize: 13,
+// //     color: '#666666',
+// //     width: 70,
+// //     fontWeight: '400',
+// //   },
+// //   requesterValue: {
+// //     fontSize: 14,
+// //     color: '#1A1A1A',
+// //     fontWeight: '500',
+// //     flex: 1,
+// //   },
+// //   checkboxContainer: {
+// //     position: 'absolute',
+// //     right: 16,
+// //     top: 16,
+// //     zIndex: 10,
+// //   },
+// //   checkbox: {
+// //     width: 22,
+// //     height: 22,
+// //     borderRadius: 11,
+// //     borderWidth: 2,
+// //     borderColor: '#CCCCCC',
+// //     backgroundColor: '#FFFFFF',
+// //     alignItems: 'center',
+// //     justifyContent: 'center',
+// //   },
+// //   checkboxSelected: {
+// //     borderColor: '#0066CC',
+// //     backgroundColor: '#0066CC',
+// //   },
+// //   checkmark: {
+// //     color: '#FFFFFF',
+// //     fontSize: 12,
+// //     fontWeight: '600',
+// //   },
+// //   menuContainer: {
+// //     position: 'absolute',
+// //     top: 50,
+// //     right: 16,
+// //     backgroundColor: '#FFFFFF',
+// //     borderRadius: 8,
+// //     shadowColor: '#000',
+// //     shadowOffset: {width: 0, height: 4},
+// //     shadowOpacity: 0.1,
+// //     shadowRadius: 8,
+// //     elevation: 4,
+// //     minWidth: 140,
+// //     borderWidth: 1,
+// //     borderColor: '#EDEDED',
+// //     zIndex: 20,
+// //   },
+// //   menuItem: {
+// //     paddingVertical: 10,
+// //     paddingHorizontal: 16,
+// //   },
+// //   menuItemText: {
+// //     fontSize: 14,
+// //     color: '#333333',
+// //     fontWeight: '400',
+// //   },
+// // });
+
+// // const tabStyles = StyleSheet.create({
+// //   container: {
+// //     backgroundColor: '#FFFFFF',
+// //     paddingVertical: 12,
+// //     paddingHorizontal: 16,
+// //     borderBottomWidth: 1,
+// //     borderBottomColor: '#F0F0F0',
+// //   },
+// //   scrollContent: {
+// //     gap: 8,
+// //   },
+// //   tab: {
+// //     flexDirection: 'row',
+// //     alignItems: 'center',
+// //     paddingHorizontal: 16,
+// //     paddingVertical: 6,
+// //     borderRadius: 20,
+// //     backgroundColor: '#F5F7FA',
+// //     gap: 6,
+// //   },
+// //   activeTab: {
+// //     backgroundColor: '#0066CC',
+// //   },
+// //   tabText: {
+// //     fontSize: 14,
+// //     fontWeight: '500',
+// //     color: '#666666',
+// //   },
+// //   activeTabText: {
+// //     color: '#FFFFFF',
+// //     fontWeight: '500',
+// //   },
+// //   badge: {
+// //     backgroundColor: '#E9ECEF',
+// //     paddingHorizontal: 6,
+// //     paddingVertical: 2,
+// //     borderRadius: 12,
+// //     minWidth: 20,
+// //     alignItems: 'center',
+// //   },
+// //   activeBadge: {
+// //     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+// //   },
+// //   badgeText: {
+// //     fontSize: 11,
+// //     fontWeight: '500',
+// //     color: '#666666',
+// //   },
+// //   activeBadgeText: {
+// //     color: '#FFFFFF',
+// //   },
+// // });
+
+// // const bulkToolbarStyles = StyleSheet.create({
+// //   container: {
+// //     backgroundColor: '#FFFFFF',
+// //     paddingVertical: 16,
+// //     paddingHorizontal: 16,
+// //     borderBottomWidth: 1,
+// //     borderBottomColor: '#F0F0F0',
+// //     shadowColor: '#000',
+// //     shadowOffset: {width: 0, height: 2},
+// //     shadowOpacity: 0.05,
+// //     shadowRadius: 4,
+// //     elevation: 2,
+// //   },
+// //   actionRow: {
+// //     flexDirection: 'row',
+// //     gap: 12,
+// //     marginBottom: 12,
+// //   },
+// //   approveButton: {
+// //     flex: 1,
+// //     alignItems: 'center',
+// //     justifyContent: 'center',
+// //     paddingVertical: 10,
+// //     borderRadius: 8,
+// //     backgroundColor: '#FFFFFF',
+// //     borderWidth: 1,
+// //     borderColor: '#2E7D32',
+// //   },
+// //   approveText: {
+// //     color: '#2E7D32',
+// //     fontWeight: '500',
+// //     fontSize: 14,
+// //   },
+// //   rejectButton: {
+// //     flex: 1,
+// //     alignItems: 'center',
+// //     justifyContent: 'center',
+// //     paddingVertical: 10,
+// //     borderRadius: 8,
+// //     backgroundColor: '#FFFFFF',
+// //     borderWidth: 1,
+// //     borderColor: '#C62828',
+// //   },
+// //   rejectText: {
+// //     color: '#C62828',
+// //     fontWeight: '500',
+// //     fontSize: 14,
+// //   },
+// //   controlRow: {
+// //     flexDirection: 'row',
+// //     justifyContent: 'space-between',
+// //     alignItems: 'center',
+// //   },
+// //   textButton: {
+// //     paddingVertical: 4,
+// //   },
+// //   primaryButtonText: {
+// //     color: '#0066CC',
+// //     fontWeight: '500',
+// //     fontSize: 14,
+// //   },
+// //   secondaryButtonText: {
+// //     color: '#666666',
+// //     fontWeight: '500',
+// //     fontSize: 14,
+// //   },
+// // });
+
 // /* eslint-disable react-native/no-inline-styles */
 // /* eslint-disable react-hooks/exhaustive-deps */
 // /* eslint-disable curly */
-// import React, {useState, useCallback} from 'react';
+// import React, {useState, useCallback, useMemo, useEffect} from 'react';
 // import {
 //   Text,
 //   FlatList,
@@ -11,50 +940,85 @@
 //   View,
 //   TouchableOpacity,
 //   ActivityIndicator,
-//   TouchableWithoutFeedback,
+//   Pressable,
+//   StyleSheet,
 // } from 'react-native';
 // import {
 //   useNavigation,
 //   useRoute,
 //   useFocusEffect,
 // } from '@react-navigation/native';
-// import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 // import {useSelector} from 'react-redux';
 // import ActionPaneContainer from '../../components/ActionPaneContainer';
 // import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 // import AlertModal from '../../components/Alert/AlertModal';
+// import DynamicRequestCard from '../../components/DynamicRequestCard';
+// import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
 
 // import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
 // import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+// import useListFilters from '../../hooks/useListFilters';
+// import ListFilterBar from '../../components/Filters/ListFilterBar';
 // import styles from '../../styles/styles';
-// import {StyleSheet} from 'react-native';
+// import usePallete from '../../hooks/usePalette';
+// import {useDispatch} from 'react-redux';
+// import {setPendingWorkItemsCount} from '../../store/slices/workItemsSlice';
 
 // const WorkItemsAssignedToMePage = () => {
 //   const navigation = useNavigation();
 //   const route = useRoute();
+//   const P = usePallete();
+//   const dispatch = useDispatch();
 
 //   const {userData: routeUserData} = route.params || {};
 //   const reduxUserData = useSelector(state => state.user.userData);
 //   const effectiveUserData = routeUserData || reduxUserData;
 
-//   const [tableData, setTableData] = useState([]);
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [isActionLoading, setIsActionLoading] = useState(false);
 //   const [refreshing, setRefreshing] = useState(false);
 //   const [alertModal, setAlertModal] = useState(false);
 //   const [alertMessage, setAlertMessage] = useState('');
-//   const [processingAction, setProcessingAction] = useState('');
-//   const [isProcessing, setIsProcessing] = useState(false);
 
 //   const [selectionMode, setSelectionMode] = useState(false);
 //   const [selectedRecIds, setSelectedRecIds] = useState([]);
 
-//   // New state for tabs
-//   const [activeTab, setActiveTab] = useState('All');
+//   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+//   const [selectedWorkItem, setSelectedWorkItem] = useState(null);
+//   const {selectedLegalEntity} = useSelector(state => state.company);
 
-//   // State for managing menu visibility
-//   const [menuVisible, setMenuVisible] = useState(null);
+//   const effectiveEmployeeId = effectiveUserData?.employeeId;
+//   const effectiveEmployeeName = effectiveUserData?.employeeName;
+
+//   // ── Pill filter — replaces old activeTab ──
+//   const [activeFilter, setActiveFilter] = useState('All');
+
+//   // Per-card processing buttons
+//   const [processingButtons, setProcessingButtons] = useState({});
+
+//   // Source data; filtering/sorting/search all derive from this via the hook.
+//   const [rawData, setRawData] = useState([]);
+
+//   const f = useListFilters({
+//     data: rawData,
+//     dateField: 'createdDateTime',
+//     searchFields: [
+//       'documentType',
+//       'documentId',
+//       'requester',
+//       'Subject',
+//       'From',
+//       'Document',
+//     ],
+//     pills: ['All', 'Pending', 'Returned'],
+//     classifyPill: item =>
+//       item.workflowWorkItemType === 'WorkItem'
+//         ? 'Pending'
+//         : item.workflowWorkItemType === 'Return'
+//         ? 'Returned'
+//         : null,
+//   });
 
 //   /* ==============================
 //      Fetch Data
@@ -65,27 +1029,9 @@
 
 //     setIsLoading(true);
 //     try {
-//       const data = await RetrieveByEmail({
-//         email: effectiveUserData.email,
-//       });
+//       const data = await RetrieveByEmail({email: effectiveUserData.email});
 
-//       // const formattedData = (data || []).map((item, index) => {
-//       //   // Parse Document string: "Purchase requisition: 007488, NewTest"
-//       //   const documentStr = item.Document || '';
-
-//       //   // Extract document number (007488)
-//       //   const numberMatch = documentStr.match(/:?\s*(\d+)/);
-//       //   const documentNumber = numberMatch ? numberMatch[1] : '';
-
-//       //   // Extract document type (Purchase requisition)
-//       //   const typeMatch = documentStr.match(/^([^:]+)/);
-//       //   let documentType = typeMatch ? typeMatch[1].trim() : '';
-//       //   // Capitalize first letter of each word
-//       //   documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
-
-//       //   // Extract requester (NewTest)
-//       //   const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
-//       //   const requester = requesterMatch ? requesterMatch[1].trim() : '';
+//       console.log('here is retieve by email', data);
 
 //       const formattedData = (data || []).map((item, index) => {
 //         const documentStr = item.Document || '';
@@ -112,12 +1058,21 @@
 //           requester: requester,
 //           ContextTableId: item.ContextTableId,
 //           ContextRecId: item.ContextRecId,
+//           TableName: item.TableName,
+//           workflowWorkItemType: item.workflowWorkItemType,
+//           Document: item.Document,
+//           createdDateTime: item.createdDateTime,
+//           From: item.From,
+//           Subject: item.Subject,
 //         };
 //       });
 
-//       console.log('here is log', data);
+//       setRawData(formattedData);
 
-//       setTableData(formattedData);
+//       const pendingCount = formattedData.filter(
+//         item => item.workflowWorkItemType === 'WorkItem',
+//       ).length;
+//       dispatch(setPendingWorkItemsCount(pendingCount));
 //     } catch (error) {
 //       setAlertMessage('Failed to fetch work items.');
 //       setAlertModal(true);
@@ -127,9 +1082,7 @@
 //     }
 //   }, [effectiveUserData?.email]);
 
-//   const handleRefresh = () => {
-//     fetchWorkItems();
-//   };
+//   const handleRefresh = () => fetchWorkItems();
 
 //   useFocusEffect(
 //     useCallback(() => {
@@ -151,12 +1104,18 @@
 //         navigation.goBack();
 //         return true;
 //       };
-
 //       BackHandler.addEventListener('hardwareBackPress', onBackPress);
 //       return () =>
 //         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
 //     }, [selectionMode]),
 //   );
+
+//   useEffect(() => {
+//     const unsubscribe = navigation.addListener('blur', () => {
+//       exitSelectionMode();
+//     });
+//     return unsubscribe;
+//   }, [navigation]);
 
 //   /* ==============================
 //      Selection Logic
@@ -179,7 +1138,7 @@
 //   };
 
 //   const selectAll = () => {
-//     const currentData = getFilteredData();
+//     const currentData = f.filteredData;
 //     if (selectedRecIds.length === currentData.length) {
 //       setSelectedRecIds([]);
 //     } else {
@@ -188,177 +1147,200 @@
 //   };
 
 //   /* ==============================
-//      Tab Filter Logic
+//      Filter Logic
 //   ============================== */
 
-//   const getFilteredData = () => {
-//     switch (activeTab) {
-//       case 'All':
-//         return tableData;
-//       case 'Approved':
-//         return [];
-//       case 'Rejected':
-//         return [];
-//       default:
-//         return tableData;
-//     }
+//   // const getFilteredData = () => {
+//   //   if (activeFilter === 'All') return tableData;
+
+//   //   if (activeFilter === 'Pending') {
+//   //     return tableData.filter(
+//   //       item => (item.workflowWorkItemType || '') === 'WorkItem',
+//   //     );
+//   //   }
+
+//   //   if (activeFilter === 'Returned') {
+//   //     return tableData.filter(
+//   //       item => (item.workflowWorkItemType || '') === 'Return',
+//   //     );
+//   //   }
+
+//   //   return tableData;
+//   // };
+
+//   // // Count badges per pill
+//   // const getFilterCounts = () => {
+//   //   return {
+//   //     All: tableData.length,
+//   //     Pending: tableData.filter(
+//   //       item => (item.workflowWorkItemType || '') === 'WorkItem',
+//   //     ).length,
+//   //     Returned: tableData.filter(
+//   //       item => (item.workflowWorkItemType || '') === 'Return',
+//   //     ).length,
+//   //   };
+//   // };
+
+//   /* ==============================
+//      Per-card button processing
+//   ============================== */
+
+//   const setCardButtonProcessing = (recId, buttonType, isProc) => {
+//     setProcessingButtons(prev => {
+//       const updated = {...prev};
+//       if (isProc) {
+//         updated[recId] = [...(updated[recId] || []), buttonType];
+//       } else {
+//         updated[recId] = (updated[recId] || []).filter(b => b !== buttonType);
+//         if (updated[recId].length === 0) delete updated[recId];
+//       }
+//       return updated;
+//     });
 //   };
 
 //   /* ==============================
-//      Single Item Actions
+//      Actions
 //   ============================== */
-
-//   // const handleSingleAction = async (recId, actionType) => {
-//   //   if (isActionLoading) return;
-
-//   //   try {
-//   //     setIsActionLoading(true);
-
-//   //     const response = await WorkflowItemAction({
-//   //       recId: [recId],
-//   //       action: actionType,
-//   //     });
-
-//   //     if (response?.IsSuccess) {
-//   //       fetchWorkItems();
-//   //     } else {
-//   //       setAlertMessage(`Failed to ${actionType}`);
-//   //     }
-//   //   } catch {
-//   //     setAlertMessage(`Error during ${actionType}`);
-//   //   } finally {
-//   //     setIsActionLoading(false);
-//   //     setAlertModal(true);
-//   //   }
-//   // };
-
-//   // const handleSingleAction = async (recId, actionType) => {
-//   //   if (isActionLoading) return;
-
-//   //   try {
-//   //     setIsActionLoading(true);
-//   //     setProcessingAction(actionType.toLowerCase()); // 'approve' or 'reject'
-
-//   //     const response = await WorkflowItemAction({
-//   //       recId: [recId],
-//   //       action: actionType,
-//   //     });
-
-//   //     if (response?.IsSuccess) {
-//   //       setAlertMessage(`${actionType} successful`);
-//   //       await fetchWorkItems(); // ✅ IMPORTANT
-//   //     } else {
-//   //       setAlertMessage(`Failed to ${actionType}`);
-//   //       setAlertModal(true);
-//   //     }
-//   //   } catch {
-//   //     setAlertMessage(`Error during ${actionType}`);
-//   //     setAlertModal(true);
-//   //   } finally {
-//   //     setIsActionLoading(false);
-//   //     setProcessingAction('');
-//   //   }
-//   // };
 
 //   const handleSingleAction = async (recId, actionType) => {
 //     if (isActionLoading) return;
 
+//     const buttonKey = actionType.toLowerCase();
 //     try {
 //       setIsActionLoading(true);
-//       setProcessingAction(actionType.toLowerCase());
+//       setCardButtonProcessing(recId, buttonKey, true);
 
 //       const response = await WorkflowItemAction({
 //         recId: [recId],
 //         action: actionType,
 //       });
 
-//       if (!response?.IsSuccess) {
-//         throw new Error(`Failed to ${actionType}`);
-//       }
+//       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
 
-//       setAlertMessage(`${actionType} successful`);
-//       await fetchWorkItems(); // wait for refresh
+//       const PAST_TENSE = {
+//         Approve: 'Approved',
+//         Reject: 'Rejected',
+//         RequestChange: 'Change requested',
+//         Delegate: 'Delegated',
+//         Recall: 'Recalled',
+//         Resubmit: 'Resubmitted',
+//       };
+//       setAlertMessage(`Workitem ${PAST_TENSE[actionType] || `${actionType}d`}`);
+//       setAlertModal(true);
+//       await fetchWorkItems();
 //     } catch (error) {
 //       setAlertMessage(error.message || `Error during ${actionType}`);
 //       setAlertModal(true);
 //     } finally {
 //       setIsActionLoading(false);
-//       setProcessingAction('');
+//       setCardButtonProcessing(recId, buttonKey, false);
 //     }
 //   };
-
-//   /* ==============================
-//      Bulk Action
-//   ============================== */
-
-//   const handleViewHistory = (ContextRecId, contextTableId) => {
-//     setMenuVisible(null);
-//     console.log('recId:', ContextRecId, 'tableId:', contextTableId);
-//     // Should now log: recId: 68719507682  tableId: 66621
+//   const handleViewHistory = (ContextRecId, ContextTableId) => {
 //     navigation.navigate('WorkflowHistoryScreen', {
 //       recId: ContextRecId,
-//       tableId: contextTableId,
+//       tableId: ContextTableId,
+//       cameFrom: 'WorkItemsAssignedToMePage', // ← add this
 //     });
 //   };
 
-//   // const handleBulkAction = async actionType => {
-//   //   if (selectedRecIds.length === 0 || isActionLoading) return;
-
-//   //   try {
-//   //     setIsActionLoading(true);
-
-//   //     const response = await WorkflowItemAction({
-//   //       recId: selectedRecIds,
-//   //       action: actionType,
-//   //     });
-
-//   //     if (response?.IsSuccess) {
-//   //       setAlertMessage(
-//   //         `${actionType} successful for ${selectedRecIds.length} item(s)`,
-//   //       );
-//   //       exitSelectionMode();
-//   //       fetchWorkItems();
-//   //     } else {
-//   //       setAlertMessage(`Failed to ${actionType}`);
-//   //     }
-//   //   } catch {
-//   //     setAlertMessage(`Error during ${actionType}`);
-//   //   } finally {
-//   //     setIsActionLoading(false);
-//   //     setAlertModal(true);
-//   //   }
-//   // };
-
+//   const handleWorkflowDetail = (ContextRecId, ContextTableId) => {
+//     navigation.navigate('WorkflowDetailScreen', {
+//       tableId: ContextTableId,
+//       contextRecId: ContextRecId,
+//     });
+//   };
 //   const handleBulkAction = async actionType => {
 //     if (selectedRecIds.length === 0 || isActionLoading) return;
 
 //     try {
 //       setIsActionLoading(true);
-//       setProcessingAction('bulk');
 
 //       const response = await WorkflowItemAction({
 //         recId: selectedRecIds,
 //         action: actionType,
 //       });
 
-//       if (!response?.IsSuccess) {
-//         throw new Error(`Failed to ${actionType}`);
-//       }
+//       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
 
 //       setAlertMessage(
 //         `${actionType} successful for ${selectedRecIds.length} item(s)`,
 //       );
-
+//       setAlertModal(true);
 //       exitSelectionMode();
-
-//       await fetchWorkItems(); // ✅ IMPORTANT — wait for refresh
+//       await fetchWorkItems();
 //     } catch (error) {
 //       setAlertMessage(error.message || `Error during ${actionType}`);
 //       setAlertModal(true);
 //     } finally {
 //       setIsActionLoading(false);
-//       setProcessingAction('');
 //     }
+//   };
+
+//   /* ==============================
+//      Card Config
+//   ============================== */
+
+//   const CARD_CONFIG = {
+//     headerConfig: {
+//       title: {key: 'documentType'},
+//     },
+//     fields: [
+//       // {key: 'Document', label: '', type: 'link'},
+//       {key: 'Subject', label: 'Subject', type: 'text'},
+//       {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
+//       {key: 'From', label: 'From', type: 'text'},
+//     ],
+//   };
+
+//   const getButtonConfig = Item => ({
+//     attachment: {
+//       show: true,
+//       position: 'header',
+//       style: 'icon',
+//       icon: 'paperclip',
+//       iconSize: 20,
+//       iconColor: '#fff',
+//       backgroundColor: P.primary,
+//       disabled: false,
+//     },
+//     approval: {
+//       show: !selectionMode,
+//       position: 'bottom',
+//       style: 'approval_dropdown',
+//       text: 'Approval',
+//       textColor: P.primary,
+//       disabled: isActionLoading,
+//       actions:
+//         Item.workflowWorkItemType === 'WorkItem'
+//           ? [
+//               {key: 'approve', label: 'Approve', icon: 'check'},
+//               {key: 'reject', label: 'Reject', icon: 'x'},
+//               // {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
+//               // {key: 'delegate', label: 'Delegate', icon: 'user'},
+//               // {key: 'recall', label: 'Recall', icon: 'undo'},
+//               {key: 'viewHistory', label: 'View History', icon: 'clock'},
+//             ]
+//           : [{key: 'viewHistory', label: 'View History', icon: 'clock'}],
+//     },
+//   });
+
+//   const handleButtonPress = (buttonType, item) => {
+//     if (buttonType === 'approve') handleSingleAction(item.recId, 'Approve');
+//     else if (buttonType === 'reject') handleSingleAction(item.recId, 'Reject');
+//     else if (buttonType === 'requestChange')
+//       handleSingleAction(item.recId, 'RequestChange');
+//     else if (buttonType === 'delegate')
+//       handleSingleAction(item.recId, 'Delegate');
+//     else if (buttonType === 'recall') handleSingleAction(item.recId, 'Recall');
+//     else if (buttonType === 'viewHistory')
+//       handleViewHistory(item.ContextRecId, item.ContextTableId);
+//     else if (buttonType === 'attachment') handleAttachmentPress(item);
+//   };
+
+//   const handleAttachmentPress = item => {
+//     setSelectedWorkItem(item);
+//     setAttachmentModalVisible(true);
 //   };
 
 //   /* ==============================
@@ -367,157 +1349,52 @@
 
 //   const renderWorkItemCard = ({item}) => {
 //     const isSelected = selectedRecIds.includes(item.recId);
-//     const isMenuOpen = menuVisible === item.recId;
-
 //     return (
-//       <View style={cardStyles.container}>
-//         {/* Selection Overlay for long press */}
-//         <TouchableOpacity
-//           activeOpacity={0.9}
-//           onLongPress={() => enterSelectionMode(item.recId)}
-//           onPress={() => (selectionMode ? toggleSelection(item.recId) : null)}
-//           style={cardStyles.touchableArea}>
-//           {/* Selection Checkbox - Only visible in selection mode */}
-//           {selectionMode && (
-//             <View style={cardStyles.checkboxContainer}>
-//               <View
-//                 style={[
-//                   cardStyles.checkbox,
-//                   isSelected && cardStyles.checkboxSelected,
-//                 ]}>
-//                 {isSelected && <Text style={cardStyles.checkmark}>✓</Text>}
-//               </View>
-//             </View>
-//           )}
-
-//           {/* Card Content */}
-//           <View
-//             style={[cardStyles.card, isSelected && cardStyles.cardSelected]}>
-//             {/* Top Row - Document Number and Action Buttons */}
-//             <View style={cardStyles.topRow}>
-//               <View style={cardStyles.documentNumberContainer}>
-//                 <Text style={cardStyles.documentNumber}>{item.documentId}</Text>
-//               </View>
-
-//               {/* Action Buttons - Only show when not in selection mode */}
-//               {!selectionMode && (
-//                 <View style={cardStyles.actionButtons}>
-//                   <TouchableOpacity
-//                     style={[cardStyles.actionButton, cardStyles.approveButton]}
-//                     onPress={() => handleSingleAction(item.recId, 'Approve')}
-//                     disabled={isActionLoading}>
-//                     <Text style={cardStyles.approveButtonText}>Approve</Text>
-//                   </TouchableOpacity>
-
-//                   <TouchableOpacity
-//                     style={[cardStyles.actionButton, cardStyles.rejectButton]}
-//                     onPress={() => handleSingleAction(item.recId, 'Reject')}
-//                     disabled={isActionLoading}>
-//                     <Text style={cardStyles.rejectButtonText}>Reject</Text>
-//                   </TouchableOpacity>
-
-//                   {/* Three Dots Menu */}
-//                   {/* <TouchableOpacity
-//                     style={cardStyles.menuButton}
-//                     onPress={() =>
-//                       setMenuVisible(isMenuOpen ? null : item.recId)
-//                     }>
-//                     <Text style={cardStyles.menuDots}>⋮</Text>
-//                   </TouchableOpacity> */}
-//                   <TouchableOpacity
-//                     style={cardStyles.menuButton}
-//                     onPress={() =>
-//                       setMenuVisible(isMenuOpen ? null : item.recId)
-//                     }>
-//                     <FontAwesome name="ellipsis-v" size={18} color="#666666" />
-//                   </TouchableOpacity>
-//                 </View>
-//               )}
-//             </View>
-
-//             {/* Title */}
-//             <Text style={cardStyles.title}>{item.documentType}</Text>
-
-//             {/* Requester Info */}
-//             {item.requester ? (
-//               <View style={cardStyles.requesterContainer}>
-//                 <Text style={cardStyles.requesterLabel}>Requester</Text>
-//                 <Text style={cardStyles.requesterValue}>{item.requester}</Text>
-//               </View>
-//             ) : null}
-//           </View>
-
-//           {/* Dropdown Menu */}
-//           {isMenuOpen && (
-//             <View style={cardStyles.menuContainer}>
-//               <TouchableOpacity
-//                 style={cardStyles.menuItem}
-//                 onPress={() =>
-//                   handleViewHistory(item.ContextRecId, item.ContextTableId)
-//                 }>
-//                 <Text style={cardStyles.menuItemText}>View History</Text>
-//               </TouchableOpacity>
-//             </View>
-//           )}
-//         </TouchableOpacity>
-//       </View>
-//     );
-//   };
-
-//   /* ==============================
-//      Render Tabs
-//   ============================== */
-
-//   const renderTabs = () => {
-//     const tabs = [
-//       {key: 'All', label: 'All', count: tableData.length},
-//       {key: 'Approved', label: 'Approved', count: 0},
-//       {key: 'Rejected', label: 'Rejected', count: 0},
-//     ];
-
-//     return (
-//       <View style={tabStyles.container}>
-//         <ScrollView
-//           horizontal
-//           showsHorizontalScrollIndicator={false}
-//           contentContainerStyle={tabStyles.scrollContent}>
-//           {tabs.map(tab => (
-//             <TouchableOpacity
-//               key={tab.key}
+//       <Pressable
+//         onLongPress={() => enterSelectionMode(item.recId)}
+//         onPress={() => selectionMode && toggleSelection(item.recId)}
+//         style={[
+//           styles.Page_CardWrapper,
+//           isSelected && styles.Page_CardWrapperSelected,
+//         ]}>
+//         {selectionMode && (
+//           <View style={styles.Page_CheckboxContainer}>
+//             <View
 //               style={[
-//                 tabStyles.tab,
-//                 activeTab === tab.key && tabStyles.activeTab,
-//               ]}
-//               onPress={() => {
-//                 setActiveTab(tab.key);
-//                 exitSelectionMode();
-//               }}>
-//               <Text
-//                 style={[
-//                   tabStyles.tabText,
-//                   activeTab === tab.key && tabStyles.activeTabText,
-//                 ]}>
-//                 {tab.label}
-//               </Text>
-//               {tab.count > 0 && (
-//                 <View
-//                   style={[
-//                     tabStyles.badge,
-//                     activeTab === tab.key && tabStyles.activeBadge,
-//                   ]}>
-//                   <Text
-//                     style={[
-//                       tabStyles.badgeText,
-//                       activeTab === tab.key && tabStyles.activeBadgeText,
-//                     ]}>
-//                     {tab.count}
-//                   </Text>
-//                 </View>
-//               )}
-//             </TouchableOpacity>
-//           ))}
-//         </ScrollView>
-//       </View>
+//                 styles.Page_Checkbox,
+//                 isSelected && styles.Page_CheckboxSelected,
+//               ]}>
+//               {isSelected && <Text style={styles.Page_Checkmark}>✓</Text>}
+//             </View>
+//           </View>
+//         )}
+
+//         <DynamicRequestCard
+//           data={item}
+//           headerConfig={CARD_CONFIG.headerConfig}
+//           fields={CARD_CONFIG.fields}
+//           buttons={getButtonConfig(item)}
+//           onButtonPress={handleButtonPress}
+//           onPress={() => {
+//             if (selectionMode) {
+//               toggleSelection(item.recId);
+//             } else {
+//               handleWorkflowDetail(item.ContextRecId, item.ContextTableId);
+//             }
+//           }}
+//           onLongPress={() => enterSelectionMode(item.recId)}
+//           isExpandable={false}
+//           gradientColors={
+//             isSelected
+//               ? ['#dbeafe', '#eff6ff', '#f0f4ff']
+//               : ['#f0f9ff', '#e0f2fe', '#dbeafe']
+//           }
+//           processingButtons={processingButtons[item.recId] || []}
+//           showNavigationArrow={false}
+//           isHighlighted={isSelected}
+//           searchQuery={f.searchQuery}
+//         />
+//       </Pressable>
 //     );
 //   };
 
@@ -525,7 +1402,22 @@
 //      UI
 //   ============================== */
 
-//   const filteredData = getFilteredData();
+//   const filteredData = f.filteredData;
+
+//   const areSelectedItemsSameType = () => {
+//     if (selectedRecIds.length === 0) return true;
+
+//     const items = rawData.filter(item => selectedRecIds.includes(item.recId));
+
+//     const firstType = items[0]?.workflowWorkItemType;
+
+//     return items.every(item => item.workflowWorkItemType === firstType);
+//   };
+
+//   const isUniformSelection = areSelectedItemsSameType();
+//   const selectedItems = rawData.filter(t => selectedRecIds.includes(t.recId));
+
+//   const firstSelectedType = selectedItems[0]?.workflowWorkItemType;
 
 //   return (
 //     <ActionPaneContainer
@@ -536,11 +1428,18 @@
 //       showFooter={false}
 //       showFloatingButton={false}
 //       isHeaderActive={true}
-//       showTabNavigator={false}
-//       onRefresh={handleRefresh}>
-//       {/* Tabs */}
-//       {renderTabs()}
+//       showTabNavigator={true}
+//       onRefresh={handleRefresh}
+//       showPageTitleRow={true}
+//       showSearchBar={true}
+//       {...f.actionPaneProps}
+//       onFilterChange={filter => {
+//         f.setActiveFilter(filter);
+//         exitSelectionMode();
+//       }}>
+//       <ListFilterBar filters={f} showDocumentTypeFilter />
 
+//       {/* Processing overlay */}
 //       {isActionLoading && (
 //         <View style={styles.DSR_ProcessingOverlay}>
 //           <View style={styles.DSR_ProcessingContainer}>
@@ -550,39 +1449,105 @@
 //         </View>
 //       )}
 
+//       <DynamicAttachmentModal
+//         visible={attachmentModalVisible}
+//         recordData={selectedWorkItem}
+//         recordIdKey="ContextRecId"
+//         tableName={selectedWorkItem?.TableName || ''}
+//         onClose={() => {
+//           setAttachmentModalVisible(false);
+//           setSelectedWorkItem(null);
+//         }}
+//         onSave={() => fetchWorkItems()}
+//         legalEntity={selectedLegalEntity}
+//         employeeId={effectiveEmployeeId}
+//         employeeName={effectiveEmployeeName}
+//         modalTitle="Work Item Attachments"
+//         showTakePhoto={false}
+//         showChooseFile={false}
+//         showDownload={true}
+//         showView={true}
+//         showDelete={false}
+//       />
+
 //       {/* Bulk Toolbar */}
 //       {selectionMode && (
 //         <View style={styles.BulkToolbar_Container}>
-//           <View style={bulkToolbarStyles.actionRow}>
-//             <TouchableOpacity
-//               disabled={isActionLoading}
-//               onPress={() => handleBulkAction('Approve')}
-//               style={bulkToolbarStyles.approveButton}>
-//               {isActionLoading ? (
-//                 <ActivityIndicator color="#2E7D32" size="small" />
-//               ) : (
-//                 <Text style={bulkToolbarStyles.approveText}>Approve All</Text>
-//               )}
-//             </TouchableOpacity>
+//           {selectedRecIds.length === 0 ? (
+//             <View style={{paddingVertical: 10}}>
+//               <Text
+//                 style={{
+//                   textAlign: 'center',
+//                   color: '#555',
+//                   fontWeight: '600',
+//                 }}>
+//                 Please select at least one record.
+//               </Text>
+//             </View>
+//           ) : !isUniformSelection ? (
+//             <View style={{paddingVertical: 10}}>
+//               <Text
+//                 style={{
+//                   textAlign: 'center',
+//                   color: '#C62828',
+//                   fontWeight: '600',
+//                 }}>
+//                 Selected items must be of the same type.
+//               </Text>
+//             </View>
+//           ) : (
+//             <View style={styles.BulkToolbar_ActionRow}>
+//               {firstSelectedType === 'WorkItem' ? (
+//                 <>
+//                   <TouchableOpacity
+//                     disabled={isActionLoading}
+//                     onPress={() => handleBulkAction('Approve')}
+//                     style={styles.BulkToolbar_ApproveButton}>
+//                     {isActionLoading ? (
+//                       <ActivityIndicator size="small" />
+//                     ) : (
+//                       <Text style={styles.BulkToolbar_ApproveText}>
+//                         Approve Selected
+//                       </Text>
+//                     )}
+//                   </TouchableOpacity>
 
-//             <TouchableOpacity
-//               disabled={isActionLoading}
-//               onPress={() => handleBulkAction('Reject')}
-//               style={bulkToolbarStyles.rejectButton}>
-//               {isActionLoading ? (
-//                 <ActivityIndicator color="#C62828" size="small" />
+//                   <TouchableOpacity
+//                     disabled={isActionLoading}
+//                     onPress={() => handleBulkAction('Reject')}
+//                     style={styles.BulkToolbar_RejectButton}>
+//                     {isActionLoading ? (
+//                       <ActivityIndicator size="small" />
+//                     ) : (
+//                       <Text style={styles.BulkToolbar_RejectText}>
+//                         Reject Selected
+//                       </Text>
+//                     )}
+//                   </TouchableOpacity>
+//                 </>
 //               ) : (
-//                 <Text style={bulkToolbarStyles.rejectText}>Reject All</Text>
+//                 <TouchableOpacity
+//                   disabled={isActionLoading}
+//                   onPress={() => handleBulkAction('Resubmit')}
+//                   style={styles.BulkToolbar_ApproveButton}>
+//                   {isActionLoading ? (
+//                     <ActivityIndicator size="small" />
+//                   ) : (
+//                     <Text style={styles.BulkToolbar_ApproveText}>
+//                       Resubmit All
+//                     </Text>
+//                   )}
+//                 </TouchableOpacity>
 //               )}
-//             </TouchableOpacity>
-//           </View>
-
-//           <View style={bulkToolbarStyles.controlRow}>
+//             </View>
+//           )}
+//           <View style={styles.BulkToolbar_ControlRow}>
 //             <TouchableOpacity
 //               onPress={selectAll}
-//               style={bulkToolbarStyles.textButton}>
-//               <Text style={bulkToolbarStyles.primaryButtonText}>
-//                 {selectedRecIds.length === filteredData.length
+//               style={styles.BulkToolbar_TextButton}>
+//               <Text style={styles.BulkToolbar_PrimaryButtonText}>
+//                 {selectedRecIds.length === filteredData.length &&
+//                 filteredData.length > 0
 //                   ? 'Unselect all'
 //                   : 'Select all'}
 //               </Text>
@@ -590,8 +1555,8 @@
 
 //             <TouchableOpacity
 //               onPress={exitSelectionMode}
-//               style={bulkToolbarStyles.textButton}>
-//               <Text style={bulkToolbarStyles.secondaryButtonText}>Cancel</Text>
+//               style={styles.BulkToolbar_TextButton}>
+//               <Text style={styles.BulkToolbar_SecondaryButtonText}>Cancel</Text>
 //             </TouchableOpacity>
 //           </View>
 //         </View>
@@ -600,31 +1565,33 @@
 //       {isLoading ? (
 //         <CustomIndicator />
 //       ) : filteredData.length > 0 ? (
-//         <TouchableWithoutFeedback onPress={() => setMenuVisible(null)}>
-//           <View style={{flex: 1}}>
-//             <FlatList
-//               data={filteredData}
-//               renderItem={renderWorkItemCard}
-//               keyExtractor={item => item.recId?.toString()}
-//               contentContainerStyle={cardStyles.listContainer}
-//               showsVerticalScrollIndicator={false}
-//               refreshControl={
-//                 <RefreshControl
-//                   refreshing={refreshing}
-//                   onRefresh={fetchWorkItems}
-//                 />
-//               }
+//         <FlatList
+//           data={filteredData}
+//           renderItem={renderWorkItemCard}
+//           keyExtractor={item => item.recId?.toString()}
+//           contentContainerStyle={styles.Page_ListContainer}
+//           showsVerticalScrollIndicator={false}
+//           refreshControl={
+//             <RefreshControl
+//               refreshing={refreshing}
+//               onRefresh={fetchWorkItems}
 //             />
-//           </View>
-//         </TouchableWithoutFeedback>
+//           }
+//         />
 //       ) : (
 //         <ScrollView
 //           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
-//           <Text style={styles.LReqLP_NoDataText}>
-//             {activeTab === 'All'
-//               ? 'No work items found'
-//               : `No ${activeTab.toLowerCase()} items found`}
-//           </Text>
+//           {f.searchQuery.trim() ? (
+//             <Text style={styles.LReqLP_NoDataText}>
+//               No records match "{f.searchQuery}"
+//             </Text>
+//           ) : (
+//             <Text style={styles.LReqLP_NoDataText}>
+//               {f.activeFilter === 'All'
+//                 ? 'No work items found'
+//                 : `No ${f.activeFilter.toLowerCase()} items found`}
+//             </Text>
+//           )}
 //         </ScrollView>
 //       )}
 
@@ -639,297 +1606,750 @@
 // };
 
 // export default WorkItemsAssignedToMePage;
+// import React, {useState, useCallback, useMemo, useEffect} from 'react';
+// import {
+//   Text,
+//   FlatList,
+//   BackHandler,
+//   RefreshControl,
+//   ScrollView,
+//   View,
+//   TouchableOpacity,
+//   ActivityIndicator,
+//   Pressable,
+//   Alert,
+//   StyleSheet,
+// } from 'react-native';
+// import {
+//   useNavigation,
+//   useRoute,
+//   useFocusEffect,
+// } from '@react-navigation/native';
 
-// /* ==============================
-//      Styles
+// import {useSelector} from 'react-redux';
+// import ActionPaneContainer from '../../components/ActionPaneContainer';
+// import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
+// import AlertModal from '../../components/Alert/AlertModal';
+// import DynamicRequestCard from '../../components/DynamicRequestCard';
+// import DynamicAttachmentModal from '../../shared/DynamicAttachmentModal';
+
+// import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
+// import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
+// import useListFilters from '../../hooks/useListFilters';
+// import ListFilterBar from '../../components/Filters/ListFilterBar';
+// import styles from '../../styles/styles';
+// import usePallete from '../../hooks/usePalette';
+// import {useDispatch} from 'react-redux';
+// import {setPendingWorkItemsCount} from '../../store/slices/workItemsSlice';
+
+// const WorkItemsAssignedToMePage = () => {
+//   const navigation = useNavigation();
+//   const route = useRoute();
+//   const P = usePallete();
+//   const dispatch = useDispatch();
+
+//   const {userData: routeUserData} = route.params || {};
+//   const reduxUserData = useSelector(state => state.user.userData);
+//   const effectiveUserData = routeUserData || reduxUserData;
+
+//   const [isLoading, setIsLoading] = useState(false);
+//   const [isActionLoading, setIsActionLoading] = useState(false);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [alertModal, setAlertModal] = useState(false);
+//   const [alertMessage, setAlertMessage] = useState('');
+
+//   const [selectionMode, setSelectionMode] = useState(false);
+//   const [selectedRecIds, setSelectedRecIds] = useState([]);
+
+//   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
+//   const [selectedWorkItem, setSelectedWorkItem] = useState(null);
+//   const {selectedLegalEntity} = useSelector(state => state.company);
+
+//   const effectiveEmployeeId = effectiveUserData?.employeeId;
+//   const effectiveEmployeeName = effectiveUserData?.employeeName;
+
+//   // ── Pill filter — replaces old activeTab ──
+//   const [activeFilter, setActiveFilter] = useState('All');
+
+//   // Per-card processing buttons
+//   const [processingButtons, setProcessingButtons] = useState({});
+
+//   // Source data; filtering/sorting/search all derive from this via the hook.
+//   const [rawData, setRawData] = useState([]);
+
+//   const f = useListFilters({
+//     data: rawData,
+//     dateField: 'createdDateTime',
+//     searchFields: [
+//       'documentType',
+//       'documentId',
+//       'requester',
+//       'Subject',
+//       'From',
+//       'Document',
+//     ],
+//     pills: ['All', 'Pending', 'Returned'],
+//     classifyPill: item =>
+//       item.workflowWorkItemType === 'WorkItem'
+//         ? 'Pending'
+//         : item.workflowWorkItemType === 'Return'
+//         ? 'Returned'
+//         : null,
+//   });
+
+//   /* ==============================
+//      Fetch Data
 //   ============================== */
 
-// const cardStyles = StyleSheet.create({
-//   listContainer: {
-//     padding: 16,
-//     paddingBottom: 24,
+//   const fetchWorkItems = useCallback(async () => {
+//     if (!effectiveUserData?.email) return;
+
+//     setIsLoading(true);
+//     try {
+//       const data = await RetrieveByEmail({email: effectiveUserData.email});
+
+//       console.log('here is retieve by email', data);
+
+//       const formattedData = (data || []).map((item, index) => {
+//         const documentStr = item.Document || '';
+
+//         // Extract the document ID (everything after ':' and before ',')
+//         const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
+//         const documentId = documentIdMatch
+//           ? documentIdMatch[1].trim()
+//           : documentStr;
+
+//         // Extract requester (after last comma)
+//         const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
+//         const requester = requesterMatch ? requesterMatch[1].trim() : '';
+
+//         // Get document type from API if exists
+//         let documentType = item.DocumentType || '';
+//         documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+//         return {
+//           id: item.workflowWorkItemRecId ?? index,
+//           recId: item.workflowWorkItemRecId,
+//           documentId: documentId, // USMF-00060
+//           documentType: documentType, // Employee Leave Requests
+//           requester: requester,
+//           ContextTableId: item.ContextTableId,
+//           ContextRecId: item.ContextRecId,
+//           TableName: item.TableName,
+//           workflowWorkItemType: item.workflowWorkItemType,
+//           Document: item.Document,
+//           createdDateTime: item.createdDateTime,
+//           From: item.From,
+//           Subject: item.Subject,
+//         };
+//       });
+
+//       setRawData(formattedData);
+
+//       const pendingCount = formattedData.filter(
+//         item => item.workflowWorkItemType === 'WorkItem',
+//       ).length;
+//       dispatch(setPendingWorkItemsCount(pendingCount));
+//     } catch (error) {
+//       setAlertMessage('Failed to fetch work items.');
+//       setAlertModal(true);
+//     } finally {
+//       setIsLoading(false);
+//       setRefreshing(false);
+//     }
+//   }, [dispatch, effectiveUserData.email]);
+
+//   const handleRefresh = () => fetchWorkItems();
+
+//   useFocusEffect(
+//     useCallback(() => {
+//       fetchWorkItems();
+//     }, [fetchWorkItems]),
+//   );
+
+//   /* ==============================
+//      Back Handling
+//   ============================== */
+
+//   useFocusEffect(
+//     useCallback(() => {
+//       const onBackPress = () => {
+//         if (selectionMode) {
+//           exitSelectionMode();
+//           return true;
+//         }
+//         navigation.goBack();
+//         return true;
+//       };
+//       BackHandler.addEventListener('hardwareBackPress', onBackPress);
+//       return () =>
+//         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+//     }, [navigation, selectionMode]),
+//   );
+
+//   useEffect(() => {
+//     const unsubscribe = navigation.addListener('blur', () => {
+//       exitSelectionMode();
+//     });
+//     return unsubscribe;
+//   }, [navigation]);
+
+//   /* ==============================
+//      Selection Logic
+//   ============================== */
+
+//   const enterSelectionMode = recId => {
+//     setSelectionMode(true);
+//     setSelectedRecIds([recId]);
+//   };
+
+//   const exitSelectionMode = () => {
+//     setSelectionMode(false);
+//     setSelectedRecIds([]);
+//   };
+
+//   const toggleSelection = recId => {
+//     setSelectedRecIds(prev =>
+//       prev.includes(recId) ? prev.filter(id => id !== recId) : [...prev, recId],
+//     );
+//   };
+
+//   const selectAll = () => {
+//     const currentData = f.filteredData;
+//     if (selectedRecIds.length === currentData.length) {
+//       setSelectedRecIds([]);
+//     } else {
+//       setSelectedRecIds(currentData.map(item => item.recId));
+//     }
+//   };
+
+//   /* ==============================
+//      Per-card button processing
+//   ============================== */
+
+//   const setCardButtonProcessing = (recId, buttonType, isProc) => {
+//     setProcessingButtons(prev => {
+//       const updated = {...prev};
+//       if (isProc) {
+//         updated[recId] = [...(updated[recId] || []), buttonType];
+//       } else {
+//         updated[recId] = (updated[recId] || []).filter(b => b !== buttonType);
+//         if (updated[recId].length === 0) delete updated[recId];
+//       }
+//       return updated;
+//     });
+//   };
+
+//   /* ==============================
+//      Actions
+//   ============================== */
+
+//   const handleSingleAction = async (recId, actionType) => {
+//     if (isActionLoading) return;
+
+//     const buttonKey = actionType.toLowerCase();
+//     try {
+//       setIsActionLoading(true);
+//       setCardButtonProcessing(recId, buttonKey, true);
+
+//       const response = await WorkflowItemAction({
+//         recId: [recId],
+//         action: actionType,
+//       });
+
+//       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
+
+//       const PAST_TENSE = {
+//         Approve: 'Approved',
+//         Reject: 'Rejected',
+//         RequestChange: 'Change requested',
+//         Delegate: 'Delegated',
+//         Recall: 'Recalled',
+//         Resubmit: 'Resubmitted',
+//       };
+//       setAlertMessage(`Workitem ${PAST_TENSE[actionType] || `${actionType}d`}`);
+//       setAlertModal(true);
+//       await fetchWorkItems();
+//     } catch (error) {
+//       setAlertMessage(error.message || `Error during ${actionType}`);
+//       setAlertModal(true);
+//     } finally {
+//       setIsActionLoading(false);
+//       setCardButtonProcessing(recId, buttonKey, false);
+//     }
+//   };
+//   const handleViewHistory = (ContextRecId, ContextTableId) => {
+//     navigation.navigate('WorkflowHistoryScreen', {
+//       recId: ContextRecId,
+//       tableId: ContextTableId,
+//       cameFrom: 'WorkItemsAssignedToMePage', // ← add this
+//     });
+//   };
+
+//   const handleWorkflowDetail = (ContextRecId, ContextTableId) => {
+//     navigation.navigate('WorkflowDetailScreen', {
+//       tableId: ContextTableId,
+//       contextRecId: ContextRecId,
+//     });
+//   };
+
+//   // Now accepts an explicit recId list (falls back to the current selection),
+//   // so both the selection-mode toolbar and the "Approve All / Reject All"
+//   // buttons below can share the same action + refresh + error-handling path.
+//   const handleBulkAction = async (actionType, recIdsOverride = null) => {
+//     const targetRecIds = recIdsOverride ?? selectedRecIds;
+//     if (targetRecIds.length === 0 || isActionLoading) return;
+
+//     try {
+//       setIsActionLoading(true);
+
+//       const response = await WorkflowItemAction({
+//         recId: targetRecIds,
+//         action: actionType,
+//       });
+
+//       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
+
+//       setAlertMessage(
+//         `${actionType} successful for ${targetRecIds.length} item(s)`,
+//       );
+//       setAlertModal(true);
+//       exitSelectionMode();
+//       await fetchWorkItems();
+//     } catch (error) {
+//       setAlertMessage(error.message || `Error during ${actionType}`);
+//       setAlertModal(true);
+//     } finally {
+//       setIsActionLoading(false);
+//     }
+//   };
+
+//   /* ==============================
+//      Bulk actions on the current view (respects search / document-type
+//      pills / status pill — whatever is presently visible in filteredData)
+//   ============================== */
+
+//   // Only WorkItem-type entries can be approved/rejected — Return-type items
+//   // use Resubmit instead, same distinction the selection-mode toolbar makes.
+//   const bulkEligibleRecIds = useMemo(
+//     () =>
+//       f.filteredData
+//         .filter(item => item.workflowWorkItemType === 'WorkItem')
+//         .map(item => item.recId),
+//     [f.filteredData],
+//   );
+
+//   const isFiltered =
+//     f.activeFilter !== 'All' ||
+//     f.selectedDocumentTypes.length > 0 ||
+//     f.searchQuery.trim().length > 0;
+
+//   const confirmBulkActionOnVisible = actionType => {
+//     const count = bulkEligibleRecIds.length;
+//     if (count === 0 || isActionLoading) return;
+
+//     Alert.alert(
+//       `${actionType} ${count} item${count > 1 ? 's' : ''}?`,
+//       `This will ${actionType.toLowerCase()} ${count} work item${
+//         count > 1 ? 's' : ''
+//       }${isFiltered ? ' matching your current filter' : ''}.`,
+//       [
+//         {text: 'Cancel', style: 'cancel'},
+//         {
+//           text: actionType,
+//           style: actionType === 'Reject' ? 'destructive' : 'default',
+//           onPress: () => handleBulkAction(actionType, bulkEligibleRecIds),
+//         },
+//       ],
+//     );
+//   };
+
+//   /* ==============================
+//      Card Config
+//   ============================== */
+
+//   const CARD_CONFIG = {
+//     headerConfig: {
+//       title: {key: 'documentType'},
+//     },
+//     fields: [
+//       // {key: 'Document', label: '', type: 'link'},
+//       {key: 'Subject', label: 'Subject', type: 'text'},
+//       {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
+//       {key: 'From', label: 'From', type: 'text'},
+//     ],
+//   };
+
+//   const getButtonConfig = Item => ({
+//     attachment: {
+//       show: true,
+//       position: 'header',
+//       style: 'icon',
+//       icon: 'paperclip',
+//       iconSize: 20,
+//       iconColor: '#fff',
+//       backgroundColor: P.primary,
+//       disabled: false,
+//     },
+//     approval: {
+//       show: !selectionMode,
+//       position: 'bottom',
+//       style: 'approval_dropdown',
+//       text: 'Approval',
+//       textColor: P.primary,
+//       disabled: isActionLoading,
+//       actions:
+//         Item.workflowWorkItemType === 'WorkItem'
+//           ? [
+//               {key: 'approve', label: 'Approve', icon: 'check'},
+//               {key: 'reject', label: 'Reject', icon: 'x'},
+//               // {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
+//               // {key: 'delegate', label: 'Delegate', icon: 'user'},
+//               // {key: 'recall', label: 'Recall', icon: 'undo'},
+//               {key: 'viewHistory', label: 'View History', icon: 'clock'},
+//             ]
+//           : [{key: 'viewHistory', label: 'View History', icon: 'clock'}],
+//     },
+//   });
+
+//   const handleButtonPress = (buttonType, item) => {
+//     if (buttonType === 'approve') handleSingleAction(item.recId, 'Approve');
+//     else if (buttonType === 'reject') handleSingleAction(item.recId, 'Reject');
+//     else if (buttonType === 'requestChange')
+//       handleSingleAction(item.recId, 'RequestChange');
+//     else if (buttonType === 'delegate')
+//       handleSingleAction(item.recId, 'Delegate');
+//     else if (buttonType === 'recall') handleSingleAction(item.recId, 'Recall');
+//     else if (buttonType === 'viewHistory')
+//       handleViewHistory(item.ContextRecId, item.ContextTableId);
+//     else if (buttonType === 'attachment') handleAttachmentPress(item);
+//   };
+
+//   const handleAttachmentPress = item => {
+//     setSelectedWorkItem(item);
+//     setAttachmentModalVisible(true);
+//   };
+
+//   /* ==============================
+//      Render Card
+//   ============================== */
+
+//   const renderWorkItemCard = ({item}) => {
+//     const isSelected = selectedRecIds.includes(item.recId);
+//     return (
+//       <Pressable
+//         onLongPress={() => enterSelectionMode(item.recId)}
+//         onPress={() => selectionMode && toggleSelection(item.recId)}
+//         style={[
+//           styles.Page_CardWrapper,
+//           isSelected && styles.Page_CardWrapperSelected,
+//         ]}>
+//         {selectionMode && (
+//           <View style={styles.Page_CheckboxContainer}>
+//             <View
+//               style={[
+//                 styles.Page_Checkbox,
+//                 isSelected && styles.Page_CheckboxSelected,
+//               ]}>
+//               {isSelected && <Text style={styles.Page_Checkmark}>✓</Text>}
+//             </View>
+//           </View>
+//         )}
+
+//         <DynamicRequestCard
+//           data={item}
+//           headerConfig={CARD_CONFIG.headerConfig}
+//           fields={CARD_CONFIG.fields}
+//           buttons={getButtonConfig(item)}
+//           onButtonPress={handleButtonPress}
+//           onPress={() => {
+//             if (selectionMode) {
+//               toggleSelection(item.recId);
+//             } else {
+//               handleWorkflowDetail(item.ContextRecId, item.ContextTableId);
+//             }
+//           }}
+//           onLongPress={() => enterSelectionMode(item.recId)}
+//           isExpandable={false}
+//           gradientColors={
+//             isSelected
+//               ? ['#dbeafe', '#eff6ff', '#f0f4ff']
+//               : ['#f0f9ff', '#e0f2fe', '#dbeafe']
+//           }
+//           processingButtons={processingButtons[item.recId] || []}
+//           showNavigationArrow={false}
+//           isHighlighted={isSelected}
+//           searchQuery={f.searchQuery}
+//         />
+//       </Pressable>
+//     );
+//   };
+
+//   /* ==============================
+//      UI
+//   ============================== */
+
+//   const filteredData = f.filteredData;
+
+//   const areSelectedItemsSameType = () => {
+//     if (selectedRecIds.length === 0) return true;
+
+//     const items = rawData.filter(item => selectedRecIds.includes(item.recId));
+
+//     const firstType = items[0]?.workflowWorkItemType;
+
+//     return items.every(item => item.workflowWorkItemType === firstType);
+//   };
+
+//   const isUniformSelection = areSelectedItemsSameType();
+//   const selectedItems = rawData.filter(t => selectedRecIds.includes(t.recId));
+
+//   const firstSelectedType = selectedItems[0]?.workflowWorkItemType;
+
+//   return (
+//     <ActionPaneContainer
+//       pageTitle={
+//         selectionMode ? `${selectedRecIds.length} selected` : 'Work Items'
+//       }
+//       isBackButton={false}
+//       showFooter={false}
+//       showFloatingButton={false}
+//       isHeaderActive={true}
+//       showTabNavigator={true}
+//       onRefresh={handleRefresh}
+//       showPageTitleRow={true}
+//       showSearchBar={true}
+//       {...f.actionPaneProps}
+//       onFilterChange={filter => {
+//         f.setActiveFilter(filter);
+//         exitSelectionMode();
+//       }}>
+//       <ListFilterBar filters={f} showDocumentTypeFilter />
+
+//       {/* Approve All / Reject All — acts on whatever is currently in view
+//           (filteredData), so a search or document-type/status pill narrows
+//           the scope automatically. Hidden once selection mode is active to
+//           avoid two competing bulk-action bars on screen at once. */}
+//       {!selectionMode && bulkEligibleRecIds.length > 0 && (
+//         <View style={bulkAllStyles.wrap}>
+//           <Text style={bulkAllStyles.label}>
+//             {bulkEligibleRecIds.length} pending item
+//             {bulkEligibleRecIds.length > 1 ? 's' : ''}
+//             {isFiltered ? ' in this view' : ''}
+//           </Text>
+//           <View style={styles.BulkToolbar_ActionRow}>
+//             <TouchableOpacity
+//               disabled={isActionLoading}
+//               onPress={() => confirmBulkActionOnVisible('Approve')}
+//               style={styles.BulkToolbar_ApproveButton}>
+//               {isActionLoading ? (
+//                 <ActivityIndicator size="small" />
+//               ) : (
+//                 <Text style={styles.BulkToolbar_ApproveText}>
+//                   Approve All ({bulkEligibleRecIds.length})
+//                 </Text>
+//               )}
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               disabled={isActionLoading}
+//               onPress={() => confirmBulkActionOnVisible('Reject')}
+//               style={styles.BulkToolbar_RejectButton}>
+//               {isActionLoading ? (
+//                 <ActivityIndicator size="small" />
+//               ) : (
+//                 <Text style={styles.BulkToolbar_RejectText}>
+//                   Reject All ({bulkEligibleRecIds.length})
+//                 </Text>
+//               )}
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+//       )}
+
+//       {/* Processing overlay */}
+//       {isActionLoading && (
+//         <View style={styles.DSR_ProcessingOverlay}>
+//           <View style={styles.DSR_ProcessingContainer}>
+//             <ActivityIndicator size="large" color={P.primary} />
+//             <Text style={styles.DSR_ProcessingText}>Processing...</Text>
+//           </View>
+//         </View>
+//       )}
+
+//       <DynamicAttachmentModal
+//         visible={attachmentModalVisible}
+//         recordData={selectedWorkItem}
+//         recordIdKey="ContextRecId"
+//         tableName={selectedWorkItem?.TableName || ''}
+//         onClose={() => {
+//           setAttachmentModalVisible(false);
+//           setSelectedWorkItem(null);
+//         }}
+//         onSave={() => fetchWorkItems()}
+//         legalEntity={selectedLegalEntity}
+//         employeeId={effectiveEmployeeId}
+//         employeeName={effectiveEmployeeName}
+//         modalTitle="Work Item Attachments"
+//         showTakePhoto={false}
+//         showChooseFile={false}
+//         showDownload={true}
+//         showView={true}
+//         showDelete={false}
+//       />
+
+//       {/* Bulk Toolbar (manual multi-select via long-press) */}
+//       {selectionMode && (
+//         <View style={styles.BulkToolbar_Container}>
+//           {selectedRecIds.length === 0 ? (
+//             <View style={{paddingVertical: 10}}>
+//               <Text
+//                 style={{
+//                   textAlign: 'center',
+//                   color: '#555',
+//                   fontWeight: '600',
+//                 }}>
+//                 Please select at least one record.
+//               </Text>
+//             </View>
+//           ) : !isUniformSelection ? (
+//             <View style={{paddingVertical: 10}}>
+//               <Text
+//                 style={{
+//                   textAlign: 'center',
+//                   color: '#C62828',
+//                   fontWeight: '600',
+//                 }}>
+//                 Selected items must be of the same type.
+//               </Text>
+//             </View>
+//           ) : (
+//             <View style={styles.BulkToolbar_ActionRow}>
+//               {firstSelectedType === 'WorkItem' ? (
+//                 <>
+//                   <TouchableOpacity
+//                     disabled={isActionLoading}
+//                     onPress={() => handleBulkAction('Approve')}
+//                     style={styles.BulkToolbar_ApproveButton}>
+//                     {isActionLoading ? (
+//                       <ActivityIndicator size="small" />
+//                     ) : (
+//                       <Text style={styles.BulkToolbar_ApproveText}>
+//                         Approve Selected
+//                       </Text>
+//                     )}
+//                   </TouchableOpacity>
+
+//                   <TouchableOpacity
+//                     disabled={isActionLoading}
+//                     onPress={() => handleBulkAction('Reject')}
+//                     style={styles.BulkToolbar_RejectButton}>
+//                     {isActionLoading ? (
+//                       <ActivityIndicator size="small" />
+//                     ) : (
+//                       <Text style={styles.BulkToolbar_RejectText}>
+//                         Reject Selected
+//                       </Text>
+//                     )}
+//                   </TouchableOpacity>
+//                 </>
+//               ) : (
+//                 <TouchableOpacity
+//                   disabled={isActionLoading}
+//                   onPress={() => handleBulkAction('Resubmit')}
+//                   style={styles.BulkToolbar_ApproveButton}>
+//                   {isActionLoading ? (
+//                     <ActivityIndicator size="small" />
+//                   ) : (
+//                     <Text style={styles.BulkToolbar_ApproveText}>
+//                       Resubmit All
+//                     </Text>
+//                   )}
+//                 </TouchableOpacity>
+//               )}
+//             </View>
+//           )}
+//           <View style={styles.BulkToolbar_ControlRow}>
+//             <TouchableOpacity
+//               onPress={selectAll}
+//               style={styles.BulkToolbar_TextButton}>
+//               <Text style={styles.BulkToolbar_PrimaryButtonText}>
+//                 {selectedRecIds.length === filteredData.length &&
+//                 filteredData.length > 0
+//                   ? 'Unselect all'
+//                   : 'Select all'}
+//               </Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               onPress={exitSelectionMode}
+//               style={styles.BulkToolbar_TextButton}>
+//               <Text style={styles.BulkToolbar_SecondaryButtonText}>Cancel</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+//       )}
+
+//       {isLoading ? (
+//         <CustomIndicator />
+//       ) : filteredData.length > 0 ? (
+//         <FlatList
+//           data={filteredData}
+//           renderItem={renderWorkItemCard}
+//           keyExtractor={item => item.recId?.toString()}
+//           contentContainerStyle={styles.Page_ListContainer}
+//           showsVerticalScrollIndicator={false}
+//           refreshControl={
+//             <RefreshControl
+//               refreshing={refreshing}
+//               onRefresh={fetchWorkItems}
+//             />
+//           }
+//         />
+//       ) : (
+//         <ScrollView
+//           contentContainerStyle={{flexGrow: 1, justifyContent: 'center'}}>
+//           {f.searchQuery.trim() ? (
+//             <Text style={styles.LReqLP_NoDataText}>
+//               No records match "{f.searchQuery}"
+//             </Text>
+//           ) : (
+//             <Text style={styles.LReqLP_NoDataText}>
+//               {f.activeFilter === 'All'
+//                 ? 'No work items found'
+//                 : `No ${f.activeFilter.toLowerCase()} items found`}
+//             </Text>
+//           )}
+//         </ScrollView>
+//       )}
+
+//       <AlertModal
+//         visible={alertModal}
+//         heading="Alert"
+//         text={alertMessage}
+//         onPress={() => setAlertModal(false)}
+//       />
+//     </ActionPaneContainer>
+//   );
+// };
+
+// // Local styles for the "Approve All / Reject All" strip only — layout
+// // scaffolding around the shared BulkToolbar_* button styles from styles.js.
+// const bulkAllStyles = StyleSheet.create({
+//   wrap: {
+//     paddingHorizontal: 16,
+//     paddingTop: 6,
+//     paddingBottom: 4,
 //   },
-//   container: {
-//     marginBottom: 12,
-//     position: 'relative',
-//   },
-//   touchableArea: {
-//     position: 'relative',
-//   },
-//   card: {
-//     backgroundColor: '#FFFFFF',
-//     borderRadius: 14,
-//     padding: 16,
-//     shadowColor: '#000',
-//     shadowOffset: {width: 0, height: 2},
-//     shadowOpacity: 0.05,
-//     shadowRadius: 8,
-//     elevation: 2,
-//     borderWidth: 1,
-//     borderColor: '#F0F0F0',
-//   },
-//   cardSelected: {
-//     backgroundColor: '#F8F9FF',
-//     borderColor: '#0066CC',
-//     borderWidth: 1.5,
-//   },
-//   topRow: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//     marginBottom: 12,
-//   },
-//   documentNumberContainer: {
-//     backgroundColor: '#F5F7FA',
-//     paddingHorizontal: 10,
-//     paddingVertical: 4,
-//     borderRadius: 6,
-//   },
-//   documentNumber: {
-//     fontSize: 15,
-//     fontWeight: '600',
-//     color: '#1A1A1A',
-//     letterSpacing: 0.2,
-//   },
-//   actionButtons: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     gap: 8,
-//   },
-//   actionButton: {
-//     paddingHorizontal: 12,
-//     paddingVertical: 6,
-//     borderRadius: 6,
-//     borderWidth: 1,
-//   },
-//   approveButton: {
-//     backgroundColor: '#FFFFFF',
-//     borderColor: '#2E7D32',
-//   },
-//   rejectButton: {
-//     backgroundColor: '#FFFFFF',
-//     borderColor: '#C62828',
-//   },
-//   approveButtonText: {
-//     color: '#2E7D32',
-//     fontSize: 13,
-//     fontWeight: '500',
-//   },
-//   rejectButtonText: {
-//     color: '#C62828',
-//     fontSize: 13,
-//     fontWeight: '500',
-//   },
-//   menuButton: {
-//     padding: 4,
-//     marginLeft: 4,
-//   },
-//   menuDots: {
-//     fontSize: 18,
-//     color: '#666666',
-//     letterSpacing: 1,
-//   },
-//   title: {
-//     fontSize: 16,
-//     fontWeight: '500',
-//     color: '#333333',
-//     marginBottom: 12,
-//   },
-//   requesterContainer: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     paddingTop: 8,
-//     borderTopWidth: 1,
-//     borderTopColor: '#F0F0F0',
-//   },
-//   requesterLabel: {
-//     fontSize: 13,
-//     color: '#666666',
-//     width: 70,
-//     fontWeight: '400',
-//   },
-//   requesterValue: {
-//     fontSize: 14,
-//     color: '#1A1A1A',
-//     fontWeight: '500',
-//     flex: 1,
-//   },
-//   checkboxContainer: {
-//     position: 'absolute',
-//     right: 16,
-//     top: 16,
-//     zIndex: 10,
-//   },
-//   checkbox: {
-//     width: 22,
-//     height: 22,
-//     borderRadius: 11,
-//     borderWidth: 2,
-//     borderColor: '#CCCCCC',
-//     backgroundColor: '#FFFFFF',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   checkboxSelected: {
-//     borderColor: '#0066CC',
-//     backgroundColor: '#0066CC',
-//   },
-//   checkmark: {
-//     color: '#FFFFFF',
+//   label: {
 //     fontSize: 12,
 //     fontWeight: '600',
-//   },
-//   menuContainer: {
-//     position: 'absolute',
-//     top: 50,
-//     right: 16,
-//     backgroundColor: '#FFFFFF',
-//     borderRadius: 8,
-//     shadowColor: '#000',
-//     shadowOffset: {width: 0, height: 4},
-//     shadowOpacity: 0.1,
-//     shadowRadius: 8,
-//     elevation: 4,
-//     minWidth: 140,
-//     borderWidth: 1,
-//     borderColor: '#EDEDED',
-//     zIndex: 20,
-//   },
-//   menuItem: {
-//     paddingVertical: 10,
-//     paddingHorizontal: 16,
-//   },
-//   menuItemText: {
-//     fontSize: 14,
-//     color: '#333333',
-//     fontWeight: '400',
+//     color: '#64748B',
+//     marginBottom: 6,
 //   },
 // });
 
-// const tabStyles = StyleSheet.create({
-//   container: {
-//     backgroundColor: '#FFFFFF',
-//     paddingVertical: 12,
-//     paddingHorizontal: 16,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#F0F0F0',
-//   },
-//   scrollContent: {
-//     gap: 8,
-//   },
-//   tab: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     paddingHorizontal: 16,
-//     paddingVertical: 6,
-//     borderRadius: 20,
-//     backgroundColor: '#F5F7FA',
-//     gap: 6,
-//   },
-//   activeTab: {
-//     backgroundColor: '#0066CC',
-//   },
-//   tabText: {
-//     fontSize: 14,
-//     fontWeight: '500',
-//     color: '#666666',
-//   },
-//   activeTabText: {
-//     color: '#FFFFFF',
-//     fontWeight: '500',
-//   },
-//   badge: {
-//     backgroundColor: '#E9ECEF',
-//     paddingHorizontal: 6,
-//     paddingVertical: 2,
-//     borderRadius: 12,
-//     minWidth: 20,
-//     alignItems: 'center',
-//   },
-//   activeBadge: {
-//     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-//   },
-//   badgeText: {
-//     fontSize: 11,
-//     fontWeight: '500',
-//     color: '#666666',
-//   },
-//   activeBadgeText: {
-//     color: '#FFFFFF',
-//   },
-// });
-
-// const bulkToolbarStyles = StyleSheet.create({
-//   container: {
-//     backgroundColor: '#FFFFFF',
-//     paddingVertical: 16,
-//     paddingHorizontal: 16,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#F0F0F0',
-//     shadowColor: '#000',
-//     shadowOffset: {width: 0, height: 2},
-//     shadowOpacity: 0.05,
-//     shadowRadius: 4,
-//     elevation: 2,
-//   },
-//   actionRow: {
-//     flexDirection: 'row',
-//     gap: 12,
-//     marginBottom: 12,
-//   },
-//   approveButton: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     paddingVertical: 10,
-//     borderRadius: 8,
-//     backgroundColor: '#FFFFFF',
-//     borderWidth: 1,
-//     borderColor: '#2E7D32',
-//   },
-//   approveText: {
-//     color: '#2E7D32',
-//     fontWeight: '500',
-//     fontSize: 14,
-//   },
-//   rejectButton: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//     paddingVertical: 10,
-//     borderRadius: 8,
-//     backgroundColor: '#FFFFFF',
-//     borderWidth: 1,
-//     borderColor: '#C62828',
-//   },
-//   rejectText: {
-//     color: '#C62828',
-//     fontWeight: '500',
-//     fontSize: 14,
-//   },
-//   controlRow: {
-//     flexDirection: 'row',
-//     justifyContent: 'space-between',
-//     alignItems: 'center',
-//   },
-//   textButton: {
-//     paddingVertical: 4,
-//   },
-//   primaryButtonText: {
-//     color: '#0066CC',
-//     fontWeight: '500',
-//     fontSize: 14,
-//   },
-//   secondaryButtonText: {
-//     color: '#666666',
-//     fontWeight: '500',
-//     fontSize: 14,
-//   },
-// });
-
-/* eslint-disable react-native/no-inline-styles */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable curly */
+// export default WorkItemsAssignedToMePage;
 import React, {useState, useCallback, useMemo, useEffect} from 'react';
 import {
   Text,
@@ -941,6 +2361,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Pressable,
+  Alert,
   StyleSheet,
 } from 'react-native';
 import {
@@ -950,6 +2371,7 @@ import {
 } from '@react-navigation/native';
 
 import {useSelector} from 'react-redux';
+import FeatherIcon from 'react-native-vector-icons/Feather';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
@@ -960,15 +2382,19 @@ import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByE
 import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowItemAction';
 import useListFilters from '../../hooks/useListFilters';
 import ListFilterBar from '../../components/Filters/ListFilterBar';
+import useAppTokens from '../../components/AppComponentsDesign/useAppTokens';
 import styles from '../../styles/styles';
 import usePallete from '../../hooks/usePalette';
 import {useDispatch} from 'react-redux';
 import {setPendingWorkItemsCount} from '../../store/slices/workItemsSlice';
+import WorkflowCommentModal from '../../components/CommentModal/WorkflowCommentModal';
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const P = usePallete();
+  const T = useAppTokens();
+  const bulkAllStyles = useMemo(() => createBulkAllStyles(T), [T]);
   const dispatch = useDispatch();
 
   const {userData: routeUserData} = route.params || {};
@@ -990,6 +2416,8 @@ const WorkItemsAssignedToMePage = () => {
 
   const effectiveEmployeeId = effectiveUserData?.employeeId;
   const effectiveEmployeeName = effectiveUserData?.employeeName;
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null); // { actionType, recIds }
 
   // ── Pill filter — replaces old activeTab ──
   const [activeFilter, setActiveFilter] = useState('All');
@@ -1049,6 +2477,10 @@ const WorkItemsAssignedToMePage = () => {
         // Get document type from API if exists
         let documentType = item.DocumentType || '';
         documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+        documentType =
+          documentType
+            .replace(/^\s*Employee\s+Self\s+Service\s*[-:]?\s*/i, '')
+            .trim() || documentType;
 
         return {
           id: item.workflowWorkItemRecId ?? index,
@@ -1080,7 +2512,7 @@ const WorkItemsAssignedToMePage = () => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [effectiveUserData?.email]);
+  }, [dispatch, effectiveUserData.email]);
 
   const handleRefresh = () => fetchWorkItems();
 
@@ -1107,7 +2539,7 @@ const WorkItemsAssignedToMePage = () => {
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [selectionMode]),
+    }, [navigation, selectionMode]),
   );
 
   useEffect(() => {
@@ -1147,41 +2579,6 @@ const WorkItemsAssignedToMePage = () => {
   };
 
   /* ==============================
-     Filter Logic
-  ============================== */
-
-  // const getFilteredData = () => {
-  //   if (activeFilter === 'All') return tableData;
-
-  //   if (activeFilter === 'Pending') {
-  //     return tableData.filter(
-  //       item => (item.workflowWorkItemType || '') === 'WorkItem',
-  //     );
-  //   }
-
-  //   if (activeFilter === 'Returned') {
-  //     return tableData.filter(
-  //       item => (item.workflowWorkItemType || '') === 'Return',
-  //     );
-  //   }
-
-  //   return tableData;
-  // };
-
-  // // Count badges per pill
-  // const getFilterCounts = () => {
-  //   return {
-  //     All: tableData.length,
-  //     Pending: tableData.filter(
-  //       item => (item.workflowWorkItemType || '') === 'WorkItem',
-  //     ).length,
-  //     Returned: tableData.filter(
-  //       item => (item.workflowWorkItemType || '') === 'Return',
-  //     ).length,
-  //   };
-  // };
-
-  /* ==============================
      Per-card button processing
   ============================== */
 
@@ -1202,7 +2599,42 @@ const WorkItemsAssignedToMePage = () => {
      Actions
   ============================== */
 
-  const handleSingleAction = async (recId, actionType) => {
+  // const handleSingleAction = async (recId, actionType) => {
+  //   if (isActionLoading) return;
+
+  //   const buttonKey = actionType.toLowerCase();
+  //   try {
+  //     setIsActionLoading(true);
+  //     setCardButtonProcessing(recId, buttonKey, true);
+
+  //     const response = await WorkflowItemAction({
+  //       recId: [recId],
+  //       action: actionType,
+  //     });
+
+  //     if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
+
+  //     const PAST_TENSE = {
+  //       Approve: 'Approved',
+  //       Reject: 'Rejected',
+  //       RequestChange: 'Change requested',
+  //       Delegate: 'Delegated',
+  //       Recall: 'Recalled',
+  //       Resubmit: 'Resubmitted',
+  //     };
+  //     setAlertMessage(`Workitem ${PAST_TENSE[actionType] || `${actionType}d`}`);
+  //     setAlertModal(true);
+  //     await fetchWorkItems();
+  //   } catch (error) {
+  //     setAlertMessage(error.message || `Error during ${actionType}`);
+  //     setAlertModal(true);
+  //   } finally {
+  //     setIsActionLoading(false);
+  //     setCardButtonProcessing(recId, buttonKey, false);
+  //   }
+  // };
+
+  const handleSingleAction = async (recId, actionType, comment = '') => {
     if (isActionLoading) return;
 
     const buttonKey = actionType.toLowerCase();
@@ -1213,6 +2645,7 @@ const WorkItemsAssignedToMePage = () => {
       const response = await WorkflowItemAction({
         recId: [recId],
         action: actionType,
+        memo: comment,
       });
 
       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
@@ -1236,6 +2669,7 @@ const WorkItemsAssignedToMePage = () => {
       setCardButtonProcessing(recId, buttonKey, false);
     }
   };
+
   const handleViewHistory = (ContextRecId, ContextTableId) => {
     navigation.navigate('WorkflowHistoryScreen', {
       recId: ContextRecId,
@@ -1244,36 +2678,157 @@ const WorkItemsAssignedToMePage = () => {
     });
   };
 
-  const handleWorkflowDetail = (ContextRecId, ContextTableId) => {
+  const handleWorkflowDetail = (ContextRecId, ContextTableId, item) => {
     navigation.navigate('WorkflowDetailScreen', {
       tableId: ContextTableId,
       contextRecId: ContextRecId,
+      recId: item?.recId,
+      workflowWorkItemType: item?.workflowWorkItemType,
     });
   };
-  const handleBulkAction = async actionType => {
-    if (selectedRecIds.length === 0 || isActionLoading) return;
+
+  // Now accepts an explicit recId list (falls back to the current selection),
+  // so both the selection-mode toolbar and the "Approve All / Reject All"
+  // buttons below can share the same action + refresh + error-handling path.
+  // const handleBulkAction = async (actionType, recIdsOverride = null) => {
+  //   const targetRecIds = recIdsOverride ?? selectedRecIds;
+  //   if (targetRecIds.length === 0 || isActionLoading) return;
+
+  //   try {
+  //     setIsActionLoading(true);
+
+  //     const response = await WorkflowItemAction({
+  //       recId: targetRecIds,
+  //       action: actionType,
+  //     });
+
+  //     if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
+
+  //     setAlertMessage(
+  //       `${actionType} successful for ${targetRecIds.length} item(s)`,
+  //     );
+  //     setAlertModal(true);
+  //     exitSelectionMode();
+  //     // The category/status just acted on may now have nothing left in it —
+  //     // reset back to "All" rather than leaving the user looking at a filter
+  //     // that could be empty.
+  //     f.setSelectedDocumentTypes([]);
+  //     f.setActiveFilter('All');
+  //     await fetchWorkItems();
+  //   } catch (error) {
+  //     setAlertMessage(error.message || `Error during ${actionType}`);
+  //     setAlertModal(true);
+  //   } finally {
+  //     setIsActionLoading(false);
+  //   }
+  // };
+
+  const handleBulkAction = async (
+    actionType,
+    recIdsOverride = null,
+    comment = '',
+  ) => {
+    const targetRecIds = recIdsOverride ?? selectedRecIds;
+    if (targetRecIds.length === 0 || isActionLoading) return;
 
     try {
       setIsActionLoading(true);
 
       const response = await WorkflowItemAction({
-        recId: selectedRecIds,
+        recId: targetRecIds,
         action: actionType,
+        memo: comment,
       });
 
       if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
 
       setAlertMessage(
-        `${actionType} successful for ${selectedRecIds.length} item(s)`,
+        `${actionType} successful for ${targetRecIds.length} item(s)`,
       );
       setAlertModal(true);
       exitSelectionMode();
+      f.setSelectedDocumentTypes([]);
+      f.setActiveFilter('All');
       await fetchWorkItems();
     } catch (error) {
       setAlertMessage(error.message || `Error during ${actionType}`);
       setAlertModal(true);
     } finally {
       setIsActionLoading(false);
+    }
+  };
+
+  /* ==============================
+     Bulk actions on the current view (respects search / document-type
+     pills / status pill — whatever is presently visible in filteredData)
+  ============================== */
+
+  // Only WorkItem-type entries can be approved/rejected — Return-type items
+  // use Resubmit instead, same distinction the selection-mode toolbar makes.
+  const bulkEligibleRecIds = useMemo(
+    () =>
+      f.filteredData
+        .filter(item => item.workflowWorkItemType === 'WorkItem')
+        .map(item => item.recId),
+    [f.filteredData],
+  );
+
+  const isFiltered =
+    f.activeFilter !== 'All' ||
+    f.selectedDocumentTypes.length > 0 ||
+    f.searchQuery.trim().length > 0;
+
+  // const confirmBulkActionOnVisible = actionType => {
+  //   const count = bulkEligibleRecIds.length;
+  //   if (count === 0 || isActionLoading) return;
+
+  //   Alert.alert(
+  //     `${actionType} ${count} item${count > 1 ? 's' : ''}?`,
+  //     `This will ${actionType.toLowerCase()} ${count} work item${
+  //       count > 1 ? 's' : ''
+  //     }${isFiltered ? ' matching your current filter' : ''}.`,
+  //     [
+  //       {text: 'Cancel', style: 'cancel'},
+  //       {
+  //         text: actionType,
+  //         style: actionType === 'Reject' ? 'destructive' : 'default',
+  //         onPress: () => handleBulkAction(actionType, bulkEligibleRecIds),
+  //       },
+  //     ],
+  //   );
+  // };
+
+  const confirmBulkActionOnVisible = actionType => {
+    if (bulkEligibleRecIds.length === 0 || isActionLoading) return;
+    openCommentModal(actionType, bulkEligibleRecIds);
+  };
+
+  const openCommentModal = (actionType, recIds) => {
+    setPendingAction({actionType, recIds});
+    setCommentModalVisible(true);
+  };
+
+  const closeCommentModal = () => {
+    if (isActionLoading) return;
+    setCommentModalVisible(false);
+    setPendingAction(null);
+  };
+
+  const handleCommentModalCancel = () => {
+    setCommentModalVisible(false);
+    setPendingAction(null);
+  };
+
+  const handleCommentModalSubmit = comment => {
+    const action = pendingAction;
+    setCommentModalVisible(false);
+    setPendingAction(null);
+    if (!action) return;
+
+    if (action.recIds.length === 1) {
+      handleSingleAction(action.recIds[0], action.actionType, comment);
+    } else {
+      handleBulkAction(action.actionType, action.recIds, comment);
     }
   };
 
@@ -1325,9 +2880,22 @@ const WorkItemsAssignedToMePage = () => {
     },
   });
 
+  // const handleButtonPress = (buttonType, item) => {
+  //   if (buttonType === 'approve') handleSingleAction(item.recId, 'Approve');
+  //   else if (buttonType === 'reject') handleSingleAction(item.recId, 'Reject');
+  //   else if (buttonType === 'requestChange')
+  //     handleSingleAction(item.recId, 'RequestChange');
+  //   else if (buttonType === 'delegate')
+  //     handleSingleAction(item.recId, 'Delegate');
+  //   else if (buttonType === 'recall') handleSingleAction(item.recId, 'Recall');
+  //   else if (buttonType === 'viewHistory')
+  //     handleViewHistory(item.ContextRecId, item.ContextTableId);
+  //   else if (buttonType === 'attachment') handleAttachmentPress(item);
+  // };
+
   const handleButtonPress = (buttonType, item) => {
-    if (buttonType === 'approve') handleSingleAction(item.recId, 'Approve');
-    else if (buttonType === 'reject') handleSingleAction(item.recId, 'Reject');
+    if (buttonType === 'approve') openCommentModal('Approve', [item.recId]);
+    else if (buttonType === 'reject') openCommentModal('Reject', [item.recId]);
     else if (buttonType === 'requestChange')
       handleSingleAction(item.recId, 'RequestChange');
     else if (buttonType === 'delegate')
@@ -1379,7 +2947,11 @@ const WorkItemsAssignedToMePage = () => {
             if (selectionMode) {
               toggleSelection(item.recId);
             } else {
-              handleWorkflowDetail(item.ContextRecId, item.ContextTableId);
+              handleWorkflowDetail(
+                item.ContextRecId,
+                item.ContextTableId,
+                item,
+              );
             }
           }}
           onLongPress={() => enterSelectionMode(item.recId)}
@@ -1439,6 +3011,74 @@ const WorkItemsAssignedToMePage = () => {
       }}>
       <ListFilterBar filters={f} showDocumentTypeFilter />
 
+      {/* Approve All / Reject All — acts on whatever is currently in view
+          (filteredData), so a search or document-type/status pill narrows
+          the scope automatically. Hidden once selection mode is active to
+          avoid two competing bulk-action bars on screen at once. */}
+      {!selectionMode && bulkEligibleRecIds.length > 0 && (
+        <View style={bulkAllStyles.card}>
+          <View style={bulkAllStyles.headerRow}>
+            <View style={bulkAllStyles.countBadge}>
+              <Text style={bulkAllStyles.countBadgeText}>
+                {bulkEligibleRecIds.length}
+              </Text>
+            </View>
+            <Text style={bulkAllStyles.headerText}>
+              Work items assigned to me
+              {/* {isFiltered ? 'in this view' : 'awaiting your action'} */}
+            </Text>
+          </View>
+
+          <View style={bulkAllStyles.divider} />
+
+          <View style={bulkAllStyles.buttonRow}>
+            <TouchableOpacity
+              disabled={isActionLoading}
+              onPress={() => confirmBulkActionOnVisible('Approve')}
+              activeOpacity={0.85}
+              style={[
+                bulkAllStyles.approveBtn,
+                isActionLoading && bulkAllStyles.btnDisabled,
+              ]}>
+              {isActionLoading ? (
+                <ActivityIndicator size="small" color={T.onPrimary ?? '#fff'} />
+              ) : (
+                <>
+                  <FeatherIcon
+                    name="check-circle"
+                    size={16}
+                    color={T.onPrimary ?? '#fff'}
+                  />
+                  <Text style={bulkAllStyles.approveBtnText}>
+                    Approve All ({bulkEligibleRecIds.length})
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              disabled={isActionLoading}
+              onPress={() => confirmBulkActionOnVisible('Reject')}
+              activeOpacity={0.85}
+              style={[
+                bulkAllStyles.rejectBtn,
+                isActionLoading && bulkAllStyles.btnDisabled,
+              ]}>
+              {isActionLoading ? (
+                <ActivityIndicator size="small" color={T.red} />
+              ) : (
+                <>
+                  <FeatherIcon name="x-circle" size={16} color={T.red} />
+                  <Text style={bulkAllStyles.rejectBtnText}>
+                    Reject All ({bulkEligibleRecIds.length})
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Processing overlay */}
       {isActionLoading && (
         <View style={styles.DSR_ProcessingOverlay}>
@@ -1470,7 +3110,7 @@ const WorkItemsAssignedToMePage = () => {
         showDelete={false}
       />
 
-      {/* Bulk Toolbar */}
+      {/* Bulk Toolbar (manual multi-select via long-press) */}
       {selectionMode && (
         <View style={styles.BulkToolbar_Container}>
           {selectedRecIds.length === 0 ? (
@@ -1501,7 +3141,7 @@ const WorkItemsAssignedToMePage = () => {
                 <>
                   <TouchableOpacity
                     disabled={isActionLoading}
-                    onPress={() => handleBulkAction('Approve')}
+                    onPress={() => openCommentModal('Approve', selectedRecIds)}
                     style={styles.BulkToolbar_ApproveButton}>
                     {isActionLoading ? (
                       <ActivityIndicator size="small" />
@@ -1514,7 +3154,7 @@ const WorkItemsAssignedToMePage = () => {
 
                   <TouchableOpacity
                     disabled={isActionLoading}
-                    onPress={() => handleBulkAction('Reject')}
+                    onPress={() => openCommentModal('Reject', selectedRecIds)}
                     style={styles.BulkToolbar_RejectButton}>
                     {isActionLoading ? (
                       <ActivityIndicator size="small" />
@@ -1601,8 +3241,130 @@ const WorkItemsAssignedToMePage = () => {
         text={alertMessage}
         onPress={() => setAlertModal(false)}
       />
+
+      <WorkflowCommentModal
+        visible={commentModalVisible}
+        title={
+          pendingAction
+            ? `${pendingAction.actionType} ${
+                pendingAction.recIds.length > 1
+                  ? `${pendingAction.recIds.length} Work Items`
+                  : 'Work Item'
+              }`
+            : ''
+        }
+        message="Add a comment for the workflow, or cancel to close the dialog."
+        onCancel={handleCommentModalCancel}
+        onSubmit={handleCommentModalSubmit}
+        onRequestClose={closeCommentModal}
+        isProcessing={isActionLoading}
+      />
     </ActionPaneContainer>
   );
 };
+
+// Styles for the "Approve All / Reject All" card. createX(T) factory (same
+// pattern as WorkflowDetailScreen) so it recomputes on theme change — built
+// with the real token names from Tokens.js:
+//  - cardBg/cardDivider/shadowColor/titleText/blue/blueBg for chrome
+//  - BrandTokens green/greenBg + red/redBg for the semantic approve/reject
+//    colors, which stay the same hue in both themes rather than going neutral
+const createBulkAllStyles = T =>
+  StyleSheet.create({
+    card: {
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 4,
+      backgroundColor: T.cardBg,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: T.cardDivider,
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: 14,
+      shadowColor: T.shadowColor,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    countBadge: {
+      minWidth: 24,
+      height: 24,
+      paddingHorizontal: 6,
+      borderRadius: 12,
+      backgroundColor: T.blueBg,
+      borderWidth: 1,
+      borderColor: T.blue,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    countBadgeText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: T.blue,
+    },
+    headerText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: T.titleText,
+      flexShrink: 1,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: T.cardDivider,
+      marginTop: 10,
+      marginBottom: 12,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      gap: 10,
+    },
+    approveBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: T.green,
+      paddingVertical: 11,
+      borderRadius: 10,
+      shadowColor: T.green,
+      shadowOffset: {width: 0, height: 2},
+      shadowOpacity: 0.2,
+      shadowRadius: 5,
+      elevation: 2,
+    },
+    approveBtnText: {
+      fontSize: 13.5,
+      fontWeight: '700',
+      color: T.onPrimary ?? '#FFFFFF',
+    },
+    rejectBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      backgroundColor: T.redBg,
+      borderWidth: 1.5,
+      borderColor: T.red,
+      paddingVertical: 11,
+      borderRadius: 10,
+    },
+    rejectBtnText: {
+      fontSize: 13.5,
+      fontWeight: '700',
+      color: T.red,
+    },
+    btnDisabled: {
+      opacity: 0.55,
+    },
+  });
 
 export default WorkItemsAssignedToMePage;

@@ -98,6 +98,10 @@ const ESSMyRequestStatusListPage = () => {
         // Get document type from API if exists
         let documentType = item.DocumentType || '';
         documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+        documentType =
+          documentType
+            .replace(/^\s*Employee\s+Self\s+Service\s*[-:]?\s*/i, '')
+            .trim() || documentType;
 
         return {
           id: item.workflowWorkItemRecId ?? index,
@@ -219,7 +223,7 @@ const ESSMyRequestStatusListPage = () => {
     };
 
     const handleCardPress = () => {
-      navigation.navigate('WorkflowHistoryScreen', {
+      navigation.push('WorkflowHistoryScreen', {
         recId: item.ContextRecId,
         tableId: item.ContextTableId,
         cameFrom: 'ESSMyRequestStatusListPage',

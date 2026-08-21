@@ -62,36 +62,6 @@ const WorkflowHistoryScreen = () => {
         let trackingType = 'Unknown';
 
         switch (item.TrackingType) {
-          // case 1:
-          //   trackingType = 'Workflow Started';
-          //   break;
-          // case 2:
-          //   trackingType = 'Task Assigned';
-          //   break;
-          // case 3:
-          //   trackingType = 'Task Completed';
-          //   break;
-          // case 4:
-          //   trackingType = 'Workflow Completed';
-          //   break;
-          // case 5:
-          //   trackingType = 'Workflow Cancelled';
-          //   break;
-          // case 6:
-          //   trackingType = 'Workflow Rejected';
-          //   break;
-          // case 7:
-          //   trackingType = 'Workflow Pending';
-          //   break;
-          // case 8:
-          //   trackingType = 'Workflow Approved';
-          //   break;
-          // case 9:
-          //   trackingType = 'Workflow Created';
-          //   break;
-          // case 10:
-          //   trackingType = 'Workflow Submitted';
-          //   break;
           default:
             trackingType = item.TrackingType;
         }
@@ -144,39 +114,68 @@ const WorkflowHistoryScreen = () => {
 
   const handleRefresh = () => fetchWorkflowHistory();
 
-  const handleGoBack = () => {
-    console.log(
-      '[WorkflowHistory] handleGoBack called | cameFrom:',
-      cameFrom,
-      '| canGoBack:',
-      navigation.canGoBack(),
-    );
+  // const handleGoBack = () => {
+  //   console.log(
+  //     '[WorkflowHistory] handleGoBack called | cameFrom:',
+  //     cameFrom,
+  //     '| canGoBack:',
+  //     navigation.canGoBack(),
+  //   );
 
-    if (cameFrom) {
-      navigation.navigate(cameFrom); // ← always prefer explicit target
-    } else if (navigation.canGoBack()) {
-      navigation.goBack();
+  //   if (cameFrom) {
+  //     navigation.navigate(cameFrom); // ← always prefer explicit target
+  //   } else if (navigation.canGoBack()) {
+  //     navigation.goBack();
+  //   } else {
+  //     console.warn('[WorkflowHistory] No cameFrom and cannot goBack — stuck!');
+  //   }
+  // };
+
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack(); // pops the actual entry beneath this screen
+    } else if (cameFrom) {
+      navigation.navigate(cameFrom); // fallback for deep-link / no back stack case
     } else {
       console.warn('[WorkflowHistory] No cameFrom and cannot goBack — stuck!');
     }
   };
 
+  // ── Manual dd/mm/yyyy + hh:mm AM/PM formatter (no locale dependency) ──
+  // ── Parses API string directly (no Date object, no timezone shift) ──
+  // Handles formats like "2026-08-20T14:45:00", "2026-08-20 14:45:00", etc.
   const formatDateTime = dateTimeStr => {
     if (!dateTimeStr) return 'N/A';
+
     try {
-      const date = new Date(dateTimeStr);
-      const month = date.getMonth() + 1;
-      const day = String(date.getDate()).padStart(2, '0');
-      const year = date.getFullYear();
-      const time = date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
-      return `${month}/${day}/${year}  ${time}`;
+      const match = dateTimeStr.match(
+        /(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/,
+      );
+
+      if (!match) return dateTimeStr; // fallback: show raw value if format is unexpected
+
+      const [, year, month, day, hourStr, minute] = match;
+
+      let hours = parseInt(hourStr, 10);
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+
+      hours = hours % 12;
+      if (hours === 0) hours = 12; // 0 -> 12
+      const hoursDisplay = String(hours).padStart(2, '0');
+
+      return `${day}/${month}/${year}  ${hoursDisplay}:${minute} ${ampm}`;
     } catch {
       return dateTimeStr;
     }
+  };
+
+  // ── Splits PascalCase/camelCase into spaced words ──
+  const formatLabel = str => {
+    if (!str) return '';
+    return str
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2') // camel -> camel Case
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2') // ABCDef -> ABC Def
+      .trim();
   };
 
   /**
@@ -305,7 +304,7 @@ const WorkflowHistoryScreen = () => {
             {/* Top row: title + badge */}
             <View style={tl.cardTop}>
               <Text style={tl.title} numberOfLines={2}>
-                {item.TrackingType}
+                {formatLabel(item.TrackingType)}
               </Text>
               {statusConfig.category !== 'Unknown' && (
                 <View
@@ -431,7 +430,6 @@ const tl = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
 
-  // ── Header ──
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,13 +456,11 @@ const tl = StyleSheet.create({
     color: '#475569',
   },
 
-  // ── Row ──
   row: {
     flexDirection: 'row',
     marginBottom: 2,
   },
 
-  // ── Connector ──
   connectorCol: {
     width: 44,
     alignItems: 'center',
@@ -491,7 +487,6 @@ const tl = StyleSheet.create({
     minHeight: 16,
   },
 
-  // ── Card ──
   cardWrap: {
     flex: 1,
     paddingLeft: 10,
@@ -502,7 +497,6 @@ const tl = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     borderLeftWidth: 3,
-    // subtle shadow
     shadowColor: '#64748B',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.06,
@@ -525,7 +519,6 @@ const tl = StyleSheet.create({
     lineHeight: 21,
   },
 
-  // ── Badge (short category only, no duplication) ──
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -546,7 +539,6 @@ const tl = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // ── TrackingContext ──
   contextRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -557,10 +549,8 @@ const tl = StyleSheet.create({
     fontWeight: '600',
     color: '#94A3B8',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
 
-  // ── Timestamp ──
   timestamp: {
     fontSize: 12,
     color: '#94A3B8',
@@ -568,7 +558,6 @@ const tl = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // ── User meta row ──
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -584,7 +573,6 @@ const tl = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Localized message ──
   infoBox: {
     marginTop: 6,
     backgroundColor: '#F0F9FF',
@@ -600,7 +588,6 @@ const tl = StyleSheet.create({
     lineHeight: 17,
   },
 
-  // ── Comment ──
   commentBox: {
     marginTop: 6,
     backgroundColor: '#FFFBEB',
@@ -615,7 +602,6 @@ const tl = StyleSheet.create({
     fontWeight: '700',
     color: '#92400E',
     letterSpacing: 0.6,
-    textTransform: 'uppercase',
     marginBottom: 3,
   },
   commentText: {

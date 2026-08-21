@@ -34,13 +34,14 @@ import styles from '../../../../styles/styles';
 import {findEmployeeLeaveHistory} from '../../API/Leaves/findEmployeeLeaveHistory';
 import {retrieveEmployeeAvailableLeaves} from '../../API/Leaves/retrieveEmployeeAvailableLeaves';
 import DeleteDFEmployeeLeaveHistory from '../../API/Leaves/deleteDFEmploeeLeaveHistory';
-import submitDFEmployeeLeaveRequest from '../../API/Leaves/submitDFEmployeeLeaveRequest,';
+import submitDFEmployeeLeaveRequest from '../../API/Leaves/submitDFEmployeeLeaveRequest';
 import {findEmployeePenaltyLeaves} from '../../API/Leaves/findEmployeePenaltyLeaves';
 import useNotify from '../../../../hooks/useNotify';
 import useListFilters from '../../../../hooks/useListFilters';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import useAlertModal from '../../../../hooks/useAlertModal';
 import useAppTokens from '../../../../components/AppComponentsDesign/useAppTokens';
+import WorkflowCommentModal from '../../../../components/CommentModal/WorkflowCommentModal';
 
 const createLocalStyles = T =>
   StyleSheet.create({
@@ -193,6 +194,8 @@ const DFEmployeeLeaveRequestListPage = () => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [submitTargetItem, setSubmitTargetItem] = useState(null);
   const {notifySuccess, notifyError, notifyDelete} = useNotify('Leave Request');
 
   // ---------------- Page label ----------------
@@ -356,26 +359,36 @@ const DFEmployeeLeaveRequestListPage = () => {
     },
     fields: [
       {
+        key: 'LeaveCalendarHistory',
+        label: 'Leave calendar',
+        type: 'text',
+      },
+      {
         key: 'FromDateHistory',
-        label: 'Start Date',
+        label: 'Start date',
         type: 'date',
       },
       {
         key: 'ToDateHistory',
-        label: 'End Date',
+        label: 'End date',
         type: 'date',
-      },
-      {
-        key: 'LeaveDaysHistory',
-        label: 'Leave Days',
-        type: 'text',
       },
       {key: 'WfStatusHistory', label: '', type: 'status'},
     ],
     expandableFields: [
       {
-        key: 'LeaveCalendarHistory',
-        label: 'Leave Calendar',
+        key: 'LeaveDaysHistory',
+        label: 'Leave days',
+        type: 'text',
+      },
+      {
+        key: 'LeaveNatureHistory',
+        label: 'Nature',
+        type: 'text',
+      },
+      {
+        key: 'Note',
+        label: 'Notes',
         type: 'text',
       },
     ],
@@ -409,7 +422,11 @@ const DFEmployeeLeaveRequestListPage = () => {
       const formatDateOnly = date => {
         if (!date) return '';
         const d = new Date(date);
-        return d.toISOString().split('T')[0];
+        if (isNaN(d.getTime())) return '';
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
+          d.getDate(),
+        )}`;
       };
 
       const cleanedItem = {
@@ -795,7 +812,7 @@ const DFEmployeeLeaveRequestListPage = () => {
     }, 100);
   };
 
-  const handleSubmitPress = async itemData => {
+  const handleSubmitPress = async (itemData, comment = '') => {
     const recId = itemData.LeaveRequestRecId;
 
     setIsProcessing(true);
@@ -804,6 +821,7 @@ const DFEmployeeLeaveRequestListPage = () => {
     try {
       const response = await submitDFEmployeeLeaveRequest({
         recId: Number(recId),
+        comment,
       });
 
       if (response && String(response.IsSuccess).toLowerCase() === 'true') {
@@ -832,6 +850,29 @@ const DFEmployeeLeaveRequestListPage = () => {
     }
   };
 
+  const openSubmitCommentModal = itemData => {
+    setSubmitTargetItem(itemData);
+    setCommentModalVisible(true);
+  };
+
+  const closeSubmitCommentModal = () => {
+    if (isProcessing) return;
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+  };
+
+  const handleCommentModalCancel = () => {
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+  };
+
+  const handleCommentModalSubmit = comment => {
+    const item = submitTargetItem;
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+    if (item) handleSubmitPress(item, comment);
+  };
+
   // ---------------- History Card render ----------------
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
@@ -841,7 +882,7 @@ const DFEmployeeLeaveRequestListPage = () => {
         break;
       case BUTTON_TYPES.SUBMIT:
       case 'submit':
-        handleSubmitPress(itemData);
+        openSubmitCommentModal(itemData);
         break;
       case BUTTON_TYPES.ATTACHMENT:
       case 'attachment':
@@ -1059,6 +1100,15 @@ const DFEmployeeLeaveRequestListPage = () => {
           setDeleteModal(false);
           setItemToDelete(null);
         }}
+      />
+      <WorkflowCommentModal
+        visible={commentModalVisible}
+        title="Submit Leave Request"
+        message="Add a comment for the approver, or cancel to close the dialog."
+        onCancel={handleCommentModalCancel}
+        onSubmit={handleCommentModalSubmit}
+        onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
       />
     </ActionPaneContainer>
   );

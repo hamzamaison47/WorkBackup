@@ -34,6 +34,7 @@ import styles from '../../../../../styles/styles';
 import useNotify from '../../../../../hooks/useNotify';
 import useListFilters from '../../../../../hooks/useListFilters';
 import usePalette from '../../../../../hooks/usePalette';
+import WorkflowCommentModal from '../../../../../components/CommentModal/WorkflowCommentModal';
 
 const TravelRequisitionListPage = () => {
   const navigation = useNavigation();
@@ -56,6 +57,8 @@ const TravelRequisitionListPage = () => {
   const effectiveEmployeeId = employeeId || effectiveUserData?.employeeId;
   const effectiveEmployeeName = employeeName || effectiveUserData?.employeeName;
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [submitTargetItem, setSubmitTargetItem] = useState(null);
 
   // State
   const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +84,7 @@ const TravelRequisitionListPage = () => {
     fields: [
       {key: 'Location', label: 'Destination', type: 'text'},
       {key: 'RequisitionDate', label: 'Date', type: 'Date'},
-      {key: 'TotalEstimateWithCurrency', label: 'Total Estimate', type: 'text'},
+      {key: 'TotalEstimateWithCurrency', label: 'Total estimate', type: 'text'},
       {key: 'ApprovalStatus', label: '', type: 'status'},
     ],
   };
@@ -101,7 +104,11 @@ const TravelRequisitionListPage = () => {
   const formatDate = dateString => {
     if (!dateString || dateString === '1900-01-01T00:00:00') return 'N/A';
     const date = new Date(dateString);
-    return isNaN(date) ? dateString : date.toLocaleDateString();
+    if (isNaN(date.getTime())) return dateString;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const normalizeRecId = item => item.recId || item.RecId || '';
@@ -380,7 +387,7 @@ const TravelRequisitionListPage = () => {
     if (buttonType === 'delete') handleDeletePress(item);
     else if (buttonType === 'edit') handleEditTravel(item);
     else if (buttonType === 'attachment') handleAttachmentPress(item);
-    else if (buttonType === 'submit') handleSubmitPress(item);
+    else if (buttonType === 'submit') openSubmitCommentModal(item);
     else if (buttonType === 'viewHistory') handleViewHistory(item);
   };
 
@@ -389,18 +396,43 @@ const TravelRequisitionListPage = () => {
     setDeleteModal(true);
   };
 
-  const handleSubmitPress = async itemData => {
+  const openSubmitCommentModal = itemData => {
+    setSubmitTargetItem(itemData);
+    setCommentModalVisible(true);
+  };
+
+  const closeSubmitCommentModal = () => {
+    if (isProcessing) return;
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+  };
+
+  const handleCommentModalCancel = () => {
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+  };
+
+  const handleCommentModalSubmit = comment => {
+    const item = submitTargetItem;
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+    if (item) handleSubmitPress(item, comment);
+  };
+
+  const handleSubmitPress = async (itemData, comment = '') => {
     setTimeout(async () => {
       setIsProcessing(true);
       setButtonProcessing(itemData.RecId, 'submit', true);
 
       try {
-        const result = await SubmitTravelRequisition(normalizeRecId(itemData));
+        const result = await SubmitTravelRequisition(
+          normalizeRecId(itemData),
+          comment,
+        );
 
         if (result.success) {
-          const successMsg = `${itemData.RequisitionNumber} submitted successfully.`;
           notifySuccess('Request submitted successfully.');
-          showSuccess(successMsg);
+          showSuccess('Travel requisition submitted succesfully');
           setTimeout(() => fetchTravelData(), 1000);
         } else {
           notifyError(result.message);
@@ -496,7 +528,7 @@ const TravelRequisitionListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Travel Requisition"
+      pageTitle="Travel requisition"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
@@ -613,6 +645,16 @@ const TravelRequisitionListPage = () => {
           setItemToDelete(null);
         }}
         isProcessing={isDeleting}
+      />
+
+      <WorkflowCommentModal
+        visible={commentModalVisible}
+        title="Submit Travel Requisition"
+        message="Add a comment for the approver, or cancel to close the dialog."
+        onCancel={handleCommentModalCancel}
+        onSubmit={handleCommentModalSubmit}
+        onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
       />
     </ActionPaneContainer>
   );

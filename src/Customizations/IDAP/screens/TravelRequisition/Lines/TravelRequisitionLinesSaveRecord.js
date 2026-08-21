@@ -43,7 +43,7 @@ import ActionPaneContainer from '../../../../../components/ActionPaneContainer';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../../components/Buttons/SaveRecordButtons';
-import {AppTokens} from '../../../../../components/AppComponentsDesign/Appcomponents';
+import {AppTokens} from '../../../../../components/AppComponentsDesign/Tokens';
 import styles from '../../../../../styles/styles';
 import useNotify from '../../../../../hooks/useNotify';
 import usePalette from '../../../../../hooks/usePalette';
@@ -351,7 +351,7 @@ const TravelRequisitionLinesSaveRecord = () => {
     if (value === '' || value === null || value === undefined) return '';
     const num = parseFloat(value);
     if (isNaN(num)) return '';
-    return num.toFixed(3);
+    return (num / 100).toFixed(3);
   };
 
   // ── Auto-calc Estimated Amount + Amount in PKR for PERDIEM group ───────
@@ -483,6 +483,7 @@ const TravelRequisitionLinesSaveRecord = () => {
   const fetchCategoryOptions = async (forceRefresh = false) => {
     if (categoryOptions.length > 0 && !forceRefresh) return;
     const categories = await RetrieveExpenseCategory(effectiveWorkerRecId);
+    console.log('here is log', categories);
     setCategoryOptions(
       (categories || []).map(cat => ({label: cat, value: cat})),
     );
@@ -742,6 +743,21 @@ const TravelRequisitionLinesSaveRecord = () => {
       : `${sign}${formattedInt}`;
   };
 
+  // Read-only display — used for disabled/derived amount text (Estimated
+  // Amount when disabled, Amount in PKR). Forces 2 decimals; safe here since
+  // nothing is being typed into these fields.
+  const formatDisplayAmount = value => {
+    if (value === '' || value === null || value === undefined) return '';
+    const num = parseFloat(value);
+    if (isNaN(num)) return '';
+    const fixed = num.toFixed(2);
+    const [intPart, decPart] = fixed.split('.');
+    const sign = intPart.startsWith('-') ? '-' : '';
+    const digitsOnly = intPart.replace('-', '');
+    const formattedInt = digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return `${sign}${formattedInt}.${decPart}`;
+  };
+
   const stripThousands = value => value.replace(/,/g, '');
 
   const handleAmountChange = rawInput => {
@@ -762,59 +778,57 @@ const TravelRequisitionLinesSaveRecord = () => {
 
   const validate = () => {
     const nextErrors = {};
+    const missing = [];
 
-    if (!formData.Category) nextErrors.Category = 'Category is required';
-    if (!formData.EstimatedDate)
+    // Estimated Date — required in all cases
+    if (!formData.EstimatedDate) {
       nextErrors.EstimatedDate = 'Estimated date is required';
-
-    if (config.showCurrency && !formData.Currency) {
-      nextErrors.Currency = 'Currency is required';
+      missing.push('Estimated date');
     }
 
-    if (config.showEstimatedAmount) {
+    // Estimated Amount — required only in STANDARD/AIRLINE (the editable case)
+    if (config.showEstimatedAmount && config.amountEditable) {
       const raw = formData.EstimatedAmount;
       if (raw === '' || raw === null || raw === undefined) {
         nextErrors.EstimatedAmount = 'Estimated amount is required';
-      } else {
-        const num = parseFloat(raw);
-        if (isNaN(num)) {
-          nextErrors.EstimatedAmount =
-            'Estimated amount must be a valid number';
-        } else if (num < 0) {
-          nextErrors.EstimatedAmount = 'Estimated amount cannot be negative';
-        }
+        missing.push('Estimated amount');
       }
     }
 
+    // Mileage — required only in MILEAGE group
     if (config.showMileage) {
-      const mileageNum = parseFloat(formData.Mileage);
-      if (formData.Mileage === '' || formData.Mileage === null) {
+      if (
+        formData.Mileage === '' ||
+        formData.Mileage === null ||
+        formData.Mileage === undefined
+      ) {
         nextErrors.Mileage = 'Mileage is required';
-      } else if (isNaN(mileageNum) || mileageNum < 0) {
-        nextErrors.Mileage = 'Mileage must be a valid non-negative number';
+        missing.push('Mileage');
       }
     }
 
-    if (config.showAirlineServiceClass && !formData.AirlineServiceClass) {
-      nextErrors.AirlineServiceClass = 'Airline service class is required';
-    }
-
+    // Per Diem dates — required only in PERDIEM group
     if (config.showPerDiemDates) {
-      if (!formData.PerDiemFromDate)
+      if (!formData.PerDiemFromDate) {
         nextErrors.PerDiemFromDate = 'Per diem from date is required';
-      if (!formData.PerDiemToDate)
+        missing.push('Per diem from date');
+      }
+      if (!formData.PerDiemToDate) {
         nextErrors.PerDiemToDate = 'Per diem to date is required';
+        missing.push('Per diem to date');
+      }
       if (
         formData.PerDiemFromDate &&
         formData.PerDiemToDate &&
         new Date(formData.PerDiemToDate) < new Date(formData.PerDiemFromDate)
       ) {
         nextErrors.PerDiemToDate = 'To date cannot be before from date';
+        missing.push('Per diem to date (must be after from date)');
       }
     }
 
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return {valid: Object.keys(nextErrors).length === 0, missing};
   };
 
   const handleSave = async actionType => {
@@ -824,8 +838,9 @@ const TravelRequisitionLinesSaveRecord = () => {
       return;
     }
 
-    if (!validate()) {
-      showWarning('Please correct the highlighted fields before saving.');
+    const {valid, missing} = validate();
+    if (!valid) {
+      showWarning(`Please fill the following fields:\n${missing.join('\n')}`);
       return;
     }
 
@@ -873,6 +888,10 @@ const TravelRequisitionLinesSaveRecord = () => {
         notifySuccess(message);
         showSuccess(message);
 
+        // Keep the button disabled / overlay up through this delay — clearing
+        // processingButton here would let a second tap fire another
+        // create/update against the same data before navigation actually
+        // happens.
         setTimeout(() => {
           clearAllStates();
           navigation.navigate('TravelRequisitionLinesListPage', {
@@ -887,18 +906,20 @@ const TravelRequisitionLinesSaveRecord = () => {
             refresh: Date.now(),
           });
         }, 1200);
-      } else {
-        const message =
-          response?.Message ||
-          (isEdit ? 'Error updating record' : 'Error creating record');
-        notifyError(message);
-        showError(message);
+        return;
       }
+
+      const message =
+        response?.Message ||
+        (isEdit ? 'Error updating record' : 'Error creating record');
+      notifyError(message);
+      showError(message);
+      setProcessingButton('');
+      setIsProcessing(false);
     } catch (error) {
       console.error('Error saving travel requisition line:', error);
       notifyError('Failed to save record. Please try again.');
       showError('Failed to save record. Please try again.');
-    } finally {
       setProcessingButton('');
       setIsProcessing(false);
     }
@@ -915,8 +936,8 @@ const TravelRequisitionLinesSaveRecord = () => {
     <ActionPaneContainer
       pageTitle={
         isEdit
-          ? 'Edit Travel Requisition Line'
-          : 'Create Travel Requisition Line'
+          ? 'Edit Travel requisition line'
+          : 'Create Travel requisition line'
       }
       isBackButton={true}
       showFooter={false}
@@ -947,7 +968,12 @@ const TravelRequisitionLinesSaveRecord = () => {
               contentContainerStyle={styles.DSR_FormContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
-              nestedScrollEnabled={true}>
+              nestedScrollEnabled={true}
+              enableOnAndroid={true}
+              enableAutomaticScroll={true}
+              extraScrollHeight={Platform.OS === 'android' ? 100 : 20}
+              extraHeight={150}
+              keyboardOpeningTime={0}>
               {/* 1. Category — editable only in create mode */}
               <Text style={styles.DSR_Label}>Expense category *</Text>
               {isEdit ? (
@@ -1019,7 +1045,7 @@ const TravelRequisitionLinesSaveRecord = () => {
                     </>
                   ) : (
                     <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
-                      {formatThousands(formData.EstimatedAmount) || '0.00'}
+                      {formatDisplayAmount(formData.EstimatedAmount) || '0.00'}
                     </Text>
                   )}
                 </>
@@ -1028,7 +1054,7 @@ const TravelRequisitionLinesSaveRecord = () => {
               {/* 4. Currency */}
               {config.showCurrency && (
                 <>
-                  <Text style={styles.DSR_Label}>Currency *</Text>
+                  <Text style={styles.DSR_Label}>Currency</Text>
                   {group === 'PERDIEM' || group === 'MILEAGE' ? (
                     <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
                       {formData.Currency || 'PKR'}
@@ -1088,7 +1114,7 @@ const TravelRequisitionLinesSaveRecord = () => {
               <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
                 {isCalculatingPKR
                   ? 'Calculating...'
-                  : formatThousands(formData.AmountInPKR) || '0.00'}
+                  : formatDisplayAmount(formData.AmountInPKR) || '0.00'}
               </Text>
 
               {config.showMileage && (
@@ -1108,7 +1134,7 @@ const TravelRequisitionLinesSaveRecord = () => {
 
               {config.showAirlineServiceClass && (
                 <>
-                  <Text style={styles.DSR_Label}>Airline Service Class *</Text>
+                  <Text style={styles.DSR_Label}>Airline service class *</Text>
                   <Dropdown
                     style={styles.DSR_Input}
                     data={AIRLINE_SERVICE_CLASS_OPTIONS}
@@ -1140,7 +1166,7 @@ const TravelRequisitionLinesSaveRecord = () => {
 
               {config.showPerDiemDates && (
                 <>
-                  <Text style={styles.DSR_Label}>Per Diem From Date *</Text>
+                  <Text style={styles.DSR_Label}>Per diem from date *</Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
                     onPress={() => setDateTimeField('PerDiemFromDate')}>
@@ -1148,14 +1174,14 @@ const TravelRequisitionLinesSaveRecord = () => {
                       <Text style={styles.DSR_DateText}>
                         {formData.PerDiemFromDate
                           ? formatDisplayDateTime(formData.PerDiemFromDate)
-                          : 'Select From Date/Time'}
+                          : 'Select from date/time'}
                       </Text>
                     </View>
                     <Icon name="calendar" size={20} color={P.primary} />
                   </TouchableOpacity>
                   {renderError('PerDiemFromDate')}
 
-                  <Text style={styles.DSR_Label}>Per Diem To Date *</Text>
+                  <Text style={styles.DSR_Label}>Per diem to date *</Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
                     onPress={() => setDateTimeField('PerDiemToDate')}>
@@ -1163,7 +1189,7 @@ const TravelRequisitionLinesSaveRecord = () => {
                       <Text style={styles.DSR_DateText}>
                         {formData.PerDiemToDate
                           ? formatDisplayDateTime(formData.PerDiemToDate)
-                          : 'Select To Date/Time'}
+                          : 'Select to date/time'}
                       </Text>
                     </View>
                     <Icon name="calendar" size={20} color={P.primary} />

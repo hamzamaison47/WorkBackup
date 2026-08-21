@@ -29,6 +29,7 @@ export const LightTokens = {
   dropdownBorder: '#E0E0E0',
   dropdownItemBorder: '#F0F0F0',
   overlayBg: 'rgba(255, 255, 255, 0.9)',
+  dropdownActiveBg: '#E8F1FB',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ export const DarkTokens = {
   dropdownBorder: '#334155',
   dropdownItemBorder: '#263449',
   overlayBg: 'rgba(0, 0, 0, 0.85)',
+  dropdownActiveBg: '#28374D',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -74,9 +74,19 @@ const TravelRequisitionLinesListPage = () => {
   useFocusEffect(
     useCallback(() => {
       const status = travelRequisitionData?.ApprovalStatus;
-      const statusSaysDraft = status === 'Draft' || status === 'Create';
-      const nextIsDraft = statusSaysDraft || !!forceShowAddButton || !!refresh;
 
+      if (status) {
+        // We have a real, current status for this header — trust it over any
+        // stale forceShowAddButton/refresh flag from a previous navigation.
+        const statusSaysDraft = status === 'Draft' || status === 'Create';
+        setShowAddButton(statusSaysDraft);
+        setIsHeaderDraft(statusSaysDraft);
+        return;
+      }
+
+      // No status available this time (e.g. returning from SaveRecord, which
+      // doesn't resend travelRequisitionData) — fall back to the flags.
+      const nextIsDraft = !!forceShowAddButton || !!refresh;
       setShowAddButton(nextIsDraft);
       setIsHeaderDraft(nextIsDraft);
     }, [travelRequisitionData?.ApprovalStatus, forceShowAddButton, refresh]),
@@ -102,18 +112,65 @@ const TravelRequisitionLinesListPage = () => {
 
   // Read-only card: Category up top, currency/date/amount in the fields, the
   // read-only PKR-converted value behind the expander.
-  const CARD_CONFIG = {
-    headerConfig: {
+  const getCardConfig = category => {
+    const group = getLineCategoryGroup(category);
+
+    const headerConfig = {
       title: {key: 'Category', label: 'Category'},
-    },
-    fields: [
+    };
+
+    const fields = [
       {key: 'EstimatedDate', label: 'Estimated date', type: 'text'},
       {key: 'EstimatedAmount', label: 'Estimated amount', type: 'text'},
       {key: 'Currency', label: 'Currency'},
-    ],
-    expandableFields: [
-      {key: 'AmountInPKR', label: 'Amount in PKR', type: 'text'},
-    ],
+    ];
+
+    if (group === 'AIRLINE') {
+      return {
+        headerConfig,
+        fields,
+        expandableFields: [
+          {key: 'AmountInPKR', label: 'Amount in PKR', type: 'text'},
+          {
+            key: 'AirlineServiceClass',
+            label: 'Airline service class',
+            type: 'text',
+          },
+        ],
+      };
+    }
+
+    if (group === 'PERDIEM') {
+      return {
+        headerConfig,
+        fields,
+        expandableFields: [
+          {key: 'AmountInPKR', label: 'Amount in PKR', type: 'text'},
+          {key: 'PerDiemFromDate', label: 'Per diem from date', type: 'text'},
+          {key: 'PerDiemToDate', label: 'Per diem to date', type: 'text'},
+        ],
+      };
+    }
+
+    if (group === 'MILEAGE') {
+      return {
+        headerConfig,
+        fields,
+        expandableFields: [
+          {key: 'AmountInPKR', label: 'Amount in PKR', type: 'text'},
+          {key: 'Mileage', label: 'Mileage', type: 'text'},
+        ],
+      };
+    }
+
+    // STANDARD — Bus, Car Fuel, Hotel INT/Loc, Other Expenses, Rail, Taxi/Rickshaw, Toll Tax, Visa Fee
+    return {
+      headerConfig,
+      fields,
+      expandableFields: [
+        {key: 'AmountInPKR', label: 'Amount in PKR', type: 'text'},
+      ],
+    };
   };
 
   useEffect(() => {
@@ -147,6 +204,26 @@ const TravelRequisitionLinesListPage = () => {
     return `${day}/${month}/${year}`;
   };
 
+  // AM/PM date+time formatter — used only for per-diem from/to display.
+  const formatDateTimeAMPM = value => {
+    if (!value) return 'N/A';
+    const date = value instanceof Date ? value : new Date(value);
+    if (isNaN(date.getTime())) return 'N/A';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours === 0 ? 12 : hours;
+    const hoursStr = String(hours).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`;
+  };
+
   const formatCurrency = amount => {
     const num = typeof amount === 'number' ? amount : parseFloat(amount);
     if (isNaN(num)) return '0.00';
@@ -158,6 +235,18 @@ const TravelRequisitionLinesListPage = () => {
     const formattedInt = digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
     return `${sign}${formattedInt}.${decPart}`;
+  };
+
+  const getLineCategoryGroup = category => {
+    if (!category) return 'STANDARD';
+    const normalized = String(category).trim();
+
+    if (normalized === 'Car Mileage') return 'MILEAGE';
+    if (normalized === 'Flight International' || normalized === 'Flight Local')
+      return 'AIRLINE';
+    if (/^Per Diem( INT)? G-\d+$/i.test(normalized)) return 'PERDIEM';
+
+    return 'STANDARD';
   };
 
   // Search + sort via useListFilters (no pills). Date filter + sort key off
@@ -470,6 +559,8 @@ const TravelRequisitionLinesListPage = () => {
   };
 
   const renderLineCard = ({item}) => {
+    const cardConfig = getCardConfig(item.Category);
+
     const processedItem = {
       ...item,
       Category: item.Category || 'N/A',
@@ -477,14 +568,18 @@ const TravelRequisitionLinesListPage = () => {
       EstimatedDate: formatDate(item.EstimatedDate),
       EstimatedAmount: formatCurrency(item.EstimatedAmount),
       AmountInPKR: formatCurrency(item.AmountInPKR),
+      AirlineServiceClass: item.AirlineServiceClass || 'N/A',
+      PerDiemFromDate: formatDateTimeAMPM(item.PerDiemFromDate), // ← was formatDate
+      PerDiemToDate: formatDateTimeAMPM(item.PerDiemToDate), // ← was formatDate
+      Mileage: item.Mileage != null ? Number(item.Mileage).toFixed(2) : 'N/A',
     };
 
     return (
       <DynamicRequestCard
         data={processedItem}
-        headerConfig={CARD_CONFIG.headerConfig}
-        fields={CARD_CONFIG.fields}
-        expandableFields={CARD_CONFIG.expandableFields}
+        headerConfig={cardConfig.headerConfig}
+        fields={cardConfig.fields}
+        expandableFields={cardConfig.expandableFields}
         buttons={getLineButtonConfig()}
         onButtonPress={handleButtonPress}
         isExpandable={true}
@@ -500,7 +595,7 @@ const TravelRequisitionLinesListPage = () => {
   };
 
   const getPageTitle = () =>
-    `Travel Requisition Lines - ${requisitionNumber || 'Requisition'}`;
+    `Travel requisition lines - ${requisitionNumber || 'Requisition'}`;
 
   const totals = getTotals();
 
@@ -541,7 +636,7 @@ const TravelRequisitionLinesListPage = () => {
             ]}>
             <View>
               <Text style={styles.DLP_SummaryText}>
-                Total (PKR): {totals.totalPKR}
+                Total amount (PKR): {totals.totalPKR}
               </Text>
             </View>
           </View>

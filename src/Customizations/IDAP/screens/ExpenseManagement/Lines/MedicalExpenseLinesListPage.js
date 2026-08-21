@@ -98,15 +98,14 @@ const MedicalExpenseLinesListPage = () => {
       subtitle: {key: 'Name', label: 'Patient'},
     },
     fields: [
-      {key: 'Relation', label: 'Relation', type: 'text'},
-      {key: 'TransDate', label: 'Transaction Date', type: 'text'},
+      {key: 'Relation', label: 'Relation with Employee', type: 'text'},
+      {key: 'TransDate', label: 'Transaction date', type: 'text'},
+      {key: 'ReceiptNum', label: 'Receipt number', type: 'text'},
       {key: 'ClaimedAmount', label: 'Claimed Amount', type: 'text'},
-      {key: 'ReceiptStatus', label: '', type: 'status'},
     ],
     expandableFields: [
-      {key: 'TransAmount', label: 'Transaction Amount', type: 'text'},
-      {key: 'AuthAmount', label: 'Authorized Amount', type: 'text'},
-      {key: 'ReceiptNum', label: 'Receipt Number', type: 'text'},
+      {key: 'TransAmount', label: 'Transaction amount', type: 'text'},
+      {key: 'IsReceiptAttached', label: 'Receipts attached', type: 'boolean'},
     ],
   };
 
@@ -202,6 +201,27 @@ const MedicalExpenseLinesListPage = () => {
     }
   }, [headerRecId]);
 
+  const handleGoBack = useCallback(() => {
+    navigation.navigate('MedicalExpenseManagmentListPage', {
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      userData: {
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
+      },
+      cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
+    });
+  }, [
+    navigation,
+    effectiveEmployeeId,
+    effectiveEmployeeName,
+    effectiveWorkerRecId,
+    originalCameFrom,
+    cameFrom,
+  ]);
+
   // Refetch on focus (also covers the refresh flag SaveRecord passes back).
   useFocusEffect(
     useCallback(() => {
@@ -225,27 +245,6 @@ const MedicalExpenseLinesListPage = () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [isMultiSelectMode, handleGoBack]),
   );
-
-  const handleGoBack = useCallback(() => {
-    navigation.navigate('MedicalExpenseManagmentListPage', {
-      employeeId: effectiveEmployeeId,
-      employeeName: effectiveEmployeeName,
-      WorkerRecId: effectiveWorkerRecId,
-      userData: {
-        employeeId: effectiveEmployeeId,
-        employeeName: effectiveEmployeeName,
-        WorkerRecId: effectiveWorkerRecId,
-      },
-      cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
-    });
-  }, [
-    navigation,
-    effectiveEmployeeId,
-    effectiveEmployeeName,
-    effectiveWorkerRecId,
-    originalCameFrom,
-    cameFrom,
-  ]);
 
   const handleAddLine = useCallback(() => {
     navigation.navigate('MedicalExpenseLinesSaveRecord', {
@@ -623,7 +622,7 @@ const MedicalExpenseLinesListPage = () => {
             ]}>
             <View>
               <Text style={styles.DLP_SummaryText}>
-                Total Claimed: {totals.totalClaimed}
+                Total amount: {totals.totalClaimed}
               </Text>
               {/* <Text style={styles.DLP_SummaryText}>
                 Total Authorized: {totals.totalAuth}

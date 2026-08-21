@@ -39,7 +39,7 @@ import ActionPaneContainer from '../../../../../components/ActionPaneContainer';
 import SaveRecordButtons, {
   BUTTON_TYPES,
 } from '../../../../../components/Buttons/SaveRecordButtons';
-import {AppTokens} from '../../../../../components/AppComponentsDesign/Appcomponents';
+import {AppTokens} from '../../../../../components/AppComponentsDesign/Tokens';
 import styles from '../../../../../styles/styles';
 import useNotify from '../../../../../hooks/useNotify';
 import usePalette from '../../../../../hooks/usePalette';
@@ -417,45 +417,86 @@ const MedicalExpenseLinesSaveRecord = () => {
   };
 
   // Required + amount validation. Amounts must be numeric and non-negative.
+  // const validate = () => {
+  //   const nextErrors = {};
+
+  //   if (!formData.SubCategory)
+  //     nextErrors.SubCategory = 'Sub Category is required';
+  //   if (!formData.Name) nextErrors.Name = 'Patient name is required';
+  //   if (!formData.Relation?.trim())
+  //     nextErrors.Relation = 'Relation is required';
+  //   if (!formData.TransDate)
+  //     nextErrors.TransDate = 'Transaction date is required';
+
+  //   const amountFields = [
+  //     {key: 'ClaimedAmount', label: 'Claimed Amount'},
+  //     {key: 'TransAmount', label: 'Transaction Amount'},
+  //   ];
+
+  //   amountFields.forEach(({key, label}) => {
+  //     const raw = formData[key];
+  //     if (raw === '' || raw === null || raw === undefined) {
+  //       nextErrors[key] = `${label} is required`;
+  //       return;
+  //     }
+  //     const num = parseFloat(raw);
+  //     if (isNaN(num)) {
+  //       nextErrors[key] = `${label} must be a valid number`;
+  //     } else if (num < 0) {
+  //       nextErrors[key] = `${label} cannot be negative`;
+  //     }
+  //   });
+
+  //   setErrors(nextErrors);
+  //   return Object.keys(nextErrors).length === 0;
+  // };
+
   const validate = () => {
     const nextErrors = {};
+    const missing = [];
 
-    if (!formData.SubCategory)
+    if (!formData.SubCategory) {
       nextErrors.SubCategory = 'Sub Category is required';
-    if (!formData.Name) nextErrors.Name = 'Patient name is required';
-    if (!formData.Relation?.trim())
+      missing.push('Expense subcategory');
+    }
+    if (!formData.Name) {
+      nextErrors.Name = 'Patient name is required';
+      missing.push('Patient name');
+    }
+    if (!formData.Relation?.trim()) {
       nextErrors.Relation = 'Relation is required';
-    if (!formData.TransDate)
+      missing.push('Relation with employee');
+    }
+    if (!formData.TransDate) {
       nextErrors.TransDate = 'Transaction date is required';
+      missing.push('Transaction date');
+    }
 
-    const amountFields = [
-      {key: 'ClaimedAmount', label: 'Claimed Amount'},
-      {key: 'TransAmount', label: 'Transaction Amount'},
-    ];
-
-    amountFields.forEach(({key, label}) => {
-      const raw = formData[key];
-      if (raw === '' || raw === null || raw === undefined) {
-        nextErrors[key] = `${label} is required`;
-        return;
-      }
+    const raw = formData.ClaimedAmount;
+    if (raw === '' || raw === null || raw === undefined) {
+      nextErrors.ClaimedAmount = 'Claimed amount is required';
+      missing.push('Claimed amount');
+    } else {
       const num = parseFloat(raw);
       if (isNaN(num)) {
-        nextErrors[key] = `${label} must be a valid number`;
+        nextErrors.ClaimedAmount = 'Claimed amount must be a valid number';
+        missing.push('Claimed amount (must be a valid number)');
       } else if (num < 0) {
-        nextErrors[key] = `${label} cannot be negative`;
+        nextErrors.ClaimedAmount = 'Claimed amount cannot be negative';
+        missing.push('Claimed amount (cannot be negative)');
       }
-    });
+    }
 
     setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
+    return {valid: Object.keys(nextErrors).length === 0, missing};
   };
 
   const handleSave = async actionType => {
     if (processingButton) return;
 
-    if (!validate()) {
-      showWarning('Please fill the Mandatory fields.'); // was: setAlertMessage + setAlertModal(true)
+    const {valid, missing} = validate();
+    if (!valid) {
+      showWarning(`Please fill the following fields:\n${missing.join('\n')}`);
       return;
     }
 

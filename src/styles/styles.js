@@ -9076,6 +9076,12 @@ export const getDSRStyles = tokens =>
       flex: 1,
       backgroundColor: tokens.formPageBg,
     },
+    DSR_LoadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: tokens.formPageBg,
+    },
     DSR_FormContainer: {
       paddingHorizontal: conditionalScale(12, 14, 16, 18),
       paddingTop: conditionalVerticalScale(8, 10, 12, 14),

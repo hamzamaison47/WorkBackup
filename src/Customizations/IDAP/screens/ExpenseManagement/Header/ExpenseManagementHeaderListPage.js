@@ -32,6 +32,7 @@ import useAlertModal from '../../../../../hooks/useAlertModal';
 import AlertDeleteModal from '../../../../../components/Alert/AlertDeleteModal';
 import CustomIndicator from '../../../../../components/CustomIndicator/CustomIndicator';
 import DynamicAttachmentModal from '../../../../../shared/DynamicAttachmentModal';
+import WorkflowCommentModal from '../../../../../components/CommentModal/WorkflowCommentModal';
 
 const ExpenseManagementHeaderListPage = () => {
   const navigation = useNavigation();
@@ -66,6 +67,8 @@ const ExpenseManagementHeaderListPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [attachmentModalVisible, setAttachmentModalVisible] = useState(false);
   const [selectedExpenseItem, setSelectedExpenseItem] = useState(null);
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [submitTargetItem, setSubmitTargetItem] = useState(null);
 
   const {notifySuccess, notifyError, notifyDelete} =
     useNotify('Expense Management');
@@ -75,13 +78,19 @@ const ExpenseManagementHeaderListPage = () => {
       title: {key: 'ExpenseNumber'},
     },
     fields: [
-      {key: 'ApprovalStatus', label: 'Approval Status', type: 'status'},
+      {key: 'HasReceiptAttached', label: 'Receipt attached', type: 'boolean'},
       {key: 'Location', label: 'Location', type: 'text'},
+      {key: 'ApprovalStatus', label: 'Approval status', type: 'status'},
       {key: 'Amount', label: 'Amount', type: 'text'},
     ],
     expandableFields: [
-      {key: 'HasReceiptAttached', label: 'Receipt Attached', type: 'boolean'},
-      {key: 'PaymentVoucher', label: 'Payment Voucher', type: 'text'},
+      {
+        key: 'CreatedDateTime',
+        label: 'Created date and time',
+        type: 'datetime',
+      },
+      {key: 'PaymentDate', label: 'Payment date', type: 'date'},
+      {key: 'PaymentVoucher', label: 'Payment voucher', type: 'text'},
       {key: 'InvoiceId', label: 'Invoice', type: 'text'},
     ],
   };
@@ -351,7 +360,7 @@ const ExpenseManagementHeaderListPage = () => {
   const handleButtonPress = (buttonType, item) => {
     if (buttonType === 'delete') handleDeletePress(item);
     else if (buttonType === 'edit') handleEditExpense(item);
-    else if (buttonType === 'submit') handleSubmitPress(item);
+    else if (buttonType === 'submit') openSubmitCommentModal(item);
     else if (buttonType === 'viewHistory') handleViewHistory(item);
     else if (buttonType === 'attachment') handleAttachmentPress(item);
   };
@@ -361,13 +370,36 @@ const ExpenseManagementHeaderListPage = () => {
     setDeleteModal(true);
   };
 
-  const handleSubmitPress = itemData => {
+  const openSubmitCommentModal = itemData => {
+    setSubmitTargetItem(itemData);
+    setCommentModalVisible(true);
+  };
+
+  const closeSubmitCommentModal = () => {
+    if (isProcessing) return;
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+  };
+
+  const handleCommentModalCancel = () => {
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+  };
+
+  const handleCommentModalSubmit = comment => {
+    const item = submitTargetItem;
+    setCommentModalVisible(false);
+    setSubmitTargetItem(null);
+    if (item) handleSubmitPress(item, comment);
+  };
+
+  const handleSubmitPress = (itemData, comment = '') => {
     const recId = normalizeRecId(itemData);
     setTimeout(async () => {
       setIsProcessing(true);
       setButtonProcessing(recId, 'submit', true);
       try {
-        const result = await SubmitExpenseManagementHeader({recId});
+        const result = await SubmitExpenseManagementHeader({recId, comment});
         if (result.IsSuccess) {
           notifySuccess('Request submitted successfully.');
           showSuccess(result.Message || 'Request submitted successfully.');
@@ -436,7 +468,7 @@ const ExpenseManagementHeaderListPage = () => {
       ApprovalStatus: getStatusLabel(item.ApprovalStatus),
       Amount: item.Amount || 'N/A',
       InvoiceId: item.InvoiceId || 'N/A',
-      CreatedDateTime: formatDate(item.CreatedDateTime),
+      // CreatedDateTime: formatDate(item.CreatedDateTime),
       employeeId: effectiveEmployeeId,
       employeeName: effectiveEmployeeName,
     };
@@ -460,7 +492,7 @@ const ExpenseManagementHeaderListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Expense Reports"
+      pageTitle="Expense reports"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}
@@ -547,6 +579,16 @@ const ExpenseManagementHeaderListPage = () => {
           setDeleteModal(false);
           setItemToDelete(null);
         }}
+      />
+
+      <WorkflowCommentModal
+        visible={commentModalVisible}
+        title="Submit Expense Report"
+        message="Add a comment for the approver, or cancel to close the dialog."
+        onCancel={handleCommentModalCancel}
+        onSubmit={handleCommentModalSubmit}
+        onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
       />
 
       <DynamicAttachmentModal

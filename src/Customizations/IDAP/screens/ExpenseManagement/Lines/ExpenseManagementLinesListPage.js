@@ -103,19 +103,119 @@ const ExpenseManagementLinesListPage = () => {
   const [processingLabel, setProcessingLabel] = useState('');
   // CostType up top, currency + claimed amount + transaction date in the body,
   // the backend-derived PKR value and meal reduction behind the expander.
-  const CARD_CONFIG = {
-    headerConfig: {
+  // const CARD_CONFIG = {
+  //   headerConfig: {
+  //     title: {key: 'CostType', label: 'Cost Type'},
+  //     subtitle: {key: 'ExchangeCode', label: 'Currency'},
+  //   },
+  //   fields: [
+  //     {key: 'Transaction', label: 'Transaction date', type: 'text'},
+  //     {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
+  //     {key: 'ClaimedAmount', label: 'Transaction amount', type: 'text'},
+  //   ],
+  //   expandableFields: [
+  //     {key: 'ExchangeCode', label: 'Currency', type: 'text'},
+  //     {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'},
+  //     {key: 'MealReductionAmount', label: 'Meal Reduction', type: 'text'},
+  //     {key: 'DepartureLocation', label: 'Departure location', type: 'text'},
+  //     {
+  //       key: 'DepartureDateTime',
+  //       label: 'Departure date and time',
+  //       type: 'text',
+  //     },
+  //     {key: 'ArrivalLocation', label: 'Arrival location', type: 'text'},
+  //     {
+  //       key: 'ArrivalDateTime',
+  //       label: 'Arrival date and time',
+  //       type: 'text',
+  //     },
+  //     {key: 'DateFrom', label: 'Per diem from date', type: 'text'},
+  //     {key: 'DateTo', label: 'Per diem to date', type: 'text'},
+  //     {key: 'RatePerMile', label: 'Rate per mile', type: 'text'},
+  //   ],
+  // };
+
+  // headerConfig stays the same across all categories — CostType is the card
+  // title regardless, so it's not repeated inside fields/expandableFields.
+  const getCardConfig = costType => {
+    const category = getCostCategory(costType);
+
+    const headerConfig = {
       title: {key: 'CostType', label: 'Cost Type'},
       subtitle: {key: 'ExchangeCode', label: 'Currency'},
-    },
-    fields: [
-      {key: 'ClaimedAmount', label: 'Claimed Amount', type: 'text'},
-      {key: 'Transaction', label: 'Transaction Date', type: 'text'},
-    ],
-    expandableFields: [
-      {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'},
-      {key: 'MealReductionAmount', label: 'Meal Reduction', type: 'text'},
-    ],
+    };
+
+    if (category === 'perDiem') {
+      return {
+        headerConfig,
+        fields: [
+          {key: 'Transaction', label: 'Transaction date', type: 'text'},
+          {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
+          {key: 'ExchangeCode', label: 'Currency', type: 'text'},
+        ],
+        expandableFields: [
+          {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'},
+          {key: 'DateFrom', label: 'Per diem from date', type: 'text'},
+          {key: 'DateTo', label: 'Per diem to date', type: 'text'},
+          {key: 'MealReductionAmount', label: 'Meal Reduction', type: 'text'},
+        ],
+      };
+    }
+
+    if (category === 'mileage') {
+      return {
+        headerConfig,
+        fields: [
+          {key: 'Transaction', label: 'Transaction date', type: 'text'},
+          {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
+        ],
+        expandableFields: [
+          {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'},
+          {key: 'Mileage', label: 'Mileage', type: 'text'},
+          {key: 'RatePerMile', label: 'Rate per mile', type: 'text'},
+          {key: 'DepartureLocation', label: 'Departure location', type: 'text'},
+          {
+            key: 'DepartureDateTime',
+            label: 'Departure date and time',
+            type: 'text',
+          },
+          {key: 'ArrivalLocation', label: 'Arrival location', type: 'text'},
+          {
+            key: 'ArrivalDateTime',
+            label: 'Arrival date and time',
+            type: 'text',
+          },
+        ],
+      };
+    }
+
+    // default — Bus, Car Fuel, Flight, Hotel, Rail, Taxi, Toll Tax, Visa Fee, etc.
+    return {
+      headerConfig,
+      fields: [
+        {key: 'Transaction', label: 'Transaction date', type: 'text'},
+        {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
+        {key: 'ClaimedAmount', label: 'Transaction amount', type: 'text'},
+        {key: 'ExchangeCode', label: 'Currency', type: 'text'},
+      ],
+      expandableFields: [
+        {key: 'DepartureLocation', label: 'Departure location', type: 'text'},
+        {
+          key: 'DepartureDateTime',
+          label: 'Departure date and time',
+          type: 'text',
+        },
+        {key: 'ArrivalLocation', label: 'Arrival location', type: 'text'},
+        {key: 'ArrivalDateTime', label: 'Arrival date and time', type: 'text'},
+      ],
+    };
+  };
+
+  const getCostCategory = costType => {
+    const ct = String(costType || '').toLowerCase();
+    if (ct.includes('per diem')) return 'perDiem';
+    if (ct.includes('mileage')) return 'mileage';
+    return 'default';
   };
 
   useEffect(() => {
@@ -172,6 +272,32 @@ const ExpenseManagementLinesListPage = () => {
     return `${sign}${formattedInt}.${decPart}`;
   };
 
+  // Add this helper next to formatDate/formatCurrency
+  const formatDateTime = value => {
+    if (!value) return 'N/A';
+    const date = value instanceof Date ? value : new Date(value);
+    if (isNaN(date.getTime())) return 'N/A';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours === 0 ? 12 : hours; // 0 → 12
+    const hoursStr = String(hours).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`;
+  };
+
+  const formatNumber = value => {
+    const num = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(num)) return 'N/A';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
+
   const f = useListFilters({
     data: linesData,
     dateField: 'Transaction',
@@ -220,6 +346,29 @@ const ExpenseManagementLinesListPage = () => {
     }
   }, [headerRecId]);
 
+  const handleGoBack = useCallback(() => {
+    navigation.navigate('ExpenseManagementHeaderListPage', {
+      employeeId: effectiveEmployeeId,
+      employeeName: effectiveEmployeeName,
+      WorkerRecId: effectiveWorkerRecId,
+      personnelNumber: effectivePersonnelNumber,
+      userData: {
+        employeeId: effectiveEmployeeId,
+        employeeName: effectiveEmployeeName,
+        WorkerRecId: effectiveWorkerRecId,
+      },
+      cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
+    });
+  }, [
+    navigation,
+    effectiveEmployeeId,
+    effectiveEmployeeName,
+    effectiveWorkerRecId,
+    effectivePersonnelNumber,
+    originalCameFrom,
+    cameFrom,
+  ]);
+
   // Refetch on focus (also covers the refresh flag SaveRecord passes back).
   useFocusEffect(
     useCallback(() => {
@@ -243,29 +392,6 @@ const ExpenseManagementLinesListPage = () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [isMultiSelectMode, handleGoBack]),
   );
-
-  const handleGoBack = useCallback(() => {
-    navigation.navigate('ExpenseManagementHeaderListPage', {
-      employeeId: effectiveEmployeeId,
-      employeeName: effectiveEmployeeName,
-      WorkerRecId: effectiveWorkerRecId,
-      personnelNumber: effectivePersonnelNumber,
-      userData: {
-        employeeId: effectiveEmployeeId,
-        employeeName: effectiveEmployeeName,
-        WorkerRecId: effectiveWorkerRecId,
-      },
-      cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
-    });
-  }, [
-    navigation,
-    effectiveEmployeeId,
-    effectiveEmployeeName,
-    effectiveWorkerRecId,
-    effectivePersonnelNumber,
-    originalCameFrom,
-    cameFrom,
-  ]);
 
   // ── Add a new line ──────────────────────────────────────────
   const handleAddLine = useCallback(() => {
@@ -505,6 +631,7 @@ const ExpenseManagementLinesListPage = () => {
   };
 
   const renderLineCard = ({item}) => {
+    const cardConfig = getCardConfig(item.CostType);
     const processedItem = {
       ...item,
       CostType: item.CostType || 'N/A',
@@ -513,6 +640,10 @@ const ExpenseManagementLinesListPage = () => {
       ClaimedAmount: formatCurrency(item.ClaimedAmount),
       AmountInPKR: formatCurrency(item.AmountInPKR),
       MealReductionAmount: formatCurrency(item.MealReductionAmount),
+      DepartureDateTime: formatDateTime(item.DepartureDateTime),
+      ArrivalDateTime: formatDateTime(item.ArrivalDateTime),
+      DateFrom: formatDateTime(item.DateFrom),
+      DateTo: formatDateTime(item.DateTo),
     };
 
     const buttons = {
@@ -554,9 +685,9 @@ const ExpenseManagementLinesListPage = () => {
     return (
       <DynamicRequestCard
         data={processedItem}
-        headerConfig={CARD_CONFIG.headerConfig}
-        fields={CARD_CONFIG.fields}
-        expandableFields={CARD_CONFIG.expandableFields}
+        headerConfig={cardConfig.headerConfig}
+        fields={cardConfig.fields}
+        expandableFields={cardConfig.expandableFields}
         buttons={buttons}
         onButtonPress={handleButtonPress}
         isExpandable={true}
@@ -572,7 +703,7 @@ const ExpenseManagementLinesListPage = () => {
     );
   };
 
-  const getPageTitle = () => `Expense Lines - ${expenseNumber || 'Expense'}`;
+  const getPageTitle = () => `Expense lines - ${expenseNumber || 'Expense'}`;
 
   const totals = getTotals();
 

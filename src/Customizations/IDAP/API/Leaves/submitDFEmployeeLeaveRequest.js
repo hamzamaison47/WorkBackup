@@ -7,7 +7,7 @@ import {getToken} from '../../../../API/Token/getToken';
 import {createSoapEnvelope} from '../../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../../Controller/secureConfig';
 
-const submitDFEmployeeLeaveRequest = async ({recId}) => {
+const submitDFEmployeeLeaveRequest = async ({recId, comment = ''}) => {
   try {
     if (typeof recId === 'object') {
       if ('recId' in recId) {
@@ -25,9 +25,18 @@ const submitDFEmployeeLeaveRequest = async ({recId}) => {
 
     const token = await getToken();
 
+    const escapeXml = str =>
+      String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
     const soapBody = `
       <submitLeaveByRecId xmlns="http://tempuri.org">
         <_recId>${recId}</_recId>
+         <_workflowComment>${escapeXml(comment)}</_workflowComment>
       </submitLeaveByRecId>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

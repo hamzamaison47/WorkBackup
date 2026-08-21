@@ -125,6 +125,14 @@ const MedicalExpenseManagementSaveRecord = () => {
   const {notifySuccess, notifyError} = useNotify('Medical Expense Report');
 
   const today = new Date().toISOString().split('T')[0];
+  // near the top, alongside `today`
+  const MIN_VALID_YEAR = 1950;
+  const isSentinelOrInvalidDate = value => {
+    if (!value) return true;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return true;
+    return d.getFullYear() < MIN_VALID_YEAR;
+  };
 
   // See file header note — key names for the category/date prefill are
   // unverified against GetAllExpenseManagementHeaders.js's actual output.
@@ -140,7 +148,11 @@ const MedicalExpenseManagementSaveRecord = () => {
         legalEntity: effectiveLegalEntity,
         expenseCategory:
           headerData.expenseCategory || headerData.SLD_CostType || '',
-        date: headerData.date || headerData.SLD_MonthOfYear || today,
+        date: isSentinelOrInvalidDate(
+          headerData.date ?? headerData.SLD_MonthOfYear,
+        )
+          ? today
+          : headerData.date || headerData.SLD_MonthOfYear,
         ExpenseReportNumber: headerData.ExpenseNumber || '',
       };
     }
@@ -499,7 +511,7 @@ const MedicalExpenseManagementSaveRecord = () => {
     if (processingButton) return;
 
     const missingFields = [];
-    if (!formData.expenseCategory) missingFields.push('Expense Category');
+    if (!formData.expenseCategory) missingFields.push('Expense category');
     if (!formData.date) missingFields.push('Date');
     if (isEditMode && !formData.expenseReportNumber) {
       // Should never happen if navigation always passes headerData, but
@@ -530,7 +542,11 @@ const MedicalExpenseManagementSaveRecord = () => {
           clearAllStates();
           goBack();
         }, 1500);
+        return; // keep button disabled / overlay up until the delayed nav fires
       }
+
+      setProcessingButton('');
+      setIsProcessing(false);
     } catch (error) {
       console.error('Error saving medical expense:', error);
       showError('Failed to save record. Please try again.');
@@ -542,11 +558,7 @@ const MedicalExpenseManagementSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={
-        isEditMode
-          ? 'Edit Medical Expense Report'
-          : 'Create Medical Expense Report'
-      }
+      pageTitle={isEditMode ? 'Edit expense report' : 'New expense report'}
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -576,13 +588,13 @@ const MedicalExpenseManagementSaveRecord = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               nestedScrollEnabled={true}>
-              <Text style={styles.DSR_Label}>Expense Category</Text>
+              <Text style={styles.DSR_Label}>Expense category</Text>
               <Dropdown
                 style={styles.DSR_Input}
                 data={categoryOptions}
                 labelField="label"
                 valueField="value"
-                placeholder="Select Expense Category"
+                placeholder="Select expense category"
                 value={formData.expenseCategory}
                 onFocus={handleCategoryDropdownFocus}
                 onChange={handleCategoryChange}
@@ -639,7 +651,11 @@ const MedicalExpenseManagementSaveRecord = () => {
       {showCalendar && (
         <CalendarModal
           visible={showCalendar}
-          initialDate={formData.date}
+          initialDate={
+            formData.date && !isSentinelOrInvalidDate(formData.date)
+              ? formData.date
+              : today
+          }
           onDateSelected={handleDateChange}
           onClose={() => setShowCalendar(false)}
         />

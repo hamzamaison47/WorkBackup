@@ -105,14 +105,132 @@
 // export {SubmitIdentificationRequest};
 /* eslint-disable curly */
 /* eslint-disable dot-notation */
+// import axios from 'axios';
+// import {XMLParser} from 'fast-xml-parser';
+// import {getToken} from '../../Token/getToken';
+// import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
+// import {getActiveConfigData} from '../../../Controller/secureConfig';
+
+// const SubmitIdentificationRequest = async ({recId}) => {
+//   console.log('RecId : ', recId);
+//   try {
+//     if (typeof recId === 'object') {
+//       if ('recId' in recId) {
+//         recId = recId.recId;
+//       } else {
+//         throw new Error('Invalid recId. Expected a number, got an object.');
+//       }
+//     }
+
+//     const config = await getActiveConfigData();
+
+//     if (!config || !config.resource) {
+//       throw new Error('No configuration found. Please scan QR code first.');
+//     }
+
+//     const token = await getToken();
+
+//     const soapBody = `
+//       <submitESSPersonIdentificaitonNumber xmlns="http://tempuri.org">
+//         <_requestList xmlns:q1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
+//           <q1:long>${recId}</q1:long>
+//         </_requestList>
+//       </submitESSPersonIdentificaitonNumber>`;
+
+//     const soapEnvelope = createSoapEnvelope(soapBody);
+
+//     const {data: xml} = await axios.post(
+//       `${config.resource}soap/services/EssWorkflowSvcGroup`,
+//       soapEnvelope,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'text/xml;charset=utf-8',
+//           SOAPAction:
+//             'http://tempuri.org/ESSWorkflowSvc/submitESSPersonIdentificaitonNumber',
+//         },
+//         responseType: 'text',
+//       },
+//     );
+
+//     const parser = new XMLParser({
+//       ignoreAttributes: false,
+//       ignoreNameSpace: false,
+//       attributeNamePrefix: '',
+//       isArray: () => false,
+//       parseTagValue: false,
+//     });
+
+//     const parsed = parser.parse(xml);
+
+//     const result =
+//       parsed?.['s:Envelope']?.['s:Body']?.[
+//         'submitESSPersonIdentificaitonNumberResponse'
+//       ]?.['result'] ||
+//       parsed?.['soap:Envelope']?.['soap:Body']?.[
+//         'submitESSPersonIdentificaitonNumberResponse'
+//       ]?.['result'];
+
+//     if (!result) {
+//       console.log('No result found in Submit Identification SOAP response');
+//       return [];
+//     }
+
+//     const cleanObject = obj => {
+//       if (obj === null || obj === undefined) return obj;
+//       if (typeof obj !== 'object') return obj;
+//       if (Array.isArray(obj)) return obj.map(cleanObject);
+
+//       return Object.fromEntries(
+//         Object.entries(obj).map(([key, value]) => [
+//           key.replace(/^[a-zA-Z0-9]+:/, ''),
+//           typeof value === 'object' ? cleanObject(value) : value,
+//         ]),
+//       );
+//     };
+
+//     const cleanedResult = cleanObject(result);
+//     console.log('Cleaned Result: ', cleanedResult);
+
+//     const contracts = cleanedResult?.GeneralContract
+//       ? Array.isArray(cleanedResult.GeneralContract)
+//         ? cleanedResult.GeneralContract
+//         : [cleanedResult.GeneralContract]
+//       : [];
+
+//     return contracts;
+//   } catch (error) {
+//     console.error(
+//       'Failed to submit identification request:',
+//       error.response?.data || error.message,
+//     );
+//     throw error;
+//   }
+// };
+
+// export {SubmitIdentificationRequest};
+/* eslint-disable curly */
+/* eslint-disable dot-notation */
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../../Token/getToken';
 import {createSoapEnvelope} from '../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../Controller/secureConfig';
 
-const SubmitIdentificationRequest = async ({recId}) => {
-  console.log('RecId : ', recId);
+// Minimal local escape — kept self-contained here rather than importing a
+// shared xml util whose exact path/name I couldn't confirm. If the codebase
+// already has an `escapeXml` helper (used elsewhere per the Site Survey SOAP
+// calls), swap this out for that shared one instead.
+const escapeXml = value =>
+  String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
+const SubmitIdentificationRequest = async ({recId, comment = ''}) => {
+  console.log('RecId : ', recId, 'Comment:', comment);
   try {
     if (typeof recId === 'object') {
       if ('recId' in recId) {
@@ -130,11 +248,13 @@ const SubmitIdentificationRequest = async ({recId}) => {
 
     const token = await getToken();
 
+    // Sequence order per WSDL: _requestList, then _workflowComment.
     const soapBody = `
       <submitESSPersonIdentificaitonNumber xmlns="http://tempuri.org">
         <_requestList xmlns:q1="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
           <q1:long>${recId}</q1:long>
         </_requestList>
+        <_workflowComment>${escapeXml(comment)}</_workflowComment>
       </submitESSPersonIdentificaitonNumber>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);

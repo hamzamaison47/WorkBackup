@@ -214,7 +214,7 @@ const SettingsScreen = ({navigation: navProp}) => {
       <PageBackground>
         {/* ── GENERAL ──────────────────────────────────────────────────── */}
         <AnimatedCard delay={0}>
-          <CardHeading label="GENERAL" />
+          {/* <CardHeading label="GENERAL" /> */}
           {/* <SettingRow
             icon="globe"
             iconColor={AppTokens.blue}
@@ -223,7 +223,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             subtitle={`Current: ${langLabel}`}
             onPress={() => setLanguageModalVisible(true)}
           /> */}
-          <SettingRow
+          {/* <SettingRow
             icon={isDark ? 'moon' : 'sun'}
             iconColor={isDark ? AppTokens.purple : AppTokens.amber}
             iconBg={isDark ? AppTokens.purpleBg : AppTokens.amberBg}
@@ -231,7 +231,7 @@ const SettingsScreen = ({navigation: navProp}) => {
             subtitle={`Current: ${isDark ? 'Dark' : 'Light'}`} // ✅ cleaner
             rightElement={ThemeToggle}
             isLast
-          />
+          /> */}
           {/* <SettingRow
             icon="clock"
             iconColor={AppTokens.indigo}

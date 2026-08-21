@@ -185,14 +185,14 @@ const CreateTravelRequisitionLine = async (headerRecId, lineData = {}) => {
       }
       ${
         lineData.PerDiemFromDate !== undefined
-          ? `<d:PerDiemFromDate>${toIsoDateTime(
+          ? `<d:PerDiemFromDate>${toIsoDateTimePreserveTime(
               lineData.PerDiemFromDate,
             )}</d:PerDiemFromDate>`
           : ''
       }
       ${
         lineData.PerDiemToDate !== undefined
-          ? `<d:PerDiemToDate>${toIsoDateTime(
+          ? `<d:PerDiemToDate>${toIsoDateTimePreserveTime(
               lineData.PerDiemToDate,
             )}</d:PerDiemToDate>`
           : ''

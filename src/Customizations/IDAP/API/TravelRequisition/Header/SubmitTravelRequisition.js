@@ -32,7 +32,7 @@ const toBoolean = value => {
   return str === 'true' || str === '1';
 };
 
-const SubmitTravelRequisition = async recId => {
+const SubmitTravelRequisition = async (recId, comment = '') => {
   try {
     const config = await getActiveConfigData();
     if (!config?.resource) {
@@ -45,9 +45,18 @@ const SubmitTravelRequisition = async recId => {
 
     const token = await getToken();
 
+    const escapeXml = str =>
+      String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+
     const soapBody = `
       <submitTravelRequisitionByRecId xmlns="http://tempuri.org">
         <_recId>${recId}</_recId>
+        <_workflowComment>${escapeXml(comment)}</_workflowComment>
       </submitTravelRequisitionByRecId>
     `;
 
