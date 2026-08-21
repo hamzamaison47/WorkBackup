@@ -433,11 +433,15 @@ const DynamicRequestCard = ({
 
     if (field.type === 'boolean') {
       const isTrue =
-        value === true || value === 'true' || value === 1 || value === '1';
+        value === true ||
+        value === 'true' ||
+        value === 1 ||
+        value === '1' ||
+        value === 'Yes';
       return (
         <View key={`${field.key}-${index}`} style={S.fieldRow}>
           {hasLabel && (
-            <Text style={{...S.fieldLabel, color: T.titleText}}>
+            <Text style={{...S.fieldLabel, color: T.subtitleText}}>
               {field.label}
             </Text>
           )}

@@ -1,7 +1,7 @@
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useCallback, useState, useEffect} from 'react';
+import React, {useCallback, useState, useEffect, useRef} from 'react';
 import {
   Text,
   RefreshControl,
@@ -201,6 +201,20 @@ const MedicalExpenseLinesListPage = () => {
     }
   }, [headerRecId]);
 
+  const {refresh} = route.params || {};
+  const handledRefreshRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (refresh && handledRefreshRef.current !== refresh) {
+        handledRefreshRef.current = refresh;
+        f.resetFilters();
+      }
+      setIsLoading(true);
+      fetchExpenseLinesData();
+    }, [fetchExpenseLinesData, refresh]),
+  );
+
   const handleGoBack = useCallback(() => {
     navigation.navigate('MedicalExpenseManagmentListPage', {
       employeeId: effectiveEmployeeId,
@@ -211,7 +225,7 @@ const MedicalExpenseLinesListPage = () => {
         employeeName: effectiveEmployeeName,
         WorkerRecId: effectiveWorkerRecId,
       },
-      cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
+      cameFrom: originalCameFrom || 'DrawerNavigator',
     });
   }, [
     navigation,
@@ -219,20 +233,18 @@ const MedicalExpenseLinesListPage = () => {
     effectiveEmployeeName,
     effectiveWorkerRecId,
     originalCameFrom,
-    cameFrom,
   ]);
-
-  // Refetch on focus (also covers the refresh flag SaveRecord passes back).
-  useFocusEffect(
-    useCallback(() => {
-      setIsLoading(true);
-      fetchExpenseLinesData();
-    }, [fetchExpenseLinesData]),
-  );
 
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        console.log(
+          '[BACK] LINES handler, isFocused:',
+          navigation.isFocused(),
+          'canGoBack:',
+          navigation.canGoBack(),
+        );
+        if (!navigation.isFocused()) return false;
         if (isMultiSelectMode) {
           exitSelectMode();
           return true;
@@ -240,9 +252,11 @@ const MedicalExpenseLinesListPage = () => {
         handleGoBack();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
     }, [isMultiSelectMode, handleGoBack]),
   );
 
@@ -651,7 +665,7 @@ const MedicalExpenseLinesListPage = () => {
                   fontWeight: '600',
                   fontSize: 12,
                 }}>
-                Claim Report
+                OPD Claim Report
               </Text>
             </TouchableOpacity>
           </View>
@@ -687,13 +701,17 @@ const MedicalExpenseLinesListPage = () => {
                 <Text style={styles.DLP_NoDataSubText}>
                   No records match "{f.searchQuery}"
                 </Text>
+              ) : expenseLinesData.length > 0 ? (
+                <Text style={styles.DLP_NoDataText}>
+                  {`${f.activeFilter} record not found.`}
+                </Text>
               ) : (
                 <>
                   <Text style={styles.DLP_NoDataText}>
-                    No Expense Lines yet
+                    No Medical expense lines yet
                   </Text>
                   <Text style={styles.DLP_NoDataSubText}>
-                    Tap the + button below to add your first expense
+                    Tap the + button below to add your first Medical expense
                   </Text>
                 </>
               )}

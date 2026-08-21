@@ -668,19 +668,40 @@ const ActionPaneContainer = ({
     navigation.closeDrawer?.();
   }, [navigation]);
 
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     const onBackPressHandler = () => {
+  //       navigation.goBack();
+  //       return true;
+  //     };
+  //     BackHandler.addEventListener('hardwareBackPress', onBackPressHandler);
+  //     return () =>
+  //       BackHandler.removeEventListener(
+  //         'hardwareBackPress',
+  //         onBackPressHandler,
+  //       );
+  //   }, [navigation]),
+  // );
   useFocusEffect(
     useCallback(() => {
       const onBackPressHandler = () => {
-        navigation.goBack();
-        return true;
+        if (!navigation.isFocused()) return false;
+        if (typeof onBackPress === 'function') {
+          onBackPress();
+          return true;
+        }
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+          return true;
+        }
+        return false;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPressHandler);
-      return () =>
-        BackHandler.removeEventListener(
-          'hardwareBackPress',
-          onBackPressHandler,
-        );
-    }, [navigation]),
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPressHandler,
+      );
+      return () => sub.remove();
+    }, [navigation, onBackPress]),
   );
 
   const fetchNotifications = useCallback(async () => {

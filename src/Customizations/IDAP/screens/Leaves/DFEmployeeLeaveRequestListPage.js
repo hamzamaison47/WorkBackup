@@ -260,7 +260,7 @@ const DFEmployeeLeaveRequestListPage = () => {
       const data = await findEmployeeLeaveHistory({
         employeeId: effectiveEmployeeId,
       });
-      console.log('Here is leave data', data);
+      // console.log('Here is leave data', data);
       setHistoryData(data || []);
     } catch (error) {
       showError('Failed to fetch leave history');

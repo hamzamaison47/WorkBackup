@@ -256,6 +256,7 @@ const ExpenseManagementLineSaveRecord = () => {
   // ClaimedAmount is only ever editable for the 'standard' group — mileage
   // and perDiem both derive it via the calc services below.
   const isClaimedAmountEditable = currentGroup === 'standard';
+  const hasCategory = !!formData.CostType;
 
   const clearAllStates = useCallback(
     (resetForm = false) => {
@@ -369,9 +370,11 @@ const ExpenseManagementLineSaveRecord = () => {
         goBack();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
     }, [goBack]),
   );
 
@@ -627,45 +630,69 @@ const ExpenseManagementLineSaveRecord = () => {
   // still re-triggers the full group cascade (clearing fields that don't
   // belong to the new group), same as create — this is now expected in edit
   // mode too rather than blocked.
+  // const handleCostTypeChange = item => {
+  //   const nextGroup = getGroupForCostType(item.value);
+  //   const nextFields = GROUP_CONFIG[nextGroup].fields;
+  //   const nextShowCurrency = GROUP_CONFIG[nextGroup].showCurrency;
+  //   const allGroupFields = [
+  //     'ClaimedAmount',
+  //     'DepartureLocation',
+  //     'DepartureDateTime',
+  //     'ArrivalLocation',
+  //     'ArrivalDateTime',
+  //     'Mileage',
+  //     'DateFrom',
+  //     'DateTo',
+  //   ];
+
+  //   setFormData(prev => {
+  //     const next = {
+  //       ...prev,
+  //       CostType: item.value,
+  //       AmountInPKR: '',
+  //       ExchangeRate: '',
+  //     };
+  //     allGroupFields.forEach(field => {
+  //       if (!nextFields.includes(field)) next[field] = '';
+  //     });
+  //     if (!nextShowCurrency) next.ExchangeCode = 'PKR';
+  //     if (nextGroup === 'perDiem') next.Transaction = today;
+  //     return next;
+  //   });
+
+  //   setErrors(prev => {
+  //     const next = {...prev};
+  //     delete next.CostType;
+  //     delete next.Transaction;
+  //     allGroupFields.forEach(field => {
+  //       if (!nextFields.includes(field)) delete next[field];
+  //     });
+  //     return next;
+  //   });
+  // };
+
   const handleCostTypeChange = item => {
     const nextGroup = getGroupForCostType(item.value);
-    const nextFields = GROUP_CONFIG[nextGroup].fields;
     const nextShowCurrency = GROUP_CONFIG[nextGroup].showCurrency;
-    const allGroupFields = [
-      'ClaimedAmount',
-      'DepartureLocation',
-      'DepartureDateTime',
-      'ArrivalLocation',
-      'ArrivalDateTime',
-      'Mileage',
-      'DateFrom',
-      'DateTo',
-    ];
 
-    setFormData(prev => {
-      const next = {
-        ...prev,
-        CostType: item.value,
-        AmountInPKR: '',
-        ExchangeRate: '',
-      };
-      allGroupFields.forEach(field => {
-        if (!nextFields.includes(field)) next[field] = '';
-      });
-      if (!nextShowCurrency) next.ExchangeCode = 'PKR';
-      if (nextGroup === 'perDiem') next.Transaction = today;
-      return next;
-    });
+    setFormData(prev => ({
+      ...prev,
+      CostType: item.value,
+      ClaimedAmount: '',
+      AmountInPKR: '',
+      ExchangeRate: '',
+      DepartureLocation: '',
+      DepartureDateTime: '',
+      ArrivalLocation: '',
+      ArrivalDateTime: '',
+      Mileage: '',
+      DateFrom: '',
+      DateTo: '',
+      ExchangeCode: nextShowCurrency ? prev.ExchangeCode || 'PKR' : 'PKR',
+      Transaction: nextGroup === 'perDiem' ? today : prev.Transaction,
+    }));
 
-    setErrors(prev => {
-      const next = {...prev};
-      delete next.CostType;
-      delete next.Transaction;
-      allGroupFields.forEach(field => {
-        if (!nextFields.includes(field)) delete next[field];
-      });
-      return next;
-    });
+    setErrors({});
   };
 
   const handleCurrencyChange = item => {
@@ -730,11 +757,36 @@ const ExpenseManagementLineSaveRecord = () => {
     return current || undefined;
   };
 
+  // const handleDateTimeConfirm = date => {
+  //   const field = dateTimeField;
+  //   setDateTimeField(null);
+  //   if (!field) return;
+  //   setFormData(prev => ({...prev, [field]: toLocalDateTimeString(date)}));
+  //   clearFieldError(field);
+  // };
+
+  const FUTURE_MSG = 'Future date is not allowed';
+
+  const FUTURE_BLOCKED_FIELDS = {
+    DateFrom: 'Per diem from date',
+    DepartureDateTime: 'Departure date and time',
+    ArrivalDateTime: 'Arrival date and time',
+  };
+
   const handleDateTimeConfirm = date => {
     const field = dateTimeField;
     setDateTimeField(null);
     if (!field) return;
-    setFormData(prev => ({...prev, [field]: toLocalDateTimeString(date)}));
+
+    const value = toLocalDateTimeString(date);
+
+    if (FUTURE_BLOCKED_FIELDS[field] && isFutureDate(value)) {
+      setErrors(prev => ({...prev, [field]: FUTURE_MSG}));
+      showWarning(`${FUTURE_BLOCKED_FIELDS[field]} — ${FUTURE_MSG}`);
+      return; // don't write the value
+    }
+
+    setFormData(prev => ({...prev, [field]: value}));
     clearFieldError(field);
   };
 
@@ -750,92 +802,6 @@ const ExpenseManagementLineSaveRecord = () => {
     DateFrom: 'Per diem from date',
     DateTo: 'Per diem to date',
   };
-
-  // const validate = () => {
-  //   const nextErrors = {};
-
-  //   if (!formData.CostType)
-  //     nextErrors.CostType = 'Expense category is required';
-  //   if (!formData.ExchangeCode)
-  //     nextErrors.ExchangeCode = 'Currency is required';
-  //   if (!formData.Transaction)
-  //     nextErrors.Transaction = 'Transaction date is required';
-
-  //   groupRequired.forEach(field => {
-  //     // ClaimedAmount is derived (non-editable) for mileage/perDiem — it's
-  //     // not user-required there even though 'standard' requires it.
-  //     if (field === 'ClaimedAmount' && !isClaimedAmountEditable) return;
-
-  //     const raw = formData[field];
-  //     if (raw === '' || raw === null || raw === undefined) {
-  //       nextErrors[field] = `${FIELD_LABELS[field] || field} is required`;
-  //     }
-  //   });
-
-  //   if (
-  //     isFieldVisible('ClaimedAmount') &&
-  //     isClaimedAmountEditable &&
-  //     !nextErrors.ClaimedAmount
-  //   ) {
-  //     const num = parseFloat(formData.ClaimedAmount);
-  //     if (isNaN(num)) {
-  //       nextErrors.ClaimedAmount = 'Claimed amount must be a valid number';
-  //     } else if (num < 0) {
-  //       nextErrors.ClaimedAmount = 'Claimed amount cannot be negative';
-  //     }
-  //   }
-
-  //   if (isFieldVisible('Mileage') && !nextErrors.Mileage) {
-  //     const num = parseFloat(formData.Mileage);
-  //     if (isNaN(num)) {
-  //       nextErrors.Mileage = 'Mileage must be a valid number';
-  //     } else if (num < 0) {
-  //       nextErrors.Mileage = 'Mileage cannot be negative';
-  //     }
-  //   }
-
-  //   if (
-  //     isFieldVisible('DepartureDateTime') &&
-  //     isFieldVisible('ArrivalDateTime') &&
-  //     formData.DepartureDateTime &&
-  //     formData.ArrivalDateTime
-  //   ) {
-  //     const departure = parseLocalDateTime(formData.DepartureDateTime);
-  //     const arrival = parseLocalDateTime(formData.ArrivalDateTime);
-  //     if (departure && arrival && arrival.getTime() < departure.getTime()) {
-  //       nextErrors.ArrivalDateTime = 'Arrival cannot be earlier than departure';
-  //     }
-  //   }
-
-  //   if (
-  //     isFieldVisible('DateFrom') &&
-  //     isFieldVisible('DateTo') &&
-  //     formData.DateFrom &&
-  //     formData.DateTo &&
-  //     !nextErrors.DateFrom &&
-  //     !nextErrors.DateTo
-  //   ) {
-  //     const from = parseLocalDateTime(formData.DateFrom);
-  //     const to = parseLocalDateTime(formData.DateTo);
-  //     if (from && to && to.getTime() < from.getTime()) {
-  //       nextErrors.DateTo = 'Per diem to date cannot be earlier than from date';
-  //     }
-  //   }
-
-  //   setErrors(nextErrors);
-  //   return Object.keys(nextErrors).length === 0;
-  // };
-
-  // const formatThousands = value => {
-  //   if (value === '' || value === null || value === undefined) return '';
-  //   const [intPart, decPart] = String(value).split('.');
-  //   const sign = intPart.startsWith('-') ? '-' : '';
-  //   const digitsOnly = intPart.replace('-', '');
-  //   const formattedInt = digitsOnly.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  //   return decPart !== undefined
-  //     ? `${sign}${formattedInt}.${decPart}`
-  //     : `${sign}${formattedInt}`;
-  // };
 
   const validate = () => {
     const nextErrors = {};
@@ -997,6 +963,7 @@ const ExpenseManagementLineSaveRecord = () => {
             legalEntity: effectiveLegalEntity,
             userData: effectiveUserData,
             cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
+            forceShowAddButton: true,
             refresh: Date.now(),
           });
         }, 1200);
@@ -1030,6 +997,19 @@ const ExpenseManagementLineSaveRecord = () => {
       .map(Number);
     const d = new Date(year, month - 1, day, hours, minutes, seconds);
     return isNaN(d.getTime()) ? null : d;
+  };
+
+  // Day-granularity future check. Date fields carry a time component
+  // (T00:00:00 for calendar picks, real clock time for the DatePicker),
+  // so both sides are normalized to midnight — otherwise picking "today"
+  // via the datetime picker would fail once the current time passes it.
+  const isFutureDate = value => {
+    const d = parseLocalDateTime(value);
+    if (!d) return false;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() > startOfToday.getTime();
   };
 
   const renderError = field =>
@@ -1299,6 +1279,7 @@ const ExpenseManagementLineSaveRecord = () => {
                   </Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
+                    disabled={!hasCategory}
                     onPress={() => setDateTimeField('DateFrom')}>
                     <View style={{flex: 1}}>
                       <Text style={styles.DSR_DateText}>
@@ -1318,6 +1299,7 @@ const ExpenseManagementLineSaveRecord = () => {
                   <Text style={styles.DSR_Label}>Per diem to date/time *</Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
+                    disabled={!hasCategory}
                     onPress={() => setDateTimeField('DateTo')}>
                     <View style={{flex: 1}}>
                       <Text style={styles.DSR_DateText}>
@@ -1338,6 +1320,7 @@ const ExpenseManagementLineSaveRecord = () => {
                   <Text style={styles.DSR_Label}>Departure date and time</Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
+                    disabled={!hasCategory}
                     onPress={() => setDateTimeField('DepartureDateTime')}>
                     <View style={{flex: 1}}>
                       <Text style={styles.DSR_DateText}>
@@ -1375,6 +1358,7 @@ const ExpenseManagementLineSaveRecord = () => {
                   <Text style={styles.DSR_Label}>Arrival date and time</Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
+                    disabled={!hasCategory}
                     onPress={() => setDateTimeField('ArrivalDateTime')}>
                     <View style={{flex: 1}}>
                       <Text style={styles.DSR_DateText}>

@@ -173,13 +173,16 @@ const ExpenseManagementHeaderListPage = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        if (!navigation.isFocused()) return false;
         handleGoBack();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
+    }, [handleGoBack, navigation]),
   );
 
   const handleAttachmentPress = itemData => {

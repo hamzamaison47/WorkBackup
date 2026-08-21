@@ -207,18 +207,35 @@ const RetrieveMapTravelRequisitions = async ({employeeId, workerRecId}) => {
       JSON.stringify({label: labelOf(cleaned[0] ?? {})}),
     );
 
-    // label === value: the backend puts the requisition Name on
-    // MapToTravelRequisition, and that same name is what create() stores back.
-    return cleaned.map(row => ({
-      label: labelOf(row),
-      value: row.RequisitionNumber
+    const formatReqDate = value => {
+      if (!value) return '';
+      const d = new Date(value);
+      if (isNaN(d.getTime()) || d.getFullYear() < 1950) return '';
+      const pad = n => String(n).padStart(2, '0');
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    };
+
+    return cleaned.map(row => {
+      const reqNumber = row.RequisitionNumber
         ? String(row.RequisitionNumber)
-        : labelOf(row),
-      requisitionNumber: row.RequisitionNumber
-        ? String(row.RequisitionNumber)
-        : '',
-      raw: row,
-    }));
+        : '';
+      const mapName = labelOf(row);
+      const reqDate = formatReqDate(row.RequisitionDate);
+
+      return {
+        // Display: "Trv-012321  ·  Official Tour  ·  20/08/2026"
+        label: [reqNumber, mapName, reqDate].filter(Boolean).join('  ·  '),
+        // Field holds the requisition number
+        value: reqNumber || mapName,
+        requisitionNumber: reqNumber,
+        mapToTravelRequisition: mapName,
+        requisitionDate: reqDate,
+        travelRequisitionAmount: row.TravelRequisitionAmount
+          ? String(row.TravelRequisitionAmount)
+          : '',
+        raw: row,
+      };
+    });
   } catch (err) {
     console.error(
       '[ExpMgmt MAPTRV] RetrieveMapTravelRequisitions SOAP error:',

@@ -102,14 +102,20 @@ const WorkflowHistoryScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      const onBackPress = () => {
-        handleGoBack();
-        return true;
-      };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+      const unsub = navigation.addListener('beforeRemove', e => {
+        console.log('[WFH] beforeRemove fired, cameFrom:', cameFrom);
+        if (!cameFrom) return;
+        e.preventDefault();
+        navigation.removeListener('beforeRemove', () => {}); // stop re-entry
+        navigation.reset({
+          index: 0,
+          routes: [
+            {name: 'DrawerNavigator', state: {routes: [{name: cameFrom}]}},
+          ],
+        });
+      });
+      return unsub;
+    }, [navigation, cameFrom]),
   );
 
   const handleRefresh = () => fetchWorkflowHistory();
@@ -131,13 +137,33 @@ const WorkflowHistoryScreen = () => {
   //   }
   // };
 
+  // const handleGoBack = () => {
+  //   if (navigation.canGoBack()) {
+  //     navigation.goBack(); // pops the actual entry beneath this screen
+  //   } else if (cameFrom) {
+  //     navigation.navigate(cameFrom); // fallback for deep-link / no back stack case
+  //   } else {
+  //     console.warn('[WorkflowHistory] No cameFrom and cannot goBack — stuck!');
+  //   }
+  // };
+
   const handleGoBack = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack(); // pops the actual entry beneath this screen
-    } else if (cameFrom) {
-      navigation.navigate(cameFrom); // fallback for deep-link / no back stack case
-    } else {
-      console.warn('[WorkflowHistory] No cameFrom and cannot goBack — stuck!');
+    console.log('[WFH] cameFrom:', cameFrom);
+    console.log(
+      '[WFH] parent state:',
+      JSON.stringify(
+        navigation.getParent()?.getState()?.routeNames ?? 'no parent',
+      ),
+    );
+    console.log(
+      '[WFH] own state:',
+      JSON.stringify(navigation.getState()?.routeNames),
+    );
+
+    if (cameFrom) {
+      navigation.navigate(cameFrom);
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
     }
   };
 
@@ -350,7 +376,7 @@ const WorkflowHistoryScreen = () => {
             {hasComment && (
               <View style={tl.commentBox}>
                 <Text style={tl.commentLabel}>Comment</Text>
-                <Text style={tl.commentText}>"{item.Comment}"</Text>
+                <Text style={tl.commentText}>{item.Comment}</Text>
               </View>
             )}
           </View>

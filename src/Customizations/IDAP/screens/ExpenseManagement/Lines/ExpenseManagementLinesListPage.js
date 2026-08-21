@@ -5,7 +5,7 @@
 // Requisition lines list: read-only cards, per-row delete, long-press bulk
 // delete, floating + to add — all gated on the parent header still being
 // editable.
-import React, {useCallback, useState, useEffect} from 'react';
+import React, {useCallback, useState, useEffect, useRef} from 'react';
 import {
   Text,
   RefreshControl,
@@ -52,6 +52,8 @@ const ExpenseManagementLinesListPage = () => {
   const route = useRoute();
   const P = usePalette();
   const {notifySuccess, notifyError} = useNotify('Expense Lines');
+  const {refresh} = route.params || {};
+  const handledRefreshRef = useRef(null);
 
   const {
     headerRecId,
@@ -369,17 +371,21 @@ const ExpenseManagementLinesListPage = () => {
     cameFrom,
   ]);
 
-  // Refetch on focus (also covers the refresh flag SaveRecord passes back).
   useFocusEffect(
     useCallback(() => {
+      if (refresh && handledRefreshRef.current !== refresh) {
+        handledRefreshRef.current = refresh;
+        f.resetFilters();
+      }
       setIsLoading(true);
       fetchLinesData();
-    }, [fetchLinesData]),
+    }, [fetchLinesData, refresh]),
   );
 
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        if (!navigation.isFocused()) return false;
         if (isMultiSelectMode) {
           exitSelectMode();
           return true;
@@ -387,10 +393,12 @@ const ExpenseManagementLinesListPage = () => {
         handleGoBack();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [isMultiSelectMode, handleGoBack]),
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
+    }, [isMultiSelectMode, handleGoBack, navigation]),
   );
 
   // ── Add a new line ──────────────────────────────────────────
@@ -788,13 +796,17 @@ const ExpenseManagementLinesListPage = () => {
                 <Text style={styles.DLP_NoDataSubText}>
                   No records match "{f.searchQuery}"
                 </Text>
+              ) : linesData.length > 0 ? (
+                <Text style={styles.DLP_NoDataText}>
+                  No lines match the current filters.
+                </Text>
               ) : (
                 <>
                   <Text style={styles.DLP_NoDataText}>
                     No Expense Lines yet
                   </Text>
                   <Text style={styles.DLP_NoDataSubText}>
-                    Tap the + button below to add your first expense
+                    Tap the + button below to add your first expense lines
                   </Text>
                 </>
               )}

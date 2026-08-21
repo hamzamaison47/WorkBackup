@@ -149,6 +149,7 @@ const ExpenseManagementSaveRecord = () => {
           : headerData.DateTo,
         MapToTravelRequisition: headerData.MapToTravelRequisition || '',
         RequisitionNumber: headerData.RequisitionNumber || '',
+        TravelRequisitionAmount: headerData.TravelRequisitionAmount || '',
       };
     }
     return {
@@ -161,6 +162,7 @@ const ExpenseManagementSaveRecord = () => {
       DateTo: '',
       MapToTravelRequisition: '',
       RequisitionNumber: '',
+      TravelRequisitionAmount: '',
     };
   }, [
     isEditMode,
@@ -241,7 +243,9 @@ const ExpenseManagementSaveRecord = () => {
         workerRecId: WorkerRecId,
       });
 
-      const formatted = (rows || []).filter(option => option.label);
+      const formatted = (rows || []).filter(
+        option => option.label && option.value,
+      );
 
       console.log(
         '[ExpMgmt MAPTRV] dropdown options:',
@@ -255,6 +259,35 @@ const ExpenseManagementSaveRecord = () => {
       setMapTrvOptions([]);
     }
   };
+
+  // Edit mode: the header `find` contract doesn't return TravelRequisitionAmount,
+  // so the field opens blank. Once the lookup rows land, resolve the amount from
+  // the option matching the saved RequisitionNumber.
+  useEffect(() => {
+    if (!isEditMode) return;
+    if (mapTrvOptions.length === 0) return;
+    if (!formData.RequisitionNumber) return;
+    if (formData.TravelRequisitionAmount) return; // already resolved
+
+    const match = mapTrvOptions.find(
+      o =>
+        String(o.requisitionNumber) === String(formData.RequisitionNumber) ||
+        String(o.value) === String(formData.RequisitionNumber),
+    );
+    if (!match) return;
+
+    setFormData(prev => ({
+      ...prev,
+      TravelRequisitionAmount: match.travelRequisitionAmount || '',
+      MapToTravelRequisition:
+        prev.MapToTravelRequisition || match.mapToTravelRequisition || '',
+    }));
+  }, [
+    isEditMode,
+    mapTrvOptions,
+    formData.RequisitionNumber,
+    formData.TravelRequisitionAmount,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -378,8 +411,9 @@ const ExpenseManagementSaveRecord = () => {
   const handleMapTrvChange = item => {
     setFormData(prev => ({
       ...prev,
-      MapToTravelRequisition: item.label,
-      RequisitionNumber: item.value,
+      MapToTravelRequisition: item.mapToTravelRequisition || '',
+      RequisitionNumber: item.requisitionNumber || item.value || '',
+      TravelRequisitionAmount: item.travelRequisitionAmount || '',
     }));
     clearFieldError('MapToTravelRequisition');
   };
@@ -666,6 +700,11 @@ const ExpenseManagementSaveRecord = () => {
                 keyboardAvoiding={true}
               />
               {renderError('MapToTravelRequisition')}
+
+              <Text style={styles.DSR_Label}>Travel requisition amount</Text>
+              <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+                {formData.TravelRequisitionAmount || '0.00'}
+              </Text>
 
               {/* Date From */}
               <Text style={styles.DSR_Label}>Date from *</Text>

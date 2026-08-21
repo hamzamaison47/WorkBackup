@@ -40,7 +40,7 @@ const WorkflowItemAction = async ({recId, action, memo}) => {
       </workflowBulkActionProcess>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-    console.log('Soap Envelope: ', soapEnvelope);
+    // console.log('Soap Envelope: ', soapEnvelope);
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,
@@ -54,7 +54,7 @@ const WorkflowItemAction = async ({recId, action, memo}) => {
         responseType: 'text',
       },
     );
-    console.log('RAW Response XML:', xml);
+    // console.log('RAW Response XML:', xml);
     // 🔵 Parse XML response
     const parser = new XMLParser({
       ignoreAttributes: false,

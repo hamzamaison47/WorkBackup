@@ -412,6 +412,14 @@ export default function useListFilters({
     return base;
   }, [sorted, selectedDateRange, activeDateField, activeFilter, classifyPill]);
 
+  const resetFilters = useCallback(() => {
+    setSearchQuery('');
+    setSortOrder(null);
+    setActiveFilter('All');
+    setSelectedDocumentTypes([]);
+    setSelectedDateRange('all');
+  }, []);
+
   const documentTypeCounts = useMemo(() => {
     const counts = {};
     documentTypes.forEach(type => {
@@ -531,6 +539,7 @@ export default function useListFilters({
     onDateRangeChange,
     setSelectedDocumentTypes,
     setSelectedDateRange,
+    resetFilters,
     // derived
     documentTypes,
     visiblePills,

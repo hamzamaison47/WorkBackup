@@ -154,7 +154,7 @@ const MedicalExpenseLinesSaveRecord = () => {
   const clearAllStates = useCallback(() => {
     setSubCategoryOptions([]);
     setPatientOptions([]);
-    setFormData(createInitialFormData());
+    // setFormData(createInitialFormData());
     setErrors({});
     setShowCalendar(false);
     hide(); // was: setAlertModal(false); setAlertMessage('');
@@ -195,6 +195,7 @@ const MedicalExpenseLinesSaveRecord = () => {
       userData: effectiveUserData,
       cameFrom: originalCameFrom || cameFrom || 'DrawerNavigator',
       forceShowAddButton: true,
+      refresh: Date.now(),
     });
   }, [
     clearAllStates,
@@ -213,9 +214,11 @@ const MedicalExpenseLinesSaveRecord = () => {
         goBack();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
     }, [goBack]),
   );
 
@@ -271,10 +274,6 @@ const MedicalExpenseLinesSaveRecord = () => {
               fetchPatientOptions(),
             ]);
             setDataFetched(true);
-
-            if (isEdit && lineData?.RecId) {
-              setFormData(createInitialFormData());
-            }
           } catch (error) {
             console.error('Error fetching lookup data:', error);
             showError('Failed to fetch data.');
@@ -297,7 +296,15 @@ const MedicalExpenseLinesSaveRecord = () => {
     useCallback(() => {
       setFormData(createInitialFormData());
       setErrors({});
-    }, [isEdit, lineData]),
+    }, [
+      isEdit,
+      lineData?.RecId,
+      lineData?.SubCategory,
+      lineData?.Name,
+      lineData?.ClaimedAmount,
+      lineData?.TransDate,
+      headerRecId,
+    ]),
   );
 
   const handleRefresh = useCallback(async () => {

@@ -229,14 +229,20 @@ const MedicalExpenseManagmentListPage = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
+        console.log(
+          '[BACK] HEADER handler, isFocused:',
+          navigation.isFocused(),
+        );
+        if (!navigation.isFocused()) return false; // ← add this
         handleGoBack();
         return true;
       };
-
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [navigation]),
+      const sub = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => sub.remove();
+    }, [handleGoBack, navigation]),
   );
 
   const handleCardPress = itemData => {
