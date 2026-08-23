@@ -92,6 +92,7 @@ const GetMileageAmountForExpense = async ({
     return {
       claimedAmount: parseFloat(record?.['a:ClaimedAmount']) || 0,
       amountInPKR: parseFloat(record?.['a:AmountInPKR']) || 0,
+      ratePerMile: parseFloat(record?.['a:RatePerMile']) || 0,
     };
   } catch (err) {
     console.error(

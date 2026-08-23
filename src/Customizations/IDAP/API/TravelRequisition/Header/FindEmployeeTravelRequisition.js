@@ -217,6 +217,7 @@ const FindEmployeeTravelRequisition = async workerRecId => {
         ToDate: toStr(pick(contract, 'ToDate')),
         NumberofDays: toStr(pick(contract, 'NumberofDays')),
         TravelType: toStr(pick(contract, 'TravelType')),
+        CreatedDateTime: toDate(pick(contract, 'CreatedDateTime')),
       };
     });
 

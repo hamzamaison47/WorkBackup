@@ -206,6 +206,11 @@ const ExpenseManagementLineSaveRecord = () => {
         ? String(lineData.Mileage)
         : ''
       : '',
+    RatePerMile: isEdit
+      ? lineData.RatePerMile != null
+        ? String(lineData.RatePerMile)
+        : ''
+      : '',
     DateFrom: isEdit ? toDateString(lineData.DateFrom) : '',
     DateTo: isEdit ? toDateString(lineData.DateTo) : '',
   });
@@ -574,6 +579,7 @@ const ExpenseManagementLineSaveRecord = () => {
           ...prev,
           ClaimedAmount: String(result.claimedAmount),
           AmountInPKR: String(result.amountInPKR),
+          RatePerMile: String(result.ratePerMile),
         }));
       } catch (error) {
         console.error('Expense mileage calculation error:', error);
@@ -681,6 +687,7 @@ const ExpenseManagementLineSaveRecord = () => {
       ClaimedAmount: '',
       AmountInPKR: '',
       ExchangeRate: '',
+      RatePerMile: '',
       DepartureLocation: '',
       DepartureDateTime: '',
       ArrivalLocation: '',
@@ -782,7 +789,7 @@ const ExpenseManagementLineSaveRecord = () => {
 
     if (FUTURE_BLOCKED_FIELDS[field] && isFutureDate(value)) {
       setErrors(prev => ({...prev, [field]: FUTURE_MSG}));
-      showWarning(`${FUTURE_BLOCKED_FIELDS[field]} — ${FUTURE_MSG}`);
+      showWarning(FUTURE_MSG);
       return; // don't write the value
     }
 
@@ -1190,6 +1197,17 @@ const ExpenseManagementLineSaveRecord = () => {
                     placeholderTextColor={AppTokens.subtitleText}
                   />
                   {renderError('Mileage')}
+                </>
+              )}
+
+              {currentGroup === 'mileage' && (
+                <>
+                  <Text style={styles.DSR_Label}>Rate per mile</Text>
+                  <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
+                    {isCalculatingPKR
+                      ? 'Calculating...'
+                      : formatDisplayAmount(formData.RatePerMile) || '0.00'}
+                  </Text>
                 </>
               )}
 

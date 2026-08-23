@@ -237,7 +237,7 @@ const DFEmployeeLeaveRequestListPage = () => {
 
   const f = useListFilters({
     data: historyData,
-    dateField: 'FromDateHistory',
+    dateField: 'CreatedDateTime',
     classifyPill: item => getStatusLabel(item.WfStatusHistory),
   });
 

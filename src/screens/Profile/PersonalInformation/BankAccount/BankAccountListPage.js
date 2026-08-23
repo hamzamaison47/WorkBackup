@@ -241,7 +241,7 @@ const BankAccountListPage = () => {
 
   const getButtonConfig = item => {
     const statusLabel = getStatusLabel(item.WFStatus);
-    const isEditable = statusLabel === 'Not Submitted' || statusLabel === 'HR'; // ← add HR
+    const isEditable = statusLabel === 'Draft';
     const isRejected = statusLabel === 'Rejected';
 
     return {
@@ -253,7 +253,7 @@ const BankAccountListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: P.primary,
-        disabled: !isEditable, // ← use isEditable
+        disabled: !isEditable,
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
       delete: {
@@ -264,13 +264,11 @@ const BankAccountListPage = () => {
         iconSize: 20,
         iconColor: '#fff',
         backgroundColor: P.primary,
-        disabled: !isEditable, // ← use isEditable
+        disabled: !isEditable,
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
-      // ...approval button also needs updating:
       approval: {
         show: false,
-        // ...
         actions: [
           {
             key: 'submit',

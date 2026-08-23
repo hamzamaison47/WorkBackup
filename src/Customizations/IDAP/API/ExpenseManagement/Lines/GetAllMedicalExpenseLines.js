@@ -129,6 +129,10 @@ const GetAllMedicalExpenseLines = async headerRecId => {
       const date = new Date(str);
       return isNaN(date.getTime()) ? null : date;
     };
+    console.log(
+      '[MedExp LINES] first contract raw:',
+      JSON.stringify(contractsArray[0] ?? {}),
+    );
 
     const lines = contractsArray.map(contract => ({
       RecId: toInt(pick(contract, 'RecId')),
@@ -142,6 +146,7 @@ const GetAllMedicalExpenseLines = async headerRecId => {
       TransAmount: toNumber(pick(contract, 'TransAmount')),
       AuthAmount: toNumber(pick(contract, 'AuthAmount')),
       IsReceiptAttached: toBoolean(pick(contract, 'IsReceiptAttached')),
+      CreatedDateTime: toDate(pick(contract, 'CreatedDateTime')),
     }));
 
     return lines;

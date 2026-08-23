@@ -115,7 +115,7 @@ const TravelRequisitionListPage = () => {
 
   const f = useListFilters({
     data: travelData,
-    dateField: 'RequisitionDate',
+    dateField: 'CreatedDateTime',
     classifyPill: item => getStatusLabel(item.ApprovalStatus),
   });
 
@@ -156,8 +156,8 @@ const TravelRequisitionListPage = () => {
       const headers = await FindEmployeeTravelRequisition(effectiveWorkerRecId);
 
       const sortedData = (headers || []).sort((a, b) => {
-        const dateA = a.RequisitionDate ? new Date(a.RequisitionDate) : 0;
-        const dateB = b.RequisitionDate ? new Date(b.RequisitionDate) : 0;
+        const dateA = a.CreatedDateTime ? new Date(a.CreatedDateTime) : 0;
+        const dateB = b.CreatedDateTime ? new Date(b.CreatedDateTime) : 0;
         return dateB - dateA;
       });
 

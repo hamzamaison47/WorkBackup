@@ -192,7 +192,9 @@ const FindExpenseManagementLines = async headerRecId => {
       ArrivalLocation: toStr(pick(contract, 'ArrivalLocation')),
       ArrivalDateTime: toDate(pick(contract, 'ArrivalDateTime')),
       Mileage: toNumber(pick(contract, 'Mileage')),
+      RatePerMile: toNumber(pick(contract, 'RatePerMile')),
       PersonnelNumber: toStr(pick(contract, 'PersonnelNumber')),
+      CreatedDateTime: toDate(pick(contract, 'CreatedDateTime')),
     }));
 
     // ── DIAGNOSTIC (keep until the wire shape is confirmed on first run) ──

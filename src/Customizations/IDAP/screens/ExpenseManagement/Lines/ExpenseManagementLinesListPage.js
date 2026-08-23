@@ -27,7 +27,6 @@ import {
 
 import {FindExpenseManagementLines} from '../../../API/ExpenseManagement/Lines/FindExpenseManagementLines';
 import {DeleteExpenseManagementLines} from '../../../API/ExpenseManagement/Lines/DeleteExpenseManagementLines';
-import TravelRequisitionSiteSurveyReport from './TravelRequisitionSiteSurveyReport';
 
 import AlertModal from '../../../../../components/Alert/AlertModal';
 import useAlertModal from '../../../../../hooks/useAlertModal';
@@ -294,15 +293,9 @@ const ExpenseManagementLinesListPage = () => {
     return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`;
   };
 
-  const formatNumber = value => {
-    const num = typeof value === 'number' ? value : parseFloat(value);
-    if (isNaN(num)) return 'N/A';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
-
   const f = useListFilters({
     data: linesData,
-    dateField: 'Transaction',
+    dateField: 'CreatedDateTime',
   });
 
   const fetchLinesData = useCallback(async () => {
@@ -325,11 +318,12 @@ const ExpenseManagementLinesListPage = () => {
 
     try {
       const lines = await FindExpenseManagementLines(headerRecId);
+      console.log('hjererearae', lines);
 
-      // Newest transaction first.
+      // Newest created first — matches the CreatedDateTime filter field.
       const sortedLines = (lines || []).sort((a, b) => {
-        const dateA = a.Transaction ? new Date(a.Transaction) : 0;
-        const dateB = b.Transaction ? new Date(b.Transaction) : 0;
+        const dateA = a.CreatedDateTime ? new Date(a.CreatedDateTime) : 0;
+        const dateB = b.CreatedDateTime ? new Date(b.CreatedDateTime) : 0;
         return dateB - dateA;
       });
 
@@ -647,6 +641,7 @@ const ExpenseManagementLinesListPage = () => {
       Transaction: formatDate(item.Transaction),
       ClaimedAmount: formatCurrency(item.ClaimedAmount),
       AmountInPKR: formatCurrency(item.AmountInPKR),
+      RatePerMile: formatCurrency(item.RatePerMile),
       MealReductionAmount: formatCurrency(item.MealReductionAmount),
       DepartureDateTime: formatDateTime(item.DepartureDateTime),
       ArrivalDateTime: formatDateTime(item.ArrivalDateTime),

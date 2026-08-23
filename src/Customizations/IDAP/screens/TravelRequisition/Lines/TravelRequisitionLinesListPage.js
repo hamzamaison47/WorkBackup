@@ -249,11 +249,9 @@ const TravelRequisitionLinesListPage = () => {
     return 'STANDARD';
   };
 
-  // Search + sort via useListFilters (no pills). Date filter + sort key off
-  // the line estimated date.
   const f = useListFilters({
     data: linesData,
-    dateField: 'EstimatedDate',
+    dateField: 'CreatedDateTime',
   });
 
   const fetchLinesData = useCallback(async () => {
@@ -273,8 +271,8 @@ const TravelRequisitionLinesListPage = () => {
       const lines = await FindTravelRequisitionLines(headerRecId);
 
       const sortedLines = (lines || []).sort((a, b) => {
-        const dateA = a.EstimatedDate ? new Date(a.EstimatedDate) : 0;
-        const dateB = b.EstimatedDate ? new Date(b.EstimatedDate) : 0;
+        const dateA = a.CreatedDateTime ? new Date(a.CreatedDateTime) : 0;
+        const dateB = b.CreatedDateTime ? new Date(b.CreatedDateTime) : 0;
         return dateB - dateA;
       });
 

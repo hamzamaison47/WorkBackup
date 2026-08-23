@@ -171,6 +171,7 @@ const FindTravelRequisitionLines = async headerRecId => {
       Mileage: toNumber(pick(contract, 'Mileage')),
       PerDiemFromDate: toDate(pick(contract, 'PerDiemFromDate')),
       PerDiemToDate: toDate(pick(contract, 'PerDiemToDate')),
+      CreatedDateTime: toDate(pick(contract, 'CreatedDateTime')),
     }));
 
     return lines;
