@@ -183,6 +183,7 @@ const FindExpenseManagementLines = async headerRecId => {
       Transaction: toDate(pick(contract, 'Transaction')),
       ClaimedAmount: toNumber(pick(contract, 'ClaimedAmount')),
       ExchangeCode: toStr(pick(contract, 'ExchangeCode')),
+      ExchangeRate: toNumber(pick(contract, 'ExchangeRate')), // ← add this
       AmountInPKR: toNumber(pick(contract, 'AmountInPKR')),
       MealReductionAmount: toNumber(pick(contract, 'MealReductionAmount')),
       DateFrom: toDate(pick(contract, 'DateFrom')),

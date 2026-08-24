@@ -153,6 +153,7 @@ const ExpenseManagementLinesListPage = () => {
           {key: 'Transaction', label: 'Transaction date', type: 'text'},
           {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
           {key: 'ExchangeCode', label: 'Currency', type: 'text'},
+          {key: 'ExchangeRate', label: 'Exchange rate', type: 'text'},
         ],
         expandableFields: [
           {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'},
@@ -198,6 +199,8 @@ const ExpenseManagementLinesListPage = () => {
         {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
         {key: 'ClaimedAmount', label: 'Transaction amount', type: 'text'},
         {key: 'ExchangeCode', label: 'Currency', type: 'text'},
+        {key: 'ExchangeRate', label: 'Exchange rate', type: 'text'}, // ← add
+        {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'}, // ← add
       ],
       expandableFields: [
         {key: 'DepartureLocation', label: 'Departure location', type: 'text'},
@@ -638,6 +641,9 @@ const ExpenseManagementLinesListPage = () => {
       ...item,
       CostType: item.CostType || 'N/A',
       ExchangeCode: item.ExchangeCode || 'N/A',
+      ExchangeRate: item.ExchangeRate
+        ? (Number(item.ExchangeRate) / 100).toFixed(3)
+        : 'N/A',
       Transaction: formatDate(item.Transaction),
       ClaimedAmount: formatCurrency(item.ClaimedAmount),
       AmountInPKR: formatCurrency(item.AmountInPKR),
