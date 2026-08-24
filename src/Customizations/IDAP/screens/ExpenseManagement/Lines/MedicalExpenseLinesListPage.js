@@ -665,7 +665,7 @@ const MedicalExpenseLinesListPage = () => {
                   fontWeight: '600',
                   fontSize: 12,
                 }}>
-                OPD Claim Report
+                OPD Medical Claim
               </Text>
             </TouchableOpacity>
           </View>
