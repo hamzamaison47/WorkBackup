@@ -35,6 +35,7 @@ import {DeleteEducationDetails} from '../../../../API/PersonalInformation/Educat
 import {SubmitEducationRequest} from '../../../../API/PersonalInformation/Education/SubmitEducationRequest';
 import {isEducationWorkflowConfigured} from '../../../../API/PersonalInformation/Education/isEducationWorkflowEnabled';
 import {GetPersonalEducationLabel} from '../../../../API/PersonalInformation/Education/GetPersonalEducationLabel';
+import RecallWorkflowRecordGeneric from '../../../../API/WorkflowTrackingStatusTable/RecallWorkflowRecordGeneric';
 import useNotify from '../../../../hooks/useNotify';
 import useListFilters from '../../../../hooks/useListFilters';
 import usePalette from '../../../../hooks/usePalette';
@@ -82,6 +83,11 @@ const PersonalEducationListPage = () => {
   // DFEmployeeLeaveRequestListPage / IdentificationNumberListPage.
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [submitTargetItem, setSubmitTargetItem] = useState(null);
+  // Recall-comment modal state — recall opens this to collect an optional
+  // comment before calling the API, same pattern as the submit comment flow.
+  const [recallCommentModalVisible, setRecallCommentModalVisible] =
+    useState(false);
+  const [recallTargetItem, setRecallTargetItem] = useState(null);
 
   /* ---------- fetch ---------- */
   const fetchEducationData = useCallback(async () => {
@@ -177,6 +183,58 @@ const PersonalEducationListPage = () => {
     });
   };
 
+  const handleRecallPress = async (itemData, comment = '') => {
+    setIsProcessing(true);
+    setButtonProcessing(itemData.RecId, 'recall', true);
+
+    try {
+      const result = await RecallWorkflowRecordGeneric({
+        tableId: Number(itemData.TableId),
+        recId: itemData.RecId,
+        comment,
+      });
+
+      if (String(result?.IsSuccess).toLowerCase() === 'true') {
+        notifySuccess('Education record recalled successfully.');
+        showSuccess('Education record recalled successfully.');
+        setHighlightedRecId(itemData.RecId);
+        setTimeout(() => setHighlightedRecId(null), 3000);
+        setTimeout(() => fetchEducationData(), 1000);
+      } else {
+        showError(result?.Message || 'Failed to recall request.');
+      }
+    } catch (error) {
+      console.error('Recall error:', error);
+      showError('Failed to recall request.');
+    } finally {
+      setIsProcessing(false);
+      setButtonProcessing(itemData.RecId, 'recall', false);
+    }
+  };
+
+  const openRecallCommentModal = itemData => {
+    setRecallTargetItem(itemData);
+    setRecallCommentModalVisible(true);
+  };
+
+  const closeRecallCommentModal = () => {
+    if (isProcessing) return;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalCancel = () => {
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalSubmit = comment => {
+    const item = recallTargetItem;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+    if (item) handleRecallPress(item, comment);
+  };
+
   /* ---------- status ---------- */
   const getStatusLabel = status => {
     if (!status) return 'HR'; // ← was 'Approved'
@@ -233,6 +291,7 @@ const PersonalEducationListPage = () => {
     const canDelete = isDraft || isCancelled;
     const isHCMRecord = statusLabel === '';
     const isRejected = statusLabel === 'Rejected';
+    const isInReview = statusLabel === 'In review'; // ← add this
 
     return {
       edit: {
@@ -302,6 +361,10 @@ const PersonalEducationListPage = () => {
                 },
               ]
             : []),
+          // Recall: In review only, placed right after View History
+          ...(isInReview
+            ? [{key: 'recall', label: 'Recall', icon: 'rotate-ccw'}]
+            : []),
         ],
       },
     };
@@ -334,6 +397,9 @@ const PersonalEducationListPage = () => {
         break;
       case 'viewHistory': // ← add this
         handleViewHistory(itemData);
+        break;
+      case 'recall': // ← add this
+        openRecallCommentModal(itemData);
         break;
       default:
         console.log('Unknown button type:', buttonType);
@@ -671,6 +737,16 @@ const PersonalEducationListPage = () => {
         onCancel={handleCommentModalCancel}
         onSubmit={handleCommentModalSubmit}
         onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
+      />
+
+      <WorkflowCommentModal
+        visible={recallCommentModalVisible}
+        title="Recall Education Details"
+        message="Add a comment for the recall, or cancel to close the dialog."
+        onCancel={handleRecallCommentModalCancel}
+        onSubmit={handleRecallCommentModalSubmit}
+        onRequestClose={closeRecallCommentModal}
         isProcessing={isProcessing}
       />
     </ActionPaneContainer>

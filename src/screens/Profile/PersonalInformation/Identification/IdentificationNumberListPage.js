@@ -26,6 +26,7 @@ import {DeleteIdentityRequest} from '../../../../API/PersonalInformation/Identif
 import {canEnableEditButton} from '../../../../API/PersonalInformation/Identification/canEnableEditButton';
 import {translate as t} from '../../../../store/utils/translate';
 import {retrieveESSIdentificationtableTableRecId} from '../../../../API/PersonalInformation/Identification/retrieveESSIdentificationtableTableRecId&TableId';
+import RecallWorkflowRecordGeneric from '../../../../API/WorkflowTrackingStatusTable/RecallWorkflowRecordGeneric';
 
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import AlertDeleteModal from '../../../../components/Alert/AlertDeleteModal';
@@ -90,6 +91,11 @@ const IdentificationNumberListPage = () => {
   // DFEmployeeLeaveRequestListPage.
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [submitTargetItem, setSubmitTargetItem] = useState(null);
+  // Recall-comment modal state — recall opens this to collect an optional
+  // comment before calling the API, same pattern as the submit comment flow.
+  const [recallCommentModalVisible, setRecallCommentModalVisible] =
+    useState(false);
+  const [recallTargetItem, setRecallTargetItem] = useState(null);
 
   // Fetch Identification Data
   const fetchIdentifications = useCallback(async () => {
@@ -229,6 +235,60 @@ const IdentificationNumberListPage = () => {
     }
   };
 
+  const handleRecallPress = async (itemData, comment = '') => {
+    setIsProcessing(true);
+    setButtonProcessing(itemData.RecId, 'recall', true);
+
+    try {
+      const {tableId, recId} = await fetchTableIdAndRecId(itemData);
+
+      const result = await RecallWorkflowRecordGeneric({
+        tableId: Number(tableId),
+        recId: recId,
+        comment,
+      });
+
+      if (String(result?.IsSuccess).toLowerCase() === 'true') {
+        notifySuccess('Identification record recalled successfully.');
+        showSuccess('Identification record recalled successfully.');
+        setHighlightedRecId(itemData.RecId);
+        setTimeout(() => setHighlightedRecId(null), 3000);
+        setTimeout(() => fetchIdentifications(), 1000);
+      } else {
+        showError(result?.Message || 'Failed to recall request.');
+      }
+    } catch (error) {
+      console.error('Recall error:', error);
+      showError('Failed to recall request.');
+    } finally {
+      setIsProcessing(false);
+      setButtonProcessing(itemData.RecId, 'recall', false);
+    }
+  };
+
+  const openRecallCommentModal = itemData => {
+    setRecallTargetItem(itemData);
+    setRecallCommentModalVisible(true);
+  };
+
+  const closeRecallCommentModal = () => {
+    if (isProcessing) return;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalCancel = () => {
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalSubmit = comment => {
+    const item = recallTargetItem;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+    if (item) handleRecallPress(item, comment);
+  };
+
   const getStatusLabel = status => {
     if (!status) return 'HR'; // ← was 'Approved'
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
@@ -295,6 +355,7 @@ const IdentificationNumberListPage = () => {
     const isHCMRecord = statusLabel === 'HR'; // ← was === ''
     const isRejected = statusLabel === 'Rejected';
     const isCancelled = statusLabel === 'Cancelled';
+    const isInReview = statusLabel === 'In Review'; // ← add thi
 
     return {
       edit: {
@@ -366,6 +427,10 @@ const IdentificationNumberListPage = () => {
                 },
               ]
             : []),
+          // Recall: In review only, placed right after View History
+          ...(isInReview
+            ? [{key: 'recall', label: 'Recall', icon: 'rotate-ccw'}]
+            : []),
         ],
       },
     };
@@ -398,6 +463,9 @@ const IdentificationNumberListPage = () => {
         break;
       case 'viewHistory': // ← add this
         handleViewHistory(itemData);
+        break;
+      case 'recall': // ← add this
+        openRecallCommentModal(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);
@@ -760,6 +828,16 @@ const IdentificationNumberListPage = () => {
         onCancel={handleCommentModalCancel}
         onSubmit={handleCommentModalSubmit}
         onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
+      />
+
+      <WorkflowCommentModal
+        visible={recallCommentModalVisible}
+        title="Recall Identification Number"
+        message="Add a comment for the recall, or cancel to close the dialog."
+        onCancel={handleRecallCommentModalCancel}
+        onSubmit={handleRecallCommentModalSubmit}
+        onRequestClose={closeRecallCommentModal}
         isProcessing={isProcessing}
       />
     </ActionPaneContainer>

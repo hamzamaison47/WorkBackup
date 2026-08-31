@@ -24,6 +24,7 @@ import DynamicAttachmentModal from '../../../../../shared/DynamicAttachmentModal
 import {GetAllExpenseManagementHeaders} from '../../../API/ExpenseManagement/Header/GetAllExpenseManagementHeaders';
 import {DeleteExpenseReports} from '../../../../../API/ExpenseManagment/Headers/DeleteExpenseReports';
 import {SubmitExpenseManagementHeader} from '../../../API/ExpenseManagement/Header/SubmitExpenseManagementHeader';
+import RecallWorkflowRecordGeneric from '../../../../../API/WorkflowTrackingStatusTable/RecallWorkflowRecordGeneric';
 import {translate as t} from '../../../../../store/utils/translate';
 import DynamicRequestCard from '../../../../../components/DynamicRequestCard';
 import ActionPaneContainer from '../../../../../components/ActionPaneContainer';
@@ -64,6 +65,11 @@ const MedicalExpenseManagmentListPage = () => {
   const effectiveWorkerRecId = WorkerRecId || effectiveUserData?.WorkerRecId;
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [submitTargetItem, setSubmitTargetItem] = useState(null);
+  // Recall-comment modal state — recall opens this to collect an optional
+  // comment before calling the API, same pattern as the submit comment flow.
+  const [recallCommentModalVisible, setRecallCommentModalVisible] =
+    useState(false);
+  const [recallTargetItem, setRecallTargetItem] = useState(null);
 
   // State
   const [isLoading, setIsLoading] = useState(true);
@@ -333,6 +339,7 @@ const MedicalExpenseManagmentListPage = () => {
   const getButtonConfig = item => {
     const isDraft = item.ApprovalStatus === 'Draft';
     const isRejected = getStatusLabel(item.ApprovalStatus) === 'Rejected';
+    const isPending = item.ApprovalStatus === 'In review';
 
     return {
       edit: {
@@ -388,6 +395,9 @@ const MedicalExpenseManagmentListPage = () => {
           ...(!isDraft
             ? [{key: 'viewHistory', label: 'View History', icon: 'clock'}]
             : []),
+          ...(isPending
+            ? [{key: 'recall', label: 'Recall', icon: 'rotate-ccw'}]
+            : []),
         ],
       },
     };
@@ -399,6 +409,7 @@ const MedicalExpenseManagmentListPage = () => {
     else if (buttonType === 'submit') openSubmitCommentModal(item);
     else if (buttonType === 'viewHistory') handleViewHistory(item);
     else if (buttonType === 'attachment') handleAttachmentPress(item);
+    else if (buttonType === 'recall') openRecallCommentModal(item);
   };
 
   const handleDeletePress = itemData => {
@@ -456,6 +467,60 @@ const MedicalExpenseManagmentListPage = () => {
         setButtonProcessing(recId, 'submit', false);
       }
     }, 100);
+  };
+
+  const handleRecallPress = (itemData, comment = '') => {
+    const recId = normalizeRecId(itemData);
+
+    setTimeout(async () => {
+      setIsProcessing(true);
+      setButtonProcessing(recId, 'recall', true);
+
+      try {
+        const result = await RecallWorkflowRecordGeneric({
+          tableId: Number(itemData.TableId),
+          recId,
+          comment,
+        });
+
+        if (String(result?.IsSuccess).toLowerCase() === 'true') {
+          notifySuccess('Medical expense report recalled successfully.');
+          showSuccess('Medical expense report recalled successfully.');
+          setTimeout(() => fetchExpenseData(), 1000);
+        } else {
+          notifyError(result?.Message);
+          showError(result?.Message || 'Failed to recall request.');
+        }
+      } catch (error) {
+        showError(extractErrorMessage(error.message));
+      } finally {
+        setIsProcessing(false);
+        setButtonProcessing(recId, 'recall', false);
+      }
+    }, 100);
+  };
+
+  const openRecallCommentModal = itemData => {
+    setRecallTargetItem(itemData);
+    setRecallCommentModalVisible(true);
+  };
+
+  const closeRecallCommentModal = () => {
+    if (isProcessing) return;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalCancel = () => {
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalSubmit = comment => {
+    const item = recallTargetItem;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+    if (item) handleRecallPress(item, comment);
   };
 
   const extractErrorMessage = rawMessage => {
@@ -697,6 +762,16 @@ const MedicalExpenseManagmentListPage = () => {
         onCancel={handleCommentModalCancel}
         onSubmit={handleCommentModalSubmit}
         onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
+      />
+
+      <WorkflowCommentModal
+        visible={recallCommentModalVisible}
+        title="Recall Medical Expense Report"
+        message="Add a comment for the recall, or cancel to close the dialog."
+        onCancel={handleRecallCommentModalCancel}
+        onSubmit={handleRecallCommentModalSubmit}
+        onRequestClose={closeRecallCommentModal}
         isProcessing={isProcessing}
       />
     </ActionPaneContainer>

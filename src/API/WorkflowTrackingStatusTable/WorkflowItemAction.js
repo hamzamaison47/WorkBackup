@@ -40,7 +40,7 @@ const WorkflowItemAction = async ({recId, action, memo}) => {
       </workflowBulkActionProcess>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-    // console.log('Soap Envelope: ', soapEnvelope);
+    console.log('Soap Envelope: ', soapEnvelope);
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/EssWorkflowSvcGroup`,
       soapEnvelope,
@@ -73,6 +73,8 @@ const WorkflowItemAction = async ({recId, action, memo}) => {
       parsed?.['Envelope']?.['Body']?.['workflowBulkActionProcessResponse']?.[
         'result'
       ];
+
+    console.log('Extracted result:', result); // ← and this
 
     if (!result) {
       console.log('No result found in workflowBulkActionProcess response');

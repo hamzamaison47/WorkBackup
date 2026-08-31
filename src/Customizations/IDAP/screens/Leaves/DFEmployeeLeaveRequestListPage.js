@@ -36,6 +36,7 @@ import {retrieveEmployeeAvailableLeaves} from '../../API/Leaves/retrieveEmployee
 import DeleteDFEmployeeLeaveHistory from '../../API/Leaves/deleteDFEmploeeLeaveHistory';
 import submitDFEmployeeLeaveRequest from '../../API/Leaves/submitDFEmployeeLeaveRequest';
 import {findEmployeePenaltyLeaves} from '../../API/Leaves/findEmployeePenaltyLeaves';
+import RecallWorkflowRecordGeneric from '../../../../API/WorkflowTrackingStatusTable/RecallWorkflowRecordGeneric';
 import useNotify from '../../../../hooks/useNotify';
 import useListFilters from '../../../../hooks/useListFilters';
 import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
@@ -197,6 +198,11 @@ const DFEmployeeLeaveRequestListPage = () => {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [submitTargetItem, setSubmitTargetItem] = useState(null);
   const {notifySuccess, notifyError, notifyDelete} = useNotify('Leave Request');
+  // Recall-comment modal state — recall opens this to collect an optional
+  // comment before calling the API, same pattern as the submit comment flow.
+  const [recallCommentModalVisible, setRecallCommentModalVisible] =
+    useState(false);
+  const [recallTargetItem, setRecallTargetItem] = useState(null);
 
   // ---------------- Page label ----------------
   const getPageLabel = () => {
@@ -260,7 +266,7 @@ const DFEmployeeLeaveRequestListPage = () => {
       const data = await findEmployeeLeaveHistory({
         employeeId: effectiveEmployeeId,
       });
-      // console.log('Here is leave data', data);
+      console.log('Here is leave data', data);
       setHistoryData(data || []);
     } catch (error) {
       showError('Failed to fetch leave history');
@@ -873,6 +879,60 @@ const DFEmployeeLeaveRequestListPage = () => {
     if (item) handleSubmitPress(item, comment);
   };
 
+  const handleRecallPress = async (itemData, comment = '') => {
+    const recId = itemData.LeaveRequestRecId;
+
+    setIsProcessing(true);
+    setButtonProcessing(recId, 'recall', true);
+
+    try {
+      const result = await RecallWorkflowRecordGeneric({
+        tableId: Number(itemData.TableId),
+        recId: recId,
+        comment,
+      });
+
+      if (String(result?.IsSuccess).toLowerCase() === 'true') {
+        notifySuccess('Leave request recalled successfully.');
+        showSuccess('Leave request recalled successfully.');
+        setHighlightedRecId(recId);
+        setTimeout(() => setHighlightedRecId(null), 3000);
+        setTimeout(() => fetchHistory(), 1000);
+      } else {
+        showError(result?.Message || 'Failed to recall request.');
+      }
+    } catch (error) {
+      console.error('Recall error:', error);
+      showError('Failed to recall request.');
+    } finally {
+      setIsProcessing(false);
+      setButtonProcessing(recId, 'recall', false);
+    }
+  };
+
+  const openRecallCommentModal = itemData => {
+    setRecallTargetItem(itemData);
+    setRecallCommentModalVisible(true);
+  };
+
+  const closeRecallCommentModal = () => {
+    if (isProcessing) return;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalCancel = () => {
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+  };
+
+  const handleRecallCommentModalSubmit = comment => {
+    const item = recallTargetItem;
+    setRecallCommentModalVisible(false);
+    setRecallTargetItem(null);
+    if (item) handleRecallPress(item, comment);
+  };
+
   // ---------------- History Card render ----------------
   const handleButtonPress = (buttonType, itemData) => {
     switch (buttonType) {
@@ -890,6 +950,9 @@ const DFEmployeeLeaveRequestListPage = () => {
         break;
       case 'viewHistory':
         handleViewHistory(itemData);
+        break;
+      case 'recall':
+        openRecallCommentModal(itemData);
         break;
       default:
         console.log('Unknown button pressed:', buttonType);
@@ -911,6 +974,7 @@ const DFEmployeeLeaveRequestListPage = () => {
   const getButtonConfig = item => {
     const statusLabel = getStatusLabel(item.WfStatusHistory);
     const isDraft = statusLabel === 'Draft';
+    const isInReview = statusLabel === 'In review';
 
     return {
       delete: {
@@ -945,19 +1009,12 @@ const DFEmployeeLeaveRequestListPage = () => {
         disabled: false,
         actions: [
           ...(isDraft
-            ? [
-                {
-                  key: 'submit',
-                  label: 'Submit',
-                  icon: 'send',
-                },
-              ]
+            ? [{key: 'submit', label: 'Submit', icon: 'send'}]
             : [
-                {
-                  key: 'viewHistory',
-                  label: 'View History',
-                  icon: 'clock',
-                },
+                {key: 'viewHistory', label: 'View History', icon: 'clock'},
+                ...(isInReview
+                  ? [{key: 'recall', label: 'Recall', icon: 'rotate-ccw'}]
+                  : []),
               ]),
         ],
       },
@@ -1108,6 +1165,15 @@ const DFEmployeeLeaveRequestListPage = () => {
         onCancel={handleCommentModalCancel}
         onSubmit={handleCommentModalSubmit}
         onRequestClose={closeSubmitCommentModal}
+        isProcessing={isProcessing}
+      />
+      <WorkflowCommentModal
+        visible={recallCommentModalVisible}
+        title="Recall Leave Request"
+        message="Add a comment for the recall, or cancel to close the dialog."
+        onCancel={handleRecallCommentModalCancel}
+        onSubmit={handleRecallCommentModalSubmit}
+        onRequestClose={closeRecallCommentModal}
         isProcessing={isProcessing}
       />
     </ActionPaneContainer>
