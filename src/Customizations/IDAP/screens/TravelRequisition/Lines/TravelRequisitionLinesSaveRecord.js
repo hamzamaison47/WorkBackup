@@ -635,12 +635,9 @@ const TravelRequisitionLinesSaveRecord = () => {
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
     const mins = String(d.getMinutes()).padStart(2, '0');
-    let hours = d.getHours();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-    return `${day}/${month}/${year} ${hours}:${mins} ${ampm}`;
+    return `${day}/${month}/${year} ${hours}:${mins}`;
   };
 
   // Used for EstimatedDate — noon is fine here since only the calendar day
@@ -1226,6 +1223,8 @@ const TravelRequisitionLinesSaveRecord = () => {
         open={dateTimeField !== null}
         date={dateTimePickerInitialDate()}
         mode="datetime"
+        is24hourSource="locale"
+        locale="en-GB"
         onConfirm={handleDateTimeConfirm}
         onCancel={() => setDateTimeField(null)}
       />

@@ -8,24 +8,98 @@ import {createSoapEnvelope} from '../../../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../../../Controller/secureConfig';
 import {EXP_MGMT_LINES_CONTRACT, EXP_MGMT_LINES_GROUP} from './serviceConfig';
 
-// Serializes to the D365 dateTime literal YYYY-MM-DDTHH:MM:SS. Unlike the
-// header's date-only members, these are TrvDateTime, so an existing time
-// component is PRESERVED rather than flattened to midnight. String inputs keep
-// their calendar day verbatim so no timezone shift can move the date.
+// // Serializes to the D365 dateTime literal YYYY-MM-DDTHH:MM:SS. Unlike the
+// // header's date-only members, these are TrvDateTime, so an existing time
+// // component is PRESERVED rather than flattened to midnight. String inputs keep
+// // their calendar day verbatim so no timezone shift can move the date.
+// const toIsoDateTime = value => {
+//   if (!value) return '';
+
+//   if (typeof value === 'string') {
+//     // Already a full ISO-ish literal — keep date + time, drop any zone suffix.
+//     const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/);
+//     if (match) return `${match[1]}T${match[2]}`;
+
+//     // Date-only string — default to midnight.
+//     const dateOnly = value.match(/^(\d{4}-\d{2}-\d{2})$/);
+//     if (dateOnly) return `${dateOnly[1]}T00:00:00`;
+//   }
+
+//   const d = value instanceof Date ? value : new Date(value);
+//   if (isNaN(d.getTime())) return '';
+
+//   const pad = n => String(n).padStart(2, '0');
+//   return (
+//     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+//     `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+//   );
+// };
+
+const getOffsetSuffix = date => {
+  const offsetMin = -date.getTimezoneOffset(); // e.g. +300 for GMT+5
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMin);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${sign}${hh}:${mm}`;
+};
+
 const toIsoDateTime = value => {
   if (!value) return '';
 
-  if (typeof value === 'string') {
-    // Already a full ISO-ish literal — keep date + time, drop any zone suffix.
-    const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/);
-    if (match) return `${match[1]}T${match[2]}`;
-
-    // Date-only string — default to midnight.
-    const dateOnly = value.match(/^(\d{4}-\d{2}-\d{2})$/);
-    if (dateOnly) return `${dateOnly[1]}T00:00:00`;
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const match = String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+    );
+    if (!match) return '';
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] =
+      match;
+    d = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
   }
 
-  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return '';
+
+  const pad = n => String(n).padStart(2, '0');
+  const literal =
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  return `${literal}${getOffsetSuffix(d)}`;
+};
+
+const toIsoDateTimeLiteral = value => {
+  if (!value) return '';
+
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const match = String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+    );
+    if (!match) return '';
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] =
+      match;
+    d = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
+  }
+
   if (isNaN(d.getTime())) return '';
 
   const pad = n => String(n).padStart(2, '0');
@@ -96,8 +170,8 @@ const CreateExpenseManagementLine = async ({
       ['ArrivalLocation', escapeXml(ArrivalLocation)],
       ['ClaimedAmount', toNumber(ClaimedAmount)],
       ['CostType', escapeXml(CostType)],
-      ['DateFrom', toIsoDateTime(DateFrom)],
-      ['DateTo', toIsoDateTime(DateTo)],
+      ['DateFrom', toIsoDateTimeLiteral(DateFrom)],
+      ['DateTo', toIsoDateTimeLiteral(DateTo)],
       ['DepartureDateTime', toIsoDateTime(DepartureDateTime)],
       ['DepartureLocation', escapeXml(DepartureLocation)],
       ['ExchangeCode', escapeXml(ExchangeCode)],

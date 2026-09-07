@@ -6,6 +6,81 @@ import {createSoapEnvelope} from '../../../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../../../Controller/secureConfig';
 import {EXP_MGMT_LINES_CONTRACT, EXP_MGMT_LINES_GROUP} from './serviceConfig';
 
+// ── ADD HERE ──────────────────────────────────────────────────────────
+const getOffsetSuffix = date => {
+  const offsetMin = -date.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMin);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${sign}${hh}:${mm}`;
+};
+
+const toIsoDateTime = value => {
+  if (!value) return '';
+
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const match = String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+    );
+    if (!match) return '';
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] =
+      match;
+    d = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
+  }
+
+  if (isNaN(d.getTime())) return '';
+
+  const pad = n => String(n).padStart(2, '0');
+  const literal =
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  return `${literal}${getOffsetSuffix(d)}`;
+};
+
+const toIsoDateTimeLiteral = value => {
+  if (!value) return '';
+
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const match = String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+    );
+    if (!match) return '';
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] =
+      match;
+    d = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
+  }
+
+  if (isNaN(d.getTime())) return '';
+
+  const pad = n => String(n).padStart(2, '0');
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  );
+};
+
 // Calls DFExpenseManagementLinesSvcNew.getEstimatedAmountForPerDiem.
 // PersonnelNumber is REQUIRED — X++ resolves it via
 // HcmWorker::findByPersonnelNumber() to set CreatingWorker, which perDiem()
@@ -38,8 +113,12 @@ const GetEstimatedAmountForPerDiemExpense = async ({
       <a:ArrivalLocation i:nil="true"/>
       <a:ClaimedAmount>0</a:ClaimedAmount>
       <a:CostType>${CostType || ''}</a:CostType>
-      <a:DateFrom>${DateFrom || '0001-01-01T00:00:00'}</a:DateFrom>
-      <a:DateTo>${DateTo || '0001-01-01T00:00:00'}</a:DateTo>
+      <a:DateFrom>${
+        toIsoDateTimeLiteral(DateFrom) || '0001-01-01T00:00:00'
+      }</a:DateFrom>
+      <a:DateTo>${
+        toIsoDateTimeLiteral(DateTo) || '0001-01-01T00:00:00'
+      }</a:DateTo>
       <a:DepartureDateTime>0001-01-01T00:00:00</a:DepartureDateTime>
       <a:DepartureLocation i:nil="true"/>
       <a:ExchangeCode i:nil="true"/>
@@ -48,7 +127,9 @@ const GetEstimatedAmountForPerDiemExpense = async ({
       <a:MealReductionAmount i:nil="true"/>
       <a:Mileage>0</a:Mileage>
       <a:PersonnelNumber>${PersonnelNumber || ''}</a:PersonnelNumber>
-      <a:Transaction>${Transaction || '0001-01-01T00:00:00'}</a:Transaction>
+      <a:Transaction>${
+        toIsoDateTime(Transaction) || '0001-01-01T00:00:00'
+      }</a:Transaction>
     </_contract>
   </getEstimatedAmountForPerDiem>`;
 

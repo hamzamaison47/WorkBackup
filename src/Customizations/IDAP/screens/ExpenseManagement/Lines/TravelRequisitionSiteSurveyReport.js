@@ -941,7 +941,9 @@ const TravelRequisitionSiteSurveyReport = () => {
       if (result.IsSuccess) {
         notifySuccess(result.Message || 'Site Survey saved successfully.');
         showSuccess(result.Message || 'Site Survey saved successfully.');
-        fetchSurveyData();
+        setTimeout(() => {
+          handleGoBack();
+        }, 1000);
       } else {
         notifyError(result.Message || 'Failed to save Site Survey.');
         showError(result.Message || 'Failed to save Site Survey.');

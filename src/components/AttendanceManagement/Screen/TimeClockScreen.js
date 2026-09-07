@@ -5,8 +5,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/AttendanceManagement/screens/TimeClockScreen.js
 //
-// P0.3 — Reordered validation pipeline: local checks → Face → QR → SOAP.
-//         If Face/QR fail, zero SOAP calls are wasted.
+// P0.3 — Reordered validation pipeline: local checks → Face → SOAP.
+//         If Face fails, zero SOAP calls are wasted. The QR gate now runs on
+//         the confirm screens' Confirm button, not here.
 // P2.5 — AttendanceOrchestrator wired in. prepare() fires 2 parallel SOAP
 //         calls and returns a ValidationToken passed to confirm screens.
 // P3.2 — prewarmToken() + NetInfo.fetch() called on mount so token and
@@ -40,10 +41,7 @@ import NavigationFAB from '../NavigationFAB';
 import ConfirmClockInScreen from './ConfirmClockInScreen';
 import ConfirmBreakScreen from './ConfirmBreakScreen';
 import ConfirmClockOutScreen from './ConfirmClockOutScreen';
-import QRScannerModal, {
-  isQRCodeActive,
-  isFaceRecognitionActive,
-} from '../QRScannerModal';
+import {isFaceRecognitionActive} from '../QRScannerModal';
 import FaceVerificationModal from '../FaceVerificationModal';
 import {
   getActionFence,
@@ -78,7 +76,6 @@ import {
 } from '../../../services/AttendanceManagement/AttendanceHeadlessTask';
 import useAttendanceTheme from '../useAttendanceTheme';
 import useAttendanceNotificationAction from '../../../hooks/useAttendanceNotificationAction';
-import {ValidateQRCode} from '../../../API/AttendanceManagement/ValidateQRCode';
 import {initSyncListener} from '../../../services/AttendanceManagement/SyncManager';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
 import DeviceInfo from 'react-native-device-info';
@@ -637,7 +634,7 @@ const ActionButtons = ({
       )}
       {status === 'in' && (
         <>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               AB.btn,
               {backgroundColor: DK.accentAmber},
@@ -646,7 +643,7 @@ const ActionButtons = ({
             onPress={onBreakStart}
             disabled={breakDisabled}>
             <Text style={AB.txt}>☕ Start Break</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity
             style={[
               AB.btn,
@@ -725,14 +722,10 @@ const TimeClockScreen = ({onNavigate}) => {
   const [pendingAction, setPendingAction] = useState(null);
   const [preFaceModalVisible, setPreFaceModalVisible] = useState(false);
   const [preFaceResult, setPreFaceResult] = useState(null);
-  const [preQrModalVisible, setPreQrModalVisible] = useState(false);
-  const [preQrFence, setPreQrFence] = useState(null);
-  const [preQrValue, setPreQrValue] = useState(null);
   // P2.5 — Validation token from AttendanceOrchestrator.prepare()
   const [validationToken, setValidationToken] = useState(null);
 
   const actionInProgress = useRef(false);
-  const preQrFenceRef = useRef(null);
   const timerRef = useRef(null);
 
   useAttendanceNotificationAction(action => {
@@ -913,10 +906,6 @@ const TimeClockScreen = ({onNavigate}) => {
           handlePreFaceCancel();
           return true;
         }
-        if (preQrModalVisible) {
-          handlePreQrCancel();
-          return true;
-        }
         if (subScreen !== 'main') {
           setSubScreen('main');
           setValidationToken(null);
@@ -929,14 +918,7 @@ const TimeClockScreen = ({onNavigate}) => {
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () =>
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [
-      subScreen,
-      modalVisible,
-      preFaceModalVisible,
-      preQrModalVisible,
-      handlePreFaceCancel,
-      handlePreQrCancel,
-    ]),
+    }, [subScreen, modalVisible, preFaceModalVisible, handlePreFaceCancel]),
   );
 
   const checkCommonIntegrity = (requireFence = false) => {
@@ -1004,7 +986,7 @@ const TimeClockScreen = ({onNavigate}) => {
         }
 
         // ── Phase 2: User-gated checks BEFORE any SOAP call ──
-        // P0.3: If Face or QR fail here, zero SOAP calls are wasted.
+        // P0.3: If Face fails here, zero SOAP calls are wasted.
         const actionTypeMap = {
           confirmIn: ACTION_TYPES.CLOCK_IN,
           confirmOut: ACTION_TYPES.CLOCK_OUT,
@@ -1016,10 +998,7 @@ const TimeClockScreen = ({onNavigate}) => {
           matchedFence,
           clockInFence,
         });
-        preQrFenceRef.current = fenceForGating;
         setPendingAction(actionKey);
-        setPreQrFence(fenceForGating);
-        setPreQrValue(null);
         setPreFaceResult(null);
         setValidationToken(null);
 
@@ -1033,20 +1012,11 @@ const TimeClockScreen = ({onNavigate}) => {
           return;
         }
 
-        // QR gate: open scanner and STOP here — handlePreQrSuccess continues.
-        if (isQRCodeActive(fenceForGating)) {
-          setPreQrModalVisible(true);
-          setIsProcessing(false);
-          actionInProgress.current = false;
-          return;
-        }
-
         // ── Phase 3: Single parallel SOAP validation ──
-        // No Face/QR gate → go straight to orchestrator.
+        // No Face gate → go straight to orchestrator.
         await _runOrchestratorPrepare({
           actionKey,
           actionType: actionTypeMap[actionKey],
-          qrRawValue: null,
           faceVerified: false,
         });
       } catch (err) {
@@ -1073,7 +1043,7 @@ const TimeClockScreen = ({onNavigate}) => {
   // Fires the parallel SOAP validation, stores the token, and navigates
   // to the confirm screen. Called after all user-gated checks pass.
   const _runOrchestratorPrepare = useCallback(
-    async ({actionKey, actionType, qrRawValue, faceVerified}) => {
+    async ({actionKey, actionType, faceVerified}) => {
       setIsProcessing(true);
       try {
         const result = await AttendanceOrchestrator.prepare({
@@ -1081,7 +1051,6 @@ const TimeClockScreen = ({onNavigate}) => {
           actionType,
           coords,
           clockInFence,
-          qrRawValue,
           faceVerified,
           spoofingDetected,
         });
@@ -1105,13 +1074,8 @@ const TimeClockScreen = ({onNavigate}) => {
     result => {
       setPreFaceModalVisible(false);
       setPreFaceResult(result);
-      const fence = preQrFenceRef.current;
-      // If QR gate also required, open scanner next
-      if (isQRCodeActive(fence)) {
-        setTimeout(() => setPreQrModalVisible(true), 300);
-        return;
-      }
-      // No QR gate — go straight to SOAP validation
+      // Face gate passed — go straight to SOAP validation. The QR gate (when
+      // the fence requires one) now runs on the confirm screen's Confirm press.
       const actionTypeMap = {
         confirmIn: ACTION_TYPES.CLOCK_IN,
         confirmOut: ACTION_TYPES.CLOCK_OUT,
@@ -1121,7 +1085,6 @@ const TimeClockScreen = ({onNavigate}) => {
       _runOrchestratorPrepare({
         actionKey: pendingAction,
         actionType: actionTypeMap[pendingAction],
-        qrRawValue: null,
         faceVerified: result?.verified === true,
       }).catch(() => {});
     },
@@ -1131,40 +1094,7 @@ const TimeClockScreen = ({onNavigate}) => {
   const handlePreFaceCancel = useCallback(() => {
     setPreFaceModalVisible(false);
     setPendingAction(null);
-    setPreQrFence(null);
-    setPreQrValue(null);
     setPreFaceResult(null);
-    setValidationToken(null);
-    actionInProgress.current = false;
-  }, []);
-
-  // QR scanned — pass the raw value into the orchestrator prepare call.
-  // The orchestrator calls ValidateQRCode internally (no double-call).
-  const handlePreQrSuccess = useCallback(
-    async rawValue => {
-      setPreQrModalVisible(false);
-      setPreQrValue(rawValue);
-      const actionTypeMap = {
-        confirmIn: ACTION_TYPES.CLOCK_IN,
-        confirmOut: ACTION_TYPES.CLOCK_OUT,
-        confirmBreak: ACTION_TYPES.BREAK_START,
-        confirmBreakEnd: ACTION_TYPES.BREAK_END,
-      };
-      await _runOrchestratorPrepare({
-        actionKey: pendingAction,
-        actionType: actionTypeMap[pendingAction],
-        qrRawValue: rawValue,
-        faceVerified: preFaceResult?.verified === true,
-      }).catch(() => {});
-    },
-    [pendingAction, preFaceResult, _runOrchestratorPrepare],
-  );
-
-  const handlePreQrCancel = useCallback(() => {
-    setPreQrModalVisible(false);
-    setPendingAction(null);
-    setPreQrFence(null);
-    setPreQrValue(null);
     setValidationToken(null);
     actionInProgress.current = false;
   }, []);
@@ -1417,21 +1347,6 @@ const TimeClockScreen = ({onNavigate}) => {
           handlePreFaceCancel();
         }}
         onCancel={handlePreFaceCancel}
-      />
-      <QRScannerModal
-        visible={preQrModalVisible}
-        eventLabel={
-          pendingAction === 'confirmIn'
-            ? 'CLOCK_IN'
-            : pendingAction === 'confirmOut'
-            ? 'CLOCK_OUT'
-            : pendingAction === 'confirmBreak'
-            ? 'BREAK_START'
-            : 'BREAK_END'
-        }
-        fenceName={preQrFence?.FenceName}
-        onScanSuccess={handlePreQrSuccess}
-        onCancel={handlePreQrCancel}
       />
     </SafeAreaView>
   );

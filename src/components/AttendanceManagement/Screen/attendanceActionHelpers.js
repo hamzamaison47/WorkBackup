@@ -179,6 +179,7 @@ export const buildAttendancePayload = async ({
   personRecId,
   qrValue,
   faceResult,
+  biometricVerified = false,
   deviceContext,
   mode,
 }) => {
@@ -204,6 +205,7 @@ export const buildAttendancePayload = async ({
     DeviceId: deviceContext?.id || null,
     QRImage: qrString,
     VerifyFaceId: faceResult?.verified === true,
+    VerifyBiometric: biometricVerified === true,
   };
 
   if (__DEV__) {

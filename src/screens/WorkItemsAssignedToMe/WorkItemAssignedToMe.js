@@ -93,13 +93,9 @@ const WorkItemsAssignedToMePage = () => {
       'From',
       'Document',
     ],
-    pills: ['All', 'Pending', 'Returned'],
+    pills: ['All', 'Pending'],
     classifyPill: item =>
-      item.workflowWorkItemType === 'WorkItem'
-        ? 'Pending'
-        : item.workflowWorkItemType === 'Return'
-        ? 'Returned'
-        : null,
+      item.workflowWorkItemType === 'WorkItem' ? 'Pending' : null,
   });
 
   /* ==============================

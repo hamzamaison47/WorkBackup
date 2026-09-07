@@ -4,6 +4,7 @@ import FeatherIcon from 'react-native-vector-icons/Feather';
 import {AppTokens} from '../AppComponentsDesign/Appcomponents';
 import useAppTokens from '../AppComponentsDesign/useAppTokens';
 import {getInitials, calculateYearsSinceHire} from '../../store/utils/helpers';
+import useTodayAttendance from '../../hooks/Usetodayattendance';
 import {
   conditionalScale,
   conditionalVerticalScale,
@@ -11,13 +12,62 @@ import {
 } from '../../store/utils/scaling';
 import styles from '../../styles/styles';
 
-const formatHireDate = raw => {
+// DOJ (date of joining) — dd/mm/yyyy, not the old "MMM yyyy" format.
+const formatDOJ = raw => {
   try {
     const d = new Date(raw);
-    return d.toLocaleDateString('en-US', {month: 'short', year: 'numeric'});
+    if (isNaN(d.getTime())) return raw;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
   } catch {
     return raw;
   }
+};
+
+// Real data shape (per the punch/audit log): an array of records like
+//   {GenerationType: 'ClockIn' | 'ClockOut', PunchDateTime: '2026-09-06T16:44:13Z', ...}
+// PunchDateTime is a true UTC instant (has the trailing 'Z'), unlike the
+// calendar-only "midnight" dates elsewhere in this app — so plain
+// `new Date(...)` + the locale Date/Time methods below already convert to
+// the device's local time correctly; no manual offset math needed here.
+const isSameLocalDay = (isoString, reference) => {
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return false;
+  return (
+    d.getFullYear() === reference.getFullYear() &&
+    d.getMonth() === reference.getMonth() &&
+    d.getDate() === reference.getDate()
+  );
+};
+
+// First ClockIn and last ClockOut of the day — a worker can clock in/out
+// more than once (see the sample log: multiple ClockIn/ClockOut pairs on
+// the same day), so "today's" clock in is the earliest, clock out the
+// latest, not just "the first record found".
+const getTodayPunch = (records, generationType, pick) => {
+  if (!Array.isArray(records) || records.length === 0) return null;
+  const today = new Date();
+  const matches = records
+    .filter(
+      r =>
+        r?.GenerationType === generationType &&
+        r?.PunchDateTime &&
+        isSameLocalDay(r.PunchDateTime, today),
+    )
+    .sort((a, b) => new Date(a.PunchDateTime) - new Date(b.PunchDateTime));
+  if (matches.length === 0) return null;
+  return pick === 'first' ? matches[0] : matches[matches.length - 1];
+};
+
+const formatPunchTime = punch => {
+  if (!punch?.PunchDateTime) return '—';
+  const d = new Date(punch.PunchDateTime);
+  if (isNaN(d.getTime())) return '—';
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
 };
 
 const StatCell = ({icon, label, value}) => {
@@ -47,6 +97,10 @@ const DashboardHeader = ({
   profilePictureUrl,
   isLoading,
   onProfilePress,
+  // The raw punch/audit log array — same shape as "person attendance data"
+  // in your logs: [{GenerationType: 'ClockIn'|'ClockOut', PunchDateTime, ...}].
+  // Today's first ClockIn and last ClockOut are derived from it below.
+  attendanceRecords,
 }) => {
   // console.log('here is the user data', userData);
   // console.log('[DashboardHeader] location fields:', {
@@ -120,6 +174,9 @@ const DashboardHeader = ({
 
   const yearsWorked = calculateYearsSinceHire(userData?.OriginalHireDate);
   const initials = getInitials(userData?.employeeName);
+
+  const todayClockIn = getTodayPunch(attendanceRecords, 'ClockIn', 'first');
+  const todayClockOut = getTodayPunch(attendanceRecords, 'ClockOut', 'last');
 
   return (
     <Animated.View
@@ -240,7 +297,9 @@ const DashboardHeader = ({
         </View>
       </View>
 
-      {/* Stats strip */}
+      {/* Stats strip — Employee ID (left), DOJ (middle), Clock In/Out
+          (right, sourced from today's attendance record). Location was
+          dropped from this row to make room for Clock In/Out. */}
       <View
         style={[
           styles.DH_statsStrip,
@@ -255,21 +314,23 @@ const DashboardHeader = ({
           style={[styles.DH_statsDivider, {backgroundColor: T.rowDivider}]}
         />
         <StatCell
-          icon="map-pin"
-          label="Location"
-          value={userData?.location || userData?.workLocation || '—'}
+          icon="calendar"
+          label="DOJ"
+          value={
+            userData?.OriginalHireDate
+              ? formatDOJ(userData.OriginalHireDate)
+              : '—'
+          }
         />
         <View
           style={[styles.DH_statsDivider, {backgroundColor: T.rowDivider}]}
         />
         <StatCell
-          icon="calendar"
-          label="Since"
-          value={
-            userData?.OriginalHireDate
-              ? formatHireDate(userData.OriginalHireDate)
-              : '—'
-          }
+          icon="clock"
+          label="Clock In/Out"
+          value={`${formatPunchTime(todayClockIn)} / ${formatPunchTime(
+            todayClockOut,
+          )}`}
         />
       </View>
     </Animated.View>

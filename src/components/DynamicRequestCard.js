@@ -23,6 +23,11 @@ import {
   conditionalVerticalScale,
   conditionalFontScale,
 } from '../store/utils/scaling';
+import {
+  parseDynamicsDate,
+  formatDynamicsDate,
+  formatDynamicsDateTime,
+} from '../utils/dynamicsDate';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -298,20 +303,11 @@ const DynamicRequestCard = ({
     if (value === null || value === undefined) return '—';
     if (value === '') return '—';
 
-    if (value === null || value === undefined) {
-      return '—';
-    }
     switch (fieldType) {
       case 'date':
-      case 'datetime': {
-        return formatDateValue(
-          value,
-          selectedFormat,
-          fieldType,
-          selectedTimeFormat,
-          selectedTimezone,
-        );
-      }
+        return formatDynamicsDate(parseDynamicsDate(value));
+      case 'datetime':
+        return formatDynamicsDateTime(parseDynamicsDate(value));
       case 'currency': {
         const num = Number(value);
         return isNaN(num)

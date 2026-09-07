@@ -12,6 +12,15 @@ import {getToken} from '../../../../../API/Token/getToken';
 import {createSoapEnvelope} from '../../../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../../../Controller/secureConfig';
 
+const getOffsetSuffix = date => {
+  const offsetMin = -date.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMin);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${sign}${hh}:${mm}`;
+};
+
 // Serialize any accepted date shape to the D365 dateTime literal the contract
 // expects: YYYY-MM-DDT00:00:00 (midnight). String inputs keep their calendar
 // day verbatim (split on 'T') so no timezone shift can move the date.
@@ -50,19 +59,35 @@ const toIsoDateTime = value => {
 // are time-selectable, not just date-only like EstimatedDate.
 const toIsoDateTimePreserveTime = value => {
   if (!value) return '';
-  if (typeof value === 'string') {
-    const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/);
-    if (match) return `${match[1]}T${match[2]}`;
-    const dateOnly = value.match(/^(\d{4}-\d{2}-\d{2})$/);
-    if (dateOnly) return `${dateOnly[1]}T00:00:00`;
+
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const match = String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+    );
+    if (!match) return '';
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] =
+      match;
+    d = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
   }
-  const d = value instanceof Date ? value : new Date(value);
+
   if (isNaN(d.getTime())) return '';
+
   const pad = n => String(n).padStart(2, '0');
-  return (
+  const literal =
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-  );
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  return `${literal}${getOffsetSuffix(d)}`;
 };
 
 const escapeXml = value =>

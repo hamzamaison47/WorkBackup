@@ -720,12 +720,9 @@ const ExpenseManagementLineSaveRecord = () => {
     if (!d) return '';
     const day = d.getDate();
     const month = d.getMonth() + 1;
+    const hours = String(d.getHours()).padStart(2, '0');
     const mins = String(d.getMinutes()).padStart(2, '0');
-    let hours = d.getHours();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-    return `${day}/${month}/${d.getFullYear()} ${hours}:${mins} ${ampm}`;
+    return `${day}/${month}/${d.getFullYear()} ${hours}:${mins}`;
   };
 
   const formatToISOWithTime = dateInput => {
@@ -1028,7 +1025,9 @@ const ExpenseManagementLineSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={isEdit ? 'Edit Expense Line' : 'New Expense line'}
+      pageTitle={
+        isEdit ? 'Edit travel expense line' : 'New travel expense line'
+      }
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -1420,6 +1419,8 @@ const ExpenseManagementLineSaveRecord = () => {
         open={dateTimeField !== null}
         date={pickerInitialDate()}
         mode="datetime"
+        is24hourSource="locale"
+        locale="en_GB"
         onConfirm={handleDateTimeConfirm}
         onCancel={() => setDateTimeField(null)}
       />

@@ -22,11 +22,17 @@ import {screenMapping} from '../Controller/screenMapping';
 
 const Tab = createBottomTabNavigator();
 
+// Mustard badge for the pending-approvals count — deliberately distinct from
+// the platform-default red badge color used elsewhere, since this count is
+// informational (items waiting on you) rather than an error/alert state.
+const MUSTARD_BADGE_BG = '#D9A404';
+const MUSTARD_BADGE_TEXT = '#1A1A1A';
+
 const TabNavigator = () => {
   const currentLanguage = useSelector(state => state.language.currentLanguage);
   const {menuItems} = useSelector(state => state.menuItem);
   const pendingWorkItemsCount = useSelector(
-    state => state.workItems.pendingCount,
+    state => state.workItems?.pendingCount ?? 0,
   );
 
   const footerTabs = menuItems.filter(
@@ -94,10 +100,17 @@ const TabNavigator = () => {
               options={{
                 tabBarLabel: item.Label || item.MenuId,
                 tabBarBadge:
-                  item.MenuId === 'WorkItemAssigned' &&
+                  item.MenuId === 'WorkItemsAssignedToMePage' &&
                   pendingWorkItemsCount > 0
                     ? pendingWorkItemsCount
                     : undefined,
+                // Only takes effect when tabBarBadge above is actually set,
+                // so it's safe to leave unconditional here.
+                tabBarBadgeStyle: {
+                  backgroundColor: MUSTARD_BADGE_BG,
+                  color: MUSTARD_BADGE_TEXT,
+                  fontWeight: '700',
+                },
               }}
             />
           );

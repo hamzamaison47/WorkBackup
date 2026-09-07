@@ -31,6 +31,10 @@ import {retrieveLeaveTypes} from '../../API/Leaves/retrieveLeaveTypes';
 import {createDFEmployeeLeaveRequest} from '../../API/Leaves/createDFEmployeeLeaveRequest';
 import {calculateAvailableLeaveDays} from '../../API/Leaves/calculateAvailableLeaveDays';
 import {getEmployeeLeaveDays} from '../../API/Leaves/getEmployeeLeaveDays';
+import {
+  parseDynamicsDate,
+  formatDynamicsDate,
+} from '../../../../utils/dynamicsDate';
 
 import AlertModal from '../../../../components/Alert/AlertModal';
 import useAlertModal from '../../../../hooks/useAlertModal';
@@ -98,7 +102,15 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
 
   const {notifySuccess, notifyError} = useNotify('Leave Request');
 
-  const today = new Date().toISOString().split('T')[0];
+  const getLocalToday = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalToday();
 
   const createInitialFormData = () => ({
     recId: '',
@@ -328,16 +340,18 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
   };
 
   // ✅ REPLACE WITH THIS
-  const formatDate = date => {
-    if (!date) return '';
-    return formatDateValue(
-      date,
-      selectedFormat,
-      'date',
-      selectedTimeFormat,
-      selectedTimezone,
-    );
-  };
+  // const formatDate = date => {
+  //   if (!date) return '';
+  //   return formatDateValue(
+  //     date,
+  //     selectedFormat,
+  //     'date',
+  //     selectedTimeFormat,
+  //     selectedTimezone,
+  //   );
+  // };
+
+  const formatDate = date => formatDynamicsDate(parseDynamicsDate(date));
 
   const formatToISOWithTime = dateInput => {
     let year, month, day;

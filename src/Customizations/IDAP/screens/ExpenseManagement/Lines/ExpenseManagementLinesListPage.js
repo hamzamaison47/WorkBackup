@@ -41,6 +41,8 @@ import useNotify from '../../../../../hooks/useNotify';
 import usePalette from '../../../../../hooks/usePalette';
 import DynamicAttachmentModal from '../../../../../shared/DynamicAttachmentModal';
 import {translate as t} from '../../../../../store/utils/translate';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import {RetrieveSiteSurveyByExpense} from '../../../API/SiteSurveyReport/retrieveSiteSurveryReport';
 
 // ── HEADER-STATUS LOCK ────────────────────────────────────────────────────────
 // Lines are only creatable/deletable while the parent header is still in its
@@ -102,40 +104,9 @@ const ExpenseManagementLinesListPage = () => {
   const [selectedLineItem, setSelectedLineItem] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState('');
-  // CostType up top, currency + claimed amount + transaction date in the body,
-  // the backend-derived PKR value and meal reduction behind the expander.
-  // const CARD_CONFIG = {
-  //   headerConfig: {
-  //     title: {key: 'CostType', label: 'Cost Type'},
-  //     subtitle: {key: 'ExchangeCode', label: 'Currency'},
-  //   },
-  //   fields: [
-  //     {key: 'Transaction', label: 'Transaction date', type: 'text'},
-  //     {key: 'ClaimedAmount', label: 'Claimed amount', type: 'text'},
-  //     {key: 'ClaimedAmount', label: 'Transaction amount', type: 'text'},
-  //   ],
-  //   expandableFields: [
-  //     {key: 'ExchangeCode', label: 'Currency', type: 'text'},
-  //     {key: 'AmountInPKR', label: 'Amount (PKR)', type: 'text'},
-  //     {key: 'MealReductionAmount', label: 'Meal Reduction', type: 'text'},
-  //     {key: 'DepartureLocation', label: 'Departure location', type: 'text'},
-  //     {
-  //       key: 'DepartureDateTime',
-  //       label: 'Departure date and time',
-  //       type: 'text',
-  //     },
-  //     {key: 'ArrivalLocation', label: 'Arrival location', type: 'text'},
-  //     {
-  //       key: 'ArrivalDateTime',
-  //       label: 'Arrival date and time',
-  //       type: 'text',
-  //     },
-  //     {key: 'DateFrom', label: 'Per diem from date', type: 'text'},
-  //     {key: 'DateTo', label: 'Per diem to date', type: 'text'},
-  //     {key: 'RatePerMile', label: 'Rate per mile', type: 'text'},
-  //   ],
-  // };
-
+  // null = not yet checked, true = survey record exists, false = confirmed missing
+  const [siteSurveyExists, setSiteSurveyExists] = useState(null);
+  const [checkingSiteSurvey, setCheckingSiteSurvey] = useState(true);
   // headerConfig stays the same across all categories — CostType is the card
   // title regardless, so it's not repeated inside fields/expandableFields.
   const getCardConfig = costType => {
@@ -215,6 +186,23 @@ const ExpenseManagementLinesListPage = () => {
     };
   };
 
+  const checkSiteSurveyStatus = useCallback(async () => {
+    if (!expenseNumber) {
+      setCheckingSiteSurvey(false);
+      return;
+    }
+    setCheckingSiteSurvey(true);
+    try {
+      const result = await RetrieveSiteSurveyByExpense({expenseNumber});
+      setSiteSurveyExists(Array.isArray(result) && result.length > 0);
+    } catch (error) {
+      console.error('Failed to check Site Survey status:', error);
+      setSiteSurveyExists(false);
+    } finally {
+      setCheckingSiteSurvey(false);
+    }
+  }, [expenseNumber]);
+
   const getCostCategory = costType => {
     const ct = String(costType || '').toLowerCase();
     if (ct.includes('per diem')) return 'perDiem';
@@ -286,14 +274,10 @@ const ExpenseManagementLinesListPage = () => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
 
-    let hours = date.getHours();
+    const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours === 0 ? 12 : hours; // 0 → 12
-    const hoursStr = String(hours).padStart(2, '0');
 
-    return `${day}/${month}/${year} ${hoursStr}:${minutes} ${ampm}`;
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
   const f = useListFilters({
@@ -376,7 +360,8 @@ const ExpenseManagementLinesListPage = () => {
       }
       setIsLoading(true);
       fetchLinesData();
-    }, [fetchLinesData, refresh]),
+      checkSiteSurveyStatus(); // ← add this
+    }, [fetchLinesData, refresh, checkSiteSurveyStatus]),
   );
 
   useFocusEffect(
@@ -712,7 +697,8 @@ const ExpenseManagementLinesListPage = () => {
     );
   };
 
-  const getPageTitle = () => `Expense lines - ${expenseNumber || 'Expense'}`;
+  const getPageTitle = () =>
+    `Travel expense lines - ${expenseNumber || 'Expense'}`;
 
   const totals = getTotals();
 
@@ -753,16 +739,36 @@ const ExpenseManagementLinesListPage = () => {
             </View>
             <TouchableOpacity
               onPress={handleSiteSurveyReport}
-              activeOpacity={0.7}>
-              <Text
-                style={{
-                  color: P.primary,
-                  fontSize: 13,
-                  fontWeight: '600',
-                  textDecorationLine: 'underline',
-                }}>
-                Site Survey Report
-              </Text>
+              activeOpacity={0.75}
+              style={styles.SSB_container}>
+              <Ionicons
+                name="document-text-outline"
+                size={15}
+                color="#475569"
+              />
+              <Text style={styles.SSB_label}>Site Survey Report</Text>
+
+              <View
+                style={[
+                  styles.SSB_badge,
+                  {
+                    backgroundColor: checkingSiteSurvey
+                      ? '#94A3B8'
+                      : siteSurveyExists
+                      ? '#2E7D32'
+                      : '#C62828',
+                  },
+                ]}>
+                {checkingSiteSurvey ? (
+                  <ActivityIndicator size={8} color="#fff" />
+                ) : (
+                  <Ionicons
+                    name={siteSurveyExists ? 'checkmark' : 'close'}
+                    size={10}
+                    color="#fff"
+                  />
+                )}
+              </View>
             </TouchableOpacity>
           </View>
 

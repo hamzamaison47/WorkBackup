@@ -33,6 +33,8 @@ const SORT_OPTIONS = [
 const FilterPanel = ({
   visible,
   onClose,
+  anchorTop,
+  anchorRight,
   // Document type
   showDocumentTypeFilter,
   documentTypes = [],
@@ -102,8 +104,8 @@ const FilterPanel = ({
 
   const panelStyle = {
     position: 'absolute',
-    top: conditionalVerticalScale(52, 56, 60, 62),
-    right: conditionalScale(10, 12, 14, 14),
+    top: anchorTop ?? conditionalVerticalScale(52, 56, 60, 62),
+    right: anchorRight ?? conditionalScale(10, 12, 14, 14),
     width: conditionalScale(232, 242, 254, 254),
     maxHeight: conditionalVerticalScale(420, 460, 500, 520),
     backgroundColor: T.cardBg,

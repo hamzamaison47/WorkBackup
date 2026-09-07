@@ -11,6 +11,7 @@ import chatbotReducer from './slices/chatbotSlice';
 import dateFormatReducer from './slices/dateFormatSlice';
 import themeReducer from './slices/themeSlice';
 import colorPaletteReducer from './slices/colorPaletteSlice';
+import workItemsReducer from './slices/workItemsSlice';
 
 /**
  * The one action that wipes the app. Dispatched at logout, at the start of
@@ -34,6 +35,7 @@ const appReducer = combineReducers({
   dateFormat: dateFormatReducer,
   theme: themeReducer,
   colorPalette: colorPaletteReducer,
+  workItems: workItemsReducer,
 });
 
 /**

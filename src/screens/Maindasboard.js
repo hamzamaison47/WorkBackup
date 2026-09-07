@@ -18,6 +18,7 @@ import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
 import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
+import useTodayAttendance from '../hooks/Usetodayattendance';
 // import AIChatbot from '../components/AIChatbot/AIChatbot';
 // import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
 import QuickAccessSheet, {
@@ -74,6 +75,8 @@ const MainDashboard = () => {
   );
 
   const [quickAccessVisible, setQuickAccessVisible] = useState(false);
+  // inside the component:
+  const {attendanceRecords} = useTodayAttendance();
 
   // Initialize Leave Service
   const masterService = MasterService();
@@ -172,6 +175,7 @@ const MainDashboard = () => {
                 isLoading={isLoading}
                 isSmallScreen={dimensions.isSmallScreen}
                 onProfilePress={() => navigation.navigate('Profile')}
+                attendanceRecords={attendanceRecords}
               />
 
               <MenuGrid

@@ -10,6 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import DocumentPicker from 'react-native-document-picker';
@@ -69,7 +70,7 @@ const DynamicAttachmentModal = ({
   showDetails = false,
   detailFields = [],
   detailData = {},
-  showTakePhoto = true,
+  showTakePhoto: _showTakePhotoProp, // ignored on purpose — see below
   showChooseFile = true,
   showDownload = true,
   showDelete = true,
@@ -77,6 +78,10 @@ const DynamicAttachmentModal = ({
   showCopyToLines = true,
   showView = true,
 }) => {
+  // Take Photo is disabled app-wide. Screens may still pass showTakePhoto
+  // as a prop (harmless — it's captured above as _showTakePhotoProp and
+  // deliberately not used), but this component always hides the button.
+  const showTakePhoto = false;
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
@@ -180,9 +185,45 @@ const DynamicAttachmentModal = ({
     return parts.pop().toLowerCase();
   };
 
+  const requestCameraPermission = async () => {
+    if (Platform.OS !== 'android') return true; // iOS prompts automatically via launchCamera
+
+    try {
+      const alreadyGranted = await PermissionsAndroid.check(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      );
+      if (alreadyGranted) return true;
+
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+        {
+          title: 'Camera Permission',
+          message:
+            'This app needs access to your camera to take photos of receipts/attachments.',
+          buttonPositive: 'Allow',
+          buttonNegative: 'Deny',
+        },
+      );
+
+      return result === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
+      console.error('[ATTACH DEBUG] Camera permission error:', err);
+      return false;
+    }
+  };
+
   const takePhoto = async () => {
     // ── DEBUG ──
     console.log('[ATTACH DEBUG] takePhoto called');
+
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      setAlertMessage(
+        'Camera permission is required to take photos. Please enable it from app settings.',
+      );
+      setAlertModal(true);
+      return;
+    }
     try {
       const result = await launchCamera({
         mediaType: 'photo',

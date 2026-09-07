@@ -43,6 +43,10 @@ import DynamicAttachmentModal from '../../../../shared/DynamicAttachmentModal';
 import useAlertModal from '../../../../hooks/useAlertModal';
 import useAppTokens from '../../../../components/AppComponentsDesign/useAppTokens';
 import WorkflowCommentModal from '../../../../components/CommentModal/WorkflowCommentModal';
+import {
+  parseDynamicsDate,
+  formatDynamicsDate,
+} from '../../../../utils/dynamicsDate';
 
 const createLocalStyles = T =>
   StyleSheet.create({
@@ -425,20 +429,14 @@ const DFEmployeeLeaveRequestListPage = () => {
 
   const handleReceiptAttachmentPress = async itemData => {
     try {
-      const formatDateOnly = date => {
-        if (!date) return '';
-        const d = new Date(date);
-        if (isNaN(d.getTime())) return '';
-        const pad = n => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
-          d.getDate(),
-        )}`;
-      };
-
       const cleanedItem = {
         ...itemData,
-        FromDateHistory: formatDateOnly(itemData.FromDateHistory),
-        ToDateHistory: formatDateOnly(itemData.ToDateHistory),
+        FromDateHistory: formatDynamicsDate(
+          parseDynamicsDate(itemData.FromDateHistory),
+        ),
+        ToDateHistory: formatDynamicsDate(
+          parseDynamicsDate(itemData.ToDateHistory),
+        ),
       };
 
       setSelectedLeaveItem(cleanedItem);
@@ -563,7 +561,9 @@ const DFEmployeeLeaveRequestListPage = () => {
               .filter(item => String(item.IsExpired).toLowerCase() === 'true')
               .map((item, idx) => (
                 <Text key={idx} style={localStyles.footerText}>
-                  {`${item.LeaveName}: Expires on ${formatDate(item.EndDate)}`}
+                  {`${item.LeaveName}: Expires on ${formatDynamicsDate(
+                    parseDynamicsDate(item.EndDate),
+                  )}`}
                 </Text>
               ))}
           </View>

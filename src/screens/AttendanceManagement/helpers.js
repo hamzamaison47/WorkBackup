@@ -252,10 +252,20 @@ export const loadRecords = async ({person} = {}) => {
 // P1.3 FIX: canClockOut now returns false if there is an open (unended) break.
 // Previously this was UI-only — a race condition could bypass it.
 // ─────────────────────────────────────────────
+// export const canClockIn = records => {
+//   if (!records.length) return true;
+//   const last = records[records.length - 1];
+//   return !!last.clockOut;
+// };
+
 export const canClockIn = records => {
   if (!records.length) return true;
   const last = records[records.length - 1];
-  return !!last.clockOut;
+  if (!last.clockOut) return false; // still in an open shift
+  // Once a cycle has completed TODAY, block a further clock-in until
+  // tomorrow — the file already has isToday() (PKT-aware) for this.
+  if (isToday(last.clockOut)) return false;
+  return true;
 };
 
 export const canStartBreak = records => {

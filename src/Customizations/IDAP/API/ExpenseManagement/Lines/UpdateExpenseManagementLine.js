@@ -41,6 +41,94 @@ const UpdateExpenseManagementLine = async ({
     const lineRecId = Number(LineRecId) || 0;
     const headerRecId = Number(HeaderRecId) || 0;
 
+    const getOffsetSuffix = date => {
+      const offsetMin = -date.getTimezoneOffset();
+      const sign = offsetMin >= 0 ? '+' : '-';
+      const abs = Math.abs(offsetMin);
+      const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+      const mm = String(abs % 60).padStart(2, '0');
+      return `${sign}${hh}:${mm}`;
+    };
+
+    const toIsoDateTime = value => {
+      if (!value) return '';
+
+      let d;
+      if (value instanceof Date) {
+        d = value;
+      } else {
+        const match = String(value).match(
+          /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+        );
+        if (!match) return '';
+        const [
+          ,
+          year,
+          month,
+          day,
+          hours = '00',
+          minutes = '00',
+          seconds = '00',
+        ] = match;
+        d = new Date(
+          Number(year),
+          Number(month) - 1,
+          Number(day),
+          Number(hours),
+          Number(minutes),
+          Number(seconds),
+        );
+      }
+
+      if (isNaN(d.getTime())) return '';
+
+      const pad = n => String(n).padStart(2, '0');
+      const literal =
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+        `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+      return `${literal}${getOffsetSuffix(d)}`;
+    };
+
+    const toIsoDateTimeLiteral = value => {
+      if (!value) return '';
+
+      let d;
+      if (value instanceof Date) {
+        d = value;
+      } else {
+        const match = String(value).match(
+          /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+        );
+        if (!match) return '';
+        const [
+          ,
+          year,
+          month,
+          day,
+          hours = '00',
+          minutes = '00',
+          seconds = '00',
+        ] = match;
+        d = new Date(
+          Number(year),
+          Number(month) - 1,
+          Number(day),
+          Number(hours),
+          Number(minutes),
+          Number(seconds),
+        );
+      }
+
+      if (isNaN(d.getTime())) return '';
+
+      const pad = n => String(n).padStart(2, '0');
+      return (
+        `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+        `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+      );
+    };
+
     const esc = v =>
       (v ?? '')
         .toString()
@@ -53,16 +141,20 @@ const UpdateExpenseManagementLine = async ({
     <contract xmlns:a="http://schemas.datacontract.org/2004/07/Dynamics.AX.Application" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
       <a:AmountCurr>${AmountCurr || 0}</a:AmountCurr>
       <a:AmountInPKR>${AmountInPKR || 0}</a:AmountInPKR>
-      <a:ArrivalDateTime>${
-        ArrivalDateTime || '0001-01-01T00:00:00'
-      }</a:ArrivalDateTime>
+     <a:ArrivalDateTime>${
+       toIsoDateTime(ArrivalDateTime) || '0001-01-01T00:00:00'
+     }</a:ArrivalDateTime>
       <a:ArrivalLocation>${esc(ArrivalLocation)}</a:ArrivalLocation>
       <a:ClaimedAmount>${ClaimedAmount || 0}</a:ClaimedAmount>
       <a:CostType>${esc(CostType)}</a:CostType>
-      <a:DateFrom>${DateFrom || '0001-01-01T00:00:00'}</a:DateFrom>
-      <a:DateTo>${DateTo || '0001-01-01T00:00:00'}</a:DateTo>
+      <a:DateFrom>${
+        toIsoDateTimeLiteral(DateFrom) || '0001-01-01T00:00:00'
+      }</a:DateFrom>
+      <a:DateTo>${
+        toIsoDateTimeLiteral(DateTo) || '0001-01-01T00:00:00'
+      }</a:DateTo>
       <a:DepartureDateTime>${
-        DepartureDateTime || '0001-01-01T00:00:00'
+        toIsoDateTime(DepartureDateTime) || '0001-01-01T00:00:00'
       }</a:DepartureDateTime>
       <a:DepartureLocation>${esc(DepartureLocation)}</a:DepartureLocation>
       <a:ExchangeCode>${esc(ExchangeCode)}</a:ExchangeCode>
@@ -71,7 +163,9 @@ const UpdateExpenseManagementLine = async ({
       <a:MealReductionAmount>${esc(MealReductionAmount)}</a:MealReductionAmount>
       <a:Mileage>${Mileage || 0}</a:Mileage>
       <a:PersonnelNumber>${esc(PersonnelNumber)}</a:PersonnelNumber>
-      <a:Transaction>${Transaction || '0001-01-01T00:00:00'}</a:Transaction>
+      <a:Transaction>${
+        toIsoDateTime(Transaction) || '0001-01-01T00:00:00'
+      }</a:Transaction>
     </contract>
   </update>`;
 

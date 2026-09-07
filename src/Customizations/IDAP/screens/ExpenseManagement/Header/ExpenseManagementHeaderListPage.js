@@ -407,6 +407,29 @@ const ExpenseManagementHeaderListPage = () => {
     if (item) handleSubmitPress(item, comment);
   };
 
+  // Strips backend debug trace text that gets concatenated into error
+  // messages. The backend glues its real message directly onto the debug
+  // trace with no space after the period (e.g. "...EXP-037129.Please..."),
+  // while its own debug sentences use a normal ". " with a space. That gap
+  // is used as the split point — no hardcoded keywords needed.
+  const cleanErrorMessage = msg => {
+    if (!msg || typeof msg !== 'string') return msg;
+
+    const normalized = msg
+      .split('Site Survey Debug:')
+      .join('|||Site Survey Debug:')
+      .replace(/\.(?=[A-Z])/g, '.|||'); // period immediately touching a capital, no space
+
+    const parts = normalized
+      .split('|||')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const clean = parts.filter(s => !/Debug:/i.test(s));
+
+    return clean.length ? clean.join(' ') : msg;
+  };
+
   const handleSubmitPress = (itemData, comment = '') => {
     const recId = normalizeRecId(itemData);
     setTimeout(async () => {
@@ -419,8 +442,13 @@ const ExpenseManagementHeaderListPage = () => {
           showSuccess(result.Message || 'Request submitted successfully.');
           setTimeout(() => fetchExpenseData(), 1000);
         } else {
-          notifyError(result.Message);
-          showError(result.Message);
+          console.error('[ExpenseSubmit] Submit failed:', result.Message, {
+            recId,
+            result,
+          });
+          const cleanMessage = cleanErrorMessage(result.Message);
+          notifyError(cleanMessage);
+          showError(cleanMessage);
         }
       } catch (error) {
         showError(`Failed to submit request: ${error.message}`);
@@ -557,7 +585,7 @@ const ExpenseManagementHeaderListPage = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Expense reports"
+      pageTitle="Travel expense"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}

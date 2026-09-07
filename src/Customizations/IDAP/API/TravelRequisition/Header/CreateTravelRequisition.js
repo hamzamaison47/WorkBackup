@@ -32,6 +32,15 @@ import {getToken} from '../../../../../API/Token/getToken';
 import {createSoapEnvelope} from '../../../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../../../Controller/secureConfig';
 
+const getOffsetSuffix = date => {
+  const offsetMin = -date.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMin);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${sign}${hh}:${mm}`;
+};
+
 // Serialize any accepted date shape to the D365 dateTime literal the contract
 // expects: YYYY-MM-DDT00:00:00 (midnight). String inputs keep their calendar
 // day verbatim (split on 'T') so no timezone shift can move the date.
@@ -74,7 +83,7 @@ const toIsoDateTime = value => {
     seconds = d.getSeconds();
   }
 
-  return (
+  const literal =
     `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(
       2,
       '0',
@@ -82,8 +91,10 @@ const toIsoDateTime = value => {
     `T${String(hours).padStart(2, '0')}:${String(minutes).padStart(
       2,
       '0',
-    )}:${String(seconds).padStart(2, '0')}`
-  );
+    )}:${String(seconds).padStart(2, '0')}`;
+
+  const d = new Date(year, month - 1, day, hours, minutes, seconds);
+  return `${literal}${getOffsetSuffix(d)}`;
 };
 
 const escapeXml = value =>

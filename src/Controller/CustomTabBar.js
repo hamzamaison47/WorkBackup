@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-import React from 'react';
+import React, {useEffect} from 'react';
 import {View, TouchableOpacity, Text, StyleSheet, Platform} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -11,6 +11,11 @@ import {translate as t} from '../store/utils/translate';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
 import usePalette from '../hooks/usePalette';
 import {screenMapping} from './screenMapping';
+import {useDispatch} from 'react-redux';
+import {RetrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
+import {setPendingWorkItemsCount} from '../store/slices/workItemsSlice';
+const MUSTARD_BADGE_BG = '#D9A404';
+const MUSTARD_BADGE_TEXT = '#1A1A1A';
 
 export default function CustomTabBar(props) {
   // ✅ reactive theme tokens
@@ -25,12 +30,55 @@ export default function CustomTabBar(props) {
   const currentLanguage = useSelector(state => state.language.currentLanguage);
   const {menuItems} = useSelector(state => state.menuItem);
 
+  // add:
+  const pendingWorkItemsCount = useSelector(
+    state => state.workItems?.pendingCount ?? 0,
+  );
+
   const footerTabs = menuItems.filter(
     item =>
       item.Visible === '1' &&
       item.DisplayOnFooter === 'Yes' &&
       screenMapping[item.MenuId],
   );
+  const dispatch = useDispatch();
+  const currentUserData = useSelector(state => state.user?.userData);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchPendingCount = async () => {
+      console.log(
+        '[CustomTabBar] fetchPendingCount fired, email =',
+        currentUserData?.email,
+      );
+      if (!currentUserData?.email) {
+        console.log('[CustomTabBar] no email yet — skipping fetch');
+        return;
+      }
+      try {
+        const data = await RetrieveByEmail({email: currentUserData.email});
+        console.log(
+          '[CustomTabBar] RetrieveByEmail returned',
+          data?.length,
+          'items',
+        );
+        const pendingCount = (data || []).filter(
+          item => item.workflowWorkItemType === 'WorkItem',
+        ).length;
+        console.log('[CustomTabBar] computed pendingCount =', pendingCount);
+        if (!cancelled) dispatch(setPendingWorkItemsCount(pendingCount));
+      } catch (err) {
+        console.log(
+          '[CustomTabBar] RetrieveByEmail FAILED:',
+          err?.message || err,
+        );
+      }
+    };
+    fetchPendingCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserData?.email, dispatch]);
 
   const iconMap = {
     MainDashboard: {focused: 'home', unfocused: 'home-outline'},
@@ -57,6 +105,11 @@ export default function CustomTabBar(props) {
       iconFocused: iconMap[item.MenuId]?.focused || 'folder-open',
       iconUnfocused: iconMap[item.MenuId]?.unfocused || 'folder-outline',
       color: P.primary,
+      // ADD THIS LINE:
+      badge:
+        item.MenuId === 'WorkItemsAssignedToMePage' && pendingWorkItemsCount > 0
+          ? pendingWorkItemsCount
+          : 0,
     }));
 
   const defaultHomeTab = {
@@ -200,6 +253,14 @@ export default function CustomTabBar(props) {
                   />
                 </View>
               )}
+              {/* ADD THIS BLOCK — right after the icon's closing )} above */}
+              {tab.badge > 0 && (
+                <View style={styles.tabBadge}>
+                  <Text style={styles.tabBadgeText} numberOfLines={1}>
+                    {tab.badge > 99 ? '99+' : tab.badge}
+                  </Text>
+                </View>
+              )}
 
               {/* Label */}
               {responsiveStyles.showLabel && (
@@ -274,6 +335,26 @@ const styles = StyleSheet.create({
   },
   iconWrapperInactive: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  tabBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 10,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: MUSTARD_BADGE_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+  },
+  tabBadgeText: {
+    color: MUSTARD_BADGE_TEXT,
+    fontSize: 10,
+    fontWeight: '700',
   },
   iconInnerGlow: {
     width: 48,

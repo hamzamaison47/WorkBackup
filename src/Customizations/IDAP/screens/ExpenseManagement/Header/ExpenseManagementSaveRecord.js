@@ -619,7 +619,7 @@ const ExpenseManagementSaveRecord = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle={isEditMode ? 'Edit Expense Report' : 'New expense report'}
+      pageTitle={isEditMode ? 'Edit travel expense' : 'New travel expense'}
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}

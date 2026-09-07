@@ -14,7 +14,7 @@
 //         → workflow re-check from embedded data → CreateUserAttendance
 //         (~0 additional SOAP calls if token fresh, ~0.3s)
 // ─────────────────────────────────────────────
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useState, useCallback, useMemo, useRef} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Alert} from 'react-native';
 import {useSelector} from 'react-redux';
 import ConfirmSheet from '../ConfirmSheet';
@@ -28,8 +28,15 @@ import {
   formatTime,
   formatDateShort,
 } from '../../../screens/AttendanceManagement/helpers';
-import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
-import {runBiometricGate} from './biometricGate';
+import AttendanceOrchestrator, {
+  qrRejectionMessage,
+} from '../../../services/AttendanceManagement/AttendanceOrchestrator';
+import QRScannerModal, {isQRCodeActive} from '../QRScannerModal';
+import {
+  validateQRCode,
+  QR_STATUS,
+} from '../../../API/AttendanceManagement/ValidateQRCode';
+import {runBiometricGate, BIOMETRIC_GATE_REASON} from './biometricGate';
 import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE = 'ClockIn';
@@ -46,11 +53,60 @@ const ConfirmClockInScreen = ({
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingLabel, setProcessingLabel] = useState('Processing...');
+  const [qrModalVisible, setQrModalVisible] = useState(false);
+  // Carries the Confirm-press biometric outcome across the QR modal round-trip
+  // (handleConfirmPress → handleQrScanned). A ref, not state: it must not
+  // trigger a re-render or re-create doSubmit in the middle of the flow.
+  const biometricVerifiedRef = useRef(false);
 
   const {matchedFence, clockInFence, locationError, locationLoading} =
     useGeofence();
   const {spoofingDetected} = useLocation();
   const {userData} = useSelector(s => s.user);
+
+  // Fence the Confirm-time gates run against — the one prepare() validated and
+  // confirm() will submit the punch against. Biometric and QR share it.
+  const gateFence = validationToken?.matchedFence ?? matchedFence;
+
+  // Everything after the Confirm-time gates. qrResult is null when the fence
+  // has no QR policy.
+  const doSubmit = useCallback(
+    async (qrResult, biometricVerified = false) => {
+      setProcessingLabel('Clocking in…');
+      setIsProcessing(true);
+      try {
+        const deviceId = await DeviceInfo.getUniqueId();
+
+        await AttendanceOrchestrator.confirm({
+          token: validationToken,
+          generationType: GENERATION_TYPE,
+          personRecId: userData?.Person,
+          deviceId,
+          clockInFence,
+          spoofingDetected,
+          qrResult,
+          biometricVerified,
+        });
+
+        await onConfirm(note);
+      } catch (error) {
+        Alert.alert(
+          'Clock In Failed',
+          error.message || 'Unable to record attendance. Please try again.',
+        );
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [
+      validationToken,
+      userData?.Person,
+      clockInFence,
+      spoofingDetected,
+      note,
+      onConfirm,
+    ],
+  );
 
   const handleConfirmPress = useCallback(async () => {
     if (isProcessing) return;
@@ -58,47 +114,71 @@ const ConfirmClockInScreen = ({
     // Biometric gate — runs ONLY on Confirm, before any processing UI, so the
     // system dialog never appears over a spinner. Gates on the token's fence
     // (the one prepare() validated and confirm() will submit against).
-    const gate = await runBiometricGate(
-      validationToken?.matchedFence ?? matchedFence,
-    );
+    const gate = await runBiometricGate(gateFence);
     if (!gate.ok) {
       Alert.alert('Biometric Verification Required', gate.message);
       return;
     }
 
-    setProcessingLabel('Clocking in…');
-    setIsProcessing(true);
-    try {
-      const deviceId = await DeviceInfo.getUniqueId();
+    // ok:true covers two different things — an actual biometric match
+    // (AUTHENTICATED) and a fence with no biometric policy (NOT_REQUIRED).
+    // Only the first is a verification, so only the first records 'Yes'.
+    const biometricVerified =
+      gate.reason === BIOMETRIC_GATE_REASON.AUTHENTICATED;
+    biometricVerifiedRef.current = biometricVerified;
 
-      await AttendanceOrchestrator.confirm({
-        token: validationToken,
-        generationType: GENERATION_TYPE,
-        personRecId: userData?.Person,
-        deviceId,
-        clockInFence,
-        spoofingDetected,
+    // QR gate — same position and same fence as the biometric gate.
+    if (isQRCodeActive(gateFence)) {
+      // Lock the Confirm button while the scanner is up — handleQrScanned or
+      // handleQrCancel releases it.
+      setProcessingLabel('Waiting for QR scan…');
+      setIsProcessing(true);
+      setQrModalVisible(true);
+      return;
+    }
+
+    await doSubmit(null, biometricVerified);
+  }, [isProcessing, gateFence, doSubmit]);
+
+  const handleQrScanned = useCallback(
+    async scan => {
+      setQrModalVisible(false);
+
+      // QRScannerModal passes {value, type, scannedAt}, not a bare string.
+      const value = scan && typeof scan === 'object' ? scan.value : scan;
+
+      setProcessingLabel('Verifying QR code…');
+      setIsProcessing(true);
+
+      const result = await validateQRCode({
+        qrData: value,
+        geoFenceIds: [gateFence?.GeoFenceID],
       });
 
-      await onConfirm(note);
-    } catch (error) {
-      Alert.alert(
-        'Clock In Failed',
-        error.message || 'Unable to record attendance. Please try again.',
+      // FAIL CLOSED: only an explicit IsValid === true alongside a 'Valid'
+      // StatusCode proceeds. Anything else — including a self-contradictory
+      // answer — is a rejection.
+      if (
+        result?.IsValid !== true ||
+        String(result.StatusCode ?? '').trim() !== QR_STATUS.VALID
+      ) {
+        setIsProcessing(false);
+        Alert.alert('QR Verification Failed', qrRejectionMessage(result));
+        return;
+      }
+
+      await doSubmit(
+        {...result, rawValue: value},
+        biometricVerifiedRef.current,
       );
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [
-    isProcessing,
-    validationToken,
-    matchedFence,
-    userData?.Person,
-    clockInFence,
-    spoofingDetected,
-    note,
-    onConfirm,
-  ]);
+    },
+    [gateFence, doSubmit],
+  );
+
+  const handleQrCancel = useCallback(() => {
+    setQrModalVisible(false);
+    setIsProcessing(false);
+  }, []);
 
   // Derive display state from the token (already validated) or
   // fall back to GeofenceContext for live GPS strip
@@ -170,14 +250,22 @@ const ConfirmClockInScreen = ({
         </TouchableOpacity>
 
         <View style={S.divider} />
-        <OptionRow icon="🏷" label="Select an activity" onPress={() => {}} />
+        {/* <OptionRow icon="🏷" label="Select an activity" onPress={() => {}} />
         <OptionRow icon="📁" label="Select a project" onPress={() => {}} />
-        <NoteRow value={note} onChangeText={setNote} />
+        <NoteRow value={note} onChangeText={setNote} /> */}
       </ConfirmSheet>
 
       <LocationPickerModal
         visible={locationModalVisible}
         onClose={() => setLocationModalVisible(false)}
+      />
+
+      <QRScannerModal
+        visible={qrModalVisible}
+        eventLabel="CLOCK_IN"
+        fenceName={gateFence?.FenceName}
+        onScanSuccess={handleQrScanned}
+        onCancel={handleQrCancel}
       />
     </>
   );

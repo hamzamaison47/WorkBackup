@@ -5,8 +5,9 @@
 //
 // RESPONSIBILITIES:
 //   1. Fires RetrieveByPerson + RetrieveByPersonAttendance in PARALLEL.
-//   2. Validates geofence, QR code (if enabled), and network against
-//      the fresh server data in one coordinated step.
+//   2. Validates geofence and network against the fresh server data in one
+//      coordinated step. QR is NOT validated here — the confirm screens run
+//      the QR gate on Confirm and hand the result to confirm().
 //   3. Returns a ValidationToken — a short-lived (60s) opaque object
 //      containing all validation results and the fetched data.
 //   4. On confirm: verifies the token is still fresh; if so, re-derives
@@ -19,18 +20,19 @@
 //
 // PERFORMANCE:
 //   Before: 3–4 sequential SOAP calls (~3.2s)
-//   After:  2 parallel SOAP calls + 1 optional QR call (~0.9s)
+//   After:  2 parallel SOAP calls (~0.9s)
 // ─────────────────────────────────────────────
 /* eslint-disable curly */
 import {RetrieveByPerson} from '../../API/AttendanceManagement/RetrieveByPerson';
 import {RetrieveByPersonAttendance} from '../../API/AttendanceManagement/RetrieveByPersonAttendance';
-import {ValidateQRCode} from '../../API/AttendanceManagement/ValidateQRCode';
+import {QR_STATUS} from '../../API/AttendanceManagement/ValidateQRCode';
 import {
   aggregateServerPunches,
   canClockIn,
   canClockOut,
   canStartBreak,
   canEndBreak,
+  isToday,
 } from '../../screens/AttendanceManagement/helpers';
 import {
   checkNetworkMatch,
@@ -181,6 +183,80 @@ const FENCE_UNRESOLVED_MESSAGE =
   'Could not determine your work location. Pull down to refresh on the Time Clock screen and try again.';
 
 // ─────────────────────────────────────────────
+// qrRejectionMessage — user-facing copy per StatusCode.
+//
+// Exported: the confirm screens own the QR gate and surface this text directly.
+//
+// Malformed and NotRecognized deliberately return IDENTICAL text. Saying "that
+// isn't one of our codes" vs "that code is for another site" would let someone
+// enumerate which fences exist by scanning codes and reading the errors. The
+// server's own Message is surfaced ONLY for the client-side 'Error' status
+// (connectivity/parse), never for a server-side rejection.
+// ─────────────────────────────────────────────
+const QR_GENERIC_REJECTION =
+  'This QR code is not valid for attendance here. Please scan the QR code displayed at your location.';
+
+export const qrRejectionMessage = result => {
+  switch (String(result?.StatusCode ?? '').trim()) {
+    case QR_STATUS.NOT_YET_VALID:
+      return 'This QR code is not active yet. Please contact your administrator.';
+    case QR_STATUS.EXPIRED:
+      return 'This QR code has expired. Please scan the current QR code at your location.';
+    case QR_STATUS.ERROR:
+      return (
+        result?.Message || 'Could not validate the QR code. Please try again.'
+      );
+    case QR_STATUS.MALFORMED:
+    case QR_STATUS.NOT_RECOGNIZED:
+    default:
+      return QR_GENERIC_REJECTION;
+  }
+};
+
+// ─────────────────────────────────────────────
+// qrValidityWindowError — LOCAL re-check of the QR's ValidFrom/ValidTo.
+//
+// DATE granularity, not datetime: the D365 side compares X++ dates, so the
+// whole of the final day is valid. Both bounds are therefore collapsed to the
+// start of their LOCAL day and compared against today's local day.
+//
+// Doing this in UTC would be wrong. AX sends an offset-less form such as
+// '2026-09-07T00:00:00', which ECMA-262 parses as LOCAL time — in Lahore
+// (UTC+5) that is 2026-09-06T19:00:00Z. Any UTC-based midnight test would
+// silently never match and the final valid day would read as expired.
+//
+// parseBound also absorbs the AX unset-date sentinel: an empty AX date
+// serializes as 1900-01-01 rather than nil, and treating that as a real bound
+// would reject every punch.
+// ─────────────────────────────────────────────
+const AX_NULL_DATE_YEAR = 1900;
+
+const parseBound = value => {
+  if (value == null) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  if (d.getUTCFullYear() <= AX_NULL_DATE_YEAR) return null;
+  return d;
+};
+
+const startOfLocalDay = d =>
+  new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+const qrValidityWindowError = (validFrom, validTo) => {
+  const today = startOfLocalDay(new Date());
+  const from = parseBound(validFrom);
+  const to = parseBound(validTo);
+
+  if (from && today < startOfLocalDay(from))
+    return 'This QR code is not active yet. Please contact your administrator.';
+
+  if (to && today > startOfLocalDay(to))
+    return 'This QR code has expired. Please scan the current QR code at your location.';
+
+  return null;
+};
+
+// ─────────────────────────────────────────────
 // recoverFenceFromPunches — server-side fallback for Clock Out / Break
 //
 // WHY THIS EXISTS (fresh-install 'Invalid GeoFence ID.' bug):
@@ -264,10 +340,15 @@ const resolveActionFence = ({
 // ─────────────────────────────────────────────
 const workflowCheck = (actionType, records) => {
   switch (actionType) {
-    case ACTION_TYPES.CLOCK_IN:
-      if (!canClockIn(records))
+    case ACTION_TYPES.CLOCK_IN: {
+      if (!records.length) return null;
+      const last = records[records.length - 1];
+      if (!last.clockOut)
         return 'You already have an active session. Clock out first.';
+      if (isToday(last.clockOut))
+        return 'You have already completed your attendance for today.';
       return null;
+    }
     case ACTION_TYPES.CLOCK_OUT:
       if (!canClockOut(records)) {
         if (canEndBreak(records))
@@ -591,7 +672,6 @@ const resolveNetworkContext = (actionFence, netInfo, publicIp) => {
 //   actionType   — ACTION_TYPES constant
 //   coords       — current GPS coords from GeofenceContext
 //   clockInFence — fence recorded at clock-in (for Clock Out / Break)
-//   qrRawValue   — scanned QR string (if QR gate was passed before prepare)
 //   faceVerified — boolean (true if face gate was passed before prepare)
 //   spoofingDetected — boolean from useLocation hook
 //
@@ -602,7 +682,6 @@ const prepare = async ({
   actionType,
   coords,
   clockInFence,
-  qrRawValue = null,
   faceVerified = false,
   spoofingDetected = false,
 }) => {
@@ -664,42 +743,6 @@ const prepare = async ({
     return {ok: false, error: FENCE_UNRESOLVED_MESSAGE};
   }
 
-  // ── QR validation (parallel-friendly) ───────
-  let qrValidated = false;
-  const qrRequired =
-    actionFence &&
-    (() => {
-      const val = String(actionFence?.IsQRCodeActive ?? '')
-        .trim()
-        .toLowerCase();
-      return val === 'yes' || val === '1' || val === 'true';
-    })();
-
-  if (qrRequired) {
-    if (!qrRawValue)
-      return {ok: false, error: 'QR code scan is required for this location.'};
-
-    try {
-      const qrString =
-        qrRawValue && typeof qrRawValue === 'object'
-          ? qrRawValue.value
-          : qrRawValue;
-      const validationResult = await ValidateQRCode({
-        qrImage: qrString,
-        geoFenceID: String(actionFence?.GeoFenceID ?? ''),
-      });
-      if (!validationResult || validationResult === 0)
-        return {
-          ok: false,
-          error:
-            'Invalid QR code for this location. Please scan the correct QR.',
-        };
-      qrValidated = true;
-    } catch (err) {
-      return {ok: false, error: `QR validation failed: ${err.message}`};
-    }
-  }
-
   // ── Network context capture (always) + validation (when configured) ────────
   // IMPORTANT: WiFi data is ALWAYS captured for audit trail and DB persistence,
   // regardless of whether this fence has a network policy configured.
@@ -741,8 +784,6 @@ const prepare = async ({
     serverPunches: rawPunches ?? [], // Raw punches for re-check on confirm
     networkContext,
     coords,
-    qrRawValue,
-    qrValidated,
     faceVerified,
     fetchedAt: Date.now(),
   };
@@ -774,6 +815,14 @@ const prepare = async ({
 //   deviceId       — from DeviceInfo.getUniqueId()
 //   clockInFence   — fence at clock-in time (for Clock Out / Break)
 //   spoofingDetected — current spoofing state at confirm time
+//   qrResult       — the confirm screen's QR gate result: exactly what
+//                    validateQRCode() returns plus `rawValue` (the scanned
+//                    string). null when the fence has no QR policy.
+//   biometricVerified — true ONLY when a device biometric actually matched at
+//                    Confirm time. The caller owns this: confirm() does not run
+//                    the biometric gate, and a fence with no biometric policy
+//                    passes that gate without verifying anything, so it must
+//                    arrive false in that case.
 //
 // Returns: SOAP CreateUserAttendance result
 // Throws on any validation or SOAP failure
@@ -785,6 +834,8 @@ const confirm = async ({
   deviceId,
   clockInFence,
   spoofingDetected = false,
+  qrResult = null,
+  biometricVerified = false,
 }) => {
   if (!token)
     throw new Error('No validation token. Please restart the action.');
@@ -813,7 +864,6 @@ const confirm = async ({
       actionType: token.actionType,
       coords: coordsForRevalidation,
       clockInFence,
-      qrRawValue: token.qrRawValue,
       faceVerified: token.faceVerified,
       spoofingDetected,
     });
@@ -856,6 +906,37 @@ const confirm = async ({
   // message the user can act on instead of surfacing the backend's.
   if (!hasValidFenceId(actionFence)) throw new Error(FENCE_UNRESOLVED_MESSAGE);
 
+  // ── QR re-assertion (LOCAL ONLY — no second server call) ─────────────────
+  // confirm() re-resolves the fence against FRESH GPS above, so it can land on
+  // a different fence than the one the QR was scanned against (overlapping
+  // zones, GPS drift). Submitting then would record the punch against a
+  // location this QR never authorised. Re-check against the scan's own answer.
+  if (qrResult) {
+    const qrFenceId = String(qrResult.GeoFenceId ?? '').trim();
+    const liveFenceId = String(actionFence?.GeoFenceID ?? '').trim();
+
+    if (
+      qrFenceId.length === 0 ||
+      qrFenceId.toLowerCase() !== liveFenceId.toLowerCase()
+    ) {
+      if (__DEV__) {
+        console.warn('[Orchestrator] QR fence drift at confirm →', {
+          validatedFor: qrFenceId,
+          resolvedNow: liveFenceId,
+        });
+      }
+      throw new Error(
+        'Your location changed after the QR code was scanned. Please scan again.',
+      );
+    }
+
+    const windowError = qrValidityWindowError(
+      qrResult.ValidFrom,
+      qrResult.ValidTo,
+    );
+    if (windowError) throw new Error(windowError);
+  }
+
   // Re-read the network live and re-enforce the action fence's policy.
   const [netInfo, publicIp] = await Promise.all([
     fetchNetworkInfo(),
@@ -880,8 +961,9 @@ const confirm = async ({
     generationType,
     networkContext,
     personRecId,
-    qrValue: activeToken.qrRawValue,
+    qrValue: qrResult?.rawValue,
     faceResult: {verified: activeToken.faceVerified},
+    biometricVerified,
     deviceContext: {id: deviceId},
     mode: ATTENDANCE_MODE.ONLINE,
   });

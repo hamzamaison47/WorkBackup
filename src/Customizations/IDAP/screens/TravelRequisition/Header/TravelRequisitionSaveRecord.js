@@ -277,12 +277,9 @@ const TravelRequisitionSaveRecord = () => {
     const day = d.getDate();
     const month = d.getMonth() + 1;
     const year = d.getFullYear();
-    let hours = d.getHours();
+    const hours = String(d.getHours()).padStart(2, '0');
     const mins = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    if (hours === 0) hours = 12;
-    return `${day}/${month}/${year} ${hours}:${mins} ${ampm}`;
+    return `${day}/${month}/${year} ${hours}:${mins}`;
   };
 
   const toLocalDateTimeString = date => {
@@ -628,7 +625,7 @@ const TravelRequisitionSaveRecord = () => {
         date={pickerInitialDate()}
         mode="datetime"
         is24hourSource="locale"
-        locale="en-US"
+        locale="en-GB"
         minimumDate={pickerMinDate()}
         maximumDate={pickerMaxDate()}
         onConfirm={handleDateTimeConfirm}

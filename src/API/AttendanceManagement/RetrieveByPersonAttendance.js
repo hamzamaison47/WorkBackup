@@ -24,10 +24,10 @@ const RetrieveByPersonAttendance = async ({person}) => {
 
     const soapEnvelope = createSoapEnvelope(soapBody);
 
-    if (__DEV__) {
-      console.log('Person =-=-=-=-=-', {person});
-      console.log('soapEnvelope =-=-=-=-=-', {soapEnvelope});
-    }
+    // if (__DEV__) {
+    //   console.log('Person =-=-=-=-=-', {person});
+    //   console.log('soapEnvelope =-=-=-=-=-', {soapEnvelope});
+    // }
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/DFUserAttendanceSvcGroup`,

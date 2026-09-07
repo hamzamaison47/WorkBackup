@@ -298,3 +298,11 @@ export default {
   isTablet,
   getDeviceType,
 };
+
+// at the very bottom of store/utils/scaling.js
+console.log('[scaling.js] exports:', module.exports);
+// or if it's ES modules with babel interop:
+console.log(
+  '[scaling.js] loaded, conditionalScale is:',
+  typeof conditionalScale,
+);

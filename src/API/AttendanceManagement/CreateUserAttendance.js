@@ -21,8 +21,18 @@ const FIELDS = [
   'PersonRecId',
   'PunchDateTime',
   'QRImage',
+  'VerifyBiometric',
   'VerifyFaceId',
 ];
+
+// D365 DFNoYes members travel on the wire as the strings 'Yes'/'No'. Callers
+// hand us a boolean (or a 1/0 from a normalized SOAP read); anything else is
+// already in wire form and passes through untouched.
+const toNoYes = value => {
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (value === 1 || value === 0) return value === 1 ? 'Yes' : 'No';
+  return value;
+};
 
 const CreateUserAttendance = async ({attendanceData}) => {
   try {
@@ -41,15 +51,8 @@ const CreateUserAttendance = async ({attendanceData}) => {
         : undefined,
     };
 
-    if (typeof normalizedData.VerifyFaceId === 'boolean') {
-      normalizedData.VerifyFaceId = normalizedData.VerifyFaceId ? 'Yes' : 'No';
-    } else if (
-      normalizedData.VerifyFaceId === 1 ||
-      normalizedData.VerifyFaceId === 0
-    ) {
-      normalizedData.VerifyFaceId =
-        normalizedData.VerifyFaceId === 1 ? 'Yes' : 'No';
-    }
+    normalizedData.VerifyFaceId = toNoYes(normalizedData.VerifyFaceId);
+    normalizedData.VerifyBiometric = toNoYes(normalizedData.VerifyBiometric);
 
     const soapBody = `
       <create xmlns="http://tempuri.org">

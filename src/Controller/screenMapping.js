@@ -81,7 +81,14 @@ import ExpenseManagementHeaderListPage from '../Customizations/IDAP/screens/Expe
 import ExpenseManagementSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Header/ExpenseManagementSaveRecord';
 import ExpenseManagementLinesListPage from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLinesListPage';
 import ExpenseManagementLineSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLineSaveRecord';
-import {Plane, Receipt, CalendarDays, Stethoscope} from 'lucide-react-native';
+import DFAttendanceCalendarScreen from '../Customizations/IDAP/screens/AttendanceCalendar/DFAttendanceCalendarScreen';
+import {
+  Plane,
+  Receipt,
+  CalendarDays,
+  Stethoscope,
+  CalendarClock,
+} from 'lucide-react-native';
 
 export const screenMapping = {
   // Tab Navigator Screens
@@ -173,6 +180,7 @@ export const screenMapping = {
   ExpenseManagementSaveRecord: ExpenseManagementSaveRecord,
   ExpenseManagementLinesListPage: ExpenseManagementLinesListPage,
   ExpenseManagementLineSaveRecord: ExpenseManagementLineSaveRecord,
+  DFAttendanceCalendarScreen: DFAttendanceCalendarScreen,
 };
 
 // Map Images → Screen component
@@ -209,4 +217,5 @@ export const iconMapping = {
   MedicalExpenseManagmentListPage: Stethoscope,
   TravelRequisitionListPage: Plane,
   ExpenseManagementHeaderListPage: Receipt,
+  DFAttendanceCalendarScreen: CalendarClock,
 };

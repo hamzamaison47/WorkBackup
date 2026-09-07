@@ -2650,6 +2650,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
+  DSR_DropdownInputSearch: {
+    height: 40,
+    fontSize: 14,
+    borderColor: '#ccc',
+    borderRadius: 8,
+  },
+
   DSR_ContentWrapper: {
     flex: 1,
     position: 'relative',
@@ -9066,6 +9073,34 @@ const styles = StyleSheet.create({
 
   EI_CancelBtn: {
     backgroundColor: '#f0f0f0',
+  },
+
+  // ============================================
+  // SITE SURVEY BUTTON (SSB_) - RESPONSIVE STYLES
+  // ============================================
+  SSB_container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: conditionalScale(14, 15, 16, 16),
+    paddingVertical: conditionalVerticalScale(7, 8, 8, 9),
+    paddingHorizontal: conditionalScale(10, 11, 12, 13),
+    borderWidth: moderateScale(1),
+    borderColor: '#E2E8F0',
+  },
+  SSB_label: {
+    fontSize: conditionalFontScale(11.5, 12, 12.5, 13),
+    fontWeight: '600',
+    color: '#334155',
+    marginLeft: conditionalScale(6, 6, 7, 7),
+    marginRight: conditionalScale(6, 6, 7, 7),
+  },
+  SSB_badge: {
+    width: conditionalScale(16, 17, 18, 18),
+    height: conditionalScale(16, 17, 18, 18),
+    borderRadius: conditionalScale(8, 8.5, 9, 9),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

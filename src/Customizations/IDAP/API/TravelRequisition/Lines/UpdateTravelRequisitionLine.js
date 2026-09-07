@@ -5,6 +5,48 @@ import {getToken} from '../../../../../API/Token/getToken';
 import {createSoapEnvelope} from '../../../../../store/utils/soapHeaderUtils';
 import {getActiveConfigData} from '../../../../../Controller/secureConfig';
 
+const getOffsetSuffix = date => {
+  const offsetMin = -date.getTimezoneOffset();
+  const sign = offsetMin >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetMin);
+  const hh = String(Math.floor(abs / 60)).padStart(2, '0');
+  const mm = String(abs % 60).padStart(2, '0');
+  return `${sign}${hh}:${mm}`;
+};
+
+const toIsoDateTimePreserveTime = value => {
+  if (!value) return '';
+
+  let d;
+  if (value instanceof Date) {
+    d = value;
+  } else {
+    const match = String(value).match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2}))?/,
+    );
+    if (!match) return '';
+    const [, year, month, day, hours = '00', minutes = '00', seconds = '00'] =
+      match;
+    d = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day),
+      Number(hours),
+      Number(minutes),
+      Number(seconds),
+    );
+  }
+
+  if (isNaN(d.getTime())) return '';
+
+  const pad = n => String(n).padStart(2, '0');
+  const literal =
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  return `${literal}${getOffsetSuffix(d)}`;
+};
+
 // Calls DFTravelRequisitionLinesSvc.update.
 // Element order inside <contract> MUST stay alphabetical to match the
 // service contract's xs:sequence — do not reorder.
@@ -48,11 +90,11 @@ const UpdateTravelRequisitionLine = async ({
       }</a:EstimatedDate>
       <a:LegalEntity>${LegalEntity || ''}</a:LegalEntity>
       <a:Mileage>${Mileage || 0}</a:Mileage>
-      <a:PerDiemFromDate>${
-        PerDiemFromDate || '0001-01-01T00:00:00'
-      }</a:PerDiemFromDate>
+     <a:PerDiemFromDate>${
+       toIsoDateTimePreserveTime(PerDiemFromDate) || '0001-01-01T00:00:00'
+     }</a:PerDiemFromDate>
       <a:PerDiemToDate>${
-        PerDiemToDate || '0001-01-01T00:00:00'
+        toIsoDateTimePreserveTime(PerDiemToDate) || '0001-01-01T00:00:00'
       }</a:PerDiemToDate>
       <a:RecId>${recId}</a:RecId>
       <a:RequisitionHeaderRecId>${reqHeaderRecId}</a:RequisitionHeaderRecId>
