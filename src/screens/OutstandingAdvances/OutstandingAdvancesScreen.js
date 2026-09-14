@@ -568,7 +568,7 @@ const SummaryCard = ({totalAdvanced, totalRecovered, totalOutstanding, T}) => (
         style={{
           fontSize: conditionalScale(13, 14, 14, 14),
           fontWeight: '500',
-          color: 'rgba(255,255,255,0.8)',
+          color: T.onPrimaryMuted,
           marginBottom: conditionalVerticalScale(4, 4, 5, 5),
         }}>
         Total Outstanding Amount
@@ -607,7 +607,7 @@ const SummaryCard = ({totalAdvanced, totalRecovered, totalOutstanding, T}) => (
           style={{
             fontSize: conditionalScale(11, 12, 12, 12),
             fontWeight: '500',
-            color: 'rgba(255,255,255,0.7)',
+            color: T.onPrimaryMuted,
             marginBottom: conditionalVerticalScale(4, 4, 5, 5),
           }}>
           Total Advance Amount
@@ -642,7 +642,7 @@ const SummaryCard = ({totalAdvanced, totalRecovered, totalOutstanding, T}) => (
           style={{
             fontSize: conditionalScale(11, 12, 12, 12),
             fontWeight: '500',
-            color: 'rgba(255,255,255,0.7)',
+            color: T.onPrimaryMuted,
             marginBottom: conditionalVerticalScale(4, 4, 5, 5),
           }}>
           Total Recovered

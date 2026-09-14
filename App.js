@@ -3,7 +3,7 @@
 import React, {useEffect, useCallback, useRef} from 'react';
 import {Provider, useSelector} from 'react-redux';
 import {NavigationContainer} from '@react-navigation/native';
-import {I18nManager, Text, TextInput} from 'react-native';
+import {I18nManager, StatusBar, Text, TextInput} from 'react-native';
 import RNRestart from 'react-native-restart';
 import {PersistGate} from 'redux-persist/integration/react';
 import NetInfo from '@react-native-community/netinfo';
@@ -67,7 +67,6 @@ const AppContent = () => {
     <NavigationContainer
       ref={navigationRef}
       theme={{
-        // ← ADD THIS
         dark: isDark,
         colors: {
           background: colors.background,
@@ -78,6 +77,14 @@ const AppContent = () => {
           notification: colors.primary,
         },
       }}>
+      {/* The ONE status-bar policy for the app. The app bar is surface-
+          coloured, so the status bar must be light with dark icons; a
+          light-content bar over a white app bar is invisible. Screens must
+          not mount their own <StatusBar> — it would override this. */}
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.card}
+      />
       <AppNavigator />
     </NavigationContainer>
   );

@@ -28,18 +28,20 @@ const baseTokens = {
   tabBarInactive: null,
 };
 
+// Light values that the brand owns come from src/theme/brand.js (this feeds
+// the NavigationContainer theme in App.js and the Settings switches).
 export const lightTheme = {
   ...baseTokens,
   primary: brand.primary,
-  background: '#F5F7FA',
-  surface: '#F2F2F2',
-  card: '#FFFFFF',
-  text: '#000000',
-  subText: '#666666',
-  titleText: '#111827',
-  subtitleText: '#6B7280',
-  border: '#CCCCCC',
-  divider: '#F0F0F0',
+  background: brand.pageBg,
+  surface: brand.surfaceAlt,
+  card: brand.surface,
+  text: brand.text,
+  subText: brand.secondary,
+  titleText: brand.text,
+  subtitleText: brand.secondary,
+  border: brand.divider,
+  divider: brand.divider,
   shadow: '#000000',
   inputBg: '#F5F7FA',
   placeholder: '#999999',
@@ -51,8 +53,8 @@ export const lightTheme = {
   disabled: '#CCCCCC',
   disabledText: '#AAAAAA',
   overlay: 'rgba(0,0,0,0.4)',
-  tabBar: '#FFFFFF',
-  tabBarInactive: '#999999',
+  tabBar: brand.surface,
+  tabBarInactive: brand.secondary,
 };
 
 export const darkTheme = {

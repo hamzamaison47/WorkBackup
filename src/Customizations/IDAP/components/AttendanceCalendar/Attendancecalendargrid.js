@@ -40,14 +40,19 @@ const STATUS_COLORS = {
   onTime: {bg: AppTokens.greenBg, dot: AppTokens.green, text: '#065F46'},
   irregular: {bg: AppTokens.redBg, dot: AppTokens.red, text: '#991B1B'},
   // "missing" is the waiting/attention family — slate, not amber
-  // (statusWaiting* in Tokens.js). NOTE: dot now matches `absent`'s slate;
-  // only bg/text differ. Flagged in THEME_AUDIT step-2 report.
+  // (statusWaiting* in Tokens.js).
   missing: {
     bg: AppTokens.statusWaitingBg,
     dot: AppTokens.statusWaiting,
     text: AppTokens.statusWaitingText,
   },
-  absent: {bg: AppTokens.slateBg, dot: AppTokens.slate, text: AppTokens.slate},
+  // "absent" uses the Draft family so it reads differently from "missing"
+  // (waiting family) at a glance.
+  absent: {
+    bg: AppTokens.statusDraftBg,
+    dot: AppTokens.statusDraft,
+    text: AppTokens.statusDraftText,
+  },
   leave: {bg: AppTokens.blueBg, dot: AppTokens.blue, text: AppTokens.blue},
 };
 

@@ -10,7 +10,6 @@ import {
   BackHandler,
   ToastAndroid,
   Platform,
-  StatusBar,
   StyleSheet,
   Dimensions,
   ActivityIndicator,
@@ -528,8 +527,6 @@ const LoginScreen = () => {
   // ── Render ─────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
       {/* Decorative background shapes */}
       <View style={styles.bgShape1} />
       <View style={styles.bgShape2} />

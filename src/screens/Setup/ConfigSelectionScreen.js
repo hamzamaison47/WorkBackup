@@ -10,7 +10,6 @@ import {
   Modal,
   I18nManager,
   StyleSheet,
-  StatusBar,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -235,8 +234,6 @@ const ConfigSelectionScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}

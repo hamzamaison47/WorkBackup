@@ -6,9 +6,9 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
 
         <!-- Blue theme for Date/Time picker dialogs -->
-        <item name="colorPrimary">#0A66C2</item>         
+        <item name="colorPrimary">#F4B400</item>         
         <!-- <item name="colorPrimaryDark">#084C92</item>     darker shade for status bar -->
-        <item name="colorAccent">#0A66C2</item>          <!-- affects buttons like OK/CANCEL -->
+        <item name="colorAccent">#F4B400</item>          <!-- affects buttons like OK/CANCEL -->
     </style>
 
 </resources>

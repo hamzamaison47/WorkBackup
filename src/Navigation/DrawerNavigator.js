@@ -30,18 +30,14 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
   const T = useAppTokens();
   const P = usePalette();
 
+  // Active item: 4px primary left border + tint row + text-coloured label;
+  // the icon stays primaryStrong in both states (it sits on a light well).
   const renderIcon = () => {
     const iconSize = 20;
-    const color = isActive ? P.onPrimary : P.primaryStrong;
+    const color = P.primaryStrong;
 
     if (typeof icon === 'string') {
-      return (
-        <Ionicons
-          name={icon}
-          size={iconSize}
-          color={isActive ? P.onPrimary : P.primaryStrong}
-        />
-      );
+      return <Ionicons name={icon} size={iconSize} color={color} />;
     }
 
     if (typeof icon === 'function' || (icon && icon.$$typeof)) {
@@ -71,7 +67,9 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
         marginHorizontal: conditionalScale(12, 14, 16, 16),
         marginVertical: conditionalVerticalScale(1, 1, 2, 2),
         borderRadius: conditionalScale(8, 9, 10, 10),
-        backgroundColor: isActive ? T.blue : 'transparent',
+        backgroundColor: isActive ? T.blueBg : 'transparent',
+        borderLeftWidth: 4,
+        borderLeftColor: isActive ? T.blue : 'transparent',
       }}
       onPress={onPress}
       activeOpacity={0.7}>
@@ -80,7 +78,7 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
           width: conditionalScale(32, 34, 36, 36),
           height: conditionalScale(32, 34, 36, 36),
           borderRadius: conditionalScale(9, 10, 10, 10),
-          backgroundColor: isActive ? 'rgba(255,255,255,0.18)' : T.blueBg,
+          backgroundColor: isActive ? T.cardBg : T.blueBg,
           alignItems: 'center',
           justifyContent: 'center',
           marginRight: conditionalScale(12, 13, 14, 14),
@@ -91,8 +89,8 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
         style={{
           flex: 1,
           fontSize: conditionalScale(13, 14, 14, 14),
-          fontWeight: isActive ? '500' : '400',
-          color: isActive ? T.onPrimary : T.titleText,
+          fontWeight: isActive ? '600' : '400',
+          color: T.titleText,
           letterSpacing: 0.2,
         }}
         numberOfLines={2}>
@@ -102,9 +100,9 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
   );
 };
 
-// Header stays on brand blue in both themes (same as QuickAccessSheet's
-// header) — white text/circle keep proper contrast against it regardless of
-// theme, so those specific colors are intentionally NOT theme-reactive.
+// Inverted header: surface background, text-coloured name/title, a tinted
+// avatar circle, and a primary bottom border that separates it from the
+// item list. Fully theme-reactive via T.*.
 const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
   const T = useAppTokens();
 
@@ -123,9 +121,9 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
   return (
     <View
       style={{
-        backgroundColor: T.blue,
-        borderBottomLeftRadius: conditionalScale(16, 18, 20, 20),
-        borderBottomRightRadius: conditionalScale(16, 18, 20, 20),
+        backgroundColor: T.cardBg,
+        borderBottomWidth: 3,
+        borderBottomColor: T.blue,
         marginBottom: conditionalVerticalScale(8, 10, 12, 12),
       }}>
       <View
@@ -149,7 +147,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
           style={{
             fontSize: conditionalScale(16, 17, 18, 18),
             fontWeight: '600',
-            color: '#FFFFFF',
+            color: T.titleText,
             letterSpacing: 0.3,
           }}>
           IDAP360
@@ -175,7 +173,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
               width: conditionalScale(40, 42, 44, 44),
               height: conditionalScale(40, 42, 44, 44),
               borderRadius: conditionalScale(20, 21, 22, 22),
-              backgroundColor: '#FFFFFF',
+              backgroundColor: T.blueBg,
               justifyContent: 'center',
               alignItems: 'center',
               overflow: 'hidden',
@@ -191,7 +189,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
                 style={{
                   fontSize: conditionalScale(14, 15, 16, 16),
                   fontWeight: '600',
-                  color: T.blue,
+                  color: T.blueStrong,
                 }}>
                 {getInitials(userData?.employeeName)}
               </Text>
@@ -207,7 +205,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
               borderRadius: conditionalScale(5, 5.5, 6, 6),
               backgroundColor: '#4ADE80',
               borderWidth: 2,
-              borderColor: T.blue,
+              borderColor: T.cardBg, // cutout ring: matches the header
             }}
           />
         </View>
@@ -217,7 +215,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
             style={{
               fontSize: conditionalScale(13, 14, 14, 14),
               fontWeight: '600',
-              color: '#FFFFFF',
+              color: T.titleText,
               marginBottom: conditionalVerticalScale(2, 2, 3, 3),
             }}
             numberOfLines={1}>
@@ -226,7 +224,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
           <Text
             style={{
               fontSize: conditionalScale(10, 11, 11, 11),
-              color: 'rgba(255,255,255,0.7)',
+              color: T.subtitleText,
             }}
             numberOfLines={1}>
             {userData?.email || 'user@email.com'}
@@ -481,14 +479,20 @@ const DrawerNavigator = () => {
       screenOptions={{
         drawerStyle: {
           width: conditionalScale(280, 300, 320, 340),
-          backgroundColor: T.pageBg,
+          backgroundColor: T.cardBg,
         },
         headerShown: true,
         ...(Platform.OS === 'android' && {headerStatusBarHeight: insets.top}),
+        // Same inverted treatment as MainPageHeader (which overrides these
+        // once a screen's ActionPaneContainer mounts): surface bar, text-
+        // coloured title/tint, hairline bottom edge, no shadow.
         headerStyle: {
-          backgroundColor: T.blue,
+          backgroundColor: T.cardBg,
           shadowColor: 'transparent',
+          shadowOpacity: 0,
           elevation: 0,
+          borderBottomWidth: 1,
+          borderBottomColor: T.cardDivider,
           height:
             Platform.OS === 'android'
               ? insets.top + conditionalVerticalScale(56, 60, 64, 64)
@@ -497,9 +501,9 @@ const DrawerNavigator = () => {
         headerTitleStyle: {
           fontSize: conditionalScale(15, 16, 17, 17),
           fontWeight: '500',
-          color: '#FFFFFF',
+          color: T.titleText,
         },
-        headerTintColor: '#FFFFFF',
+        headerTintColor: T.titleText,
         headerTitleAlign: 'center',
       }}>
       <Drawer.Screen

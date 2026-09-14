@@ -7,9 +7,11 @@
  * ambiguous UI. Run with `npm run contrast`. Intended to gate the palette
  * swap: change src/theme/brand.js, run this, fix what it flags.
  *
- * Reads the REAL modules (src/theme/brand.js, src/components/AppComponentsDesign/
- * Tokens.js) through @babel/register so the numbers can never drift from the
- * app. Nothing in src/ is modified.
+ * Reads the REAL modules (src/theme/brand.js — i.e. whichever brand file is
+ * selected there — and src/components/AppComponentsDesign/Tokens.js) through
+ * @babel/register so the numbers can never drift from the app. A brand that
+ * fails the contract (src/theme/brandContract.js) fails here too, at import.
+ * Nothing in src/ is modified.
  *
  * Checks
  *   1. onPrimary on primary            ≥ 4.5  (button labels, header icons)
@@ -18,7 +20,14 @@
  *   4. statusWaiting on statusWaitingBg ≥ 4.5 (dot / icon on pill)
  *   5. statusWaitingText on statusWaitingBg ≥ 4.5 (pill text)
  *   6. white on statusWaiting          ≥ 4.5  (active-pill text)
- *   7. primary vs statusWaiting distinguishable: CIE76 ΔE ≥ 20
+ *   7. statusDraftText on statusDraftBg ≥ 4.5 (Draft pill text)
+ *   8. titleText on statusDraft         ≥ 4.5  (active Draft pill label —
+ *      white would be 2.6:1 on #94A3B8, so PILL_COLORS uses titleText)
+ *   9. onPrimaryMuted on primary        ≥ 4.5  (rgba composited over primary)
+ *  10. text on pageBg / secondary on surface & pageBg ≥ 4.5 (brand neutrals)
+ *  11. primary vs statusWaiting distinguishable: CIE76 ΔE ≥ 20
+ *  12. statusDraft vs statusWaiting distinguishable: CIE76 ΔE ≥ 20
+ *      (Draft and Pending must not read as the same state)
  *      A WCAG luminance ratio was first proposed for this check, but it
  *      cannot measure hue difference: today's blue vs slate is only 1.33:1
  *      by luminance while being obviously different colours (ΔE 43.7), and
@@ -63,6 +72,30 @@ const norm = h => {
   return ('#' + m6[1]).toUpperCase();
 };
 const rgb = h => [1, 3, 5].map(i => parseInt(norm(h).slice(i, i + 2), 16));
+// Resolve `rgba(r,g,b,a)` drawn over an opaque hex background to the opaque
+// hex a viewer actually sees. Opaque hex passes through unchanged. Used for
+// onPrimaryMuted, which is defined as an alpha of onPrimary over primary.
+const composite = (fg, bg) => {
+  const s = String(fg).trim();
+  const ra =
+    /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(
+      s,
+    );
+  if (!ra) {
+    return norm(s);
+  }
+  const a = ra[4] === undefined ? 1 : Number(ra[4]);
+  const top = [ra[1], ra[2], ra[3]].map(Number);
+  const under = rgb(bg);
+  const out = top.map((c, i) => Math.round(c * a + under[i] * (1 - a)));
+  return (
+    '#' +
+    out
+      .map(c => c.toString(16).padStart(2, '0'))
+      .join('')
+      .toUpperCase()
+  );
+};
 const lin = c => {
   c /= 255;
   return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
@@ -144,12 +177,55 @@ const checks = [
     bg: BrandTokens.statusWaiting,
     min: AA,
   },
+  {
+    label: 'statusDraftText on statusDraftBg',
+    fg: BrandTokens.statusDraftText,
+    bg: BrandTokens.statusDraftBg,
+    min: AA,
+  },
+  {
+    label: 'titleText on statusDraft (active Draft pill)',
+    fg: LightTokens.titleText,
+    bg: BrandTokens.statusDraft,
+    min: AA,
+  },
+  {
+    // An alpha of onPrimary over primary; composited before measuring.
+    label: 'onPrimaryMuted on primary',
+    fg: brand.onPrimaryMuted,
+    bg: brand.primary,
+    min: AA,
+  },
+  {
+    label: 'text on pageBg',
+    fg: brand.text,
+    bg: brand.pageBg,
+    min: AA,
+  },
+  {
+    label: 'secondary on surface',
+    fg: brand.secondary,
+    bg: brand.surface,
+    min: AA,
+  },
+  {
+    label: 'secondary on pageBg',
+    fg: brand.secondary,
+    bg: brand.pageBg,
+    min: AA,
+  },
 ];
 
 const distinct = [
   {
     label: 'primary vs statusWaiting (semantic distinguishability)',
     a: brand.primary,
+    b: BrandTokens.statusWaiting,
+    min: DISTINCT,
+  },
+  {
+    label: 'statusDraft vs statusWaiting (Draft ≠ Pending)',
+    a: BrandTokens.statusDraft,
     b: BrandTokens.statusWaiting,
     min: DISTINCT,
   },
@@ -167,6 +243,11 @@ const info = [
     b: BrandTokens.tabBadgeBg,
   },
   {
+    // Expected to WARN while the palette is blue: tint (#e2edf8) and the
+    // waiting pill bg (#E2E8F0) are both cool pale greys. Under mustard the
+    // tint becomes a warm cream (#FEF6E0, ΔE ≈ 17 → still close but a
+    // different temperature) and resolves on its own at Step 3. Left
+    // informational on purpose — do not promote to a gated check.
     label: 'tint vs statusWaitingBg (selected row vs waiting pill)',
     a: brand.tint,
     b: BrandTokens.statusWaitingBg,
@@ -177,18 +258,21 @@ let failed = 0;
 const pad = s => String(s).padEnd(58);
 const f2 = n => n.toFixed(2).padStart(6);
 
-console.log('\ncontrast-guard — palette: primary ' + norm(brand.primary));
+console.log(
+  `\ncontrast-guard — brand "${brand.name}": primary ${norm(brand.primary)}`,
+);
 console.log('\nWCAG contrast (minimum ' + AA + ':1)');
 for (const c of checks) {
-  const r = ratio(c.fg, c.bg);
+  const fg = composite(c.fg, c.bg); // opaque hex passes through unchanged
+  const r = ratio(fg, c.bg);
   const ok = r >= c.min;
   if (!ok) {
     failed++;
   }
   console.log(
-    `  ${ok ? 'PASS' : 'FAIL'}  ${pad(c.label)} ${f2(r)}:1   ${norm(
-      c.fg,
-    )} on ${norm(c.bg)}`,
+    `  ${ok ? 'PASS' : 'FAIL'}  ${pad(c.label)} ${f2(r)}:1   ${
+      /^#/.test(String(c.fg).trim()) ? fg : `${c.fg} → ${fg}`
+    } on ${norm(c.bg)}`,
   );
 }
 

@@ -173,32 +173,28 @@ export default function CustomTabBar(props) {
 
   const responsiveStyles = getResponsiveStyles();
 
-  // ✅ In dark mode: deep dark surface for tab bar
-  // In light mode: brand blue (unchanged from original)
-  const tabBarBg =
-    T.pageBg === '#0F172A'
-      ? '#1E293B' // dark mode — elevated surface
-      : P.primary; // light mode — brand blue
+  // Light mode is an INVERTED bar: surface background, secondary-coloured
+  // inactive tabs, primaryStrong active icon/label (primary itself is
+  // 1.85:1 on white) and a primary-filled indicator under the active label.
+  // Dark mode keeps its elevated dark surface and light-blue active state.
+  const tabBarBg = T.isDark ? '#1E293B' : T.cardBg;
 
-  // ✅ Active icon bg — white pill in light, subtle blue in dark
-  const activeIconGradient =
-    T.pageBg === '#0F172A'
-      ? ['#334155', '#1E293B'] // dark mode
-      : ['#ffffff', '#f0f0f0']; // light mode
+  // Active icon well — only dark mode still draws one (a subtle gradient);
+  // the light bar has no pill, the indicator carries the active state.
+  const activeIconGradient = ['#334155', '#1E293B'];
 
-  // ✅ Active icon color — brand blue in light, bright white in dark
-  const activeIconColor = T.pageBg === '#0F172A' ? '#93C5FD' : P.primary;
+  const activeIconColor = T.isDark ? '#93C5FD' : T.blueStrong;
+  const inactiveIconColor = T.isDark
+    ? 'rgba(148, 163, 184, 0.9)'
+    : T.subtitleText;
 
-  // ✅ Inactive icon color — white in light, muted in dark
-  const inactiveIconColor =
-    T.pageBg === '#0F172A' ? 'rgba(148, 163, 184, 0.9)' : P.onPrimary;
+  const activeLabelColor = T.isDark ? '#93C5FD' : T.blueStrong;
+  const inactiveLabelColor = T.isDark
+    ? 'rgba(148, 163, 184, 0.7)'
+    : T.subtitleText;
 
-  // ✅ Label colors
-  const activeLabelColor = T.pageBg === '#0F172A' ? '#93C5FD' : P.onPrimary;
-  const inactiveLabelColor =
-    T.pageBg === '#0F172A'
-      ? 'rgba(148, 163, 184, 0.7)'
-      : 'rgba(255, 255, 255, 0.7)';
+  // The 2px indicator under the active label: primary on the light bar.
+  const indicatorColor = T.isDark ? activeLabelColor : T.blue;
 
   return (
     <View
@@ -206,7 +202,7 @@ export default function CustomTabBar(props) {
         styles.container,
         {
           backgroundColor: tabBarBg,
-          borderTopColor: P.primary,
+          borderTopColor: T.cardDivider,
           paddingBottom: insets.bottom,
         },
         props.style,
@@ -225,7 +221,7 @@ export default function CustomTabBar(props) {
               accessibilityRole="button"
               accessibilityState={{selected: isActive}}>
               {/* Icon */}
-              {isActive ? (
+              {isActive && T.isDark ? (
                 <LinearGradient
                   colors={activeIconGradient}
                   start={{x: 0, y: 0}}
@@ -244,11 +240,15 @@ export default function CustomTabBar(props) {
                   </View>
                 </LinearGradient>
               ) : (
-                <View style={[styles.iconWrapper, styles.iconWrapperInactive]}>
+                <View
+                  style={[
+                    styles.iconWrapper,
+                    !isActive && T.isDark && styles.iconWrapperInactive,
+                  ]}>
                   <Ionicons
-                    name={tab.iconUnfocused}
+                    name={isActive ? tab.iconFocused : tab.iconUnfocused}
                     size={responsiveStyles.iconSize}
-                    color={inactiveIconColor}
+                    color={isActive ? activeIconColor : inactiveIconColor}
                   />
                 </View>
               )}
@@ -279,7 +279,7 @@ export default function CustomTabBar(props) {
                   {isActive && (
                     <View style={styles.activeUnderline}>
                       <LinearGradient
-                        colors={[activeLabelColor, activeLabelColor]}
+                        colors={[indicatorColor, indicatorColor]}
                         start={{x: 0, y: 0}}
                         end={{x: 1, y: 0}}
                         style={styles.underlineGradient}
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: -8},
     shadowOpacity: 0.08,
     shadowRadius: 16,
-    elevation: 20,
+    elevation: 8,
     borderTopWidth: 1,
   },
   tabBarWrapper: {
@@ -332,6 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 2,
   },
+  // Dark mode only — a faint well behind inactive icons.
   iconWrapperInactive: {
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },

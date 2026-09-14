@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   Dimensions,
-  StatusBar,
   Animated,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
@@ -159,8 +158,6 @@ const HrNewsUpdatesScreen = ({navigation}) => {
       showPageTitleRow={true}
       onBackPress={() => navigation.goBack()}>
       <View style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-
         {loading && !refreshing ? (
           <View style={{paddingHorizontal: 24, paddingTop: 20}}>
             <ModernSkeleton />

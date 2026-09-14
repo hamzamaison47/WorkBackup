@@ -21,6 +21,7 @@ const PALETTE = Object.freeze({
   primary: brand.primary, // filled surfaces
   primaryStrong: brand.primaryStrong, // primary as text / thin border / icon
   onPrimary: brand.onPrimary, // content on a primary fill
+  onPrimaryMuted: brand.onPrimaryMuted, // de-emphasised content on a fill
   tint: brand.tint, // selected-card / active-row background
 });
 

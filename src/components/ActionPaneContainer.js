@@ -66,12 +66,15 @@ const PILL_COLORS = {
     dot: null,
     onActive: brand.onPrimary,
   },
+  // "Draft" family — lighter neutral than the waiting family (statusDraft*
+  // in Tokens.js). White fails on the #94A3B8 fill, so the active label is
+  // dark.
   Draft: {
-    active: AppTokens.slate,
-    bg: AppTokens.slateBg,
-    text: AppTokens.slate,
-    dot: AppTokens.slate,
-    onActive: '#FFFFFF',
+    active: AppTokens.statusDraft,
+    bg: AppTokens.statusDraftBg,
+    text: AppTokens.statusDraftText,
+    dot: AppTokens.statusDraft,
+    onActive: AppTokens.titleText,
   },
   // "Waiting" family — see statusWaiting* in Tokens.js for why not amber.
   Pending: {
@@ -814,7 +817,11 @@ const ActionPaneContainer = ({
         onTitle: pageTitle,
         onShowNotify: toggleNotification,
         onCount: totalUnreadCount,
-        headerBg: T.blue,
+        // Inverted app bar: surface background, text-coloured content.
+        headerBg: T.cardBg,
+        headerFg: T.titleText,
+        chipBg: T.chipBg,
+        dividerColor: T.cardDivider,
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
         isBack: false,
         onBackPress: onBackPress,
@@ -834,7 +841,10 @@ const ActionPaneContainer = ({
     defaultLegalEntity,
     isHeaderActive,
     toggleDrawer,
-    T.blue,
+    T.cardBg,
+    T.titleText,
+    T.chipBg,
+    T.cardDivider,
     onBackPress,
     totalUnreadCount,
     insets.top,

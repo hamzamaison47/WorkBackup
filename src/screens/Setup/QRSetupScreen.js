@@ -587,7 +587,6 @@ import {
   I18nManager,
   Platform,
   StyleSheet,
-  StatusBar,
   Dimensions,
   Pressable,
 } from 'react-native';
@@ -889,8 +888,6 @@ const QRSetupScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() =>

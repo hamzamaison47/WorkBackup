@@ -2,16 +2,20 @@ import brand from '../../theme/brand';
 // ─────────────────────────────────────────────────────────────────────────────
 // LIGHT TOKENS (default)
 // ─────────────────────────────────────────────────────────────────────────────
+// Neutrals that the brand owns come from src/theme/brand.js so a brand file
+// can restyle page, card, text and divider colours without touching this
+// file. Everything else here is design-system detail shared by all brands.
 export const LightTokens = {
-  pageBg: '#F1F5F9',
-  formPageBg: '#FFFFFF',
-  cardBg: '#FFFFFF',
+  pageBg: brand.pageBg,
+  formPageBg: brand.surface,
+  cardBg: brand.surface,
   cardHeadingBg: '#FAFBFC',
-  cardDivider: '#F1F5F9',
+  cardDivider: brand.divider,
   rowDivider: '#F8FAFC',
-  headingText: '#94A3B8',
-  titleText: '#1E293B',
-  subtitleText: '#94A3B8',
+  headingText: brand.secondary,
+  titleText: brand.text,
+  subtitleText: brand.secondary,
+  chipBg: brand.surfaceAlt, // icon/avatar chips on an inverted app bar
   chevronColor: '#CBD5E1',
   shadowColor: '#0F172A',
   emptyText: '#CBD5E1',
@@ -45,6 +49,7 @@ export const DarkTokens = {
   headingText: '#64748B',
   titleText: '#F1F5F9',
   subtitleText: '#64748B',
+  chipBg: '#334155',
   chevronColor: '#475569',
   shadowColor: '#000000',
   emptyText: '#475569',
@@ -71,7 +76,7 @@ export const DarkTokens = {
 export const BrandTokens = {
   blue: brand.primary,
   blueStrong: brand.primaryStrong, // primary as text / thin border / icon
-  blueBg: brand.primaryBg,
+  blueBg: brand.tint, // pale primary: icon tiles, chips, selected rows
   indigo: '#6366F1',
   indigoBg: '#EDEFFD',
   teal: '#0D9488',
@@ -99,6 +104,18 @@ export const BrandTokens = {
   statusWaiting: '#475569',
   statusWaitingBg: '#E2E8F0',
   statusWaitingText: '#334155',
+
+  // "Draft" family: Draft / Not submitted / absent-day — "nothing has
+  // happened yet". A lighter neutral than the waiting family so the two
+  // states read differently at a glance (ΔE 30 between the dots; the guard
+  // enforces ≥ 20). NOTE: an active Draft pill filled with statusDraft needs
+  // DARK text (white on #94A3B8 is 2.6:1) — PILL_COLORS uses titleText.
+  //   statusDraft     — dot / icon / active-pill fill
+  //   statusDraftBg   — pill background
+  //   statusDraftText — text on statusDraftBg (7.2:1)
+  statusDraft: '#94A3B8',
+  statusDraftBg: '#F8FAFC',
+  statusDraftText: '#475569',
 
   // Pending-count badge on the bottom tab bar. Today's values, named — still
   // mustard because the bar is blue today. It WILL collide with a mustard

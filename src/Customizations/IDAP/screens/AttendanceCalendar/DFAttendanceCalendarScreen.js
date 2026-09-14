@@ -81,13 +81,19 @@ const STATUS_COLORS = {
   onTime: {bg: '#2E7D32', text: '#1B5E20', soft: '#E6F4EA'}, // green
   irregular: {bg: '#C62828', text: '#B71C1C', soft: '#FDECEA'}, // red
   // "missing" is the waiting/attention family — slate, not yellow
-  // (statusWaiting* in Tokens.js). Close to `absent`'s grey; flagged.
+  // (statusWaiting* in Tokens.js).
   missing: {
     bg: AppTokens.statusWaiting,
     text: AppTokens.statusWaitingText,
     soft: AppTokens.statusWaitingBg,
   },
-  absent: {bg: '#9E9E9E', text: '#616161', soft: '#F2F2F2'}, // grey
+  // "absent" uses the Draft family (statusDraft* in Tokens.js) so it reads
+  // differently from "missing" (waiting family) at a glance.
+  absent: {
+    bg: AppTokens.statusDraft,
+    text: AppTokens.statusDraftText,
+    soft: AppTokens.statusDraftBg,
+  },
   leave: {bg: '#1565C0', text: '#0D47A1', soft: '#E8F0FE'}, // blue
   // Off-day gets its own light blue — distinct enough from "Leave"'s
   // deeper blue that the two aren't confused, while still reading as a

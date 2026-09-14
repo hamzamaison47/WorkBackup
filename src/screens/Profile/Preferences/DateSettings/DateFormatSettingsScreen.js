@@ -393,7 +393,7 @@ const createStyles = P =>
     },
     headerSubtitle: {
       fontSize: 13,
-      color: 'rgba(255,255,255,0.85)',
+      color: P.onPrimaryMuted,
       textAlign: 'center',
       lineHeight: 18,
       marginBottom: 16,

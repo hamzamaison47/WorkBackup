@@ -7,6 +7,7 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "contrast": "node scripts/contrast-guard.js",
+    "sync-native-theme": "node scripts/sync-native-theme.js",
     "start": "react-native start",
     "test": "jest"
   },

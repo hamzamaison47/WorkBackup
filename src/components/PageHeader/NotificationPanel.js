@@ -42,7 +42,8 @@ const makeNotifTokens = AT => ({
   blue: brand.primary,
   blueSoft: AT.blueBg,
   blueLight: AT.blueBg,
-  accent: '#3B82F6',
+  accent: brand.primaryStrong,
+  chip: AT.chipBg,
   success: '#10B981',
   warn: '#F59E0B',
   surface: AT.cardBg,
@@ -95,20 +96,20 @@ const TYPE_CONFIG = {
   Firebase: {
     icon: 'bell',
     color: brand.primaryStrong,
-    bg: '#E8F1FB',
+    bg: brand.tint,
     label: 'Push',
   },
   Info: {
     icon: 'info-circle',
     color: brand.primaryStrong,
-    bg: '#E8F1FB',
+    bg: brand.tint,
     label: 'Info',
   },
 
   default: {
     icon: 'bell',
     color: brand.primaryStrong,
-    bg: '#E8F1FB',
+    bg: brand.tint,
     label: 'System',
   },
 };
@@ -411,7 +412,7 @@ const NotificationPanel = ({
           <View style={S.headerTop}>
             {/* Close */}
             <TouchableOpacity onPress={onClose} style={S.closeBtn}>
-              <Ionicons name="arrow-forward" size={20} color={P.onPrimary} />
+              <Ionicons name="arrow-forward" size={20} color={T.text} />
             </TouchableOpacity>
 
             {/* Title block */}
@@ -439,9 +440,7 @@ const NotificationPanel = ({
                 name="trash-outline"
                 size={14}
                 color={
-                  processedNotifications.length === 0
-                    ? 'rgba(255,255,255,0.3)'
-                    : '#fff'
+                  processedNotifications.length === 0 ? T.textMute : T.text
                 }
               />
               <Text
@@ -534,7 +533,7 @@ const makeStyles = (palette, T) =>
       bottom: 0,
       width: PANEL_WIDTH,
       backgroundColor: T.surfaceAlt,
-      shadowColor: palette.primary,
+      shadowColor: T.shadow,
       shadowOffset: {width: -4, height: 0},
       shadowOpacity: 0.18,
       shadowRadius: 20,
@@ -542,8 +541,11 @@ const makeStyles = (palette, T) =>
     },
 
     // Header
+    // Inverted header: surface bar, text-coloured content, hairline edge.
     header: {
-      backgroundColor: palette.primary,
+      backgroundColor: T.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: T.border,
       paddingTop: (StatusBar.currentHeight || 44) + 10,
       paddingHorizontal: 16,
       paddingBottom: 14,
@@ -557,7 +559,7 @@ const makeStyles = (palette, T) =>
       width: 36,
       height: 36,
       borderRadius: 10,
-      backgroundColor: 'rgba(255,255,255,0.12)',
+      backgroundColor: T.chip,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 10,
@@ -566,12 +568,12 @@ const makeStyles = (palette, T) =>
     headerTitle: {
       fontSize: 17,
       fontWeight: '700',
-      color: palette.onPrimary,
+      color: T.text,
       letterSpacing: 0.2,
     },
     headerSub: {
       fontSize: 12,
-      color: 'rgba(255,255,255,0.6)',
+      color: T.textSub,
       marginTop: 1,
       fontWeight: '500',
     },
@@ -593,7 +595,7 @@ const makeStyles = (palette, T) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1.5,
-      borderColor: palette.primary, // cutout ring: matches the header fill
+      borderColor: T.surface, // cutout ring: matches the header
     },
     bellBadgeText: {fontSize: 9, color: '#fff', fontWeight: '700'},
 
@@ -602,13 +604,13 @@ const makeStyles = (palette, T) =>
       flexDirection: 'row',
       alignItems: 'center',
       alignSelf: 'flex-start',
-      backgroundColor: 'rgba(255,255,255,0.95)',
+      backgroundColor: T.blueSoft,
       borderRadius: 20,
       paddingHorizontal: 12,
       paddingVertical: 6,
       gap: 5,
     },
-    markAllBtnDisabled: {backgroundColor: 'rgba(255,255,255,0.25)'},
+    markAllBtnDisabled: {backgroundColor: T.chip},
     markAllText: {
       fontSize: 12,
       color: palette.primaryStrong,
@@ -804,21 +806,21 @@ const makeStyles = (palette, T) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 5,
-      backgroundColor: 'rgba(255,255,255,0.15)',
+      backgroundColor: T.chip,
       borderRadius: 20,
       paddingHorizontal: 11,
       paddingVertical: 6,
     },
     clearBtnDisabled: {
-      backgroundColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: T.surfaceAlt,
     },
     clearBtnText: {
       fontSize: 12,
       fontWeight: '600',
-      color: palette.onPrimary,
+      color: T.text,
     },
     clearBtnTextDisabled: {
-      color: 'rgba(255,255,255,0.3)',
+      color: T.textMute,
     },
   });
 

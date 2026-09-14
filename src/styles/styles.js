@@ -1884,7 +1884,7 @@ const styles = StyleSheet.create({
 
   DPI_headerSubtitle: {
     fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: brand.onPrimaryMuted,
     lineHeight: conditionalFontScale(20, 21, 22, 23),
     letterSpacing: 0.3,
   },
@@ -2102,7 +2102,7 @@ const styles = StyleSheet.create({
 
   Biometric_headerSubtitle: {
     fontSize: conditionalFontScale(14, 14.5, 15, 15.5),
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: brand.onPrimaryMuted,
     lineHeight: conditionalFontScale(20, 21, 22, 23),
     marginTop: conditionalVerticalScale(2, 3, 4, 5),
     letterSpacing: 0.2,
@@ -2142,7 +2142,7 @@ const styles = StyleSheet.create({
   },
 
   Biometric_statusTextInactive: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: brand.onPrimaryMuted,
   },
 
   Biometric_unavailableContainer: {
@@ -5216,7 +5216,7 @@ const styles = StyleSheet.create({
   },
 
   AIChat_userTimestamp: {
-    color: 'rgba(255,255,255,0.7)',
+    color: brand.onPrimaryMuted,
   },
 
   AIChat_typingContainer: {

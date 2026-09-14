@@ -71,7 +71,12 @@ const getStatusColors = status => {
     return {bg: AppTokens.redBg, text: '#991B1B', dot: AppTokens.red};
   }
   if (['draft', 'notsubmitted'].includes(s)) {
-    return {bg: AppTokens.slateBg, text: AppTokens.slate, dot: '#94A3B8'};
+    // "Draft" family — lighter neutral than waiting (statusDraft* in Tokens.js).
+    return {
+      bg: AppTokens.statusDraftBg,
+      text: AppTokens.statusDraftText,
+      dot: AppTokens.statusDraft,
+    };
   }
   return {bg: AppTokens.slateBg, text: AppTokens.slate, dot: '#94A3B8'};
 };

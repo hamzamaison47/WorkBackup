@@ -85,7 +85,7 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
   // ✅ useAppTokens — reactive
   const T = useAppTokens();
   const P = usePalette();
-  const sheet = createStyles(P);
+  const sheet = createStyles(P, T);
 
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const isRendered = useRef(false);
@@ -176,12 +176,11 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
         // ✅ sheet bg reacts to theme
         {backgroundColor: T.pageBg, transform: [{translateY}]},
       ]}>
-      <StatusBar backgroundColor={T.blue} barStyle="light-content" />
-
-      {/* Blue Header — intentionally brand blue, unchanged */}
+      {/* Inverted header — surface bar, text-coloured content, hairline
+          bottom edge. The status bar is set once at shell level (App.js). */}
       <View style={sheet.header}>
         <TouchableOpacity onPress={handleClose} style={sheet.backBtn}>
-          <Ionicons name="chevron-down" size={24} color="#fff" />
+          <Ionicons name="chevron-down" size={24} color={T.titleText} />
         </TouchableOpacity>
         <Text style={sheet.headerTitle}>Quick Access</Text>
         <View style={{width: 40}} />
@@ -203,7 +202,7 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
 
 // ✅ Only layout/spacing — zero colors
 // const sheet = StyleSheet.create({
-const createStyles = P =>
+const createStyles = (P, T) =>
   StyleSheet.create({
     container: {
       position: 'absolute',
@@ -218,7 +217,9 @@ const createStyles = P =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: P.primary, // brand blue — intentionally static
+      backgroundColor: T.cardBg,
+      borderBottomWidth: 1,
+      borderBottomColor: T.cardDivider,
       paddingHorizontal: 12,
       paddingTop: StatusBar.currentHeight || 44,
       paddingBottom: 14,
@@ -232,7 +233,7 @@ const createStyles = P =>
     headerTitle: {
       fontSize: 17,
       fontWeight: '700',
-      color: '#fff',
+      color: T.titleText,
       letterSpacing: 0.3,
     },
     gridContent: {

@@ -11,13 +11,20 @@ import {
 } from '../../store/utils/scaling';
 import brand from '../../theme/brand';
 
+// The app bar is an inverted (surface-coloured) bar: surface background,
+// `text`-coloured title/icons, `surfaceAlt` chips, a 1px `divider` bottom edge
+// and no tinted shadow. Colours are parameters so ActionPaneContainer can
+// pass the theme-aware tokens; the defaults are the brand's light values.
 const MainPageHeader = ({
   onToggleDrawer,
   onShowNotify,
   onCount,
   onHeaderMenuPress,
   isBack = false,
-  headerBg = brand.primary,
+  headerBg = brand.surface,
+  headerFg = brand.text,
+  chipBg = brand.surfaceAlt,
+  dividerColor = brand.divider,
   topInset = 0,
 }) => ({
   headerTitle: () => null,
@@ -26,15 +33,15 @@ const MainPageHeader = ({
     <View style={S.side}>
       <TouchableOpacity
         onPress={onToggleDrawer}
-        style={S.iconBtn}
+        style={[S.iconBtn, {backgroundColor: chipBg}]}
         activeOpacity={0.72}>
         <FeatherIcon
           name={isBack ? 'arrow-left' : 'menu'}
           size={conditionalFontScale(15, 16, 17, 17)}
-          color="#fff"
+          color={headerFg}
         />
       </TouchableOpacity>
-      <Text style={S.titleText}>IDAP360</Text>
+      <Text style={[S.titleText, {color: headerFg}]}>IDAP360</Text>
     </View>
   ),
 
@@ -44,13 +51,15 @@ const MainPageHeader = ({
       <TouchableOpacity
         onPress={onShowNotify}
         activeOpacity={0.72}
-        style={S.iconBtn}>
+        style={[S.iconBtn, {backgroundColor: chipBg}]}>
         <FeatherIcon
           name="bell"
           size={conditionalFontScale(15, 16, 16, 17)}
-          color="#fff"
+          color={headerFg}
         />
         {onCount > 0 && (
+          // The badge ring matches the bar behind it (a "cutout" look), so it
+          // borrows headerBg on purpose.
           <View style={[S.badge, {borderColor: headerBg}]}>
             <Text style={S.badgeText}>{onCount > 99 ? '99+' : onCount}</Text>
           </View>
@@ -61,11 +70,14 @@ const MainPageHeader = ({
       <TouchableOpacity
         onPress={onHeaderMenuPress}
         activeOpacity={0.72}
-        style={S.avatarBtn}>
+        style={[
+          S.avatarBtn,
+          {backgroundColor: chipBg, borderColor: dividerColor},
+        ]}>
         <FeatherIcon
           name="user"
           size={conditionalFontScale(14, 15, 15, 16)}
-          color="#fff"
+          color={headerFg}
         />
       </TouchableOpacity>
     </View>
@@ -82,15 +94,15 @@ const MainPageHeader = ({
       // total header = status-bar strip + the existing compact content height
       height: topInset + conditionalScale(48, 50, 52, 54),
     }),
-    elevation: 4,
-    shadowColor: '#0A2540',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.18,
-    shadowRadius: 6,
-    borderBottomWidth: 0,
+    // A surface-coloured bar separates from the page with a hairline, not a
+    // tinted shadow.
+    elevation: 0,
+    shadowOpacity: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: dividerColor,
   },
 
-  headerTintColor: '#fff',
+  headerTintColor: headerFg,
   headerTitleAlign: 'left',
 });
 
@@ -102,12 +114,11 @@ const S = StyleSheet.create({
     gap: conditionalScale(6, 7, 8, 8),
   },
 
-  // Generic square icon button
+  // Generic square icon button (background from chipBg)
   iconBtn: {
     width: conditionalScale(32, 33, 34, 34),
     height: conditionalScale(32, 33, 34, 34),
     borderRadius: conditionalScale(9, 9, 10, 10),
-    backgroundColor: 'rgba(255,255,255,0.14)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -129,26 +140,23 @@ const S = StyleSheet.create({
   badgeText: {
     fontSize: conditionalFontScale(7, 8, 8, 9),
     fontWeight: '700',
-    color: '#fff',
+    color: '#fff', // on the red badge, not on primary
     lineHeight: conditionalFontScale(10, 11, 11, 12),
   },
 
-  // Avatar button — slightly more opaque + circular to feel like a profile chip
+  // Avatar button — circular to feel like a profile chip (colours inline)
   avatarBtn: {
     width: conditionalScale(32, 33, 34, 34),
     height: conditionalScale(32, 33, 34, 34),
     borderRadius: 99,
-    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.35)',
   },
 
   titleText: {
     fontSize: conditionalFontScale(14, 15, 16, 16),
     fontWeight: '800',
-    color: '#fff',
     letterSpacing: -0.2,
   },
 });
