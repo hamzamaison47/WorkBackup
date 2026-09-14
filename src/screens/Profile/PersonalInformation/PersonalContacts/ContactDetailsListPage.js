@@ -182,14 +182,14 @@ const ContactDetailsListPage = () => {
     fields: [
       {key: 'type', label: 'Type', type: 'text'},
       {
-        key: 'IsPrimary',
-        label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
-        type: 'text',
-      },
-      {
         key: 'Locator',
         label: 'Address',
         type: 'text',
+      },
+      {
+        key: 'IsPrimary',
+        label: contactsData[0]?.IsPrimarylbl || 'Primary Contact',
+        type: 'boolean',
       },
     ],
   };

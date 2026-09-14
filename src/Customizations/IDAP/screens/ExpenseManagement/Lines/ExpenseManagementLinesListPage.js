@@ -720,56 +720,59 @@ const ExpenseManagementLinesListPage = () => {
         </View>
       ) : (
         <Animated.View style={{flex: 1, opacity: fadeAnim}}>
-          <View
-            style={[
-              styles.DLP_SummaryContainer,
-              {
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              },
-            ]}>
-            <View>
-              {/* <Text style={styles.DLP_SummaryText}>
-                Total Claimed: {totals.totalClaimed}
-              </Text> */}
-              <Text style={styles.DLP_SummaryText}>
-                Total (PKR): {totals.totalPKR}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleSiteSurveyReport}
-              activeOpacity={0.75}
-              style={styles.SSB_container}>
-              <Ionicons
-                name="document-text-outline"
-                size={15}
-                color="#475569"
-              />
-              <Text style={styles.SSB_label}>Site Survey Report</Text>
+          <View style={[styles.DLP_SummaryContainer, {gap: 10}]}>
+            {/* Amount — always shown, never disabled */}
+            <Text
+              style={styles.DLP_SummaryText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}>
+              Total (PKR): {totals.totalPKR}
+            </Text>
 
-              <View
+            {/* Button — disabled only when not Draft */}
+            <View style={{alignItems: 'center'}}>
+              <TouchableOpacity
+                onPress={handleSiteSurveyReport}
+                activeOpacity={0.75}
+                disabled={!isDraft}
                 style={[
-                  styles.SSB_badge,
-                  {
-                    backgroundColor: checkingSiteSurvey
-                      ? '#94A3B8'
-                      : siteSurveyExists
-                      ? '#2E7D32'
-                      : '#C62828',
-                  },
+                  styles.SSB_container,
+                  !isDraft && {backgroundColor: '#BDBDBD', shadowOpacity: 0},
                 ]}>
-                {checkingSiteSurvey ? (
-                  <ActivityIndicator size={8} color="#fff" />
-                ) : (
-                  <Ionicons
-                    name={siteSurveyExists ? 'checkmark' : 'close'}
-                    size={10}
-                    color="#fff"
-                  />
-                )}
-              </View>
-            </TouchableOpacity>
+                <Ionicons
+                  name="document-text-outline"
+                  size={15}
+                  color={isDraft ? '#FFFFFF' : '#E5E7EB'}
+                />
+                <Text
+                  style={[styles.SSB_label, !isDraft && {color: '#E5E7EB'}]}>
+                  Site Survey Report
+                </Text>
+                <View
+                  style={[
+                    styles.SSB_badge,
+                    {
+                      backgroundColor: checkingSiteSurvey
+                        ? '#94A3B8'
+                        : siteSurveyExists
+                        ? '#2E7D32'
+                        : '#C62828',
+                      opacity: isDraft ? 1 : 0.6,
+                    },
+                  ]}>
+                  {checkingSiteSurvey ? (
+                    <ActivityIndicator size={8} color="#fff" />
+                  ) : (
+                    <Ionicons
+                      name={siteSurveyExists ? 'checkmark' : 'close'}
+                      size={10}
+                      color="#fff"
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {f.filteredData.length > 0 ? (

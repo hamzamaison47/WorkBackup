@@ -9081,17 +9081,20 @@ const styles = StyleSheet.create({
   SSB_container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: DEFAULT_PALETTE.primary,
     borderRadius: conditionalScale(14, 15, 16, 16),
     paddingVertical: conditionalVerticalScale(7, 8, 8, 9),
     paddingHorizontal: conditionalScale(10, 11, 12, 13),
-    borderWidth: moderateScale(1),
-    borderColor: '#E2E8F0',
+    shadowColor: DEFAULT_PALETTE.primary,
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   SSB_label: {
     fontSize: conditionalFontScale(11.5, 12, 12.5, 13),
     fontWeight: '600',
-    color: '#334155',
+    color: '#FFFFFF',
     marginLeft: conditionalScale(6, 6, 7, 7),
     marginRight: conditionalScale(6, 6, 7, 7),
   },
@@ -9101,6 +9104,8 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(8, 8.5, 9, 9),
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
   },
 });
 

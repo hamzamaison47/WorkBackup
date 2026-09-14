@@ -42,6 +42,8 @@ import ConfirmClockInScreen from './ConfirmClockInScreen';
 import ConfirmBreakScreen from './ConfirmBreakScreen';
 import ConfirmClockOutScreen from './ConfirmClockOutScreen';
 import {isFaceRecognitionActive} from '../QRScannerModal';
+import useAlertModal from '../../../hooks/useAlertModal';
+import AlertModal from '../../Alert/AlertModal';
 import FaceVerificationModal from '../FaceVerificationModal';
 import {
   getActionFence,
@@ -328,29 +330,102 @@ const makeSP = DK =>
 // ─────────────────────────────────────────────
 // Time summary — shows elapsed, clock-in time, breaks
 // ─────────────────────────────────────────────
-const TimeSummary = ({
-  status,
-  elapsed,
-  clockInTime,
-  breakCount,
-  totalBreakMs,
-}) => {
+// const TimeSummary = ({
+//   status,
+//   elapsed,
+//   clockInTime,
+//   breakCount,
+//   totalBreakMs,
+// }) => {
+//   const {DK} = useAttendanceTheme();
+//   const TS = useMemo(() => makeTS(DK), [DK]);
+//   const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
+//   const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
+//   const breakStr =
+//     totalBreakMs > 0
+//       ? formatDurationShort(totalBreakMs)
+//       : breakCount > 0
+//       ? `${breakCount} break${breakCount > 1 ? 's' : ''}`
+//       : '--';
+
+//   return (
+//     <View style={TS.container}>
+//       <View style={TS.heroCard}>
+//         <Text style={TS.heroLabel}>TOTAL TIME</Text>
+//         <Text style={[TS.heroValue, status === 'out' && {color: DK.textMuted}]}>
+//           {totalTimeStr}
+//         </Text>
+//       </View>
+//       <View style={TS.row}>
+//         <View style={TS.miniCard}>
+//           <Text style={TS.miniLabel}>CLOCK IN</Text>
+//           <Text style={TS.miniValue}>{clockInStr}</Text>
+//         </View>
+//         <View style={TS.miniCard}>
+//           <Text style={TS.miniLabel}>BREAKS</Text>
+//           <Text style={TS.miniValue}>{breakStr}</Text>
+//         </View>
+//       </View>
+//     </View>
+//   );
+// };
+// const TimeSummary = ({status, elapsed, clockInTime, clockOutTime}) => {
+//   const {DK} = useAttendanceTheme();
+//   const TS = useMemo(() => makeTS(DK), [DK]);
+//   const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
+//   const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
+//   const clockOutStr = clockOutTime ? formatTime(clockOutTime) : '--:--';
+
+//   return (
+//     <View style={TS.container}>
+//       <View style={TS.heroCard}>
+//         <Text style={TS.heroLabel}>TOTAL TIME</Text>
+//         <Text style={[TS.heroValue, status === 'out' && {color: DK.textMuted}]}>
+//           {totalTimeStr}
+//         </Text>
+//       </View>
+//       <View style={TS.row}>
+//         <View style={TS.miniCard}>
+//           <Text style={TS.miniLabel}>CLOCK IN</Text>
+//           <Text style={TS.miniValue}>{clockInStr}</Text>
+//         </View>
+//         <View style={TS.miniCard}>
+//           <Text style={TS.miniLabel}>CLOCK OUT</Text>
+//           <Text style={TS.miniValue}>{clockOutStr}</Text>
+//         </View>
+//       </View>
+//     </View>
+//   );
+// };
+const TimeSummary = ({status, elapsed, clockInTime, clockOutTime}) => {
   const {DK} = useAttendanceTheme();
   const TS = useMemo(() => makeTS(DK), [DK]);
-  const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
+
+  const totalTimeStr =
+    status !== 'out'
+      ? formatElapsed(elapsed)
+      : clockInTime && clockOutTime
+      ? formatElapsed(
+          Math.floor(
+            (new Date(clockOutTime).getTime() -
+              new Date(clockInTime).getTime()) /
+              1000,
+          ),
+        )
+      : '--:--:--';
+
   const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
-  const breakStr =
-    totalBreakMs > 0
-      ? formatDurationShort(totalBreakMs)
-      : breakCount > 0
-      ? `${breakCount} break${breakCount > 1 ? 's' : ''}`
-      : '--';
+  const clockOutStr = clockOutTime ? formatTime(clockOutTime) : '--:--';
 
   return (
     <View style={TS.container}>
       <View style={TS.heroCard}>
         <Text style={TS.heroLabel}>TOTAL TIME</Text>
-        <Text style={[TS.heroValue, status === 'out' && {color: DK.textMuted}]}>
+        <Text
+          style={[
+            TS.heroValue,
+            status === 'out' && !clockOutTime && {color: DK.textMuted},
+          ]}>
           {totalTimeStr}
         </Text>
       </View>
@@ -360,8 +435,8 @@ const TimeSummary = ({
           <Text style={TS.miniValue}>{clockInStr}</Text>
         </View>
         <View style={TS.miniCard}>
-          <Text style={TS.miniLabel}>BREAKS</Text>
-          <Text style={TS.miniValue}>{breakStr}</Text>
+          <Text style={TS.miniLabel}>CLOCK OUT</Text>
+          <Text style={TS.miniValue}>{clockOutStr}</Text>
         </View>
       </View>
     </View>
@@ -710,6 +785,8 @@ const TimeClockScreen = ({onNavigate}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [notifAction, setNotifAction] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const {showSuccess, showError, showWarning, alertModalProps} =
+    useAlertModal();
   const [breakCount, setBreakCount] = useState(0);
   const [totalBreakMs, setTotalBreakMs] = useState(0);
   const [workflowFlags, setWorkflowFlags] = useState({
@@ -768,25 +845,31 @@ const TimeClockScreen = ({onNavigate}) => {
       canOut: canClockOut(records),
     });
 
-    if (records.length) {
-      const last = records[records.length - 1];
-      const breaks = last.breaks || [];
-      setBreakCount(breaks.filter(b => b.breakEnd).length);
-      let bMs = 0;
-      breaks.forEach(b => {
-        if (b.breakStart && b.breakEnd) {
-          bMs += new Date(b.breakEnd) - new Date(b.breakStart);
-        }
-      });
-      setTotalBreakMs(bMs);
+    if (!records.length) {
+      // No records on server — reset to a clean "out" state.
+      setStatus('out');
+      setClockInTime(null);
+      setLastOut(null);
+      setElapsed(0);
+      setBreakCount(0);
+      setTotalBreakMs(0);
+      return;
     }
 
-    if (!records.length) return;
     const last = records[records.length - 1];
+    const breaks = last.breaks || [];
+    setBreakCount(breaks.filter(b => b.breakEnd).length);
+    let bMs = 0;
+    breaks.forEach(b => {
+      if (b.breakStart && b.breakEnd) {
+        bMs += new Date(b.breakEnd) - new Date(b.breakStart);
+      }
+    });
+    setTotalBreakMs(bMs);
     if (last.clockOut) {
       setLastOut(last.clockOut);
       setStatus('out');
-      setClockInTime(null);
+      setClockInTime(last.clockIn); // ← keep it instead of null
     } else if (last.breaks?.length) {
       const lastBreak = last.breaks[last.breaks.length - 1];
       if (lastBreak.breakStart && !lastBreak.breakEnd) {
@@ -921,33 +1004,53 @@ const TimeClockScreen = ({onNavigate}) => {
     }, [subScreen, modalVisible, preFaceModalVisible, handlePreFaceCancel]),
   );
 
+  // const checkCommonIntegrity = (requireFence = false) => {
+  //   if (locationLoading) {
+  //     Alert.alert(
+  //       'Please Wait',
+  //       'Location is still being verified. Try again in a moment.',
+  //     );
+  //     return false;
+  //   }
+  //   if (permissionStatus === 'denied') {
+  //     Alert.alert(
+  //       'Permission Required',
+  //       'Please enable location access in your device Settings.',
+  //     );
+  //     return false;
+  //   }
+  //   if (spoofingDetected) {
+  //     Alert.alert(
+  //       'GPS Integrity Issue',
+  //       SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS detected.',
+  //     );
+  //     return false;
+  //   }
+  //   if (requireFence && !matchedFence) {
+  //     Alert.alert(
+  //       'Location Check Failed',
+  //       locationError ?? 'You are outside all authorised zones.',
+  //     );
+  //     return false;
+  //   }
+  //   return true;
+  // };
+
   const checkCommonIntegrity = (requireFence = false) => {
     if (locationLoading) {
-      Alert.alert(
-        'Please Wait',
-        'Location is still being verified. Try again in a moment.',
-      );
+      showWarning('Location is still being verified. Try again in a moment.');
       return false;
     }
     if (permissionStatus === 'denied') {
-      Alert.alert(
-        'Permission Required',
-        'Please enable location access in your device Settings.',
-      );
+      showWarning('Please enable location access in your device Settings.');
       return false;
     }
     if (spoofingDetected) {
-      Alert.alert(
-        'GPS Integrity Issue',
-        SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS detected.',
-      );
+      showError(SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS detected.');
       return false;
     }
     if (requireFence && !matchedFence) {
-      Alert.alert(
-        'Location Check Failed',
-        locationError ?? 'You are outside all authorised zones.',
-      );
+      showError(locationError ?? 'You are outside all authorised zones.');
       return false;
     }
     return true;
@@ -977,10 +1080,13 @@ const TimeClockScreen = ({onNavigate}) => {
         // Emulator check (fast local, ~50ms)
         const runningOnEmulator = await DeviceInfo.isEmulator();
         if (runningOnEmulator) {
-          Alert.alert(
-            'Device Not Supported',
+          // Alert.alert(
+          //   'Device Not Supported',
+          //   'Attendance actions cannot be performed from an emulator. Please use a physical device.',
+          //   [{text: 'OK', style: 'default'}],
+          // );
+          showError(
             'Attendance actions cannot be performed from an emulator. Please use a physical device.',
-            [{text: 'OK', style: 'default'}],
           );
           return;
         }
@@ -1020,8 +1126,11 @@ const TimeClockScreen = ({onNavigate}) => {
           faceVerified: false,
         });
       } catch (err) {
-        Alert.alert(
-          'Error',
+        // Alert.alert(
+        //   'Error',
+        //   err.message || 'Unable to complete action. Please try again.',
+        // );
+        showError(
           err.message || 'Unable to complete action. Please try again.',
         );
       } finally {
@@ -1056,7 +1165,8 @@ const TimeClockScreen = ({onNavigate}) => {
         });
 
         if (!result.ok) {
-          Alert.alert('Validation Failed', result.error);
+          // Alert.alert('Validation Failed', result.error);
+          showError(result.error);
           return;
         }
 
@@ -1173,7 +1283,6 @@ const TimeClockScreen = ({onNavigate}) => {
       await guardedAction(async () => {
         const now = new Date().toISOString();
         setLastOut(now);
-        setClockInTime(null);
         setElapsed(0);
         setStatus('out');
         setSubScreen('main');
@@ -1286,8 +1395,7 @@ const TimeClockScreen = ({onNavigate}) => {
           status={status}
           elapsed={elapsed}
           clockInTime={clockInTime}
-          breakCount={breakCount}
-          totalBreakMs={totalBreakMs}
+          clockOutTime={lastOut}
         />
 
         {notifAction && (
@@ -1343,11 +1451,13 @@ const TimeClockScreen = ({onNavigate}) => {
         }
         onSuccess={handlePreFaceSuccess}
         onFailure={() => {
-          Alert.alert('Verification Failed', 'Could not verify your identity.');
+          // Alert.alert('Verification Failed', 'Could not verify your identity.');
+          showError('Could not verify your identity.');
           handlePreFaceCancel();
         }}
         onCancel={handlePreFaceCancel}
       />
+      <AlertModal {...alertModalProps} />
     </SafeAreaView>
   );
 };
