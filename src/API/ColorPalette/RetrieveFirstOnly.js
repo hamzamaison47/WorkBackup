@@ -1,5 +1,17 @@
 /* eslint-disable curly */
 /* eslint-disable dot-notation */
+// ─────────────────────────────────────────────────────────────────────────────
+// INTENTIONALLY UNREFERENCED.
+//
+// This is the client for the D365 colour-palette service
+// (DFColorPaletteSvcGroup / DFColorPaletteSvc.retrieveFirstOnly). The app no
+// longer consumes it: brand colour is a compile-time constant in
+// src/theme/brand.js. The client and the SOAP service are kept intact so
+// tenant-driven theming can be re-enabled later without touching the backend.
+// To re-enable: call this after login (see the notes in
+// src/Controller/authUtils.js and src/screens/LoginScreen.js) and feed the
+// result into a palette source that usePalette()/useAppTokens() read from.
+// ─────────────────────────────────────────────────────────────────────────────
 import axios from 'axios';
 import {XMLParser} from 'fast-xml-parser';
 import {getToken} from '../Token/getToken';
@@ -38,12 +50,6 @@ const RetrieveFirstOnly = async () => {
       },
     );
 
-    // TEMP [PALETTE-DEBUG] raw SOAP response — remove after diagnosis
-    console.log(
-      '[PALETTE-DEBUG] raw xml:',
-      typeof xml === 'string' ? xml.slice(0, 1500) : xml,
-    );
-
     const parser = new XMLParser({
       ignoreAttributes: false,
       ignoreNameSpace: false,
@@ -61,14 +67,6 @@ const RetrieveFirstOnly = async () => {
       parsed?.['s:Envelope']?.['s:Body']?.['retrieveFirstOnlyResponse']?.[
         'result'
       ];
-
-    // TEMP [PALETTE-DEBUG] what keys actually live under <result> — remove after diagnosis
-    console.log(
-      '[PALETTE-DEBUG] result node keys:',
-      response && typeof response === 'object'
-        ? Object.keys(response)
-        : response,
-    );
 
     // Parse the list response
     let result = null;

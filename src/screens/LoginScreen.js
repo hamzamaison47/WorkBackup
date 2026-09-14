@@ -32,8 +32,6 @@ import {
   initializeLegalEntity,
 } from '../store/slices/companySlice';
 import {setMenuItems} from '../store/slices/menuItemSlice';
-import {setPalette} from '../store/slices/colorPaletteSlice';
-import {RetrieveFirstOnly} from '../API/ColorPalette/RetrieveFirstOnly';
 import {
   authenticateWithBiometrics,
   getBiometricCredentials,
@@ -201,26 +199,9 @@ const LoginScreen = () => {
       dispatch(setLegalEntities(legalEntities));
       dispatch(setMenuItems(menus));
 
-      try {
-        const palette = await RetrieveFirstOnly();
-
-        // TEMP [PALETTE-DEBUG] — remove after diagnosis
-        console.log('[PALETTE-DEBUG] dispatch payload (biometric login):', {
-          primary: palette?.primaryColor,
-          onPrimary: palette?.onPrimaryColor,
-          selection: palette?.selectionColor,
-        });
-
-        dispatch(
-          setPalette({
-            primary: palette?.primaryColor,
-            onPrimary: palette?.onPrimaryColor,
-            selection: palette?.selectionColor,
-          }),
-        );
-      } catch (e) {
-        console.warn('Palette hydration failed:', e);
-      }
+      // Brand colour is a compile-time constant (src/theme/brand.js); the
+      // D365 palette fetch that used to run here is intentionally not called.
+      // See src/Controller/authUtils.js for the same note on the normal path.
 
       console.log('Biometric login successful for:', email);
       return true;

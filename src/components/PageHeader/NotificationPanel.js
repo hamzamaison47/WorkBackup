@@ -18,7 +18,7 @@ import {
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {updateNotificationByRecID} from '../../API/Notification/UpdateNotificationByRecID';
-import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
+import brand from '../../theme/brand';
 import usePalette from '../../hooks/usePalette';
 
 // ─── AppComponents imports ────────────────────────────────────────────────────
@@ -38,8 +38,8 @@ const PANEL_WIDTH = SCREEN_WIDTH * 0.88;
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
 const makeNotifTokens = AT => ({
-  navy: DEFAULT_PALETTE.primary,
-  blue: DEFAULT_PALETTE.primary,
+  navy: brand.primary,
+  blue: brand.primary,
   blueSoft: AT.blueBg,
   blueLight: AT.blueBg,
   accent: '#3B82F6',
@@ -94,20 +94,20 @@ const TYPE_CONFIG = {
   Delete: {icon: 'trash', color: '#DC2626', bg: '#FEE2E2', label: 'Deleted'},
   Firebase: {
     icon: 'bell',
-    color: DEFAULT_PALETTE.primary,
+    color: brand.primary,
     bg: '#E8F1FB',
     label: 'Push',
   },
   Info: {
     icon: 'info-circle',
-    color: DEFAULT_PALETTE.primary,
+    color: brand.primary,
     bg: '#E8F1FB',
     label: 'Info',
   },
 
   default: {
     icon: 'bell',
-    color: DEFAULT_PALETTE.primary,
+    color: brand.primary,
     bg: '#E8F1FB',
     label: 'System',
   },
@@ -279,8 +279,9 @@ const NotificationPanel = ({
   // ── Render helpers ─────────────────────────────────────────────────────────
   const renderItem = ({item, index}) => {
     const cfg = item.typeConfig;
-    const cfgColor =
-      cfg.color === DEFAULT_PALETTE.primary ? P.primary : cfg.color;
+    // TYPE_CONFIG colours are already brand.primary where they should be;
+    // no runtime substitution needed now the palette is compile-time.
+    const cfgColor = cfg.color;
     const isLoading = loadingStates[item.RecId];
 
     return (

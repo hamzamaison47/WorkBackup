@@ -116,7 +116,6 @@ import {
   chatbotAddMessage,
   chatbotAddContext,
 } from '../../src/store/slices/chatbotSlice';
-import {setPalette} from '../../src/store/slices/colorPaletteSlice';
 import {
   setAccounts,
   setBiometricEnabled,
@@ -183,9 +182,6 @@ const seedUserA = () => {
   store.dispatch(addInAppNotification({text: A.notification, type: 'Success'}));
   store.dispatch(chatbotAddMessage({id: 1, text: A.chatText}));
   store.dispatch(chatbotAddContext({q: A.chatText}));
-  store.dispatch(
-    setPalette({primary: '#AA0000', onPrimary: '#FFF', selection: '#AA0000'}),
-  );
 
   // Must SURVIVE: enrolment + device preferences.
   store.dispatch(setBiometricEnabled(true));
@@ -233,7 +229,6 @@ const assertWiped = () => {
   expect(s.firebase.inAppNotifications).toEqual([]);
   expect(s.chatbot.messages).toEqual([]);
   expect(s.chatbot.state.conversationContext).toEqual([]);
-  expect(s.colorPalette.hydrated).toBe(false);
   expect(s.language.skipLoginAfterRestart).toBe(false);
 };
 

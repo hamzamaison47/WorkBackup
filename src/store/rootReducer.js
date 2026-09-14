@@ -10,7 +10,6 @@ import authReducer from './slices/authSlice';
 import chatbotReducer from './slices/chatbotSlice';
 import dateFormatReducer from './slices/dateFormatSlice';
 import themeReducer from './slices/themeSlice';
-import colorPaletteReducer from './slices/colorPaletteSlice';
 import workItemsReducer from './slices/workItemsSlice';
 
 /**
@@ -34,7 +33,6 @@ const appReducer = combineReducers({
   chatbot: chatbotReducer,
   dateFormat: dateFormatReducer,
   theme: themeReducer,
-  colorPalette: colorPaletteReducer,
   workItems: workItemsReducer,
 });
 

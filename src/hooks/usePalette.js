@@ -1,48 +1,28 @@
-/* eslint-disable curly */
 // ─────────────────────────────────────────────
 // src/hooks/usePalette.js
 //
-// Returns the active color palette (API values || defaults) plus a
-// client-derived `tint` (primary lightened toward white, ~12%) for
-// selected-state backgrounds. Mirrors useAttendanceTheme().
+// Returns the brand palette (src/theme/brand.js) plus the derived `tint`
+// (primary lightened toward white, ~12%) for selected-state backgrounds.
+// Mirrors useAttendanceTheme().
+//
+// The palette is a compile-time constant — this hook no longer reads Redux.
+// It stays a hook (rather than a plain import) so the ~80 existing call
+// sites keep working unchanged; the returned object is referentially stable,
+// so `useMemo(() => makeStyles(P), [P])` never recomputes.
 //
 // Usage:
 //   const P = usePalette();
 //   <View style={{backgroundColor: P.primary}} />
 //   const S = useMemo(() => makeStyles(P), [P]);
 // ─────────────────────────────────────────────
-import {useMemo} from 'react';
-import {useSelector} from 'react-redux';
-import {DEFAULT_PALETTE} from '../store/slices/colorPaletteSlice';
+import brand from '../theme/brand';
 
-// Blend a hex color toward white by `amount` (0..1). amount=0.88 keeps 12%
-// of the source → a pale tint. Returns an opaque #RRGGBB.
-const lighten = (hex, amount) => {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
-  if (!m) return hex;
-  const mix = c =>
-    Math.round(parseInt(c, 16) + (255 - parseInt(c, 16)) * amount);
-  const to2 = n => n.toString(16).padStart(2, '0');
-  return `#${to2(mix(m[1]))}${to2(mix(m[2]))}${to2(mix(m[3]))}`;
-};
+const PALETTE = Object.freeze({
+  primary: brand.primary,
+  onPrimary: brand.onPrimary,
+  tint: brand.tint, // selected-card / active-row background
+});
 
-const usePalette = () => {
-  const palette = useSelector(state => state.colorPalette);
-
-  return useMemo(() => {
-    // TEMP [PALETTE-DEBUG] — remove after diagnosis
-    // console.log('[PALETTE-DEBUG] usePalette store:', palette);
-    const primary = palette?.primary || DEFAULT_PALETTE.primary;
-    const onPrimary = palette?.onPrimary || DEFAULT_PALETTE.onPrimary;
-    const selection = palette?.selection || primary;
-    return {
-      primary,
-      onPrimary,
-      selection,
-      tint: lighten(primary, 0.88), // selected-card / active-row background
-      hydrated: !!palette?.hydrated,
-    };
-  }, [palette]);
-};
+const usePalette = () => PALETTE;
 
 export default usePalette;

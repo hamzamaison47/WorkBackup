@@ -1,6 +1,6 @@
 // src/theme/colors.js
 
-import {DEFAULT_PALETTE} from '../store/slices/colorPaletteSlice';
+import brand from './brand';
 
 const baseTokens = {
   primary: null,
@@ -30,8 +30,7 @@ const baseTokens = {
 
 export const lightTheme = {
   ...baseTokens,
-  // primary: '#0A66C2',
-  primary: DEFAULT_PALETTE.primary,
+  primary: brand.primary,
   background: '#F5F7FA',
   surface: '#F2F2F2',
   card: '#FFFFFF',

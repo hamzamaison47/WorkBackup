@@ -9,7 +9,7 @@ import {
   conditionalScale,
   conditionalFontScale,
 } from '../../store/utils/scaling';
-import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
+import brand from '../../theme/brand';
 
 const MainPageHeader = ({
   onToggleDrawer,
@@ -17,7 +17,7 @@ const MainPageHeader = ({
   onCount,
   onHeaderMenuPress,
   isBack = false,
-  headerBg = DEFAULT_PALETTE.primary,
+  headerBg = brand.primary,
   topInset = 0,
 }) => ({
   headerTitle: () => null,
