@@ -27,6 +27,7 @@ import AlertModal from '../components/Alert/AlertModal';
 
 import styles from '../styles/styles';
 import {iconSize} from '../store/utils/scaling';
+import brand from '../theme/brand';
 
 /**
  * ReceiptDetailsModal
@@ -707,7 +708,7 @@ const ReceiptDetailsModal = ({
               onPress={handleSave}
               disabled={isSaveDisabled}>
               {processingAction === 'save' ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={brand.onPrimary} />
               ) : (
                 <Text style={styles.DAM_saveButtonText}>
                   Save ({receipts.filter(r => r.isNew).length})

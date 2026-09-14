@@ -31,6 +31,7 @@ import CalendarModal from '../../components/Leaves/CalendarModal';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import styles from '../../styles/styles';
 import usePalette from '../../hooks/usePalette';
+import brand from '../../theme/brand';
 
 const EmployeeAdvanceSalary_Create = () => {
   const route = useRoute();
@@ -255,7 +256,7 @@ const EmployeeAdvanceSalary_Create = () => {
         {isProcessing && (
           <View style={styles.DSR_ProcessingOverlay}>
             <View style={styles.DSR_ProcessingContainer}>
-              <ActivityIndicator size="large" color={P.primary} />
+              <ActivityIndicator size="large" color={P.primaryStrong} />
               <Text style={styles.DSR_ProcessingText}>
                 {t('common.processing') || 'Processing...'}
               </Text>
@@ -313,7 +314,7 @@ const EmployeeAdvanceSalary_Create = () => {
                   : 'Select Payment Date'}
               </Text>
             </View>
-            <Icon name="calendar" size={20} color={P.primary} />
+            <Icon name="calendar" size={20} color={P.primaryStrong} />
           </TouchableOpacity>
 
           {/* ── 4. Advance Type Code (read-only) ── */}
@@ -398,7 +399,7 @@ const EmployeeAdvanceSalary_Create = () => {
             onPress={handleCreate}
             disabled={isProcessing}>
             {isProcessing ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={P.onPrimary} size="small" />
             ) : (
               <Text style={localStyles.createText}>
                 {t('common.create') || 'Create'}
@@ -458,7 +459,7 @@ const localStyles = StyleSheet.create({
   // },
   createText: {
     fontSize: 15,
-    color: '#fff',
+    color: brand.onPrimary,
     fontWeight: '600',
   },
 });

@@ -471,7 +471,7 @@ const TravelRequisitionLinesListPage = () => {
       style: 'icon',
       icon: 'edit',
       iconSize: 20,
-      iconColor: '#fff',
+      iconColor: P.onPrimary,
       backgroundColor: P.primary,
       disabled: !isHeaderDraft,
       customStyle: !isHeaderDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -482,7 +482,7 @@ const TravelRequisitionLinesListPage = () => {
       style: 'icon',
       icon: 'trash',
       iconSize: 20,
-      iconColor: '#fff',
+      iconColor: P.onPrimary,
       backgroundColor: P.primary,
       disabled: !isHeaderDraft,
       customStyle: !isHeaderDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -606,7 +606,7 @@ const TravelRequisitionLinesListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>Deleting</Text>
           </View>
         </View>

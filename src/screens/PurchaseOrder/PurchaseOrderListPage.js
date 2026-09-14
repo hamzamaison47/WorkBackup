@@ -120,7 +120,7 @@ const PurchaseOrderListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
@@ -131,7 +131,7 @@ const PurchaseOrderListPage = () => {
         style: 'approval_dropdown',
         text: 'View Details',
         icon: 'eye',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           {
@@ -399,7 +399,7 @@ const PurchaseOrderListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>Processing...</Text>
           </View>
         </View>

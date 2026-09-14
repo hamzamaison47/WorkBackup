@@ -18,6 +18,7 @@ import {
 import {formatDateValue} from '../store/utils/dateUtils';
 import {AppTokens} from './AppComponentsDesign/Appcomponents';
 import useAppTokens from './AppComponentsDesign/useAppTokens';
+import brand from '../theme/brand';
 import {
   conditionalScale,
   conditionalVerticalScale,
@@ -59,7 +60,12 @@ const getStatusColors = status => {
       'in progress',
     ].includes(s)
   ) {
-    return {bg: AppTokens.amberBg, text: '#92400E', dot: AppTokens.amber};
+    // "Waiting" family — slate, not amber (see statusWaiting* in Tokens.js).
+    return {
+      bg: AppTokens.statusWaitingBg,
+      text: AppTokens.statusWaitingText,
+      dot: AppTokens.statusWaiting,
+    };
   }
   if (['cancelled', 'rejected', 'failed', 'no', 'false'].includes(s)) {
     return {bg: AppTokens.redBg, text: '#991B1B', dot: AppTokens.red};
@@ -747,7 +753,7 @@ const DynamicRequestCard = ({
           <FeatherIcon
             name={approvalDropdownVisible ? 'chevron-up' : 'chevron-down'}
             size={conditionalFontScale(11, 12, 12, 13)}
-            color="#FFFFFF"
+            color={T.onPrimary}
           />
         </TouchableOpacity>
 
@@ -811,7 +817,7 @@ const DynamicRequestCard = ({
                             <FeatherIcon
                               name={action.icon}
                               size={conditionalFontScale(12, 13, 13, 14)}
-                              color={T.blue}
+                              color={T.blueStrong}
                             />
                           </View>
                         )}
@@ -1291,7 +1297,7 @@ const S = {
   approvalBtnText: {
     fontSize: conditionalFontScale(11, 12, 12, 13),
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
   approvalMenu: {
     position: 'absolute',

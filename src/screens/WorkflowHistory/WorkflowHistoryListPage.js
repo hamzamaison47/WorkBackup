@@ -18,6 +18,7 @@ import {
 
 // Components
 import ActionPaneContainer from '../../components/ActionPaneContainer';
+import {AppTokens} from '../../components/AppComponentsDesign/Tokens';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
 import AlertModal from '../../components/Alert/AlertModal';
 
@@ -236,19 +237,21 @@ const WorkflowHistoryScreen = () => {
         icon: '↗',
         category: 'Submitted',
       };
+    // Assigned / Pending are the "waiting" family — slate, not amber
+    // (see statusWaiting* in Tokens.js).
     if (type.includes('assigned'))
       return {
-        color: '#D97706',
-        bgColor: '#FFFBEB',
-        dotColor: '#FDE68A',
+        color: AppTokens.statusWaitingText,
+        bgColor: AppTokens.statusWaitingBg,
+        dotColor: AppTokens.statusWaitingBg,
         icon: '⊕',
         category: 'Assigned',
       };
     if (type.includes('pending'))
       return {
-        color: '#B45309',
-        bgColor: '#FEF3C7',
-        dotColor: '#FDE68A',
+        color: AppTokens.statusWaitingText,
+        bgColor: AppTokens.statusWaitingBg,
+        dotColor: AppTokens.statusWaitingBg,
         icon: '◔',
         category: 'Pending',
       };

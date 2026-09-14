@@ -312,7 +312,7 @@ const tpStyles = P =>
       color: '#555',
     },
     periodTextActive: {
-      color: '#fff',
+      color: P.onPrimary,
     },
     highlightBar: {
       position: 'absolute',
@@ -352,7 +352,7 @@ const tpStyles = P =>
     },
     okText: {
       fontSize: 15,
-      color: '#fff',
+      color: P.onPrimary,
       fontWeight: '600',
     },
   });
@@ -589,7 +589,7 @@ const OvertimePlanner_Create = () => {
         {isProcessing && (
           <View style={styles.DSR_ProcessingOverlay}>
             <View style={styles.DSR_ProcessingContainer}>
-              <ActivityIndicator size="large" color={P.primary} />
+              <ActivityIndicator size="large" color={P.primaryStrong} />
               <Text style={styles.DSR_ProcessingText}>
                 {t('common.processing') || 'Processing...'}
               </Text>
@@ -660,7 +660,7 @@ const OvertimePlanner_Create = () => {
                   : 'Select Plan Date'}
               </Text>
             </View>
-            <Icon name="calendar" size={20} color={P.primary} />
+            <Icon name="calendar" size={20} color={P.primaryStrong} />
           </TouchableOpacity>
 
           {/* ── Start Time (selectable) ── */}
@@ -682,7 +682,7 @@ const OvertimePlanner_Create = () => {
                   : 'Select Start Time'}
               </Text>
             </View>
-            <Icon name="clock-o" size={20} color={P.primary} />
+            <Icon name="clock-o" size={20} color={P.primaryStrong} />
           </TouchableOpacity>
 
           {/* ── End Time (selectable) ── */}
@@ -704,7 +704,7 @@ const OvertimePlanner_Create = () => {
                   : 'Select End Time'}
               </Text>
             </View>
-            <Icon name="clock-o" size={20} color={P.primary} />
+            <Icon name="clock-o" size={20} color={P.primaryStrong} />
           </TouchableOpacity>
         </ScrollView>
 
@@ -728,7 +728,7 @@ const OvertimePlanner_Create = () => {
             onPress={handleCreate}
             disabled={isProcessing}>
             {isProcessing ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={P.onPrimary} size="small" />
             ) : (
               <Text style={localStyles.createText}>
                 {t('common.create') || 'Create'}
@@ -808,7 +808,7 @@ const localStyles = P =>
     },
     createText: {
       fontSize: 15,
-      color: '#fff',
+      color: P.onPrimary,
       fontWeight: '600',
     },
   });

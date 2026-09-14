@@ -67,7 +67,7 @@ const createLocalStyles = T =>
     summaryTitle: {
       fontSize: 15,
       fontWeight: '700',
-      color: T.blue,
+      color: T.blueStrong,
       marginBottom: 8,
       marginLeft: 4,
     },
@@ -84,7 +84,7 @@ const createLocalStyles = T =>
       justifyContent: 'center',
     },
     headerCellText: {
-      color: '#fff',
+      color: T.onPrimary,
       fontWeight: '700',
       fontSize: 12,
       textAlign: 'center',
@@ -135,10 +135,10 @@ const createLocalStyles = T =>
     toggleButtonText: {
       fontSize: 13,
       fontWeight: '600',
-      color: T.blue,
+      color: T.blueStrong,
     },
     toggleButtonTextActive: {
-      color: '#fff',
+      color: T.onPrimary,
     },
     emptyText: {
       fontSize: 13,

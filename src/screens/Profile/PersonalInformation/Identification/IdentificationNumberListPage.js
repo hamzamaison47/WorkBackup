@@ -364,7 +364,7 @@ const IdentificationNumberListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: isHCMRecord ? true : !isDraft, // ← HR records never editable
         customStyle:
@@ -376,7 +376,7 @@ const IdentificationNumberListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !(isDraft || isCancelled),
         customStyle: !(isDraft || isCancelled)
@@ -389,7 +389,7 @@ const IdentificationNumberListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
@@ -400,7 +400,7 @@ const IdentificationNumberListPage = () => {
         style: 'approval_dropdown',
         text: 'Approval',
         icon: 'check-square',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           // Submit: Draft only. Resubmit on Rejected records is intentionally
@@ -718,7 +718,7 @@ const IdentificationNumberListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

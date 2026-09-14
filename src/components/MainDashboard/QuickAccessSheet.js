@@ -49,7 +49,7 @@ export const QuickAccessButton = ({onPress}) => {
           ]}
           onPress={onPress}
           activeOpacity={0.8}>
-          <Ionicons name="chevron-up" size={22} color="#fff" />
+          <Ionicons name="chevron-up" size={22} color={P.onPrimary} />
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -146,7 +146,7 @@ const QuickAccessSheet = ({visible, onClose, menus, onCardPress}) => {
         }}>
         <View style={[sheet.iconBox, {backgroundColor: AppTokens.blueBg}]}>
           {isIconComponent ? (
-            <item.icon size={26} color={P.primary} />
+            <item.icon size={26} color={P.primaryStrong} />
           ) : (
             <Image
               source={

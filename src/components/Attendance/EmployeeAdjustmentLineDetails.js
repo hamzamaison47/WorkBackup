@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import moment from 'moment';
 import AlertModal from '../Alert/AlertModal';
+import {AppTokens} from '../AppComponentsDesign/Tokens';
 import retrieveEmployeeAdjustmentlines from '../../API/Attendance/retrieveEmployeeAdjustmentlines';
 import {SubmitAdjustment} from '../../API/Attendance/SubmitAdjustment';
 
@@ -206,7 +207,8 @@ const EmployeeAdjustmentLineDetails = ({
         return '#4CAF50';
       case 'pending':
       case 'submitted':
-        return '#FF9800';
+        // "Waiting" family — slate, not amber (statusWaiting* in Tokens.js).
+        return AppTokens.statusWaiting;
       case 'rejected':
       case 'cancelled':
         return '#F44336';

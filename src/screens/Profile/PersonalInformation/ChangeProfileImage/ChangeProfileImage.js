@@ -251,7 +251,7 @@ const ChangeProfileImage = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={fetchProfilePicture}
-                tintColor={T.blue}
+                tintColor={T.blueStrong}
                 colors={[T.blue]}
               />
             }
@@ -409,7 +409,7 @@ const createCPIStyles = T =>
       color: T.titleText,
     },
     buttonTextPrimary: {
-      color: '#FFFFFF',
+      color: T.onPrimary,
     },
   });
 

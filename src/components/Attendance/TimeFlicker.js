@@ -130,7 +130,7 @@ const TimeFlicker = ({
         <Icon
           name={mode === 'date' ? 'calendar' : 'clock-o'}
           size={18}
-          color={P.primary}
+          color={P.primaryStrong}
         />
       </TouchableOpacity>
 

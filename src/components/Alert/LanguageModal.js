@@ -182,7 +182,11 @@ const LanguageModal = ({visible, onClose}) => {
                     </Text>
                   </View>
                   {selectedLanguage === language.code && (
-                    <Icon name="check-circle" size={24} color={P.primary} />
+                    <Icon
+                      name="check-circle"
+                      size={24}
+                      color={P.primaryStrong}
+                    />
                   )}
                 </TouchableOpacity>
               ))}

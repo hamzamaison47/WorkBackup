@@ -26,6 +26,7 @@ import {FindAttendanceCalendar} from '../../API/AttendanceCalendar/Findattendanc
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import useAppTokens from '../../../../components/AppComponentsDesign/useAppTokens';
+import {AppTokens} from '../../../../components/AppComponentsDesign/Tokens';
 import usePalette from '../../../../hooks/usePalette';
 import styles from '../../../../styles/styles';
 import {
@@ -79,7 +80,13 @@ const WHITE_CARD_BORDER = '#E5E5E5';
 const STATUS_COLORS = {
   onTime: {bg: '#2E7D32', text: '#1B5E20', soft: '#E6F4EA'}, // green
   irregular: {bg: '#C62828', text: '#B71C1C', soft: '#FDECEA'}, // red
-  missing: {bg: '#F9A825', text: '#8D6E00', soft: '#FFF8E1'}, // yellow
+  // "missing" is the waiting/attention family — slate, not yellow
+  // (statusWaiting* in Tokens.js). Close to `absent`'s grey; flagged.
+  missing: {
+    bg: AppTokens.statusWaiting,
+    text: AppTokens.statusWaitingText,
+    soft: AppTokens.statusWaitingBg,
+  },
   absent: {bg: '#9E9E9E', text: '#616161', soft: '#F2F2F2'}, // grey
   leave: {bg: '#1565C0', text: '#0D47A1', soft: '#E8F0FE'}, // blue
   // Off-day gets its own light blue — distinct enough from "Leave"'s
@@ -356,12 +363,14 @@ const DFAttendanceCalendarScreen = () => {
           <Text
             style={{
               fontSize: conditionalFontScale(13, 13.5, 14, 14),
-              color: isActive ? P.primary : '#1A1A1A',
+              color: isActive ? P.primaryStrong : '#1A1A1A',
               fontWeight: isActive ? '700' : '500',
             }}>
             {item.label}
           </Text>
-          {isActive && <FeatherIcon name="check" size={16} color={P.primary} />}
+          {isActive && (
+            <FeatherIcon name="check" size={16} color={P.primaryStrong} />
+          )}
         </View>
       );
     },
@@ -450,7 +459,7 @@ const DFAttendanceCalendarScreen = () => {
                 flexDirection: 'row',
               },
             ]}>
-            <ActivityIndicator size="small" color={P.primary} />
+            <ActivityIndicator size="small" color={P.primaryStrong} />
           </View>
         ) : (
           <Dropdown

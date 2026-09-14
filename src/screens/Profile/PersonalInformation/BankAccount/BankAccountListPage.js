@@ -251,7 +251,7 @@ const BankAccountListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isEditable,
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
@@ -262,7 +262,7 @@ const BankAccountListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isEditable,
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
@@ -480,7 +480,7 @@ const BankAccountListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

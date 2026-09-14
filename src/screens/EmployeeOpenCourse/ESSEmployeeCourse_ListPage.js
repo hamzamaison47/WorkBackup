@@ -221,7 +221,7 @@ const createStyles = P =>
       color: '#333',
     },
     activeText: {
-      color: '#fff',
+      color: P.onPrimary,
       fontWeight: 'bold',
     },
     listContainer: {

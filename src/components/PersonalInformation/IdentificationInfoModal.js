@@ -411,7 +411,7 @@ const createStyles = P =>
       backgroundColor: P.primary,
     },
     buttonText: {
-      color: '#fff',
+      color: P.onPrimary,
       fontWeight: 'bold',
     },
     dateSelector: {

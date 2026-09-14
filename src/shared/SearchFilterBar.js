@@ -258,7 +258,7 @@ const SearchFilterBar = ({
             <FontAwesome
               name="search"
               size={16}
-              color={searchExpanded ? '#fff' : P.primary}
+              color={searchExpanded ? P.onPrimary : P.primaryStrong}
             />
           </TouchableOpacity>
 
@@ -290,7 +290,7 @@ const SearchFilterBar = ({
           <FontAwesome5
             name="sliders-h"
             size={15}
-            color={activeFilterCount > 0 ? '#fff' : P.primary}
+            color={activeFilterCount > 0 ? P.onPrimary : P.primaryStrong}
           />
           {activeFilterCount > 0 && (
             <View style={S.badge}>
@@ -307,7 +307,7 @@ const SearchFilterBar = ({
           <FontAwesome5
             name="sort-amount-down"
             size={15}
-            color={activeSortCount > 0 ? '#fff' : P.primary}
+            color={activeSortCount > 0 ? P.onPrimary : P.primaryStrong}
           />
           {activeSortCount > 0 && (
             <View style={S.badge}>
@@ -336,7 +336,7 @@ const SearchFilterBar = ({
                 <FontAwesome
                   name="times"
                   size={10}
-                  color={P.primary}
+                  color={P.primaryStrong}
                   style={{marginLeft: 4}}
                 />
               </TouchableOpacity>
@@ -349,7 +349,7 @@ const SearchFilterBar = ({
               <FontAwesome5
                 name={sortDir === 'asc' ? 'sort-alpha-down' : 'sort-alpha-up'}
                 size={10}
-                color={P.primary}
+                color={P.primaryStrong}
                 style={{marginRight: 4}}
               />
               <Text style={S.chipText}>
@@ -358,7 +358,7 @@ const SearchFilterBar = ({
               <FontAwesome
                 name="times"
                 size={10}
-                color={P.primary}
+                color={P.primaryStrong}
                 style={{marginLeft: 4}}
               />
             </TouchableOpacity>
@@ -425,7 +425,11 @@ const SearchFilterBar = ({
                       {item.label}
                     </Text>
                     {isSelected && (
-                      <FontAwesome name="check" size={14} color={P.primary} />
+                      <FontAwesome
+                        name="check"
+                        size={14}
+                        color={P.primaryStrong}
+                      />
                     )}
                   </TouchableOpacity>
                 );
@@ -491,7 +495,7 @@ const SearchFilterBar = ({
                         sortDir === 'asc' ? 'sort-alpha-down' : 'sort-alpha-up'
                       }
                       size={14}
-                      color={P.primary}
+                      color={P.primaryStrong}
                     />
                   )}
                 </TouchableOpacity>
@@ -601,7 +605,7 @@ const makeStyles = P =>
       height: 36,
       borderRadius: 8,
       borderWidth: 1.5,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
       backgroundColor: '#fff',
       alignItems: 'center',
       justifyContent: 'center',
@@ -641,7 +645,7 @@ const makeStyles = P =>
       height: 36,
       borderRadius: 8,
       borderWidth: 1.5,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
       paddingHorizontal: 10,
       color: '#222',
       fontSize: 14,
@@ -678,7 +682,7 @@ const makeStyles = P =>
     },
     chipText: {
       fontSize: 12,
-      color: P.primary,
+      color: P.primaryStrong,
       fontWeight: '500',
     },
 
@@ -747,7 +751,7 @@ const makeStyles = P =>
     filterItemActive: {
       backgroundColor: '#e8f0fe',
       borderWidth: 1.5,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
     },
     filterItemText: {
       fontSize: 14,
@@ -755,7 +759,7 @@ const makeStyles = P =>
       fontWeight: '500',
     },
     filterItemTextActive: {
-      color: P.primary,
+      color: P.primaryStrong,
       fontWeight: '600',
     },
 
@@ -773,7 +777,7 @@ const makeStyles = P =>
     sortItemActive: {
       backgroundColor: '#e8f0fe',
       borderWidth: 1.5,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
     },
     sortItemText: {
       fontSize: 14,
@@ -781,7 +785,7 @@ const makeStyles = P =>
       fontWeight: '500',
     },
     sortItemTextActive: {
-      color: P.primary,
+      color: P.primaryStrong,
       fontWeight: '600',
     },
 
@@ -818,7 +822,7 @@ const makeStyles = P =>
       fontWeight: '500',
     },
     quickSortBtnTextActive: {
-      color: '#fff',
+      color: P.onPrimary,
     },
 
     // Apply button
@@ -830,7 +834,7 @@ const makeStyles = P =>
       alignItems: 'center',
     },
     applyBtnText: {
-      color: '#fff',
+      color: P.onPrimary,
       fontSize: 15,
       fontWeight: '700',
     },

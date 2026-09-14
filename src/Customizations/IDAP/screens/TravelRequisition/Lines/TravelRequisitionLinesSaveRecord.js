@@ -952,7 +952,7 @@ const TravelRequisitionLinesSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color={P.primary} />
+                  <ActivityIndicator size="large" color={P.primaryStrong} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -1020,7 +1020,7 @@ const TravelRequisitionLinesSaveRecord = () => {
                       : 'Select Estimated date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color={P.primary} />
+                <Icon name="calendar" size={20} color={P.primaryStrong} />
               </TouchableOpacity>
               {renderError('EstimatedDate')}
 
@@ -1174,7 +1174,7 @@ const TravelRequisitionLinesSaveRecord = () => {
                           : 'Select from date/time'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('PerDiemFromDate')}
 
@@ -1189,7 +1189,7 @@ const TravelRequisitionLinesSaveRecord = () => {
                           : 'Select to date/time'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('PerDiemToDate')}
                 </>

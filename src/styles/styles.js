@@ -1245,7 +1245,7 @@ const styles = StyleSheet.create({
   MainDash_AvatarText: {
     fontSize: conditionalFontScale(24, 28, 30, 34),
     fontWeight: '700',
-    color: brand.primary,
+    color: brand.primaryStrong,
   },
 
   MainDash_TextColumn: {
@@ -1261,7 +1261,7 @@ const styles = StyleSheet.create({
   MainDash_NameText: {
     fontSize: conditionalFontScale(14, 16, 18, 18),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
     marginBottom: conditionalVerticalScale(0, 1, 1, 2),
     textAlign: 'left',
   },
@@ -1269,7 +1269,7 @@ const styles = StyleSheet.create({
   MainDash_NameTextSmall: {
     fontSize: conditionalFontScale(14, 16, 18, 20),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
     marginBottom: conditionalVerticalScale(0, 1, 1, 2),
     textAlign: 'center',
   },
@@ -1417,7 +1417,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: conditionalScale(10, 12, 14, 16),
     borderWidth: 2,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -1440,7 +1440,7 @@ const styles = StyleSheet.create({
     height: conditionalScale(60, 70, 75, 85),
     borderRadius: conditionalScale(30, 35, 37, 42),
     borderWidth: moderateScale(3),
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     marginRight: spacing.sm,
   },
 
@@ -1493,7 +1493,7 @@ const styles = StyleSheet.create({
 
   WorkerATM_RootRole: {
     fontSize: conditionalFontScale(12, 13, 14, 16),
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '600',
     flexShrink: 1,
     textAlign: 'left',
@@ -1536,7 +1536,7 @@ const styles = StyleSheet.create({
   },
 
   WorkerATM_ActionButtonText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(10, 11, 12, 13),
     fontWeight: '600',
     marginLeft: conditionalScale(3, 4, 5, 6),
@@ -2030,7 +2030,7 @@ const styles = StyleSheet.create({
   },
 
   CPI_buttonTextPrimary: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   CPI_buttonTextSecondary: {
@@ -2095,7 +2095,7 @@ const styles = StyleSheet.create({
   Biometric_headerTitle: {
     fontSize: conditionalFontScale(20, 22, 24, 26),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     flex: 1,
     letterSpacing: 0.5,
   },
@@ -2413,7 +2413,7 @@ const styles = StyleSheet.create({
   SSlip_ButtonText: {
     fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     textAlign: 'center',
     letterSpacing: 0.5,
   },
@@ -2528,7 +2528,7 @@ const styles = StyleSheet.create({
   TCert_ButtonText: {
     fontSize: conditionalFontScale(15, 15.5, 16, 16.5),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     textAlign: 'center',
     letterSpacing: 0.5,
   },
@@ -2570,7 +2570,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     borderRadius: borderRadius.lg,
     borderLeftWidth: conditionalScale(4, 4, 5, 6),
-    borderLeftColor: brand.primary,
+    borderLeftColor: brand.primaryStrong,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: moderateScale(3)},
     shadowOpacity: 0.12,
@@ -2581,7 +2581,7 @@ const styles = StyleSheet.create({
   DLP_SummaryText: {
     fontSize: conditionalFontScale(14, 15, 16, 16),
     fontWeight: '600',
-    color: brand.primary,
+    color: brand.primaryStrong,
     textAlign: 'center',
   },
 
@@ -2595,7 +2595,7 @@ const styles = StyleSheet.create({
   DLP_NoDataText: {
     fontSize: conditionalFontScale(16, 17, 18, 18),
     fontWeight: '600',
-    color: brand.primary,
+    color: brand.primaryStrong,
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
@@ -3434,7 +3434,7 @@ const styles = StyleSheet.create({
   DRC_approvalButtonText2: {
     fontSize: conditionalFontScale(12, 12.5, 13, 14),
     fontWeight: '600',
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   DRC_approvalButtonTextDisabled: {
@@ -3539,7 +3539,7 @@ const styles = StyleSheet.create({
 
   APCont_plusIcon: {
     fontSize: iconSize.sm,
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   APCont_customTabItem: {
@@ -3565,7 +3565,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: conditionalFontScale(13, 14, 15, 16),
     fontWeight: '700',
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   APCont_pageTitleCenteredContainer: {
@@ -3576,7 +3576,7 @@ const styles = StyleSheet.create({
   },
 
   APCont_pageTitleCenteredText: {
-    color: '#ffffff',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(12, 14, 16, 18),
     fontWeight: 'bold',
     textAlign: 'center',
@@ -3650,7 +3650,7 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(3, 3.5, 3.5, 4),
     backgroundColor: '#fff',
     borderWidth: moderateScale(1),
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
 
   SearchBar_modalOverlay: {
@@ -3701,7 +3701,7 @@ const styles = StyleSheet.create({
   },
 
   SearchBar_dropdownTextActive: {
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '600',
   },
 
@@ -3821,13 +3821,13 @@ const styles = StyleSheet.create({
 
   notif_BellIcon: {
     fontSize: iconSize.md,
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   notif_HeaderTitle: {
     fontSize: conditionalFontScale(16, 18, 19, 19),
     fontWeight: '700',
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   notif_HeaderCount: {
@@ -3931,7 +3931,7 @@ const styles = StyleSheet.create({
   notif_NotificationItemToday: {
     backgroundColor: '#f0f9ff',
     borderLeftWidth: 2,
-    borderLeftColor: brand.primary,
+    borderLeftColor: brand.primaryStrong,
   },
 
   notif_NotificationItemRead: {
@@ -3955,7 +3955,7 @@ const styles = StyleSheet.create({
 
   notif_NotificationIcon: {
     fontSize: iconSize.sm,
-    color: brand.primary,
+    color: brand.primaryStrong,
   },
 
   notif_NotificationIconToday: {
@@ -3999,11 +3999,11 @@ const styles = StyleSheet.create({
 
   notif_MarkReadIcon: {
     fontSize: conditionalFontScale(3, 4, 4, 5),
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   notif_MarkReadIconToday: {
-    color: '#ffffff',
+    color: brand.onPrimary,
   },
 
   notif_MarkReadIconRead: {
@@ -4022,7 +4022,7 @@ const styles = StyleSheet.create({
   },
 
   notif_NotificationTitleToday: {
-    color: brand.primary,
+    color: brand.primaryStrong,
   },
 
   notif_NotificationMessage: {
@@ -4042,7 +4042,7 @@ const styles = StyleSheet.create({
   },
 
   notif_NotificationTimeToday: {
-    color: brand.primary,
+    color: brand.primaryStrong,
   },
 
   notif_EmptyContainer: {
@@ -4156,7 +4156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: conditionalScale(3, 3, 4, 4),
     borderWidth: 1.5,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
   NB_badgeText: {
     color: '#FFFFFF',
@@ -4243,7 +4243,7 @@ const styles = StyleSheet.create({
     color: '#333333',
   },
   CD_SelectedCompanyName: {
-    color: brand.primary,
+    color: brand.primaryStrong,
   },
   CD_CheckIcon: {
     marginLeft: conditionalScale(6, 8, 8, 10),
@@ -4728,7 +4728,7 @@ const styles = StyleSheet.create({
   LanguageModal_selectedItem: {
     backgroundColor: '#EEF2FF',
     borderWidth: moderateScale(2),
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
 
   LanguageModal_languageInfo: {
@@ -4997,7 +4997,7 @@ const styles = StyleSheet.create({
   },
 
   AIFloat_text: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(14, 16, 18, 20),
     fontWeight: '700',
     textAlign: 'center',
@@ -5086,7 +5086,7 @@ const styles = StyleSheet.create({
     bottom: scale(2),
     right: scale(2),
     borderWidth: moderateScale(2),
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
 
   AIChat_headerText: {
@@ -5212,7 +5212,7 @@ const styles = StyleSheet.create({
   },
 
   AIChat_userMessageText: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   AIChat_userTimestamp: {
@@ -5461,7 +5461,7 @@ const styles = StyleSheet.create({
   DRC_TextButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     borderWidth: moderateScale(2),
     paddingHorizontal: scale(12),
     paddingVertical: verticalScale(7),
@@ -5470,7 +5470,7 @@ const styles = StyleSheet.create({
   },
 
   DRC_TextButtonText: {
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '600',
     fontSize: fontScale(14),
   },
@@ -5614,7 +5614,7 @@ const styles = StyleSheet.create({
 
   SRBtn_Button: {
     borderWidth: moderateScale(2),
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     borderRadius: borderRadius.xxl,
     paddingVertical: conditionalVerticalScale(10, 12, 14, 16),
     alignItems: 'center',
@@ -5647,7 +5647,7 @@ const styles = StyleSheet.create({
   SRBtn_ButtonText: {
     fontWeight: '600',
     fontSize: conditionalFontScale(12, 13, 14, 14),
-    color: brand.primary,
+    color: brand.primaryStrong,
     textAlign: 'center',
     includeFontPadding: false,
   },
@@ -5655,7 +5655,7 @@ const styles = StyleSheet.create({
   SRBtn_SubmitButtonText: {
     fontWeight: '600',
     fontSize: conditionalFontScale(10, 11, 12, 13),
-    color: '#FFF',
+    color: brand.onPrimary,
     textAlign: 'center',
     includeFontPadding: false,
   },
@@ -5690,7 +5690,7 @@ const styles = StyleSheet.create({
   },
 
   SRBtn_pressedText: {
-    color: '#FFF',
+    color: brand.onPrimary,
   },
 
   SRBtn_pressedCancelText: {
@@ -5732,7 +5732,7 @@ const styles = StyleSheet.create({
   CalModal_headerTitle: {
     fontSize: conditionalFontScale(15, 16, 17, 19),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     textAlign: 'center',
   },
 
@@ -5781,7 +5781,7 @@ const styles = StyleSheet.create({
   CalModal_okButtonText: {
     fontSize: conditionalFontScale(13, 14, 15, 16),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   // ============================================
@@ -6045,7 +6045,7 @@ const styles = StyleSheet.create({
   RDM_SaveButtonText: {
     fontSize: fontScale(14),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   // ============================================
@@ -6151,7 +6151,7 @@ const styles = StyleSheet.create({
   },
 
   SB_saveButtonText: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(16, 17, 18, 19),
     fontWeight: '700',
   },
@@ -6303,7 +6303,7 @@ const styles = StyleSheet.create({
   },
 
   DNav_LogoutText: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontSize: fontScale(13),
     fontWeight: '700',
     letterSpacing: 0.6,
@@ -6652,7 +6652,7 @@ const styles = StyleSheet.create({
   DAM_saveButtonText: {
     fontSize: conditionalFontScale(13, 14, 15, 18),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
   },
 
   // ==================================================================================================================
@@ -6718,7 +6718,7 @@ const styles = StyleSheet.create({
   },
   DisplayActiveFilterButton: {
     borderBottomWidth: 5,
-    borderBottomColor: brand.primary,
+    borderBottomColor: brand.primaryStrong,
   },
   DisplayFilterButtonText: {
     fontSize: width * 0.04,
@@ -6727,7 +6727,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   DisplayActiveFilterButtonText: {
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '700',
   },
   DisplayMenuContainer: {
@@ -6972,13 +6972,13 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: brand.primary,
+    borderLeftColor: brand.primaryStrong,
     borderRadius: 8,
   },
   formHeaderText: {
     fontSize: 18,
     fontWeight: '600',
-    color: brand.primary,
+    color: brand.primaryStrong,
     marginBottom: 4,
   },
   formHeaderSubtext: {
@@ -7044,7 +7044,7 @@ const styles = StyleSheet.create({
   },
   DisLp_ActiveFilterButton: {
     borderBottomWidth: 5,
-    borderBottomColor: brand.primary,
+    borderBottomColor: brand.primaryStrong,
   },
   DisLp_FilterButtonText: {
     fontSize: width * 0.04,
@@ -7053,7 +7053,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   DisLp_ActiveFilterButtonText: {
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '700',
   },
   DisLp_MenuContainer: {
@@ -7180,7 +7180,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   Alert_OkButtonText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontWeight: '600',
     fontSize: width * 0.04,
   },
@@ -7284,7 +7284,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   CalMod_CloseButtonText: {
-    color: 'white',
+    color: brand.onPrimary,
     fontWeight: 'bold',
   },
   // end of calendar modal
@@ -7319,7 +7319,7 @@ const styles = StyleSheet.create({
   NotDD_dropdownTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: brand.primary,
+    color: brand.primaryStrong,
     marginBottom: 10,
     textAlign: 'center',
   },
@@ -7480,7 +7480,7 @@ const styles = StyleSheet.create({
     backgroundColor: brand.primary,
   },
   CntInfoMdl_buttonText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontWeight: 'bold',
   },
   // end of contact info modal
@@ -7564,7 +7564,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
@@ -7577,7 +7577,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 3,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     alignSelf: 'center',
     marginBottom: 8,
   },
@@ -7597,7 +7597,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderLeftWidth: 4,
-    borderLeftColor: brand.primary,
+    borderLeftColor: brand.primaryStrong,
   },
   orgStyles_departmentIcon: {
     width: 36,
@@ -7672,7 +7672,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderLeftWidth: 1,
     borderBottomWidth: 1,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
   orgStyles_verticalLine: {
     position: 'absolute',
@@ -7709,7 +7709,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   orgStyles_backButton: {
-    color: brand.primary,
+    color: brand.primaryStrong,
     textAlign: 'center',
     marginVertical: 8,
     fontWeight: '600',
@@ -7725,7 +7725,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
@@ -7738,7 +7738,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 3,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
     marginRight: 16,
   },
   orgStyles_rootInfo: {
@@ -7760,7 +7760,7 @@ const styles = StyleSheet.create({
   },
   orgStyles_rootRole: {
     fontSize: 14,
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '600',
     flexShrink: 1,
   },
@@ -8020,7 +8020,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
   ID_ButtonDisabled: {
     opacity: 0.6,
@@ -8214,7 +8214,7 @@ const styles = StyleSheet.create({
   MSAB_countNumber: {
     fontSize: conditionalFontScale(11, 11, 12, 12),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
   },
   MSAB_countLabel: {
     fontSize: conditionalFontScale(12, 13, 13, 14),
@@ -8306,7 +8306,7 @@ const styles = StyleSheet.create({
     padding: conditionalScale(2, 2, 3, 3),
     borderRadius: 99,
     borderWidth: 2,
-    borderColor: brand.primary + '40',
+    borderColor: brand.primaryStrong + '40',
     backgroundColor: AppTokens.blueBg,
   },
   DH_avatarImg: {
@@ -8325,7 +8325,7 @@ const styles = StyleSheet.create({
   DH_avatarInitialsText: {
     fontSize: conditionalFontScale(18, 19, 20, 21),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
     letterSpacing: 0.5,
   },
   DH_onlineDot: {
@@ -8368,11 +8368,11 @@ const styles = StyleSheet.create({
   DH_editChipText: {
     fontSize: conditionalFontScale(9, 10, 10, 11),
     fontWeight: '600',
-    color: AppTokens.blue,
+    color: AppTokens.blueStrong,
   },
   DH_positionText: {
     fontSize: conditionalFontScale(11, 12, 12, 13),
-    color: brand.primary,
+    color: brand.primaryStrong,
     fontWeight: '400',
   },
   DH_tagsRow: {
@@ -8395,7 +8395,7 @@ const styles = StyleSheet.create({
   DH_tagText: {
     fontSize: conditionalFontScale(10, 10, 11, 11),
     fontWeight: '600',
-    color: AppTokens.blue,
+    color: AppTokens.blueStrong,
   },
   DH_tagTextNeutral: {
     color: AppTokens.subtitleText,
@@ -9094,7 +9094,7 @@ const styles = StyleSheet.create({
   SSB_label: {
     fontSize: conditionalFontScale(11.5, 12, 12.5, 13),
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     marginLeft: conditionalScale(6, 6, 7, 7),
     marginRight: conditionalScale(6, 6, 7, 7),
   },
@@ -9241,13 +9241,13 @@ export const getDSRStyles = tokens =>
       zIndex: 10,
     },
     SRBtn_CancelButton: {
-      borderColor: tokens.blue,
+      borderColor: tokens.blueStrong,
       backgroundColor: 'transparent',
     },
     SRBtn_CancelButtonText: {
       fontWeight: '600',
       fontSize: conditionalFontScale(12, 13, 14, 15),
-      color: tokens.blue,
+      color: tokens.blueStrong,
       textAlign: 'center',
       includeFontPadding: false,
     },
@@ -9283,7 +9283,7 @@ export const getNotDDStyles = tokens =>
     NotDD_dropdownTitle: {
       fontSize: 18,
       fontWeight: 'bold',
-      color: tokens.blue,
+      color: tokens.blueStrong,
       marginBottom: 10,
       textAlign: 'center',
     },

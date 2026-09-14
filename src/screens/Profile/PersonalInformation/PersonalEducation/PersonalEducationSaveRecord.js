@@ -495,7 +495,7 @@ const PersonalEducationSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -669,7 +669,7 @@ const PersonalEducationSaveRecord = () => {
                     : 'Select Start Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
             <Text style={styles.DSR_Label}>End Date*</Text>
             <TouchableOpacity
@@ -682,7 +682,7 @@ const PersonalEducationSaveRecord = () => {
                     : 'Select End Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
 
             <Text style={styles.DSR_Label}>

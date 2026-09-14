@@ -168,7 +168,7 @@ const Profile = ({navigation}) => {
             <CardHeading label="GENERAL" />
             <SettingRow
               icon="user"
-              iconColor={AppTokens.blue}
+              iconColor={AppTokens.blueStrong}
               iconBg={AppTokens.blueBg}
               title="Personal Information"
               subtitle="Manage your personal details"

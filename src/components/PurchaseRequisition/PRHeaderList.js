@@ -380,7 +380,7 @@ const createStyles = P =>
     idText: {
       fontSize: 16,
       fontWeight: '800',
-      color: '#fff',
+      color: P.onPrimary,
       textAlign: 'center',
     },
     title: {

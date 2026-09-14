@@ -600,7 +600,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
       </View>
       <View style={[styles.AIChat_bubble, styles.AIChat_typingBubble]}>
         <View style={styles.AIChat_typingContainer}>
-          <ActivityIndicator size="small" color={P.primary} />
+          <ActivityIndicator size="small" color={P.primaryStrong} />
           <Text style={styles.AIChat_typingText}>Dynaface is typing...</Text>
         </View>
       </View>

@@ -511,7 +511,7 @@ const MedicalReceiptDetailsModal = ({
 
             {isLoading ? (
               <View style={styles.DAM_loadingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DAM_loadingText}>
                   Loading attachments...
                 </Text>
@@ -617,7 +617,7 @@ const MedicalReceiptDetailsModal = ({
                 onPress={handleSave}
                 disabled={isSaveDisabled}>
                 {processingAction === 'save' ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={P.onPrimary} />
                 ) : (
                   <Text style={styles.DAM_saveButtonText}>
                     Save ({attachments.filter(a => a.isNew).length})

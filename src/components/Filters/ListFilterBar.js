@@ -15,6 +15,7 @@ import {
   conditionalFontScale,
 } from '../../store/utils/scaling';
 import FilterPanel from './FilterPanel';
+import brand from '../../theme/brand';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  ListFilterBar — body control for the two multi-type screens (WorkItems + ESS).
@@ -125,7 +126,7 @@ const ListFilterBar = ({filters, showDocumentTypeFilter = false}) => {
                 LFB.docPill,
                 {
                   backgroundColor: isSelected ? T.blue : T.cardBg,
-                  borderColor: isSelected ? T.blue : T.cardDivider,
+                  borderColor: isSelected ? T.blueStrong : T.cardDivider,
                 },
               ]}>
               <Text
@@ -166,13 +167,13 @@ const ListFilterBar = ({filters, showDocumentTypeFilter = false}) => {
           LFB.trigger,
           {
             backgroundColor: T.cardBg,
-            borderColor: active ? T.blue : T.cardDivider,
+            borderColor: active ? T.blueStrong : T.cardDivider,
           },
         ]}>
         <FeatherIcon
           name="sliders"
           size={conditionalFontScale(14, 15, 15, 16)}
-          color={active ? T.blue : T.subtitleText}
+          color={active ? T.blueStrong : T.subtitleText}
         />
         {active && (
           <View style={[LFB.badge, {backgroundColor: T.blue}]}>
@@ -263,7 +264,7 @@ const LFB = StyleSheet.create({
   badgeText: {
     fontSize: conditionalFontScale(9, 9, 10, 10),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
   },
 });
 

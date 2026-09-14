@@ -240,7 +240,7 @@ const RootUser = ({
       activeOpacity={0.8}
       style={styles.WorkerATM_ActionButton}
       onPress={handleLeaveHistoryPress}>
-      <FontAwesome name="calendar" size={iconSize.xs} color="#fff" />
+      <FontAwesome name="calendar" size={iconSize.xs} color={T.onPrimary} />
       <Text style={styles.WorkerATM_ActionButtonText}>
         Leave History
       </Text>

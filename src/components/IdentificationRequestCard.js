@@ -77,13 +77,13 @@ const IdentificationRequestCard = ({
           isDisabled && {opacity: 0.5},
         ]}>
         {isProcessing ? (
-          <FontAwesome name="spinner" size={16} color={P.primary} />
+          <FontAwesome name="spinner" size={16} color={P.onPrimary} />
         ) : (
           config.icon && (
             <FontAwesome
               name={config.icon}
               size={16}
-              color={config.iconColor || P.primary}
+              color={config.iconColor || P.onPrimary}
               style={{marginRight: config.text ? 6 : 0}}
             />
           )
@@ -92,7 +92,7 @@ const IdentificationRequestCard = ({
           <Text
             style={{
               fontSize: 13,
-              color: config.textColor || P.primary,
+              color: config.textColor || P.onPrimary,
               fontWeight: '600',
             }}>
             {isProcessing ? 'Processing...' : config.text}
@@ -143,14 +143,14 @@ const IdentificationRequestCard = ({
                 <MaterialCommunityIcons
                   name={'card'}
                   size={22}
-                  color={P.primary}
+                  color={P.primaryStrong}
                   style={{marginRight: 8}}
                 />
                 <Text
                   style={{
                     fontSize: 15,
                     fontWeight: '700',
-                    color: P.primary,
+                    color: P.primaryStrong,
                   }}>
                   {data.IdentificationTypeId || 'Identification'}
                 </Text>

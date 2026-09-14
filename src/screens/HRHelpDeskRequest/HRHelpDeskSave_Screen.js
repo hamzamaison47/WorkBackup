@@ -514,7 +514,7 @@ const HRHelpDeskSaveScreen = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -595,7 +595,7 @@ const HRHelpDeskSaveScreen = () => {
                     : 'Select Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* Detail Problem */}

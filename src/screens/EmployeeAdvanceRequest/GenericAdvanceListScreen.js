@@ -610,7 +610,7 @@ const GenericAdvanceListScreen = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -621,7 +621,7 @@ const GenericAdvanceListScreen = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -632,7 +632,7 @@ const GenericAdvanceListScreen = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
@@ -643,7 +643,7 @@ const GenericAdvanceListScreen = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           ...(isDraft || isRejected
@@ -1138,13 +1138,13 @@ const GenericAdvanceListScreen = () => {
                     justifyContent: 'center',
                   }}>
                   {isSaving ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={P.onPrimary} />
                   ) : (
                     <Text
                       style={{
                         fontSize: 15,
                         fontWeight: '600',
-                        color: '#FFFFFF',
+                        color: P.onPrimary,
                       }}>
                       Save
                     </Text>
@@ -1284,7 +1284,7 @@ const GenericAdvanceListScreen = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

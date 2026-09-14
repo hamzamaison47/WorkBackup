@@ -194,7 +194,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
               <Text style={styles.DSR_DateText}>
                 {formatDate(formData.startDate)}
               </Text>
-              <Icon name="calendar" size={18} color={P.primary} />
+              <Icon name="calendar" size={18} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* End Date */}
@@ -205,7 +205,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
               <Text style={styles.DSR_DateText}>
                 {formatDate(formData.endDate)}
               </Text>
-              <Icon name="calendar" size={18} color={P.primary} />
+              <Icon name="calendar" size={18} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* Notes */}
@@ -235,7 +235,7 @@ const ESSEmployeeCertificate_Saverecord = () => {
                   marginRight: 10,
                 }}
                 onPress={handleSubmit}>
-                <Text style={{color: '#fff'}}>Submit</Text>
+                <Text style={{color: P.onPrimary}}>Submit</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

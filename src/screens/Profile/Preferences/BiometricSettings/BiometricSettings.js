@@ -588,7 +588,7 @@ const BiometricSettings = () => {
                   <MaterialCommunityIcons
                     name={getBiometricIcon()}
                     size={styles.Biometric_headerIconSize}
-                    color="#FFFFFF"
+                    color={P.onPrimary}
                   />
                 </View>
                 <Text style={styles.Biometric_headerTitle}>

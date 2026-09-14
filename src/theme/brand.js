@@ -34,15 +34,24 @@ export const lighten = (hex, amount) => {
 const primary = '#0A66C2';
 
 const brand = Object.freeze({
-  // Fills: app bar, tab bar, buttons, section headers, FAB, selected states.
+  // FILLED SURFACES ≥ 3px: app bar, tab bar, buttons, section headers, FAB,
+  // selected rows, connectors. Never use this for text or thin borders —
+  // that is what `primaryStrong` is for.
   primary,
 
-  // Text / thin borders / icons drawn in the brand colour on light surfaces.
-  // Same as `primary` today; will diverge when a lighter primary needs a
-  // darker companion for contrast.
+  // Primary used AS text, a link, a 1–2px border, a small icon, a radio dot,
+  // a spinner or a switch track — i.e. anything thin drawn on a LIGHT
+  // background. Equal to `primary` today (blue on white is 5.7:1). Under the
+  // mustard palette `primary` becomes #F4B400, which is 1.85:1 on white, so
+  // this becomes a dark mustard (~#8A6A00) to stay ≥ 4.5:1. scripts/
+  // contrast-guard.js enforces that.
   primaryStrong: primary,
 
-  // Text and icons drawn ON a `primary` fill.
+  // Content drawn ON a `primary` fill: button labels, header icons, badge
+  // text, spinners inside primary buttons. White today (5.7:1 on blue).
+  // Becomes #1F1F1F (charcoal) under mustard, because white on #F4B400 is
+  // 1.85:1. Every hardcoded white that sits on a primary surface must use
+  // this token or the palette swap will ship unreadable buttons.
   onPrimary: '#FFFFFF',
 
   // Derived pale tint for selected rows / active chips (P.tint, T.blueBg).
@@ -50,9 +59,9 @@ const brand = Object.freeze({
 
   // Designer-picked pale background used by the static AppTokens.blueBg
   // (dashboard icon tiles, profile chips, pill backgrounds). NOT the same
-  // value as `tint` today (#E8F1FB vs #e2edf8) — kept as its own key so this
-  // consolidation is pixel-identical. Candidate to merge into `tint` when the
-  // palette itself changes.
+  // value as `tint` today (#E8F1FB vs #e2edf8) — kept as its own key so the
+  // consolidation stayed pixel-identical. FOLDS INTO `tint` AT STEP 3 (the
+  // palette swap), when the two are allowed to move together.
   primaryBg: '#E8F1FB',
 });
 

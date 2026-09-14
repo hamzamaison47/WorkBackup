@@ -81,7 +81,9 @@ const DynamicPurchaseReqHeaderCard = ({
           <FontAwesome
             name={buttonConfig.icon}
             size={buttonConfig.iconSize || 16}
-            color={isDisabled ? '#999' : buttonConfig.iconColor || P.primary}
+            color={
+              isDisabled ? '#999' : buttonConfig.iconColor || P.primaryStrong
+            }
           />
         )}
         {isProcessing && (

@@ -153,7 +153,7 @@ const IdentificationDetailsSection = ({
       )}
 
       <TouchableOpacity onPress={onCreate} style={styles.createIconContainer}>
-        <Icon name="plus" size={16} color="#fff" />
+        <Icon name="plus" size={16} color={P.onPrimary} />
       </TouchableOpacity>
 
       <AlertDeleteModal

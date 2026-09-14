@@ -642,7 +642,7 @@ const ExpenseManagementSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color={P.primary} />
+                  <ActivityIndicator size="large" color={P.primaryStrong} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -718,7 +718,7 @@ const ExpenseManagementSaveRecord = () => {
                       : 'Select date from'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color={P.primary} />
+                <Icon name="calendar" size={20} color={P.primaryStrong} />
               </TouchableOpacity>
               {renderError('DateFrom')}
 
@@ -740,7 +740,7 @@ const ExpenseManagementSaveRecord = () => {
                       : 'Select date from first'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color={P.primary} />
+                <Icon name="calendar" size={20} color={P.primaryStrong} />
               </TouchableOpacity>
               {renderError('DateTo')}
             </ScrollView>

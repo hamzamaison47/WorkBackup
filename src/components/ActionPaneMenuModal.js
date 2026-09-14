@@ -307,7 +307,7 @@ const ActionPaneMenuModal = ({
             <SectionLabel label="ACCOUNT" styles={styles} />
             <MenuRow
               iconName="person-outline"
-              iconColor={P.primary}
+              iconColor={P.primaryStrong}
               iconBg={P.tint}
               label="My Profile"
               sub="View and edit your information"
@@ -501,7 +501,7 @@ const createStyles = T =>
     avatarText: {
       fontSize: conditionalFontScale(13, 14, 15, 15),
       fontWeight: '800',
-      color: '#FFFFFF',
+      color: T.onPrimary,
       letterSpacing: 0.5,
     },
     userInfo: {flex: 1},

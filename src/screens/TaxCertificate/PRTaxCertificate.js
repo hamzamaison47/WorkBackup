@@ -181,7 +181,7 @@ const PRTaxCertificate = () => {
             <Icon
               name="file-pdf-o"
               size={50}
-              color={P.primary}
+              color={P.primaryStrong}
               style={styles.TCert_Icon}
             />
             <Text style={styles.TCert_ScreenTitle}>Email Tax Certificate</Text>
@@ -212,7 +212,7 @@ const PRTaxCertificate = () => {
                 colors={[P.primary, P.primary]}
                 style={styles.TCert_ButtonContent}>
                 {sendingEmail ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={P.onPrimary} />
                 ) : (
                   <Text style={styles.TCert_ButtonText}>
                     Email Tax Certificate

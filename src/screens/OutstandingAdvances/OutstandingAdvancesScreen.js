@@ -486,7 +486,7 @@ const OutstandingRow = ({item}) => {
             style={{
               fontSize: conditionalScale(15, 16, 16, 16),
               fontWeight: '700',
-              color: T.blue,
+              color: T.blueStrong,
             }}>
             {formatAmount(remainingAmount)}
           </Text>
@@ -578,7 +578,7 @@ const SummaryCard = ({totalAdvanced, totalRecovered, totalOutstanding, T}) => (
         style={{
           fontSize: conditionalScale(28, 30, 32, 32),
           fontWeight: '700',
-          color: '#FFFFFF',
+          color: T.onPrimary,
         }}>
         {formatAmount(totalOutstanding)}
       </Text>
@@ -617,7 +617,7 @@ const SummaryCard = ({totalAdvanced, totalRecovered, totalOutstanding, T}) => (
           style={{
             fontSize: conditionalScale(16, 17, 18, 18),
             fontWeight: '700',
-            color: '#FFFFFF',
+            color: T.onPrimary,
           }}>
           {formatAmount(totalAdvanced)}
         </Text>
@@ -811,7 +811,7 @@ const OutstandingAdvancesScreen = () => {
               refreshing={refreshing} // ← separate from isLoading
               onRefresh={onRefresh} // ← dedicated refresh handler
               colors={[T.blue]} // Android spinner color
-              tintColor={T.blue} // iOS spinner color
+              tintColor={T.blueStrong} // iOS spinner color
             />
           }>
           {isLoading ? (
@@ -846,7 +846,7 @@ const OutstandingAdvancesScreen = () => {
                       flex: 1,
                       fontSize: conditionalScale(12, 13, 13, 13),
                       fontWeight: '600',
-                      color: '#FFFFFF',
+                      color: T.onPrimary,
                       letterSpacing: 0.5,
                     }}>
                     Advance Type
@@ -856,7 +856,7 @@ const OutstandingAdvancesScreen = () => {
                     style={{
                       fontSize: conditionalScale(12, 13, 13, 13),
                       fontWeight: '600',
-                      color: '#FFFFFF',
+                      color: T.onPrimary,
                       letterSpacing: 0.5,
                       textAlign: 'right',
                     }}>

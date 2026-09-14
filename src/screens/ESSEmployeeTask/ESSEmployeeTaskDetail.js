@@ -166,7 +166,7 @@ const ESSEmployeeTaskDetail = () => {
       style: 'icon',
       icon: 'edit',
       iconSize: 20,
-      iconColor: '#fff',
+      iconColor: P.onPrimary,
       backgroundColor: P.primary,
       disabled: false,
     },
@@ -253,7 +253,7 @@ const ESSEmployeeTaskDetail = () => {
                     <Text>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={handleUpdateDueDate}>
-                    <Text style={{color: P.primary}}>Save</Text>
+                    <Text style={{color: P.primaryStrong}}>Save</Text>
                   </TouchableOpacity>
                 </View>
               </View>

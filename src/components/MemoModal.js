@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import styles from '../styles/styles';
+import brand from '../theme/brand';
 
 const MemoModal = ({
   visible,
@@ -90,7 +91,7 @@ const MemoModal = ({
               disabled={isProcessing}
               onPress={handleSubmit}>
               {isProcessing ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={brand.onPrimary} />
               ) : (
                 <Text style={styles.DAM_saveButtonText}>OK</Text>
               )}

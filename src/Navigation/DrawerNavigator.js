@@ -32,14 +32,14 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
 
   const renderIcon = () => {
     const iconSize = 20;
-    const color = isActive ? '#FFFFFF' : P.primary;
+    const color = isActive ? P.onPrimary : P.primaryStrong;
 
     if (typeof icon === 'string') {
       return (
         <Ionicons
           name={icon}
           size={iconSize}
-          color={isActive ? '#FFFFFF' : P.primary}
+          color={isActive ? P.onPrimary : P.primaryStrong}
         />
       );
     }
@@ -92,7 +92,7 @@ const CustomDrawerItem = ({label, icon, onPress, isActive = false}) => {
           flex: 1,
           fontSize: conditionalScale(13, 14, 14, 14),
           fontWeight: isActive ? '500' : '400',
-          color: isActive ? '#FFFFFF' : T.titleText,
+          color: isActive ? T.onPrimary : T.titleText,
           letterSpacing: 0.2,
         }}
         numberOfLines={2}>

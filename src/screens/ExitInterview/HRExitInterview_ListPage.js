@@ -374,7 +374,7 @@ const HRExitInterviewListPage = () => {
       {isSaving && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>Saving…</Text>
           </View>
         </View>

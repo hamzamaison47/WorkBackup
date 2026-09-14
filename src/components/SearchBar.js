@@ -183,7 +183,7 @@ const SearchBar = ({
           <FontAwesome
             name="sort"
             size={15}
-            color={isFilterActive ? P.primary : '#ffffff'}
+            color={isFilterActive ? P.primaryStrong : '#ffffff'}
           />
         </TouchableOpacity>
 
@@ -198,7 +198,7 @@ const SearchBar = ({
             <FontAwesome
               name="filter"
               size={14}
-              color={selectedDocumentType ? P.primary : '#ffffff'}
+              color={selectedDocumentType ? P.primaryStrong : '#ffffff'}
             />
           </TouchableOpacity>
         )}
@@ -246,7 +246,7 @@ const SearchBar = ({
                       <FontAwesome
                         name={opt.icon}
                         size={13}
-                        color={isActive ? P.primary : '#6B7280'}
+                        color={isActive ? P.primaryStrong : '#6B7280'}
                         style={styles.SearchBar_dropdownIcon}
                       />
                       <Text
@@ -257,7 +257,11 @@ const SearchBar = ({
                         {opt.label}
                       </Text>
                       {isActive && (
-                        <FontAwesome name="check" size={11} color={P.primary} />
+                        <FontAwesome
+                          name="check"
+                          size={11}
+                          color={P.primaryStrong}
+                        />
                       )}
                     </TouchableOpacity>
                   );
@@ -302,7 +306,7 @@ const SearchBar = ({
                         <FontAwesome
                           name="filter"
                           size={11}
-                          color={P.primary}
+                          color={P.primaryStrong}
                         />
                       </View>
                       <Text style={S.headerTitle}>Document Type</Text>
@@ -381,7 +385,7 @@ const SearchBar = ({
                           <FontAwesome
                             name="check"
                             size={12}
-                            color={P.primary}
+                            color={P.primaryStrong}
                           />
                         )}
                       </TouchableOpacity>
@@ -488,7 +492,7 @@ const makeStyles = P =>
       justifyContent: 'center',
     },
     radioOuterActive: {
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
     },
     radioInner: {
       width: 7,
@@ -503,7 +507,7 @@ const makeStyles = P =>
       flex: 1,
     },
     optionTextActive: {
-      color: P.primary,
+      color: P.primaryStrong,
       fontWeight: '600',
     },
     activeBadge: {
@@ -514,7 +518,7 @@ const makeStyles = P =>
     },
     activeBadgeText: {
       fontSize: 10,
-      color: P.primary,
+      color: P.primaryStrong,
       fontWeight: '600',
     },
   });

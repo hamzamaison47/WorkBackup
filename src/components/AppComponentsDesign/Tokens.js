@@ -70,6 +70,7 @@ export const DarkTokens = {
 // ─────────────────────────────────────────────────────────────────────────────
 export const BrandTokens = {
   blue: brand.primary,
+  blueStrong: brand.primaryStrong, // primary as text / thin border / icon
   blueBg: brand.primaryBg,
   indigo: '#6366F1',
   indigoBg: '#EDEFFD',
@@ -85,6 +86,26 @@ export const BrandTokens = {
   purpleBg: '#EDE9FE',
   slate: '#475569',
   slateBg: '#F1F5F9',
+
+  // ── Semantic status tokens ──────────────────────────────────────────────
+  // "Waiting" family: Pending / In review / Pending Approval / Assigned /
+  // Unposted — anything that means "not decided yet". Deliberately NOT amber:
+  // the mustard primary (#F4B400) is 1.16:1 against amber #F59E0B, so a
+  // yellow "waiting" pill would be indistinguishable from a brand-coloured
+  // one. Slate keeps the meaning readable next to any primary.
+  //   statusWaiting     — dot / icon / active-pill fill
+  //   statusWaitingBg   — pill background
+  //   statusWaitingText — text on statusWaitingBg (6.6:1)
+  statusWaiting: '#475569',
+  statusWaitingBg: '#E2E8F0',
+  statusWaitingText: '#334155',
+
+  // Pending-count badge on the bottom tab bar. Today's values, named — still
+  // mustard because the bar is blue today. It WILL collide with a mustard
+  // primary (1.23:1); re-derive from statusWaiting when the tab bar is
+  // inverted in the palette step.
+  tabBadgeBg: '#D9A404',
+  tabBadgeText: '#1A1A1A',
 
   // Card shadow
   shadowOffset: {width: 0, height: 2},

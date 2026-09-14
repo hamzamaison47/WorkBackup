@@ -78,7 +78,7 @@ const StatCell = ({icon, label, value}) => {
       <FeatherIcon
         name={icon}
         size={conditionalFontScale(11, 11, 12, 12)}
-        color={AppTokens.blue}
+        color={AppTokens.blueStrong}
       />
       <Text style={[styles.DH_statLabel, {color: T.subtitleText}]}>
         {label}
@@ -204,7 +204,7 @@ const DashboardHeader = ({
             style={[
               styles.DH_avatarRing,
               {
-                borderColor: AppTokens.blue + '40',
+                borderColor: AppTokens.blueStrong + '40',
                 backgroundColor: AppTokens.blueBg,
               },
             ]}>
@@ -243,9 +243,10 @@ const DashboardHeader = ({
               <FeatherIcon
                 name="edit-2"
                 size={conditionalFontScale(9, 9, 10, 10)}
-                color={AppTokens.blue}
+                color={AppTokens.blueStrong}
               />
-              <Text style={[styles.DH_editChipText, {color: AppTokens.blue}]}>
+              <Text
+                style={[styles.DH_editChipText, {color: AppTokens.blueStrong}]}>
                 Profile
               </Text>
             </View>
@@ -266,10 +267,10 @@ const DashboardHeader = ({
                 <FeatherIcon
                   name="briefcase"
                   size={conditionalFontScale(9, 9, 10, 10)}
-                  color={AppTokens.blue}
+                  color={AppTokens.blueStrong}
                 />
                 <Text
-                  style={[styles.DH_tagText, {color: AppTokens.blue}]}
+                  style={[styles.DH_tagText, {color: AppTokens.blueStrong}]}
                   numberOfLines={1}>
                   {userData.department}
                 </Text>

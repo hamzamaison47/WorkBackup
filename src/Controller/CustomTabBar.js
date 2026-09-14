@@ -9,13 +9,12 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import {translate as t} from '../store/utils/translate';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
+import {AppTokens} from '../components/AppComponentsDesign/Tokens';
 import usePalette from '../hooks/usePalette';
 import {screenMapping} from './screenMapping';
 import {useDispatch} from 'react-redux';
 import {RetrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
 import {setPendingWorkItemsCount} from '../store/slices/workItemsSlice';
-const MUSTARD_BADGE_BG = '#D9A404';
-const MUSTARD_BADGE_TEXT = '#1A1A1A';
 
 export default function CustomTabBar(props) {
   // ✅ reactive theme tokens
@@ -344,7 +343,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     paddingHorizontal: 4,
-    backgroundColor: MUSTARD_BADGE_BG,
+    backgroundColor: AppTokens.tabBadgeBg,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -352,7 +351,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   tabBadgeText: {
-    color: MUSTARD_BADGE_TEXT,
+    color: AppTokens.tabBadgeText,
     fontSize: 10,
     fontWeight: '700',
   },

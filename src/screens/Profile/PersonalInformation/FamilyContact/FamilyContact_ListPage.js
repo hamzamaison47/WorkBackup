@@ -215,7 +215,7 @@ const FamilyContact_ListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         // disabled: !isDraft,
         // customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -226,7 +226,7 @@ const FamilyContact_ListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         // disabled: !isDraft,
         // customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -424,7 +424,7 @@ const FamilyContact_ListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

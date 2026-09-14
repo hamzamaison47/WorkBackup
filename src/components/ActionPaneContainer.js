@@ -48,66 +48,80 @@ import styles from '../styles/styles';
 
 import {AppTokens} from './AppComponentsDesign/Appcomponents';
 import useAppTokens from './AppComponentsDesign/useAppTokens';
+import brand from '../theme/brand';
 import {
   conditionalScale,
   conditionalVerticalScale,
   conditionalFontScale,
 } from '../store/utils/scaling';
 
+// `onActive` is the text/dot colour drawn ON the `active` fill. Only the
+// brand-coloured "All" pill follows the palette's onPrimary; the status
+// fills keep white.
 const PILL_COLORS = {
   All: {
     active: AppTokens.blue,
     bg: AppTokens.blueBg,
-    text: AppTokens.blue,
+    text: AppTokens.blueStrong,
     dot: null,
+    onActive: brand.onPrimary,
   },
   Draft: {
     active: AppTokens.slate,
     bg: AppTokens.slateBg,
     text: AppTokens.slate,
     dot: AppTokens.slate,
+    onActive: '#FFFFFF',
   },
+  // "Waiting" family — see statusWaiting* in Tokens.js for why not amber.
   Pending: {
-    active: AppTokens.amber,
-    bg: AppTokens.amberBg,
-    text: '#92400E',
-    dot: AppTokens.amber,
+    active: AppTokens.statusWaiting,
+    bg: AppTokens.statusWaitingBg,
+    text: AppTokens.statusWaitingText,
+    dot: AppTokens.statusWaiting,
+    onActive: '#FFFFFF',
   },
   'In review': {
-    active: AppTokens.amber,
-    bg: AppTokens.amberBg,
-    text: '#92400E',
-    dot: AppTokens.amber,
+    active: AppTokens.statusWaiting,
+    bg: AppTokens.statusWaitingBg,
+    text: AppTokens.statusWaitingText,
+    dot: AppTokens.statusWaiting,
+    onActive: '#FFFFFF',
   },
   'In Review': {
-    active: AppTokens.amber,
-    bg: AppTokens.amberBg,
-    text: '#92400E',
-    dot: AppTokens.amber,
+    active: AppTokens.statusWaiting,
+    bg: AppTokens.statusWaitingBg,
+    text: AppTokens.statusWaitingText,
+    dot: AppTokens.statusWaiting,
+    onActive: '#FFFFFF',
   },
   'Pending Approval': {
-    active: AppTokens.amber,
-    bg: AppTokens.amberBg,
-    text: '#92400E',
-    dot: AppTokens.amber,
+    active: AppTokens.statusWaiting,
+    bg: AppTokens.statusWaitingBg,
+    text: AppTokens.statusWaitingText,
+    dot: AppTokens.statusWaiting,
+    onActive: '#FFFFFF',
   },
   Approved: {
     active: AppTokens.green,
     bg: AppTokens.greenBg,
     text: '#065F46',
     dot: AppTokens.green,
+    onActive: '#FFFFFF',
   },
   Rejected: {
     active: AppTokens.red,
     bg: AppTokens.redBg,
     text: '#991B1B',
     dot: AppTokens.red,
+    onActive: '#FFFFFF',
   },
   Completed: {
     active: AppTokens.purple,
     bg: AppTokens.purpleBg,
     text: '#4C1D95',
     dot: AppTokens.purple,
+    onActive: '#FFFFFF',
   },
 };
 
@@ -270,10 +284,10 @@ const SubHeader = ({
                 <FeatherIcon
                   name="search"
                   size={conditionalFontScale(9, 9, 10, 10)}
-                  color={T.blue}
+                  color={T.blueStrong}
                 />
                 <Text
-                  style={[SH.collapsedSearchText, {color: T.blue}]}
+                  style={[SH.collapsedSearchText, {color: T.blueStrong}]}
                   numberOfLines={1}>
                   {query}
                 </Text>
@@ -295,14 +309,14 @@ const SubHeader = ({
                 SH.filterTrigger,
                 {
                   backgroundColor: T.pageBg,
-                  borderColor: filterActive ? T.blue : T.cardDivider,
+                  borderColor: filterActive ? T.blueStrong : T.cardDivider,
                   opacity: headerFilter.disabled ? 0.45 : 1,
                 },
               ]}>
               <FeatherIcon
                 name="filter"
                 size={conditionalFontScale(14, 15, 15, 16)}
-                color={filterActive ? T.blue : T.subtitleText}
+                color={filterActive ? T.blueStrong : T.subtitleText}
               />
               {filterActive && (
                 <View style={[SH.filterBadge, {backgroundColor: T.blue}]}>
@@ -318,7 +332,7 @@ const SubHeader = ({
               <FeatherIcon
                 name="chevron-down"
                 size={conditionalFontScale(14, 15, 15, 16)}
-                color={expanded ? T.blue : T.subtitleText}
+                color={expanded ? T.blueStrong : T.subtitleText}
               />
             </Animated.View>
           )}
@@ -405,14 +419,18 @@ const SubHeader = ({
                         <View
                           style={[
                             SH.dot,
-                            {backgroundColor: isActive ? '#fff' : color.dot},
+                            {
+                              backgroundColor: isActive
+                                ? color.onActive
+                                : color.dot,
+                            },
                           ]}
                         />
                       )}
                       <Text
                         style={[
                           SH.pillText,
-                          {color: isActive ? '#fff' : color.text},
+                          {color: isActive ? color.onActive : color.text},
                         ]}>
                         {pill}
                       </Text>
@@ -426,7 +444,9 @@ const SubHeader = ({
                                 : color.active,
                             },
                           ]}>
-                          <Text style={SH.countText}>{count}</Text>
+                          <Text style={[SH.countText, {color: color.onActive}]}>
+                            {count}
+                          </Text>
                         </View>
                       )}
                     </TouchableOpacity>
@@ -511,7 +531,7 @@ const SH = StyleSheet.create({
   filterBadgeText: {
     fontSize: conditionalFontScale(9, 9, 9, 10),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
   },
   searchRow: {
     flexDirection: 'row',
@@ -891,7 +911,7 @@ const ActionPaneContainer = ({
           <FeatherIcon
             name="plus"
             size={conditionalFontScale(20, 22, 24, 24)}
-            color="#fff"
+            color={T.onPrimary}
           />
         </TouchableOpacity>
       )}

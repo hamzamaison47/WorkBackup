@@ -193,7 +193,7 @@ const ESSEmployeeTask_ListPage = () => {
         style: 'approval_dropdown',
         text: 'Change Status',
         icon: 'check-square-o',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           {key: 'In progress', label: 'In progress', icon: 'play'},

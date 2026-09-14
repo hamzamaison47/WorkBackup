@@ -94,20 +94,20 @@ const TYPE_CONFIG = {
   Delete: {icon: 'trash', color: '#DC2626', bg: '#FEE2E2', label: 'Deleted'},
   Firebase: {
     icon: 'bell',
-    color: brand.primary,
+    color: brand.primaryStrong,
     bg: '#E8F1FB',
     label: 'Push',
   },
   Info: {
     icon: 'info-circle',
-    color: brand.primary,
+    color: brand.primaryStrong,
     bg: '#E8F1FB',
     label: 'Info',
   },
 
   default: {
     icon: 'bell',
-    color: brand.primary,
+    color: brand.primaryStrong,
     bg: '#E8F1FB',
     label: 'System',
   },
@@ -349,7 +349,7 @@ const NotificationPanel = ({
             onPress={() => handleMarkAsRead(item)}
             disabled={item.isRead || isLoading}>
             {isLoading ? (
-              <ActivityIndicator size="small" color={P.primary} />
+              <ActivityIndicator size="small" color={P.primaryStrong} />
             ) : (
               <View
                 style={[
@@ -411,7 +411,7 @@ const NotificationPanel = ({
           <View style={S.headerTop}>
             {/* Close */}
             <TouchableOpacity onPress={onClose} style={S.closeBtn}>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
+              <Ionicons name="arrow-forward" size={20} color={P.onPrimary} />
             </TouchableOpacity>
 
             {/* Title block */}
@@ -464,7 +464,7 @@ const NotificationPanel = ({
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={P.primary}
+              tintColor={P.primaryStrong}
               colors={[P.primary]}
             />
           }>
@@ -566,7 +566,7 @@ const makeStyles = (palette, T) =>
     headerTitle: {
       fontSize: 17,
       fontWeight: '700',
-      color: '#fff',
+      color: palette.onPrimary,
       letterSpacing: 0.2,
     },
     headerSub: {
@@ -593,7 +593,7 @@ const makeStyles = (palette, T) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1.5,
-      borderColor: palette.primary,
+      borderColor: palette.primary, // cutout ring: matches the header fill
     },
     bellBadgeText: {fontSize: 9, color: '#fff', fontWeight: '700'},
 
@@ -609,7 +609,11 @@ const makeStyles = (palette, T) =>
       gap: 5,
     },
     markAllBtnDisabled: {backgroundColor: 'rgba(255,255,255,0.25)'},
-    markAllText: {fontSize: 12, color: palette.primary, fontWeight: '600'},
+    markAllText: {
+      fontSize: 12,
+      color: palette.primaryStrong,
+      fontWeight: '600',
+    },
     markAllTextDisabled: {color: T.textMute},
 
     // Scroll
@@ -657,7 +661,7 @@ const makeStyles = (palette, T) =>
       letterSpacing: 0.6,
       textTransform: 'uppercase',
     },
-    sectionTitleToday: {color: palette.primary},
+    sectionTitleToday: {color: palette.primaryStrong},
     countPill: {
       backgroundColor: T.border,
       borderRadius: 10,
@@ -666,7 +670,7 @@ const makeStyles = (palette, T) =>
     },
     countPillToday: {backgroundColor: T.blueSoft},
     countPillText: {fontSize: 11, fontWeight: '700', color: T.textSub},
-    countPillTextToday: {color: palette.primary},
+    countPillTextToday: {color: palette.primaryStrong},
 
     // Notification item
     notifItem: {
@@ -811,7 +815,7 @@ const makeStyles = (palette, T) =>
     clearBtnText: {
       fontSize: 12,
       fontWeight: '600',
-      color: '#fff',
+      color: palette.onPrimary,
     },
     clearBtnTextDisabled: {
       color: 'rgba(255,255,255,0.3)',
