@@ -600,7 +600,6 @@ const PersonalEducationListPage = () => {
         buttons={getButtonConfig(item)}
         onButtonPress={handleButtonPress}
         isExpandable
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         isHighlighted={highlightedRecId === item.RecId}
         processingButtons={processingButtons[item.RecId] || []}

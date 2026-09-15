@@ -401,7 +401,7 @@ const createStyles = P =>
     },
     button: {
       flex: 1,
-      backgroundColor: '#007bff',
+      backgroundColor: P.primary,
       padding: 10,
       borderRadius: 5,
       marginHorizontal: 5,

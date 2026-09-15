@@ -7,13 +7,14 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import styles from '../styles/styles';
 import usePalette from '../hooks/usePalette';
+import brand from '../theme/brand';
 
 const IdentificationRequestCard = ({
   data = {},
   fields = [],
   buttons = {},
   processingButtons = [],
-  gradientColors = ['#E8F0FE', '#F9FBFF'],
+  gradientColors = [brand.tint, brand.surface],
   highlightGradientColors = ['#DFFFE0', '#EEFFF2'],
   isHighlighted = false,
   onButtonPress = () => {},

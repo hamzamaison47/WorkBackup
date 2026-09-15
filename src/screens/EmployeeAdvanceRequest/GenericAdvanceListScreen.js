@@ -48,8 +48,8 @@ import usePalette from '../../hooks/usePalette';
 
 // Speed dial menu item config — no icon field
 const MENU_ITEMS = [
-  {key: 'advance', label: 'Advance Salary', backgroundColor: '#1877F2'},
-  {key: 'loan', label: 'Loan Request', backgroundColor: '#1877F2'},
+  {key: 'advance', label: 'Advance Salary'},
+  {key: 'loan', label: 'Loan Request'},
 ];
 
 const GenericAdvanceListScreen = () => {
@@ -889,7 +889,6 @@ const GenericAdvanceListScreen = () => {
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}

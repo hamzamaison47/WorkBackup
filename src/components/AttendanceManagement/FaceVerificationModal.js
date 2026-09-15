@@ -179,7 +179,7 @@ const makeBEStyles = (C, R, Sh) =>
       marginBottom: 12,
       ...Sh.sm,
     },
-    primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
+    primaryBtnTxt: {color: C.onBlue, fontWeight: '700', fontSize: 15},
     cancelBtn: {
       backgroundColor: C.surfaceAlt,
       borderWidth: 1,
@@ -510,7 +510,7 @@ const FaceVerificationModal = ({
     if (phase === 'checking')
       return (
         <View style={S.center}>
-          <ActivityIndicator size="large" color={C.blue} />
+          <ActivityIndicator size="large" color={C.blueDark} />
           <Text style={S.centerTxt}>Initialising camera…</Text>
         </View>
       );
@@ -578,7 +578,7 @@ const FaceVerificationModal = ({
       return (
         <View style={S.center}>
           <View style={S.spinnerWrap}>
-            <ActivityIndicator size="large" color={C.blue} />
+            <ActivityIndicator size="large" color={C.blueDark} />
           </View>
           <Text style={S.stateTitle}>Analyzing Security Data…</Text>
           <Text style={S.stateSub}>
@@ -849,7 +849,7 @@ const makeStyles = (C, R, Sh) =>
       marginBottom: 12,
       ...Sh.sm,
     },
-    primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
+    primaryBtnTxt: {color: C.onBlue, fontWeight: '700', fontSize: 15},
     cancelBtn: {
       backgroundColor: C.surfaceAlt,
       borderWidth: 1,

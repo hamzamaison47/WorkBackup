@@ -5,6 +5,7 @@
 
 import React, {useEffect, useRef} from 'react';
 import {TouchableOpacity, Text, StyleSheet, Animated, View} from 'react-native';
+import brand from '../../theme/brand';
 
 const AIFloatingButton = ({onPress}) => {
   const pulse = useRef(new Animated.Value(1)).current;
@@ -59,17 +60,17 @@ const styles = StyleSheet.create({
     width: BTN_SIZE + 16,
     height: BTN_SIZE + 16,
     borderRadius: (BTN_SIZE + 16) / 2,
-    backgroundColor: 'rgba(26, 86, 219, 0.2)',
+    backgroundColor: brand.tint,
   },
   btn: {
     width: BTN_SIZE,
     height: BTN_SIZE,
     borderRadius: BTN_SIZE / 2,
-    backgroundColor: '#1A56DB',
+    backgroundColor: brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 6,
-    shadowColor: '#1A56DB',
+    shadowColor: brand.primary,
     shadowOpacity: 0.45,
     shadowRadius: 8,
     shadowOffset: {width: 0, height: 4},

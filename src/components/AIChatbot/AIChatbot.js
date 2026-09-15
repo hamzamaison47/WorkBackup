@@ -73,9 +73,9 @@ const MessageBubble = React.memo(({item, index}) => {
       {!isUser && (
         <View style={styles.AIChat_avatarContainer}>
           <LinearGradient
-            colors={[P.primary, '#0765A2']}
+            colors={[P.primary, P.primary]}
             style={styles.AIChat_avatar}>
-            <Icon name="robot-excited" size={22} color="#fff" />
+            <Icon name="robot-excited" size={22} color={P.onPrimary} />
           </LinearGradient>
         </View>
       )}
@@ -110,9 +110,9 @@ const MessageBubble = React.memo(({item, index}) => {
       {isUser && (
         <View style={styles.AIChat_avatarContainer}>
           <LinearGradient
-            colors={['#0765A2', P.primary]}
+            colors={[P.primary, P.primary]}
             style={styles.AIChat_avatar}>
-            <Icon name="account" size={22} color="#fff" />
+            <Icon name="account" size={22} color={P.onPrimary} />
           </LinearGradient>
         </View>
       )}
@@ -593,9 +593,9 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
     <View style={[styles.AIChat_messageWrapper, styles.AIChat_botWrapper]}>
       <View style={styles.AIChat_avatarContainer}>
         <LinearGradient
-          colors={[P.primary, '#0765A2']}
+          colors={[P.primary, P.primary]}
           style={styles.AIChat_avatar}>
-          <Icon name="robot-excited" size={22} color="#fff" />
+          <Icon name="robot-excited" size={22} color={P.onPrimary} />
         </LinearGradient>
       </View>
       <View style={[styles.AIChat_bubble, styles.AIChat_typingBubble]}>
@@ -657,7 +657,7 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
             ]}>
             {/* Header */}
             <LinearGradient
-              colors={[P.primary, '#0765A2', '#054A8C']}
+              colors={[P.primary, P.primary]}
               start={{x: 0, y: 0}}
               end={{x: 1, y: 1}}
               style={styles.AIChat_header}>
@@ -779,13 +779,15 @@ const AIChatbot = ({visible, onClose, serviceInstance}) => {
                           ? ['#FF4444', '#CC0000']
                           : !voiceServiceReady || isTyping
                           ? ['#CCCCCC', '#999999']
-                          : [P.primary, '#0765A2']
+                          : [P.primary, P.primary]
                       }
                       style={styles.AIChat_gradientButton}>
                       <Icon
                         name={isRecording ? 'stop' : 'microphone'}
                         size={22}
-                        color={!voiceServiceReady || isTyping ? '#888' : '#fff'}
+                        color={
+                          !voiceServiceReady || isTyping ? '#888' : P.onPrimary
+                        }
                       />
                     </LinearGradient>
                   </TouchableOpacity>

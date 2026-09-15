@@ -34,56 +34,66 @@ import {
   setGraphRefreshToken,
 } from '../../store/slices/authSlice';
 import {store} from '../../store';
+import brand from '../../theme/brand';
+import {AppTokens} from '../../components/AppComponentsDesign/Tokens';
 
 const {width: SW} = Dimensions.get('window');
 
 // ─── Design Tokens ────────────────────────────────────────────────────────────
+// Local vocabulary for this screen, with values derived from the app brand
+// (src/theme/brand.js) so it is no longer a parallel colour system.
+//   brand      — the brand as a FILL (buttons, selected day, today badge)
+//   brandMid   — the brand as TEXT / icon / spinner (= primaryStrong)
+//   brandLight — thin rings / borders in the brand colour (= primaryStrong)
+//   textInverse — content ON a brand fill (= onPrimary)
+// The old warm-gold `accent` collided with the mustard primary; the today
+// pill is now a pale tint with brand-coloured text.
 const T = {
   // Backgrounds
-  bgPage: '#F0F2F7',
-  bgCard: '#FFFFFF',
-  bgSurface: '#F7F8FC',
+  bgPage: brand.pageBg,
+  bgCard: brand.surface,
+  bgSurface: brand.surfaceAlt,
 
-  // Brand: deep slate-blue with warm gold accent
-  brand: '#1A2E4A',
-  brandMid: '#2A4A7F',
-  brandLight: '#3D6CB5',
-  brandPale: '#E8EFF9',
-  brandGhost: '#F2F5FC',
+  // Brand
+  brand: brand.primary,
+  brandMid: brand.primaryStrong,
+  brandLight: brand.primaryStrong,
+  brandPale: brand.tint,
+  brandGhost: brand.surfaceAlt,
 
-  accent: '#E8A020',
-  accentLight: '#FEF3D9',
-  accentDark: '#C47800',
+  accent: brand.tint,
+  accentLight: brand.tint,
+  accentDark: brand.primaryStrong,
 
   // Semantic
   success: '#1A8754',
   successBg: '#E3F6EC',
   danger: '#C0392B',
   dangerBg: '#FDECEA',
-  warning: '#B85C00',
-  warningBg: '#FEF3D9',
-  info: '#0A6CB5',
-  infoBg: '#E5F1FB',
+  warning: AppTokens.statusWaitingText,
+  warningBg: AppTokens.statusWaitingBg,
+  info: brand.primaryStrong,
+  infoBg: brand.tint,
 
   // Text
-  textTitle: '#0D1B2E',
-  textBody: '#2D3F55',
-  textMuted: '#7A8FA6',
-  textHint: '#A8B8CB',
-  textInverse: '#FFFFFF',
+  textTitle: brand.text,
+  textBody: brand.text,
+  textMuted: brand.secondary,
+  textHint: brand.secondary,
+  textInverse: brand.onPrimary,
 
   // Borders
-  borderFaint: '#E8ECF3',
-  borderMed: '#CCD5E3',
+  borderFaint: brand.divider,
+  borderMed: brand.divider,
 
   // Event category palette (6 distinct)
   eventPalette: [
-    '#2A4A7F', // deep blue
+    AppTokens.indigo, // was deep blue
     '#7B3DB5', // purple
     '#B83D6C', // rose
     '#C47800', // amber
     '#1A8754', // emerald
-    '#0A6CB5', // sky
+    AppTokens.teal, // was sky blue
   ],
 
   // Radius
@@ -95,21 +105,21 @@ const T = {
 
   // Shadows
   sh1: {
-    shadowColor: '#0D1B2E',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
   sh2: {
-    shadowColor: '#0D1B2E',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.09,
     shadowRadius: 10,
     elevation: 4,
   },
   sh3: {
-    shadowColor: '#0D1B2E',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 6},
     shadowOpacity: 0.14,
     shadowRadius: 20,
@@ -502,7 +512,7 @@ const cg = StyleSheet.create({
     justifyContent: 'center',
   },
   todayRing: {borderWidth: 2, borderColor: T.brandLight},
-  selCircle: {backgroundColor: T.brandMid},
+  selCircle: {backgroundColor: T.brand},
   dayNum: {fontSize: 14, fontWeight: '500', color: T.textBody},
   dimDay: {color: T.textHint},
   todayNum: {color: T.brandMid, fontWeight: '700'},
@@ -692,7 +702,7 @@ const dh = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.borderFaint,
   },
-  todayBadge: {backgroundColor: T.brandMid, borderColor: T.brandMid},
+  todayBadge: {backgroundColor: T.brand, borderColor: T.brand},
   badgeNum: {
     fontSize: 18,
     fontWeight: '800',
@@ -706,7 +716,7 @@ const dh = StyleSheet.create({
     letterSpacing: 0.5,
   },
   todayBadgeNum: {color: T.textInverse},
-  todayBadgeMo: {color: 'rgba(255,255,255,0.7)'},
+  todayBadgeMo: {color: brand.onPrimaryMuted},
   info: {gap: 2},
   dayName: {fontSize: 16, fontWeight: '700', color: T.textTitle},
   countText: {fontSize: 12, color: T.textMuted, fontWeight: '500'},
@@ -1278,7 +1288,7 @@ const cm = StyleSheet.create({
     paddingVertical: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: T.brandMid,
+    backgroundColor: T.brand,
     borderRadius: T.r12,
   },
   saveTxt: {fontSize: 15, fontWeight: '700', color: T.textInverse},
@@ -1381,7 +1391,7 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    backgroundColor: T.brandMid,
+    backgroundColor: T.brand,
     paddingHorizontal: 22,
     paddingVertical: 11,
     borderRadius: T.r12,

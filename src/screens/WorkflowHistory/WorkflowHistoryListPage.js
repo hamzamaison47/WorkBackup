@@ -26,6 +26,7 @@ import AlertModal from '../../components/Alert/AlertModal';
 import {retrieveWorkflowHistory} from '../../API/WorkflowHistory/retrieveWorkflowHistory';
 
 import styles from '../../styles/styles';
+import brand from '../../theme/brand';
 
 const WorkflowHistoryScreen = () => {
   const navigation = useNavigation();
@@ -215,9 +216,9 @@ const WorkflowHistoryScreen = () => {
 
     if (type.includes('created'))
       return {
-        color: '#2563EB',
-        bgColor: '#EFF6FF',
-        dotColor: '#BFDBFE',
+        color: brand.primaryStrong,
+        bgColor: brand.tint,
+        dotColor: brand.tint,
         icon: '⬡',
         category: 'Created',
       };
@@ -470,7 +471,7 @@ const tl = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0F172A',
+    color: brand.text,
     letterSpacing: -0.4,
   },
   headerPill: {
@@ -543,7 +544,7 @@ const tl = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A',
+    color: brand.text,
     letterSpacing: -0.2,
     lineHeight: 21,
   },
@@ -609,11 +610,11 @@ const tl = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderLeftWidth: 2,
-    borderLeftColor: '#38BDF8',
+    borderLeftColor: brand.primaryStrong,
   },
   infoText: {
     fontSize: 12,
-    color: '#0369A1',
+    color: brand.primaryStrong,
     lineHeight: 17,
   },
 

@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
-  StatusBar,
   ActivityIndicator,
   Linking,
   Platform,
@@ -70,7 +69,7 @@ const PermissionDeniedView = ({onNavigate}) => (
 const LoadingView = ({onNavigate}) => (
   <View style={S.stateWrap}>
     <View style={[S.stateIconCircle, {backgroundColor: C.blueLight}]}>
-      <ActivityIndicator size="large" color={C.blue} />
+      <ActivityIndicator size="large" color={C.blueDark} />
     </View>
     <Text style={S.stateTitle}>Getting Your Location</Text>
     <Text style={S.stateSub}>
@@ -157,7 +156,7 @@ const LocationBanner = ({
       <View style={{flex: 1}}>
         {locationLoading ? (
           <View style={S.locationCardLoading}>
-            <ActivityIndicator size="small" color={C.blue} />
+            <ActivityIndicator size="small" color={C.blueDark} />
             <Text
               style={[S.locationCardName, {color: C.inkMuted, fontSize: 13}]}>
               Verifying…
@@ -340,11 +339,6 @@ const HomeScreen = ({onNavigate}) => {
   if (permissionStatus === 'denied') {
     return (
       <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={T.pageBg}
-          translucent={false}
-        />
         <PermissionDeniedView onNavigate={onNavigate} />
       </SafeAreaView>
     );
@@ -354,11 +348,6 @@ const HomeScreen = ({onNavigate}) => {
   if (permissionStatus === 'unknown' || (locationLoading && !coords)) {
     return (
       <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={T.pageBg}
-          translucent={false}
-        />
         <LoadingView onNavigate={onNavigate} />
       </SafeAreaView>
     );
@@ -368,11 +357,6 @@ const HomeScreen = ({onNavigate}) => {
   if (!locationLoading && !coords && permissionStatus === 'granted') {
     return (
       <SafeAreaView style={{flex: 1, backgroundColor: T.pageBg}}>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={T.pageBg}
-          translucent={false}
-        />
         <GPSUnavailableView onNavigate={onNavigate} onRetry={refresh} />
       </SafeAreaView>
     );
@@ -390,12 +374,6 @@ const HomeScreen = ({onNavigate}) => {
   return (
     <PageBackground>
       <SafeAreaView style={{flex: 1}}>
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor={T.pageBg}
-          translucent={false}
-        />
-
         <ScrollView
           contentContainerStyle={S.scroll}
           showsVerticalScrollIndicator={false}>
@@ -593,12 +571,12 @@ const S = StyleSheet.create({
   cardActionTxt: {
     fontSize: 15,
     fontWeight: '600',
-    color: C.blue,
+    color: C.blueDark,
   },
 
   cardActionArrow: {
     fontSize: 18,
-    color: C.blue,
+    color: C.blueDark,
   },
 
   // ── LOCATION BANNER FIX ─────────────────────
@@ -783,7 +761,7 @@ const S = StyleSheet.create({
   },
 
   stateBtnTxt: {
-    color: C.white,
+    color: C.onBlue,
     fontWeight: '700',
   },
 });

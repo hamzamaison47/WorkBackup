@@ -686,7 +686,6 @@ const ExpenseManagementLinesListPage = () => {
         onButtonPress={handleButtonPress}
         isExpandable={true}
         showNavigationArrow={false}
-        gradientColors={[P.tint, P.tint]}
         processingButtons={processingButtons[item.LineRecId] || []}
         searchQuery={f.searchQuery}
         isMultiSelectMode={isMultiSelectMode}

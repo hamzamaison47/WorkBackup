@@ -27,6 +27,7 @@ import {
 } from '../../../../store/slices/dateFormatSlice';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import usePalette from '../../../../hooks/usePalette';
+import brand from '../../../../theme/brand';
 
 const DateFormatSettingsScreen = () => {
   const dispatch = useDispatch();
@@ -457,7 +458,7 @@ const createStyles = P =>
     },
     optionCardSelected: {
       borderColor: P.primaryStrong,
-      backgroundColor: '#EBF3FB',
+      backgroundColor: P.tint,
     },
     radio: {
       width: 20,
@@ -492,7 +493,7 @@ const createStyles = P =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: '#EBF3FB',
+      backgroundColor: P.tint,
       borderRadius: 14,
       padding: 16,
       borderWidth: 2,
@@ -528,7 +529,7 @@ const createStyles = P =>
     infoCard: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      backgroundColor: '#EBF3FB',
+      backgroundColor: P.tint,
       marginHorizontal: 16,
       marginTop: 16,
       borderRadius: 12,
@@ -560,7 +561,7 @@ const createStyles = P =>
       borderBottomWidth: 1,
       borderBottomColor: '#f3f4f6',
     },
-    modalTitle: {fontSize: 17, fontWeight: '700', color: '#111827'},
+    modalTitle: {fontSize: 17, fontWeight: '700', color: brand.text},
     searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -574,7 +575,7 @@ const createStyles = P =>
       borderWidth: 1,
       borderColor: '#e5e7eb',
     },
-    searchInput: {flex: 1, fontSize: 14, color: '#111827', padding: 0},
+    searchInput: {flex: 1, fontSize: 14, color: brand.text, padding: 0},
     tzCount: {
       fontSize: 11,
       color: '#9ca3af',
@@ -592,7 +593,7 @@ const createStyles = P =>
       paddingVertical: 14,
       height: 57,
     },
-    tzItemSelected: {backgroundColor: '#EBF3FB'},
+    tzItemSelected: {backgroundColor: P.tint},
     tzItemLeft: {flex: 1},
     tzItemLabel: {fontSize: 14, fontWeight: '500', color: '#374151'},
     tzItemLabelSelected: {color: P.primaryStrong, fontWeight: '600'},

@@ -5,6 +5,7 @@ import {Platform, View, Text, TouchableOpacity} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import usePalette from '../../hooks/usePalette';
+import brand from '../../theme/brand';
 
 /* ---------- helpers ---------- */
 const p2 = n => String(n).padStart(2, '0');
@@ -124,7 +125,7 @@ const TimeFlicker = ({
           backgroundColor: disabled ? '#F0F0F0' : '#FFFFFF',
           opacity: disabled ? 0.6 : 1,
         }}>
-        <Text style={{fontSize: 15, color: '#0E1521', fontWeight: '600'}}>
+        <Text style={{fontSize: 15, color: brand.text, fontWeight: '600'}}>
           {display}
         </Text>
         <Icon
@@ -157,7 +158,7 @@ const TimeFlicker = ({
                 marginRight: 8,
                 marginBottom: 8,
               }}>
-              <Text style={{fontSize: 12, color: '#0E1521'}}>
+              <Text style={{fontSize: 12, color: brand.text}}>
                 {toTime12Label(val)}
               </Text>
             </TouchableOpacity>

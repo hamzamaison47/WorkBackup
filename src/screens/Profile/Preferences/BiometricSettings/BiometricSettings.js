@@ -498,7 +498,7 @@ const BiometricSettings = () => {
         <Switch
           value={isEnabled}
           onValueChange={() => handleAccountSelection(item)}
-          trackColor={{false: '#E5E7EB', true: '#007AFF'}}
+          trackColor={{false: '#E5E7EB', true: P.primaryStrong}}
           thumbColor={'#FFFFFF'}
           ios_backgroundColor="#E5E7EB"
         />

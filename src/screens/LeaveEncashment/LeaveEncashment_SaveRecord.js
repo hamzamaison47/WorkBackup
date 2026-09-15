@@ -41,6 +41,7 @@ import styles from '../../styles/styles';
 import {CreateEncashment} from '../../API/LeaveEncashment/CreateEncashment';
 import {RetrieveEntitlementCode} from '../../API/LeaveEncashment/RetrieveEntitlementCode';
 import {GetBalanceBeforeApplication} from '../../API/LeaveEncashment/GetBalanceBefore';
+import brand from '../../theme/brand';
 
 const LeaveEncashment_SaveRecord = () => {
   const navigation = useNavigation();
@@ -271,7 +272,7 @@ const LeaveEncashment_SaveRecord = () => {
                 placeholder="Select item"
                 value={formData.EntitlementCode}
                 onChange={onSelectEntitlement}
-                activeColor="#E6F0FF"
+                activeColor={brand.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {marginTop: Platform.OS === 'ios' ? 5 : 2},

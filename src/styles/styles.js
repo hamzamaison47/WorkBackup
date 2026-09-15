@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(32, 34, 36, 38),
     height: conditionalScale(32, 34, 36, 38),
     borderRadius: conditionalScale(16, 17, 18, 19),
-    backgroundColor: '#EEF2FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: conditionalScale(12, 13, 14, 15),
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(23, 25, 27, 32),
     backgroundColor: '#fff',
     borderWidth: moderateScale(2),
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(32, 35, 38, 38), // was 45
     backgroundColor: '#fff',
     borderWidth: moderateScale(2),
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     height: conditionalVerticalScale(48, 52, 56, 64),
     borderRadius: borderRadius.xxl,
     borderWidth: moderateScale(2),
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
     marginVertical: conditionalVerticalScale(6, 8, 10, 12),
     paddingHorizontal: spacing.md,
     backgroundColor: '#fff',
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
 
   Login_ButtonText: {
-    color: '#0A66C2',
+    color: brand.primaryStrong,
     fontSize: conditionalFontScale(14, 15, 16, 19),
     fontWeight: '600',
   },
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_ActiveConfigCard: {
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
     backgroundColor: '#f8fbff',
   },
 
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: moderateScale(12),
     right: moderateScale(12),
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: conditionalScale(8, 10, 11, 13),
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_ActiveBadgeText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(9, 10, 11, 12),
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_ActiveIconContainer: {
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
   },
 
   ConfigSelection_ConfigTitle: {
@@ -609,13 +609,13 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_PrimaryButton: {
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     paddingHorizontal: conditionalScale(24, 28, 32, 36),
     paddingVertical: conditionalVerticalScale(12, 14, 16, 18),
     borderRadius: moderateScale(12),
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#0A66C2',
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -627,7 +627,7 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_PrimaryButtonText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(15, 16, 17, 19),
     fontWeight: '700',
   },
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
   },
 
   ConfigSelection_PrimaryButtonModal: {
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     paddingHorizontal: conditionalScale(18, 20, 22, 26),
     paddingVertical: conditionalVerticalScale(10, 12, 13, 15),
     borderRadius: moderateScale(10),
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f8ff',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0A66C2',
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -856,7 +856,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: conditionalScale(22, 25, 27, 32),
     height: conditionalScale(22, 25, 27, 32),
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
   },
 
   QRSetup_TopLeft: {
@@ -894,8 +894,8 @@ const styles = StyleSheet.create({
   QRSetup_ScanLine: {
     width: '100%',
     height: 2,
-    backgroundColor: '#0A66C2',
-    shadowColor: '#0A66C2',
+    backgroundColor: brand.primary,
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.8,
     shadowRadius: 8,
@@ -1024,7 +1024,7 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_GalleryButton: {
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     paddingVertical: conditionalVerticalScale(12, 14, 15, 17),
     paddingHorizontal: spacing.md,
     borderRadius: moderateScale(12),
@@ -1032,7 +1032,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: conditionalVerticalScale(10, 12, 13, 15),
-    shadowColor: '#0A66C2',
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1040,7 +1040,7 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_GalleryButtonText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '700',
   },
@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
     marginBottom: conditionalVerticalScale(12, 16, 18, 20),
   },
 
@@ -1063,7 +1063,7 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_SkipButtonText: {
-    color: '#0A66C2',
+    color: brand.primaryStrong,
     fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '700',
   },
@@ -1138,11 +1138,11 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_ModalButtonPrimary: {
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     paddingVertical: conditionalVerticalScale(12, 14, 15, 17),
     borderRadius: moderateScale(10),
     alignItems: 'center',
-    shadowColor: '#0A66C2',
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1150,7 +1150,7 @@ const styles = StyleSheet.create({
   },
 
   QRSetup_ModalButtonPrimaryText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(14, 15, 16, 18),
     fontWeight: '700',
   },
@@ -1214,7 +1214,7 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(40, 45, 50, 55),
     borderWidth: moderateScale(3),
     borderColor: '#fff',
-    backgroundColor: '#EAF2FB',
+    backgroundColor: brand.tint,
   },
 
   MainDash_AvatarContainer: {
@@ -1223,7 +1223,7 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(40, 45, 50, 55),
     borderWidth: moderateScale(3),
     borderColor: '#fff',
-    backgroundColor: '#bed8f6ff',
+    backgroundColor: brand.tint,
     marginRight: spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1235,7 +1235,7 @@ const styles = StyleSheet.create({
     borderRadius: conditionalScale(40, 45, 50, 55),
     borderWidth: moderateScale(3),
     borderColor: '#fff',
-    backgroundColor: '#bed8f6ff',
+    backgroundColor: brand.tint,
     marginRight: 0,
     marginBottom: conditionalVerticalScale(10, 12, 14, 16),
     justifyContent: 'center',
@@ -1276,21 +1276,21 @@ const styles = StyleSheet.create({
 
   MainDash_EmailText: {
     fontSize: conditionalFontScale(10, 11, 12, 13),
-    color: '#DCE6F5',
+    color: brand.onPrimaryMuted,
     textAlign: 'left',
     lineHeight: conditionalFontScale(13, 14, 15, 16),
   },
 
   MainDash_EmailTextSmall: {
     fontSize: conditionalFontScale(10, 11, 12, 13),
-    color: '#DCE6F5',
+    color: brand.onPrimaryMuted,
     textAlign: 'center',
     lineHeight: conditionalFontScale(13, 14, 15, 16),
   },
 
   MainDash_BoldText: {
     fontSize: conditionalFontScale(10, 11, 12, 13),
-    color: '#DCE6F5',
+    color: brand.onPrimaryMuted,
     fontWeight: 'bold',
   },
 
@@ -1690,7 +1690,7 @@ const styles = StyleSheet.create({
   DisplayList_Title: {
     fontSize: conditionalFontScale(11, 12, 13, 14),
     fontWeight: '600',
-    color: '#111827',
+    color: brand.text,
     textAlign: 'center',
     lineHeight: conditionalFontScale(14, 15, 16, 18),
   },
@@ -1733,7 +1733,7 @@ const styles = StyleSheet.create({
 
   Profile_avatarContainer: {
     marginBottom: conditionalVerticalScale(16, 18, 20, 22),
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOpacity: 0.15,
     shadowRadius: moderateScale(10),
     shadowOffset: {
@@ -1757,7 +1757,7 @@ const styles = StyleSheet.create({
   Profile_avatarText: {
     fontSize: conditionalFontScale(36, 38, 40, 42),
     fontWeight: '600',
-    color: '#6366F1',
+    color: AppTokens.indigo,
   },
 
   Profile_card: {
@@ -1791,7 +1791,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(32, 34, 36, 38),
     height: conditionalScale(32, 34, 36, 38),
     borderRadius: conditionalScale(16, 17, 18, 19),
-    backgroundColor: '#EEF2FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: conditionalScale(12, 13, 14, 15),
@@ -1866,7 +1866,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: borderRadius.lg,
     borderBottomRightRadius: borderRadius.lg,
     elevation: moderateScale(3),
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOpacity: 0.15,
     shadowRadius: moderateScale(8),
     shadowOffset: {
@@ -1916,7 +1916,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(42, 44, 46, 48),
     height: conditionalScale(42, 44, 46, 48),
     borderRadius: conditionalScale(14, 15, 16, 17),
-    backgroundColor: '#EEF2FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: conditionalScale(12, 13, 14, 15),
@@ -2062,7 +2062,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: borderRadius.lg,
     borderBottomRightRadius: borderRadius.lg,
     elevation: moderateScale(4),
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOpacity: 0.2,
     shadowRadius: moderateScale(10),
     shadowOffset: {width: 0, height: moderateScale(4)},
@@ -2208,8 +2208,8 @@ const styles = StyleSheet.create({
   },
 
   Biometric_selectedAccountItem: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#6366F1',
+    backgroundColor: brand.tint,
+    borderColor: AppTokens.indigo,
   },
 
   Biometric_accountIcon: {
@@ -2244,7 +2244,7 @@ const styles = StyleSheet.create({
   },
 
   Biometric_selectedAccountEmail: {
-    color: '#6366F1',
+    color: AppTokens.indigo,
     fontWeight: '600',
   },
 
@@ -2394,7 +2394,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginTop: conditionalVerticalScale(24, 26, 28, 30),
     overflow: 'hidden',
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOffset: {width: 0, height: moderateScale(3)},
     shadowOpacity: 0.2,
     shadowRadius: moderateScale(8),
@@ -2407,7 +2407,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: conditionalScale(24, 28, 32, 36),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6366F1',
+    backgroundColor: AppTokens.indigo,
   },
 
   SSlip_ButtonText: {
@@ -2509,7 +2509,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     marginTop: conditionalVerticalScale(24, 26, 28, 30),
     overflow: 'hidden',
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOffset: {width: 0, height: moderateScale(3)},
     shadowOpacity: 0.2,
     shadowRadius: moderateScale(8),
@@ -2522,7 +2522,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: conditionalScale(24, 28, 32, 36),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6366F1',
+    backgroundColor: AppTokens.indigo,
   },
 
   TCert_ButtonText: {
@@ -2563,7 +2563,7 @@ const styles = StyleSheet.create({
   },
 
   DLP_SummaryContainer: {
-    backgroundColor: '#E6F2FF',
+    backgroundColor: brand.tint,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     marginHorizontal: spacing.md,
@@ -2624,7 +2624,7 @@ const styles = StyleSheet.create({
     padding: conditionalScale(24, 28, 32, 36),
     alignItems: 'center',
     minWidth: conditionalScale(200, 220, 240, 260),
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOffset: {width: 0, height: moderateScale(4)},
     shadowOpacity: 0.15,
     shadowRadius: moderateScale(12),
@@ -2780,7 +2780,7 @@ const styles = StyleSheet.create({
   DSR_DropdownIcon: {
     width: conditionalScale(19, 20, 21, 22),
     height: conditionalScale(19, 20, 21, 22),
-    tintColor: '#6366F1',
+    tintColor: AppTokens.indigo,
   },
 
   DSR_ProcessingOverlay: {
@@ -2801,7 +2801,7 @@ const styles = StyleSheet.create({
     padding: conditionalScale(22, 24, 26, 28),
     alignItems: 'center',
     minWidth: conditionalScale(180, 190, 200, 210),
-    shadowColor: '#6366F1',
+    shadowColor: AppTokens.indigo,
     shadowOffset: {width: 0, height: moderateScale(3)},
     shadowOpacity: 0.15,
     shadowRadius: moderateScale(10),
@@ -2831,7 +2831,7 @@ const styles = StyleSheet.create({
     padding: conditionalScale(15, 16, 17, 18),
     marginBottom: conditionalVerticalScale(18, 20, 22, 24),
     borderLeftWidth: moderateScale(4),
-    borderLeftColor: '#6366F1',
+    borderLeftColor: AppTokens.indigo,
     borderRadius: borderRadius.lg,
     shadowColor: '#000',
     shadowOpacity: 0.02,
@@ -2843,7 +2843,7 @@ const styles = StyleSheet.create({
   DSR_FormHeaderText: {
     fontSize: conditionalFontScale(16, 17, 18, 18),
     fontWeight: '600',
-    color: '#6366F1',
+    color: AppTokens.indigo,
     marginBottom: conditionalVerticalScale(3, 4, 5, 6),
     letterSpacing: 0.3,
   },
@@ -2964,7 +2964,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     ...Platform.select({
       ios: {
-        shadowColor: '#111827',
+        shadowColor: AppTokens.shadowColor,
         shadowOffset: {width: 0, height: moderateScale(2)},
         shadowOpacity: 0.05,
         shadowRadius: moderateScale(8),
@@ -2983,11 +2983,11 @@ const styles = StyleSheet.create({
   },
 
   DRC_cardHighlighted: {
-    borderColor: '#6366f1',
+    borderColor: AppTokens.indigo,
     borderWidth: moderateScale(1.5),
     ...Platform.select({
       ios: {
-        shadowColor: '#6366f1',
+        shadowColor: AppTokens.indigo,
         shadowOpacity: 0.1,
         shadowRadius: moderateScale(12),
       },
@@ -3010,7 +3010,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(24, 26, 28, 30),
     height: conditionalScale(24, 26, 28, 30),
     borderRadius: conditionalScale(12, 13, 14, 15),
-    backgroundColor: '#e0e7ff',
+    backgroundColor: AppTokens.indigoBg,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -3039,7 +3039,7 @@ const styles = StyleSheet.create({
   DRC_headerTitle: {
     fontSize: conditionalFontScale(16, 17, 18, 20),
     fontWeight: '700',
-    color: '#111827',
+    color: brand.text,
     marginBottom: conditionalVerticalScale(2, 3, 4, 5),
     letterSpacing: -0.3,
   },
@@ -3115,7 +3115,7 @@ const styles = StyleSheet.create({
     minWidth: conditionalScale(160, 170, 180, 200),
     ...Platform.select({
       ios: {
-        shadowColor: '#111827',
+        shadowColor: AppTokens.shadowColor,
         shadowOffset: {width: 0, height: moderateScale(4)},
         shadowOpacity: 0.1,
         shadowRadius: moderateScale(12),
@@ -3327,7 +3327,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#111827',
+        shadowColor: AppTokens.shadowColor,
         shadowOffset: {width: 0, height: moderateScale(2)},
         shadowOpacity: 0.1,
         shadowRadius: moderateScale(4),
@@ -3481,7 +3481,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(24, 26, 28, 30),
     height: conditionalScale(24, 26, 28, 30),
     borderRadius: conditionalScale(6, 7, 8, 10),
-    backgroundColor: '#eff6ff',
+    backgroundColor: brand.tint,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: conditionalScale(8, 9, 10, 12),
@@ -3685,7 +3685,7 @@ const styles = StyleSheet.create({
   },
 
   SearchBar_dropdownItemActive: {
-    backgroundColor: '#EBF5FF',
+    backgroundColor: brand.tint,
   },
 
   SearchBar_dropdownIcon: {
@@ -3810,7 +3810,7 @@ const styles = StyleSheet.create({
     paddingVertical: conditionalVerticalScale(12, 16, 18, 20),
     backgroundColor: brand.primary,
     borderBottomWidth: 1,
-    borderBottomColor: '#0c5298',
+    borderBottomColor: brand.primaryStrong,
   },
 
   notif_HeaderLeft: {
@@ -3924,7 +3924,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: conditionalScale(16, 20, 22, 26),
     paddingVertical: conditionalVerticalScale(12, 16, 18, 20),
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: brand.divider,
     backgroundColor: '#fff',
   },
 
@@ -3948,7 +3948,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(40, 44, 48, 52),
     height: conditionalScale(40, 44, 48, 52),
     borderRadius: conditionalScale(20, 22, 24, 26),
-    backgroundColor: '#e0f2fe',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -3959,7 +3959,7 @@ const styles = StyleSheet.create({
   },
 
   notif_NotificationIconToday: {
-    color: '#0369a1',
+    color: brand.primaryStrong,
   },
 
   notif_MarkReadButtonContainer: {
@@ -4224,7 +4224,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F5F5F5',
   },
   CD_SelectedCompanyItem: {
-    backgroundColor: '#EBF4FF',
+    backgroundColor: brand.tint,
   },
   CD_FirstSelectedItem: {
     borderTopLeftRadius: borderRadius.md,
@@ -4726,7 +4726,7 @@ const styles = StyleSheet.create({
   },
 
   LanguageModal_selectedItem: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: brand.tint,
     borderWidth: moderateScale(2),
     borderColor: brand.primaryStrong,
   },
@@ -5086,7 +5086,7 @@ const styles = StyleSheet.create({
     bottom: scale(2),
     right: scale(2),
     borderWidth: moderateScale(2),
-    borderColor: brand.primaryStrong,
+    borderColor: brand.primary, // cutout ring: matches the header fill
   },
 
   AIChat_headerText: {
@@ -5096,13 +5096,13 @@ const styles = StyleSheet.create({
   AIChat_title: {
     fontSize: conditionalFontScale(16, 18, 20),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   AIChat_status: {
     fontSize: conditionalFontScale(11, 12, 13),
     marginTop: verticalScale(1),
-    color: '#FFFFFF',
+    color: brand.onPrimaryMuted,
   },
 
   AIChat_closeButton: {
@@ -5239,7 +5239,7 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     right: spacing.lg,
     height: conditionalVerticalScale(110, 120, 140),
-    backgroundColor: 'rgba(10,102,194,0.95)',
+    backgroundColor: brand.primary,
     borderRadius: borderRadius.xl,
     justifyContent: 'center',
     alignItems: 'center',
@@ -5277,12 +5277,12 @@ const styles = StyleSheet.create({
   AIChat_recordingText: {
     fontSize: conditionalFontScale(20, 24, 26),
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   AIChat_recordingSubtext: {
     fontSize: conditionalFontScale(12, 13, 14),
-    color: 'rgba(255,255,255,0.8)',
+    color: brand.onPrimaryMuted,
     marginTop: spacing.xs,
   },
 
@@ -5344,7 +5344,7 @@ const styles = StyleSheet.create({
 
   AIChat_textInputContainer: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     borderRadius: borderRadius.lg,
     marginHorizontal: spacing.xs,
     maxHeight: conditionalVerticalScale(70, 80, 90),
@@ -5517,7 +5517,7 @@ const styles = StyleSheet.create({
   DRC_StatusText: {
     fontWeight: '800',
     fontSize: fontScale(14),
-    color: '#112936',
+    color: brand.text,
     textAlign: 'left',
     width: '100%',
   },
@@ -5679,8 +5679,8 @@ const styles = StyleSheet.create({
   },
 
   SRBtn_pressedSubmitButton: {
-    backgroundColor: '#3D95ED',
-    borderColor: '#3D95ED',
+    backgroundColor: brand.primary,
+    borderColor: brand.primaryStrong,
     transform: [{scale: 0.98}],
   },
 
@@ -5826,7 +5826,7 @@ const styles = StyleSheet.create({
     width: scale(34),
     height: scale(34),
     borderRadius: scale(17),
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -5885,7 +5885,7 @@ const styles = StyleSheet.create({
 
   RDM_AddButton: {
     flex: 1,
-    backgroundColor: '#2563EB',
+    backgroundColor: brand.primary,
     borderRadius: borderRadius.md,
     paddingVertical: verticalScale(12),
     alignItems: 'center',
@@ -5894,7 +5894,7 @@ const styles = StyleSheet.create({
   RDM_AddButtonText: {
     fontSize: fontScale(14),
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: brand.onPrimary,
   },
 
   RDM_DisabledButton: {
@@ -5969,11 +5969,11 @@ const styles = StyleSheet.create({
 
   RDM_ExistingBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#3B82F6',
+    backgroundColor: brand.primary,
     paddingHorizontal: scale(6),
     paddingVertical: verticalScale(2),
     borderRadius: borderRadius.xs,
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontSize: fontScale(10),
     fontWeight: '600',
   },
@@ -6018,7 +6018,7 @@ const styles = StyleSheet.create({
 
   RDM_CancelButton: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     borderRadius: borderRadius.md,
     paddingVertical: verticalScale(12),
     alignItems: 'center',
@@ -6099,13 +6099,13 @@ const styles = StyleSheet.create({
   PPEdit_initialsText: {
     fontSize: conditionalFontScale(32, 36, 40, 44),
     fontWeight: '700',
-    color: '#6366F1',
+    color: AppTokens.indigo,
   },
 
   PPEdit_headerTitle: {
     fontSize: conditionalFontScale(20, 22, 24, 26),
     fontWeight: '600',
-    color: '#111827',
+    color: brand.text,
     textAlign: 'center',
   },
 
@@ -6182,13 +6182,13 @@ const styles = StyleSheet.create({
   },
 
   DNav_ActiveDrawerItem: {
-    backgroundColor: '#E0E7FF',
+    backgroundColor: brand.tint,
     marginHorizontal: scale(12),
     borderRadius: borderRadius.md,
   },
 
   DNav_ActiveDrawerItemText: {
-    color: '#2563EB',
+    color: brand.primaryStrong,
     fontWeight: '600',
   },
 
@@ -6296,7 +6296,7 @@ const styles = StyleSheet.create({
 
   DNav_LogoutTextSection: {
     flex: 1,
-    backgroundColor: '#084C94',
+    backgroundColor: brand.primary,
     justifyContent: 'center',
     paddingVertical: verticalScale(12),
     paddingHorizontal: spacing.lg,
@@ -6343,7 +6343,7 @@ const styles = StyleSheet.create({
   EntCards_CardHeaderText: {
     fontSize: fontScale(18),
     fontWeight: '700',
-    color: '#004AAD',
+    color: brand.primaryStrong,
     textAlign: 'center',
   },
 
@@ -6412,7 +6412,7 @@ const styles = StyleSheet.create({
     width: conditionalScale(26, 28, 30, 34),
     height: conditionalScale(26, 28, 30, 34),
     borderRadius: conditionalScale(13, 14, 15, 17),
-    backgroundColor: '#f1f5f9',
+    backgroundColor: brand.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -6472,14 +6472,14 @@ const styles = StyleSheet.create({
 
   DAM_addButton: {
     flex: 1,
-    backgroundColor: '#2563eb',
+    backgroundColor: brand.primary,
     borderRadius: moderateScale(10),
     paddingVertical: conditionalVerticalScale(8, 9, 10, 12),
     alignItems: 'center',
   },
 
   DAM_addButtonText: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontWeight: '600',
     fontSize: conditionalFontScale(10, 11, 12, 13),
   },
@@ -6498,7 +6498,7 @@ const styles = StyleSheet.create({
   },
 
   DAM_refreshButton: {
-    backgroundColor: '#2563eb',
+    backgroundColor: brand.primary,
     borderRadius: moderateScale(6),
     paddingHorizontal: conditionalScale(8, 9, 10, 12),
     paddingVertical: conditionalVerticalScale(4, 5, 6, 7),
@@ -6572,8 +6572,8 @@ const styles = StyleSheet.create({
   },
 
   DAM_existingBadge: {
-    backgroundColor: '#3b82f6',
-    color: '#fff',
+    backgroundColor: brand.primary,
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(8, 9, 10, 11),
     fontWeight: '600',
     paddingHorizontal: scale(6),
@@ -6621,7 +6621,7 @@ const styles = StyleSheet.create({
 
   DAM_cancelButton: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: brand.surfaceAlt,
     borderRadius: moderateScale(12),
     paddingVertical: conditionalVerticalScale(12, 13, 14, 17),
     alignItems: 'center',
@@ -6690,7 +6690,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   DisplayFilterContainer: {
-    backgroundColor: '#ebf5ff',
+    backgroundColor: brand.tint,
     paddingBottom: 0,
     paddingHorizontal: 0,
     marginBottom: height * 0.01,
@@ -6835,7 +6835,7 @@ const styles = StyleSheet.create({
   },
   LReqSR_DropdownContainer: {
     borderWidth: 1.5,
-    borderColor: '#4A90E2',
+    borderColor: brand.primaryStrong,
     borderRadius: width * 0.025,
     backgroundColor: '#fff',
     shadowColor: '#000',
@@ -7016,7 +7016,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   DisLp_FilterContainer: {
-    backgroundColor: '#ebf5ff',
+    backgroundColor: brand.tint,
     paddingBottom: 0,
     paddingHorizontal: 0,
     marginBottom: height * 0.01,
@@ -7340,12 +7340,12 @@ const styles = StyleSheet.create({
   // start of contactdetail section
   CntDtlSec_detailsContainer: {
     padding: 16,
-    backgroundColor: '#bddeff',
+    backgroundColor: brand.tint,
   },
   CntDtlSec_detailsContainerBorder: {
     padding: 16,
     marginTop: 16,
-    backgroundColor: '#cce6ff',
+    backgroundColor: brand.tint,
     borderRadius: 5,
     elevation: 3,
   },
@@ -7470,7 +7470,7 @@ const styles = StyleSheet.create({
   },
   CntInfoMdl_button: {
     flex: 1,
-    backgroundColor: '#007bff',
+    backgroundColor: brand.primary,
     padding: 10,
     borderRadius: 5,
     marginHorizontal: 5,
@@ -7603,7 +7603,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E8F3FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -7657,7 +7657,7 @@ const styles = StyleSheet.create({
   orgStyles_employeeName: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#111827',
+    color: brand.text,
   },
   orgStyles_employeeRole: {
     fontSize: 13,
@@ -7754,7 +7754,7 @@ const styles = StyleSheet.create({
   orgStyles_rootName: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: brand.text,
     marginRight: 12,
     flexShrink: 1,
   },
@@ -8066,12 +8066,12 @@ const styles = StyleSheet.create({
   },
 
   Page_CheckboxSelected: {
-    borderColor: '#0066CC',
-    backgroundColor: '#0066CC',
+    borderColor: brand.primaryStrong,
+    backgroundColor: brand.primary,
   },
 
   Page_Checkmark: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontSize: conditionalFontScale(11, 11.5, 12, 12.5),
     fontWeight: '600',
   },
@@ -8143,7 +8143,7 @@ const styles = StyleSheet.create({
   },
 
   BulkToolbar_PrimaryButtonText: {
-    color: '#0066CC',
+    color: brand.primaryStrong,
     fontWeight: '500',
     fontSize: conditionalFontScale(13, 13.5, 14, 14.5),
   },
@@ -8476,11 +8476,11 @@ const styles = StyleSheet.create({
   MG_sectionTitle: {
     fontSize: conditionalFontScale(13, 13, 14, 14),
     fontWeight: '600',
-    color: '#0F1923',
+    color: brand.text,
     letterSpacing: -0.2,
   },
   MG_badge: {
-    backgroundColor: '#1A56DB',
+    backgroundColor: brand.primary,
     borderRadius: 99,
     minWidth: conditionalScale(16, 17, 18, 18),
     height: conditionalScale(16, 17, 18, 18),
@@ -8491,7 +8491,7 @@ const styles = StyleSheet.create({
   MG_badgeText: {
     fontSize: conditionalFontScale(9, 9, 9, 10),
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
   },
   MG_sectionAction: {
     flexDirection: 'row',
@@ -8501,7 +8501,7 @@ const styles = StyleSheet.create({
   MG_sectionActionText: {
     fontSize: conditionalFontScale(11, 11, 12, 12),
     fontWeight: '500',
-    color: '#1A56DB',
+    color: brand.primaryStrong,
   },
   MG_pageLabelText: {
     fontSize: conditionalFontScale(11, 11, 12, 12),
@@ -8523,7 +8523,7 @@ const styles = StyleSheet.create({
     borderColor: '#E8EBF0',
     padding: conditionalScale(11, 12, 13, 13),
     alignItems: 'flex-start',
-    shadowColor: '#0F1923',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -8573,7 +8573,7 @@ const styles = StyleSheet.create({
     borderColor: '#E8EBF0',
     flexDirection: 'row',
     overflow: 'hidden',
-    shadowColor: '#0F1923',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.04,
     shadowRadius: 4,
@@ -8611,7 +8611,7 @@ const styles = StyleSheet.create({
   MG_aDocId: {
     fontSize: conditionalFontScale(12, 13, 13, 14),
     fontWeight: '700',
-    color: '#0F1923',
+    color: brand.text,
     letterSpacing: -0.3,
   },
   MG_aFromText: {
@@ -8724,7 +8724,7 @@ const styles = StyleSheet.create({
   MG_emptyTitle: {
     fontSize: conditionalFontScale(13, 13, 14, 14),
     fontWeight: '600',
-    color: '#0F1923',
+    color: brand.text,
   },
   MG_emptyBody: {
     fontSize: conditionalFontScale(11, 11, 12, 12),
@@ -8872,13 +8872,13 @@ const styles = StyleSheet.create({
 
   saveBtn: {
     marginTop: 15,
-    backgroundColor: '#007bff',
+    backgroundColor: brand.primary,
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
 
-  btnText: {color: '#fff', fontWeight: 'bold'},
+  btnText: {color: brand.onPrimary, fontWeight: 'bold'},
 
   optionRow: {
     padding: 12,
@@ -8889,8 +8889,8 @@ const styles = StyleSheet.create({
   },
 
   selectedOption: {
-    backgroundColor: '#d0ebff',
-    borderColor: '#007bff',
+    backgroundColor: brand.tint,
+    borderColor: brand.primaryStrong,
   },
 
   checkboxContainer: {flexDirection: 'row', alignItems: 'center'},
@@ -8904,8 +8904,8 @@ const styles = StyleSheet.create({
   },
 
   checkedBox: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
+    backgroundColor: brand.primary,
+    borderColor: brand.primaryStrong,
   },
 
   optionText: {fontSize: 14},
@@ -8996,7 +8996,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     borderLeftWidth: 4,
-    borderLeftColor: '#0A66C2',
+    borderLeftColor: brand.primaryStrong,
   },
 
   EI_CardDisabled: {
@@ -9022,7 +9022,7 @@ const styles = StyleSheet.create({
 
   // Type badge (Simple / Multiple Choice)
   EI_TypeBadge: {
-    backgroundColor: '#E3F0FB',
+    backgroundColor: brand.tint,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -9031,7 +9031,7 @@ const styles = StyleSheet.create({
   EI_TypeBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#0A66C2',
+    color: brand.primaryStrong,
     textTransform: 'capitalize',
   },
 

@@ -29,9 +29,11 @@ const idap = {
   onPrimary: charcoal,
 
   // De-emphasised content ON a primary fill (captions, secondary labels).
-  // An alpha of onPrimary over primary; 0.71 is the lowest alpha that clears
-  // the 4.5:1 gate (0.70 → 4.49). Resolves to ≈ #5D4A16 on mustard.
-  onPrimaryMuted: 'rgba(31,31,31,0.71)',
+  // A flat lighter charcoal, NOT an alpha of onPrimary: alpha-blending
+  // charcoal into mustard yields olive-brown, and brown text beside black
+  // text reads as a mistake rather than a hierarchy. Same family as
+  // `secondary`; 4.8:1 on mustard.
+  onPrimaryMuted: '#4A4A4A',
 
   // Derived pale tint for selected rows / active chips / icon tiles
   // (P.tint, T.blueBg, static AppTokens.blueBg). Warm cream on mustard.

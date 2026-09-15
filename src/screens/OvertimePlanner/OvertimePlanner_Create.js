@@ -320,7 +320,7 @@ const tpStyles = P =>
       left: 0,
       right: 0,
       height: ITEM_HEIGHT,
-      backgroundColor: 'rgba(10,102,194,0.07)',
+      backgroundColor: P.tint,
       borderRadius: 8,
       transform: [{translateY: 22}], // rough centering; adjust if needed
       zIndex: -1,

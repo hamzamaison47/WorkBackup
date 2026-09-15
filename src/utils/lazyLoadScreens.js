@@ -5,13 +5,14 @@
 
 import React, {Suspense} from 'react';
 import {View, ActivityIndicator, Text} from 'react-native';
+import brand from '../theme/brand';
 
 /**
  * Loading fallback component
  */
 const LoadingFallback = () => (
   <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-    <ActivityIndicator size="large" color="#0000ff" />
+    <ActivityIndicator size="large" color={brand.primaryStrong} />
   </View>
 );
 

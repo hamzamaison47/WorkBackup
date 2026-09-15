@@ -98,7 +98,6 @@ const ESSEmployeeCourse_ListPage = () => {
       {key: 'courseName', label: 'Course Title', type: 'text'},
       {key: 'dueDate', label: 'Due Date', type: 'date'},
     ],
-    gradientColors: ['#6ee0ff', '#bddeff', '#cce6ff'],
     isRTL,
   };
 
@@ -107,7 +106,6 @@ const ESSEmployeeCourse_ListPage = () => {
       {key: 'hrmCourseId', label: 'Course ID', type: 'text'},
       {key: 'description', label: 'Course Title', type: 'text'},
     ],
-    gradientColors: ['#fff4cc', '#ffe6cc', '#ffb3b3'],
     isRTL,
   };
 
@@ -125,7 +123,6 @@ const ESSEmployeeCourse_ListPage = () => {
       {key: 'startDate', label: 'Start Date', type: 'date'},
       {key: 'endDate', label: 'End Date', type: 'date'},
     ],
-    gradientColors: ['#6ee0ff', '#bddeff', '#cce6ff'],
     isRTL,
   };
 
@@ -148,7 +145,6 @@ const ESSEmployeeCourse_ListPage = () => {
         fields={config.fields}
         expandableFields={config.expandableFields}
         isExpandable={activeTab === 'completed'}
-        gradientColors={config.gradientColors}
         isRTL={isRTL}
       />
     );

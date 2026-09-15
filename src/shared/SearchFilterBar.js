@@ -665,12 +665,12 @@ const makeStyles = P =>
     chip: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#e8f0fe',
+      backgroundColor: P.tint,
       borderRadius: 20,
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderWidth: 1,
-      borderColor: '#c5d8fb',
+      borderColor: P.primaryStrong,
     },
     chipSort: {
       backgroundColor: '#e8f5e9',
@@ -749,7 +749,7 @@ const makeStyles = P =>
       backgroundColor: '#f5f5f5',
     },
     filterItemActive: {
-      backgroundColor: '#e8f0fe',
+      backgroundColor: P.tint,
       borderWidth: 1.5,
       borderColor: P.primaryStrong,
     },
@@ -775,7 +775,7 @@ const makeStyles = P =>
       backgroundColor: '#f5f5f5',
     },
     sortItemActive: {
-      backgroundColor: '#e8f0fe',
+      backgroundColor: P.tint,
       borderWidth: 1.5,
       borderColor: P.primaryStrong,
     },

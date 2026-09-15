@@ -633,11 +633,6 @@ const WorkItemsAssignedToMePage = () => {
           }}
           onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
-          gradientColors={
-            isSelected
-              ? ['#dbeafe', '#eff6ff', '#f0f4ff']
-              : ['#f0f9ff', '#e0f2fe', '#dbeafe']
-          }
           processingButtons={processingButtons[item.recId] || []}
           showNavigationArrow={false}
           isHighlighted={isSelected}

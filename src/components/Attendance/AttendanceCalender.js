@@ -14,6 +14,8 @@ import moment from 'moment';
 import DFCalendar from '../../components/Attendance/DFCalendar';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
 import {useSelector} from 'react-redux';
+import brand from '../../theme/brand';
+import {AppTokens} from '../AppComponentsDesign/Tokens';
 
 // Helper functions for calendar (moved here as they are calendar-specific)
 const pick = (obj, ...keys) =>
@@ -495,7 +497,7 @@ const AttendanceCalendar = React.forwardRef(
         customStyles: {
           container: {
             borderWidth: 2,
-            borderColor: '#0EA5E9',
+            borderColor: brand.primaryStrong,
             borderRadius: 50,
             margin: 2,
             paddingVertical: 2,
@@ -509,7 +511,7 @@ const AttendanceCalendar = React.forwardRef(
           text: {
             fontWeight: '800',
             color:
-              markedDates[todayStr]?.customStyles?.text?.color || '#0F172A',
+              markedDates[todayStr]?.customStyles?.text?.color || brand.text,
           },
         },
       };
@@ -525,7 +527,7 @@ const AttendanceCalendar = React.forwardRef(
       calendarCard: {
         borderRadius: getResponsiveSize(16, screenWidth),
         backgroundColor: '#FFFFFF',
-        shadowColor: '#0F172A',
+        shadowColor: AppTokens.shadowColor,
         shadowOffset: {width: 0, height: 8},
         shadowOpacity: 0.08,
         shadowRadius: 16,
@@ -577,12 +579,12 @@ const AttendanceCalendar = React.forwardRef(
                   backgroundColor: '#F5F7FB',
                   calendarBackground: '#FFFFFF',
                   textSectionTitleColor: '#8E99A4',
-                  monthTextColor: '#0F172A',
-                  arrowColor: '#0EA5E9',
-                  todayTextColor: '#0EA5E9',
-                  dayTextColor: '#0F172A',
+                  monthTextColor: brand.text,
+                  arrowColor: brand.primaryStrong,
+                  todayTextColor: brand.primaryStrong,
+                  dayTextColor: brand.text,
                   textDisabledColor: '#C7CED6',
-                  selectedDayTextColor: '#0F172A',
+                  selectedDayTextColor: brand.text,
                   textMonthFontWeight: '800',
                   textMonthFontSize: 20,
                   textDayFontSize: 14,
@@ -806,7 +808,11 @@ const AttendanceCalendar = React.forwardRef(
                             detailStyles.editButton,
                           ]}
                           onPress={handleEditAttendance}>
-                          <Text style={detailStyles.actionButtonText}>
+                          <Text
+                            style={[
+                              detailStyles.actionButtonText,
+                              {color: brand.onPrimary},
+                            ]}>
                             Edit Attendance
                           </Text>
                         </TouchableOpacity>
@@ -930,7 +936,7 @@ const detailStyles = {
     backgroundColor: '#6ce66c',
   },
   editButton: {
-    backgroundColor: '#0EA5E9',
+    backgroundColor: brand.primary,
   },
   shortLeaveButton: {
     backgroundColor: '#FFA500',

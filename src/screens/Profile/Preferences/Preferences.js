@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#E0E7FF',
+    color: brand.onPrimaryMuted,
     marginTop: 6,
   },
   listContent: {
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#111827',
+    color: brand.text,
   },
   subtitle: {
     fontSize: 13,

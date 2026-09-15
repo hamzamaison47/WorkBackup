@@ -51,7 +51,7 @@ const S = StyleSheet.create({
     width: conditionalScale(36, 37, 38, 38),
     height: conditionalScale(36, 37, 38, 38),
     borderRadius: conditionalScale(10, 10, 11, 11),
-    backgroundColor: '#F1F5F9',
+    backgroundColor: AppTokens.cardDivider,
     marginRight: conditionalScale(12, 13, 14, 14),
   },
   skeletonTextBlock: {
@@ -60,7 +60,7 @@ const S = StyleSheet.create({
   skeletonTitle: {
     height: conditionalVerticalScale(11, 12, 13, 13),
     borderRadius: 4,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: AppTokens.cardDivider,
     width: '60%',
     marginBottom: 6,
   },

@@ -555,7 +555,7 @@ const IdentificationNumberSaveRecord = () => {
               placeholderTextColor={T.placeholderText}
               selectedTextStyle={styles.DSR_DropdownSelectedText}
               itemTextStyle={styles.DSR_DropdownItemText}
-              activeColor={`${P.primary}22`}
+              activeColor={P.tint}
             />
 
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>

@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import brand from '../../theme/brand';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const isSmallDevice = SCREEN_WIDTH < 375;
@@ -23,13 +24,13 @@ const AttendanceButton = ({onPress, loading}) => (
       {loading ? (
         <ActivityIndicator
           size={isSmallDevice ? 'small' : 'large'}
-          color="#1E88E5"
+          color={brand.primaryStrong}
         />
       ) : (
         <Icon
           name="fingerprint"
           size={isSmallDevice ? 32 : 42}
-          color="#1E88E5"
+          color={brand.primaryStrong}
         />
       )}
       <Text
@@ -46,7 +47,11 @@ const AttendanceButton = ({onPress, loading}) => (
 // ✅ Responsive Info Item
 const InfoItem = ({icon, label, value, loading = false}) => (
   <View style={styles.infoItem}>
-    <Icon name={icon} size={isSmallDevice ? 18 : 22} color="#1E88E5" />
+    <Icon
+      name={icon}
+      size={isSmallDevice ? 18 : 22}
+      color={brand.primaryStrong}
+    />
     <Text
       style={[
         styles.infoLabel,
@@ -55,7 +60,7 @@ const InfoItem = ({icon, label, value, loading = false}) => (
       {label}
     </Text>
     {loading ? (
-      <ActivityIndicator size="small" color="#1E88E5" />
+      <ActivityIndicator size="small" color={brand.primaryStrong} />
     ) : (
       <Text
         style={[
@@ -69,7 +74,7 @@ const InfoItem = ({icon, label, value, loading = false}) => (
 );
 
 // ✅ Summary Item for Monthly Summary
-const SummaryItem = ({label, value, color = '#1E88E5'}) => (
+const SummaryItem = ({label, value, color = brand.primaryStrong}) => (
   <View style={styles.summaryItem}>
     <Text
       style={[
@@ -94,7 +99,7 @@ const BottomTabs = ({active, onChange}) => (
       <Icon
         name="home"
         size={isSmallDevice ? 20 : 24}
-        color={active === 'home' ? '#FFF' : '#1E88E5'}
+        color={active === 'home' ? brand.onPrimary : brand.primaryStrong}
       />
       <Text
         style={[
@@ -113,7 +118,7 @@ const BottomTabs = ({active, onChange}) => (
       <Icon
         name="event-note"
         size={isSmallDevice ? 20 : 24}
-        color={active === 'summary' ? '#FFF' : '#1E88E5'}
+        color={active === 'summary' ? brand.onPrimary : brand.primaryStrong}
       />
       <Text
         style={[
@@ -130,7 +135,7 @@ const BottomTabs = ({active, onChange}) => (
 const styles = StyleSheet.create({
   buttonOuter: {
     borderWidth: 3,
-    borderColor: '#1E88E5',
+    borderColor: brand.primaryStrong,
     borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
@@ -156,7 +161,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   buttonText: {
-    color: '#1E88E5',
+    color: brand.primaryStrong,
     marginTop: 8,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -187,7 +192,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontWeight: 'bold',
-    color: '#1E88E5',
+    color: brand.primaryStrong,
     textAlign: 'center',
     marginTop: 2,
   },
@@ -255,10 +260,10 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   activeTab: {
-    backgroundColor: '#1E88E5',
+    backgroundColor: brand.primary,
   },
   tabText: {
-    color: '#1E88E5',
+    color: brand.primaryStrong,
     marginTop: 4,
     textAlign: 'center',
   },
@@ -269,7 +274,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   activeTabText: {
-    color: '#FFF',
+    color: brand.onPrimary,
   },
 });
 

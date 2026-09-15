@@ -316,8 +316,8 @@ const ActionPaneMenuModal = ({
             />
             <MenuRow
               iconName="settings-outline"
-              iconColor="#6366F1"
-              iconBg="#EDEFFD"
+              iconColor={T.indigo}
+              iconBg={T.indigoBg}
               label="Settings"
               sub="Language · Security · Date & Time"
               onPress={() => goTo('SettingsScreen')}

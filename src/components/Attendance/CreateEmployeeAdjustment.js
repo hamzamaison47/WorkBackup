@@ -26,6 +26,7 @@ import styles from '../../styles/styles';
 import {CreateAdjustment} from '../../API/Attendance/CreateAdjustment';
 import {SubmitAdjustment} from '../../API/Attendance/SubmitAdjustment';
 import retrieveEmployeeShiftIds from '../../API/Attendance/retrieveEmployeeShiftIds';
+import brand from '../../theme/brand';
 
 const TIME_HINT = 'hh:mm AM/PM or HH:mm';
 
@@ -537,7 +538,10 @@ const CreateEmployeeAdjustment = ({
                         onPress={() => onShiftChange(shift)}>
                         <Text
                           style={{
-                            color: form.shiftId === shift ? '#007AFF' : '#000',
+                            color:
+                              form.shiftId === shift
+                                ? brand.primaryStrong
+                                : brand.text,
                             fontSize: 16,
                           }}>
                           {shift}

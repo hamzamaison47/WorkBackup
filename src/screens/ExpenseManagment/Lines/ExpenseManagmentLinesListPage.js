@@ -506,7 +506,6 @@ const ExpenseManagmentLinesListPage = () => {
         onButtonPress={handleButtonPress}
         isExpandable={true}
         showNavigationArrow={false}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         processingButtons={itemProcessingButtons}
         searchQuery={f.searchQuery}
       />

@@ -28,6 +28,8 @@ import {
 
 import AlertModal from '../../components/Alert/AlertModal';
 import AlertDeleteModal from '../../components/Alert/AlertDeleteModal';
+import brand from '../../theme/brand';
+import {AppTokens} from '../../components/AppComponentsDesign/Tokens';
 
 // ─── HELPER OUTSIDE COMPONENT ──────────────────────────────────────
 // Moving this outside ensures it has a stable reference and doesn't
@@ -181,7 +183,7 @@ const ConfigSelectionScreen = () => {
             <Icon
               name="server"
               size={20}
-              color={isActive ? '#FFFFFF' : '#64748B'}
+              color={isActive ? brand.onPrimary : brand.secondary}
             />
           </View>
 
@@ -207,7 +209,7 @@ const ConfigSelectionScreen = () => {
               <Icon
                 name="edit-3"
                 size={18}
-                color={isActive ? '#0A66C2' : '#94A3B8'}
+                color={isActive ? brand.primaryStrong : brand.secondary}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -224,7 +226,7 @@ const ConfigSelectionScreen = () => {
 
         {isActive && (
           <View style={styles.statusBadge}>
-            <Icon name="check" size={10} color="#FFF" />
+            <Icon name="check" size={10} color={brand.onPrimary} />
             <Text style={styles.statusText}>ACTIVE</Text>
           </View>
         )}
@@ -241,7 +243,7 @@ const ConfigSelectionScreen = () => {
           <Icon
             name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
             size={22}
-            color="#1E293B"
+            color={brand.text}
           />
         </TouchableOpacity>
 
@@ -257,7 +259,7 @@ const ConfigSelectionScreen = () => {
             navigation.navigate('QRSetupScreen', {isFromConfigSelection: true})
           }
           style={styles.headerCircleBtn}>
-          <Icon name="plus" size={22} color="#0A66C2" />
+          <Icon name="plus" size={22} color={brand.primaryStrong} />
         </TouchableOpacity>
       </View>
 
@@ -277,7 +279,11 @@ const ConfigSelectionScreen = () => {
           !loading && (
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconCircle}>
-                <Icon name="cloud-off" size={40} color="#CBD5E1" />
+                <Icon
+                  name="cloud-off"
+                  size={40}
+                  color={AppTokens.chevronColor}
+                />
               </View>
               <Text style={styles.emptyTitle}>No Environments</Text>
               <Text style={styles.emptyDesc}>
@@ -345,45 +351,45 @@ const ConfigSelectionScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F8FAFC'},
+  container: {flex: 1, backgroundColor: brand.pageBg},
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#FFF',
+    backgroundColor: brand.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: brand.divider,
   },
   headerCircleBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitleCenter: {alignItems: 'center'},
-  mainTitle: {fontSize: 17, fontWeight: '800', color: '#1E293B'},
+  mainTitle: {fontSize: 17, fontWeight: '800', color: brand.text},
   subTitle: {
     fontSize: 11,
-    color: '#94A3B8',
+    color: brand.secondary,
     marginTop: 2,
     fontWeight: '600',
     textTransform: 'uppercase',
   },
 
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: brand.surface,
     borderRadius: 18,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: brand.divider,
   },
   activeCard: {
-    borderColor: '#0A66C2',
+    borderColor: brand.primaryStrong,
     backgroundColor: '#F0F9FF',
     borderWidth: 2,
   },
@@ -392,15 +398,15 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeIconBox: {backgroundColor: '#0A66C2'},
+  activeIconBox: {backgroundColor: brand.primary},
   infoBox: {flex: 1, marginLeft: 12},
   titleText: {fontSize: 15, fontWeight: '700', color: '#334155'},
-  activeTitleText: {color: '#0A66C2'},
-  dateText: {fontSize: 12, color: '#94A3B8', marginTop: 2},
+  activeTitleText: {color: brand.primaryStrong},
+  dateText: {fontSize: 12, color: brand.secondary, marginTop: 2},
 
   actionContainer: {flexDirection: 'row'},
   miniBtn: {padding: 6, marginLeft: 2},
@@ -411,12 +417,17 @@ const styles = StyleSheet.create({
     right: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
   },
-  statusText: {color: '#FFF', fontSize: 9, fontWeight: '900', marginLeft: 3},
+  statusText: {
+    color: brand.onPrimary,
+    fontSize: 9,
+    fontWeight: '900',
+    marginLeft: 3,
+  },
 
   emptyContainer: {
     flex: 1,
@@ -428,28 +439,28 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 15,
   },
-  emptyTitle: {fontSize: 18, fontWeight: '800', color: '#1E293B'},
+  emptyTitle: {fontSize: 18, fontWeight: '800', color: brand.text},
   emptyDesc: {
     fontSize: 14,
-    color: '#64748B',
+    color: brand.secondary,
     textAlign: 'center',
     marginTop: 5,
     paddingHorizontal: 50,
   },
 
   primaryBtn: {
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     paddingHorizontal: 25,
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 20,
   },
-  primaryBtnText: {color: '#FFF', fontWeight: '700', fontSize: 15},
+  primaryBtnText: {color: brand.onPrimary, fontWeight: '700', fontSize: 15},
 
   modalOverlay: {
     flex: 1,
@@ -457,7 +468,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#FFF',
+    backgroundColor: brand.surface,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     padding: 25,
@@ -466,7 +477,7 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 35,
     height: 4,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: brand.divider,
     borderRadius: 10,
     alignSelf: 'center',
     marginBottom: 20,
@@ -474,17 +485,17 @@ const styles = StyleSheet.create({
   modalHeading: {
     fontSize: 19,
     fontWeight: '800',
-    color: '#1E293B',
+    color: brand.text,
     marginBottom: 15,
   },
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: brand.pageBg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: brand.divider,
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
-    color: '#1E293B',
+    color: brand.text,
   },
   modalActionRow: {
     flexDirection: 'row',
@@ -492,15 +503,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   secondaryBtn: {flex: 1, alignItems: 'center', padding: 15},
-  secondaryBtnText: {color: '#94A3B8', fontWeight: '700'},
+  secondaryBtnText: {color: brand.secondary, fontWeight: '700'},
   saveBtn: {
     flex: 2,
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  saveBtnText: {color: '#FFF', fontWeight: '700', fontSize: 15},
+  saveBtnText: {color: brand.onPrimary, fontWeight: '700', fontSize: 15},
 });
 
 export default ConfigSelectionScreen;

@@ -44,7 +44,7 @@ const AlertModal = ({
         iconColor: P.primaryStrong,
         primaryColor: P.primary,
         onPrimaryColor: P.onPrimary,
-        iconBg: '#E3F2FD',
+        iconBg: P.tint,
       },
       success: {
         icon: 'check-circle',

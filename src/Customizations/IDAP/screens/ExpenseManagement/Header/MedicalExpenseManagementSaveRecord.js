@@ -61,6 +61,7 @@ import SaveRecordButtons, {
 import styles from '../../../../../styles/styles';
 import useNotify from '../../../../../hooks/useNotify';
 import useAppStyles from '../../../../../hooks/useAppStyles';
+import brand from '../../../../../theme/brand';
 
 // Confirmed against the TrvExpTable X++ extension.
 // SLD_CostType is a plain String field.
@@ -575,7 +576,7 @@ const MedicalExpenseManagementSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color="#0A66C2" />
+                  <ActivityIndicator size="large" color={brand.primaryStrong} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -601,7 +602,7 @@ const MedicalExpenseManagementSaveRecord = () => {
                 placeholderStyle={styles.DSR_DropdownPlaceholder}
                 selectedTextStyle={styles.DSR_DropdownSelectedText}
                 itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
+                activeColor={brand.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {
@@ -628,7 +629,7 @@ const MedicalExpenseManagementSaveRecord = () => {
                     {formData.date ? formatDate(formData.date) : 'Select Date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color="#0A66C2" />
+                <Icon name="calendar" size={20} color={brand.primaryStrong} />
               </TouchableOpacity>
             </ScrollView>
 

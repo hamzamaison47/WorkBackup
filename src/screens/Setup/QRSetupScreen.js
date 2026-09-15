@@ -32,6 +32,8 @@
 // import {decryptQRData} from '../../Controller/decryptQRData';
 
 // import AlertModal from '../../components/Alert/AlertModal';
+import brand from '../../theme/brand';
+import {AppTokens} from '../../components/AppComponentsDesign/Tokens';
 
 // import styles from '../../styles/styles';
 // import {conditionalVerticalScale, iconSize} from '../../store/utils/scaling';
@@ -897,7 +899,7 @@ const QRSetupScreen = () => {
           <Icon
             name={I18nManager.isRTL ? 'arrow-right' : 'arrow-left'}
             size={20}
-            color="#1E293B"
+            color={brand.text}
           />
         </TouchableOpacity>
 
@@ -910,7 +912,7 @@ const QRSetupScreen = () => {
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setModalVisible(true)}>
-          <Icon name="help-circle" size={20} color="#64748B" />
+          <Icon name="help-circle" size={20} color={brand.secondary} />
         </TouchableOpacity>
       </View>
 
@@ -918,9 +920,9 @@ const QRSetupScreen = () => {
         <View style={styles.topSection}>
           <View style={styles.iconWrapper}>
             <LinearGradient
-              colors={['#0A66C2', '#0A66C2']}
+              colors={[brand.primary, brand.primary]}
               style={styles.qrIconGradient}>
-              <Icon name="maximize" size={24} color="#FFFFFF" />
+              <Icon name="maximize" size={24} color={brand.onPrimary} />
             </LinearGradient>
           </View>
 
@@ -979,7 +981,11 @@ const QRSetupScreen = () => {
                 </>
               ) : (
                 <View style={styles.noPermissionView}>
-                  <Icon name="camera-off" size={40} color="#CBD5E1" />
+                  <Icon
+                    name="camera-off"
+                    size={40}
+                    color={AppTokens.chevronColor}
+                  />
                   <Text style={styles.noPermissionText}>
                     {t('qrSetup.cameraAccessRequired')}
                   </Text>
@@ -1004,7 +1010,7 @@ const QRSetupScreen = () => {
 
               {isProcessing && (
                 <View style={styles.processingOverlay}>
-                  <ActivityIndicator size="small" color="#0F172A" />
+                  <ActivityIndicator size="small" color={brand.text} />
                   <Text style={styles.processingText}>Verifying...</Text>
                 </View>
               )}
@@ -1035,9 +1041,9 @@ const QRSetupScreen = () => {
             disabled={isProcessing}
             style={({pressed}) => [
               styles.galleryButton,
-              {backgroundColor: pressed ? '#08539D' : '#0A66C2'}, // Deepens slightly on press
+              {backgroundColor: brand.primary, opacity: pressed ? 0.85 : 1},
             ]}>
-            <Icon name="image" size={19} color="#FFFFFF" />
+            <Icon name="image" size={19} color={brand.onPrimary} />
             <Text style={styles.galleryButtonText}>Upload from Gallery</Text>
           </Pressable>
         </Animated.View>
@@ -1097,7 +1103,7 @@ const QRSetupScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brand.surface,
   },
   header: {
     flexDirection: 'row',
@@ -1116,7 +1122,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1140,14 +1146,14 @@ const styles = StyleSheet.create({
   instructionTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#0A66C2',
+    color: brand.primaryStrong,
     marginBottom: 10,
     textAlign: 'center',
     letterSpacing: -0.5,
   },
   instructionSubtext: {
     fontSize: 14,
-    color: '#64748B',
+    color: brand.secondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -1158,10 +1164,10 @@ const styles = StyleSheet.create({
   scannerContainer: {
     borderRadius: 30,
     padding: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brand.surface,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
+    borderColor: brand.divider,
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.08,
     shadowRadius: 20,
@@ -1220,8 +1226,8 @@ const styles = StyleSheet.create({
     width: '85%',
     alignSelf: 'center',
     height: 2,
-    backgroundColor: '#38BDF8',
-    shadowColor: '#38BDF8',
+    backgroundColor: brand.primary,
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -1231,12 +1237,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: brand.pageBg,
   },
   noPermissionText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#94A3B8',
+    color: brand.secondary,
     textAlign: 'center',
   },
   successOverlay: {
@@ -1261,7 +1267,7 @@ const styles = StyleSheet.create({
   processingText: {
     marginTop: 12,
     fontSize: 14,
-    color: '#0F172A',
+    color: brand.text,
     fontWeight: '700',
   },
   bottomSection: {
@@ -1277,17 +1283,17 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#94A3B8',
+    backgroundColor: brand.secondary,
   },
-  tipText: {fontSize: 12, color: '#94A3B8', fontWeight: '600'},
+  tipText: {fontSize: 12, color: brand.secondary, fontWeight: '600'},
   footer: {
     paddingHorizontal: 24,
     paddingBottom: 34,
     paddingTop: 12,
     gap: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brand.surface,
     borderTopWidth: 1,
-    borderTopColor: '#F8FAFC',
+    borderTopColor: brand.divider,
   },
   galleryButton: {
     flexDirection: 'row',
@@ -1296,10 +1302,10 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     // Professional blue background
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     gap: 10,
     // Subtle shadow for depth
-    shadowColor: '#0A66C2',
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -1308,7 +1314,7 @@ const styles = StyleSheet.create({
   galleryButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF', // White text as requested
+    color: brand.onPrimary,
     letterSpacing: 0.2,
   },
   skipButton: {
@@ -1319,12 +1325,12 @@ const styles = StyleSheet.create({
     // "Hint of blue" - very light background with a soft border
     backgroundColor: '#F0F7FF',
     borderWidth: 1,
-    borderColor: '#E0EEFF',
+    borderColor: brand.tint,
   },
   skipButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#0369A1', // Blue text to match the hint of blue theme
+    color: brand.primaryStrong,
   },
   modalOverlay: {
     flex: 1,
@@ -1333,7 +1339,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brand.surface,
     borderRadius: 28,
     padding: 24,
     alignItems: 'center',
@@ -1350,12 +1356,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
+    color: brand.text,
     marginBottom: 8,
   },
   modalBody: {
     fontSize: 14,
-    color: '#64748B',
+    color: brand.secondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
@@ -1365,7 +1371,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9', // Neutral for balance
+    backgroundColor: brand.surfaceAlt,
     alignItems: 'center',
   },
   modalCancelText: {fontSize: 14, fontWeight: '700', color: '#475569'},
@@ -1373,10 +1379,10 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     borderRadius: 14,
-    backgroundColor: '#0A66C2',
+    backgroundColor: brand.primary,
     alignItems: 'center',
   },
-  modalConfirmText: {fontSize: 14, fontWeight: '700', color: '#FFFFFF'},
+  modalConfirmText: {fontSize: 14, fontWeight: '700', color: brand.onPrimary},
 });
 
 export default QRSetupScreen;

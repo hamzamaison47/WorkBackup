@@ -53,6 +53,8 @@ import {
   saveConfig,
 } from '../Controller/secureConfig';
 import {iconSize} from '../store/utils/scaling';
+import brand from '../theme/brand';
+import {AppTokens} from '../components/AppComponentsDesign/Tokens';
 
 const {width} = Dimensions.get('window');
 
@@ -67,7 +69,7 @@ const AttendanceLoginModal = ({visible}) => {
       <View style={AL.card}>
         <ActivityIndicator
           size="large"
-          color="#0A66C2"
+          color={brand.primaryStrong}
           style={{marginBottom: 12}}
         />
         <Text style={AL.title}>Attendance Login</Text>
@@ -88,7 +90,7 @@ const AL = StyleSheet.create({
     zIndex: 999,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: brand.surface,
     borderRadius: 20,
     padding: 28,
     alignItems: 'center',
@@ -98,18 +100,18 @@ const AL = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: brand.divider,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0F172A',
+    color: brand.text,
     marginBottom: 6,
     textAlign: 'center',
   },
   sub: {
     fontSize: 12,
-    color: '#64748B',
+    color: brand.secondary,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -546,7 +548,7 @@ const LoginScreen = () => {
               <MaterialCommunityIcons
                 name="clock-time-four-outline"
                 size={22}
-                color="#64748B"
+                color={brand.secondary}
               />
             </TouchableOpacity>
 
@@ -557,7 +559,7 @@ const LoginScreen = () => {
               <MaterialCommunityIcons
                 name="qrcode-scan"
                 size={22}
-                color="#64748B"
+                color={brand.secondary}
               />
             </TouchableOpacity>
           </View>
@@ -624,7 +626,7 @@ const LoginScreen = () => {
                 <MaterialCommunityIcons
                   name="fingerprint"
                   size={32}
-                  color="#0A66C2"
+                  color={brand.primaryStrong}
                 />
               </View>
               <Text style={styles.biometricText}>Biometric Login</Text>
@@ -667,7 +669,7 @@ const LoginScreen = () => {
             <Text style={dialog.buttonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[dialog.button, {backgroundColor: '#0A66C2'}]}
+            style={[dialog.button, {backgroundColor: brand.primary}]}
             onPress={handleDialogConfirm}>
             <Text style={dialog.buttonText}>{t('common.ok')}</Text>
           </TouchableOpacity>
@@ -689,7 +691,7 @@ const LoginScreen = () => {
 // Styles
 // ─────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#FFFFFF'},
+  container: {flex: 1, backgroundColor: brand.surface},
 
   // Decorative circles
   bgShape1: {
@@ -697,7 +699,7 @@ const styles = StyleSheet.create({
     width: width * 1.2,
     height: width * 1.2,
     borderRadius: 600,
-    backgroundColor: '#F7FAFF',
+    backgroundColor: brand.pageBg,
     top: -width * 0.4,
     left: -width * 0.3,
     zIndex: -1,
@@ -707,7 +709,7 @@ const styles = StyleSheet.create({
     width: width * 0.8,
     height: width * 0.8,
     borderRadius: 400,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: brand.tint,
     bottom: -width * 0.4,
     right: -width * 0.2,
     zIndex: -1,
@@ -724,9 +726,9 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 12,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: brand.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: brand.divider,
   },
 
   // Logo + welcome text
@@ -736,7 +738,7 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     fontSize: 34,
     fontWeight: '800',
-    color: '#0F172A',
+    color: brand.text,
     textAlign: 'center',
     letterSpacing: 1,
   },
@@ -755,7 +757,7 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#94A3B8',
+    color: brand.secondary,
     marginBottom: 20,
     textAlign: 'center',
     letterSpacing: 1.5,
@@ -765,12 +767,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brand.surface,
     paddingVertical: 16,
     borderRadius: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: brand.divider,
   },
   shadow: {
     shadowColor: '#000',
@@ -783,10 +785,10 @@ const styles = StyleSheet.create({
 
   // OR divider
   dividerRow: {flexDirection: 'row', alignItems: 'center', marginVertical: 22},
-  line: {flex: 1, height: 1, backgroundColor: '#F1F5F9'},
+  line: {flex: 1, height: 1, backgroundColor: brand.divider},
   dividerText: {
     marginHorizontal: 15,
-    color: '#CBD5E1',
+    color: AppTokens.chevronColor,
     fontSize: 11,
     fontWeight: '800',
   },
@@ -797,20 +799,20 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#F0F7FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#E0E7FF',
+    borderColor: brand.tint,
   },
-  biometricText: {color: '#0A66C2', fontWeight: '700', fontSize: 14},
+  biometricText: {color: brand.primaryStrong, fontWeight: '700', fontSize: 14},
 
   // Footer
   footer: {paddingBottom: 25, alignItems: 'center'},
   footerText: {
     fontSize: 11,
-    color: '#CBD5E1',
+    color: AppTokens.chevronColor,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
@@ -820,7 +822,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 15,
     fontSize: 14,
-    color: '#64748B',
+    color: brand.secondary,
     fontWeight: '600',
     paddingBottom: 60,
   },
@@ -835,7 +837,7 @@ const dialog = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0F172A',
+    color: brand.text,
     textAlign: 'center',
     paddingVertical: 12,
   },
@@ -860,7 +862,7 @@ const dialog = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontWeight: '700',
     fontSize: 14,
   },

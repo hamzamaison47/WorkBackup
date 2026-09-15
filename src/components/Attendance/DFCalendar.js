@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import {StyleSheet} from 'react-native';
 import {format} from 'date-fns';
+import brand from '../../theme/brand';
 
 // Resilient import
 const RNCalendars = require('react-native-calendars');
@@ -95,14 +96,14 @@ const DFCalendar = ({
         backgroundColor: '#ffffff',
         calendarBackground: '#ffffff',
         textSectionTitleColor: '#b6c1cd',
-        selectedDayBackgroundColor: '#007AFF',
+        selectedDayBackgroundColor: brand.primary,
         selectedDayTextColor: '#ffffff',
-        todayTextColor: '#007AFF',
+        todayTextColor: brand.primaryStrong,
         dayTextColor: '#2d4150',
         textDisabledColor: '#d9e1e8',
-        dotColor: '#007AFF',
+        dotColor: brand.primaryStrong,
         selectedDotColor: '#ffffff',
-        arrowColor: '#007AFF',
+        arrowColor: brand.primaryStrong,
         monthTextColor: '#2d4150',
         textDayFontWeight: '400',
         textMonthFontWeight: 'bold',

@@ -278,7 +278,6 @@ const ContactDetailsListPage = () => {
         onButtonPress={handleButtonPress}
         processingButtons={itemProcessingButtons}
         isExpandable
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         searchQuery={f.searchQuery}
       />

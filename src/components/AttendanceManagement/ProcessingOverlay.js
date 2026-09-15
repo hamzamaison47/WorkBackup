@@ -8,7 +8,7 @@ const ProcessingOverlay = ({label = 'Processing...'}) => {
   return (
     <View style={S.overlay} pointerEvents="auto">
       <View style={S.container}>
-        <ActivityIndicator size="large" color={C.blue} />
+        <ActivityIndicator size="large" color={C.blueDark} />
         <Text style={S.text}>{label}</Text>
       </View>
     </View>

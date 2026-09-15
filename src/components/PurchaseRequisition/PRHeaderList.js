@@ -289,11 +289,11 @@ const PRHeaderList = ({
               ]}
               onPress={isDraft && !editLoading ? handleEdit : undefined}>
               {editLoading ? (
-                <ActivityIndicator size={16} color="#2196F3" />
+                <ActivityIndicator size={16} color={P.primaryStrong} />
               ) : (
                 <>
-                  <Icon name="edit" size={18} color="#2196F3" />
-                  <Text style={[styles.menuText, {color: '#2196F3'}]}>
+                  <Icon name="edit" size={18} color={P.primaryStrong} />
+                  <Text style={[styles.menuText, {color: P.primaryStrong}]}>
                     Edit
                   </Text>
                 </>

@@ -253,7 +253,6 @@ const ESSEmployeeTask_ListPage = () => {
         processingButtons={processingButtons[processedItem.recId] || []}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         isRTL={isRTL}
         onPress={() => {
           if (processedItem.recId) {

@@ -153,9 +153,9 @@ const FenceRow = ({item, isMatched}) => {
               <View
                 style={[
                   S.verifyBadge,
-                  {backgroundColor: '#FEF3C7', borderColor: '#FCD34D'},
+                  {backgroundColor: C.amberLight, borderColor: C.amber},
                 ]}>
-                <Text style={[S.verifyBadgeTxt, {color: '#92400E'}]}>
+                <Text style={[S.verifyBadgeTxt, {color: C.amberDark}]}>
                   QR required
                 </Text>
               </View>
@@ -175,7 +175,7 @@ const FenceRow = ({item, isMatched}) => {
               <View
                 style={[
                   S.verifyBadge,
-                  {backgroundColor: C.blueLight, borderColor: '#93C5FD'},
+                  {backgroundColor: C.blueLight, borderColor: C.blueDark},
                 ]}>
                 <Text style={[S.verifyBadgeTxt, {color: C.blueDark}]}>
                   Network verified
@@ -276,7 +276,7 @@ const LocationPickerModal = ({visible, onClose}) => {
           <View style={S.center}>
             <ActivityIndicator
               size="large"
-              color={C.blue}
+              color={C.blueDark}
               style={{marginBottom: 16}}
             />
             <Text style={S.centerTitle}>Verifying your location…</Text>
@@ -398,7 +398,7 @@ const makeStyles = (C, R, Sh) =>
       borderRadius: R.full,
       marginTop: 2,
     },
-    refreshTxt: {fontSize: 13, fontWeight: '600', color: C.blue},
+    refreshTxt: {fontSize: 13, fontWeight: '600', color: C.blueDark},
 
     gpsBadge: {
       flexDirection: 'row',
@@ -554,7 +554,7 @@ const makeStyles = (C, R, Sh) =>
       borderRadius: R.full,
       ...Sh.sm,
     },
-    retryTxt: {color: C.white, fontWeight: '700', fontSize: 14},
+    retryTxt: {color: C.onBlue, fontWeight: '700', fontSize: 14},
 
     footer: {padding: 16, paddingBottom: Platform.OS === 'ios' ? 8 : 16},
     closeBtn: {

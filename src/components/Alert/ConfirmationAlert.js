@@ -59,7 +59,7 @@ const ConfirmationAlert = ({
         iconColor: P.primaryStrong,
         primaryColor: P.primary,
         onPrimaryColor: P.onPrimary,
-        iconBg: '#E3F2FD',
+        iconBg: P.tint,
       },
       warning: {
         icon: 'alert-outline',

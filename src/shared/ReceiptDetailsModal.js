@@ -600,16 +600,20 @@ const ReceiptDetailsModal = ({
                 onPress={handleRefresh}
                 disabled={isRefreshing || isLoading || isAnyProcessing}>
                 {isRefreshing ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={brand.onPrimary} />
                 ) : (
-                  <FontAwesome name="refresh" size={iconSize.xs} color="#fff" />
+                  <FontAwesome
+                    name="refresh"
+                    size={iconSize.xs}
+                    color={brand.onPrimary}
+                  />
                 )}
               </TouchableOpacity>
             </View>
 
             {isLoading ? (
               <View style={styles.DAM_loadingContainer}>
-                <ActivityIndicator size="large" color="#2563eb" />
+                <ActivityIndicator size="large" color={brand.primaryStrong} />
                 <Text style={styles.DAM_loadingText}>Loading receipts...</Text>
               </View>
             ) : (

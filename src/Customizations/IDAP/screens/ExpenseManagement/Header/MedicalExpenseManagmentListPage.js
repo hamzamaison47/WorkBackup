@@ -636,7 +636,6 @@ const MedicalExpenseManagmentListPage = () => {
         onButtonPress={buttonType => handleButtonPress(buttonType, item)}
         onPress={() => handleCardPress(processedItem)}
         isExpandable={true}
-        gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[itemRecId] || []}
         showNavigationArrow={true}
         searchQuery={f.searchQuery}

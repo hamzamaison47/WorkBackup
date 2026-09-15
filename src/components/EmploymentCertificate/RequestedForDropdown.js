@@ -2,6 +2,7 @@
 import React from 'react';
 import {Platform, StyleSheet, Dimensions, View, Text} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
+import brand from '../../theme/brand';
 
 const {width, height} = Dimensions.get('window');
 
@@ -29,7 +30,7 @@ const RequestedForDropdown = ({selectedValue, data, onSelect}) => {
       placeholderStyle={styles.placeholder}
       selectedTextStyle={styles.selectedText}
       itemTextStyle={styles.itemText}
-      activeColor="#E6F0FF"
+      activeColor={brand.tint}
       containerStyle={[
         styles.container,
         {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   },
   container: {
     borderWidth: 1.5,
-    borderColor: '#4A90E2',
+    borderColor: brand.primaryStrong,
     borderRadius: width * 0.025,
     backgroundColor: '#fff',
     shadowColor: '#000',
@@ -106,6 +107,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   selectedItem: {
-    backgroundColor: '#E6F0FF',
+    backgroundColor: brand.tint,
   },
 });

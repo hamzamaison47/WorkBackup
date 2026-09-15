@@ -222,7 +222,6 @@ const EntitlementBalance = () => {
       onButtonPress={() => {}}
       processingButtons={[]}
       isExpandable
-      gradientColors={['#e0f2fe', '#bae6fd', '#dbeafe']}
       showNavigationArrow={false}
       searchQuery={searchQuery}
     />

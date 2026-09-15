@@ -33,7 +33,7 @@ export const LightTokens = {
   dropdownBorder: '#E0E0E0',
   dropdownItemBorder: '#F0F0F0',
   overlayBg: 'rgba(255, 255, 255, 0.9)',
-  dropdownActiveBg: '#E8F1FB',
+  dropdownActiveBg: brand.tint, // selected dropdown row
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,6 +73,9 @@ export const DarkTokens = {
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAND PALETTE — same in both modes
 // ─────────────────────────────────────────────────────────────────────────────
+// Hoisted so the tab-bar badge can reuse the waiting hex by reference.
+const STATUS_WAITING = '#475569';
+
 export const BrandTokens = {
   blue: brand.primary,
   blueStrong: brand.primaryStrong, // primary as text / thin border / icon
@@ -101,7 +104,7 @@ export const BrandTokens = {
   //   statusWaiting     — dot / icon / active-pill fill
   //   statusWaitingBg   — pill background
   //   statusWaitingText — text on statusWaitingBg (6.6:1)
-  statusWaiting: '#475569',
+  statusWaiting: STATUS_WAITING,
   statusWaitingBg: '#E2E8F0',
   statusWaitingText: '#334155',
 
@@ -117,12 +120,11 @@ export const BrandTokens = {
   statusDraftBg: '#F8FAFC',
   statusDraftText: '#475569',
 
-  // Pending-count badge on the bottom tab bar. Today's values, named — still
-  // mustard because the bar is blue today. It WILL collide with a mustard
-  // primary (1.23:1); re-derive from statusWaiting when the tab bar is
-  // inverted in the palette step.
-  tabBadgeBg: '#D9A404',
-  tabBadgeText: '#1A1A1A',
+  // Pending-count badge on the bottom tab bar: the waiting family (a pending
+  // count IS the waiting state), so it never collides with the primary and
+  // leaves red to the bell badge.
+  tabBadgeBg: STATUS_WAITING,
+  tabBadgeText: '#FFFFFF',
 
   // Card shadow
   shadowOffset: {width: 0, height: 2},

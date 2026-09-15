@@ -318,7 +318,6 @@ const EmployeeEOSRequestListPage = () => {
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}

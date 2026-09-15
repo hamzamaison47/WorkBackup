@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {getFormatText} from './utils';
 import RequestedForDropdown from './RequestedForDropdown';
+import brand from '../../theme/brand';
 
 const CertificateDetailsModal = ({
   visible,
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: brand.surfaceAlt,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: brand.surfaceAlt,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -280,8 +281,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
+    backgroundColor: brand.primary,
+    shadowColor: brand.primary,
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.25,
     shadowRadius: 5,
@@ -302,7 +303,7 @@ const styles = StyleSheet.create({
   sendButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
     letterSpacing: 0.3,
   },
 });

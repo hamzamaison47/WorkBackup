@@ -64,7 +64,6 @@ const ESSEmployeeCertificate_Listpage = () => {
       {key: 'issuedate', label: 'Start Date', type: 'date'},
       {key: 'expirationdate', label: 'End Date', type: 'date'},
     ],
-    gradientColors: ['#6ee0ff', '#bddeff', '#cce6ff'],
     isRTL,
   };
 
@@ -76,7 +75,6 @@ const ESSEmployeeCertificate_Listpage = () => {
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
         isExpandable={true}
-        gradientColors={cardConfig.gradientColors}
         isRTL={isRTL}
       />
     );

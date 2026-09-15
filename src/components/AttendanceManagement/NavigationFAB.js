@@ -130,7 +130,7 @@ const makeStyles = (C, R, Sh) =>
       ...Sh.lg,
     },
     fabOpen: {backgroundColor: C.redMid},
-    fabIcon: {fontSize: 20, color: C.white, fontWeight: '700'}, // icon on brand fab → white
+    fabIcon: {fontSize: 20, color: C.onBlue, fontWeight: '700'}, // icon on the brand fab
     menu: {alignItems: 'flex-end', marginBottom: 12, gap: 10},
     menuRow: {flexDirection: 'row', alignItems: 'center', gap: 10},
     label: {
@@ -142,7 +142,7 @@ const makeStyles = (C, R, Sh) =>
     },
     labelActive: {backgroundColor: C.blue},
     labelTxt: {fontSize: 13, fontWeight: '600', color: C.inkSub},
-    labelTxtActive: {color: C.white}, // text on active blue label → white
+    labelTxtActive: {color: C.onBlue}, // text on the active brand label
     menuBtn: {
       width: 46,
       height: 46,

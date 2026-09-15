@@ -29,6 +29,7 @@ import useAppTokens from '../../../../components/AppComponentsDesign/useAppToken
 import {AppTokens} from '../../../../components/AppComponentsDesign/Tokens';
 import usePalette from '../../../../hooks/usePalette';
 import styles from '../../../../styles/styles';
+import brand from '../../../../theme/brand';
 import {
   conditionalScale,
   conditionalVerticalScale,
@@ -94,11 +95,11 @@ const STATUS_COLORS = {
     text: AppTokens.statusDraftText,
     soft: AppTokens.statusDraftBg,
   },
-  leave: {bg: '#1565C0', text: '#0D47A1', soft: '#E8F0FE'}, // blue
+  leave: {bg: brand.primary, text: brand.primaryStrong, soft: brand.tint},
   // Off-day gets its own light blue — distinct enough from "Leave"'s
   // deeper blue that the two aren't confused, while still reading as a
   // calm, non-issue color for a plain weekend/rest day.
-  offDay: {bg: '#4FC3F7', text: '#0277BD', soft: '#E1F5FE'}, // light blue
+  offDay: {bg: AppTokens.teal, text: brand.text, soft: AppTokens.tealBg},
 };
 
 const STATUS_LABELS = {
@@ -123,7 +124,7 @@ const LEGEND_ITEMS = [
 // gets its own distinct blue, drawn as a ring rather than a fill. That keeps
 // it visually separate from "Leave" (which is also blue) and lets a leave
 // day that happens to be today show both: the leave fill plus the today ring.
-const TODAY_RING_COLOR = '#0288D1';
+const TODAY_RING_COLOR = brand.primaryStrong;
 
 const startOfDay = d => {
   if (!d) return null;
@@ -364,7 +365,7 @@ const DFAttendanceCalendarScreen = () => {
             justifyContent: 'space-between',
             paddingVertical: conditionalVerticalScale(11, 12, 13, 13),
             paddingHorizontal: conditionalScale(14, 15, 16, 16),
-            backgroundColor: isActive ? '#EEF3FF' : 'transparent',
+            backgroundColor: isActive ? P.tint : 'transparent',
           }}>
           <Text
             style={{

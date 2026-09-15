@@ -87,7 +87,7 @@ const ConfirmBreakScreen = ({
   const subtitle = isBreakEnd
     ? 'Resume the timer and return to work'
     : 'Pause the timer for your break';
-  const confirmColor = isBreakEnd ? C.amber : '#7C3AED';
+  const confirmColor = isBreakEnd ? C.amber : C.purple;
 
   // Fence the Confirm-time gates run against — the one prepare() validated and
   // confirm() will submit the punch against. Biometric and QR share it.
@@ -278,28 +278,31 @@ const ConfirmBreakScreen = ({
             style={[
               S.contextCard,
               isBreakEnd
-                ? {backgroundColor: '#FFFBEB', borderColor: '#FCD34D'}
+                ? {backgroundColor: C.amberLight, borderColor: C.amber}
                 : {},
             ]}>
-            <Text style={[S.contextTitle, isBreakEnd && {color: '#92400E'}]}>
+            <Text style={[S.contextTitle, isBreakEnd && {color: C.amberDark}]}>
               {isBreakEnd ? 'Break in Progress' : 'Session So Far'}
             </Text>
             <View style={S.divider} />
             <View style={S.contextRow}>
-              <Text style={[S.contextKey, isBreakEnd && {color: '#92400E'}]}>
+              <Text style={[S.contextKey, isBreakEnd && {color: C.amberDark}]}>
                 Clocked in at
               </Text>
-              <Text style={[S.contextVal, isBreakEnd && {color: '#92400E'}]}>
+              <Text style={[S.contextVal, isBreakEnd && {color: C.amberDark}]}>
                 {formatTime(sessionSummary.clockIn)}
               </Text>
             </View>
             {isBreakEnd && sessionSummary.ongoingBreakStart ? (
               <View style={S.contextRow}>
-                <Text style={[S.contextKey, {color: '#92400E'}]}>
+                <Text style={[S.contextKey, {color: C.amberDark}]}>
                   Break started
                 </Text>
                 <Text
-                  style={[S.contextVal, {color: '#92400E', fontWeight: '700'}]}>
+                  style={[
+                    S.contextVal,
+                    {color: C.amberDark, fontWeight: '700'},
+                  ]}>
                   {formatTime(sessionSummary.ongoingBreakStart)}
                   {' · '}
                   {formatDurationShort(
@@ -356,7 +359,7 @@ const ConfirmBreakScreen = ({
           {locationLoading ? (
             <ActivityIndicator
               size="small"
-              color={C.blue}
+              color={C.blueDark}
               style={{marginRight: 4}}
             />
           ) : (
@@ -438,14 +441,14 @@ const makeStyles = (C, R) =>
     },
     validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
     pendingBadge: {
-      backgroundColor: '#FEF3C7',
+      backgroundColor: C.amberLight,
       borderWidth: 1,
-      borderColor: '#FCD34D',
+      borderColor: C.amber,
       borderRadius: R.sm,
       padding: 10,
       marginBottom: 10,
     },
-    pendingBadgeText: {fontSize: 12, color: '#92400E'},
+    pendingBadgeText: {fontSize: 12, color: C.amberDark},
 
     contextCard: {
       backgroundColor: C.surfaceAlt,

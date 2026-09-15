@@ -233,7 +233,6 @@ const LeaveEncashment_ListPage = () => {
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         isRTL={isRTL}
         searchQuery={f.searchQuery}

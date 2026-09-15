@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import brand from '../../theme/brand';
 
 const PRLinesList = ({
   item,
@@ -131,8 +132,10 @@ const PRLinesList = ({
                 toggleMenu();
                 onEdit && onEdit(item);
               }}>
-              <Icon name="edit" size={18} color="#3B82F6" />
-              <Text style={[styles.menuText, {color: '#3B82F6'}]}>Edit</Text>
+              <Icon name="edit" size={18} color={brand.primaryStrong} />
+              <Text style={[styles.menuText, {color: brand.primaryStrong}]}>
+                Edit
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
   leftTop: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0F172A',
+    color: brand.text,
     letterSpacing: -0.2,
   },
   leftBottom: {

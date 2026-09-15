@@ -880,7 +880,7 @@ const LeaveRequestSaveRecord = () => {
                   styles.DSR_DropdownItemText,
                   isRTL && {textAlign: 'left'},
                 ]}
-                activeColor="#E6F0FF"
+                activeColor={P.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {
@@ -944,7 +944,7 @@ const LeaveRequestSaveRecord = () => {
                 styles.DSR_DropdownItemText,
                 isRTL && {textAlign: 'left'},
               ]}
-              activeColor="#E6F0FF"
+              activeColor={P.tint}
               containerStyle={[
                 styles.DSR_DropdownContainer,
                 {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},

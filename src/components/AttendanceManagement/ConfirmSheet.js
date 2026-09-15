@@ -11,7 +11,6 @@ import {
   ScrollView,
   SafeAreaView,
   StyleSheet,
-  StatusBar,
   RefreshControl,
   Platform,
 } from 'react-native';
@@ -39,7 +38,7 @@ const ConfirmSheet = ({
   refreshing = false,
   children,
 }) => {
-  const {C, R, Sh, isDark} = useAttendanceTheme();
+  const {C, R, Sh} = useAttendanceTheme();
   const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
   const insets = useSafeAreaInsets();
   const now = new Date();
@@ -54,8 +53,6 @@ const ConfirmSheet = ({
 
   return (
     <SafeAreaView style={S.screen}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-
       {/* Header */}
       <View style={S.header}>
         <TouchableOpacity
@@ -157,7 +154,7 @@ const makeStyles = (C, R, Sh) =>
       justifyContent: 'center',
       ...Sh.xs,
     },
-    avatarTxt: {fontSize: 22, color: C.white, fontWeight: '700'},
+    avatarTxt: {fontSize: 22, color: C.onBlue, fontWeight: '700'},
     userName: {fontSize: 18, fontWeight: '700', color: C.ink},
     userMeta: {fontSize: 12, color: C.inkMuted, marginTop: 3},
 

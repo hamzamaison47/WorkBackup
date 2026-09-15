@@ -14,6 +14,8 @@ import Feather from 'react-native-vector-icons/Feather';
 
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import {RetrieveHrNewsUpdates} from '../../API/HRNewsUpdates/RetrieveHrNewsUpdates';
+import brand from '../../theme/brand';
+import {AppTokens} from '../../components/AppComponentsDesign/Tokens';
 
 const {width} = Dimensions.get('window');
 const CARD_WIDTH = width * 0.88; // Card takes up most of the screen
@@ -45,7 +47,12 @@ const ModernSkeleton = () => {
     <Animated.View
       style={[
         styles.newsCard,
-        {opacity, height: 120, backgroundColor: '#F1F5F9', borderWidth: 0},
+        {
+          opacity,
+          height: 120,
+          backgroundColor: brand.surfaceAlt,
+          borderWidth: 0,
+        },
       ]}
     />
   );
@@ -90,7 +97,10 @@ const HrNewsUpdatesScreen = ({navigation}) => {
       <View
         style={[
           styles.heroBackground,
-          {backgroundColor: index % 2 === 0 ? '#6366F1' : '#4F46E5'},
+          {
+            backgroundColor:
+              index % 2 === 0 ? AppTokens.indigo : AppTokens.purple,
+          },
         ]}
       />
       <View style={styles.heroOverlay}>
@@ -179,7 +189,7 @@ const HrNewsUpdatesScreen = ({navigation}) => {
                   setRefreshing(true);
                   fetchNewsUpdates();
                 }}
-                tintColor="#6366F1"
+                tintColor={AppTokens.indigo}
               />
             }
             // eslint-disable-next-line react/no-unstable-nested-components
@@ -313,7 +323,7 @@ const styles = StyleSheet.create({
   dot: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#6366F1',
+    backgroundColor: AppTokens.indigo,
     marginHorizontal: 4,
   },
 
@@ -329,12 +339,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: brand.divider,
     overflow: 'hidden',
   },
   newsColorStrip: audience => ({
     width: 6,
-    backgroundColor: audience === 1 ? '#6366F1' : '#E2E8F0',
+    backgroundColor: audience === 1 ? AppTokens.indigo : brand.divider,
   }),
   newsBody: {flex: 1, padding: 18},
   newsHeader: {
@@ -345,7 +355,7 @@ const styles = StyleSheet.create({
   newsCategory: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#6366F1',
+    color: AppTokens.indigo,
     textTransform: 'uppercase',
   },
   newsDate: {fontSize: 11, color: '#94A3B8'},

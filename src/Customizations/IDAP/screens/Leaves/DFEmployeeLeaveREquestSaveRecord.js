@@ -52,6 +52,7 @@ import {
   selectTimezone,
 } from '../../../../store/selectors';
 import useAppStyles from '../../../../hooks/useAppStyles';
+import brand from '../../../../theme/brand';
 
 const DFEmployeeLeaveRequestSaveRecord = () => {
   const route = useRoute();
@@ -551,7 +552,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color="#0A66C2" />
+                <ActivityIndicator size="large" color={brand.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>Processing...</Text>
               </View>
             </View>
@@ -590,7 +591,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
                 styles.DSR_DropdownItemText,
                 isRTL && {textAlign: 'left'},
               ]}
-              activeColor="#E6F0FF"
+              activeColor={brand.tint}
               containerStyle={[
                 styles.DSR_DropdownContainer,
                 {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
@@ -655,7 +656,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
                     : 'Select From date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color="#0A66C2" />
+              <Icon name="calendar" size={20} color={brand.primaryStrong} />
             </TouchableOpacity>
 
             {/* To Date — disabled when short leave is active */}
@@ -691,7 +692,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
               <Icon
                 name="calendar"
                 size={20}
-                color={formData.isShortLeave ? '#BDBDBD' : '#0A66C2'}
+                color={formData.isShortLeave ? '#BDBDBD' : brand.primaryStrong}
               />
             </TouchableOpacity>
 
@@ -712,7 +713,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
                   toDate: value ? '' : prev.toDate,
                 }));
               }}
-              trackColor={{false: '#BDBDBD', true: '#0A66C2'}}
+              trackColor={{false: '#BDBDBD', true: brand.primaryStrong}}
               thumbColor="#fff"
               style={{alignSelf: 'flex-start', marginTop: 4}}
             />
@@ -751,7 +752,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
                 styles.DSR_DropdownItemText,
                 isRTL && {textAlign: 'left'},
               ]}
-              activeColor="#E6F0FF"
+              activeColor={brand.tint}
               containerStyle={[
                 styles.DSR_DropdownContainer,
                 {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 998},
@@ -795,7 +796,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
             {isFetchingAvailable ? (
               <ActivityIndicator
                 size="small"
-                color="#0A66C2"
+                color={brand.primaryStrong}
                 style={{marginTop: 8, alignSelf: 'flex-start'}}
               />
             ) : (
@@ -816,7 +817,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
             {isCalculatingDays ? (
               <ActivityIndicator
                 size="small"
-                color="#0A66C2"
+                color={brand.primaryStrong}
                 style={{marginTop: 8, alignSelf: 'flex-start'}}
               />
             ) : (
@@ -853,7 +854,7 @@ const DFEmployeeLeaveRequestSaveRecord = () => {
               onValueChange={value => {
                 setFormData(prev => ({...prev, isAdjustment: value}));
               }}
-              trackColor={{false: '#BDBDBD', true: '#0A66C2'}}
+              trackColor={{false: '#BDBDBD', true: brand.primaryStrong}}
               thumbColor="#fff"
               style={{alignSelf: 'flex-start', marginTop: 4}}
             />

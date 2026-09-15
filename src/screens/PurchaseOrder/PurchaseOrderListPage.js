@@ -369,7 +369,6 @@ const PurchaseOrderListPage = () => {
         onButtonPress={handleButtonPress}
         onPress={() => handleCardPress(processedItem)}
         isExpandable={true}
-        gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
         searchQuery={searchQuery}
