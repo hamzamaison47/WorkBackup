@@ -41,6 +41,8 @@ const isActiveFlag = val => {
   return s === '1' || s === 'yes' || s === 'true';
 };
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 const fetchFreshCoords = async () => {
   try {
     const p = await getFreshPositionWithTimeout({
@@ -68,7 +70,27 @@ const fetchFreshCoords = async () => {
         timestamp: p.timestamp,
       };
     } catch {
-      return null;
+      // P5.1 — one more short attempt after a brief pause. Right after an
+      // app resume from background, the GPS radio is often mid cold-start on
+      // both attempts above and settles within a few more seconds. This is
+      // NOT called on every refresh — only reached when both normal attempts
+      // already failed — so it doesn't add latency to the common case.
+      try {
+        await sleep(2000);
+        const p = await getFreshPositionWithTimeout({
+          enableHighAccuracy: false,
+          timeout: 8000,
+          maximumAge: 0,
+        });
+        return {
+          latitude: p.coords.latitude,
+          longitude: p.coords.longitude,
+          accuracy: p.coords.accuracy,
+          timestamp: p.timestamp,
+        };
+      } catch {
+        return null;
+      }
     }
   }
 };
@@ -529,7 +551,11 @@ export const GeofenceProvider = ({children, person}) => {
       if (!fresh) {
         const errorMessage =
           'Unable to get GPS location. Please enable location services.';
-        resetFenceState(errorMessage);
+        if (!latestCoordsRef.current) {
+          resetFenceState(errorMessage);
+        } else {
+          setLocationError(errorMessage);
+        }
         throw new Error(errorMessage);
       }
       setCoords(fresh);

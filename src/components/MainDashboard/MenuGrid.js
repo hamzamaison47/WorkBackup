@@ -640,6 +640,7 @@ const MenuGrid = ({dynamicMenus, dimensions, onCardPress, userData}) => {
             iconSize={reducedIconSize}
             gridGap={GRID_GAP}
             onPress={() => onCardPress(card)}
+            badgeCount={card.badgeCount} // NEW
           />
         </View>
       ))}
@@ -650,7 +651,7 @@ const MenuGrid = ({dynamicMenus, dimensions, onCardPress, userData}) => {
     <View style={styles.MG_container}>
       <LeavesAvailableSection navigation={navigation} userData={userData} />
 
-      {/* <ApprovalsSection userData={userData} navigation={navigation} /> */}
+      <ApprovalsSection userData={userData} navigation={navigation} />
 
       {dynamicMenus.length === 0 ? (
         <View style={styles.MG_emptyState}>

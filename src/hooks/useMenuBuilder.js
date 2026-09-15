@@ -4,6 +4,9 @@ import {screenMapping, iconMapping} from '../Controller/screenMapping';
 
 export const useMenuBuilder = (userData, selectedLegalEntity, navigation) => {
   const {menuItems} = useSelector(state => state.menuItem);
+  const pendingWorkItemsCount = useSelector(
+    state => state.workItems?.pendingCount ?? 0,
+  ); // NEW
 
   const getNavigationParams = menuItem => {
     const baseParams = {
@@ -77,6 +80,10 @@ export const useMenuBuilder = (userData, selectedLegalEntity, navigation) => {
         iconMapping[menuItem.MenuId] ||
         require('../assets/Maindashboard/calendar.png'),
       menuItem,
+      badgeCount:
+        menuItem.MenuId === 'WorkItemsAssignedToMePage'
+          ? pendingWorkItemsCount
+          : 0,
     }));
   };
 

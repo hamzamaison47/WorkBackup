@@ -5,7 +5,7 @@
     "deleting": "Deleting..."
   },
   "login": {
-    "welcomeTitle": "Welcome to Dynaface",
+    "welcomeTitle": "Welcome to IDAP360",
     "welcomeSubtitle": "Secure Mobile Gateway!\nYour Ultimate Companion for seamless access to D365.",
     "signInMicrosoft": "Sign in with Microsoft",
     "signInGoogle": "Sign in with Google",
@@ -211,7 +211,7 @@
   "common": {
     "ok": "OK",
     "cancel": "Cancel",
-    "dynaface": "Dynaface",
+    "dynaface": "IDAP360",
     "alert": "Alert",
     "processing": "Processing...",
     "create": "Created",

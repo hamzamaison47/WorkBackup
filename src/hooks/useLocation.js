@@ -312,6 +312,55 @@ const useLocation = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Periodic freshness refresh — independent of movement ──────────────────
+  // distanceFilter:10 means watchPosition never fires while the device is
+  // stationary, so a position's timestamp just keeps ageing and stale_fix can
+  // get stuck true forever for a perfectly legitimate, non-spoofing user who
+  // simply isn't walking around. This forces a genuinely new read on a fixed
+  // cadence regardless of movement, so staleness is judged against a fix that
+  // is actually current, not one that's spuriously ageing in the background.
+  useEffect(() => {
+    const REFRESH_INTERVAL_MS = 45_000;
+
+    const interval = setInterval(async () => {
+      try {
+        const pos = await getFreshPositionWithTimeout({
+          enableHighAccuracy: false, // low-power — this is a background sanity check, not a punch-time read
+          timeout: 10000,
+          maximumAge: 0, // must be a real new read, or the timestamp won't actually refresh
+        });
+
+        const spoof = checkSpoofing(pos, prevPositionRef.current);
+        if (spoof.detected) {
+          setSpoofingDetected(true);
+          setSpoofingReason(spoof.reason);
+        } else {
+          setSpoofingDetected(false);
+          setSpoofingReason(null);
+          setLocationError(null);
+          const coords = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: pos.timestamp,
+          };
+          setUserCoords(coords);
+          AsyncStorage.setItem(COORDS_KEY, JSON.stringify(coords)).catch(
+            () => {},
+          );
+        }
+        prevPositionRef.current = pos;
+      } catch (err) {
+        // A failed forced refresh (GPS momentarily unavailable) should NOT
+        // itself flip spoofingDetected — only an actually-read stale/suspicious
+        // fix should. Leave state as-is; the next tick will retry.
+        console.warn('📍 Periodic freshness refresh failed:', err.message);
+      }
+    }, REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const collectAttendanceData = useCallback(
     async (eventLabel = 'EVENT') => {
       let gpsCoords = userCoords;

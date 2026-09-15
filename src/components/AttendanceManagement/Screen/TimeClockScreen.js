@@ -12,6 +12,13 @@
 //         calls and returns a ValidationToken passed to confirm screens.
 // P3.2 — prewarmToken() + NetInfo.fetch() called on mount so token and
 //         network info are ready before the first action press.
+// P4.1 — Wi-Fi pre-flight banner: fences with a network policy now show a
+//         banner + disable Clock In BEFORE the button is pressed, instead of
+//         letting the user discover NOT_ON_WIFI only after prepare() fails.
+// P4.2 — Fixed silent failure: handlePreFaceSuccess used to swallow errors
+//         from _runOrchestratorPrepare with `.catch(() => {})`. Any throw
+//         after a successful Face check (e.g. SOAP failure) used to clear the
+//         spinner with zero feedback to the user. Now shows the real error.
 // ─────────────────────────────────────────────────────────────────────────────
 import React, {useState, useEffect, useRef, useCallback, useMemo} from 'react';
 import {useSelector} from 'react-redux';
@@ -62,6 +69,7 @@ import {
   canEndBreak,
   canClockOut,
   getSessionStats,
+  isToday, // add this
 } from '../../../screens/AttendanceManagement/helpers';
 import {
   startAttendanceService,
@@ -81,6 +89,35 @@ import useAttendanceNotificationAction from '../../../hooks/useAttendanceNotific
 import {initSyncListener} from '../../../services/AttendanceManagement/SyncManager';
 import AttendanceOrchestrator from '../../../services/AttendanceManagement/AttendanceOrchestrator';
 import DeviceInfo from 'react-native-device-info';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// ─────────────────────────────────────────────
+// P6.1 — Persisted attendance snapshot
+//
+// Survives app restarts. On a cold launch, if the first server sync fails
+// (e.g. boot-time SOAP congestion), this lets the screen paint real
+// last-known values instead of blank fields until the network call
+// eventually succeeds.
+// ─────────────────────────────────────────────
+const ATTENDANCE_SNAPSHOT_KEY = '@attendance_last_known_snapshot';
+
+const saveSnapshot = async snapshot => {
+  try {
+    await AsyncStorage.setItem(
+      ATTENDANCE_SNAPSHOT_KEY,
+      JSON.stringify(snapshot),
+    );
+  } catch {}
+};
+
+const loadSnapshot = async () => {
+  try {
+    const raw = await AsyncStorage.getItem(ATTENDANCE_SNAPSHOT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
 
 const {width: SCREEN_W} = Dimensions.get('window');
 
@@ -330,73 +367,6 @@ const makeSP = DK =>
 // ─────────────────────────────────────────────
 // Time summary — shows elapsed, clock-in time, breaks
 // ─────────────────────────────────────────────
-// const TimeSummary = ({
-//   status,
-//   elapsed,
-//   clockInTime,
-//   breakCount,
-//   totalBreakMs,
-// }) => {
-//   const {DK} = useAttendanceTheme();
-//   const TS = useMemo(() => makeTS(DK), [DK]);
-//   const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
-//   const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
-//   const breakStr =
-//     totalBreakMs > 0
-//       ? formatDurationShort(totalBreakMs)
-//       : breakCount > 0
-//       ? `${breakCount} break${breakCount > 1 ? 's' : ''}`
-//       : '--';
-
-//   return (
-//     <View style={TS.container}>
-//       <View style={TS.heroCard}>
-//         <Text style={TS.heroLabel}>TOTAL TIME</Text>
-//         <Text style={[TS.heroValue, status === 'out' && {color: DK.textMuted}]}>
-//           {totalTimeStr}
-//         </Text>
-//       </View>
-//       <View style={TS.row}>
-//         <View style={TS.miniCard}>
-//           <Text style={TS.miniLabel}>CLOCK IN</Text>
-//           <Text style={TS.miniValue}>{clockInStr}</Text>
-//         </View>
-//         <View style={TS.miniCard}>
-//           <Text style={TS.miniLabel}>BREAKS</Text>
-//           <Text style={TS.miniValue}>{breakStr}</Text>
-//         </View>
-//       </View>
-//     </View>
-//   );
-// };
-// const TimeSummary = ({status, elapsed, clockInTime, clockOutTime}) => {
-//   const {DK} = useAttendanceTheme();
-//   const TS = useMemo(() => makeTS(DK), [DK]);
-//   const totalTimeStr = status === 'out' ? '--:--:--' : formatElapsed(elapsed);
-//   const clockInStr = clockInTime ? formatTime(clockInTime) : '--:--';
-//   const clockOutStr = clockOutTime ? formatTime(clockOutTime) : '--:--';
-
-//   return (
-//     <View style={TS.container}>
-//       <View style={TS.heroCard}>
-//         <Text style={TS.heroLabel}>TOTAL TIME</Text>
-//         <Text style={[TS.heroValue, status === 'out' && {color: DK.textMuted}]}>
-//           {totalTimeStr}
-//         </Text>
-//       </View>
-//       <View style={TS.row}>
-//         <View style={TS.miniCard}>
-//           <Text style={TS.miniLabel}>CLOCK IN</Text>
-//           <Text style={TS.miniValue}>{clockInStr}</Text>
-//         </View>
-//         <View style={TS.miniCard}>
-//           <Text style={TS.miniLabel}>CLOCK OUT</Text>
-//           <Text style={TS.miniValue}>{clockOutStr}</Text>
-//         </View>
-//       </View>
-//     </View>
-//   );
-// };
 const TimeSummary = ({status, elapsed, clockInTime, clockOutTime}) => {
   const {DK} = useAttendanceTheme();
   const TS = useMemo(() => makeTS(DK), [DK]);
@@ -629,6 +599,82 @@ const makeSBN = DK =>
   });
 
 // ─────────────────────────────────────────────
+// P4.1 — Wi-Fi required banner (new)
+// ─────────────────────────────────────────────
+const WifiRequiredBanner = ({networkName}) => {
+  const {DK} = useAttendanceTheme();
+  const WB = useMemo(() => makeWB(DK), [DK]);
+  return (
+    <View style={WB.wrap}>
+      <Text style={WB.icon}>📶</Text>
+      <View style={{flex: 1}}>
+        <Text style={WB.title}>Wi-Fi Required</Text>
+        <Text style={WB.sub}>
+          {networkName
+            ? `Connect to "${networkName}" Wi-Fi to clock in at this location`
+            : 'Connect to the required Wi-Fi network to clock in at this location'}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Today's attendance complete banner
+// ─────────────────────────────────────────────
+const TodayCompleteBanner = () => {
+  const {DK} = useAttendanceTheme();
+  const TC = useMemo(() => makeTC(DK), [DK]);
+  return (
+    <View style={TC.wrap}>
+      <Text style={TC.icon}>✓</Text>
+      <View style={{flex: 1}}>
+        <Text style={TC.title}>Today's Attendance Complete</Text>
+        <Text style={TC.sub}>Thank you! See you tomorrow.</Text>
+      </View>
+    </View>
+  );
+};
+
+const makeTC = DK =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: 'rgba(5,150,105,0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(5,150,105,0.25)',
+    },
+    icon: {fontSize: 16, color: DK.accentGreen, fontWeight: '700'},
+    title: {fontSize: 12, fontWeight: '700', color: DK.accentGreen},
+    sub: {fontSize: 11, color: DK.accentGreen, marginTop: 1, opacity: 0.85},
+  });
+
+const makeWB = DK =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: 'rgba(217,119,6,0.08)',
+      borderWidth: 1,
+      borderColor: 'rgba(217,119,6,0.25)',
+    },
+    icon: {fontSize: 16},
+    title: {fontSize: 12, fontWeight: '700', color: DK.accentAmber},
+    sub: {fontSize: 11, color: DK.accentAmber, marginTop: 1, opacity: 0.85},
+  });
+
+// ─────────────────────────────────────────────
 // Notification banner
 // ─────────────────────────────────────────────
 const NotificationActionBanner = ({action, onDismiss}) => {
@@ -709,16 +755,6 @@ const ActionButtons = ({
       )}
       {status === 'in' && (
         <>
-          {/* <TouchableOpacity
-            style={[
-              AB.btn,
-              {backgroundColor: DK.accentAmber},
-              breakDisabled && AB.disabled,
-            ]}
-            onPress={onBreakStart}
-            disabled={breakDisabled}>
-            <Text style={AB.txt}>☕ Start Break</Text>
-          </TouchableOpacity> */}
           <TouchableOpacity
             style={[
               AB.btn,
@@ -795,12 +831,21 @@ const TimeClockScreen = ({onNavigate}) => {
     canBreakEnd: false,
     canOut: false,
   });
+  const [todayComplete, setTodayComplete] = useState(false);
+  const [syncError, setSyncError] = useState(null); // add this state
+  const [isSyncRetrying, setIsSyncRetrying] = useState(false); // add this line
 
   const [pendingAction, setPendingAction] = useState(null);
   const [preFaceModalVisible, setPreFaceModalVisible] = useState(false);
   const [preFaceResult, setPreFaceResult] = useState(null);
   // P2.5 — Validation token from AttendanceOrchestrator.prepare()
   const [validationToken, setValidationToken] = useState(null);
+
+  // P4.1 — live NetInfo snapshot, used only for the Wi-Fi pre-flight banner.
+  // This is separate from the orchestrator's own network read at prepare()/
+  // confirm() time — that one remains the source of truth for what's
+  // actually submitted. This is purely a fast, non-blocking UI signal.
+  const [currentNetInfo, setCurrentNetInfo] = useState(null);
 
   const actionInProgress = useRef(false);
   const timerRef = useRef(null);
@@ -836,60 +881,113 @@ const TimeClockScreen = ({onNavigate}) => {
 
   const {spoofingDetected, spoofingReason} = useLocation();
 
+  // P4.1 — subscribe to live network changes for the Wi-Fi banner.
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setCurrentNetInfo(state);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // P4.1 — does the CLOCK_IN fence (the one the banner/button care about)
+  // enforce a network policy, and is the device currently on it?
+  // Mirrors the exact shape AttendanceOrchestrator's checkNetworkMatch reads:
+  // fence.networks[].NetworkName vs the live wifi SSID.
+  const fenceNetworks = matchedFence?.networks ?? [];
+  const fenceRequiresWifi = fenceNetworks.length > 0;
+  const requiredNetworkName = fenceNetworks[0]?.NetworkName ?? null;
+  const isOnRequiredWifi =
+    !fenceRequiresWifi ||
+    (currentNetInfo?.type === 'wifi' &&
+      !!currentNetInfo?.details?.ssid &&
+      currentNetInfo.details.ssid === requiredNetworkName);
+
   const syncStateFromStorage = useCallback(async () => {
-    const records = await loadRecords({person});
-    setWorkflowFlags({
-      canIn: canClockIn(records),
-      canBreak: canStartBreak(records),
-      canBreakEnd: canEndBreak(records),
-      canOut: canClockOut(records),
-    });
+    setIsSyncRetrying(true);
+    try {
+      const records = await loadRecords({person});
+      setSyncError(null);
+      setWorkflowFlags({
+        canIn: canClockIn(records),
+        canBreak: canStartBreak(records),
+        canBreakEnd: canEndBreak(records),
+        canOut: canClockOut(records),
+      });
 
-    if (!records.length) {
-      // No records on server — reset to a clean "out" state.
-      setStatus('out');
-      setClockInTime(null);
-      setLastOut(null);
-      setElapsed(0);
-      setBreakCount(0);
-      setTotalBreakMs(0);
-      return;
-    }
+      let snapshotToSave = {
+        status: 'out',
+        clockInTime: null,
+        lastOut: null,
+        breakCount: 0,
+        totalBreakMs: 0,
+      };
 
-    const last = records[records.length - 1];
-    const breaks = last.breaks || [];
-    setBreakCount(breaks.filter(b => b.breakEnd).length);
-    let bMs = 0;
-    breaks.forEach(b => {
-      if (b.breakStart && b.breakEnd) {
-        bMs += new Date(b.breakEnd) - new Date(b.breakStart);
-      }
-    });
-    setTotalBreakMs(bMs);
-    if (last.clockOut) {
-      setLastOut(last.clockOut);
-      setStatus('out');
-      setClockInTime(last.clockIn); // ← keep it instead of null
-    } else if (last.breaks?.length) {
-      const lastBreak = last.breaks[last.breaks.length - 1];
-      if (lastBreak.breakStart && !lastBreak.breakEnd) {
-        setStatus('break');
-        setClockInTime(last.clockIn);
+      if (!records.length) {
+        setStatus('out');
+        setClockInTime(null);
+        setLastOut(null);
+        setElapsed(0);
+        setBreakCount(0);
+        setTotalBreakMs(0);
+        setTodayComplete(false); // add this
       } else {
-        setStatus('in');
-        setClockInTime(last.clockIn);
-        setElapsed(
-          Math.floor((Date.now() - new Date(last.clockIn).getTime()) / 1000),
-        );
+        const last = records[records.length - 1];
+        const breaks = last.breaks || [];
+        const completedBreakCount = breaks.filter(b => b.breakEnd).length;
+        let bMs = 0;
+        breaks.forEach(b => {
+          if (b.breakStart && b.breakEnd)
+            bMs += new Date(b.breakEnd) - new Date(b.breakStart);
+        });
+        setBreakCount(completedBreakCount);
+        setTotalBreakMs(bMs);
+
+        let newStatus = 'out';
+        if (last.clockOut) {
+          setLastOut(last.clockOut);
+          setStatus('out');
+          setClockInTime(last.clockIn);
+          newStatus = 'out';
+          // If this completed shift's clock-out was today, block further clock-in
+          // until tomorrow and show the "today's attendance is done" banner.
+          setTodayComplete(isToday(last.clockOut));
+        } else if (
+          last.breaks?.length &&
+          !last.breaks[last.breaks.length - 1].breakEnd
+        ) {
+          setStatus('break');
+          setClockInTime(last.clockIn);
+          setLastOut(null);
+          newStatus = 'break';
+          setTodayComplete(false); // any open/in-progress shift means today isn't "done"
+        } else if (last.clockIn) {
+          setStatus('in');
+          setClockInTime(last.clockIn);
+          setLastOut(null);
+          setElapsed(
+            Math.floor((Date.now() - new Date(last.clockIn).getTime()) / 1000),
+          );
+          newStatus = 'in';
+        }
+
+        snapshotToSave = {
+          status: newStatus,
+          clockInTime: last.clockIn ?? null,
+          lastOut: last.clockOut ?? null,
+          breakCount: completedBreakCount,
+          totalBreakMs: bMs,
+        };
       }
-    } else if (last.clockIn && !last.clockOut) {
-      setStatus('in');
-      setClockInTime(last.clockIn);
-      setElapsed(
-        Math.floor((Date.now() - new Date(last.clockIn).getTime()) / 1000),
+
+      saveSnapshot(snapshotToSave);
+    } catch (err) {
+      console.warn(
+        '[syncStateFromStorage] failed, keeping last known state:',
+        err.message,
       );
-    } else {
-      setStatus('out');
+      setSyncError('Unable to verify current status.');
+    } finally {
+      setIsSyncRetrying(false);
     }
   }, [person]);
 
@@ -908,13 +1006,33 @@ const TimeClockScreen = ({onNavigate}) => {
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
+
+      // P6.1 — Paint last-known state INSTANTLY from disk, before any network
+      // call resolves. This is what prevents a cold app launch during a
+      // network hiccup from showing blank Total Time / Clock In / Clock Out.
+      const snapshot = await loadSnapshot();
+      if (snapshot) {
+        setStatus(snapshot.status);
+        setClockInTime(snapshot.clockInTime);
+        setLastOut(snapshot.lastOut);
+        setBreakCount(snapshot.breakCount);
+        setTotalBreakMs(snapshot.totalBreakMs);
+        if (snapshot.status === 'in' && snapshot.clockInTime) {
+          setElapsed(
+            Math.floor(
+              (Date.now() - new Date(snapshot.clockInTime).getTime()) / 1000,
+            ),
+          );
+        }
+      }
+
       initSyncListener();
       // P1.1 + P3.2 — Pre-warm OAuth token + NetInfo cache on mount.
       // Both fire concurrently with data sync, so they're ready before
       // the first action press.
       prewarmToken();
       NetInfo.fetch().catch(() => {});
-      await syncStateFromStorage();
+      await syncStateFromStorage(); // overwrites the snapshot with fresh server truth if it succeeds
       const savedFS = await loadPersistedFSState();
       if (savedFS?.isRunning) {
         await resumeAttendanceService(savedFS);
@@ -1004,38 +1122,6 @@ const TimeClockScreen = ({onNavigate}) => {
     }, [subScreen, modalVisible, preFaceModalVisible, handlePreFaceCancel]),
   );
 
-  // const checkCommonIntegrity = (requireFence = false) => {
-  //   if (locationLoading) {
-  //     Alert.alert(
-  //       'Please Wait',
-  //       'Location is still being verified. Try again in a moment.',
-  //     );
-  //     return false;
-  //   }
-  //   if (permissionStatus === 'denied') {
-  //     Alert.alert(
-  //       'Permission Required',
-  //       'Please enable location access in your device Settings.',
-  //     );
-  //     return false;
-  //   }
-  //   if (spoofingDetected) {
-  //     Alert.alert(
-  //       'GPS Integrity Issue',
-  //       SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS detected.',
-  //     );
-  //     return false;
-  //   }
-  //   if (requireFence && !matchedFence) {
-  //     Alert.alert(
-  //       'Location Check Failed',
-  //       locationError ?? 'You are outside all authorised zones.',
-  //     );
-  //     return false;
-  //   }
-  //   return true;
-  // };
-
   const checkCommonIntegrity = (requireFence = false) => {
     if (locationLoading) {
       showWarning('Location is still being verified. Try again in a moment.');
@@ -1074,17 +1160,30 @@ const TimeClockScreen = ({onNavigate}) => {
       const needsFence = actionKey === 'confirmIn';
       if (!checkCommonIntegrity(needsFence)) return;
 
+      // P4.1 — Wi-Fi policy check, same phase as the other instant local
+      // checks: block BEFORE any SOAP call if the fence requires a specific
+      // network and the device isn't on it. The button is already disabled
+      // for this case, but this guards direct calls / race conditions too.
+      if (needsFence && fenceRequiresWifi && !isOnRequiredWifi) {
+        showError(
+          requiredNetworkName
+            ? `Connect to "${requiredNetworkName}" Wi-Fi to clock in at this location.`
+            : 'Connect to the required Wi-Fi network to clock in at this location.',
+        );
+        return;
+      }
+
+      // if (needsFence && todayComplete) {
+      //   showError("You've already completed your attendance for today.");
+      //   return;
+      // }
+
       actionInProgress.current = true;
       setIsProcessing(true);
       try {
         // Emulator check (fast local, ~50ms)
         const runningOnEmulator = await DeviceInfo.isEmulator();
         if (runningOnEmulator) {
-          // Alert.alert(
-          //   'Device Not Supported',
-          //   'Attendance actions cannot be performed from an emulator. Please use a physical device.',
-          //   [{text: 'OK', style: 'default'}],
-          // );
           showError(
             'Attendance actions cannot be performed from an emulator. Please use a physical device.',
           );
@@ -1126,10 +1225,6 @@ const TimeClockScreen = ({onNavigate}) => {
           faceVerified: false,
         });
       } catch (err) {
-        // Alert.alert(
-        //   'Error',
-        //   err.message || 'Unable to complete action. Please try again.',
-        // );
         showError(
           err.message || 'Unable to complete action. Please try again.',
         );
@@ -1145,6 +1240,9 @@ const TimeClockScreen = ({onNavigate}) => {
       spoofingDetected,
       locationLoading,
       permissionStatus,
+      fenceRequiresWifi,
+      isOnRequiredWifi,
+      requiredNetworkName,
     ],
   );
 
@@ -1165,7 +1263,6 @@ const TimeClockScreen = ({onNavigate}) => {
         });
 
         if (!result.ok) {
-          // Alert.alert('Validation Failed', result.error);
           showError(result.error);
           return;
         }
@@ -1192,13 +1289,20 @@ const TimeClockScreen = ({onNavigate}) => {
         confirmBreak: ACTION_TYPES.BREAK_START,
         confirmBreakEnd: ACTION_TYPES.BREAK_END,
       };
+      // P4.2 — was `.catch(() => {})`, silently swallowing any throw from
+      // _runOrchestratorPrepare (e.g. a SOAP failure) with zero feedback to
+      // the user. Now surfaces it exactly like the non-face-gated path does.
       _runOrchestratorPrepare({
         actionKey: pendingAction,
         actionType: actionTypeMap[pendingAction],
         faceVerified: result?.verified === true,
-      }).catch(() => {});
+      }).catch(err => {
+        showError(
+          err.message || 'Unable to complete action. Please try again.',
+        );
+      });
     },
-    [pendingAction, _runOrchestratorPrepare],
+    [pendingAction, _runOrchestratorPrepare, showError],
   );
 
   const handlePreFaceCancel = useCallback(() => {
@@ -1215,6 +1319,7 @@ const TimeClockScreen = ({onNavigate}) => {
         const now = new Date().toISOString();
         recordClockInFence(matchedFence);
         setClockInTime(now);
+        setLastOut(null);
         setElapsed(0);
         setStatus('in');
         setSubScreen('main');
@@ -1407,6 +1512,46 @@ const TimeClockScreen = ({onNavigate}) => {
 
         {spoofingDetected && <SpoofingBanner reason={spoofingReason} />}
 
+        {syncError && (
+          <TouchableOpacity
+            onPress={() => {
+              if (!isSyncRetrying) syncStateFromStorage();
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginHorizontal: 16,
+              marginBottom: 8,
+              padding: 10,
+              borderRadius: 10,
+              backgroundColor: 'rgba(107,114,128,0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(107,114,128,0.2)',
+            }}>
+            {isSyncRetrying ? (
+              <ActivityIndicator size="small" color={DK.textSecondary} />
+            ) : (
+              <Text style={{fontSize: 14}}>↻</Text>
+            )}
+            <Text style={{fontSize: 11, color: DK.textSecondary, flex: 1}}>
+              {syncError} Tap to retry.
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* P4.1 — only relevant pre-clock-in, and only once we actually
+            have a matched fence to check a policy against. */}
+        {status === 'out' &&
+          fenceRequiresWifi &&
+          matchedFence &&
+          !isOnRequiredWifi && (
+            <WifiRequiredBanner networkName={requiredNetworkName} />
+          )}
+
+        {status === 'out' && todayComplete && <TodayCompleteBanner />}
+
         <LocationStrip
           matchedFence={matchedFence}
           locationLoading={locationLoading}
@@ -1419,7 +1564,12 @@ const TimeClockScreen = ({onNavigate}) => {
         <ActionButtons
           status={status}
           locationLoading={locationLoading}
-          matchedFence={matchedFence}
+          matchedFence={
+            (status === 'out' && fenceRequiresWifi && !isOnRequiredWifi) ||
+            todayComplete
+              ? null
+              : matchedFence
+          }
           spoofingDetected={spoofingDetected}
           canBreak={workflowFlags.canBreak}
           canBreakEnd={workflowFlags.canBreakEnd}
@@ -1451,7 +1601,6 @@ const TimeClockScreen = ({onNavigate}) => {
         }
         onSuccess={handlePreFaceSuccess}
         onFailure={() => {
-          // Alert.alert('Verification Failed', 'Could not verify your identity.');
           showError('Could not verify your identity.');
           handlePreFaceCancel();
         }}

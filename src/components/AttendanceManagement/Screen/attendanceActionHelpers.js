@@ -4,10 +4,13 @@
 // OPTIMIZATIONS:
 //   P1.1 — prewarmToken(): fires getToken() early on screen mount so the
 //           token is already in-flight or cached when SOAP calls are needed.
-//   P3.1 — TokenManager singleton: centralizes token lifecycle.
-//           Shares in-flight token refresh across concurrent callers.
-//           Proactively refreshes token 60s before expiry to eliminate
-//           cold-path token delays during confirm press.
+//   P7.1 — Removed the separate TokenManager cache. It fed its own private
+//           cache that no SOAP call ever actually read from — RetrieveByPerson,
+//           RetrieveByPersonAttendance, etc. all call getToken() directly,
+//           which has its OWN cache in getToken.js. Two independent caches
+//           meant prewarmToken() was warming a cache nothing consumed. Now
+//           there is exactly ONE token cache (in getToken.js) and prewarmToken
+//           warms that same cache every SOAP call actually reads from.
 // ─────────────────────────────────────────────
 import {
   canClockIn,
@@ -15,7 +18,7 @@ import {
   canEndBreak,
   canStartBreak,
 } from '../../../screens/AttendanceManagement/helpers';
-import {getToken} from '../../../API/Token/getToken';
+import {getToken, invalidateTokenCache} from '../../../API/Token/getToken';
 import ntpClient from 'react-native-ntp-client';
 
 export const ACTION_TYPES = {
@@ -31,57 +34,17 @@ export const ATTENDANCE_MODE = {
   OFFLINE: 'Offline',
 };
 
-// ─────────────────────────────────────────────
-// P3.1 — TokenManager
-// Centralizes OAuth token lifecycle. All callers share one in-flight
-// promise. Proactive refresh fires 60s before expiry.
-// ─────────────────────────────────────────────
-const _tokenManager = (() => {
-  let _token = null;
-  let _expiresAt = 0; // epoch ms
-  let _inflightPromise = null;
-  const EXPIRE_BUFFER_MS = 60_000; // refresh 60s before actual expiry
+// P1.1 — prewarmToken: call on screen mount so the token is fetched (or
+// served from cache) before the user presses an action button. Fire and
+// forget — errors are intentionally swallowed here; a real failure will
+// surface naturally the next time something actually needs the token.
+export const prewarmToken = () => {
+  getToken().catch(() => {});
+};
 
-  // Estimate expiry: most Azure tokens are 3600s; we assume 3500s to be safe.
-  const TOKEN_LIFETIME_MS = 3_500_000;
-
-  const _fetchToken = async () => {
-    const t = await getToken();
-    _token = t;
-    _expiresAt = Date.now() + TOKEN_LIFETIME_MS;
-    return t;
-  };
-
-  const get = async () => {
-    const now = Date.now();
-    const needsRefresh = !_token || now >= _expiresAt - EXPIRE_BUFFER_MS;
-    if (!needsRefresh) {
-      return _token;
-    }
-
-    if (_inflightPromise) {
-      return _inflightPromise;
-    }
-
-    _inflightPromise = _fetchToken().finally(() => {
-      _inflightPromise = null;
-    });
-    return _inflightPromise;
-  };
-
-  // P1.1 — prewarmToken: call on screen mount so token is ready
-  const prewarm = () => {
-    // Fire and forget — errors intentionally swallowed here
-    get().catch(() => {});
-  };
-
-  return {get, prewarm};
-})();
-
-export const TokenManager = _tokenManager;
-
-// Convenience export for screen-mount pre-warming
-export const prewarmToken = () => _tokenManager.prewarm();
+// Re-exported for any caller that needs to force a fresh token (e.g. after
+// a 401 from a SOAP call, or an explicit re-login).
+export {invalidateTokenCache};
 
 // ─────────────────────────────────────────────
 export const getActionFence = ({actionType, matchedFence, clockInFence}) => {

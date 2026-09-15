@@ -122,7 +122,7 @@ public class AttendanceForegroundService extends Service {
                         .setColor(0xFF0A66C2)         // Brand primary color (Dynaface blue)
                         .setColorized(true)
                         .setContentTitle(title)
-                        .setSubText("Dynaface Attendance")
+                        .setSubText("IDAP360 Attendance")
                         .setContentIntent(openApp)
                         .setOngoing(true)
                         .setAutoCancel(false)

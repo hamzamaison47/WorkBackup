@@ -237,13 +237,12 @@ export const aggregateServerPunches = flatPunches => {
 // ─────────────────────────────────────────────
 export const loadRecords = async ({person} = {}) => {
   if (!person) return [];
-  try {
-    const flatPunches = await RetrieveByPersonAttendance({person});
-    return aggregateServerPunches(flatPunches);
-  } catch (err) {
-    console.warn('[loadRecords] Error fetching from server:', err.message);
-    return [];
-  }
+  // No try/catch swallowing here — a failed fetch must NOT be
+  // indistinguishable from "genuinely zero attendance history", because
+  // that shape drives canClockIn/canClockOut and a false "clean slate"
+  // can let someone attempt a duplicate clock-in against a real open shift.
+  const flatPunches = await RetrieveByPersonAttendance({person});
+  return aggregateServerPunches(flatPunches);
 };
 
 // ─────────────────────────────────────────────
