@@ -576,7 +576,6 @@ const MedicalExpenseLinesListPage = () => {
         onButtonPress={handleButtonPress}
         isExpandable={true}
         showNavigationArrow={false}
-        gradientColors={[P.tint, P.tint]}
         processingButtons={processingButtons[item.RecId] || []}
         searchQuery={f.searchQuery}
         isMultiSelectMode={isMultiSelectMode}
@@ -613,7 +612,7 @@ const MedicalExpenseLinesListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>{processingLabel}</Text>
           </View>
         </View>

@@ -33,16 +33,16 @@
  *       <CardHeading label="GENERAL" />
  *       <SettingRow
  *         icon="globe"
- *         iconColor="#0A66C2"
- *         iconBg="#E8F1FB"
+ *         iconColor={AppTokens.blueStrong}
+ *         iconBg={AppTokens.blueBg}
  *         title="Language"
  *         subtitle="English"
  *         onPress={() => {}}
  *       />
  *       <SettingRow
  *         icon="calendar"
- *         iconColor="#6366F1"
- *         iconBg="#EDEFFD"
+ *         iconColor={AppTokens.indigo}
+ *         iconBg={AppTokens.indigoBg}
  *         title="Date & Time"
  *         subtitle="Manage preferences"
  *         onPress={() => {}}

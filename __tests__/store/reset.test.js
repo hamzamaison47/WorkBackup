@@ -31,12 +31,6 @@ describe('rootReducer RESET_APP_STATE', () => {
           conversationContext: [{q: 'secret'}],
         },
       },
-      colorPalette: {
-        primary: '#FF0000',
-        onPrimary: '#000',
-        selection: '#FF0000',
-        hydrated: true,
-      },
       biometric: {
         enabled: true,
         selectedAccount: null,
@@ -64,7 +58,6 @@ describe('rootReducer RESET_APP_STATE', () => {
     expect(out.company).toEqual(fresh.company);
     expect(out.firebase).toEqual(fresh.firebase);
     expect(out.chatbot).toEqual(fresh.chatbot);
-    expect(out.colorPalette).toEqual(fresh.colorPalette);
   });
 
   it('leaves no trace of the previous user anywhere in the tree', () => {

@@ -20,6 +20,7 @@ import AlertModal from '../../components/Alert/AlertModal';
 import retrieveEmployeeAdjustments from '../../API/Attendance/retrieveEmployeeAdjustments';
 import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents';
 import EmployeeAdjustmentLineDetails from '../../components/Attendance/EmployeeAdjustmentLineDetails';
+import brand from '../../theme/brand';
 
 /* ------------ utils ------------ */
 const parseISO = iso =>
@@ -360,7 +361,7 @@ const EmployeeAdjustmentScreen = () => {
             ListFooterComponent={
               loading && !initialLoad ? (
                 <View style={styles.footerLoader}>
-                  <ActivityIndicator size="small" color="#007AFF" />
+                  <ActivityIndicator size="small" color={brand.primaryStrong} />
                   <Text style={styles.footerLoaderText}>Updating...</Text>
                 </View>
               ) : null
@@ -396,14 +397,14 @@ const styles = StyleSheet.create({
   },
   title: {fontSize: 18, fontWeight: '800', color: '#263238'},
   createButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: brand.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
     elevation: 2,
   },
   createButtonText: {
-    color: 'white',
+    color: brand.onPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
   },
 
   expandedRowCard: {
-    borderLeftColor: '#2196F3',
+    borderLeftColor: brand.primaryStrong,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
@@ -527,7 +528,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     marginRight: 8,
   },
-  chipText: {fontSize: 11, fontWeight: '700', color: '#455A64'},
+  chipText: {fontSize: 11, fontWeight: '700', color: brand.secondary},
 
   expandIcon: {
     fontSize: 12,
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#455A64',
+    color: brand.secondary,
     marginRight: 4,
     minWidth: 80,
   },

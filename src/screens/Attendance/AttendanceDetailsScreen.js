@@ -21,6 +21,7 @@ import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
 import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents';
+import brand from '../../theme/brand';
 
 /** <<< EDIT THIS IF YOUR SCREENS ARE IN A NESTED STACK >>> */
 const PARENT_STACK_NAME = null;
@@ -128,7 +129,7 @@ const rgba = (hex, a) => {
 const readableTextOn = hex => {
   const {r, g, b} = hexToRgb(hex);
   const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return L > 0.7 ? '#1A1A1A' : '#0E1521';
+  return L > 0.7 ? '#1A1A1A' : brand.text;
 };
 
 /** Build a guaranteed-unique, stable key for FlatList */
@@ -614,7 +615,7 @@ const AttendanceDetailsScreen = () => {
             ListFooterComponent={
               loading && !initialLoad ? (
                 <View style={styles.footerLoader}>
-                  <ActivityIndicator size="small" color="#2196F3" />
+                  <ActivityIndicator size="small" color={brand.primaryStrong} />
                   <Text style={styles.footerLoaderText}>Updating...</Text>
                 </View>
               ) : null
@@ -836,13 +837,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   leftButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: brand.primary,
   },
   rightButton: {
     backgroundColor: '#FF9800',
   },
   leftButtonText: {
-    color: 'white',
+    color: brand.onPrimary,
     fontSize: 14,
     fontWeight: '600',
   },

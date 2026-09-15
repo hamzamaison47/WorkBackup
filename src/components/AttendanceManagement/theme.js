@@ -2,6 +2,22 @@
 // components/AttendanceManagement/theme.js
 // Design tokens — light + dark palettes.
 //
+// The LIGHT palettes derive from the app brand (src/theme/brand.js) and the
+// shared design tokens (AppComponentsDesign/Tokens.js), so this module is no
+// longer a parallel colour system: change the brand and the kiosk follows.
+// Token NAMES are kept so the 14 consumer files did not need restructuring.
+//
+// Two names are load-bearing under the mustard brand:
+//   blue     — FILLS only (buttons, FAB, avatar). Never text or spinners:
+//              #F4B400 on white is 1.85:1.
+//   blueDark — the brand AS text / spinner / thin border (= primaryStrong).
+//   onBlue   — content drawn ON a `blue` fill (= onPrimary). `white` is for
+//              content on the green/red/purple/waiting fills only.
+//
+// The DARK palettes have no brand equivalent yet (app-wide dark mode is
+// undecided — THEME_AUDIT.md §D 3.13); only their brand/amber slots are
+// re-pointed, the rest stay as designed.
+//
 // Do NOT import `C` directly into new code and freeze it into a
 // module-level StyleSheet — that locks the component to light mode.
 // Instead use the useAttendanceTheme() hook and build styles in-render:
@@ -10,24 +26,28 @@
 //   const makeStyles = (C, R, Sh) => StyleSheet.create({ ... });
 //   const {C, R, Sh} = useAttendanceTheme();
 //   const S = useMemo(() => makeStyles(C, R, Sh), [C, R, Sh]);
-//
-// The static `C` export below stays pointed at the light palette purely
-// for backward-compatibility with the still-light Home/Records screens.
 // ─────────────────────────────────────────────
+import brand from '../../theme/brand';
+import {AppTokens} from '../AppComponentsDesign/Tokens';
+
+// Dark surfaces (no brand equivalent yet); hoisted so the palettes share them.
+const DARK_SURFACE_ALT = '#1E293B';
 
 export const C_LIGHT = {
   // Brand
-  blue: '#1B4FD8',
-  blueLight: '#EEF3FF',
-  blueMid: '#3B6FFF',
-  blueDark: '#1340B8',
+  blue: brand.primary, // fills
+  blueLight: brand.tint, // pale fill: selected rows, icon wells
+  blueMid: brand.primary, // legacy alias for a mid fill
+  blueDark: brand.primaryStrong, // brand as text / spinner / border
+  onBlue: brand.onPrimary, // content on a `blue` fill
 
-  // Accent
-  amber: '#F59E0B',
-  amberLight: '#FEF3C7',
-  amberDark: '#B45309',
+  // "On break" / waiting family — slate, not amber (see statusWaiting* in
+  // Tokens.js: amber is indistinguishable from the mustard primary).
+  amber: AppTokens.statusWaiting,
+  amberLight: AppTokens.statusWaitingBg,
+  amberDark: AppTokens.statusWaitingText,
 
-  // Status
+  // Status (shared with the rest of the app's meaning, values kept)
   green: '#059669',
   greenLight: '#D1FAE5',
   greenMid: '#10B981',
@@ -43,31 +63,32 @@ export const C_LIGHT = {
   purpleDark: '#5B21B6',
 
   // Surfaces
-  bg: '#F0F4F8',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F8FAFC',
-  border: '#E2E8F0',
-  borderMid: '#CBD5E1',
+  bg: brand.pageBg,
+  surface: brand.surface,
+  surfaceAlt: brand.surfaceAlt,
+  border: brand.divider,
+  borderMid: AppTokens.chevronColor,
 
   // Text
-  ink: '#0F172A',
-  inkSub: '#334155',
-  inkMuted: '#64748B',
-  inkFaint: '#94A3B8',
-  white: '#FFFFFF',
+  ink: brand.text,
+  inkSub: brand.text,
+  inkMuted: brand.secondary,
+  inkFaint: brand.secondary,
+  white: '#FFFFFF', // text on the green / red / purple / waiting fills
 };
 
 export const C_DARK = {
-  // Brand — slightly brighter so accents read on dark surfaces
-  blue: '#3B6FFF',
+  // Brand — the mustard reads on dark surfaces (9.9:1), so no dark variant
+  blue: brand.primary,
   blueLight: '#1E2A44', // dark tinted "blue background"
-  blueMid: '#5B85FF',
-  blueDark: '#1340B8',
+  blueMid: brand.primary,
+  blueDark: brand.primary, // on a dark surface the fill colour IS readable
+  onBlue: brand.onPrimary,
 
-  // Accent
-  amber: '#FBBF24',
-  amberLight: '#3A2E10',
-  amberDark: '#F59E0B',
+  // "On break" / waiting family (dark)
+  amber: AppTokens.statusWaitingBg,
+  amberLight: DARK_SURFACE_ALT,
+  amberDark: AppTokens.statusWaitingBg,
 
   // Status
   green: '#10B981',
@@ -87,7 +108,7 @@ export const C_DARK = {
   // Surfaces — inverted
   bg: '#0B1220',
   surface: '#111827',
-  surfaceAlt: '#1E293B',
+  surfaceAlt: DARK_SURFACE_ALT,
   border: '#334155',
   borderMid: '#475569',
 
@@ -101,29 +122,51 @@ export const C_DARK = {
 
 // TimeClockScreen's local palette, promoted to a light/dark pair.
 export const DK_LIGHT = {
-  bg: '#F5F7FA',
-  card: '#FFFFFF',
-  cardBorder: '#E2E8F0',
-  surface: '#EEF2F7',
-  accent: '#1B4FD8',
+  bg: brand.pageBg,
+  card: brand.surface,
+  cardBorder: brand.divider,
+  surface: brand.surfaceAlt,
+  accent: brand.primaryStrong, // brand as text / spinner / tint
+  accentFill: brand.primary, // brand as a fill
+  onAccentFill: brand.onPrimary,
   accentGreen: '#059669',
-  accentAmber: '#D97706',
+  accentAmber: AppTokens.statusWaiting, // "on break"
   accentRed: '#DC2626',
-  textPrimary: '#0F172A',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
-  ring: '#CBD5E1',
+  amberLight: AppTokens.statusWaitingBg,
+  amberDark: AppTokens.statusWaitingText,
+  accentPurple: '#7C3AED',
+  greenLight: '#D1FAE5',
+  greenDark: '#065F46',
+  purpleLight: '#EDE9FE',
+  purpleDark: '#5B21B6',
+  redLight: '#FEE2E2',
+  redDark: '#991B1B',
+  textPrimary: brand.text,
+  textSecondary: brand.secondary,
+  textMuted: brand.secondary,
+  ring: AppTokens.chevronColor,
 };
 
 export const DK_DARK = {
   bg: '#0B1220',
   card: '#111827',
   cardBorder: '#334155',
-  surface: '#1E293B',
-  accent: '#3B6FFF',
+  surface: DARK_SURFACE_ALT,
+  accent: brand.primary,
+  accentFill: brand.primary,
+  onAccentFill: brand.onPrimary,
   accentGreen: '#34D399',
-  accentAmber: '#FBBF24',
+  accentAmber: AppTokens.statusWaitingBg,
   accentRed: '#F87171',
+  amberLight: DARK_SURFACE_ALT,
+  amberDark: AppTokens.statusWaitingBg,
+  accentPurple: '#A78BFA',
+  greenLight: '#0E2A22',
+  greenDark: '#065F46',
+  purpleLight: '#241B3A',
+  purpleDark: '#7C3AED',
+  redLight: '#3A1A1A',
+  redDark: '#B91C1C',
   textPrimary: '#F1F5F9',
   textSecondary: '#94A3B8',
   textMuted: '#64748B',
@@ -142,30 +185,31 @@ export const R = {
   full: 999,
 };
 
+const shadowColor = AppTokens.shadowColor;
 export const Sh = {
   xs: {
-    shadowColor: '#0F172A',
+    shadowColor,
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
   },
   sm: {
-    shadowColor: '#0F172A',
+    shadowColor,
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.07,
     shadowRadius: 5,
     elevation: 3,
   },
   md: {
-    shadowColor: '#0F172A',
+    shadowColor,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.09,
     shadowRadius: 10,
     elevation: 5,
   },
   lg: {
-    shadowColor: '#0F172A',
+    shadowColor,
     shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.13,
     shadowRadius: 20,

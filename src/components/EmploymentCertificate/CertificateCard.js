@@ -2,6 +2,8 @@
 import React from 'react';
 import {TouchableOpacity, View, Text, StyleSheet} from 'react-native';
 import {getFormatIcon, getFormatText} from './utils';
+import brand from '../../theme/brand';
+import {AppTokens} from '../AppComponentsDesign/Tokens';
 
 const CertificateCard = ({certificate, onPress}) => {
   const {CertificateTypeCode, TemplateName, LetterGenerationType, Encrypt} =
@@ -78,7 +80,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderWidth: 1,
     borderColor: '#e2e8f0',
-    shadowColor: '#0f172a',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 6},
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -113,7 +115,7 @@ const styles = StyleSheet.create({
   },
 
   formatBadge: {
-    backgroundColor: '#f1f5f9',
+    backgroundColor: brand.surfaceAlt,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
@@ -131,7 +133,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: brand.divider,
     paddingTop: 12,
     marginTop: 4,
   },
@@ -141,12 +143,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   encrypted: {backgroundColor: '#fee2e2'},
-  standard: {backgroundColor: '#e0f2fe'},
+  standard: {backgroundColor: brand.tint},
   encryptText: {fontSize: 12, fontWeight: '600', letterSpacing: 0.2},
   encryptedText: {color: '#b91c1c'},
-  standardText: {color: '#0369a1'},
+  standardText: {color: brand.primaryStrong},
 
   requestContainer: {flexDirection: 'row', alignItems: 'center', gap: 6},
-  requestText: {fontSize: 13, fontWeight: '600', color: '#2563eb'},
-  arrow: {fontSize: 18, fontWeight: 'bold', color: '#2563eb'},
+  requestText: {fontSize: 13, fontWeight: '600', color: brand.primaryStrong},
+  arrow: {fontSize: 18, fontWeight: 'bold', color: brand.primaryStrong},
 });

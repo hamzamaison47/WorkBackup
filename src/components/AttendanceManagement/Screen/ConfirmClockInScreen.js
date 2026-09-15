@@ -291,16 +291,16 @@ const makeStyles = (C, R) =>
       color: '#065F46',
     },
     pendingBadge: {
-      backgroundColor: '#FEF3C7',
+      backgroundColor: C.amberLight,
       borderWidth: 1,
-      borderColor: '#FCD34D',
+      borderColor: C.amber,
       borderRadius: R.sm,
       padding: 10,
       marginBottom: 10,
     },
     pendingBadgeText: {
       fontSize: 12,
-      color: '#92400E',
+      color: C.amberDark,
     },
     locationRow: {
       flexDirection: 'row',

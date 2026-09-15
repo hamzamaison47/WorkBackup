@@ -48,8 +48,8 @@ import usePalette from '../../hooks/usePalette';
 
 // Speed dial menu item config — no icon field
 const MENU_ITEMS = [
-  {key: 'advance', label: 'Advance Salary', backgroundColor: '#1877F2'},
-  {key: 'loan', label: 'Loan Request', backgroundColor: '#1877F2'},
+  {key: 'advance', label: 'Advance Salary'},
+  {key: 'loan', label: 'Loan Request'},
 ];
 
 const GenericAdvanceListScreen = () => {
@@ -610,7 +610,7 @@ const GenericAdvanceListScreen = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -621,7 +621,7 @@ const GenericAdvanceListScreen = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -632,7 +632,7 @@ const GenericAdvanceListScreen = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
@@ -643,7 +643,7 @@ const GenericAdvanceListScreen = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           ...(isDraft || isRejected
@@ -889,7 +889,6 @@ const GenericAdvanceListScreen = () => {
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
@@ -1138,13 +1137,13 @@ const GenericAdvanceListScreen = () => {
                     justifyContent: 'center',
                   }}>
                   {isSaving ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={P.onPrimary} />
                   ) : (
                     <Text
                       style={{
                         fontSize: 15,
                         fontWeight: '600',
-                        color: '#FFFFFF',
+                        color: P.onPrimary,
                       }}>
                       Save
                     </Text>
@@ -1284,7 +1283,7 @@ const GenericAdvanceListScreen = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

@@ -5,6 +5,7 @@ import {View, Text, StyleSheet, useWindowDimensions} from 'react-native';
 import moment from 'moment';
 
 import {getRegisterSummaryColorByDate} from '../../API/Attendance/getRegisterSummaryColorByDate';
+import brand from '../../theme/brand';
 
 const AttendanceSummary = ({userData, screenWidth}) => {
   const {width} = useWindowDimensions();
@@ -51,7 +52,7 @@ const AttendanceSummary = ({userData, screenWidth}) => {
         leaveCount: 0,
         presentColor: '#4CAF50',
         absentColor: '#F44336',
-        leaveColor: '#2196F3',
+        leaveColor: brand.primary,
       };
     }
 
@@ -63,7 +64,7 @@ const AttendanceSummary = ({userData, screenWidth}) => {
       leaveCount: Number(summary.LeaveCount) || 0,
       presentColor: summary.PresentColor || '#4CAF50',
       absentColor: summary.AbsentColor || '#F44336',
-      leaveColor: summary.LeaveColor || '#2196F3',
+      leaveColor: summary.LeaveColor || brand.primary,
     };
   };
 

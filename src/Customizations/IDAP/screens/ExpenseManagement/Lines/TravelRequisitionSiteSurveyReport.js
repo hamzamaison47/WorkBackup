@@ -318,13 +318,13 @@ const createStyles = tokens =>
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1,
-      borderColor: tokens.blue,
+      borderColor: tokens.blueStrong,
       backgroundColor: tokens.blueBg,
     },
     attachmentButtonText: {
       fontSize: conditionalFontScale(13, 13.5, 14, 14),
       fontWeight: '700',
-      color: tokens.blue,
+      color: tokens.blueStrong,
       marginLeft: conditionalScale(6, 6, 7, 7),
     },
     saveButton: {
@@ -408,7 +408,7 @@ const Card = ({children, style, styles}) => (
 const SectionHeader = ({title, icon, styles, tokens}) => (
   <View style={styles.sectionHeaderRow}>
     <View style={styles.sectionIconBadge}>
-      <Ionicons name={icon} size={16} color={tokens.blue} />
+      <Ionicons name={icon} size={16} color={tokens.blueStrong} />
     </View>
     <Text style={styles.sectionTitle}>{title}</Text>
   </View>
@@ -488,13 +488,13 @@ const TogglePill = ({label, fieldKey, isYes, onToggle, styles, tokens}) => (
       styles.togglePill,
       {
         backgroundColor: isYes ? tokens.blueBg : tokens.disabledBg,
-        borderColor: isYes ? tokens.blue : tokens.disabledBorder,
+        borderColor: isYes ? tokens.blueStrong : tokens.disabledBorder,
       },
     ]}>
     <Ionicons
       name={isYes ? 'checkmark-circle' : 'close-circle-outline'}
       size={14}
-      color={isYes ? tokens.blue : tokens.subtitleText}
+      color={isYes ? tokens.blueStrong : tokens.subtitleText}
       style={{marginRight: 6}}
     />
     <Text
@@ -1002,7 +1002,11 @@ const TravelRequisitionSiteSurveyReport = () => {
                 activeOpacity={0.8}
                 disabled={isSaving}
                 style={styles.attachmentButton}>
-                <Ionicons name="attach-outline" size={16} color={tokens.blue} />
+                <Ionicons
+                  name="attach-outline"
+                  size={16}
+                  color={tokens.blueStrong}
+                />
                 <Text style={styles.attachmentButtonText}>Attachment</Text>
               </TouchableOpacity>
 
@@ -1078,7 +1082,7 @@ const TravelRequisitionSiteSurveyReport = () => {
         onRequestClose={() => {}}>
         <View style={styles.processingOverlay}>
           <View style={styles.processingCard}>
-            <ActivityIndicator size="large" color={tokens.blue} />
+            <ActivityIndicator size="large" color={tokens.blueStrong} />
             <Text style={styles.processingText}>Saving...</Text>
           </View>
         </View>

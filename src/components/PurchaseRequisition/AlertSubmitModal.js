@@ -8,6 +8,7 @@ import {
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import brand from '../../theme/brand';
 
 const {width, height} = Dimensions.get('window');
 
@@ -97,7 +98,7 @@ const styles = StyleSheet.create({
   submitButton: {
     flex: 1,
     paddingVertical: height * 0.014,
-    backgroundColor: '#1E88E5',
+    backgroundColor: brand.primary,
     borderRadius: width * 0.025,
     alignItems: 'center',
     marginLeft: width * 0.012, // small gap
@@ -108,7 +109,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   submitButtonText: {
-    color: '#FFFFFF',
+    color: brand.onPrimary,
     fontSize: 16,
     fontWeight: '700',
   },

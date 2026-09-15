@@ -33,6 +33,7 @@ import {
 } from '../../components/Attendance/AttendanceComponents';
 import {useNavigation} from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
+import brand from '../../theme/brand';
 
 // Screen sizing
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
@@ -1250,7 +1251,7 @@ const CreateAttendanceScreen = () => {
                     } pending sync`}
               </Text>
               {!processingOffline && (
-                <Icon name="sync" size={20} color="#1E88E5" />
+                <Icon name="sync" size={20} color={brand.primaryStrong} />
               )}
             </TouchableOpacity>
           )}
@@ -1384,7 +1385,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: isSmallDevice ? 34 : 46,
     fontWeight: '800',
-    color: '#1E88E5',
+    color: brand.primaryStrong,
     textAlign: 'center',
   },
   dateText: {
@@ -1426,7 +1427,7 @@ const styles = StyleSheet.create({
   quickSummaryTitle: {
     fontSize: isSmallDevice ? 16 : 18,
     fontWeight: 'bold',
-    color: '#1E88E5',
+    color: brand.primaryStrong,
   },
   quickSummaryRow: {
     flexDirection: 'row',

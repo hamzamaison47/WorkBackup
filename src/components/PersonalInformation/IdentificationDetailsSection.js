@@ -153,7 +153,7 @@ const IdentificationDetailsSection = ({
       )}
 
       <TouchableOpacity onPress={onCreate} style={styles.createIconContainer}>
-        <Icon name="plus" size={16} color="#fff" />
+        <Icon name="plus" size={16} color={P.onPrimary} />
       </TouchableOpacity>
 
       <AlertDeleteModal
@@ -184,12 +184,12 @@ const createStyles = P =>
   StyleSheet.create({
     detailsContainer: {
       padding: 16,
-      backgroundColor: '#bddeff',
+      backgroundColor: P.tint,
     },
     detailsContainerBorder: {
       padding: 16,
       marginTop: 16,
-      backgroundColor: '#cce6ff',
+      backgroundColor: P.tint,
       borderRadius: 5,
       elevation: 3,
     },

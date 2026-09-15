@@ -532,7 +532,7 @@ const WorkItemsAssignedToMePage = () => {
       style: 'icon',
       icon: 'paperclip',
       iconSize: 20,
-      iconColor: '#fff',
+      iconColor: P.onPrimary,
       backgroundColor: P.primary,
       disabled: false,
     },
@@ -541,7 +541,7 @@ const WorkItemsAssignedToMePage = () => {
       position: 'bottom',
       style: 'approval_dropdown',
       text: 'Approval',
-      textColor: P.primary,
+      textColor: P.primaryStrong,
       disabled: isActionLoading,
       actions:
         Item.workflowWorkItemType === 'WorkItem'
@@ -633,11 +633,6 @@ const WorkItemsAssignedToMePage = () => {
           }}
           onLongPress={() => enterSelectionMode(item.recId)}
           isExpandable={false}
-          gradientColors={
-            isSelected
-              ? ['#dbeafe', '#eff6ff', '#f0f4ff']
-              : ['#f0f9ff', '#e0f2fe', '#dbeafe']
-          }
           processingButtons={processingButtons[item.recId] || []}
           showNavigationArrow={false}
           isHighlighted={isSelected}
@@ -760,7 +755,7 @@ const WorkItemsAssignedToMePage = () => {
       {isActionLoading && (
         <View style={styles.DSR_ProcessingOverlay}>
           <View style={styles.DSR_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DSR_ProcessingText}>Processing...</Text>
           </View>
         </View>
@@ -972,14 +967,14 @@ const createBulkAllStyles = T =>
       borderRadius: 12,
       backgroundColor: T.blueBg,
       borderWidth: 1,
-      borderColor: T.blue,
+      borderColor: T.blueStrong,
       alignItems: 'center',
       justifyContent: 'center',
     },
     countBadgeText: {
       fontSize: 12,
       fontWeight: '700',
-      color: T.blue,
+      color: T.blueStrong,
     },
     headerText: {
       fontSize: 13,

@@ -23,8 +23,6 @@ import {clearSession} from './sessionUtils';
 import {RetrieveUserInfoByEmail} from '../API/Auth/RetrieveUserInfoByEmail';
 import {RetrieveEmployeeLegalEntities} from '../API/Auth/RetrieveEmployeeLegalEntities';
 import {RetrieveEmployeeMenuItems} from '../API/Auth/RetrieveEmployeeMenuItems';
-import {RetrieveFirstOnly} from '../API/ColorPalette/RetrieveFirstOnly';
-import {setPalette} from '../store/slices/colorPaletteSlice';
 import {
   LOGIN_ERROR,
   loginError,
@@ -272,19 +270,10 @@ export const handleSuccessfulLogin = async (
     setLegalEntities(legalEntities);
     setMenuItems(menus);
 
-    try {
-      const palette = await RetrieveFirstOnly();
-
-      store.dispatch(
-        setPalette({
-          primary: palette.primaryColor,
-          onPrimary: palette.onPrimaryColor,
-          selection: palette.selectionColor,
-        }),
-      );
-    } catch (e) {
-      console.warn('Palette hydration failed:', e);
-    }
+    // Brand colour is a compile-time constant (src/theme/brand.js). The D365
+    // colour-palette fetch (src/API/ColorPalette/RetrieveFirstOnly.js) used to
+    // run here; it is intentionally no longer called. Re-wire it here if
+    // tenant-driven theming is ever re-enabled.
 
     // The previous user's Firebase and chatbot state is already gone —
     // handleLogin ran clearSession() before this point. Clearing again here

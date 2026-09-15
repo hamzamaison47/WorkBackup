@@ -1044,7 +1044,7 @@ const ExpenseManagementLineSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color={P.primary} />
+                  <ActivityIndicator size="large" color={P.primaryStrong} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -1110,7 +1110,7 @@ const ExpenseManagementLineSaveRecord = () => {
                           : 'Select Transaction date'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('Transaction')}
                 </>
@@ -1305,7 +1305,7 @@ const ExpenseManagementLineSaveRecord = () => {
                           : 'Select Per Diem From Date/Time'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('DateFrom')}
                 </>
@@ -1325,7 +1325,7 @@ const ExpenseManagementLineSaveRecord = () => {
                           : 'Select Per Diem To Date/Time'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('DateTo')}
                 </>
@@ -1346,7 +1346,7 @@ const ExpenseManagementLineSaveRecord = () => {
                           : 'Select Departure Date/Time'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('DepartureDateTime')}
                 </>
@@ -1384,7 +1384,7 @@ const ExpenseManagementLineSaveRecord = () => {
                           : 'Select Arrival Date/Time'}
                       </Text>
                     </View>
-                    <Icon name="calendar" size={20} color={P.primary} />
+                    <Icon name="calendar" size={20} color={P.primaryStrong} />
                   </TouchableOpacity>
                   {renderError('ArrivalDateTime')}
                 </>

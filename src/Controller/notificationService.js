@@ -360,7 +360,7 @@ class NotificationService {
         smallIcon: 'ic_launcher_foreground',
         bigText: `${fileName} has been downloaded to your device.`,
         subText: 'Download Complete',
-        color: '#0A66C2',
+        color: '#F4B400',
         userInfo: {
           filePath: filePath,
           fileName: fileName,
@@ -402,7 +402,7 @@ class NotificationService {
       autoCancel: true,
       largeIcon: '',
       smallIcon: 'ic_launcher_foreground',
-      color: '#0A66C2',
+      color: '#F4B400',
     });
   };
 
@@ -426,7 +426,7 @@ class NotificationService {
       autoCancel: true,
       largeIcon: '',
       smallIcon: 'ic_launcher_foreground',
-      color: '#0A66C2',
+      color: '#F4B400',
     });
   };
 

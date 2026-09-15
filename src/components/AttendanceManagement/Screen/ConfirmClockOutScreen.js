@@ -299,7 +299,7 @@ const ConfirmClockOutScreen = ({
           activeOpacity={0.75}
           disabled={isProcessing}>
           {locationLoading ? (
-            <ActivityIndicator size="small" color={C.blue} />
+            <ActivityIndicator size="small" color={C.blueDark} />
           ) : (
             <View
               style={[
@@ -371,14 +371,14 @@ const makeStyles = (C, R) =>
     },
     validBadgeText: {fontSize: 12, fontWeight: '600', color: '#065F46'},
     pendingBadge: {
-      backgroundColor: '#FEF3C7',
+      backgroundColor: C.amberLight,
       borderWidth: 1,
-      borderColor: '#FCD34D',
+      borderColor: C.amber,
       borderRadius: R.sm,
       padding: 10,
       marginBottom: 10,
     },
-    pendingBadgeText: {fontSize: 12, color: '#92400E'},
+    pendingBadgeText: {fontSize: 12, color: C.amberDark},
 
     summaryCard: {
       backgroundColor: C.surfaceAlt,

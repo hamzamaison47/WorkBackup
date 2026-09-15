@@ -634,7 +634,7 @@ const FamilyContact_SaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -694,7 +694,7 @@ const FamilyContact_SaveRecord = () => {
               placeholderStyle={styles.DSR_DropdownPlaceholder}
               selectedTextStyle={styles.DSR_DropdownSelectedText}
               itemTextStyle={styles.DSR_DropdownItemText}
-              activeColor="#E6F0FF"
+              activeColor={P.tint}
               containerStyle={[
                 styles.DSR_DropdownContainer,
                 {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
@@ -714,7 +714,7 @@ const FamilyContact_SaveRecord = () => {
                 <Switch
                   value={formData.EmergencyContact}
                   onValueChange={() => toggleSwitch('EmergencyContact')}
-                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  trackColor={{false: '#767577', true: P.primaryStrong}}
                   thumbColor={formData.EmergencyContact ? P.primary : '#f4f3f4'}
                 />
               </View>
@@ -734,7 +734,7 @@ const FamilyContact_SaveRecord = () => {
                 <Switch
                   value={formData.isBeneficiary}
                   onValueChange={() => toggleSwitch('isBeneficiary')}
-                  trackColor={{false: '#767577', true: '#81b0ff'}}
+                  trackColor={{false: '#767577', true: P.primaryStrong}}
                   thumbColor={formData.isBeneficiary ? P.primary : '#f4f3f4'}
                 />
               </View>
@@ -757,7 +757,7 @@ const FamilyContact_SaveRecord = () => {
                       <Switch
                         value={formData.isDependent}
                         onValueChange={() => toggleSwitch('isDependent')}
-                        trackColor={{false: '#767577', true: '#81b0ff'}}
+                        trackColor={{false: '#767577', true: P.primaryStrong}}
                         thumbColor={
                           formData.isDependent ? P.primary : '#f4f3f4'
                         }
@@ -804,7 +804,7 @@ const FamilyContact_SaveRecord = () => {
                           placeholderStyle={styles.DSR_DropdownPlaceholder}
                           selectedTextStyle={styles.DSR_DropdownSelectedText}
                           itemTextStyle={styles.DSR_DropdownItemText}
-                          activeColor="#E6F0FF"
+                          activeColor={P.tint}
                           containerStyle={[
                             styles.DSR_DropdownContainer,
                             {marginTop: 4, zIndex: 1000},
@@ -843,7 +843,11 @@ const FamilyContact_SaveRecord = () => {
                               ? formatDisplayDate(formData.BirthDate)
                               : 'Select Date'}
                           </Text>
-                          <Icon name="calendar" size={20} color="#04739cff" />
+                          <Icon
+                            name="calendar"
+                            size={20}
+                            color={P.primaryStrong}
+                          />
                         </TouchableOpacity>
 
                         <View style={{marginTop: spacing.md}}>
@@ -857,10 +861,13 @@ const FamilyContact_SaveRecord = () => {
                               onValueChange={() =>
                                 toggleSwitch('IsFullTimeStudent')
                               }
-                              trackColor={{false: '#767577', true: '#81b0ff'}}
+                              trackColor={{
+                                false: '#767577',
+                                true: P.primaryStrong,
+                              }}
                               thumbColor={
                                 formData.IsFullTimeStudent
-                                  ? '#2196F3'
+                                  ? P.primary
                                   : '#f4f3f4'
                               }
                             />
@@ -878,10 +885,13 @@ const FamilyContact_SaveRecord = () => {
                               onValueChange={() =>
                                 toggleSwitch('IsPersonWithDisabilities')
                               }
-                              trackColor={{false: '#767577', true: '#81b0ff'}}
+                              trackColor={{
+                                false: '#767577',
+                                true: P.primaryStrong,
+                              }}
                               thumbColor={
                                 formData.IsPersonWithDisabilities
-                                  ? '#2196F3'
+                                  ? P.primary
                                   : '#f4f3f4'
                               }
                             />

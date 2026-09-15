@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import moment from 'moment';
 import AlertModal from '../Alert/AlertModal';
+import {AppTokens} from '../AppComponentsDesign/Tokens';
 import retrieveEmployeeAdjustmentlines from '../../API/Attendance/retrieveEmployeeAdjustmentlines';
 import {SubmitAdjustment} from '../../API/Attendance/SubmitAdjustment';
+import brand from '../../theme/brand';
 
 const parseISO = iso =>
   iso ? moment.parseZone(iso, moment.ISO_8601, true).utc() : null;
@@ -206,19 +208,20 @@ const EmployeeAdjustmentLineDetails = ({
         return '#4CAF50';
       case 'pending':
       case 'submitted':
-        return '#FF9800';
+        // "Waiting" family — slate, not amber (statusWaiting* in Tokens.js).
+        return AppTokens.statusWaiting;
       case 'rejected':
       case 'cancelled':
         return '#F44336';
       default:
-        return '#455A64';
+        return brand.secondary;
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="small" color="#2196F3" />
+        <ActivityIndicator size="small" color={brand.primaryStrong} />
         <Text style={styles.loadingText}>Loading details...</Text>
       </View>
     );
@@ -441,16 +444,17 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 12,
-    backgroundColor: '#2196F3',
+    backgroundColor: brand.primary,
     paddingVertical: 8,
     borderRadius: 6,
     alignItems: 'center',
   },
   submitBtnDisabled: {
-    backgroundColor: '#90CAF9',
+    backgroundColor: brand.primary,
+    opacity: 0.5,
   },
   submitBtnText: {
-    color: '#FFF',
+    color: brand.onPrimary,
     fontWeight: '600',
     fontSize: 14,
   },

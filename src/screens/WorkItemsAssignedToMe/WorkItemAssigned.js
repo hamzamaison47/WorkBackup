@@ -10,6 +10,7 @@ import SelectionHeader from '../../components/WorkItemAssigned/SelectionHeader';
 import WorkItemDetailSection from '../../components/WorkItemAssigned/WorkItemDetailSection';
 import AlertModal from '../../components/Alert/AlertModal';
 import {RetrieveByEmail} from '../../API/WorkflowTrackingStatusTable/retrieveByEmail';
+import brand from '../../theme/brand';
 
 const WorkItemAssigned = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -86,8 +87,8 @@ const WorkItemAssigned = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onPullToRefresh}
-                colors={['#2e6dd8']}
-                tintColor="#2e6dd8"
+                colors={[brand.primaryStrong]}
+                tintColor={brand.primaryStrong}
               />
             }>
             {workItemData.length > 0 ? (
@@ -177,7 +178,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#2e6dd8',
+    color: brand.primaryStrong,
   },
   headerCount: {
     fontSize: 14,

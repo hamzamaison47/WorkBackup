@@ -19,6 +19,8 @@ import DFCalendar from '../../components/Attendance/DFCalendar';
 import {getRegisterDetailsByDate} from '../../API/Attendance/getRegisterDetailsByDate';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
+import brand from '../../theme/brand';
+import {AppTokens} from '../../components/AppComponentsDesign/Tokens';
 
 /* ---------------- helpers (outside component) ---------------- */
 const pick = (obj, ...keys) =>
@@ -468,7 +470,7 @@ const AttendanceCalendarScreen = () => {
           container: {
             ...prevContainer,
             borderWidth: 2, // blue ring around the day
-            borderColor: '#0EA5E9',
+            borderColor: brand.primaryStrong,
             borderRadius: 50,
             margin: 2,
             paddingVertical: 2,
@@ -479,7 +481,7 @@ const AttendanceCalendarScreen = () => {
           text: {
             ...prevText,
             fontWeight: '800',
-            color: prevText.color || '#0F172A',
+            color: prevText.color || brand.text,
           },
         },
       };
@@ -516,7 +518,7 @@ const AttendanceCalendarScreen = () => {
           <>
             {loading ? (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0EA5E9" />
+                <ActivityIndicator size="large" color={brand.primaryStrong} />
                 <Text style={styles.loadingText}>
                   Loading attendance data...
                 </Text>
@@ -566,12 +568,12 @@ const AttendanceCalendarScreen = () => {
                       backgroundColor: '#F5F7FB',
                       calendarBackground: '#FFFFFF',
                       textSectionTitleColor: '#8E99A4',
-                      monthTextColor: '#0F172A',
-                      arrowColor: '#0EA5E9',
-                      todayTextColor: '#0EA5E9', // also tint today's number
-                      dayTextColor: '#0F172A',
+                      monthTextColor: brand.text,
+                      arrowColor: brand.primaryStrong,
+                      todayTextColor: brand.primaryStrong, // also tint today's number
+                      dayTextColor: brand.text,
                       textDisabledColor: '#C7CED6',
-                      selectedDayTextColor: '#0F172A',
+                      selectedDayTextColor: brand.text,
                       textMonthFontWeight: '800',
                       textMonthFontSize: 30,
                       textDayFontSize: 14,
@@ -808,7 +810,11 @@ const AttendanceCalendarScreen = () => {
                         <TouchableOpacity
                           style={[styles.actionButton, styles.editButton]}
                           onPress={handleEditAttendance}>
-                          <Text style={styles.actionButtonText}>
+                          <Text
+                            style={[
+                              styles.actionButtonText,
+                              {color: brand.onPrimary},
+                            ]}>
                             Edit Attendance
                           </Text>
                         </TouchableOpacity>
@@ -899,7 +905,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 16,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#0F172A',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -932,7 +938,7 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    shadowColor: '#0F172A',
+    shadowColor: AppTokens.shadowColor,
     shadowOffset: {width: 0, height: 6},
     shadowOpacity: 0.06,
     shadowRadius: 12,
@@ -1040,7 +1046,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#6ce66c',
   },
   editButton: {
-    backgroundColor: '#0EA5E9',
+    backgroundColor: brand.primary,
   },
   shortLeaveButton: {
     backgroundColor: '#FFA500',

@@ -68,7 +68,7 @@ const CompanyDropdown = ({
                           <Icon
                             name="check"
                             size={16}
-                            color={P.primary}
+                            color={P.primaryStrong}
                             style={styles.CD_CheckIcon}
                           />
                         )}

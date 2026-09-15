@@ -503,7 +503,7 @@ const IdentificationNumberSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -555,7 +555,7 @@ const IdentificationNumberSaveRecord = () => {
               placeholderTextColor={T.placeholderText}
               selectedTextStyle={styles.DSR_DropdownSelectedText}
               itemTextStyle={styles.DSR_DropdownItemText}
-              activeColor={`${P.primary}22`}
+              activeColor={P.tint}
             />
 
             <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
@@ -590,7 +590,10 @@ const IdentificationNumberSaveRecord = () => {
               <Switch
                 value={!!formData.IsPrimary}
                 onValueChange={val => handleInputChange('IsPrimary', val)}
-                trackColor={{false: T.inputBorder, true: `${P.primary}80`}}
+                trackColor={{
+                  false: T.inputBorder,
+                  true: `${P.primaryStrong}80`,
+                }}
                 thumbColor={formData.IsPrimary ? P.primary : T.cardBg}
                 ios_backgroundColor={T.inputBorder}
               />
@@ -615,7 +618,7 @@ const IdentificationNumberSaveRecord = () => {
                       : 'Select Issue Date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color={P.primary} />
+                <Icon name="calendar" size={20} color={P.primaryStrong} />
               </TouchableOpacity>
               {showIssuePicker && (
                 <DateTimePicker
@@ -644,7 +647,7 @@ const IdentificationNumberSaveRecord = () => {
                     : 'Select Issue Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* <Text style={styles.DSR_Label}>Expiration Date</Text>
@@ -658,7 +661,7 @@ const IdentificationNumberSaveRecord = () => {
                       : 'Select Expiration Date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color={P.primary} />
+                <Icon name="calendar" size={20} color={P.primaryStrong} />
               </TouchableOpacity>
               {showExpirationPicker && (
                 <DateTimePicker
@@ -688,7 +691,7 @@ const IdentificationNumberSaveRecord = () => {
                     : 'Select Expiration Date'}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
           </ScrollView>
 

@@ -498,7 +498,7 @@ const BiometricSettings = () => {
         <Switch
           value={isEnabled}
           onValueChange={() => handleAccountSelection(item)}
-          trackColor={{false: '#E5E7EB', true: '#007AFF'}}
+          trackColor={{false: '#E5E7EB', true: P.primaryStrong}}
           thumbColor={'#FFFFFF'}
           ios_backgroundColor="#E5E7EB"
         />
@@ -588,7 +588,7 @@ const BiometricSettings = () => {
                   <MaterialCommunityIcons
                     name={getBiometricIcon()}
                     size={styles.Biometric_headerIconSize}
-                    color="#FFFFFF"
+                    color={P.onPrimary}
                   />
                 </View>
                 <Text style={styles.Biometric_headerTitle}>

@@ -401,7 +401,7 @@ const createStyles = P =>
     },
     button: {
       flex: 1,
-      backgroundColor: '#007bff',
+      backgroundColor: P.primary,
       padding: 10,
       borderRadius: 5,
       marginHorizontal: 5,
@@ -411,7 +411,7 @@ const createStyles = P =>
       backgroundColor: P.primary,
     },
     buttonText: {
-      color: '#fff',
+      color: P.onPrimary,
       fontWeight: 'bold',
     },
     dateSelector: {

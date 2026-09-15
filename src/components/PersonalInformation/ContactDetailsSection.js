@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 import styles from '../../styles/styles';
 import AlertDeleteModal from '../Alert/AlertDeleteModal';
+import brand from '../../theme/brand';
 
 const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
   const [nameRows, setNameRows] = useState([]);
@@ -79,7 +80,7 @@ const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
                   <TouchableOpacity
                     onPress={() => onEdit(row)} // Pass entire row to the onEdit handler
                     style={styles.CntDtlSec_editIconContainer}>
-                    <Icon name="edit" size={16} color="#fff" />
+                    <Icon name="edit" size={16} color={brand.onPrimary} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -133,7 +134,7 @@ const ContactDetailsSection = ({ContactRows, onCreate, onEdit, onDelete}) => {
       <TouchableOpacity
         onPress={onCreate}
         style={styles.CntDtlSec_createIconContainer}>
-        <Icon name="plus" size={16} color="#fff" />
+        <Icon name="plus" size={16} color={brand.onPrimary} />
       </TouchableOpacity>
 
       <AlertDeleteModal

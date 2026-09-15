@@ -23,11 +23,12 @@ import WorkflowItemAction from '../../API/WorkflowTrackingStatusTable/WorkflowIt
 import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/RetrieveEntitlementBalanceRequest';
 import styles from '../../styles/styles';
 import LinearGradient from 'react-native-linear-gradient';
+import brand from '../../theme/brand';
 
 // ✅ Brand-only tokens — never change between themes
 const BRAND = {
-  blue: '#1A56DB',
-  blueSoft: '#EBF1FD',
+  blue: brand.primaryStrong, // used as accent TEXT on blueSoft
+  blueSoft: brand.tint,
   green: '#0A8F5C',
   greenSoft: '#E8F7F1',
   amber: '#B45309',
@@ -37,7 +38,7 @@ const BRAND = {
   purple: '#6D28D9',
   purpleSoft: '#EDE9FE',
   teal: '#0E7490',
-  tealSoft: '#E0F2FE',
+  tealSoft: AppTokens.tealBg,
   muted: '#9AA3AF',
 };
 

@@ -14,6 +14,7 @@ import {
   AnimatedCard,
   EmptyState,
   FooterNote,
+  AppTokens,
 } from '../../components/AppComponentsDesign/Appcomponents';
 import useAppTokens from '../../components/AppComponentsDesign/useAppTokens';
 import {
@@ -95,9 +96,15 @@ const StatusBadge = ({status, variant = 'advance'}) => {
       case 'recovered':
         return {bg: '#E8F5E9', text: '#2E7D32'};
       case 'approved':
-        return {bg: '#E3F2FD', text: '#1565C0'};
+        // Approved is a success state, not a brand-coloured one — same pair
+        // as PILL_COLORS.Approved in ActionPaneContainer.
+        return {bg: AppTokens.greenBg, text: '#065F46'};
       case 'pending':
-        return {bg: '#FFF8E1', text: '#F57F17'};
+        // "Waiting" family — slate, not amber (statusWaiting* in Tokens.js).
+        return {
+          bg: AppTokens.statusWaitingBg,
+          text: AppTokens.statusWaitingText,
+        };
       case 'rejected':
         return {bg: '#FFEBEE', text: '#C62828'};
       default:
@@ -110,7 +117,10 @@ const StatusBadge = ({status, variant = 'advance'}) => {
       case 'posted':
         return {bg: '#E8F5E9', text: '#2E7D32'};
       case 'unposted':
-        return {bg: '#FFF8E1', text: '#F57F17'};
+        return {
+          bg: AppTokens.statusWaitingBg,
+          text: AppTokens.statusWaitingText,
+        };
       case 'outsidesystem':
         return {bg: '#F3E5F5', text: '#6A1B9A'};
       case 'none':
@@ -209,7 +219,7 @@ const AdvanceRow = ({item}) => {
             style={{
               fontSize: conditionalScale(15, 16, 16, 16),
               fontWeight: '700',
-              color: T.blue,
+              color: T.blueStrong,
             }}>
             {formatAmount(remainingAmount)}
           </Text>
@@ -509,7 +519,7 @@ const EmployeeAdvancesList = () => {
                     flex: 1,
                     fontSize: conditionalScale(12, 13, 13, 13),
                     fontWeight: '600',
-                    color: '#FFFFFF',
+                    color: T.onPrimary,
                     letterSpacing: 0.5,
                   }}>
                   Advance Type
@@ -519,7 +529,7 @@ const EmployeeAdvancesList = () => {
                   style={{
                     fontSize: conditionalScale(12, 13, 13, 13),
                     fontWeight: '600',
-                    color: '#FFFFFF',
+                    color: T.onPrimary,
                     letterSpacing: 0.5,
                     textAlign: 'right',
                   }}>

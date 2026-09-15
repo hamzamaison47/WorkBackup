@@ -1010,7 +1010,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -1061,7 +1061,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                   selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                   itemTextStyle={styles.LReqSR_DropdownItemText}
                   inputSearchStyle={{color: '#888'}}
-                  activeColor="#E6F0FF"
+                  activeColor={P.tint}
                   containerStyle={[
                     styles.LReqSR_DropdownContainer,
                     {zIndex: 1000},
@@ -1172,7 +1172,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     marginTop: 20,
                     marginBottom: 12,
                     borderLeftWidth: 4,
-                    borderLeftColor: '#0275d8',
+                    borderLeftColor: P.primaryStrong,
                   }}>
                   <Text
                     style={{
@@ -1201,7 +1201,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                     itemTextStyle={styles.LReqSR_DropdownItemText}
                     inputSearchStyle={{color: '#888'}}
-                    activeColor="#E6F0FF"
+                    activeColor={P.tint}
                     containerStyle={[
                       styles.LReqSR_DropdownContainer,
                       {zIndex: 994},
@@ -1237,7 +1237,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                     selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                     itemTextStyle={styles.LReqSR_DropdownItemText}
                     inputSearchStyle={{color: '#888'}}
-                    activeColor="#E6F0FF"
+                    activeColor={P.tint}
                     containerStyle={[
                       styles.LReqSR_DropdownContainer,
                       {zIndex: 993},
@@ -1278,7 +1278,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                       selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                       itemTextStyle={styles.LReqSR_DropdownItemText}
                       inputSearchStyle={{color: '#888'}}
-                      activeColor="#E6F0FF"
+                      activeColor={P.tint}
                       containerStyle={[
                         styles.LReqSR_DropdownContainer,
                         {zIndex: 1001}, // Higher z-index than other dropdowns
@@ -1318,7 +1318,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
+                        activeColor={P.tint}
                         disable={configList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
@@ -1355,7 +1355,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
+                        activeColor={P.tint}
                         disable={sizeList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
@@ -1392,7 +1392,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
+                        activeColor={P.tint}
                         disable={colorList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
@@ -1429,7 +1429,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                         selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                         itemTextStyle={styles.LReqSR_DropdownItemText}
                         inputSearchStyle={{color: '#888'}}
-                        activeColor="#E6F0FF"
+                        activeColor={P.tint}
                         disable={styleList.length === 0}
                         containerStyle={[
                           styles.LReqSR_DropdownContainer,
@@ -1522,7 +1522,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                       selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                       itemTextStyle={styles.LReqSR_DropdownItemText}
                       inputSearchStyle={{color: '#888'}}
-                      activeColor="#E6F0FF"
+                      activeColor={P.tint}
                       disable={batchList.length === 0}
                       containerStyle={[
                         styles.LReqSR_DropdownContainer,
@@ -1559,7 +1559,7 @@ const PurchaseRequisitionLinesSaveRecord = () => {
                       selectedTextStyle={styles.LReqSR_DropdownSelectedText}
                       itemTextStyle={styles.LReqSR_DropdownItemText}
                       inputSearchStyle={{color: '#888'}}
-                      activeColor="#E6F0FF"
+                      activeColor={P.tint}
                       disable={serialList.length === 0}
                       containerStyle={[
                         styles.LReqSR_DropdownContainer,
@@ -1591,12 +1591,12 @@ const PurchaseRequisitionLinesSaveRecord = () => {
               <TouchableOpacity
                 onPress={handleOkPress}
                 style={{
-                  backgroundColor: '#0275d8',
+                  backgroundColor: P.primary,
                   paddingVertical: 12,
                   paddingHorizontal: 25,
                   borderRadius: 8,
                 }}>
-                <Text style={{color: '#fff', fontSize: 16, fontWeight: 'bold'}}>
+                <Text style={{color: P.onPrimary, fontSize: 16, fontWeight: 'bold'}}>
                   OK
                 </Text>
               </TouchableOpacity>

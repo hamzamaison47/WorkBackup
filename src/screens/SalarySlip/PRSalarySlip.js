@@ -172,7 +172,7 @@ const PRSalarySlip = () => {
             <Icon
               name="file-pdf-o"
               size={50}
-              color={P.primary}
+              color={P.primaryStrong}
               style={styles.SSlip_Icon}
             />
             <Text style={styles.SSlip_ScreenTitle}>Email Salary Slip</Text>
@@ -202,7 +202,7 @@ const PRSalarySlip = () => {
                 colors={[P.primary, P.primary]}
                 style={styles.SSlip_ButtonContent}>
                 {sendingEmail ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={P.onPrimary} />
                 ) : (
                   <Text style={styles.SSlip_ButtonText}>Email Salary Slip</Text>
                 )}

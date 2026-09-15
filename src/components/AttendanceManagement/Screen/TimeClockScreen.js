@@ -28,7 +28,6 @@ import {
   StyleSheet,
   Platform,
   SafeAreaView,
-  StatusBar,
   Alert,
   ActivityIndicator,
   TouchableOpacity,
@@ -772,12 +771,12 @@ const ActionButtons = ({
           <TouchableOpacity
             style={[
               AB.btn,
-              {backgroundColor: DK.accent},
+              {backgroundColor: DK.accentFill},
               breakEndDisabled && AB.disabled,
             ]}
             onPress={onBreakEnd}
             disabled={breakEndDisabled}>
-            <Text style={AB.txt}>▶ End Break</Text>
+            <Text style={[AB.txt, {color: DK.onAccentFill}]}>▶ End Break</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -1466,10 +1465,6 @@ const TimeClockScreen = ({onNavigate}) => {
 
   return (
     <SafeAreaView style={S.screen}>
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={DK.bg}
-      />
       <View style={{height: Platform.OS === 'android' ? 6 : 0}} />
 
       {isProcessing && (

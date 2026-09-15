@@ -24,7 +24,7 @@ const BadgePill = ({label, color, bgColor, style}) => {
   const P = usePalette();
   return (
     <View style={[S.badgePill, {backgroundColor: bgColor || P.tint}, style]}>
-      <Text style={[S.badgePillText, {color: color || P.primary}]}>
+      <Text style={[S.badgePillText, {color: color || P.primaryStrong}]}>
         {label}
       </Text>
     </View>

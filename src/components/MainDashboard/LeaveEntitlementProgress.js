@@ -9,6 +9,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/RetrieveEntitlementBalanceRequest';
 import styles from '../../styles/styles';
+import {AppTokens} from '../AppComponentsDesign/Tokens';
 
 const LeaveEntitlementProgress = ({userData, screenWidth, onDataStatus}) => {
   const [leaveData, setLeaveData] = useState([]);
@@ -22,7 +23,7 @@ const LeaveEntitlementProgress = ({userData, screenWidth, onDataStatus}) => {
   // Predefined color palette for leaves (15 colors)
   const LEAVE_COLORS = [
     '#4CAF50', // Green
-    '#3F51B5', // Indigo
+    AppTokens.indigo, // Indigo
     '#9C27B0', // Purple
     '#E91E63', // Pink
     '#FF9800', // Orange
@@ -35,12 +36,12 @@ const LeaveEntitlementProgress = ({userData, screenWidth, onDataStatus}) => {
     '#795548', // Brown
     '#607D8B', // Blue Grey
     '#F44336', // Red
-    '#2196F3', // Blue
+    AppTokens.statusDraft, // was Material blue; light slate keeps it distinct
   ];
 
   // Cache for mapping leave types to colors
   const leaveColorMapRef = useRef(new Map());
-  const defaultColor = '#2196F3'; // Grey for any additional leaves beyond 15
+  const defaultColor = AppTokens.slate; // for any additional leaves beyond 15
 
   // Function to get color for a leave type
   const getLeaveColor = useCallback(entitlementCode => {

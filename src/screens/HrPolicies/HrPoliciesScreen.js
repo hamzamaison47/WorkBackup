@@ -114,7 +114,7 @@ const HrPoliciesScreen = ({navigation}) => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: false,
       },
@@ -148,7 +148,6 @@ const HrPoliciesScreen = ({navigation}) => {
         expandableFields={cardConfig.expandableFields}
         buttons={getButtonConfig(item)}
         isExpandable={false}
-        gradientColors={['#e0f2fe', '#bae6fd', '#dbeafe']}
         onButtonPress={handleButtonPress}
       />
     );

@@ -2,6 +2,7 @@ import React from 'react';
 import {TouchableOpacity, Text, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import usePalette from '../../hooks/usePalette';
+import brand from '../../theme/brand';
 
 const SectionHeader = ({title, expanded, onToggle}) => {
   const P = usePalette();
@@ -26,7 +27,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   sectionTitle: {
-    color: '#fff',
+    color: brand.onPrimary,
     fontSize: 18,
     fontWeight: 'bold',
   },

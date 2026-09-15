@@ -67,7 +67,7 @@ const createLocalStyles = T =>
     summaryTitle: {
       fontSize: 15,
       fontWeight: '700',
-      color: T.blue,
+      color: T.blueStrong,
       marginBottom: 8,
       marginLeft: 4,
     },
@@ -84,7 +84,7 @@ const createLocalStyles = T =>
       justifyContent: 'center',
     },
     headerCellText: {
-      color: '#fff',
+      color: T.onPrimary,
       fontWeight: '700',
       fontSize: 12,
       textAlign: 'center',
@@ -135,10 +135,10 @@ const createLocalStyles = T =>
     toggleButtonText: {
       fontSize: 13,
       fontWeight: '600',
-      color: T.blue,
+      color: T.blueStrong,
     },
     toggleButtonTextActive: {
-      color: '#fff',
+      color: T.onPrimary,
     },
     emptyText: {
       fontSize: 13,
@@ -983,8 +983,8 @@ const DFEmployeeLeaveRequestListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        iconColor: T.onPrimary,
+        backgroundColor: T.blue,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
       },
@@ -994,8 +994,8 @@ const DFEmployeeLeaveRequestListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
-        backgroundColor: '#0A66C2',
+        iconColor: T.onPrimary,
+        backgroundColor: T.blue,
         disabled: false,
         customStyle: {},
       },
@@ -1005,7 +1005,7 @@ const DFEmployeeLeaveRequestListPage = () => {
         style: 'approval_dropdown',
         text: isDraft ? 'Approval' : 'Approval',
         icon: 'check-square',
-        textColor: '#0A66C2',
+        textColor: T.blueStrong,
         disabled: false,
         actions: [
           ...(isDraft
@@ -1044,7 +1044,6 @@ const DFEmployeeLeaveRequestListPage = () => {
         isHighlighted={isHighlighted}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         highlightGradientColors={['#E8F5E8', '#F0FFF0']}
         processingButtons={itemProcessingButtons}
         isRTL={isRTL}
@@ -1070,7 +1069,7 @@ const DFEmployeeLeaveRequestListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color="#0A66C2" />
+            <ActivityIndicator size="large" color={T.blueStrong} />
             <Text style={styles.DLP_ProcessingText}>Processing...</Text>
           </View>
         </View>

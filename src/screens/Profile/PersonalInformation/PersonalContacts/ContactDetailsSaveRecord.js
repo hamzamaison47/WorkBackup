@@ -404,7 +404,7 @@ const ContactDetailsSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -432,7 +432,7 @@ const ContactDetailsSaveRecord = () => {
               placeholderStyle={styles.DSR_DropdownPlaceholder}
               selectedTextStyle={styles.DSR_DropdownSelectedText}
               itemTextStyle={styles.DSR_DropdownItemText}
-              activeColor="#E6F0FF"
+              activeColor={P.tint}
               containerStyle={[
                 styles.DSR_DropdownContainer,
                 {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
@@ -494,8 +494,8 @@ const ContactDetailsSaveRecord = () => {
               <Switch
                 value={!!formData.IsPrimary}
                 onValueChange={val => handleInputChange('IsPrimary', val)}
-                trackColor={{false: '#767577', true: '#81b0ff'}}
-                thumbColor={formData.IsPrimary ? '#2196F3' : '#f4f3f4'}
+                trackColor={{false: '#767577', true: P.primaryStrong}}
+                thumbColor={formData.IsPrimary ? P.primary : '#f4f3f4'}
               />
             </View>
 
@@ -504,8 +504,8 @@ const ContactDetailsSaveRecord = () => {
               <Switch
                 value={!!formData.IsPrivate}
                 onValueChange={val => handleInputChange('IsPrivate', val)}
-                trackColor={{false: '#767577', true: '#81b0ff'}}
-                thumbColor={formData.IsPrivate ? '#2196F3' : '#f4f3f4'}
+                trackColor={{false: '#767577', true: P.primaryStrong}}
+                thumbColor={formData.IsPrivate ? P.primary : '#f4f3f4'}
               />
             </View>
           </ScrollView>

@@ -817,7 +817,7 @@ const LeaveRequestSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -880,7 +880,7 @@ const LeaveRequestSaveRecord = () => {
                   styles.DSR_DropdownItemText,
                   isRTL && {textAlign: 'left'},
                 ]}
-                activeColor="#E6F0FF"
+                activeColor={P.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {
@@ -944,7 +944,7 @@ const LeaveRequestSaveRecord = () => {
                 styles.DSR_DropdownItemText,
                 isRTL && {textAlign: 'left'},
               ]}
-              activeColor="#E6F0FF"
+              activeColor={P.tint}
               containerStyle={[
                 styles.DSR_DropdownContainer,
                 {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},
@@ -1010,7 +1010,7 @@ const LeaveRequestSaveRecord = () => {
                     : t('leaveSaveRecord.selectStartDate')}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* Leave End Date */}
@@ -1036,7 +1036,7 @@ const LeaveRequestSaveRecord = () => {
                     : t('leaveSaveRecord.selectEndDate')}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* Leave Days */}

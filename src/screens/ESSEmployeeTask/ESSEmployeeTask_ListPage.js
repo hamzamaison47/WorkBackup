@@ -193,7 +193,7 @@ const ESSEmployeeTask_ListPage = () => {
         style: 'approval_dropdown',
         text: 'Change Status',
         icon: 'check-square-o',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           {key: 'In progress', label: 'In progress', icon: 'play'},
@@ -253,7 +253,6 @@ const ESSEmployeeTask_ListPage = () => {
         processingButtons={processingButtons[processedItem.recId] || []}
         onButtonPress={handleButtonPress}
         isExpandable={true}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         isRTL={isRTL}
         onPress={() => {
           if (processedItem.recId) {

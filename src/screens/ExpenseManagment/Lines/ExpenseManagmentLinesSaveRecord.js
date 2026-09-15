@@ -691,7 +691,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color={P.primary} />
+                  <ActivityIndicator size="large" color={P.primaryStrong} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -717,7 +717,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
                       : 'Select Transaction Date'}
                   </Text>
                 </View>
-                <Icon name="calendar" size={20} color={P.primary} />
+                <Icon name="calendar" size={20} color={P.primaryStrong} />
               </TouchableOpacity>
 
               <Text style={[styles.DSR_Label, isRTL && {textAlign: 'left'}]}>
@@ -735,7 +735,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
                 placeholderStyle={styles.DSR_DropdownPlaceholder}
                 selectedTextStyle={styles.DSR_DropdownSelectedText}
                 itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
+                activeColor={P.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 1000},
@@ -779,7 +779,7 @@ const ExpenseManagmentLinesSaveRecord = () => {
                 placeholderStyle={styles.DSR_DropdownPlaceholder}
                 selectedTextStyle={styles.DSR_DropdownSelectedText}
                 itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
+                activeColor={P.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {marginTop: Platform.OS === 'ios' ? 5 : 2, zIndex: 999},

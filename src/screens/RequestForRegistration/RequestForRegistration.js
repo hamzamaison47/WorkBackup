@@ -174,11 +174,11 @@ const makeStyles = P =>
       fontWeight: '700',
       textAlign: 'center',
       marginBottom: 30,
-      color: P.primary,
+      color: P.primaryStrong,
     },
     input: {
       height: 50,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
       borderWidth: 1.5,
       borderRadius: 8,
       marginBottom: 15,
@@ -192,13 +192,13 @@ const makeStyles = P =>
       paddingVertical: 14,
       borderRadius: 50,
       borderWidth: 3,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
       alignItems: 'center',
       marginTop: 10,
       elevation: 2, // subtle shadow on Android
     },
     buttonText: {
-      color: P.primary,
+      color: P.primaryStrong,
       fontSize: 17,
       fontWeight: 'bold',
     },
@@ -210,7 +210,7 @@ const makeStyles = P =>
     dialogTitle: {
       fontSize: 20,
       fontWeight: '700',
-      color: P.primary,
+      color: P.primaryStrong,
       textAlign: 'center',
       marginBottom: 5,
     },
@@ -237,7 +237,7 @@ const makeStyles = P =>
       alignItems: 'center',
     },
     dialogButtonText: {
-      color: '#fff',
+      color: P.onPrimary,
       fontSize: 15,
       fontWeight: '600',
     },

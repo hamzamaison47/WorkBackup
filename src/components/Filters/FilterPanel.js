@@ -128,7 +128,7 @@ const FilterPanel = ({
       <View style={[FP.radio, {borderColor: isSel ? T.blue : T.chevronColor}]}>
         {isSel && <View style={[FP.radioDot, {backgroundColor: T.blue}]} />}
       </View>
-      <Text style={[FP.rowText, {color: isSel ? T.blue : T.titleText}]}>
+      <Text style={[FP.rowText, {color: isSel ? T.blueStrong : T.titleText}]}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -207,7 +207,7 @@ const FilterPanel = ({
                       style={[
                         FP.checkbox,
                         {
-                          borderColor: isSel ? T.blue : T.chevronColor,
+                          borderColor: isSel ? T.blueStrong : T.chevronColor,
                           backgroundColor: isSel ? T.blue : 'transparent',
                         },
                       ]}>
@@ -215,14 +215,14 @@ const FilterPanel = ({
                         <FeatherIcon
                           name="check"
                           size={conditionalFontScale(11, 12, 12, 13)}
-                          color="#fff"
+                          color={T.onPrimary}
                         />
                       )}
                     </View>
                     <Text
                       style={[
                         FP.rowText,
-                        {color: isSel ? T.blue : T.titleText},
+                        {color: isSel ? T.blueStrong : T.titleText},
                       ]}
                       numberOfLines={2}>
                       {type}

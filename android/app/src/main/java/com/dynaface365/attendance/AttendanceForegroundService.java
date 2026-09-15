@@ -119,7 +119,7 @@ public class AttendanceForegroundService extends Service {
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, CHANNEL_ID)
                         .setSmallIcon(R.drawable.notification_icon)
-                        .setColor(0xFF0A66C2)         // Brand primary color (Dynaface blue)
+                        .setColor(0xFFF4B400)         // Brand primary — kept in sync by scripts/sync-native-theme.js
                         .setColorized(true)
                         .setContentTitle(title)
                         .setSubText("IDAP360 Attendance")

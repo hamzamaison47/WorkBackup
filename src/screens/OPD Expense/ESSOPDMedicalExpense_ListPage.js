@@ -54,7 +54,6 @@ const ESSOPDMedicalExpense_ListPage = () => {
       {key: 'diagnosis', label: 'Diagnosis', type: 'text'},
       {key: 'remarks', label: 'Remarks', type: 'text'},
     ],
-    gradientColors: ['#d4fc79', '#96e6a1', '#c2ffd8'],
     isRTL,
   };
 
@@ -67,7 +66,6 @@ const ESSOPDMedicalExpense_ListPage = () => {
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
         isExpandable={true}
-        gradientColors={cardConfig.gradientColors}
         isRTL={isRTL}
       />
     );

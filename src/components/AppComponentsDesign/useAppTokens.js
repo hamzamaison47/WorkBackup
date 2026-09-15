@@ -1,20 +1,24 @@
 import {useSelector} from 'react-redux';
 import {LightTokens, DarkTokens, BrandTokens} from './Tokens';
-import usePalette from '../../hooks/usePalette';
+import brand from '../../theme/brand';
 
 const useAppTokens = () => {
   const mode = useSelector(state => state.theme.mode);
-  const base = mode === 'dark' ? DarkTokens : LightTokens;
-  const P = usePalette();
+  const isDark = mode === 'dark';
+  const base = isDark ? DarkTokens : LightTokens;
 
   return {
     ...base,
     ...BrandTokens,
-    // Override the brand color from the API-driven palette (static
-    // BrandTokens.blue/blueBg remain the defaults inside usePalette).
-    blue: P.primary,
-    blueBg: P.tint,
-    onPrimary: P.onPrimary,
+    // The mode flag. Use this — never compare a token value to a hex literal
+    // to detect dark mode; token values change with the brand.
+    isDark,
+    // Brand colour comes from the compile-time constant in src/theme/brand.js.
+    blue: brand.primary, // filled surfaces
+    blueStrong: brand.primaryStrong, // primary as text / thin border / icon
+    blueBg: brand.tint, // pale primary: selected rows, chips, icon tiles
+    onPrimary: brand.onPrimary, // content on a primary fill
+    onPrimaryMuted: brand.onPrimaryMuted, // de-emphasised content on a fill
   };
 };
 

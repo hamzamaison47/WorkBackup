@@ -3,6 +3,7 @@ import React, {memo, useMemo} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import moment from 'moment';
+import brand from '../../theme/brand';
 
 /* ===================== MonthFilter ===================== */
 export const MonthFilter = memo(function MonthFilter({month, onPrev, onNext}) {
@@ -12,7 +13,7 @@ export const MonthFilter = memo(function MonthFilter({month, onPrev, onNext}) {
         onPress={onPrev}
         activeOpacity={0.8}
         style={styles.monthBtn}>
-        <Icon name="chevron-left" size={24} color="#1E88E5" />
+        <Icon name="chevron-left" size={24} color={brand.primaryStrong} />
       </TouchableOpacity>
 
       <View style={styles.monthPill}>
@@ -25,7 +26,7 @@ export const MonthFilter = memo(function MonthFilter({month, onPrev, onNext}) {
         onPress={onNext}
         activeOpacity={0.8}
         style={styles.monthBtn}>
-        <Icon name="chevron-right" size={24} color="#1E88E5" />
+        <Icon name="chevron-right" size={24} color={brand.primaryStrong} />
       </TouchableOpacity>
     </View>
   );
@@ -151,7 +152,7 @@ const fade = (hex, alpha) => {
 /* ======================= Styles ======================= */
 const styles = StyleSheet.create({
   monthSelector: {flexDirection: 'row', alignItems: 'center', gap: 10},
-  monthBtn: {backgroundColor: '#E3F2FD', borderRadius: 12, padding: 6},
+  monthBtn: {backgroundColor: brand.tint, borderRadius: 12, padding: 6},
   monthPill: {
     backgroundColor: '#FFF',
     borderRadius: 16,
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
   },
   monthText: {
     fontSize: 14,
-    color: '#1E88E5',
+    color: brand.primaryStrong,
     fontWeight: '700',
     letterSpacing: 1,
   },
@@ -200,6 +201,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 4,
   },
-  detailLabel: {fontSize: 12, color: '#455A64', fontWeight: '600'},
+  detailLabel: {fontSize: 12, color: brand.secondary, fontWeight: '600'},
   detailValue: {fontSize: 12, color: '#263238', fontWeight: '700'},
 });

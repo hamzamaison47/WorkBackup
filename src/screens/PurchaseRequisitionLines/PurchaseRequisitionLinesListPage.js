@@ -324,7 +324,7 @@ const PurchaseRequisitionLinesListPage = () => {
               shadowOpacity: 0.25,
               shadowRadius: 4,
             }}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text
               style={{
                 marginTop: 15,

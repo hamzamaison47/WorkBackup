@@ -337,7 +337,7 @@ const TravelRequisitionListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isEditable,
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
@@ -348,7 +348,7 @@ const TravelRequisitionListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isEditable,
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
@@ -359,7 +359,7 @@ const TravelRequisitionListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         customStyle: {},
       },
@@ -369,7 +369,7 @@ const TravelRequisitionListPage = () => {
         style: 'approval_dropdown',
         text: 'Approval',
         icon: 'check-square',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           ...(isCreate
@@ -572,7 +572,6 @@ const TravelRequisitionListPage = () => {
         onButtonPress={buttonType => handleButtonPress(buttonType, item)}
         onPress={() => handleCardPress(processedItem)}
         isExpandable={true}
-        gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[item.RecId] || []}
         showNavigationArrow={true}
         searchQuery={f.searchQuery}
@@ -596,7 +595,7 @@ const TravelRequisitionListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

@@ -348,7 +348,7 @@ const MedicalExpenseManagmentListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -359,7 +359,7 @@ const MedicalExpenseManagmentListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -370,7 +370,7 @@ const MedicalExpenseManagmentListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         customStyle: {},
       },
@@ -380,7 +380,7 @@ const MedicalExpenseManagmentListPage = () => {
         style: 'approval_dropdown',
         text: isRejected ? 'Re-submit' : 'Approval',
         icon: 'check-square',
-        textColor: P.primary,
+        textColor: P.primaryStrong,
         disabled: false,
         actions: [
           ...(isDraft || isRejected
@@ -636,7 +636,6 @@ const MedicalExpenseManagmentListPage = () => {
         onButtonPress={buttonType => handleButtonPress(buttonType, item)}
         onPress={() => handleCardPress(processedItem)}
         isExpandable={true}
-        gradientColors={['#b8f5d4', '#d4f0e8', '#dff4ff']}
         processingButtons={processingButtons[itemRecId] || []}
         showNavigationArrow={true}
         searchQuery={f.searchQuery}
@@ -659,7 +658,7 @@ const MedicalExpenseManagmentListPage = () => {
       {isProcessing && (
         <View style={styles.DLP_ProcessingOverlay}>
           <View style={styles.DLP_ProcessingContainer}>
-            <ActivityIndicator size="large" color={P.primary} />
+            <ActivityIndicator size="large" color={P.primaryStrong} />
             <Text style={styles.DLP_ProcessingText}>
               {t('common.processing')}
             </Text>

@@ -164,7 +164,7 @@ const WorkflowCommentModal = ({
                   }}>
                   <Text
                     style={{
-                      color: '#fff',
+                      color: T.onPrimary,
                       fontWeight: '700',
                       fontSize: conditionalFontScale(12, 13, 13, 14),
                     }}>

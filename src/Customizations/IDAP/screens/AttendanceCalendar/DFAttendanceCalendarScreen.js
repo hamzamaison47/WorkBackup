@@ -26,8 +26,10 @@ import {FindAttendanceCalendar} from '../../API/AttendanceCalendar/Findattendanc
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
 import useAppTokens from '../../../../components/AppComponentsDesign/useAppTokens';
+import {AppTokens} from '../../../../components/AppComponentsDesign/Tokens';
 import usePalette from '../../../../hooks/usePalette';
 import styles from '../../../../styles/styles';
+import brand from '../../../../theme/brand';
 import {
   conditionalScale,
   conditionalVerticalScale,
@@ -79,13 +81,25 @@ const WHITE_CARD_BORDER = '#E5E5E5';
 const STATUS_COLORS = {
   onTime: {bg: '#2E7D32', text: '#1B5E20', soft: '#E6F4EA'}, // green
   irregular: {bg: '#C62828', text: '#B71C1C', soft: '#FDECEA'}, // red
-  missing: {bg: '#F9A825', text: '#8D6E00', soft: '#FFF8E1'}, // yellow
-  absent: {bg: '#9E9E9E', text: '#616161', soft: '#F2F2F2'}, // grey
-  leave: {bg: '#1565C0', text: '#0D47A1', soft: '#E8F0FE'}, // blue
+  // "missing" is the waiting/attention family — slate, not yellow
+  // (statusWaiting* in Tokens.js).
+  missing: {
+    bg: AppTokens.statusWaiting,
+    text: AppTokens.statusWaitingText,
+    soft: AppTokens.statusWaitingBg,
+  },
+  // "absent" uses the Draft family (statusDraft* in Tokens.js) so it reads
+  // differently from "missing" (waiting family) at a glance.
+  absent: {
+    bg: AppTokens.statusDraft,
+    text: AppTokens.statusDraftText,
+    soft: AppTokens.statusDraftBg,
+  },
+  leave: {bg: brand.primary, text: brand.primaryStrong, soft: brand.tint},
   // Off-day gets its own light blue — distinct enough from "Leave"'s
   // deeper blue that the two aren't confused, while still reading as a
   // calm, non-issue color for a plain weekend/rest day.
-  offDay: {bg: '#4FC3F7', text: '#0277BD', soft: '#E1F5FE'}, // light blue
+  offDay: {bg: AppTokens.teal, text: brand.text, soft: AppTokens.tealBg},
 };
 
 const STATUS_LABELS = {
@@ -110,7 +124,7 @@ const LEGEND_ITEMS = [
 // gets its own distinct blue, drawn as a ring rather than a fill. That keeps
 // it visually separate from "Leave" (which is also blue) and lets a leave
 // day that happens to be today show both: the leave fill plus the today ring.
-const TODAY_RING_COLOR = '#0288D1';
+const TODAY_RING_COLOR = brand.primaryStrong;
 
 const startOfDay = d => {
   if (!d) return null;
@@ -351,17 +365,19 @@ const DFAttendanceCalendarScreen = () => {
             justifyContent: 'space-between',
             paddingVertical: conditionalVerticalScale(11, 12, 13, 13),
             paddingHorizontal: conditionalScale(14, 15, 16, 16),
-            backgroundColor: isActive ? '#EEF3FF' : 'transparent',
+            backgroundColor: isActive ? P.tint : 'transparent',
           }}>
           <Text
             style={{
               fontSize: conditionalFontScale(13, 13.5, 14, 14),
-              color: isActive ? P.primary : '#1A1A1A',
+              color: isActive ? P.primaryStrong : '#1A1A1A',
               fontWeight: isActive ? '700' : '500',
             }}>
             {item.label}
           </Text>
-          {isActive && <FeatherIcon name="check" size={16} color={P.primary} />}
+          {isActive && (
+            <FeatherIcon name="check" size={16} color={P.primaryStrong} />
+          )}
         </View>
       );
     },
@@ -450,7 +466,7 @@ const DFAttendanceCalendarScreen = () => {
                 flexDirection: 'row',
               },
             ]}>
-            <ActivityIndicator size="small" color={P.primary} />
+            <ActivityIndicator size="small" color={P.primaryStrong} />
           </View>
         ) : (
           <Dropdown

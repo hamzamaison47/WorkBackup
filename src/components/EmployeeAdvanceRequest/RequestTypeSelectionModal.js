@@ -21,7 +21,7 @@ const RequestTypeSelectionModal = ({visible, onClose, onSelectType}) => {
       title: 'Advance Salary',
       description: 'Create an advance salary request',
       icon: 'cash-outline',
-      color: P.primary,
+      color: P.primaryStrong,
     },
   ];
 

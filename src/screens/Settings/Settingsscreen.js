@@ -217,7 +217,7 @@ const SettingsScreen = ({navigation: navProp}) => {
           {/* <CardHeading label="GENERAL" /> */}
           {/* <SettingRow
             icon="globe"
-            iconColor={AppTokens.blue}
+            iconColor={AppTokens.blueStrong}
             iconBg={AppTokens.blueBg}
             title={t('profile.language') || 'Language'}
             subtitle={`Current: ${langLabel}`}

@@ -203,7 +203,7 @@ const QRScannerModal = ({
     if (permissionStatus === 'checking') {
       return (
         <View style={S.center}>
-          <ActivityIndicator size="large" color={C.blue} />
+          <ActivityIndicator size="large" color={C.blueDark} />
           <Text style={S.centerTxt}>Checking camera permission…</Text>
         </View>
       );
@@ -566,7 +566,7 @@ const makeStyles = (C, R, Sh) =>
       marginBottom: 12,
       ...Sh.sm,
     },
-    primaryBtnTxt: {color: '#fff', fontWeight: '700', fontSize: 15},
+    primaryBtnTxt: {color: C.onBlue, fontWeight: '700', fontSize: 15},
 
     cancelBtn: {
       backgroundColor: C.surfaceAlt,

@@ -1,17 +1,21 @@
-import {DEFAULT_PALETTE} from '../../store/slices/colorPaletteSlice';
+import brand from '../../theme/brand';
 // ─────────────────────────────────────────────────────────────────────────────
 // LIGHT TOKENS (default)
 // ─────────────────────────────────────────────────────────────────────────────
+// Neutrals that the brand owns come from src/theme/brand.js so a brand file
+// can restyle page, card, text and divider colours without touching this
+// file. Everything else here is design-system detail shared by all brands.
 export const LightTokens = {
-  pageBg: '#F1F5F9',
-  formPageBg: '#FFFFFF',
-  cardBg: '#FFFFFF',
+  pageBg: brand.pageBg,
+  formPageBg: brand.surface,
+  cardBg: brand.surface,
   cardHeadingBg: '#FAFBFC',
-  cardDivider: '#F1F5F9',
+  cardDivider: brand.divider,
   rowDivider: '#F8FAFC',
-  headingText: '#94A3B8',
-  titleText: '#1E293B',
-  subtitleText: '#94A3B8',
+  headingText: brand.secondary,
+  titleText: brand.text,
+  subtitleText: brand.secondary,
+  chipBg: brand.surfaceAlt, // icon/avatar chips on an inverted app bar
   chevronColor: '#CBD5E1',
   shadowColor: '#0F172A',
   emptyText: '#CBD5E1',
@@ -29,7 +33,7 @@ export const LightTokens = {
   dropdownBorder: '#E0E0E0',
   dropdownItemBorder: '#F0F0F0',
   overlayBg: 'rgba(255, 255, 255, 0.9)',
-  dropdownActiveBg: '#E8F1FB',
+  dropdownActiveBg: brand.tint, // selected dropdown row
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -45,6 +49,7 @@ export const DarkTokens = {
   headingText: '#64748B',
   titleText: '#F1F5F9',
   subtitleText: '#64748B',
+  chipBg: '#334155',
   chevronColor: '#475569',
   shadowColor: '#000000',
   emptyText: '#475569',
@@ -68,10 +73,13 @@ export const DarkTokens = {
 // ─────────────────────────────────────────────────────────────────────────────
 // BRAND PALETTE — same in both modes
 // ─────────────────────────────────────────────────────────────────────────────
+// Hoisted so the tab-bar badge can reuse the waiting hex by reference.
+const STATUS_WAITING = '#475569';
+
 export const BrandTokens = {
-  // blue: '#0A66C2',
-  blue: DEFAULT_PALETTE.primary,
-  blueBg: '#E8F1FB',
+  blue: brand.primary,
+  blueStrong: brand.primaryStrong, // primary as text / thin border / icon
+  blueBg: brand.tint, // pale primary: icon tiles, chips, selected rows
   indigo: '#6366F1',
   indigoBg: '#EDEFFD',
   teal: '#0D9488',
@@ -86,6 +94,37 @@ export const BrandTokens = {
   purpleBg: '#EDE9FE',
   slate: '#475569',
   slateBg: '#F1F5F9',
+
+  // ── Semantic status tokens ──────────────────────────────────────────────
+  // "Waiting" family: Pending / In review / Pending Approval / Assigned /
+  // Unposted — anything that means "not decided yet". Deliberately NOT amber:
+  // the mustard primary (#F4B400) is 1.16:1 against amber #F59E0B, so a
+  // yellow "waiting" pill would be indistinguishable from a brand-coloured
+  // one. Slate keeps the meaning readable next to any primary.
+  //   statusWaiting     — dot / icon / active-pill fill
+  //   statusWaitingBg   — pill background
+  //   statusWaitingText — text on statusWaitingBg (6.6:1)
+  statusWaiting: STATUS_WAITING,
+  statusWaitingBg: '#E2E8F0',
+  statusWaitingText: '#334155',
+
+  // "Draft" family: Draft / Not submitted / absent-day — "nothing has
+  // happened yet". A lighter neutral than the waiting family so the two
+  // states read differently at a glance (ΔE 30 between the dots; the guard
+  // enforces ≥ 20). NOTE: an active Draft pill filled with statusDraft needs
+  // DARK text (white on #94A3B8 is 2.6:1) — PILL_COLORS uses titleText.
+  //   statusDraft     — dot / icon / active-pill fill
+  //   statusDraftBg   — pill background
+  //   statusDraftText — text on statusDraftBg (7.2:1)
+  statusDraft: '#94A3B8',
+  statusDraftBg: '#F8FAFC',
+  statusDraftText: '#475569',
+
+  // Pending-count badge on the bottom tab bar: the waiting family (a pending
+  // count IS the waiting state), so it never collides with the primary and
+  // leaves red to the bell badge.
+  tabBadgeBg: STATUS_WAITING,
+  tabBadgeText: '#FFFFFF',
 
   // Card shadow
   shadowOffset: {width: 0, height: 2},

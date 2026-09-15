@@ -43,7 +43,7 @@ const DisplayPersonalInfo = () => {
     {
       id: 'contactDetails',
       icon: 'phone',
-      iconColor: AppTokens.blue,
+      iconColor: AppTokens.blueStrong,
       iconBg: AppTokens.blueBg,
       title: t('personalInfo.contactDetails'),
       subtitle: t('personalInfo.contactDetailsSubtitle'),

@@ -22,6 +22,7 @@ import {useIsFocused, useNavigation} from '@react-navigation/native';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import AlertModal from '../../components/Alert/AlertModal';
 import getRosterDetailsByDate from '../../API/Attendance/TASEmployeeRosterAPI';
+import brand from '../../theme/brand';
 import {MonthFilter} from '../../components/Attendance/AttendanceDetailsComponents'; // ← Same filter as AttendanceDetailsScreen
 
 /* ------------ utils ------------ */
@@ -529,7 +530,7 @@ const RosterDetailsScreen = () => {
             ListFooterComponent={
               loading && !initialLoad ? (
                 <View style={styles.footerLoader}>
-                  <ActivityIndicator size="small" color="#2196F3" />
+                  <ActivityIndicator size="small" color={brand.primaryStrong} />
                   <Text style={styles.footerLoaderText}>Updating...</Text>
                 </View>
               ) : null
@@ -668,7 +669,7 @@ const styles = StyleSheet.create({
   dayText: {fontSize: 13, color: '#607D8B', marginTop: 2},
 
   shiftCodeContainer: {alignItems: 'flex-end'},
-  shiftCodeText: {fontSize: 14, fontWeight: '700', color: '#2196F3'},
+  shiftCodeText: {fontSize: 14, fontWeight: '700', color: brand.primaryStrong},
 
   typeChip: {
     paddingHorizontal: 8,
@@ -743,13 +744,13 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   closeButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: brand.primary,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
   },
-  closeButtonText: {color: 'white', fontSize: 16, fontWeight: '600'},
+  closeButtonText: {color: brand.onPrimary, fontSize: 16, fontWeight: '600'},
 });
 
 export default RosterDetailsScreen;

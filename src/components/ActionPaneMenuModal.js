@@ -307,7 +307,7 @@ const ActionPaneMenuModal = ({
             <SectionLabel label="ACCOUNT" styles={styles} />
             <MenuRow
               iconName="person-outline"
-              iconColor={P.primary}
+              iconColor={P.primaryStrong}
               iconBg={P.tint}
               label="My Profile"
               sub="View and edit your information"
@@ -316,8 +316,8 @@ const ActionPaneMenuModal = ({
             />
             <MenuRow
               iconName="settings-outline"
-              iconColor="#6366F1"
-              iconBg="#EDEFFD"
+              iconColor={T.indigo}
+              iconBg={T.indigoBg}
               label="Settings"
               sub="Language · Security · Date & Time"
               onPress={() => goTo('SettingsScreen')}
@@ -501,7 +501,7 @@ const createStyles = T =>
     avatarText: {
       fontSize: conditionalFontScale(13, 14, 15, 15),
       fontWeight: '800',
-      color: '#FFFFFF',
+      color: T.onPrimary,
       letterSpacing: 0.5,
     },
     userInfo: {flex: 1},

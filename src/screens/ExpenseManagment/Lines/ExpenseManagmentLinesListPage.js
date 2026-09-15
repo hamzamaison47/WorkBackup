@@ -286,7 +286,7 @@ const ExpenseManagmentLinesListPage = () => {
         style: 'icon',
         icon: 'edit',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -297,7 +297,7 @@ const ExpenseManagmentLinesListPage = () => {
         style: 'icon',
         icon: 'trash',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         disabled: !isDraft,
         customStyle: !isDraft ? {backgroundColor: '#BDBDBD'} : {},
@@ -308,7 +308,7 @@ const ExpenseManagmentLinesListPage = () => {
         style: 'icon',
         icon: 'paperclip',
         iconSize: 20,
-        iconColor: '#fff',
+        iconColor: P.onPrimary,
         backgroundColor: P.primary,
         customStyle: {},
       },
@@ -506,7 +506,6 @@ const ExpenseManagmentLinesListPage = () => {
         onButtonPress={handleButtonPress}
         isExpandable={true}
         showNavigationArrow={false}
-        gradientColors={['#6ee0ff', '#bddeff', '#cce6ff']}
         processingButtons={itemProcessingButtons}
         searchQuery={f.searchQuery}
       />

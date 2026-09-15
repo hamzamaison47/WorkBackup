@@ -27,6 +27,7 @@ import {
 } from '../../../../store/slices/dateFormatSlice';
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import usePalette from '../../../../hooks/usePalette';
+import brand from '../../../../theme/brand';
 
 const DateFormatSettingsScreen = () => {
   const dispatch = useDispatch();
@@ -67,7 +68,7 @@ const DateFormatSettingsScreen = () => {
           <MaterialCommunityIcons
             name={iconName}
             size={12}
-            color={isSelected ? P.primary : '#9ca3af'}
+            color={isSelected ? P.primaryStrong : '#9ca3af'}
           />
           <Text
             style={[
@@ -82,7 +83,7 @@ const DateFormatSettingsScreen = () => {
         <MaterialCommunityIcons
           name="check-circle"
           size={22}
-          color={P.primary}
+          color={P.primaryStrong}
         />
       )}
     </TouchableOpacity>
@@ -109,7 +110,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="calendar-clock"
               size={32}
-              color="#fff"
+              color={P.onPrimary}
             />
           </View>
           <Text style={styles.headerTitle}>Date & Time Format</Text>
@@ -121,7 +122,7 @@ const DateFormatSettingsScreen = () => {
               <MaterialCommunityIcons
                 name="calendar"
                 size={13}
-                color={P.primary}
+                color={P.primaryStrong}
               />
               <Text style={styles.currentBadgeText} numberOfLines={1}>
                 {selectedFormat.label}
@@ -132,7 +133,7 @@ const DateFormatSettingsScreen = () => {
               <MaterialCommunityIcons
                 name="clock-outline"
                 size={13}
-                color={P.primary}
+                color={P.primaryStrong}
               />
               <Text style={styles.currentBadgeText} numberOfLines={1}>
                 {selectedTimeFormat.label}
@@ -143,7 +144,7 @@ const DateFormatSettingsScreen = () => {
               <MaterialCommunityIcons
                 name="earth"
                 size={13}
-                color={P.primary}
+                color={P.primaryStrong}
               />
               <Text style={styles.currentBadgeText} numberOfLines={1}>
                 {selectedTimezone.label}
@@ -158,7 +159,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="calendar-month"
               size={16}
-              color={P.primary}
+              color={P.primaryStrong}
             />
             <Text style={styles.sectionLabel}>DATE FORMAT</Text>
           </View>
@@ -180,7 +181,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="clock-outline"
               size={16}
-              color={P.primary}
+              color={P.primaryStrong}
             />
             <Text style={styles.sectionLabel}>TIME FORMAT</Text>
           </View>
@@ -199,7 +200,11 @@ const DateFormatSettingsScreen = () => {
         {/* ── Timezone ── */}
         <View style={styles.optionsSection}>
           <View style={styles.sectionHeader}>
-            <MaterialCommunityIcons name="earth" size={16} color={P.primary} />
+            <MaterialCommunityIcons
+              name="earth"
+              size={16}
+              color={P.primaryStrong}
+            />
             <Text style={styles.sectionLabel}>TIME ZONE</Text>
           </View>
 
@@ -212,7 +217,7 @@ const DateFormatSettingsScreen = () => {
                 <MaterialCommunityIcons
                   name="earth"
                   size={20}
-                  color={P.primary}
+                  color={P.primaryStrong}
                 />
               </View>
               <View style={styles.timezoneSelectorTextWrap}>
@@ -229,7 +234,7 @@ const DateFormatSettingsScreen = () => {
             <MaterialCommunityIcons
               name="chevron-right"
               size={20}
-              color={P.primary}
+              color={P.primaryStrong}
             />
           </TouchableOpacity>
         </View>
@@ -239,7 +244,7 @@ const DateFormatSettingsScreen = () => {
           <MaterialCommunityIcons
             name="information-outline"
             size={18}
-            color={P.primary}
+            color={P.primaryStrong}
           />
           <Text style={styles.infoText}>
             Changes apply immediately to all date and time fields across the app
@@ -346,7 +351,7 @@ const DateFormatSettingsScreen = () => {
                       <MaterialCommunityIcons
                         name="check-circle"
                         size={20}
-                        color={P.primary}
+                        color={P.primaryStrong}
                       />
                     )}
                   </TouchableOpacity>
@@ -384,12 +389,12 @@ const createStyles = P =>
     headerTitle: {
       fontSize: 20,
       fontWeight: '700',
-      color: '#fff',
+      color: P.onPrimary,
       marginBottom: 6,
     },
     headerSubtitle: {
       fontSize: 13,
-      color: 'rgba(255,255,255,0.85)',
+      color: P.onPrimaryMuted,
       textAlign: 'center',
       lineHeight: 18,
       marginBottom: 16,
@@ -411,7 +416,7 @@ const createStyles = P =>
       maxWidth: 110,
     },
     badgeDivider: {width: 1, height: 16, backgroundColor: '#d1d5db'},
-    currentBadgeText: {fontSize: 11, fontWeight: '600', color: P.primary},
+    currentBadgeText: {fontSize: 11, fontWeight: '600', color: P.primaryStrong},
 
     // Section
     optionsSection: {paddingHorizontal: 16, marginTop: 8},
@@ -425,7 +430,7 @@ const createStyles = P =>
     sectionLabel: {
       fontSize: 11,
       fontWeight: '700',
-      color: P.primary,
+      color: P.primaryStrong,
       letterSpacing: 1,
     },
     divider: {
@@ -451,7 +456,10 @@ const createStyles = P =>
       elevation: 2,
       gap: 12,
     },
-    optionCardSelected: {borderColor: P.primary, backgroundColor: '#EBF3FB'},
+    optionCardSelected: {
+      borderColor: P.primaryStrong,
+      backgroundColor: P.tint,
+    },
     radio: {
       width: 20,
       height: 20,
@@ -461,7 +469,7 @@ const createStyles = P =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    radioSelected: {borderColor: P.primary},
+    radioSelected: {borderColor: P.primaryStrong},
     radioDot: {
       width: 10,
       height: 10,
@@ -475,21 +483,21 @@ const createStyles = P =>
       color: '#374151',
       marginBottom: 4,
     },
-    optionLabelSelected: {color: P.primary},
+    optionLabelSelected: {color: P.primaryStrong},
     exampleRow: {flexDirection: 'row', alignItems: 'center', gap: 4},
     optionExample: {fontSize: 12, color: '#9ca3af'},
-    optionExampleSelected: {color: P.primary},
+    optionExampleSelected: {color: P.primaryStrong},
 
     // Timezone Selector Button
     timezoneSelector: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: '#EBF3FB',
+      backgroundColor: P.tint,
       borderRadius: 14,
       padding: 16,
       borderWidth: 2,
-      borderColor: P.primary,
+      borderColor: P.primaryStrong,
       shadowColor: '#000',
       shadowOpacity: 0.04,
       shadowRadius: 4,
@@ -513,7 +521,7 @@ const createStyles = P =>
     timezoneSelectorLabel: {
       fontSize: 15,
       fontWeight: '600',
-      color: P.primary,
+      color: P.primaryStrong,
     },
     timezoneSelectorOffset: {fontSize: 12, color: '#6b7280', marginTop: 2},
 
@@ -521,16 +529,16 @@ const createStyles = P =>
     infoCard: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      backgroundColor: '#EBF3FB',
+      backgroundColor: P.tint,
       marginHorizontal: 16,
       marginTop: 16,
       borderRadius: 12,
       padding: 14,
       gap: 10,
       borderLeftWidth: 3,
-      borderLeftColor: P.primary,
+      borderLeftColor: P.primaryStrong,
     },
-    infoText: {flex: 1, fontSize: 12, color: P.primary, lineHeight: 18},
+    infoText: {flex: 1, fontSize: 12, color: P.primaryStrong, lineHeight: 18},
 
     // Modal
     modalOverlay: {
@@ -553,7 +561,7 @@ const createStyles = P =>
       borderBottomWidth: 1,
       borderBottomColor: '#f3f4f6',
     },
-    modalTitle: {fontSize: 17, fontWeight: '700', color: '#111827'},
+    modalTitle: {fontSize: 17, fontWeight: '700', color: brand.text},
     searchContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -567,7 +575,7 @@ const createStyles = P =>
       borderWidth: 1,
       borderColor: '#e5e7eb',
     },
-    searchInput: {flex: 1, fontSize: 14, color: '#111827', padding: 0},
+    searchInput: {flex: 1, fontSize: 14, color: brand.text, padding: 0},
     tzCount: {
       fontSize: 11,
       color: '#9ca3af',
@@ -585,10 +593,10 @@ const createStyles = P =>
       paddingVertical: 14,
       height: 57,
     },
-    tzItemSelected: {backgroundColor: '#EBF3FB'},
+    tzItemSelected: {backgroundColor: P.tint},
     tzItemLeft: {flex: 1},
     tzItemLabel: {fontSize: 14, fontWeight: '500', color: '#374151'},
-    tzItemLabelSelected: {color: P.primary, fontWeight: '600'},
+    tzItemLabelSelected: {color: P.primaryStrong, fontWeight: '600'},
     tzItemOffset: {fontSize: 12, color: '#9ca3af', marginTop: 2},
     tzSeparator: {
       height: 1,

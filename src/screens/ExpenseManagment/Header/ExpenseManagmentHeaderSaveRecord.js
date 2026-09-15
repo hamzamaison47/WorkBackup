@@ -538,7 +538,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
             {isProcessing && (
               <View style={styles.DSR_ProcessingOverlay}>
                 <View style={styles.DSR_ProcessingContainer}>
-                  <ActivityIndicator size="large" color={P.primary} />
+                  <ActivityIndicator size="large" color={P.primaryStrong} />
                   <Text style={styles.DSR_ProcessingText}>
                     {t('common.processing')}
                   </Text>
@@ -564,7 +564,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
                 placeholderStyle={styles.DSR_DropdownPlaceholder}
                 selectedTextStyle={styles.DSR_DropdownSelectedText}
                 itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
+                activeColor={P.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {
@@ -595,7 +595,7 @@ const ExpenseManagementHeaderSaveRecord = () => {
                 placeholderStyle={styles.DSR_DropdownPlaceholder}
                 selectedTextStyle={styles.DSR_DropdownSelectedText}
                 itemTextStyle={styles.DSR_DropdownItemText}
-                activeColor="#E6F0FF"
+                activeColor={P.tint}
                 containerStyle={[
                   styles.DSR_DropdownContainer,
                   {

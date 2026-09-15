@@ -272,7 +272,6 @@ const OvertimePlanner_ListPage = () => {
         fields={cardConfig.fields}
         expandableFields={cardConfig.expandableFields}
         isExpandable={false}
-        gradientColors={['#ffe0b2', '#fff3e0', '#fff8f0']}
         highlightGradientColors={['#FFF3E0', '#FFFDE7']}
         isRTL={isRTL}
         searchQuery={f.searchQuery}

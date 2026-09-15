@@ -37,28 +37,34 @@ const AlertModal = ({
   // Get configuration based on alert type
   const getAlertConfig = () => {
     const configs = {
+      // onPrimaryColor: text on the action button. Only the brand-coloured
+      // button follows the palette token; the status colours stay white-on.
       info: {
         icon: 'information',
-        iconColor: P.primary,
+        iconColor: P.primaryStrong,
         primaryColor: P.primary,
-        iconBg: '#E3F2FD',
+        onPrimaryColor: P.onPrimary,
+        iconBg: P.tint,
       },
       success: {
         icon: 'check-circle',
         iconColor: '#10B981',
         primaryColor: '#10B981',
+        onPrimaryColor: '#FFFFFF',
         iconBg: '#ECFDF5',
       },
       warning: {
         icon: 'alert-circle',
         iconColor: '#F59E0B',
         primaryColor: '#F59E0B',
+        onPrimaryColor: '#FFFFFF',
         iconBg: '#FEF3E7',
       },
       error: {
         icon: 'close-circle',
         iconColor: '#DC2626',
         primaryColor: '#DC2626',
+        onPrimaryColor: '#FFFFFF',
         iconBg: '#FEF2F2',
       },
     };
@@ -194,7 +200,13 @@ const AlertModal = ({
                 ]}
                 onPress={handlePress}
                 activeOpacity={0.8}>
-                <Text style={styles.Alert_buttonText}>{buttonText}</Text>
+                <Text
+                  style={[
+                    styles.Alert_buttonText,
+                    {color: alertConfig.onPrimaryColor},
+                  ]}>
+                  {buttonText}
+                </Text>
               </TouchableOpacity>
             </Animated.View>
           </TouchableWithoutFeedback>

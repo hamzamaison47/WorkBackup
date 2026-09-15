@@ -342,7 +342,7 @@ const PurchaseRequisitionSaveRecord = () => {
           {isProcessing && (
             <View style={styles.DSR_ProcessingOverlay}>
               <View style={styles.DSR_ProcessingContainer}>
-                <ActivityIndicator size="large" color={P.primary} />
+                <ActivityIndicator size="large" color={P.primaryStrong} />
                 <Text style={styles.DSR_ProcessingText}>
                   {t('common.processing')}
                 </Text>
@@ -391,7 +391,7 @@ const PurchaseRequisitionSaveRecord = () => {
                     : formatDate(new Date())}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
 
             {/* FIELD 4 */}
@@ -406,7 +406,7 @@ const PurchaseRequisitionSaveRecord = () => {
                     : formatDate(new Date())}
                 </Text>
               </View>
-              <Icon name="calendar" size={20} color={P.primary} />
+              <Icon name="calendar" size={20} color={P.primaryStrong} />
             </TouchableOpacity>
           </ScrollView>
 

@@ -57,7 +57,7 @@ const MenuCard = ({
           marginBottom: 8,
         }}>
         {isLucideIcon ? (
-          <card.icon size={renderedIconSize} color={P.primary} />
+          <card.icon size={renderedIconSize} color={P.primaryStrong} />
         ) : (
           <Image
             source={

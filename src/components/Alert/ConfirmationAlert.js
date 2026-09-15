@@ -52,28 +52,34 @@ const ConfirmationAlert = ({
   // Get configuration based on alert type
   const getAlertConfig = () => {
     const configs = {
+      // onPrimaryColor: text on the primary button. Only the brand-coloured
+      // button follows the palette token; the status colours stay white-on.
       info: {
         icon: 'information-outline',
-        iconColor: P.primary,
+        iconColor: P.primaryStrong,
         primaryColor: P.primary,
-        iconBg: '#E3F2FD',
+        onPrimaryColor: P.onPrimary,
+        iconBg: P.tint,
       },
       warning: {
         icon: 'alert-outline',
         iconColor: '#F59E0B',
         primaryColor: '#F59E0B',
+        onPrimaryColor: '#FFFFFF',
         iconBg: '#FEF3E7',
       },
       success: {
         icon: 'check-circle-outline',
         iconColor: '#10B981',
         primaryColor: '#10B981',
+        onPrimaryColor: '#FFFFFF',
         iconBg: '#ECFDF5',
       },
       error: {
         icon: 'close-circle-outline',
         iconColor: '#DC2626',
         primaryColor: '#DC2626',
+        onPrimaryColor: '#FFFFFF',
         iconBg: '#FEF2F2',
       },
     };
@@ -84,6 +90,11 @@ const ConfirmationAlert = ({
   const finalIconName = iconName || alertConfig.icon;
   const finalIconColor = iconColor || alertConfig.iconColor;
   const finalPrimaryColor = primaryButtonColor || alertConfig.primaryColor;
+  // A caller-supplied button colour has an unknown contrast pairing; keep the
+  // historical white for that case.
+  const finalOnPrimaryColor = primaryButtonColor
+    ? '#FFFFFF'
+    : alertConfig.onPrimaryColor;
 
   useEffect(() => {
     if (visible) {
@@ -205,7 +216,11 @@ const ConfirmationAlert = ({
                   ]}
                   onPress={handlePrimaryPress}
                   activeOpacity={0.8}>
-                  <Text style={styles.ConfAlert_primaryButtonText}>
+                  <Text
+                    style={[
+                      styles.ConfAlert_primaryButtonText,
+                      {color: finalOnPrimaryColor},
+                    ]}>
                     {primaryButtonText}
                   </Text>
                 </TouchableOpacity>

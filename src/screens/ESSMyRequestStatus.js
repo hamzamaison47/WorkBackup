@@ -239,7 +239,6 @@ const ESSMyRequestStatusListPage = () => {
         onButtonPress={() => {}}
         onPress={handleCardPress} // ← pass directly as onPress prop
         isExpandable={false}
-        gradientColors={['#f0f9ff', '#e0f2fe', '#dbeafe']}
         processingButtons={[]}
         showNavigationArrow={true}
         isClickable={true}

@@ -225,7 +225,7 @@ const ESSOPDMedicalExpense_SaveRecord = () => {
                   marginRight: 10,
                 }}
                 onPress={handleSubmit}>
-                <Text style={{color: '#fff'}}>Submit</Text>
+                <Text style={{color: P.onPrimary}}>Submit</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

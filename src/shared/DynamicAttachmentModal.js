@@ -30,6 +30,7 @@ import notificationService from '../Controller/notificationService';
 
 import styles from '../styles/styles';
 import {iconSize} from '../store/utils/scaling';
+import brand from '../theme/brand';
 
 /**
  * DynamicAttachmentModal
@@ -887,16 +888,20 @@ const DynamicAttachmentModal = ({
                 onPress={handleRefresh}
                 disabled={isRefreshing || isLoading || isAnyProcessing}>
                 {isRefreshing ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={brand.onPrimary} />
                 ) : (
-                  <FontAwesome name="refresh" size={iconSize.xs} color="#fff" />
+                  <FontAwesome
+                    name="refresh"
+                    size={iconSize.xs}
+                    color={brand.onPrimary}
+                  />
                 )}
               </TouchableOpacity>
             </View>
 
             {isLoading ? (
               <View style={styles.DAM_loadingContainer}>
-                <ActivityIndicator size="large" color="#2563eb" />
+                <ActivityIndicator size="large" color={brand.primaryStrong} />
                 <Text style={styles.DAM_loadingText}>
                   Loading attachments...
                 </Text>
@@ -1043,7 +1048,7 @@ const DynamicAttachmentModal = ({
                 onPress={handleSave}
                 disabled={isSaveDisabled}>
                 {processingAction === 'save' ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={brand.onPrimary} />
                 ) : (
                   <Text style={styles.DAM_saveButtonText}>
                     Save ({attachments.filter(a => a.isNew).length})

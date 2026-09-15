@@ -10,7 +10,6 @@ import {
   FlatList,
   TouchableOpacity,
   SafeAreaView,
-  StatusBar,
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
@@ -28,30 +27,8 @@ import {
   getSessionStats,
 } from '../../../screens/AttendanceManagement/helpers';
 import NavigationFAB from '../NavigationFAB';
-
-const DK = {
-  bg: '#F5F7FA',
-  card: '#FFFFFF',
-  cardBorder: '#E2E8F0',
-  surface: '#EEF2F7',
-  accent: '#1B4FD8',
-  accentGreen: '#059669',
-  accentAmber: '#D97706',
-  accentRed: '#DC2626',
-  accentPurple: '#7C3AED',
-  textPrimary: '#0F172A',
-  textSecondary: '#64748B',
-  textMuted: '#94A3B8',
-  ring: '#CBD5E1',
-  greenLight: '#D1FAE5',
-  greenDark: '#065F46',
-  purpleLight: '#EDE9FE',
-  purpleDark: '#5B21B6',
-  amberLight: '#FEF3C7',
-  amberDark: '#92400E',
-  redLight: '#FEE2E2',
-  redDark: '#991B1B',
-};
+// Light palette from the module theme (this screen is light-only today).
+import {DK_LIGHT as DK} from '../theme';
 
 // ─────────────────────────────────────────────
 // Skeleton
@@ -782,8 +759,6 @@ const AttendanceRecordsScreen = ({onNavigate}) => {
 
   return (
     <SafeAreaView style={S.screen}>
-      <StatusBar barStyle="dark-content" backgroundColor={DK.bg} />
-
       <View style={S.header}>
         <Text style={S.headerTitle}>Timesheets</Text>
         <TouchableOpacity onPress={onRefresh} disabled={refreshing}>

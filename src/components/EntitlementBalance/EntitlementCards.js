@@ -3,11 +3,12 @@ import {View, Text} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
 import styles from '../../styles/styles';
+import brand from '../../theme/brand';
 
 const EntitlementCards = ({entitlementCode, taken, accrued, balance}) => (
   <View style={styles.EntCards_CardContainer}>
     <LinearGradient
-      colors={['#6ee0ff', '#bddeff', '#cce6ff']}
+      colors={[brand.tint, brand.surface]}
       start={{x: 0, y: 0}}
       end={{x: 1, y: 1}}
       style={styles.EntCards_Card}>

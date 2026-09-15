@@ -41,7 +41,6 @@ const persistConfig = {
     'chatbot',
     'dateFormat',
     'theme',
-    'colorPalette',
   ],
   blacklist: [],
 };

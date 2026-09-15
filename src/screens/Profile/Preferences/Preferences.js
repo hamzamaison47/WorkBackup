@@ -6,6 +6,7 @@ import {useNavigation} from '@react-navigation/native';
 import ActionPaneContainer from '../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../components/CustomIndicator/CustomIndicator';
 import usePalette from '../../../hooks/usePalette';
+import brand from '../../../theme/brand';
 
 const Preferences = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +37,7 @@ const Preferences = () => {
         }
       }}>
       <View style={styles.iconContainer}>
-        <Icon name={item.icon} size={22} color={P.primary} />
+        <Icon name={item.icon} size={22} color={P.primaryStrong} />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.title}>{item.title}</Text>
@@ -103,11 +104,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: brand.onPrimary,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#E0E7FF',
+    color: brand.onPrimaryMuted,
     marginTop: 6,
   },
   listContent: {
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: brand.tint,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#111827',
+    color: brand.text,
   },
   subtitle: {
     fontSize: 13,
