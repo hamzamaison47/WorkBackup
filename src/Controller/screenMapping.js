@@ -88,6 +88,8 @@ import {
   CalendarDays,
   Stethoscope,
   CalendarClock,
+  UserCheck, // add this
+  ClipboardCheck, // add this
 } from 'lucide-react-native';
 
 export const screenMapping = {
@@ -218,4 +220,6 @@ export const iconMapping = {
   TravelRequisitionListPage: Plane,
   ExpenseManagementHeaderListPage: Receipt,
   DFAttendanceCalendarScreen: CalendarClock,
+  AttendanceManagement: UserCheck, // add this
+  WorkItemsAssignedToMePage: ClipboardCheck, // add this
 };

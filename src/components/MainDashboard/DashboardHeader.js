@@ -65,13 +65,14 @@ const formatPunchTime = punch => {
   if (!punch?.PunchDateTime) return '—';
   const d = new Date(punch.PunchDateTime);
   if (isNaN(d.getTime())) return '—';
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const period = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12; // 0 → 12, 13 → 1, etc.
+  return `${hours}:${minutes} ${period}`;
 };
 
-const StatCell = ({icon, label, value}) => {
-  // ✅ useAppTokens inside component — reactive
+const StatCell = ({icon, label, value, valueNode}) => {
   const T = useAppTokens();
   return (
     <View style={styles.DH_statCell}>
@@ -83,11 +84,15 @@ const StatCell = ({icon, label, value}) => {
       <Text style={[styles.DH_statLabel, {color: T.subtitleText}]}>
         {label}
       </Text>
-      <Text
-        style={[styles.DH_statValue, {color: T.titleText}]}
-        numberOfLines={1}>
-        {value}
-      </Text>
+      {valueNode ? (
+        valueNode
+      ) : (
+        <Text
+          style={[styles.DH_statValue, {color: T.titleText}]}
+          numberOfLines={1}>
+          {value}
+        </Text>
+      )}
     </View>
   );
 };
@@ -102,6 +107,15 @@ const DashboardHeader = ({
   // Today's first ClockIn and last ClockOut are derived from it below.
   attendanceRecords,
 }) => {
+  console.log(
+    '[DashboardHeader] render — attendanceRecords:',
+    Array.isArray(attendanceRecords)
+      ? attendanceRecords.length
+      : attendanceRecords,
+    attendanceRecords?.[0]?.PunchDateTime,
+    attendanceRecords?.[0]?.GenerationType,
+  );
+
   // console.log('here is the user data', userData);
   // console.log('[DashboardHeader] location fields:', {
   //   location: userData?.location,
@@ -328,10 +342,20 @@ const DashboardHeader = ({
         />
         <StatCell
           icon="clock"
-          label="Clock In/Out"
-          value={`${formatPunchTime(todayClockIn)} / ${formatPunchTime(
-            todayClockOut,
-          )}`}
+          label="Today's Clock In/Out"
+          valueNode={
+            <Text
+              style={[styles.DH_statValue, {color: T.titleText}]}
+              numberOfLines={1}>
+              <Text style={{color: todayClockIn ? T.titleText : '#DC2626'}}>
+                {formatPunchTime(todayClockIn)}
+              </Text>
+              <Text style={{color: T.titleText}}> / </Text>
+              <Text style={{color: todayClockOut ? T.titleText : '#DC2626'}}>
+                {formatPunchTime(todayClockOut)}
+              </Text>
+            </Text>
+          }
         />
       </View>
     </Animated.View>

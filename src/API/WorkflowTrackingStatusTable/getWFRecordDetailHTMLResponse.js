@@ -25,8 +25,6 @@ const getWFRecordDetailHTMLResponse = async ({tableId, contextRecId}) => {
       </getWFRecordDetailHTMLResponse>`;
 
     const soapEnvelope = createSoapEnvelope(soapBody);
-    console.log('=== OUTGOING SOAP ENVELOPE ===');
-    console.log(soapEnvelope);
 
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/WorkflowTrackingStatusTableSvcGroup`,
@@ -41,9 +39,6 @@ const getWFRecordDetailHTMLResponse = async ({tableId, contextRecId}) => {
         responseType: 'text',
       },
     );
-
-    console.log('=== RAW RESPONSE XML ===');
-    console.log(xml);
 
     const parser = new XMLParser({
       ignoreAttributes: false,

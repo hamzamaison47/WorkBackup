@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useSelector, useDispatch} from 'react-redux';
+// near your other imports
+import useDashboardAlerts from '../hooks/useDashboardAlerts';
+import DashboardAlertsCard from '../components/PageHeader/DashboardAlertsCard';
 
 import ActionPaneContainer from '../components/ActionPaneContainer';
 import LogoutAlertModal from '../components/Alert/LogoutAlertModal';
@@ -76,7 +79,22 @@ const MainDashboard = () => {
 
   const [quickAccessVisible, setQuickAccessVisible] = useState(false);
   // inside the component:
-  const {attendanceRecords} = useTodayAttendance();
+  const {
+    attendanceRecords,
+    isLoading: attendanceLoading,
+    refresh: refreshAttendance,
+  } = useTodayAttendance();
+  const {alerts} = useDashboardAlerts(attendanceRecords, attendanceLoading);
+
+  // NEW — bumping this forces ApprovalsSection (and anything else keyed on
+  // it) to re-fetch, since MenuGrid's approvals list has its own fetch
+  // effect that isn't otherwise triggered by pull-to-refresh.
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleRefreshAll = useCallback(async () => {
+    setRefreshKey(k => k + 1);
+    await Promise.all([handleRefresh(), refreshAttendance()]);
+  }, [handleRefresh, refreshAttendance]);
 
   // Initialize Leave Service
   const masterService = MasterService();
@@ -149,7 +167,7 @@ const MainDashboard = () => {
         showFloatingButton={false}
         isHeaderActive={true}
         showTabNavigator={true}
-        onRefresh={handleRefresh}>
+        onRefresh={handleRefreshAll}>
         {isLoading ? (
           <CustomIndicator />
         ) : (
@@ -166,7 +184,7 @@ const MainDashboard = () => {
               refreshControl={
                 <RefreshControl
                   refreshing={refreshing}
-                  onRefresh={handleRefresh}
+                  onRefresh={handleRefreshAll}
                 />
               }>
               <DashboardHeader
@@ -178,11 +196,14 @@ const MainDashboard = () => {
                 attendanceRecords={attendanceRecords}
               />
 
+              <DashboardAlertsCard alerts={alerts} />
+
               <MenuGrid
                 dynamicMenus={dynamicMenus}
                 dimensions={dimensions}
                 onCardPress={handleCardPress}
                 userData={userData}
+                refreshKey={refreshKey}
               />
 
               <View style={{height: 100}} />

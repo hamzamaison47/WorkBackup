@@ -152,7 +152,8 @@ const useNetworkCheck = () => {
           normalizeNet(net.NetworkName) === normalizeNet(wifiSsid);
         const bssidMatch =
           !net.BSSID ||
-          (wifiBssid && normalizeNet(net.BSSID) === normalizeNet(wifiBssid));
+          !wifiBssid ||
+          normalizeNet(net.BSSID) === normalizeNet(wifiBssid);
         return ssidMatch && bssidMatch;
       });
 

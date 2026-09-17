@@ -28,6 +28,7 @@ const DEBOUNCE_MS = 2000;
 export const NATIVE_ACTION_EVENT = 'AttendanceNotificationAction';
 
 // ── DeviceEventEmitter event names consumed by TimeClockScreen ────────────────
+export const FS_EVENT_CLOCK_IN = 'fs:clock_in';
 export const FS_EVENT_BREAK_START = 'fs:break_start';
 export const FS_EVENT_BREAK_END = 'fs:break_end';
 export const FS_EVENT_CLOCK_OUT = 'fs:clock_out';

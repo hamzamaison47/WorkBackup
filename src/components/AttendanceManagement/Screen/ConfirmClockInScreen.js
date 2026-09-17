@@ -38,6 +38,8 @@ import {
 } from '../../../API/AttendanceManagement/ValidateQRCode';
 import {runBiometricGate, BIOMETRIC_GATE_REASON} from './biometricGate';
 import useAttendanceTheme from '../useAttendanceTheme';
+import {DeviceEventEmitter} from 'react-native';
+import {FS_EVENT_CLOCK_IN} from '../../../services/AttendanceManagement/AttendanceHeadlessTask';
 
 const GENERATION_TYPE = 'ClockIn';
 
@@ -86,6 +88,10 @@ const ConfirmClockInScreen = ({
           spoofingDetected,
           qrResult,
           biometricVerified,
+        });
+
+        DeviceEventEmitter.emit(FS_EVENT_CLOCK_IN, {
+          clockIn: new Date().toISOString(),
         });
 
         await onConfirm(note);

@@ -31,44 +31,12 @@ export const formatTime = date => {
 
 export const formatDate = date => {
   const d = toPKT(date);
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return `${days[d.getUTCDay()]}, ${
-    months[d.getUTCMonth()]
-  } ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
+  const dd = d.getUTCDate().toString().padStart(2, '0');
+  const mm = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+  return `${dd}/${mm}/${d.getUTCFullYear()}`;
 };
 
-export const formatDateShort = date => {
-  const d = toPKT(date);
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}`;
-};
+export const formatDateShort = date => formatDate(date);
 
 export const formatElapsed = seconds => {
   const h = Math.floor(seconds / 3600).toString();

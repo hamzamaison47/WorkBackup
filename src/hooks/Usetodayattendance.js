@@ -1,60 +1,56 @@
-import {useState, useEffect, useCallback} from 'react';
+import {useState, useEffect, useCallback, useRef} from 'react';
 import {useSelector} from 'react-redux';
 import {useFocusEffect} from '@react-navigation/native';
 import {DeviceEventEmitter} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {RetrieveByPersonAttendance} from '../API/AttendanceManagement/RetrieveByPersonAttendance';
 import {
+  FS_EVENT_CLOCK_IN,
   FS_EVENT_BREAK_START,
   FS_EVENT_BREAK_END,
   FS_EVENT_CLOCK_OUT,
 } from '../services/AttendanceManagement/AttendanceHeadlessTask';
 
-// P6.2 — Persisted snapshot, same pattern as TimeClockScreen's
-// ATTENDANCE_SNAPSHOT_KEY. Keyed separately since this hook stores the raw
-// flat punch array (DashboardHeader's expected shape), not the aggregated
-// shift objects TimeClockScreen uses. Survives app restarts so a cold launch
-// during boot-time SOAP congestion shows real last-known data instead of a
-// blank dashboard header.
-const TODAY_ATTENDANCE_SNAPSHOT_KEY = '@today_attendance_last_known_snapshot';
-
-const saveSnapshot = async records => {
-  try {
-    await AsyncStorage.setItem(
-      TODAY_ATTENDANCE_SNAPSHOT_KEY,
-      JSON.stringify(records),
-    );
-  } catch {}
+// PunchDateTime is a TRUE UTC instant (backend stores it via
+// DateTimeUtil::utcNow(); the retrieveByPerson query already filters to the
+// user's local "today" by converting local midnight boundaries back to UTC).
+// So convert with `new Date()` and compare the LOCAL calendar day — matching
+// both the backend logic and DashboardHeader.getTodayPunch. Do NOT slice the
+// raw string: that treats the 'Z' as wall-clock and lands on the wrong day.
+const isSameLocalDay = (isoString, reference) => {
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return false;
+  return (
+    d.getFullYear() === reference.getFullYear() &&
+    d.getMonth() === reference.getMonth() &&
+    d.getDate() === reference.getDate()
+  );
 };
 
-const loadSnapshot = async () => {
-  try {
-    const raw = await AsyncStorage.getItem(TODAY_ATTENDANCE_SNAPSHOT_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+const isRecordToday = record => {
+  const raw = record?.PunchDateTime;
+  if (!raw) return false;
+  return isSameLocalDay(raw, new Date());
 };
+
+const filterToday = records => (records || []).filter(isRecordToday);
 
 const useTodayAttendance = () => {
   const {userData} = useSelector(s => s.user);
   const person = userData?.Person;
 
+  // In-memory / session only — never written to or read from disk. On a
+  // cold app launch this starts empty and stays empty until the first
+  // successful fetch this session. A failed fetch never overwrites it, so
+  // a network blip can't blank out data that was genuinely confirmed today.
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [snapshotLoaded, setSnapshotLoaded] = useState(false);
 
-  // P6.2 — Paint last-known data INSTANTLY from disk, before the first
-  // network call resolves. Runs once, before `load` ever fires.
-  useEffect(() => {
-    (async () => {
-      const snapshot = await loadSnapshot();
-      console.log('[useTodayAttendance] loaded snapshot:', snapshot);
-      if (snapshot) setAttendanceRecords(snapshot);
-      setSnapshotLoaded(true);
-    })();
-  }, []);
+  // Ref, not state — keeps `load` stable so the focus effect and the four
+  // DeviceEventEmitter listeners don't re-subscribe/re-fetch every time the
+  // first successful fetch flips this. Was previously a state value in the
+  // useCallback deps, which caused repeated fetches on every mount.
+  const hasFetchedOnce = useRef(false);
 
   const load = useCallback(async () => {
     if (!person) {
@@ -66,37 +62,40 @@ const useTodayAttendance = () => {
     setError(null);
     try {
       const records = await RetrieveByPersonAttendance({person});
-      setAttendanceRecords(records || []);
-      saveSnapshot(records || []); // persist on every success
+      const todaysRecords = filterToday(records);
+      setAttendanceRecords(todaysRecords);
+      hasFetchedOnce.current = true;
     } catch (err) {
+      console.warn('[useTodayAttendance] fetch failed:', err.message, err);
       setError(err);
-      // Do NOT clear attendanceRecords here — a failed fetch is not the
-      // same as "no attendance today". Keep whatever's currently shown
-      // (either a previous successful load this session, or the disk
-      // snapshot loaded above) rather than flashing a false-empty state.
+      // If we've never successfully fetched this session, there is nothing
+      // trustworthy to fall back on — show empty rather than guessing.
+      // If we HAVE fetched successfully before this session, keep that
+      // in-memory result: it's real data, not a stale disk artifact.
+      if (!hasFetchedOnce.current) {
+        setAttendanceRecords([]);
+      }
     } finally {
       setIsLoading(false);
     }
   }, [person]);
 
-  // Only start fetching once the snapshot has had a chance to paint first —
-  // avoids a race where load() resolves before the snapshot read finishes
-  // and briefly overwrites good data with an empty initial state.
   useFocusEffect(
     useCallback(() => {
-      if (snapshotLoaded) load();
-    }, [load, snapshotLoaded]),
+      load();
+    }, [load]),
   );
 
-  // Re-fetch the instant a punch completes, even if the consuming screen
-  // never lost focus — same events TimeClockScreen listens to, so the
-  // Dashboard updates live without requiring navigation or app relaunch.
+  // Re-fetch the instant any punch completes, even if the consuming screen
+  // never lost focus.
   useEffect(() => {
     const onPunch = () => load();
+    const sub0 = DeviceEventEmitter.addListener(FS_EVENT_CLOCK_IN, onPunch);
     const sub1 = DeviceEventEmitter.addListener(FS_EVENT_BREAK_START, onPunch);
     const sub2 = DeviceEventEmitter.addListener(FS_EVENT_BREAK_END, onPunch);
     const sub3 = DeviceEventEmitter.addListener(FS_EVENT_CLOCK_OUT, onPunch);
     return () => {
+      sub0.remove();
       sub1.remove();
       sub2.remove();
       sub3.remove();

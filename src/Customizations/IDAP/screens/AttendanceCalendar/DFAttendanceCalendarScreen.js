@@ -22,6 +22,7 @@ import FeatherIcon from 'react-native-vector-icons/Feather';
 
 import {FindPayPeriod} from '../../API/AttendanceCalendar/Findpayperiod';
 import {FindAttendanceCalendar} from '../../API/AttendanceCalendar/Findattendancecalendar';
+import {findEmployeePenaltyLeaves} from '../../API/Leaves/findEmployeePenaltyLeaves';
 
 import ActionPaneContainer from '../../../../components/ActionPaneContainer';
 import CustomIndicator from '../../../../components/CustomIndicator/CustomIndicator';
@@ -83,23 +84,26 @@ const STATUS_COLORS = {
   irregular: {bg: '#C62828', text: '#B71C1C', soft: '#FDECEA'}, // red
   // "missing" is the waiting/attention family — slate, not yellow
   // (statusWaiting* in Tokens.js).
-  missing: {
-    bg: AppTokens.statusWaiting,
-    text: AppTokens.statusWaitingText,
-    soft: AppTokens.statusWaitingBg,
-  },
-  // "absent" uses the Draft family (statusDraft* in Tokens.js) so it reads
-  // differently from "missing" (waiting family) at a glance.
+
+  // Mustard — was the slate "waiting" family (AppTokens.statusWaiting*).
+  // A hardcoded, theme-independent tone, same reasoning as WHITE_CARD_BG:
+  // this needs to read as "needs attention" at a glance regardless of
+  // light/dark mode.
+  missing: {bg: '#D4A017', text: '#8A6D0B', soft: '#FBF1D6'},
+
   absent: {
     bg: AppTokens.statusDraft,
     text: AppTokens.statusDraftText,
     soft: AppTokens.statusDraftBg,
-  },
-  leave: {bg: brand.primary, text: brand.primaryStrong, soft: brand.tint},
-  // Off-day gets its own light blue — distinct enough from "Leave"'s
-  // deeper blue that the two aren't confused, while still reading as a
-  // calm, non-issue color for a plain weekend/rest day.
-  offDay: {bg: AppTokens.teal, text: brand.text, soft: AppTokens.tealBg},
+  }, // unchanged
+
+  leave: {bg: brand.primary, text: brand.primaryStrong, soft: brand.tint}, // unchanged
+
+  // Grey — was a light blue (AppTokens.teal). A genuine off-day (weekend
+  // etc.) should read as neutral/non-issue, and grey is the more standard
+  // "nothing happened here" signal than blue, which was previously close
+  // enough to "Leave"'s blue to risk confusion at a glance.
+  offDay: {bg: '#9E9E9E', text: '#616161', soft: '#F1F1F1'},
 };
 
 const STATUS_LABELS = {
@@ -243,6 +247,30 @@ const DFAttendanceCalendarScreen = () => {
   // no responder conflict, no need for a full-screen modal takeover.
   const [isPeriodDropdownOpen, setIsPeriodDropdownOpen] = useState(false);
 
+  const [penaltyLeaves, setPenaltyLeaves] = useState([]);
+
+  const loadPenaltyLeaves = useCallback(async () => {
+    if (!effectivePersonnelNumber) {
+      setPenaltyLeaves([]);
+      return;
+    }
+    try {
+      const data = await findEmployeePenaltyLeaves({
+        employeeId: effectivePersonnelNumber,
+      });
+      console.log('[Attendance] Penalty leaves:', data);
+      setPenaltyLeaves(data || []);
+    } catch (error) {
+      setPenaltyLeaves([]);
+    }
+  }, [effectivePersonnelNumber]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadPenaltyLeaves();
+    }, [loadPenaltyLeaves]),
+  );
+
   const pickCurrentPeriod = periods => {
     const today = startOfDay(new Date());
     const matching = periods.find(
@@ -268,7 +296,6 @@ const DFAttendanceCalendarScreen = () => {
       const current = pickCurrentPeriod(periods || []);
       setSelectedPeriod(current);
     } catch (error) {
-      console.error('[Attendance] Failed to fetch pay periods:', error);
       setPayPeriods([]);
       setSelectedPeriod(null);
     } finally {
@@ -432,9 +459,24 @@ const DFAttendanceCalendarScreen = () => {
     return counts;
   }, [periodRecords]);
 
+  const now = new Date();
+  const currentMonthPenaltyCount = useMemo(
+    () =>
+      penaltyLeaves
+        .filter(item =>
+          monthsInRange.some(
+            ({year, month}) =>
+              item.PenaltyMonth === MONTH_NAMES[month] &&
+              Number(item.PenaltyYear) === year,
+          ),
+        )
+        .reduce((sum, item) => sum + Number(item.PenaltyLeaveDays || 0), 0),
+    [penaltyLeaves, monthsInRange],
+  );
+
   return (
     <ActionPaneContainer
-      pageTitle="Attendance Calendar"
+      pageTitle="Attendance Insights"
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}
@@ -528,6 +570,153 @@ const DFAttendanceCalendarScreen = () => {
           </View>
         ) : (
           <>
+            {/* ── Period summary ── */}
+            <View
+              style={{
+                backgroundColor: WHITE_CARD_BG,
+                borderRadius: conditionalScale(16, 17, 18, 18),
+                borderWidth: 1,
+                borderColor: WHITE_CARD_BORDER,
+                padding: conditionalScale(14, 15, 16, 16),
+                marginTop: conditionalVerticalScale(16, 17, 18, 18),
+                marginBottom: conditionalVerticalScale(12, 13, 14, 14),
+                shadowColor: '#000',
+                shadowOffset: {width: 0, height: 2},
+                shadowOpacity: 0.06,
+                shadowRadius: 8,
+                elevation: 2,
+              }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: conditionalVerticalScale(12, 13, 14, 14),
+                  paddingBottom: conditionalVerticalScale(10, 11, 12, 12),
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#F0F0F0',
+                }}>
+                <Text
+                  style={{
+                    fontSize: conditionalFontScale(13, 13.5, 14, 14),
+                    fontWeight: '700',
+                    color: '#1A1A1A',
+                  }}>
+                  Attendance summary
+                </Text>
+                <Text
+                  style={{
+                    fontSize: conditionalFontScale(11, 11.5, 12, 12),
+                    fontWeight: '600',
+                    color: '#9AA0A6',
+                  }}>
+                  {periodRecords.length} days
+                </Text>
+              </View>
+
+              <View>
+                {[0, 1].map(rowIdx => (
+                  <View
+                    key={rowIdx}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'stretch',
+                      marginBottom: conditionalVerticalScale(14, 15, 16, 16),
+                    }}>
+                    {LEGEND_ITEMS.slice(rowIdx * 3, rowIdx * 3 + 3).map(
+                      item => (
+                        <View
+                          key={item.key}
+                          style={{
+                            flex: 1,
+                            paddingRight: conditionalScale(6, 7, 8, 8),
+                          }}>
+                          <View
+                            style={{
+                              flex: 1,
+                              flexDirection: 'row',
+                              alignItems: 'flex-start',
+                              marginBottom: 3,
+                            }}>
+                            <View
+                              style={{
+                                width: 7,
+                                height: 7,
+                                borderRadius: 2,
+                                backgroundColor: STATUS_COLORS[item.key].bg,
+                                marginRight: 5,
+                                marginTop: 3,
+                              }}
+                            />
+                            <Text
+                              numberOfLines={2}
+                              style={{
+                                flex: 1,
+                                flexShrink: 1,
+                                fontSize: conditionalFontScale(
+                                  9.5,
+                                  10,
+                                  10.5,
+                                  10.5,
+                                ),
+                                lineHeight: conditionalFontScale(
+                                  13,
+                                  13.5,
+                                  14,
+                                  14,
+                                ),
+                                fontWeight: '600',
+                                color: '#9AA0A6',
+                              }}>
+                              {item.label}
+                            </Text>
+                          </View>
+                          <Text
+                            style={{
+                              fontSize: conditionalFontScale(18, 19, 20, 20),
+                              fontWeight: '700',
+                              color: '#1A1A1A',
+                            }}>
+                            {summaryCounts[item.key]}
+                          </Text>
+                        </View>
+                      ),
+                    )}
+                  </View>
+                ))}
+              </View>
+
+              {/* Penalty leaves — separate from the status legend since it isn't
+      derived from periodRecords/deriveStatus, it's this calendar month's
+      penalty count regardless of the selected pay period. */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingTop: conditionalVerticalScale(10, 11, 12, 12),
+                  borderTopWidth: 1,
+                  borderTopColor: '#F0F0F0',
+                }}>
+                <Text
+                  style={{
+                    fontSize: conditionalFontScale(11.5, 12, 12.5, 12.5),
+                    fontWeight: '600',
+                    color: '#9AA0A6',
+                  }}>
+                  Penalty leaves this month
+                </Text>
+                <Text
+                  style={{
+                    fontSize: conditionalFontScale(16, 17, 18, 18),
+                    fontWeight: '700',
+                    color: currentMonthPenaltyCount > 0 ? '#C62828' : '#1A1A1A',
+                  }}>
+                  {currentMonthPenaltyCount}
+                </Text>
+              </View>
+            </View>
+
             {/* ── Calendar card ──
                 Columns/cells are sized with flex + aspectRatio (not fixed
                 pixels) so the 7-day grid always fills the card's full width
@@ -724,123 +913,6 @@ const DFAttendanceCalendarScreen = () => {
                   );
                 })
               )}
-            </View>
-
-            {/* ── Period summary ── */}
-            <View
-              style={{
-                backgroundColor: WHITE_CARD_BG,
-                borderRadius: conditionalScale(16, 17, 18, 18),
-                borderWidth: 1,
-                borderColor: WHITE_CARD_BORDER,
-                padding: conditionalScale(14, 15, 16, 16),
-                marginTop: conditionalVerticalScale(16, 17, 18, 18),
-                marginBottom: conditionalVerticalScale(12, 13, 14, 14),
-                shadowColor: '#000',
-                shadowOffset: {width: 0, height: 2},
-                shadowOpacity: 0.06,
-                shadowRadius: 8,
-                elevation: 2,
-              }}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: conditionalVerticalScale(12, 13, 14, 14),
-                  paddingBottom: conditionalVerticalScale(10, 11, 12, 12),
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#F0F0F0',
-                }}>
-                <Text
-                  style={{
-                    fontSize: conditionalFontScale(13, 13.5, 14, 14),
-                    fontWeight: '700',
-                    color: '#1A1A1A',
-                  }}>
-                  Attendance summary
-                </Text>
-                <Text
-                  style={{
-                    fontSize: conditionalFontScale(11, 11.5, 12, 12),
-                    fontWeight: '600',
-                    color: '#9AA0A6',
-                  }}>
-                  {periodRecords.length} days
-                </Text>
-              </View>
-
-              <View>
-                {[0, 1].map(rowIdx => (
-                  <View
-                    key={rowIdx}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'stretch',
-                      marginBottom: conditionalVerticalScale(14, 15, 16, 16),
-                    }}>
-                    {LEGEND_ITEMS.slice(rowIdx * 3, rowIdx * 3 + 3).map(
-                      item => (
-                        <View
-                          key={item.key}
-                          style={{
-                            flex: 1,
-                            paddingRight: conditionalScale(6, 7, 8, 8),
-                          }}>
-                          <View
-                            style={{
-                              flex: 1,
-                              flexDirection: 'row',
-                              alignItems: 'flex-start',
-                              marginBottom: 3,
-                            }}>
-                            <View
-                              style={{
-                                width: 7,
-                                height: 7,
-                                borderRadius: 2,
-                                backgroundColor: STATUS_COLORS[item.key].bg,
-                                marginRight: 5,
-                                marginTop: 3,
-                              }}
-                            />
-                            <Text
-                              numberOfLines={2}
-                              style={{
-                                flex: 1,
-                                flexShrink: 1,
-                                fontSize: conditionalFontScale(
-                                  9.5,
-                                  10,
-                                  10.5,
-                                  10.5,
-                                ),
-                                lineHeight: conditionalFontScale(
-                                  13,
-                                  13.5,
-                                  14,
-                                  14,
-                                ),
-                                fontWeight: '600',
-                                color: '#9AA0A6',
-                              }}>
-                              {item.label}
-                            </Text>
-                          </View>
-                          <Text
-                            style={{
-                              fontSize: conditionalFontScale(18, 19, 20, 20),
-                              fontWeight: '700',
-                              color: '#1A1A1A',
-                            }}>
-                            {summaryCounts[item.key]}
-                          </Text>
-                        </View>
-                      ),
-                    )}
-                  </View>
-                ))}
-              </View>
             </View>
 
             {/* ── Selected day detail ── */}

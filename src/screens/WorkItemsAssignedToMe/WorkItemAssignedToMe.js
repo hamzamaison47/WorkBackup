@@ -2,8 +2,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-// export default WorkItemsAssignedToMePage;
-import React, {useState, useCallback, useMemo, useEffect} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import {
   Text,
   FlatList,
@@ -15,6 +14,7 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  Image,
 } from 'react-native';
 import {
   useNavigation,
@@ -22,7 +22,7 @@ import {
   useFocusEffect,
 } from '@react-navigation/native';
 
-import {useSelector} from 'react-redux';
+import {useSelector, useDispatch} from 'react-redux';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import ActionPaneContainer from '../../components/ActionPaneContainer';
 import CustomIndicator from '../../components/CustomIndicator/CustomIndicator';
@@ -39,9 +39,181 @@ import ListFilterBar from '../../components/Filters/ListFilterBar';
 import useAppTokens from '../../components/AppComponentsDesign/useAppTokens';
 import styles from '../../styles/styles';
 import usePallete from '../../hooks/usePalette';
-import {useDispatch} from 'react-redux';
 import {setPendingWorkItemsCount} from '../../store/slices/workItemsSlice';
 import WorkflowCommentModal from '../../components/CommentModal/WorkflowCommentModal';
+import useExtraWorkflowFields from '../../hooks/useExtraWorkflowFields';
+import {TABLE_EXTRA_FIELDS} from '../../Controller/workflowExtraFields';
+
+/* ==============================
+   Card field config (module scope — doesn't need to be redefined
+   every render since it doesn't depend on component state)
+============================== */
+
+const CARD_HEADER_CONFIG = {
+  title: {key: 'documentType'},
+};
+
+// TrvExpTable and TrvRequisitionTable both get a fixed title instead of
+// showing the raw Subject text.
+const getFixedCardTitle = item => {
+  if (item.TableName === 'TrvExpTable') {
+    const subject = item.Subject || '';
+    if (/med exp/i.test(subject)) return 'Medical Expense';
+    if (/^exp:/i.test(subject)) return 'Expense Report';
+    return null;
+  }
+  if (item.TableName === 'TrvRequisitionTable') {
+    return 'Travel Requisition';
+  }
+  if (item.TableName === 'PurchTable') {
+    return 'Purchase Order';
+  }
+  if (item.TableName === 'IDAP_EmpClearanceTable') {
+    return 'Employee Clearance';
+  }
+  if (item.TableName === 'HcmGoal') {
+    return 'Performance Goals';
+  }
+  return null;
+};
+
+const getCardFields = item => {
+  const fixedTitle = getFixedCardTitle(item);
+
+  let fields;
+
+  if (item.TableName === 'LedgerJournalTable') {
+    fields = [];
+  } else if (item.TableName === 'SLD_HRPenaltyLeave') {
+    fields = [];
+  } else if (item.TableName === 'PurchTable') {
+    // Fixed title + From (no Subject). Vendor Name / Net Amount appended
+    // below via TABLE_EXTRA_FIELDS.
+    fields = [
+      {key: '__fixedCardTitle', label: 'Title', type: 'text'},
+      {key: 'From', label: 'From', type: 'text'},
+    ];
+  } else if (fixedTitle) {
+    fields = [{key: '__fixedCardTitle', label: 'Title', type: 'text'}];
+  } else if (item.TableName === 'IDAP_EmpClearanceTable') {
+    // Title, then Subject value relabeled to "Description". Worker Name
+    // appended below via TABLE_EXTRA_FIELDS.
+    fields = [{key: '__fixedCardTitle', label: 'Title', type: 'text'}];
+  } else if (fixedTitle) {
+    fields = [{key: '__fixedCardTitle', label: 'Title', type: 'text'}];
+  } else if (item.TableName === 'SLD_HRTrainingRequests') {
+    // No title, no Subject, no From — just the extra fields below.
+    fields = [];
+  } else {
+    fields = [
+      {key: 'Subject', label: 'Subject', type: 'text'},
+      {key: 'From', label: 'From', type: 'text'},
+    ];
+  }
+
+  const configs = TABLE_EXTRA_FIELDS[item.TableName] || [];
+  configs.forEach(({targetKey, cardLabel}) => {
+    if (item[targetKey]) {
+      fields.push({key: targetKey, label: cardLabel, type: 'text'});
+    }
+  });
+
+  return fields;
+};
+
+/* ==============================
+   WorkItemCard — its own component so useExtraWorkflowFields gets a
+   stable per-row component instance (hooks can't safely live inside
+   a FlatList renderItem callback function directly).
+============================== */
+
+const getInitialsFromDocument = documentStr => {
+  const nameMatch = (documentStr || '').match(/:\s*([^,]+)/);
+  const name = nameMatch ? nameMatch[1].trim() : '';
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(w => w[0]?.toUpperCase())
+      .join('') || '?'
+  );
+};
+
+const WorkItemCard = ({
+  item,
+  isSelected,
+  selectionMode,
+  onLongPress,
+  onPress,
+  buttonConfig,
+  onButtonPress,
+  processingButtons,
+  searchQuery,
+}) => {
+  const fieldConfigs = TABLE_EXTRA_FIELDS[item.TableName] || [];
+  const sourceLabels = fieldConfigs.map(f => f.sourceLabel);
+
+  const result = useExtraWorkflowFields(item, sourceLabels);
+  const extractedFields = result?.fields;
+  const photoUri = result?.imageUri;
+  const initials = getInitialsFromDocument(item.Document);
+
+  const cardData = extractedFields
+    ? fieldConfigs.reduce(
+        (acc, {sourceLabel, targetKey}) => {
+          if (extractedFields[sourceLabel] !== undefined) {
+            acc[targetKey] = extractedFields[sourceLabel];
+          }
+          return acc;
+        },
+        {...item},
+      )
+    : {...item};
+
+  const fixedTitle = getFixedCardTitle(item);
+  if (fixedTitle) {
+    cardData.__fixedCardTitle = fixedTitle;
+  }
+
+  return (
+    <Pressable
+      onLongPress={onLongPress}
+      onPress={onPress}
+      style={[
+        styles.Page_CardWrapper,
+        isSelected && styles.Page_CardWrapperSelected,
+      ]}>
+      {selectionMode && (
+        <View style={styles.Page_CheckboxContainer}>
+          <View
+            style={[
+              styles.Page_Checkbox,
+              isSelected && styles.Page_CheckboxSelected,
+            ]}>
+            {isSelected && <Text style={styles.Page_Checkmark}>✓</Text>}
+          </View>
+        </View>
+      )}
+
+      <DynamicRequestCard
+        data={cardData}
+        headerConfig={CARD_HEADER_CONFIG}
+        fields={getCardFields(cardData)}
+        buttons={buttonConfig}
+        onButtonPress={onButtonPress}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        isExpandable={false}
+        processingButtons={processingButtons}
+        showNavigationArrow={false}
+        isHighlighted={isSelected}
+        searchQuery={searchQuery}
+        avatar={{uri: photoUri, initials}}
+      />
+    </Pressable>
+  );
+};
 
 const WorkItemsAssignedToMePage = () => {
   const navigation = useNavigation();
@@ -73,13 +245,8 @@ const WorkItemsAssignedToMePage = () => {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState(null); // { actionType, recIds }
 
-  // ── Pill filter — replaces old activeTab ──
   const [activeFilter, setActiveFilter] = useState('All');
-
-  // Per-card processing buttons
   const [processingButtons, setProcessingButtons] = useState({});
-
-  // Source data; filtering/sorting/search all derive from this via the hook.
   const [rawData, setRawData] = useState([]);
 
   const f = useListFilters({
@@ -109,22 +276,17 @@ const WorkItemsAssignedToMePage = () => {
     try {
       const data = await RetrieveByEmail({email: effectiveUserData.email});
 
-      // console.log('here is retieve by email', data);
-
       const formattedData = (data || []).map((item, index) => {
         const documentStr = item.Document || '';
 
-        // Extract the document ID (everything after ':' and before ',')
         const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
         const documentId = documentIdMatch
           ? documentIdMatch[1].trim()
           : documentStr;
 
-        // Extract requester (after last comma)
         const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
         const requester = requesterMatch ? requesterMatch[1].trim() : '';
 
-        // Get document type from API if exists
         let documentType = item.DocumentType || '';
         documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
         documentType =
@@ -135,8 +297,8 @@ const WorkItemsAssignedToMePage = () => {
         return {
           id: item.workflowWorkItemRecId ?? index,
           recId: item.workflowWorkItemRecId,
-          documentId: documentId, // USMF-00060
-          documentType: documentType, // Employee Leave Requests
+          documentId: documentId,
+          documentType: documentType,
           requester: requester,
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
@@ -175,7 +337,7 @@ const WorkItemsAssignedToMePage = () => {
     setIsLoading(false);
     setIsActionLoading(false);
     setRefreshing(false);
-    hide(); // ← replaces setAlertModal/setAlertMessage
+    hide();
     setSelectionMode(false);
     setSelectedRecIds([]);
     setAttachmentModalVisible(false);
@@ -190,7 +352,7 @@ const WorkItemsAssignedToMePage = () => {
 
   useFocusEffect(
     useCallback(() => {
-      return () => clearAllStates(); // runs on blur
+      return () => clearAllStates();
     }, [clearAllStates]),
   );
 
@@ -216,13 +378,6 @@ const WorkItemsAssignedToMePage = () => {
       return () => sub.remove();
     }, [navigation, selectionMode]),
   );
-
-  // useEffect(() => {
-  //   const unsubscribe = navigation.addListener('blur', () => {
-  //     exitSelectionMode();
-  //   });
-  //   return unsubscribe;
-  // }, [navigation]);
 
   /* ==============================
      Selection Logic
@@ -274,41 +429,6 @@ const WorkItemsAssignedToMePage = () => {
      Actions
   ============================== */
 
-  // const handleSingleAction = async (recId, actionType) => {
-  //   if (isActionLoading) return;
-
-  //   const buttonKey = actionType.toLowerCase();
-  //   try {
-  //     setIsActionLoading(true);
-  //     setCardButtonProcessing(recId, buttonKey, true);
-
-  //     const response = await WorkflowItemAction({
-  //       recId: [recId],
-  //       action: actionType,
-  //     });
-
-  //     if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
-
-  //     const PAST_TENSE = {
-  //       Approve: 'Approved',
-  //       Reject: 'Rejected',
-  //       RequestChange: 'Change requested',
-  //       Delegate: 'Delegated',
-  //       Recall: 'Recalled',
-  //       Resubmit: 'Resubmitted',
-  //     };
-  //     setAlertMessage(`Workitem ${PAST_TENSE[actionType] || `${actionType}d`}`);
-  //     setAlertModal(true);
-  //     await fetchWorkItems();
-  //   } catch (error) {
-  //     setAlertMessage(error.message || `Error during ${actionType}`);
-  //     setAlertModal(true);
-  //   } finally {
-  //     setIsActionLoading(false);
-  //     setCardButtonProcessing(recId, buttonKey, false);
-  //   }
-  // };
-
   const handleSingleAction = async (recId, actionType, comment = '') => {
     if (isActionLoading) return;
 
@@ -351,7 +471,7 @@ const WorkItemsAssignedToMePage = () => {
     navigation.navigate('WorkflowHistoryScreen', {
       recId: ContextRecId,
       tableId: ContextTableId,
-      cameFrom: 'WorkItemsAssignedToMePage', // ← add this
+      cameFrom: 'WorkItemsAssignedToMePage',
     });
   };
 
@@ -363,42 +483,6 @@ const WorkItemsAssignedToMePage = () => {
       workflowWorkItemType: item?.workflowWorkItemType,
     });
   };
-
-  // Now accepts an explicit recId list (falls back to the current selection),
-  // so both the selection-mode toolbar and the "Approve All / Reject All"
-  // buttons below can share the same action + refresh + error-handling path.
-  // const handleBulkAction = async (actionType, recIdsOverride = null) => {
-  //   const targetRecIds = recIdsOverride ?? selectedRecIds;
-  //   if (targetRecIds.length === 0 || isActionLoading) return;
-
-  //   try {
-  //     setIsActionLoading(true);
-
-  //     const response = await WorkflowItemAction({
-  //       recId: targetRecIds,
-  //       action: actionType,
-  //     });
-
-  //     if (!response?.IsSuccess) throw new Error(`Failed to ${actionType}`);
-
-  //     setAlertMessage(
-  //       `${actionType} successful for ${targetRecIds.length} item(s)`,
-  //     );
-  //     setAlertModal(true);
-  //     exitSelectionMode();
-  //     // The category/status just acted on may now have nothing left in it —
-  //     // reset back to "All" rather than leaving the user looking at a filter
-  //     // that could be empty.
-  //     f.setSelectedDocumentTypes([]);
-  //     f.setActiveFilter('All');
-  //     await fetchWorkItems();
-  //   } catch (error) {
-  //     setAlertMessage(error.message || `Error during ${actionType}`);
-  //     setAlertModal(true);
-  //   } finally {
-  //     setIsActionLoading(false);
-  //   }
-  // };
 
   const handleBulkAction = async (
     actionType,
@@ -436,12 +520,9 @@ const WorkItemsAssignedToMePage = () => {
   };
 
   /* ==============================
-     Bulk actions on the current view (respects search / document-type
-     pills / status pill — whatever is presently visible in filteredData)
+     Bulk actions on the current view
   ============================== */
 
-  // Only WorkItem-type entries can be approved/rejected — Return-type items
-  // use Resubmit instead, same distinction the selection-mode toolbar makes.
   const bulkEligibleRecIds = useMemo(
     () =>
       f.filteredData
@@ -454,26 +535,6 @@ const WorkItemsAssignedToMePage = () => {
     f.activeFilter !== 'All' ||
     f.selectedDocumentTypes.length > 0 ||
     f.searchQuery.trim().length > 0;
-
-  // const confirmBulkActionOnVisible = actionType => {
-  //   const count = bulkEligibleRecIds.length;
-  //   if (count === 0 || isActionLoading) return;
-
-  //   Alert.alert(
-  //     `${actionType} ${count} item${count > 1 ? 's' : ''}?`,
-  //     `This will ${actionType.toLowerCase()} ${count} work item${
-  //       count > 1 ? 's' : ''
-  //     }${isFiltered ? ' matching your current filter' : ''}.`,
-  //     [
-  //       {text: 'Cancel', style: 'cancel'},
-  //       {
-  //         text: actionType,
-  //         style: actionType === 'Reject' ? 'destructive' : 'default',
-  //         onPress: () => handleBulkAction(actionType, bulkEligibleRecIds),
-  //       },
-  //     ],
-  //   );
-  // };
 
   const confirmBulkActionOnVisible = actionType => {
     if (bulkEligibleRecIds.length === 0 || isActionLoading) return;
@@ -509,22 +570,6 @@ const WorkItemsAssignedToMePage = () => {
     }
   };
 
-  /* ==============================
-     Card Config
-  ============================== */
-
-  const CARD_CONFIG = {
-    headerConfig: {
-      title: {key: 'documentType'},
-    },
-    fields: [
-      // {key: 'Document', label: '', type: 'link'},
-      {key: 'Subject', label: 'Subject', type: 'text'},
-      {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
-      {key: 'From', label: 'From', type: 'text'},
-    ],
-  };
-
   const getButtonConfig = Item => ({
     attachment: {
       show: true,
@@ -548,27 +593,11 @@ const WorkItemsAssignedToMePage = () => {
           ? [
               {key: 'approve', label: 'Approve', icon: 'check'},
               {key: 'reject', label: 'Reject', icon: 'x'},
-              // {key: 'requestChange', label: 'Request Change', icon: 'pencil'},
-              // {key: 'delegate', label: 'Delegate', icon: 'user'},
-              // {key: 'recall', label: 'Recall', icon: 'undo'},
               {key: 'viewHistory', label: 'View History', icon: 'clock'},
             ]
           : [{key: 'viewHistory', label: 'View History', icon: 'clock'}],
     },
   });
-
-  // const handleButtonPress = (buttonType, item) => {
-  //   if (buttonType === 'approve') handleSingleAction(item.recId, 'Approve');
-  //   else if (buttonType === 'reject') handleSingleAction(item.recId, 'Reject');
-  //   else if (buttonType === 'requestChange')
-  //     handleSingleAction(item.recId, 'RequestChange');
-  //   else if (buttonType === 'delegate')
-  //     handleSingleAction(item.recId, 'Delegate');
-  //   else if (buttonType === 'recall') handleSingleAction(item.recId, 'Recall');
-  //   else if (buttonType === 'viewHistory')
-  //     handleViewHistory(item.ContextRecId, item.ContextTableId);
-  //   else if (buttonType === 'attachment') handleAttachmentPress(item);
-  // };
 
   const handleButtonPress = (buttonType, item) => {
     if (buttonType === 'approve') openCommentModal('Approve', [item.recId]);
@@ -594,51 +623,25 @@ const WorkItemsAssignedToMePage = () => {
 
   const renderWorkItemCard = ({item}) => {
     const isSelected = selectedRecIds.includes(item.recId);
-    return (
-      <Pressable
-        onLongPress={() => enterSelectionMode(item.recId)}
-        onPress={() => selectionMode && toggleSelection(item.recId)}
-        style={[
-          styles.Page_CardWrapper,
-          isSelected && styles.Page_CardWrapperSelected,
-        ]}>
-        {selectionMode && (
-          <View style={styles.Page_CheckboxContainer}>
-            <View
-              style={[
-                styles.Page_Checkbox,
-                isSelected && styles.Page_CheckboxSelected,
-              ]}>
-              {isSelected && <Text style={styles.Page_Checkmark}>✓</Text>}
-            </View>
-          </View>
-        )}
 
-        <DynamicRequestCard
-          data={item}
-          headerConfig={CARD_CONFIG.headerConfig}
-          fields={CARD_CONFIG.fields}
-          buttons={getButtonConfig(item)}
-          onButtonPress={handleButtonPress}
-          onPress={() => {
-            if (selectionMode) {
-              toggleSelection(item.recId);
-            } else {
-              handleWorkflowDetail(
-                item.ContextRecId,
-                item.ContextTableId,
-                item,
-              );
-            }
-          }}
-          onLongPress={() => enterSelectionMode(item.recId)}
-          isExpandable={false}
-          processingButtons={processingButtons[item.recId] || []}
-          showNavigationArrow={false}
-          isHighlighted={isSelected}
-          searchQuery={f.searchQuery}
-        />
-      </Pressable>
+    return (
+      <WorkItemCard
+        item={item}
+        isSelected={isSelected}
+        selectionMode={selectionMode}
+        onLongPress={() => enterSelectionMode(item.recId)}
+        onPress={() => {
+          if (selectionMode) {
+            toggleSelection(item.recId);
+          } else {
+            handleWorkflowDetail(item.ContextRecId, item.ContextTableId, item);
+          }
+        }}
+        buttonConfig={getButtonConfig(item)}
+        onButtonPress={handleButtonPress}
+        processingButtons={processingButtons[item.recId] || []}
+        searchQuery={f.searchQuery}
+      />
     );
   };
 
@@ -650,17 +653,13 @@ const WorkItemsAssignedToMePage = () => {
 
   const areSelectedItemsSameType = () => {
     if (selectedRecIds.length === 0) return true;
-
     const items = rawData.filter(item => selectedRecIds.includes(item.recId));
-
     const firstType = items[0]?.workflowWorkItemType;
-
     return items.every(item => item.workflowWorkItemType === firstType);
   };
 
   const isUniformSelection = areSelectedItemsSameType();
   const selectedItems = rawData.filter(t => selectedRecIds.includes(t.recId));
-
   const firstSelectedType = selectedItems[0]?.workflowWorkItemType;
 
   return (
@@ -683,10 +682,6 @@ const WorkItemsAssignedToMePage = () => {
       }}>
       <ListFilterBar filters={f} showDocumentTypeFilter />
 
-      {/* Approve All / Reject All — acts on whatever is currently in view
-          (filteredData), so a search or document-type/status pill narrows
-          the scope automatically. Hidden once selection mode is active to
-          avoid two competing bulk-action bars on screen at once. */}
       {!selectionMode && bulkEligibleRecIds.length > 0 && (
         <View style={bulkAllStyles.card}>
           <View style={bulkAllStyles.headerRow}>
@@ -697,7 +692,6 @@ const WorkItemsAssignedToMePage = () => {
             </View>
             <Text style={bulkAllStyles.headerText}>
               Work items assigned to me
-              {/* {isFiltered ? 'in this view' : 'awaiting your action'} */}
             </Text>
           </View>
 
@@ -751,7 +745,6 @@ const WorkItemsAssignedToMePage = () => {
         </View>
       )}
 
-      {/* Processing overlay */}
       {isActionLoading && (
         <View style={styles.DSR_ProcessingOverlay}>
           <View style={styles.DSR_ProcessingContainer}>
@@ -782,7 +775,6 @@ const WorkItemsAssignedToMePage = () => {
         showDelete={false}
       />
 
-      {/* Bulk Toolbar (manual multi-select via long-press) */}
       {selectionMode && (
         <View style={styles.BulkToolbar_Container}>
           {selectedRecIds.length === 0 ? (
@@ -930,12 +922,6 @@ const WorkItemsAssignedToMePage = () => {
   );
 };
 
-// Styles for the "Approve All / Reject All" card. createX(T) factory (same
-// pattern as WorkflowDetailScreen) so it recomputes on theme change — built
-// with the real token names from Tokens.js:
-//  - cardBg/cardDivider/shadowColor/titleText/blue/blueBg for chrome
-//  - BrandTokens green/greenBg + red/redBg for the semantic approve/reject
-//    colors, which stay the same hue in both themes rather than going neutral
 const createBulkAllStyles = T =>
   StyleSheet.create({
     card: {
@@ -955,11 +941,7 @@ const createBulkAllStyles = T =>
       shadowRadius: 8,
       elevation: 2,
     },
-    headerRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
+    headerRow: {flexDirection: 'row', alignItems: 'center', gap: 8},
     countBadge: {
       minWidth: 24,
       height: 24,
@@ -971,11 +953,7 @@ const createBulkAllStyles = T =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    countBadgeText: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: T.blueStrong,
-    },
+    countBadgeText: {fontSize: 12, fontWeight: '700', color: T.blueStrong},
     headerText: {
       fontSize: 13,
       fontWeight: '600',
@@ -988,10 +966,7 @@ const createBulkAllStyles = T =>
       marginTop: 10,
       marginBottom: 12,
     },
-    buttonRow: {
-      flexDirection: 'row',
-      gap: 10,
-    },
+    buttonRow: {flexDirection: 'row', gap: 10},
     approveBtn: {
       flex: 1,
       flexDirection: 'row',
@@ -1024,14 +999,8 @@ const createBulkAllStyles = T =>
       paddingVertical: 11,
       borderRadius: 10,
     },
-    rejectBtnText: {
-      fontSize: 13.5,
-      fontWeight: '700',
-      color: T.red,
-    },
-    btnDisabled: {
-      opacity: 0.55,
-    },
+    rejectBtnText: {fontSize: 13.5, fontWeight: '700', color: T.red},
+    btnDisabled: {opacity: 0.55},
   });
 
 export default WorkItemsAssignedToMePage;

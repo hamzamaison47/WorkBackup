@@ -12,6 +12,7 @@ const MenuCard = ({
   iconSize,
   gridGap,
   onPress,
+  badgeCount, // add this
 }) => {
   // ✅ useAppTokens — reactive
   const T = useAppTokens();
@@ -26,8 +27,6 @@ const MenuCard = ({
 
   const isLucideIcon = isReactComponent(card.icon);
 
-  // Box stays sized off the original iconSize so spacing/layout is
-  // unaffected; only the rendered icon itself shrinks.
   const iconBoxSize = Math.round(iconSize * 1.7);
   const renderedIconSize = Math.round(iconSize * 0.8);
 
@@ -39,7 +38,6 @@ const MenuCard = ({
           width: cardWidth,
           height: cardHeight,
           marginBottom: gridGap,
-          // ✅ card bg and shadow react to theme
           backgroundColor: T.cardBg,
           shadowColor: T.shadowColor,
         },
@@ -69,6 +67,36 @@ const MenuCard = ({
             ]}
             resizeMode="contain"
           />
+        )}
+        {badgeCount > 0 && (
+          <View
+            // eslint-disable-next-line react-native/no-inline-styles
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              minWidth: 18,
+              height: 18,
+              borderRadius: 9,
+              paddingHorizontal: 4,
+              backgroundColor: AppTokens.tabBadgeBg,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1.5,
+              borderColor: T.cardBg,
+              zIndex: 10,
+            }}>
+            <Text
+              // eslint-disable-next-line react-native/no-inline-styles
+              style={{
+                color: AppTokens.tabBadgeText,
+                fontSize: 10,
+                fontWeight: '700',
+              }}
+              numberOfLines={1}>
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </Text>
+          </View>
         )}
       </View>
       <Text

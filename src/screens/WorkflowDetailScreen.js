@@ -321,7 +321,7 @@ const WorkflowDetailScreen = () => {
 
   const route = useRoute();
   const navigation = useNavigation();
-  const {contextRecId, tableId} = route.params ?? {};
+  const {contextRecId, tableId, returnTo} = route.params ?? {};
   const {width} = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -375,8 +375,8 @@ const WorkflowDetailScreen = () => {
   );
 
   const handleGoBack = useCallback(() => {
-    navigation.navigate('WorkItemsAssignedToMePage');
-  }, [navigation]);
+    navigation.navigate(returnTo || 'WorkItemsAssignedToMePage');
+  }, [navigation, returnTo]);
 
   // System/hardware back press (Android back button or gesture) should land
   // in the same place as the in-content "Back to Work Items" button and the

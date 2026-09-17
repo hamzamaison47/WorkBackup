@@ -7,6 +7,7 @@ import {
   Animated,
   Modal,
   Dimensions,
+  Image,
 } from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import {useSelector} from 'react-redux';
@@ -132,6 +133,7 @@ const DynamicRequestCard = ({
   isSelected = false,
   onSelectToggle = null,
   searchQuery = '',
+  avatar = null, // NEW — { uri } for a photo, or { initials } for the fallback badge
 }) => {
   // ✅ useAppTokens at top — reactive to theme changes
   const T = useAppTokens();
@@ -945,6 +947,27 @@ const DynamicRequestCard = ({
           ]}>
           {/* ── Hero Header ── */}
           <View style={[S.heroHeader, {backgroundColor: T.cardBg}]}>
+            {avatar && (
+              <View style={S.avatarWrap}>
+                {avatar.uri ? (
+                  <Image source={{uri: avatar.uri}} style={S.avatarImage} />
+                ) : (
+                  <View
+                    style={[
+                      S.avatarFallback,
+                      {backgroundColor: T.blueBg ?? '#E5EEFB'},
+                    ]}>
+                    <Text
+                      style={[
+                        S.avatarFallbackText,
+                        {color: T.blueStrong ?? '#2563EB'},
+                      ]}>
+                      {avatar.initials || '?'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
             <View style={S.heroLeft}>
               {headerConfig.title && (
                 <HighlightText
@@ -1126,8 +1149,8 @@ const S = {
     justifyContent: 'space-between',
     paddingLeft: conditionalScale(14, 15, 16, 16),
     paddingRight: conditionalScale(10, 11, 12, 12),
-    paddingTop: conditionalVerticalScale(11, 12, 13, 13),
-    paddingBottom: conditionalVerticalScale(11, 12, 13, 13),
+    paddingTop: conditionalVerticalScale(16, 17, 18, 18), // was 11, 12, 13, 13
+    paddingBottom: conditionalVerticalScale(16, 17, 18, 18), // was 11, 12, 13, 13
     gap: conditionalScale(8, 9, 10, 10),
   },
   heroLeft: {flex: 1, gap: conditionalVerticalScale(2, 2, 3, 3)},
@@ -1345,6 +1368,25 @@ const S = {
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarWrap: {
+    flexShrink: 0,
+  },
+  avatarImage: {
+    width: conditionalScale(64, 70, 76, 82), // bigger
+    height: conditionalScale(64, 70, 76, 82),
+    borderRadius: 999,
+  },
+  avatarFallback: {
+    width: conditionalScale(64, 70, 76, 82), // match avatarImage
+    height: conditionalScale(64, 70, 76, 82),
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarFallbackText: {
+    fontSize: conditionalFontScale(22, 24, 25, 27),
+    fontWeight: '700',
   },
 };
 

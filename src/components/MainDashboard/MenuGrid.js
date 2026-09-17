@@ -137,8 +137,11 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
   const T = useAppTokens();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(8)).current;
+  const blinkAnim = useRef(new Animated.Value(1)).current;
   const accent = getTypeAccent(item.documentType);
   const isProcessing = processingKey === item.recId;
+  const daysOld = getDaysOld(item.createdDateTime);
+  const overdue = daysOld >= OVERDUE_THRESHOLD_DAYS;
 
   useEffect(() => {
     Animated.parallel([
@@ -155,6 +158,32 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
     ]).start();
   }, [fadeAnim, slideAnim]);
 
+  // Blinking loop for the overdue dot only — starts/stops based on `overdue`
+  // so non-overdue cards never run the animation loop at all.
+  useEffect(() => {
+    let loop;
+    if (overdue) {
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.2,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+    } else {
+      blinkAnim.setValue(1);
+    }
+    return () => loop?.stop();
+  }, [overdue, blinkAnim]);
+
   return (
     <Animated.View
       style={[
@@ -168,6 +197,23 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
       ]}>
       <View style={[styles.MG_aCardStrip, {backgroundColor: accent.color}]} />
 
+      {/* Blinking red dot — the only overdue indicator on the card itself */}
+      {overdue && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: BRAND.red,
+            opacity: blinkAnim,
+            zIndex: 1,
+          }}
+        />
+      )}
+
       <TouchableOpacity
         onPress={() => onPress(item)}
         activeOpacity={0.7}
@@ -180,9 +226,21 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
               {item.documentType || 'Request'}
             </Text>
           </View>
-          <Text style={[styles.MG_aTimeText, {color: T.subtitleText}]}>
-            {formatRelativeTime(item.createdDateTime)}
-          </Text>
+
+          {overdue ? (
+            <Text
+              style={{
+                fontSize: 10.5,
+                fontWeight: '700',
+                color: BRAND.red,
+              }}>
+              {daysOld}d overdue
+            </Text>
+          ) : (
+            <Text style={[styles.MG_aTimeText, {color: T.subtitleText}]}>
+              {formatRelativeTime(item.createdDateTime)}
+            </Text>
+          )}
         </View>
 
         <Text
@@ -261,10 +319,22 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
   );
 };
 
+const OVERDUE_THRESHOLD_DAYS = 7;
+
+const getDaysOld = raw => {
+  if (!raw) return 0;
+  const created = new Date(raw).getTime();
+  if (isNaN(created)) return 0;
+  const diffMs = Date.now() - created;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+};
+
+const isOverdue = raw => getDaysOld(raw) >= OVERDUE_THRESHOLD_DAYS;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ApprovalsSection
 // ─────────────────────────────────────────────────────────────────────────────
-const ApprovalsSection = ({userData, navigation}) => {
+const ApprovalsSection = ({userData, navigation, refreshKey}) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingKey, setProcessingKey] = useState(null);
@@ -299,7 +369,13 @@ const ApprovalsSection = ({userData, navigation}) => {
           ContextRecId: item.ContextRecId,
         };
       });
-      setItems(formatted);
+      const sorted = [...formatted].sort((a, b) => {
+        const aOverdue = isOverdue(a.createdDateTime);
+        const bOverdue = isOverdue(b.createdDateTime);
+        if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
+        return new Date(a.createdDateTime) - new Date(b.createdDateTime);
+      });
+      setItems(sorted);
     } catch {
       setItems([]);
     } finally {
@@ -309,7 +385,7 @@ const ApprovalsSection = ({userData, navigation}) => {
 
   useEffect(() => {
     fetchApprovals();
-  }, [fetchApprovals]);
+  }, [fetchApprovals, refreshKey]); // ← now actually re-fetches on pull-to-refresh
 
   useEffect(() => {
     if (!loading) {
@@ -347,6 +423,7 @@ const ApprovalsSection = ({userData, navigation}) => {
     navigation.navigate('WorkflowDetailScreen', {
       tableId: item.ContextTableId,
       contextRecId: item.ContextRecId,
+      returnTo: 'MainDashboard', // ← where back should land when opened from the dashboard
     });
   };
 
@@ -585,7 +662,13 @@ const LeavesAvailableSection = ({navigation, userData}) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // MenuGrid
 // ─────────────────────────────────────────────────────────────────────────────
-const MenuGrid = ({dynamicMenus, dimensions, onCardPress, userData}) => {
+const MenuGrid = ({
+  dynamicMenus,
+  dimensions,
+  onCardPress,
+  userData,
+  refreshKey,
+}) => {
   const T = useAppTokens();
   const navigation = useNavigation();
   const [currentPage, setCurrentPage] = useState(0);
@@ -650,9 +733,11 @@ const MenuGrid = ({dynamicMenus, dimensions, onCardPress, userData}) => {
 
   return (
     <View style={styles.MG_container}>
-      <LeavesAvailableSection navigation={navigation} userData={userData} />
-
-      <ApprovalsSection userData={userData} navigation={navigation} />
+      <ApprovalsSection
+        userData={userData}
+        navigation={navigation}
+        refreshKey={refreshKey}
+      />
 
       {dynamicMenus.length === 0 ? (
         <View style={styles.MG_emptyState}>

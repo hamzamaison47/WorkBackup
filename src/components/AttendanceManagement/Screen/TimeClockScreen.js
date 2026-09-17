@@ -323,14 +323,14 @@ const makeCL = DK =>
 // ─────────────────────────────────────────────
 // Status pill
 // ─────────────────────────────────────────────
-const StatusPill = ({status}) => {
+const StatusPill = ({status, todayComplete}) => {
   const {DK} = useAttendanceTheme();
   const SP = useMemo(() => makeSP(DK), [DK]);
   const STATUS_CFG = {
     out: {
-      label: 'Not Clocked In',
-      color: DK.textSecondary,
-      dotColor: DK.textMuted,
+      label: todayComplete ? 'Attendance Completed' : 'Not Clocked In',
+      color: todayComplete ? DK.accentGreen : DK.textSecondary,
+      dotColor: todayComplete ? DK.accentGreen : DK.textMuted,
     },
     in: {label: 'Clocked In', color: DK.accentGreen, dotColor: DK.accentGreen},
     break: {label: 'On Break', color: DK.accentAmber, dotColor: DK.accentAmber},
@@ -402,10 +402,16 @@ const TimeSummary = ({status, elapsed, clockInTime, clockOutTime}) => {
         <View style={TS.miniCard}>
           <Text style={TS.miniLabel}>CLOCK IN</Text>
           <Text style={TS.miniValue}>{clockInStr}</Text>
+          {clockInTime && (
+            <Text style={TS.miniDate}>{formatDateShort(clockInTime)}</Text>
+          )}
         </View>
         <View style={TS.miniCard}>
           <Text style={TS.miniLabel}>CLOCK OUT</Text>
           <Text style={TS.miniValue}>{clockOutStr}</Text>
+          {clockOutTime && (
+            <Text style={TS.miniDate}>{formatDateShort(clockOutTime)}</Text>
+          )}
         </View>
       </View>
     </View>
@@ -457,6 +463,7 @@ const makeTS = DK =>
       marginBottom: 3,
     },
     miniValue: {fontSize: 15, fontWeight: '700', color: DK.textPrimary},
+    miniDate: {fontSize: 12, fontWeight: '500', color: DK.textMuted},
   });
 
 // ─────────────────────────────────────────────
@@ -900,11 +907,18 @@ const TimeClockScreen = ({onNavigate}) => {
     (currentNetInfo?.type === 'wifi' &&
       !!currentNetInfo?.details?.ssid &&
       currentNetInfo.details.ssid === requiredNetworkName);
+  const syncRetryTimeoutRef = useRef(null);
+  const syncRetryCountRef = useRef(0);
 
   const syncStateFromStorage = useCallback(async () => {
+    if (syncRetryTimeoutRef.current) {
+      clearTimeout(syncRetryTimeoutRef.current);
+      syncRetryTimeoutRef.current = null;
+    }
     setIsSyncRetrying(true);
     try {
       const records = await loadRecords({person});
+      syncRetryCountRef.current = 0;
       setSyncError(null);
       setWorkflowFlags({
         canIn: canClockIn(records),
@@ -980,15 +994,26 @@ const TimeClockScreen = ({onNavigate}) => {
 
       saveSnapshot(snapshotToSave);
     } catch (err) {
-      console.warn(
-        '[syncStateFromStorage] failed, keeping last known state:',
-        err.message,
-      );
-      setSyncError('Unable to verify current status.');
+      console.warn('[syncStateFromStorage] failed, retrying:', err.message);
+      setSyncError('Reconnecting…');
+      const attempt = syncRetryCountRef.current + 1;
+      syncRetryCountRef.current = attempt;
+      const delay = Math.min(2000 * 2 ** (attempt - 1), 30000); // 2s → 30s cap
+      syncRetryTimeoutRef.current = setTimeout(() => {
+        syncStateFromStorage();
+      }, delay);
     } finally {
       setIsSyncRetrying(false);
     }
   }, [person]);
+
+  useEffect(
+    () => () => {
+      if (syncRetryTimeoutRef.current)
+        clearTimeout(syncRetryTimeoutRef.current);
+    },
+    [],
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -1094,32 +1119,6 @@ const TimeClockScreen = ({onNavigate}) => {
       sub3.remove();
     };
   }, []);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      const onBackPress = () => {
-        if (modalVisible) {
-          setModalVisible(false);
-          return true; // Swallowed by TimeClockScreen
-        }
-        if (preFaceModalVisible) {
-          handlePreFaceCancel();
-          return true;
-        }
-        if (subScreen !== 'main') {
-          setSubScreen('main');
-          setValidationToken(null);
-          return true; // Swallowed by TimeClockScreen
-        }
-        // Let it bubble up to AttendanceManagement
-        return false;
-      };
-
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-    }, [subScreen, modalVisible, preFaceModalVisible, handlePreFaceCancel]),
-  );
 
   const checkCommonIntegrity = (requireFence = false) => {
     if (locationLoading) {
@@ -1312,6 +1311,32 @@ const TimeClockScreen = ({onNavigate}) => {
     actionInProgress.current = false;
   }, []);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        if (modalVisible) {
+          setModalVisible(false);
+          return true; // Swallowed by TimeClockScreen
+        }
+        if (preFaceModalVisible) {
+          handlePreFaceCancel();
+          return true;
+        }
+        if (subScreen !== 'main') {
+          setSubScreen('main');
+          setValidationToken(null);
+          return true; // Swallowed by TimeClockScreen
+        }
+        // Let it bubble up to AttendanceManagement
+        return false;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [subScreen, modalVisible, preFaceModalVisible, handlePreFaceCancel]),
+  );
+
   const handleClockIn = useCallback(
     async note => {
       await guardedAction(async () => {
@@ -1404,6 +1429,12 @@ const TimeClockScreen = ({onNavigate}) => {
     [syncStateFromStorage, guardedAction],
   );
 
+  const hasTodayRecord = useMemo(
+    () =>
+      (clockInTime && isToday(clockInTime)) || (lastOut && isToday(lastOut)),
+    [clockInTime, lastOut],
+  );
+
   // ── Sub-screens ─────────────────────────────────────────────────────────────
   // P2.5: validationToken passed to all confirm screens.
   // Confirm screens use Orchestrator.confirm(token) — no redundant SOAP calls.
@@ -1457,11 +1488,7 @@ const TimeClockScreen = ({onNavigate}) => {
 
   if (isLoading) return <SkeletonScreen />;
 
-  const todayStr = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
+  const todayStr = formatDateShort(new Date().toISOString());
 
   return (
     <SafeAreaView style={S.screen}>
@@ -1487,15 +1514,19 @@ const TimeClockScreen = ({onNavigate}) => {
           />
         }
         showsVerticalScrollIndicator={false}>
-        <StatusPill status={status} />
+        <StatusPill status={status} todayComplete={todayComplete} />
         <ClockRing status={status} />
         <Text style={S.dateLabel}>{todayStr}</Text>
 
         <TimeSummary
           status={status}
           elapsed={elapsed}
-          clockInTime={clockInTime}
-          clockOutTime={lastOut}
+          clockInTime={
+            status !== 'out' || (clockInTime && isToday(clockInTime))
+              ? clockInTime
+              : null
+          }
+          clockOutTime={lastOut && isToday(lastOut) ? lastOut : null}
         />
 
         {notifAction && (
@@ -1508,11 +1539,7 @@ const TimeClockScreen = ({onNavigate}) => {
         {spoofingDetected && <SpoofingBanner reason={spoofingReason} />}
 
         {syncError && (
-          <TouchableOpacity
-            onPress={() => {
-              if (!isSyncRetrying) syncStateFromStorage();
-            }}
-            activeOpacity={0.7}
+          <View
             style={{
               flexDirection: 'row',
               alignItems: 'center',
@@ -1525,15 +1552,11 @@ const TimeClockScreen = ({onNavigate}) => {
               borderWidth: 1,
               borderColor: 'rgba(107,114,128,0.2)',
             }}>
-            {isSyncRetrying ? (
-              <ActivityIndicator size="small" color={DK.textSecondary} />
-            ) : (
-              <Text style={{fontSize: 14}}>↻</Text>
-            )}
+            <ActivityIndicator size="small" color={DK.textSecondary} />
             <Text style={{fontSize: 11, color: DK.textSecondary, flex: 1}}>
-              {syncError} Tap to retry.
+              Reconnecting…
             </Text>
-          </TouchableOpacity>
+          </View>
         )}
 
         {/* P4.1 — only relevant pre-clock-in, and only once we actually
