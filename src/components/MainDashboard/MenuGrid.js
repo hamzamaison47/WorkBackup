@@ -10,7 +10,7 @@ import {
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import {useNavigation} from '@react-navigation/native';
 import MenuCard from './MenuCard';
-import {chunkArray} from '../../store/utils/helpers';
+// import {chunkArray} from '../../store/utils/helpers';
 import {AppTokens} from '../AppComponentsDesign/Appcomponents';
 import useAppTokens from '../AppComponentsDesign/useAppTokens';
 import {
@@ -24,6 +24,8 @@ import {RetrieveEntitlementBalanceRequest} from '../../API/EntitlementBalance/Re
 import styles from '../../styles/styles';
 import LinearGradient from 'react-native-linear-gradient';
 import brand from '../../theme/brand';
+import useExtraWorkflowFields from '../../hooks/useExtraWorkflowFields';
+import {TABLE_EXTRA_FIELDS} from '../../Controller/workflowExtraFields';
 
 // ✅ Brand-only tokens — never change between themes
 const BRAND = {
@@ -40,6 +42,11 @@ const BRAND = {
   teal: '#0E7490',
   tealSoft: AppTokens.tealBg,
   muted: '#9AA3AF',
+};
+
+const DOCUMENT_TYPE_OVERRIDES = {
+  HRMCourseAttendee: 'Training Calendar',
+  SLD_HRTrainingRequests: 'Employee Course Request',
 };
 
 const formatRelativeTime = raw => {
@@ -101,7 +108,7 @@ const SectionHeader = ({title, count, actionLabel, onAction, rightLabel}) => {
           {title}
         </Text>
         {count != null && count > 0 && (
-          <View style={[styles.MG_badge, {backgroundColor: BRAND.blue}]}>
+          <View style={[styles.MG_badge, {backgroundColor: '#F4B400'}]}>
             <Text style={styles.MG_badgeText}>{count}</Text>
           </View>
         )}
@@ -142,6 +149,22 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
   const isProcessing = processingKey === item.recId;
   const daysOld = getDaysOld(item.createdDateTime);
   const overdue = daysOld >= OVERDUE_THRESHOLD_DAYS;
+
+  // Same extra-field extraction the full work-items card uses, so the
+  // dashboard preview shows the same per-type fields (Employee/Amount,
+  // Leave Name, etc.). One extra fetch per card via the hook.
+  const fieldConfigs = TABLE_EXTRA_FIELDS[item.TableName] || [];
+  const sourceLabels = fieldConfigs.map(fc => fc.sourceLabel);
+  const {fields: extractedFields} =
+    useExtraWorkflowFields(item, sourceLabels) || {};
+
+  const topFields = fieldConfigs
+    .map(({sourceLabel, cardLabel}) => ({
+      label: cardLabel,
+      value: extractedFields?.[sourceLabel],
+    }))
+    .filter(fld => fld.value != null && fld.value !== '')
+    .slice(0, 2);
 
   useEffect(() => {
     Animated.parallel([
@@ -243,13 +266,33 @@ const ApprovalCard = ({item, onApprove, onReject, onPress, processingKey}) => {
           )}
         </View>
 
-        <Text
-          style={[styles.MG_aDocId, {color: T.titleText}]}
-          numberOfLines={1}>
-          {item.documentId || item.Document || '—'}
-        </Text>
+        {topFields[0] ? (
+          <Text
+            style={[styles.MG_aDocId, {color: T.titleText}]}
+            numberOfLines={1}>
+            {topFields[0].value}
+          </Text>
+        ) : item.TableName === 'HRMCourseAttendee' && item.Subject ? (
+          <Text
+            style={[styles.MG_aDocId, {color: T.titleText}]}
+            numberOfLines={1}>
+            {item.Subject}
+          </Text>
+        ) : null}
 
-        {item.From ? (
+        {topFields[1] ? (
+          <Text
+            style={[styles.MG_aFromText, {color: T.subtitleText}]}
+            numberOfLines={1}>
+            {topFields[1].value}
+          </Text>
+        ) : item.TableName === 'SLD_HRLeaveHistory' ? (
+          <Text
+            style={[styles.MG_aFromText, {color: T.subtitleText}]}
+            numberOfLines={1}>
+            {item.documentId || item.Document || '—'}
+          </Text>
+        ) : item.TableName === 'HRMCourseAttendee' && item.From ? (
           <Text
             style={[styles.MG_aFromText, {color: T.subtitleText}]}
             numberOfLines={1}>
@@ -355,6 +398,8 @@ const ApprovalsSection = ({userData, navigation, refreshKey}) => {
           : documentStr;
         let documentType = item.DocumentType || '';
         documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+
+        documentType = DOCUMENT_TYPE_OVERRIDES[item.TableName] || documentType;
         return {
           id: item.workflowWorkItemRecId ?? index,
           recId: item.workflowWorkItemRecId,
@@ -367,6 +412,7 @@ const ApprovalsSection = ({userData, navigation, refreshKey}) => {
           Subject: item.Subject,
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
+          TableName: item.TableName, // ← needed for extra-field extraction
         };
       });
       const sorted = [...formatted].sort((a, b) => {
@@ -671,51 +717,48 @@ const MenuGrid = ({
 }) => {
   const T = useAppTokens();
   const navigation = useNavigation();
-  const [currentPage, setCurrentPage] = useState(0);
-  const flatListRef = useRef(null);
-  const dotAnims = useRef([]).current;
 
   const {
-    screenWidth,
     computedCardWidth,
     computedCardHeight,
     iconSize,
     GRID_GAP,
     numColumns,
-    cardsPerPage,
   } = dimensions;
 
   const reducedIconSize = Math.round(iconSize * 0.72);
-  const pages = chunkArray(dynamicMenus, cardsPerPage);
 
-  while (dotAnims.length < pages.length) {
-    dotAnims.push(new Animated.Value(dotAnims.length === 0 ? 1 : 0));
-  }
-
-  const goToPage = index => {
-    flatListRef.current?.scrollToIndex({index, animated: true});
-    animateDot(index);
-    setCurrentPage(index);
+  // ── Split tiles into an Attendance group + everything else ──
+  // Adjust this matcher if your attendance MenuIds don't contain "attendance".
+  // For exact control, swap it for a Set:
+  //   const ATTENDANCE_IDS = new Set(['MarkAttendance', 'AttendanceHistory', ...]);
+  //   const isAttendanceTile = card => ATTENDANCE_IDS.has(card.menuItem?.MenuId);
+  const isAttendanceTile = card => {
+    const hay = `${card.menuItem?.MenuId || ''} ${
+      card.title || ''
+    }`.toLowerCase();
+    return hay.includes('attendance');
   };
 
-  const animateDot = index => {
-    dotAnims.forEach((anim, i) => {
-      Animated.timing(anim, {
-        toValue: i === index ? 1 : 0,
-        duration: 180,
-        useNativeDriver: false,
-      }).start();
-    });
-  };
+  const attendanceMenus = dynamicMenus.filter(isAttendanceTile);
+  const otherMenus = dynamicMenus.filter(card => !isAttendanceTile(card));
 
-  const renderPage = ({item: pageCards}) => (
-    <View style={[styles.MG_page, {width: screenWidth}]}>
-      {pageCards.map((card, index) => (
+  // Shared wrapping grid — cards wrap to the next row and the section grows
+  // downward, scrolling with the dashboard's outer ScrollView.
+  const renderTileGrid = cards => (
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingLeft: GRID_GAP, // ✅ space on the left side of the tiles
+      }}>
+      {cards.map((card, index) => (
         <View
           key={card.id}
           style={{
             width: computedCardWidth,
             marginRight: (index + 1) % numColumns === 0 ? 0 : GRID_GAP,
+            marginBottom: GRID_GAP,
           }}>
           <MenuCard
             card={card}
@@ -724,7 +767,7 @@ const MenuGrid = ({
             iconSize={reducedIconSize}
             gridGap={GRID_GAP}
             onPress={() => onCardPress(card)}
-            badgeCount={card.badgeCount} // NEW
+            badgeCount={card.badgeCount}
           />
         </View>
       ))}
@@ -757,65 +800,18 @@ const MenuGrid = ({
         </View>
       ) : (
         <>
-          <SectionHeader
-            title="Quick Actions"
-            rightLabel={
-              pages.length > 1
-                ? `${currentPage + 1} / ${pages.length}`
-                : undefined
-            }
-          />
-          <FlatList
-            ref={flatListRef}
-            data={pages}
-            renderItem={renderPage}
-            keyExtractor={(_, index) => index.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={e => {
-              const page = Math.round(
-                e.nativeEvent.contentOffset.x / screenWidth,
-              );
-              if (page !== currentPage) {
-                setCurrentPage(page);
-                animateDot(page);
-              }
-            }}
-            scrollEventThrottle={16}
-          />
-          {pages.length > 1 && (
-            <View style={styles.MG_dots}>
-              {pages.map((_, index) => {
-                const dotWidth = dotAnims[index]?.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [4, 14],
-                });
-                const dotOpacity = dotAnims[index]?.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.2, 1],
-                });
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => goToPage(index)}
-                    hitSlop={{top: 8, bottom: 8, left: 6, right: 6}}
-                    activeOpacity={0.7}>
-                    <Animated.View
-                      style={[
-                        styles.MG_dot,
-                        {
-                          width: dotWidth,
-                          opacity: dotOpacity,
-                          backgroundColor:
-                            currentPage === index ? BRAND.blue : T.subtitleText,
-                        },
-                      ]}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+          {otherMenus.length > 0 && (
+            <>
+              <SectionHeader title="Quick Actions" />
+              {renderTileGrid(otherMenus)}
+            </>
+          )}
+
+          {attendanceMenus.length > 0 && (
+            <>
+              <SectionHeader title="Attendance" />
+              {renderTileGrid(attendanceMenus)}
+            </>
           )}
         </>
       )}

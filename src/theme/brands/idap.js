@@ -23,7 +23,7 @@ const idap = {
 
   // Primary AS text / link / 1–2px border / small icon / spinner on a light
   // background. Dark mustard: 5.1:1 on white, 4.7:1 on pageBg and on tint.
-  primaryStrong: '#8A6A00',
+  primaryStrong: '#F4B400',
 
   // Content ON a primary fill: button labels, icons, badge text. 8.9:1.
   onPrimary: charcoal,

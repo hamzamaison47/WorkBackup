@@ -31,9 +31,6 @@ export default function useExtraWorkflowFields(item, labels) {
         });
         const fields = labels.length ? extractFieldsFromHtml(html, labels) : {};
         const imageUri = extractImageUriFromHtml(html);
-        if (item.TableName === 'PurchTable') {
-          console.log('DEBUG raw HTML for PurchTable recId', item.recId, html);
-        }
         const combined = {fields, imageUri};
         cache.set(item.recId, combined);
         if (!cancelled) setResult(combined);

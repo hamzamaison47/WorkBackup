@@ -82,6 +82,7 @@ import ExpenseManagementSaveRecord from '../Customizations/IDAP/screens/ExpenseM
 import ExpenseManagementLinesListPage from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLinesListPage';
 import ExpenseManagementLineSaveRecord from '../Customizations/IDAP/screens/ExpenseManagement/Lines/ExpenseManagementLineSaveRecord';
 import DFAttendanceCalendarScreen from '../Customizations/IDAP/screens/AttendanceCalendar/DFAttendanceCalendarScreen';
+import DFTeamAttendanceScreen from '../Customizations/IDAP/screens/AttendanceCalendar/DFTeamAttendanceScreen';
 import {
   Plane,
   Receipt,
@@ -89,7 +90,9 @@ import {
   Stethoscope,
   CalendarClock,
   UserCheck, // add this
+  Users, // add this
   ClipboardCheck, // add this
+  Inbox, // ✅ add this
 } from 'lucide-react-native';
 
 export const screenMapping = {
@@ -183,6 +186,7 @@ export const screenMapping = {
   ExpenseManagementLinesListPage: ExpenseManagementLinesListPage,
   ExpenseManagementLineSaveRecord: ExpenseManagementLineSaveRecord,
   DFAttendanceCalendarScreen: DFAttendanceCalendarScreen,
+  DFTeamAttendanceScreen: DFTeamAttendanceScreen,
 };
 
 // Map Images → Screen component
@@ -221,5 +225,6 @@ export const iconMapping = {
   ExpenseManagementHeaderListPage: Receipt,
   DFAttendanceCalendarScreen: CalendarClock,
   AttendanceManagement: UserCheck, // add this
-  WorkItemsAssignedToMePage: ClipboardCheck, // add this
+  WorkItemsAssignedToMePage: Inbox, // add this
+  DFTeamAttendanceScreen: Users,
 };

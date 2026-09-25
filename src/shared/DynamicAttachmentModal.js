@@ -126,12 +126,6 @@ const DynamicAttachmentModal = ({
         tableName: tableName,
       });
 
-      // ── DEBUG ──
-      console.log(
-        '[ATTACH DEBUG] RetrieveReceipts raw result:',
-        JSON.stringify(result),
-      );
-
       console.log('RetrieveReceipts', {result});
 
       if (result.success && result.attachments) {

@@ -186,6 +186,7 @@ const MedicalExpenseManagmentListPage = () => {
         personnelNumber: effectiveEmployeeId,
         purpose: 'Medical',
       });
+      console.log('here is the required data', myExpenseHeaderData);
 
       const sortedData = (myExpenseHeaderData || []).sort((a, b) => {
         const dateA = new Date(a.CreatedDateTime || 0);

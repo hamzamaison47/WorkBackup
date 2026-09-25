@@ -104,12 +104,43 @@ const EmployeeNode = ({employee, onPress}) => {
             {employee.role}
           </Text>
         </View>
-        <View style={styles.WorkerATM_ChevronIcon}>
-          <FontAwesome
-            name="chevron-right"
-            size={iconSize.xs}
-            color={T.chevronColor}
-          />
+
+        {/* Right side: team-member count + chevron */}
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          {employee.totalTeamMembers > 0 && (
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: T.cardDivider,
+                borderRadius: 999,
+                paddingVertical: 3,
+                paddingHorizontal: 8,
+                marginRight: 8,
+              }}>
+              <FontAwesome
+                name="users"
+                size={iconSize.xs}
+                color={T.subtitleText}
+                style={{marginRight: 4}}
+              />
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: '700',
+                  color: T.titleText,
+                }}>
+                {employee.totalTeamMembers}
+              </Text>
+            </View>
+          )}
+          <View style={styles.WorkerATM_ChevronIcon}>
+            <FontAwesome
+              name="chevron-right"
+              size={iconSize.xs}
+              color={T.chevronColor}
+            />
+          </View>
         </View>
       </TouchableOpacity>
     </View>
@@ -307,6 +338,7 @@ const WorkerAssignedToMe = () => {
           department: emp.DepartmentName,
           email: emp.Email,
           positionId: emp.PositionId,
+          totalTeamMembers: Number(emp.TotalTeamMembers) || 0, // ✅ add this
         })) || [];
 
       setEmployees(mapped);

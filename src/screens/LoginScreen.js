@@ -1,11 +1,12 @@
 /* eslint-disable curly */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback, useRef} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   Image,
   BackHandler,
   ToastAndroid,
@@ -13,6 +14,9 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
@@ -52,11 +56,26 @@ import {
   getActiveConfig,
   saveConfig,
 } from '../Controller/secureConfig';
+import {
+  CONFIG_UNLOCK_TAP_COUNT,
+  verifyConfigPin,
+  isConfigAccessUnlocked,
+  unlockConfigAccess,
+  lockConfigAccess,
+} from '../Controller/Configaccess ';
 import {iconSize} from '../store/utils/scaling';
 import brand from '../theme/brand';
 import {AppTokens} from '../components/AppComponentsDesign/Tokens';
 
 const {width} = Dimensions.get('window');
+
+// Shown on devices where the QR screen is hidden and no environment exists yet
+const NOT_CONFIGURED_MESSAGE =
+  'Setup Required\nThis device is not set up for IDAP360 yet.\nPlease contact your IT administrator.';
+
+const TAP_RESET_MS = 1500; // taps must be closer together than this
+const MAX_PIN_ATTEMPTS = 5;
+const PIN_LOCKOUT_MS = 30000;
 
 // ─────────────────────────────────────────────
 // Attendance Login Modal — shown while logging in
@@ -118,6 +137,150 @@ const AL = StyleSheet.create({
 });
 
 // ─────────────────────────────────────────────
+// Config Access PIN Modal — hidden admin unlock
+// ─────────────────────────────────────────────
+const ConfigPinModal = ({
+  visible,
+  value,
+  error,
+  onChangeText,
+  onSubmit,
+  onCancel,
+}) => (
+  <Modal
+    visible={visible}
+    transparent
+    animationType="fade"
+    onRequestClose={onCancel}>
+    <KeyboardAvoidingView
+      style={PIN.overlay}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={PIN.card}>
+        <View style={PIN.iconCircle}>
+          <MaterialCommunityIcons
+            name="shield-key-outline"
+            size={26}
+            color={brand.primaryStrong}
+          />
+        </View>
+        <Text style={PIN.title}>Enter admin PIN</Text>
+        <Text style={PIN.sub}>
+          Unlocks environment setup on this device only.
+        </Text>
+
+        <TextInput
+          value={value}
+          onChangeText={text => onChangeText(text.replace(/[^0-9]/g, ''))}
+          onSubmitEditing={onSubmit}
+          keyboardType="number-pad"
+          secureTextEntry
+          maxLength={4}
+          autoFocus
+          style={[PIN.input, !!error && PIN.inputError]}
+          placeholder="••••"
+          placeholderTextColor={AppTokens.chevronColor}
+          textAlign="center"
+        />
+        <Text style={PIN.error}>{error || ' '}</Text>
+
+        <View style={PIN.buttonRow}>
+          <TouchableOpacity
+            style={[PIN.button, PIN.cancelButton]}
+            onPress={onCancel}>
+            <Text style={PIN.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              PIN.button,
+              PIN.unlockButton,
+              value.length < 4 && {opacity: 0.5},
+            ]}
+            onPress={onSubmit}
+            disabled={value.length < 4}>
+            <Text style={PIN.unlockText}>Unlock</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  </Modal>
+);
+
+const PIN = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 320,
+    backgroundColor: brand.surface,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: brand.divider,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+  },
+  iconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: brand.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  title: {fontSize: 17, fontWeight: '700', color: brand.text},
+  sub: {
+    fontSize: 12,
+    color: brand.secondary,
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 18,
+  },
+  input: {
+    width: 160,
+    borderWidth: 1.5,
+    borderColor: brand.divider,
+    borderRadius: 12,
+    paddingVertical: 10,
+    fontSize: 22,
+    letterSpacing: 10,
+    color: brand.text,
+    backgroundColor: brand.surfaceAlt,
+  },
+  inputError: {borderColor: '#DC2626'},
+  error: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 8,
+    textAlign: 'center',
+    minHeight: 16,
+  },
+  buttonRow: {flexDirection: 'row', gap: 10, marginTop: 14, width: '100%'},
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: brand.surfaceAlt,
+    borderWidth: 1,
+    borderColor: brand.divider,
+  },
+  unlockButton: {backgroundColor: brand.primary},
+  cancelText: {fontWeight: '600', color: brand.secondary, fontSize: 14},
+  unlockText: {fontWeight: '700', color: brand.onPrimary, fontSize: 14},
+});
+
+// ─────────────────────────────────────────────
 // Main Login Screen
 // ─────────────────────────────────────────────
 const LoginScreen = () => {
@@ -135,6 +298,133 @@ const LoginScreen = () => {
   const [backPressedOnce, setBackPressedOnce] = useState(false);
   const [onAlertConfirm, setOnAlertConfirm] = useState(null);
   const [onDialogConfirm, setOnDialogConfirm] = useState(null);
+
+  // ── Hidden config access (QR screen) ──────────────────────
+  const [configAccess, setConfigAccess] = useState(false);
+  const configAccessRef = useRef(false); // readable inside the auto-login effect
+  const [pinModalVisible, setPinModalVisible] = useState(false);
+  const [pinValue, setPinValue] = useState('');
+  const [pinError, setPinError] = useState('');
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef(null);
+  const failedAttemptsRef = useRef(0);
+  const lockoutUntilRef = useRef(0);
+
+  const applyConfigAccess = useCallback(value => {
+    configAccessRef.current = value;
+    setConfigAccess(value);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    isConfigAccessUnlocked().then(value => {
+      if (active) applyConfigAccess(value);
+    });
+    return () => {
+      active = false;
+      clearTimeout(tapTimerRef.current);
+    };
+  }, [applyConfigAccess]);
+
+  const notify = useCallback(message => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      setAlertMessage(message);
+      setAlertModal(true);
+    }
+  }, []);
+
+  // Missing/broken config: unlocked devices get routed to the QR screen,
+  // everyone else is told to contact their administrator.
+  const showConfigRequired = useCallback(
+    unlockedMessage => {
+      if (configAccessRef.current) {
+        setAlertMessage(unlockedMessage);
+        setOnAlertConfirm(
+          () => () => navigation.navigate('ConfigSelectionScreen'),
+        );
+      } else {
+        setAlertMessage(NOT_CONFIGURED_MESSAGE);
+        setOnAlertConfirm(null);
+      }
+      setAlertModal(true);
+    },
+    [navigation],
+  );
+
+  const handleLogoTap = () => {
+    tapCountRef.current += 1;
+    clearTimeout(tapTimerRef.current);
+    tapTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0;
+    }, TAP_RESET_MS);
+
+    if (tapCountRef.current < CONFIG_UNLOCK_TAP_COUNT) return;
+
+    tapCountRef.current = 0;
+    clearTimeout(tapTimerRef.current);
+
+    if (configAccessRef.current) {
+      notify('Environment setup is already enabled on this device');
+      return;
+    }
+    setPinValue('');
+    setPinError('');
+    setPinModalVisible(true);
+  };
+
+  const handlePinSubmit = async () => {
+    const remainingMs = lockoutUntilRef.current - Date.now();
+    if (remainingMs > 0) {
+      setPinError(
+        `Too many attempts. Try again in ${Math.ceil(remainingMs / 1000)}s.`,
+      );
+      setPinValue('');
+      return;
+    }
+
+    if (!verifyConfigPin(pinValue)) {
+      failedAttemptsRef.current += 1;
+      if (failedAttemptsRef.current >= MAX_PIN_ATTEMPTS) {
+        failedAttemptsRef.current = 0;
+        lockoutUntilRef.current = Date.now() + PIN_LOCKOUT_MS;
+        setPinError('Too many incorrect attempts. Try again in 30s.');
+      } else {
+        setPinError('Incorrect PIN');
+      }
+      setPinValue('');
+      return;
+    }
+
+    try {
+      await unlockConfigAccess();
+    } catch (error) {
+      console.error('Config unlock save failed:', error);
+      setPinError('Could not save. Try again.');
+      return;
+    }
+
+    failedAttemptsRef.current = 0;
+    applyConfigAccess(true);
+    setPinModalVisible(false);
+    setPinValue('');
+    setPinError('');
+    notify('Environment setup enabled on this device');
+  };
+
+  const handlePinCancel = () => {
+    setPinModalVisible(false);
+    setPinValue('');
+    setPinError('');
+  };
+
+  // Long-press the QR icon to hide it again on this device
+  const handleLockConfigAccess = async () => {
+    await lockConfigAccess();
+    applyConfigAccess(false);
+    notify('Environment setup hidden on this device');
+  };
 
   // ── Load user data (biometric path) ───────────────────────
   // Errors propagate as-is; both callers run them through describeLoginError()
@@ -234,7 +524,9 @@ const LoginScreen = () => {
           );
           if (!cancelled) {
             setAlertMessage(
-              'Configuration Error\nYour saved configuration could not be loaded. Please select a valid configuration from the QR code screen.',
+              configAccessRef.current
+                ? 'Configuration Error\nYour saved configuration could not be loaded. Please select a valid configuration from the QR code screen.'
+                : NOT_CONFIGURED_MESSAGE,
             );
             setAlertModal(true);
           }
@@ -326,13 +618,9 @@ const LoginScreen = () => {
     try {
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
-        setAlertMessage(
+        showConfigRequired(
           'Configuration Required\nNo configuration found. Please scan a QR code first to set up your environment.',
         );
-        setOnAlertConfirm(
-          () => () => navigation.navigate('ConfigSelectionScreen'),
-        );
-        setAlertModal(true);
         return;
       }
 
@@ -378,13 +666,9 @@ const LoginScreen = () => {
 
       const activeConfigId = await getActiveConfig();
       if (!activeConfigId) {
-        setAlertMessage(
+        showConfigRequired(
           'Configuration Required\nNo active configuration found.\nPlease select a configuration from the QR code screen before using biometric login.',
         );
-        setOnAlertConfirm(
-          () => () => navigation.navigate('ConfigSelectionScreen'),
-        );
-        setAlertModal(true);
         return;
       }
 
@@ -410,11 +694,10 @@ const LoginScreen = () => {
 
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
-        setAlertMessage(
+        setLoading(false);
+        showConfigRequired(
           'Configuration Load Failed\nCould not load the active configuration.\nPossible causes:\n• Configuration was deleted\n• Keychain access denied\n• Corrupted configuration data\nPlease select a valid configuration.',
         );
-        setAlertModal(true);
-        setLoading(false);
         return;
       }
 
@@ -447,13 +730,9 @@ const LoginScreen = () => {
     try {
       const activeConfig = await getActiveConfigData();
       if (!activeConfig) {
-        setAlertMessage(
+        showConfigRequired(
           'Configuration Required\nNo environment configuration found.\nPlease tap the QR icon (top-right) and scan your setup QR code first.',
         );
-        setOnAlertConfirm(
-          () => () => navigation.navigate('ConfigSelectionScreen'),
-        );
-        setAlertModal(true);
         return;
       }
 
@@ -538,7 +817,7 @@ const LoginScreen = () => {
 
       {!loading ? (
         <View style={styles.content}>
-          {/* ── Top bar: Attendance shortcut (left) + QR (right) ── */}
+          {/* ── Top bar: Attendance shortcut (left) + QR (right, unlocked devices only) ── */}
           <View style={styles.topBar}>
             <TouchableOpacity
               activeOpacity={0.7}
@@ -552,25 +831,32 @@ const LoginScreen = () => {
               />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              activeOpacity={0.7}
-              style={styles.iconButton}
-              onPress={() => navigation.navigate('ConfigSelectionScreen')}>
-              <MaterialCommunityIcons
-                name="qrcode-scan"
-                size={22}
-                color={brand.secondary}
-              />
-            </TouchableOpacity>
+            {configAccess && (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                style={styles.iconButton}
+                onPress={() => navigation.navigate('ConfigSelectionScreen')}
+                onLongPress={handleLockConfigAccess}
+                delayLongPress={1500}>
+                <MaterialCommunityIcons
+                  name="qrcode-scan"
+                  size={22}
+                  color={brand.secondary}
+                />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── Identity section: logo + welcome text ── */}
           <View style={styles.identitySection}>
-            <Image
-              source={require('../assets/IDAPNewLogo.jpg')}
-              style={styles.mainLogo}
-              resizeMode="contain"
-            />
+            {/* Tapping the logo 7 times opens the admin PIN prompt */}
+            <Pressable onPress={handleLogoTap}>
+              <Image
+                source={require('../assets/IDAPNewLogo.jpg')}
+                style={styles.mainLogo}
+                resizeMode="contain"
+              />
+            </Pressable>
             <View style={styles.textStack}>
               <Text style={styles.welcomeTitle}>IDAP360</Text>
               <Text style={styles.welcomeSubtitle}>معمارِ پنجاب</Text>
@@ -676,6 +962,18 @@ const LoginScreen = () => {
         </View>
       </PopupDialog>
       */}
+
+      <ConfigPinModal
+        visible={pinModalVisible}
+        value={pinValue}
+        error={pinError}
+        onChangeText={text => {
+          setPinValue(text);
+          if (pinError) setPinError('');
+        }}
+        onSubmit={handlePinSubmit}
+        onCancel={handlePinCancel}
+      />
 
       <AlertModal
         visible={alertModal}

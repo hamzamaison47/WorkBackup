@@ -41,7 +41,10 @@ const MainPageHeader = ({
           color={headerFg}
         />
       </TouchableOpacity>
-      <Text style={[S.titleText, {color: headerFg}]}>IDAP360</Text>
+      <Text style={S.titleText}>
+        <Text style={{color: '#d7a118'}}>IDAP</Text>
+        <Text style={{color: headerFg}}>360</Text>
+      </Text>
     </View>
   ),
 

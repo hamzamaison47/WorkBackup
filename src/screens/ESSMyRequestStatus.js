@@ -84,38 +84,64 @@ const ESSMyRequestStatusListPage = () => {
       // }));
       const formattedData = (data || []).map((item, index) => {
         const documentStr = item.Document || '';
+        const subjectStr = item.Subject || '';
+        const tableName = item.TableName || '';
 
-        // Extract the document ID (everything after ':' and before ',')
+        let resolvedType;
+        let resolvedSubject;
+
+        if (subjectStr.includes('Med Exp')) {
+          resolvedType = 'Medical Expense';
+          resolvedSubject = 'Medical Expense';
+        } else if (subjectStr.includes('Exp: EXP')) {
+          resolvedType = 'Travel Expense';
+          resolvedSubject = 'Travel Expense';
+        } else if (tableName === 'EssPersonEducation') {
+          // ✅
+          resolvedType = 'Education';
+          resolvedSubject = 'Education';
+        } else if (tableName === 'EssPersonIdentificationNumber') {
+          // ✅
+          resolvedType = 'Identification';
+          resolvedSubject = 'Identification';
+        } else if (tableName === 'TrvRequisitionTable') {
+          // ✅
+          resolvedType = 'Travel Requisition';
+          resolvedSubject = 'Travel Requisition';
+        } else {
+          let documentType = item.DocumentType || '';
+          documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
+          documentType =
+            documentType
+              .replace(/^\s*Employee\s+Self\s+Service\s*[-:]?\s*/i, '')
+              .trim() || documentType;
+          resolvedType = documentType;
+          resolvedSubject = subjectStr;
+        }
+
         const documentIdMatch = documentStr.match(/:\s*([^,]+)/);
         const documentId = documentIdMatch
           ? documentIdMatch[1].trim()
           : documentStr;
 
-        // Extract requester (after last comma)
         const requesterMatch = documentStr.match(/,?\s*([^,]+)$/);
         const requester = requesterMatch ? requesterMatch[1].trim() : '';
-
-        // Get document type from API if exists
-        let documentType = item.DocumentType || '';
-        documentType = documentType.replace(/\b\w/g, l => l.toUpperCase());
-        documentType =
-          documentType
-            .replace(/^\s*Employee\s+Self\s+Service\s*[-:]?\s*/i, '')
-            .trim() || documentType;
 
         return {
           id: item.workflowWorkItemRecId ?? index,
           recId: item.workflowWorkItemRecId,
-          documentId: documentId, // USMF-00060
-          documentType: documentType, // Employee Leave Requests
-          requester: requester,
+          documentId,
+          documentType: resolvedType, // ✅ Medical Expense / Travel Expense / etc.
+          requester,
           ContextTableId: item.ContextTableId,
           ContextRecId: item.ContextRecId,
           workflowWorkItemType: item.workflowWorkItemType,
           Document: item.Document,
           createdDateTime: item.createdDateTime,
           From: item.From,
-          Subject: item.Subject,
+          Subject: resolvedSubject, // ✅ same resolved label
+          WorkerName: item.WorkerName,
+          RequestStatus: item.RequestStatus, // ✅ was missing entirely
         };
       });
       setRawData(formattedData);
@@ -169,7 +195,7 @@ const ESSMyRequestStatusListPage = () => {
   const f = useListFilters({
     data: rawData,
     dateField: 'createdDateTime',
-    classifyPill: item => normaliseStatus(item.PRWFStatus),
+    classifyPill: item => item.RequestStatus || null,
   });
 
   /* ==============================
@@ -201,10 +227,9 @@ const ESSMyRequestStatusListPage = () => {
       title: {key: 'documentType'},
     },
     fields: [
-      // {key: 'Document', label: '', type: 'link'},
       {key: 'Subject', label: 'Subject', type: 'text'},
-      {key: 'createdDateTime', label: 'Created date time', type: 'datetime'},
-      {key: 'From', label: 'From', type: 'text'},
+      {key: 'WorkerName', label: 'Worker', type: 'text'}, // ✅
+      {key: 'createdDateTime', label: 'Created', type: 'datetime'},
     ],
   };
 
@@ -219,7 +244,7 @@ const ESSMyRequestStatusListPage = () => {
     const processedItem = {
       ...item,
       ModifiedDateTime: formatDateTime(item.ModifiedDateTime),
-      PRWFStatus: item.PRWFStatus || 'Unknown',
+      PRWFStatus: item.RequestStatus || 'Unknown', // ✅ so the card status badge also reflects it
     };
 
     const handleCardPress = () => {

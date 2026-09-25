@@ -78,16 +78,16 @@ export const TABLE_EXTRA_FIELDS = {
 
   HcmGoal: [
     {
+      sourceLabel: 'Goal name',
+      targetKey: 'ExtraGoalDescription',
+      cardLabel: 'Goal Type',
+    },
+    {
       sourceLabel: 'Department',
       targetKey: 'ExtraGoalDepartment',
       cardLabel: 'Department',
     },
     {sourceLabel: 'Worker', targetKey: 'ExtraGoalWorker', cardLabel: 'Worker'},
-    {
-      sourceLabel: 'Goal name',
-      targetKey: 'ExtraGoalDescription',
-      cardLabel: 'Goal',
-    },
   ],
 
   LedgerJournalTable: [

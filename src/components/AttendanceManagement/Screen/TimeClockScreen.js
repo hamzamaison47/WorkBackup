@@ -214,6 +214,56 @@ const SkeletonScreen = () => {
   );
 };
 
+// "Tuesday, 22nd Sept 2026" — long weekday, ordinal day, short month, full year.
+const formatLongDateOrdinal = iso => {
+  const d = iso ? new Date(iso) : new Date();
+  if (isNaN(d.getTime())) return '';
+
+  const weekdays = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+  ];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  const day = d.getDate();
+  // Ordinal suffix: 1st, 2nd, 3rd, 4th… with the 11th–13th exception.
+  const ord = (n => {
+    if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+    switch (n % 10) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
+  })(day);
+
+  return `${weekdays[d.getDay()]}, ${day}${ord} ${
+    months[d.getMonth()]
+  } ${d.getFullYear()}`;
+};
+
 // ─────────────────────────────────────────────
 // Clock Ring
 // ─────────────────────────────────────────────
@@ -1488,7 +1538,7 @@ const TimeClockScreen = ({onNavigate}) => {
 
   if (isLoading) return <SkeletonScreen />;
 
-  const todayStr = formatDateShort(new Date().toISOString());
+  const todayStr = formatLongDateOrdinal(); // ✅ "Tuesday, 22nd Sept 2026"
 
   return (
     <SafeAreaView style={S.screen}>

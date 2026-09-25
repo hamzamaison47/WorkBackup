@@ -2,7 +2,7 @@
 
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
-import React, {useEffect, useCallback, useState, useRef} from 'react';
+import React, {useEffect, useCallback, useState, useRef, useMemo} from 'react';
 import {
   SafeAreaView,
   Animated,
@@ -22,8 +22,8 @@ import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
 import useTodayAttendance from '../hooks/Usetodayattendance';
-// import AIChatbot from '../components/AIChatbot/AIChatbot';
-// import AIFloatingButton from '../components/AIChatbot/AIFloatingButton';
+import {buildOpdClaimAlert} from '../store/utils/dashboardAlertRules';
+import {GetAllExpenseManagementHeaders} from '../Customizations/IDAP/API/ExpenseManagement/Header/GetAllExpenseManagementHeaders';
 import QuickAccessSheet, {
   QuickAccessButton,
 } from '../components/MainDashboard/QuickAccessSheet';
@@ -84,12 +84,41 @@ const MainDashboard = () => {
     isLoading: attendanceLoading,
     refresh: refreshAttendance,
   } = useTodayAttendance();
-  const {alerts} = useDashboardAlerts(attendanceRecords, attendanceLoading);
+  const {alerts: baseAlerts} = useDashboardAlerts(
+    attendanceRecords,
+    attendanceLoading,
+  );
 
   // NEW — bumping this forces ApprovalsSection (and anything else keyed on
   // it) to re-fetch, since MenuGrid's approvals list has its own fetch
   // effect that isn't otherwise triggered by pull-to-refresh.
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [medicalHeaders, setMedicalHeaders] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!userData?.employeeId) return;
+      try {
+        const data = await GetAllExpenseManagementHeaders({
+          personnelNumber: userData.employeeId,
+          purpose: 'Medical',
+        });
+        if (!cancelled) setMedicalHeaders(data || []);
+      } catch {
+        if (!cancelled) setMedicalHeaders([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userData?.employeeId, refreshKey]);
+
+  const alerts = useMemo(() => {
+    const opd = buildOpdClaimAlert(medicalHeaders);
+    return opd ? [opd, ...(baseAlerts || [])] : baseAlerts || [];
+  }, [medicalHeaders, baseAlerts]);
 
   const handleRefreshAll = useCallback(async () => {
     setRefreshKey(k => k + 1);
@@ -206,7 +235,7 @@ const MainDashboard = () => {
                 refreshKey={refreshKey}
               />
 
-              <View style={{height: 100}} />
+              <View style={{height: 24}} />
             </Animated.ScrollView>
           </SafeAreaView>
         )}

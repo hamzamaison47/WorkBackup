@@ -476,7 +476,7 @@ const DFAttendanceCalendarScreen = () => {
 
   return (
     <ActionPaneContainer
-      pageTitle="Attendance Insights"
+      pageTitle="My Attendance"
       isBackButton={true}
       showFooter={false}
       showFloatingButton={false}

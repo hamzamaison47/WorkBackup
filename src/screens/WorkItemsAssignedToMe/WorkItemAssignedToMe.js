@@ -53,6 +53,11 @@ const CARD_HEADER_CONFIG = {
   title: {key: 'documentType'},
 };
 
+const DOCUMENT_TYPE_OVERRIDES = {
+  HRMCourseAttendee: 'Training Calendar', // was "Course Participants"
+  SLD_HRTrainingRequests: 'Employee Course Request', // was "Course Request"
+};
+
 // TrvExpTable and TrvRequisitionTable both get a fixed title instead of
 // showing the raw Subject text.
 const getFixedCardTitle = item => {
@@ -87,22 +92,16 @@ const getCardFields = item => {
   } else if (item.TableName === 'SLD_HRPenaltyLeave') {
     fields = [];
   } else if (item.TableName === 'PurchTable') {
-    // Fixed title + From (no Subject). Vendor Name / Net Amount appended
+    // From only (no Subject, no Title). Vendor Name / Net Amount appended
     // below via TABLE_EXTRA_FIELDS.
-    fields = [
-      {key: '__fixedCardTitle', label: 'Title', type: 'text'},
-      {key: 'From', label: 'From', type: 'text'},
-    ];
-  } else if (fixedTitle) {
-    fields = [{key: '__fixedCardTitle', label: 'Title', type: 'text'}];
+    fields = [{key: 'From', label: 'From', type: 'text'}];
   } else if (item.TableName === 'IDAP_EmpClearanceTable') {
-    // Title, then Subject value relabeled to "Description". Worker Name
-    // appended below via TABLE_EXTRA_FIELDS.
-    fields = [{key: '__fixedCardTitle', label: 'Title', type: 'text'}];
+    // No Title. Description + Worker Name appended below via TABLE_EXTRA_FIELDS.
+    fields = [];
   } else if (fixedTitle) {
+    // TrvExpTable, TrvRequisitionTable, HcmGoal — fixed title only.
     fields = [{key: '__fixedCardTitle', label: 'Title', type: 'text'}];
   } else if (item.TableName === 'SLD_HRTrainingRequests') {
-    // No title, no Subject, no From — just the extra fields below.
     fields = [];
   } else {
     fields = [
@@ -127,18 +126,13 @@ const getCardFields = item => {
    a FlatList renderItem callback function directly).
 ============================== */
 
-const getInitialsFromDocument = documentStr => {
-  const nameMatch = (documentStr || '').match(/:\s*([^,]+)/);
-  const name = nameMatch ? nameMatch[1].trim() : '';
-  return (
-    name
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(w => w[0]?.toUpperCase())
-      .join('') || '?'
-  );
-};
+const getInitialsFromType = typeStr =>
+  (typeStr || '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0]?.toUpperCase())
+    .join('') || '?';
 
 const WorkItemCard = ({
   item,
@@ -157,7 +151,7 @@ const WorkItemCard = ({
   const result = useExtraWorkflowFields(item, sourceLabels);
   const extractedFields = result?.fields;
   const photoUri = result?.imageUri;
-  const initials = getInitialsFromDocument(item.Document);
+  const initials = getInitialsFromType(item.documentType);
 
   const cardData = extractedFields
     ? fieldConfigs.reduce(
@@ -260,9 +254,8 @@ const WorkItemsAssignedToMePage = () => {
       'From',
       'Document',
     ],
-    pills: ['All', 'Pending'],
-    classifyPill: item =>
-      item.workflowWorkItemType === 'WorkItem' ? 'Pending' : null,
+    pills: ['All'],
+    classifyPill: () => null,
   });
 
   /* ==============================
@@ -293,6 +286,8 @@ const WorkItemsAssignedToMePage = () => {
           documentType
             .replace(/^\s*Employee\s+Self\s+Service\s*[-:]?\s*/i, '')
             .trim() || documentType;
+
+        documentType = DOCUMENT_TYPE_OVERRIDES[item.TableName] || documentType;
 
         return {
           id: item.workflowWorkItemRecId ?? index,
@@ -685,11 +680,6 @@ const WorkItemsAssignedToMePage = () => {
       {!selectionMode && bulkEligibleRecIds.length > 0 && (
         <View style={bulkAllStyles.card}>
           <View style={bulkAllStyles.headerRow}>
-            <View style={bulkAllStyles.countBadge}>
-              <Text style={bulkAllStyles.countBadgeText}>
-                {bulkEligibleRecIds.length}
-              </Text>
-            </View>
             <Text style={bulkAllStyles.headerText}>
               Work items assigned to me
             </Text>

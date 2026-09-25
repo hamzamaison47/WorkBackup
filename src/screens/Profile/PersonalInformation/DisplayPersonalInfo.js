@@ -67,15 +67,15 @@ const DisplayPersonalInfo = () => {
       subtitle: t('personalInfo.identificationSubtitle'),
       screen: 'IdentificationNumberListPage',
     },
-    {
-      id: 'profileImage',
-      icon: 'image',
-      iconColor: AppTokens.amber,
-      iconBg: AppTokens.amberBg,
-      title: t('personalInfo.profileImage'),
-      subtitle: t('personalInfo.profileImageSubtitle'),
-      screen: 'ChangeProfileImage',
-    },
+    // {
+    //   id: 'profileImage',
+    //   icon: 'image',
+    //   iconColor: AppTokens.amber,
+    //   iconBg: AppTokens.amberBg,
+    //   title: t('personalInfo.profileImage'),
+    //   subtitle: t('personalInfo.profileImageSubtitle'),
+    //   screen: 'ChangeProfileImage',
+    // },
   ];
 
   const educationItems = [

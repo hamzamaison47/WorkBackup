@@ -89,7 +89,10 @@ export default function CustomTabBar(props) {
       focused: 'document-text',
       unfocused: 'document-text-outline',
     },
-    WorkItemsAssignedToMePage: {focused: 'list', unfocused: 'list-outline'},
+    WorkItemsAssignedToMePage: {
+      focused: 'file-tray-full',
+      unfocused: 'file-tray-outline',
+    }, // ✅ My Bucket
     AttendanceManagement: {focused: 'calendar', unfocused: 'calendar-outline'},
   };
 

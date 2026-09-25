@@ -4,10 +4,6 @@ import {
   deriveAttendanceStatus,
   ATTENDANCE_STATUS,
 } from '../store/utils/attendanceStatus';
-import {
-  isWithinOpdClaimWindow,
-  getOpdClaimTargetMonthLabel,
-} from '../store/utils/dashboardAlertRules';
 
 export default function useDashboardAlerts(
   attendanceRecords,
@@ -15,15 +11,6 @@ export default function useDashboardAlerts(
 ) {
   const alerts = useMemo(() => {
     const list = [];
-
-    if (isWithinOpdClaimWindow()) {
-      list.push({
-        id: 'opd-claim-reminder',
-        severity: 'warning',
-        title: 'OPD Medical Claim Due',
-        message: `Submit your OPD Medical Claim for ${getOpdClaimTargetMonthLabel()} before the 10th of this month.`,
-      });
-    }
 
     if (!attendanceLoading) {
       const status = deriveAttendanceStatus(attendanceRecords);
