@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 /* eslint-disable curly */
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import {useSelector} from 'react-redux';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import {RetrieveEmployeeReportToMe} from '../../API/WorkerAssignedToMe/RetrieveEmployeeReportToMe';
@@ -366,12 +366,20 @@ const WorkerAssignedToMe = () => {
     fetchProfilePictureForRoot(getEmployeeId(emp));
   };
 
-  useEffect(() => {
-    if (userData?.employeeId) {
-      fetchEmployeeReportToMe(userData, true);
-      fetchProfilePictureForRoot(getEmployeeId(userData));
-    }
-  }, [userData?.employeeId]);
+  // useFocusEffect (not useEffect) — this screen stays mounted in the stack,
+  // so navigating away and back doesn't remount it, only re-focuses it.
+  // Resetting to the logged-in user's own team here means drilling into a
+  // report's team, going back to another screen, then returning here always
+  // lands back on your own team with fresh data, instead of resuming
+  // wherever you'd drilled down to with stale data.
+  useFocusEffect(
+    useCallback(() => {
+      if (userData?.employeeId) {
+        fetchEmployeeReportToMe(userData, true);
+        fetchProfilePictureForRoot(getEmployeeId(userData));
+      }
+    }, [userData?.employeeId]),
+  );
 
   return (
     <ActionPaneContainer

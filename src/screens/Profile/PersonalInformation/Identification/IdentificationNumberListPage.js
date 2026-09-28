@@ -293,6 +293,8 @@ const IdentificationNumberListPage = () => {
     if (!status) return 'HR'; // ← was 'Approved'
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
 
+    if (!normalizedStatus || normalizedStatus === 'noworkflow') return 'HR';
+
     const statusMap = {
       draft: 'Draft',
       inreview: 'In Review',
@@ -398,7 +400,7 @@ const IdentificationNumberListPage = () => {
         show: true, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
-        text: 'Approval',
+        text: 'Workflow',
         icon: 'check-square',
         textColor: P.primaryStrong,
         disabled: false,
@@ -642,6 +644,7 @@ const IdentificationNumberListPage = () => {
       ...item,
       employeeId: item.employeeId || employeeId,
       employeeName: item.employeeName || employeeName,
+      ApprovalStatus: getStatusLabel(item.ApprovalStatus), // add this
       // Fix: use optional chaining to avoid crash if date is null/undefined
       ExpirationDate: item.ExpirationDate?.startsWith(D365_MAX_DATE)
         ? 'Never'

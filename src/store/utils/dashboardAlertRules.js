@@ -77,7 +77,7 @@ export const buildOpdClaimAlert = (expenseRecords = [], date = new Date()) => {
       id: 'opd-claim-resubmit',
       severity: 'error',
       title: 'OPD medical claim rejected',
-      message: `Your OPD medical expense report ${rejected.ExpenseNumber} for ${monthLabel} was rejected. Please review and re-submit it.`,
+      message: `Your OPD medical expense ${rejected.ExpenseNumber} for ${monthLabel} was rejected. Please review and re-submit it.`,
     };
   }
 
@@ -87,6 +87,6 @@ export const buildOpdClaimAlert = (expenseRecords = [], date = new Date()) => {
     id: 'opd-claim-submit',
     severity: 'warning',
     title: 'OPD medical claim not submitted',
-    message: `Your OPD medical expense report ${draft.ExpenseNumber} for ${monthLabel} is still in Draft. Please submit it.`,
+    message: `Your OPD medical expense ${draft.ExpenseNumber} for ${monthLabel} is still in Draft. Please submit it.`,
   };
 };

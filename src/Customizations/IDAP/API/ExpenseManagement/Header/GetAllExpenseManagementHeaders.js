@@ -102,14 +102,6 @@ const GetAllExpenseManagementHeaders = async ({
 
     const parsed = parser.parse(response.data);
 
-    console.log('GetAllExpenseManagementHeaders: SOAP response:', parsed);
-
-    // ── DIAGNOSTIC (remove after confirmed) ──
-    console.log(
-      '[ExpMgmt FIND] raw first 2000:',
-      String(response.data).slice(0, 2000),
-    );
-
     if (parsed?.['s:Envelope']?.['s:Body']?.['s:Fault']) {
       const fault = parsed['s:Envelope']['s:Body']['s:Fault'];
       throw new Error(`SOAP Fault: ${fault.faultstring || 'Unknown fault'}`);

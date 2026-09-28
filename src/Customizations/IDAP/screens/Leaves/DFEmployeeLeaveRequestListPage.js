@@ -1003,7 +1003,7 @@ const DFEmployeeLeaveRequestListPage = () => {
         show: true, // was: isDraft — always show now so non-draft rows get View History
         position: 'bottom',
         style: 'approval_dropdown',
-        text: isDraft ? 'Approval' : 'Approval',
+        text: isDraft ? 'Workflow' : 'Workflow',
         icon: 'check-square',
         textColor: T.blueStrong,
         disabled: false,

@@ -367,7 +367,7 @@ const TravelRequisitionListPage = () => {
         show: true,
         position: 'bottom',
         style: 'approval_dropdown',
-        text: 'Approval',
+        text: 'Workflow',
         icon: 'check-square',
         textColor: P.primaryStrong,
         disabled: false,

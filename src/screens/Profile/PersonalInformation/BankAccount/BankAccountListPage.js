@@ -164,9 +164,9 @@ const BankAccountListPage = () => {
   };
 
   const getStatusLabel = status => {
-    if (!status || status.trim() === '') return 'HR'; // ← add this line first
+    if (!status || status.trim() === '') return 'HR';
     const statusMap = {
-      NotSubmitted: 'Draft',
+      NotSubmitted: 'Not Submitted',
       Submitted: 'Submitted',
       Approved: 'Approved',
       Rejected: 'Rejected',
@@ -179,7 +179,8 @@ const BankAccountListPage = () => {
       WorkflowCompleted: 'Workflow Completed',
       Completed: 'Completed',
     };
-    return statusMap[status] || status; // ← return raw status if unknown, not 'Draft'
+    const key = status.replace(/\s+/g, '');
+    return statusMap[key] || status;
   };
 
   // Filter/sort/search now owned by useListFilters. Derived status pills off
@@ -241,7 +242,7 @@ const BankAccountListPage = () => {
 
   const getButtonConfig = item => {
     const statusLabel = getStatusLabel(item.WFStatus);
-    const isEditable = statusLabel === 'Draft';
+    const isEditable = statusLabel === 'Not Submitted';
     const isRejected = statusLabel === 'Rejected';
 
     return {
@@ -268,7 +269,8 @@ const BankAccountListPage = () => {
         customStyle: !isEditable ? {backgroundColor: '#BDBDBD'} : {},
       },
       approval: {
-        show: false,
+        show: isEditable || isRejected,
+        text: 'Workflow',
         actions: [
           {
             key: 'submit',
@@ -556,10 +558,16 @@ const BankAccountListPage = () => {
           {key: 'AccountNum', label: 'Account Number'},
         ]}
         detailData={selectedBankItem || {}}
-        showTakePhoto={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
-        showChooseFile={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
+        showTakePhoto={
+          getStatusLabel(selectedBankItem?.WFStatus) === 'Not Submitted'
+        }
+        showChooseFile={
+          getStatusLabel(selectedBankItem?.WFStatus) === 'Not Submitted'
+        }
         showDownload={true}
-        showDelete={getStatusLabel(selectedBankItem?.WFStatus) === 'Draft'}
+        showDelete={
+          getStatusLabel(selectedBankItem?.WFStatus) === 'Not Submitted'
+        }
       />
 
       <AlertModal {...alertModalProps} />

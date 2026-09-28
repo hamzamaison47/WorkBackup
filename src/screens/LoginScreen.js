@@ -819,7 +819,7 @@ const LoginScreen = () => {
         <View style={styles.content}>
           {/* ── Top bar: Attendance shortcut (left) + QR (right, unlocked devices only) ── */}
           <View style={styles.topBar}>
-            <TouchableOpacity
+            {/* <TouchableOpacity
               activeOpacity={0.7}
               style={styles.iconButton}
               onPress={handleAttendanceLogin}
@@ -829,7 +829,7 @@ const LoginScreen = () => {
                 size={22}
                 color={brand.secondary}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
             {configAccess && (
               <TouchableOpacity
@@ -1018,7 +1018,7 @@ const styles = StyleSheet.create({
   // Top bar — attendance icon on left, QR on right
   topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     marginTop: 15,
   },
   iconButton: {

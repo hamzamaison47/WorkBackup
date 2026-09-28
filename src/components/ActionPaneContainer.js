@@ -54,78 +54,43 @@ import {
   conditionalVerticalScale,
   conditionalFontScale,
 } from '../store/utils/scaling';
+import {getStatusColors} from '../utils/statusColors';
 
 // `onActive` is the text/dot colour drawn ON the `active` fill. Only the
-// brand-coloured "All" pill follows the palette's onPrimary; the status
-// fills keep white.
-const PILL_COLORS = {
-  All: {
-    active: AppTokens.blue,
-    bg: AppTokens.blueBg,
-    text: AppTokens.blueStrong,
-    dot: null,
-    onActive: brand.onPrimary,
-  },
-  // "Draft" family — lighter neutral than the waiting family (statusDraft*
-  // in Tokens.js). White fails on the #94A3B8 fill, so the active label is
-  // dark.
-  Draft: {
-    active: AppTokens.statusDraft,
-    bg: AppTokens.statusDraftBg,
-    text: AppTokens.statusDraftText,
-    dot: AppTokens.statusDraft,
-    onActive: AppTokens.titleText,
-  },
-  // "Waiting" family — see statusWaiting* in Tokens.js for why not amber.
-  Pending: {
-    active: AppTokens.statusWaiting,
-    bg: AppTokens.statusWaitingBg,
-    text: AppTokens.statusWaitingText,
-    dot: AppTokens.statusWaiting,
-    onActive: '#FFFFFF',
-  },
-  'In review': {
-    active: AppTokens.statusWaiting,
-    bg: AppTokens.statusWaitingBg,
-    text: AppTokens.statusWaitingText,
-    dot: AppTokens.statusWaiting,
-    onActive: '#FFFFFF',
-  },
-  'In Review': {
-    active: AppTokens.statusWaiting,
-    bg: AppTokens.statusWaitingBg,
-    text: AppTokens.statusWaitingText,
-    dot: AppTokens.statusWaiting,
-    onActive: '#FFFFFF',
-  },
-  'Pending Approval': {
-    active: AppTokens.statusWaiting,
-    bg: AppTokens.statusWaitingBg,
-    text: AppTokens.statusWaitingText,
-    dot: AppTokens.statusWaiting,
-    onActive: '#FFFFFF',
-  },
-  Approved: {
-    active: AppTokens.green,
-    bg: AppTokens.greenBg,
-    text: '#065F46',
-    dot: AppTokens.green,
-    onActive: '#FFFFFF',
-  },
-  Rejected: {
-    active: AppTokens.red,
-    bg: AppTokens.redBg,
-    text: '#991B1B',
-    dot: AppTokens.red,
-    onActive: '#FFFFFF',
-  },
-  Completed: {
-    active: AppTokens.purple,
-    bg: AppTokens.purpleBg,
-    text: '#4C1D95',
-    dot: AppTokens.purple,
-    onActive: '#FFFFFF',
-  },
+// brand-coloured "All" pill follows the palette's onPrimary; every status
+// pill now derives from the SAME getStatusColors() the card badges use
+// (src/utils/statusColors.js), so a pill and its card badge can never
+// disagree on color again — no more per-status entries to keep in sync
+// across files, and no more silent fallback-to-blue for a status that
+// was never added here (that's what caused the Cancelled/yellow bug).
+const ALL_PILL_COLOR = {
+  active: AppTokens.blue,
+  bg: AppTokens.blueBg,
+  text: AppTokens.blueStrong,
+  dot: null,
+  onActive: brand.onPrimary,
+};
+
+const getPillColor = label => {
+  if (!label || label === 'All') {
+    return ALL_PILL_COLOR;
+  }
+
+  const c = getStatusColors(label);
+  const compact = String(label).toLowerCase().replace(/\s+/g, '');
+  // White text fails on the light "draft"/"not submitted" fill — match the
+  // dark label DynamicRequestCard already uses for that family.
+  const onActive = ['draft', 'notsubmitted'].includes(compact)
+    ? c.text
+    : '#FFFFFF';
+
+  return {
+    active: c.dot,
+    bg: c.bg,
+    text: c.text,
+    dot: c.dot,
+    onActive,
+  };
 };
 
 const DEFAULT_PILLS = [
@@ -263,9 +228,7 @@ const SubHeader = ({
                   style={[
                     SH.collapsedDot,
                     {
-                      backgroundColor: (
-                        PILL_COLORS[activeFilterLabel] ?? PILL_COLORS.All
-                      ).active,
+                      backgroundColor: getPillColor(activeFilterLabel).active,
                     },
                   ]}
                 />
@@ -273,8 +236,7 @@ const SubHeader = ({
                   style={[
                     SH.collapsedPillText,
                     {
-                      color: (PILL_COLORS[activeFilterLabel] ?? PILL_COLORS.All)
-                        .active,
+                      color: getPillColor(activeFilterLabel).active,
                     },
                   ]}>
                   {activeFilterLabel}
@@ -404,7 +366,7 @@ const SubHeader = ({
                 contentContainerStyle={SH.pillsScroll}>
                 {filterPills.map(pill => {
                   const isActive = activeFilter === pill;
-                  const color = PILL_COLORS[pill] ?? PILL_COLORS.All;
+                  const color = getPillColor(pill);
                   const count = filterCounts?.[pill];
                   return (
                     <TouchableOpacity
@@ -691,20 +653,6 @@ const ActionPaneContainer = ({
     navigation.closeDrawer?.();
   }, [navigation]);
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const onBackPressHandler = () => {
-  //       navigation.goBack();
-  //       return true;
-  //     };
-  //     BackHandler.addEventListener('hardwareBackPress', onBackPressHandler);
-  //     return () =>
-  //       BackHandler.removeEventListener(
-  //         'hardwareBackPress',
-  //         onBackPressHandler,
-  //       );
-  //   }, [navigation]),
-  // );
   useFocusEffect(
     useCallback(() => {
       const onBackPressHandler = () => {

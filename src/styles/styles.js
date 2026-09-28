@@ -8271,7 +8271,7 @@ const styles = StyleSheet.create({
   // ============================================
   DH_card: {
     backgroundColor: AppTokens.cardBg,
-    marginHorizontal: conditionalScale(8, 10, 12, 12),
+    marginHorizontal: 16,
     marginTop: conditionalVerticalScale(10, 12, 14, 14),
     marginBottom: conditionalVerticalScale(6, 7, 8, 8),
     borderRadius: conditionalScale(14, 15, 16, 16),
@@ -8465,7 +8465,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: conditionalScale(18, 18, 20, 20),
+    paddingHorizontal: 16,
     marginBottom: conditionalVerticalScale(12, 13, 14, 14),
   },
   MG_sectionLeft: {
@@ -8512,7 +8512,7 @@ const styles = StyleSheet.create({
   // ── Leave Balance ──
   MG_leaveGrid: {
     flexDirection: 'row',
-    paddingHorizontal: conditionalScale(18, 18, 20, 20),
+    paddingHorizontal: 16,
     gap: conditionalScale(8, 9, 10, 10),
   },
   MG_leaveCard: {

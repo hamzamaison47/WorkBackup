@@ -14,7 +14,7 @@ const RetrieveUserInfoByEmail = async ({email}) => {
     }
 
     const accessToken = await getToken();
-    console.log(accessToken);
+    // console.log(accessToken);
     const soapEnvelope = `<?xml version="1.0" encoding="utf-8"?>
     <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
       <soapenv:Header>
@@ -30,8 +30,8 @@ const RetrieveUserInfoByEmail = async ({email}) => {
       </soapenv:Body>
     </soapenv:Envelope>`;
 
-    console.log({soapEnvelope});
-    console.log(config);
+    // console.log({soapEnvelope});
+    // console.log(config);
     const {data: xml} = await axios.post(
       `${config.resource}soap/services/DFUserInfoSvcGroup`,
       soapEnvelope,

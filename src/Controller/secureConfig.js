@@ -25,17 +25,6 @@ export async function getConfig() {
   return null;
 }
 
-// export async function getConfig() {
-//   return {
-//     tokenUrl:
-//       'https://login.windows.net/5df08255-a152-4fbc-a174-0d8a182aa594/oauth2/token',
-//     client_id: '44c7cff3-bed3-4644-bed9-36c7c0a13dbe',
-//     client_secret: 'VUw8Q~OD7aGLfl39TRFCUeFhs5KnVLxvIzN5Occz',
-//     grant_type: 'client_credentials',
-//     resource: 'https://maison-uat.sandbox.operations.dynamics.com/',
-//   };
-// }
-
 export async function clearConfig() {
   await Keychain.resetGenericPassword({service: CONFIG_SERVICE});
 }
@@ -318,5 +307,36 @@ export async function migrateOldConfig() {
     }
   } catch (error) {
     console.error('Error migrating old config:', error);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Seeds a fixed default environment (UAT) for a brand-new install
+// with no saved configs. Call this once at app startup, right after
+// migrateOldConfig(). See patch notes for why the ordering matters.
+// ─────────────────────────────────────────────────────────────
+const DEFAULT_ENVIRONMENT = {
+  tokenUrl:
+    'https://login.windows.net/dcd51900-6904-4054-b11c-3911591f596f/oauth2/token',
+  client_id: '34fca2f9-63d8-4e78-8ef5-8b68ca2c0728',
+  client_secret: 'MzQ8Q~lF~kybirwICApLVj8vQnyQ5aG83DDgWal~',
+  grant_type: 'client_credentials',
+  resource: 'https://idap-d365-uat.sandbox.operations.dynamics.com/',
+};
+
+const DEFAULT_ENVIRONMENT_NAME = 'IDAP (Default)';
+
+export async function seedDefaultEnvironmentIfNeeded() {
+  try {
+    const configsList = await getConfigsList();
+
+    if (configsList.length > 0) {
+      return;
+    }
+
+    console.log('No environments found — seeding default environment...');
+    await saveConfigWithId(DEFAULT_ENVIRONMENT, DEFAULT_ENVIRONMENT_NAME);
+  } catch (error) {
+    console.error('Error seeding default environment:', error);
   }
 }

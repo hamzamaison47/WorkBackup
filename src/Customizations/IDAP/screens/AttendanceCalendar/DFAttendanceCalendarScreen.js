@@ -156,6 +156,30 @@ const formatSecondsToTime = seconds => {
   return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 };
 
+// ClockIn/ClockOut are both "seconds since midnight" (same unit
+// formatSecondsToTime already expects), so the worked duration is just their
+// difference — not a duration in its own right on the record. Requires both
+// sides present; a partial/missing punch (deriveStatus's "missing" case)
+// shows '—' rather than a misleading duration.
+const formatDurationHM = totalSeconds => {
+  const hh = Math.floor(totalSeconds / 3600);
+  const mm = Math.floor((totalSeconds % 3600) / 60);
+  return `${hh}h ${String(mm).padStart(2, '0')}m`;
+};
+
+const formatTotalTime = (clockIn, clockOut) => {
+  const hasIn = clockIn !== null && clockIn !== undefined;
+  const hasOut = clockOut !== null && clockOut !== undefined;
+  if (!hasIn || !hasOut) return '—';
+
+  let diff = clockOut - clockIn;
+  // Guard against an overnight shift (ClockOut's seconds-since-midnight
+  // wrapping past 24h) producing a negative duration.
+  if (diff < 0) diff += 24 * 3600;
+
+  return formatDurationHM(diff);
+};
+
 // Local (never UTC/toISOString) — avoids shifting the day backward for
 // positive-UTC-offset zones like Pakistan.
 const toYMD = d => {
@@ -1064,6 +1088,35 @@ const DFAttendanceCalendarScreen = () => {
                           fontSize: conditionalFontScale(12, 12.5, 13, 13),
                         }}>
                         {formatSecondsToTime(selectedRecord.ClockOut)}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginTop: conditionalVerticalScale(10, 11, 12, 12),
+                        paddingTop: conditionalVerticalScale(10, 11, 12, 12),
+                        borderTopWidth: 1,
+                        borderTopColor: '#F0F0F0',
+                      }}>
+                      <Text
+                        style={{
+                          color: '#666',
+                          fontSize: conditionalFontScale(12, 12.5, 13, 13),
+                        }}>
+                        Total time
+                      </Text>
+                      <Text
+                        style={{
+                          color: '#1A1A1A',
+                          fontWeight: '700',
+                          fontSize: conditionalFontScale(12, 12.5, 13, 13),
+                        }}>
+                        {formatTotalTime(
+                          selectedRecord.ClockIn,
+                          selectedRecord.ClockOut,
+                        )}
                       </Text>
                     </View>
                   </>

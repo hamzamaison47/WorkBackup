@@ -237,7 +237,7 @@ const PersonalEducationListPage = () => {
 
   /* ---------- status ---------- */
   const getStatusLabel = status => {
-    if (!status) return 'HR'; // ← was 'Approved'
+    if (!status) return 'HR';
     const normalizedStatus = status.replace(/\s+/g, '').toLowerCase();
     const map = {
       draft: 'Draft',
@@ -256,7 +256,7 @@ const PersonalEducationListPage = () => {
       changerequested: 'Change Requested',
       taskinreview: 'Task In Review',
       taskcompleted: 'Task Completed',
-      noworkflow: '',
+      noworkflow: 'HR',
     };
     return map[normalizedStatus] ?? '';
   };
@@ -289,7 +289,7 @@ const PersonalEducationListPage = () => {
     const isCancelled =
       statusLabel === 'Cancelled' || statusLabel === 'Canceled';
     const canDelete = isDraft || isCancelled;
-    const isHCMRecord = statusLabel === '';
+    const isHCMRecord = statusLabel === 'HR';
     const isRejected = statusLabel === 'Rejected';
     const isInReview = statusLabel === 'In review'; // ← add this
 
@@ -332,7 +332,7 @@ const PersonalEducationListPage = () => {
         show: true, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
-        text: 'Approval',
+        text: 'Workflow',
         icon: 'check-square',
         textColor: P.primaryStrong,
         disabled: false,
@@ -590,7 +590,11 @@ const PersonalEducationListPage = () => {
   // Search + sort now handled by useListFilters via f.actionPaneProps.
 
   const renderEducationCard = ({item}) => {
-    const updatedItem = {...item, EducationTitle: 'Education'};
+    const updatedItem = {
+      ...item,
+      EducationTitle: 'Education',
+      ApprovalStatus: getStatusLabel(item.ApprovalStatus),
+    };
     return (
       <DynamicRequestCard
         data={updatedItem}
@@ -703,16 +707,16 @@ const PersonalEducationListPage = () => {
         detailData={selectedEducationItem || {}}
         showTakePhoto={
           getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'Draft' ||
-          getStatusLabel(selectedEducationItem?.ApprovalStatus) === ''
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'HR'
         }
         showChooseFile={
           getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'Draft' ||
-          getStatusLabel(selectedEducationItem?.ApprovalStatus) === ''
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'HR'
         }
         showDownload={true}
         showDelete={
           getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'Draft' ||
-          getStatusLabel(selectedEducationItem?.ApprovalStatus) === ''
+          getStatusLabel(selectedEducationItem?.ApprovalStatus) === 'HR'
         }
       />
 

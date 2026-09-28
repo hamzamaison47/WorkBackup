@@ -186,7 +186,7 @@ const Profile = ({navigation}) => {
           </AnimatedCard>
 
           {/* ── Legal card ───────────────────────────────────────────────── */}
-          <AnimatedCard delay={CARD_STAGGER * 3}>
+          {/* <AnimatedCard delay={CARD_STAGGER * 3}>
             <CardHeading label="LEGAL" />
             <SettingRow
               icon="file-text"
@@ -213,7 +213,7 @@ const Profile = ({navigation}) => {
               onPress={() => navigation.navigate('CookiePolicy')}
               isLast
             />
-          </AnimatedCard>
+          </AnimatedCard> */}
         </PageBackground>
       )}
 

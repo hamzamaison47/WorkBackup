@@ -345,7 +345,7 @@ const ExpenseManagementHeaderListPage = () => {
         show: true,
         position: 'bottom',
         style: 'approval_dropdown',
-        text: isRejected ? 'Re-submit' : 'Approval',
+        text: isRejected ? 'Re-submit' : 'Workflow',
         icon: 'check-square',
         textColor: P.primaryStrong,
         disabled: false,

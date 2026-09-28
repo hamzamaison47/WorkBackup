@@ -186,7 +186,6 @@ const MedicalExpenseManagmentListPage = () => {
         personnelNumber: effectiveEmployeeId,
         purpose: 'Medical',
       });
-      console.log('here is the required data', myExpenseHeaderData);
 
       const sortedData = (myExpenseHeaderData || []).sort((a, b) => {
         const dateA = new Date(a.CreatedDateTime || 0);
@@ -379,7 +378,7 @@ const MedicalExpenseManagmentListPage = () => {
         show: true,
         position: 'bottom',
         style: 'approval_dropdown',
-        text: isRejected ? 'Re-submit' : 'Approval',
+        text: isRejected ? 'Re-submit' : 'Workflow',
         icon: 'check-square',
         textColor: P.primaryStrong,
         disabled: false,
@@ -645,7 +644,7 @@ const MedicalExpenseManagmentListPage = () => {
   };
   return (
     <ActionPaneContainer
-      pageTitle="Medical Expense Reports"
+      pageTitle="Medical Expense"
       isBackButton={false}
       showFooter={true}
       showFloatingButton={true}

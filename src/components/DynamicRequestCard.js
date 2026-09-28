@@ -30,6 +30,7 @@ import {
   formatDynamicsDate,
   formatDynamicsDateTime,
 } from '../utils/dynamicsDate';
+import {getStatusColors} from '../utils/statusColors';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
@@ -40,46 +41,6 @@ export const BUTTON_TYPES = {
   SUBMIT: 'submit',
   VIEW: 'view',
   APPROVAL: 'approval',
-};
-
-// ✅ AppTokens used here only for brand colors (never change between themes)
-const getStatusColors = status => {
-  const s = String(status ?? '').toLowerCase();
-  if (['active', 'approved', 'success', 'yes', 'true'].includes(s)) {
-    return {bg: AppTokens.greenBg, text: '#065F46', dot: AppTokens.green};
-  }
-  if (s === 'completed') {
-    return {bg: AppTokens.purpleBg, text: '#4C1D95', dot: AppTokens.purple};
-  }
-  if (
-    [
-      'pending',
-      'pending approval',
-      'in review',
-      'waiting',
-      'processing',
-      'in progress',
-    ].includes(s)
-  ) {
-    // "Waiting" family — slate, not amber (see statusWaiting* in Tokens.js).
-    return {
-      bg: AppTokens.statusWaitingBg,
-      text: AppTokens.statusWaitingText,
-      dot: AppTokens.statusWaiting,
-    };
-  }
-  if (['cancelled', 'rejected', 'failed', 'no', 'false'].includes(s)) {
-    return {bg: AppTokens.redBg, text: '#991B1B', dot: AppTokens.red};
-  }
-  if (['draft', 'notsubmitted'].includes(s)) {
-    // "Draft" family — lighter neutral than waiting (statusDraft* in Tokens.js).
-    return {
-      bg: AppTokens.statusDraftBg,
-      text: AppTokens.statusDraftText,
-      dot: AppTokens.statusDraft,
-    };
-  }
-  return {bg: AppTokens.slateBg, text: AppTokens.slate, dot: '#94A3B8'};
 };
 
 let globalMenuCloser = null;
@@ -204,18 +165,6 @@ const DynamicRequestCard = ({
     unregisterMenuCloser(closeMenu);
   }, [menuFadeAnim]);
 
-  // const openMenu = () => {
-  //   menuButtonRef.current?.measure((fx, fy, w, h, px, py) => {
-  //     setMenuPosition({top: py + h + 6, right: SCREEN_WIDTH - px - w});
-  //     registerMenuCloser(closeMenu);
-  //     setMenuVisible(true);
-  //     Animated.timing(menuFadeAnim, {
-  //       toValue: 1,
-  //       duration: 160,
-  //       useNativeDriver: true,
-  //     }).start();
-  //   });
-  // };
   const openMenu = () => {
     menuButtonRef.current?.measure((fx, fy, w, h, px, py) => {
       const menuHeight = 10; // Approximate height of your menu
@@ -251,34 +200,6 @@ const DynamicRequestCard = ({
     }).start(() => setApprovalDropdownVisible(false));
   };
 
-  // const openApprovalDropdown = () => {
-  //   approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
-  //     const approvalConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
-  //     const estimatedHeight = (approvalConfig.actions?.length || 1) * 48 + 16;
-  //     const spaceBelow = SCREEN_HEIGHT - (py + h) - 20;
-  //     const opensUpward = spaceBelow < estimatedHeight;
-  //     const dropdownWidth = 180;
-  //     const PADDING = 12;
-  //     const clampedLeft = Math.min(
-  //       Math.max(px, PADDING),
-  //       SCREEN_WIDTH - dropdownWidth - PADDING,
-  //     );
-  //     const topPosition = opensUpward
-  //       ? Math.max(py - estimatedHeight - 4, PADDING)
-  //       : Math.min(py + h + 4, SCREEN_HEIGHT - estimatedHeight - PADDING);
-  //     setApprovalPosition({
-  //       top: topPosition,
-  //       left: clampedLeft,
-  //       width: Math.max(w, dropdownWidth),
-  //     });
-  //     setApprovalDropdownVisible(true);
-  //     Animated.timing(approvalFadeAnim, {
-  //       toValue: 1,
-  //       duration: 160,
-  //       useNativeDriver: true,
-  //     }).start();
-  //   });
-  // };
   const openApprovalDropdown = () => {
     approvalButtonRef.current?.measure((fx, fy, w, h, px, py) => {
       const approvalConfig = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
@@ -382,7 +303,7 @@ const DynamicRequestCard = ({
     },
     [BUTTON_TYPES.APPROVAL]: {
       show: false,
-      text: 'Approval',
+      text: 'Workflow',
       icon: null,
       position: 'bottom',
       style: 'approval_dropdown',
@@ -485,43 +406,6 @@ const DynamicRequestCard = ({
     );
   };
 
-  // const renderMenuItem = buttonType => {
-  //   const cfg = getMergedButtonConfig(buttonType);
-  //   if (!cfg.show) {
-  //     return null;
-  //   }
-  //   const isProcessing = processingButtons.includes(buttonType);
-  //   const isDisabled = cfg.disabled || processingButtons.length > 0;
-
-  //   return (
-  //     <TouchableOpacity
-  //       key={buttonType}
-  //       onPress={() => {
-  //         closeMenu();
-  //         onButtonPress(buttonType, data);
-  //       }}
-  //       disabled={isDisabled}
-  //       activeOpacity={0.72}
-  //       style={[S.menuItem, isDisabled && S.menuItemDisabled]}>
-  //       <View style={[S.menuItemIcon, {backgroundColor: cfg.color + '18'}]}>
-  //         <FeatherIcon
-  //           name={isProcessing ? 'loader' : cfg.icon || 'circle'}
-  //           size={conditionalFontScale(13, 13, 14, 14)}
-  //           color={isDisabled ? T.border : cfg.color}
-  //         />
-  //       </View>
-  //       <Text
-  //         style={[
-  //           S.menuItemText,
-  //           {color: T.titleText},
-  //           isDisabled && {color: T.border},
-  //         ]}>
-  //         {isProcessing ? 'Processing…' : cfg.text}
-  //       </Text>
-  //     </TouchableOpacity>
-  //   );
-  // };
-
   const renderMenuItem = buttonType => {
     const cfg = getMergedButtonConfig(buttonType);
     if (!cfg.show) return null;
@@ -551,38 +435,6 @@ const DynamicRequestCard = ({
       </TouchableOpacity>
     );
   };
-
-  // const renderBottomButton = buttonType => {
-  //   const cfg = getMergedButtonConfig(buttonType);
-  //   if (!cfg.show || cfg.style === 'approval_dropdown') {
-  //     return null;
-  //   }
-  //   const isProcessing = processingButtons.includes(buttonType);
-  //   const isDisabled = cfg.disabled || isProcessing;
-
-  //   return (
-  //     <TouchableOpacity
-  //       key={buttonType}
-  //       onPress={() => onButtonPress(buttonType, data)}
-  //       disabled={isDisabled}
-  //       activeOpacity={0.72}
-  //       style={[
-  //         S.bottomBtn,
-  //         {borderColor: isDisabled ? T.border : cfg.color},
-  //         isDisabled && S.bottomBtnDisabled,
-  //       ]}>
-  //       <FeatherIcon
-  //         name={isProcessing ? 'loader' : cfg.icon || 'circle'}
-  //         size={conditionalFontScale(11, 12, 12, 13)}
-  //         color={isDisabled ? T.border : cfg.color}
-  //       />
-  //       <Text
-  //         style={[S.bottomBtnText, {color: isDisabled ? T.border : cfg.color}]}>
-  //         {isProcessing ? 'Processing…' : cfg.text}
-  //       </Text>
-  //     </TouchableOpacity>
-  //   );
-  // };
 
   const renderBottomButton = buttonType => {
     const cfg = getMergedButtonConfig(buttonType);
@@ -615,124 +467,6 @@ const DynamicRequestCard = ({
     );
   };
 
-  // const renderApprovalButton = () => {
-  //   const cfg = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
-  //   if (!cfg.show) {
-  //     return null;
-  //   }
-  //   const isDisabled = cfg.disabled || processingButtons.length > 0;
-  //   const actions = cfg.actions || [
-  //     {key: 'submit', label: 'Submit', icon: 'send'},
-  //   ];
-  //   const fillColor = isDisabled ? T.border : cfg.color || T.blue;
-
-  //   return (
-  //     <>
-  //       <TouchableOpacity
-  //         ref={approvalButtonRef}
-  //         onPress={toggleApprovalDropdown}
-  //         disabled={isDisabled}
-  //         activeOpacity={0.8}
-  //         style={[
-  //           S.approvalBtn,
-  //           {backgroundColor: fillColor, borderColor: fillColor},
-  //           isDisabled && S.approvalBtnDisabled,
-  //         ]}>
-  //         <Text style={S.approvalBtnText}>{cfg.text || 'Approval'}</Text>
-  //         <FeatherIcon
-  //           name={approvalDropdownVisible ? 'chevron-up' : 'chevron-down'}
-  //           size={conditionalFontScale(11, 12, 12, 13)}
-  //           color="#FFFFFF"
-  //         />
-  //       </TouchableOpacity>
-
-  //       <Modal
-  //         transparent
-  //         visible={approvalDropdownVisible}
-  //         animationType="none"
-  //         onRequestClose={closeApprovalDropdown}>
-  //         <TouchableWithoutFeedback onPress={closeApprovalDropdown}>
-  //           <View style={S.modalOverlay}>
-  //             <TouchableWithoutFeedback>
-  //               <Animated.View
-  //                 style={[
-  //                   S.approvalMenu,
-  //                   {
-  //                     // ✅ dynamic colors inline
-  //                     backgroundColor: T.cardBg,
-  //                     borderColor: T.cardDivider,
-  //                     shadowColor: T.shadowColor,
-  //                     top: approvalPosition.top,
-  //                     left: approvalPosition.left,
-  //                     minWidth: approvalPosition.width || 160,
-  //                     opacity: approvalFadeAnim,
-  //                     transform: [
-  //                       {
-  //                         translateY: approvalFadeAnim.interpolate({
-  //                           inputRange: [0, 1],
-  //                           outputRange: [6, 0],
-  //                         }),
-  //                       },
-  //                     ],
-  //                   },
-  //                 ]}>
-  //                 {actions.map((action, idx) => {
-  //                   const isLast = idx === actions.length - 1;
-  //                   const isActionProcessing = processingButtons.includes(
-  //                     action.key,
-  //                   );
-  //                   return (
-  //                     <TouchableOpacity
-  //                       key={idx}
-  //                       activeOpacity={0.72}
-  //                       style={[
-  //                         S.approvalMenuItem,
-  //                         !isLast && {
-  //                           borderBottomWidth: 1,
-  //                           borderBottomColor: T.cardDivider,
-  //                         },
-  //                       ]}
-  //                       onPress={() => {
-  //                         closeApprovalDropdown();
-  //                         onButtonPress(action.key, data);
-  //                       }}
-  //                       disabled={isActionProcessing}>
-  //                       {action.icon && (
-  //                         <View
-  //                           style={[
-  //                             S.approvalMenuIcon,
-  //                             {backgroundColor: T.blue + '18'},
-  //                           ]}>
-  //                           <FeatherIcon
-  //                             name={action.icon}
-  //                             size={conditionalFontScale(12, 13, 13, 14)}
-  //                             color={isActionProcessing ? T.border : T.blue}
-  //                           />
-  //                         </View>
-  //                       )}
-  //                       <Text
-  //                         style={[
-  //                           S.approvalMenuItemText,
-  //                           {
-  //                             color: isActionProcessing
-  //                               ? T.border
-  //                               : T.titleText,
-  //                           },
-  //                         ]}>
-  //                         {isActionProcessing ? 'Processing…' : action.label}
-  //                       </Text>
-  //                     </TouchableOpacity>
-  //                   );
-  //                 })}
-  //               </Animated.View>
-  //             </TouchableWithoutFeedback>
-  //           </View>
-  //         </TouchableWithoutFeedback>
-  //       </Modal>
-  //     </>
-  //   );
-  // };
-
   const renderApprovalButton = () => {
     const cfg = getMergedButtonConfig(BUTTON_TYPES.APPROVAL);
     if (!cfg.show) {
@@ -756,7 +490,7 @@ const DynamicRequestCard = ({
             {backgroundColor: fillColor, borderColor: fillColor},
             isDisabled && S.approvalBtnDisabled,
           ]}>
-          <Text style={S.approvalBtnText}>{cfg.text || 'Approval'}</Text>
+          <Text style={S.approvalBtnText}>{cfg.text || 'Workflow'}</Text>
           <FeatherIcon
             name={approvalDropdownVisible ? 'chevron-up' : 'chevron-down'}
             size={conditionalFontScale(11, 12, 12, 13)}
@@ -1133,7 +867,6 @@ const DynamicRequestCard = ({
 const S = {
   card: {
     borderRadius: conditionalScale(12, 13, 14, 14),
-    // marginHorizontal: conditionalScale(4, 6, 8, 8),
     marginBottom: conditionalVerticalScale(8, 9, 10, 10),
     borderWidth: 1,
     shadowOffset: {width: 0, height: 2},
@@ -1149,8 +882,8 @@ const S = {
     justifyContent: 'space-between',
     paddingLeft: conditionalScale(14, 15, 16, 16),
     paddingRight: conditionalScale(10, 11, 12, 12),
-    paddingTop: conditionalVerticalScale(16, 17, 18, 18), // was 11, 12, 13, 13
-    paddingBottom: conditionalVerticalScale(16, 17, 18, 18), // was 11, 12, 13, 13
+    paddingTop: conditionalVerticalScale(16, 17, 18, 18),
+    paddingBottom: conditionalVerticalScale(16, 17, 18, 18),
     gap: conditionalScale(8, 9, 10, 10),
   },
   heroLeft: {flex: 1, gap: conditionalVerticalScale(2, 2, 3, 3)},
@@ -1373,12 +1106,12 @@ const S = {
     flexShrink: 0,
   },
   avatarImage: {
-    width: conditionalScale(64, 70, 76, 82), // bigger
+    width: conditionalScale(64, 70, 76, 82),
     height: conditionalScale(64, 70, 76, 82),
     borderRadius: 999,
   },
   avatarFallback: {
-    width: conditionalScale(64, 70, 76, 82), // match avatarImage
+    width: conditionalScale(64, 70, 76, 82),
     height: conditionalScale(64, 70, 76, 82),
     borderRadius: 999,
     alignItems: 'center',

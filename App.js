@@ -16,6 +16,10 @@ import {selectIsRTL, selectCurrentLanguage} from './src/store/selectors';
 import useTheme from './src/theme/useTheme';
 import Geolocation from '@react-native-community/geolocation';
 import {Platform} from 'react-native';
+import {
+  migrateOldConfig,
+  seedDefaultEnvironmentIfNeeded,
+} from './src/Controller/secureConfig';
 
 NetInfo.configure({
   shouldFetchWiFiSSID: true,
@@ -49,6 +53,26 @@ const AppContent = () => {
     }
   }, [isRTL, currentLanguage]);
   const {colors, isDark} = useTheme(); // ← ADD THIS
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrapConfig = async () => {
+      try {
+        await migrateOldConfig();
+        if (cancelled) return;
+        await seedDefaultEnvironmentIfNeeded();
+      } catch (error) {
+        console.error('Config bootstrap error:', error);
+      }
+    };
+
+    bootstrapConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     // Pass the navigation ref so notification taps can navigate correctly.

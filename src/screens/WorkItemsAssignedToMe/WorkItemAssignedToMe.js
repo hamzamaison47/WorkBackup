@@ -580,7 +580,7 @@ const WorkItemsAssignedToMePage = () => {
       show: !selectionMode,
       position: 'bottom',
       style: 'approval_dropdown',
-      text: 'Approval',
+      text: 'Workflow',
       textColor: P.primaryStrong,
       disabled: isActionLoading,
       actions:
