@@ -5,7 +5,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {setLastBackgroundTime} from '../store/slices/authSlice';
 import {handleLogoutauth} from '../Controller/authUtils';
 
-const SESSION_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const SESSION_TIMEOUT = 4 * 60 * 60 * 1000; // 4 hours
 
 const useSessionTimeout = () => {
   const [showModal, setShowModal] = useState(false);

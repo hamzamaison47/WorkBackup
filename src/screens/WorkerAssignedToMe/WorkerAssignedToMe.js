@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  BackHandler,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import {useNavigation, useFocusEffect} from '@react-navigation/native';
@@ -299,6 +300,7 @@ const WorkerAssignedToMe = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [rootChain, setRootChain] = useState([]);
   const [profilePictures, setProfilePictures] = useState({});
+  const navigation = useNavigation();
 
   const {userData} = useSelector(state => state.user);
 
@@ -379,6 +381,29 @@ const WorkerAssignedToMe = () => {
         fetchProfilePictureForRoot(getEmployeeId(userData));
       }
     }, [userData?.employeeId]),
+  );
+
+  // Back press: if drilled into a report's team, first jump straight back to
+  // the logged-in user's own team (level 1); a back press from there goes to
+  // the main dashboard.
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (rootChain.length > 1) {
+          fetchEmployeeReportToMe(userData, true);
+          fetchProfilePictureForRoot(getEmployeeId(userData));
+          return true; // handled, don't leave the screen
+        }
+        navigation.navigate('MainDashboard');
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+      return () => subscription.remove();
+    }, [rootChain.length, userData, navigation]),
   );
 
   return (

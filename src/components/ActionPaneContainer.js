@@ -779,6 +779,7 @@ const ActionPaneContainer = ({
           defaultLegalEntity ||
           t('actionPane.selectCompany'),
         defaultDat: defaultLegalEntity,
+        onLogoPress: () => navigation.navigate('MainDashboard'),
       });
       navigation.setOptions(headerOptions);
     }

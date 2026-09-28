@@ -1,130 +1,4 @@
-// // components/MainDashboard/DashboardAlertsCard.js
-// import React, {useMemo} from 'react';
-// import {View, Text, StyleSheet} from 'react-native';
-// import FeatherIcon from 'react-native-vector-icons/Feather';
-// import useAppTokens from '../AppComponentsDesign/useAppTokens';
-
-// const SEVERITY_ICON = {
-//   warning: 'alert-triangle',
-//   error: 'alert-circle',
-//   success: 'check-circle',
-// };
-
-// const DashboardAlertsCard = ({alerts}) => {
-//   const T = useAppTokens();
-//   const styles = useMemo(() => createStyles(T), [T]);
-
-//   if (!alerts?.length) return null;
-
-//   return (
-//     <View style={styles.container}>
-//       {alerts.map(alert => (
-//         <View key={alert.id} style={[styles.row, styles[alert.severity]]}>
-//           <FeatherIcon
-//             name={SEVERITY_ICON[alert.severity]}
-//             size={18}
-//             color={styles[`${alert.severity}Icon`].color}
-//           />
-//           <View style={styles.textContainer}>
-//             <Text style={styles.title}>{alert.title}</Text>
-//             <Text style={styles.message}>{alert.message}</Text>
-//           </View>
-//         </View>
-//       ))}
-//     </View>
-//   );
-// };
-
-// const createStyles = T =>
-//   StyleSheet.create({
-//     container: {marginHorizontal: 16, marginTop: 8, gap: 8},
-//     row: {
-//       flexDirection: 'row',
-//       alignItems: 'flex-start',
-//       gap: 10,
-//       padding: 12,
-//       borderRadius: 10,
-//       borderWidth: 1,
-//     },
-//     textContainer: {flex: 1},
-//     title: {fontWeight: '700', fontSize: 13.5, color: T.titleText},
-//     message: {fontSize: 12.5, color: T.subtitleText, marginTop: 2},
-//     warning: {
-//       backgroundColor: T.yellowBg ?? '#FFF7E0',
-//       borderColor: T.yellowStrong ?? '#F0B429',
-//     },
-//     warningIcon: {color: T.yellowStrong ?? '#F0B429'},
-//     error: {backgroundColor: T.redBg, borderColor: T.red},
-//     errorIcon: {color: T.red},
-//     success: {backgroundColor: T.greenBg ?? '#E6F7EC', borderColor: T.green},
-//     successIcon: {color: T.green},
-//   });
-
-// export default DashboardAlertsCard;
-// // components/MainDashboard/DashboardAlertsCard.js
-// import React, {useMemo} from 'react';
-// import {View, Text, StyleSheet} from 'react-native';
-// import FeatherIcon from 'react-native-vector-icons/Feather';
-// import useAppTokens from '../AppComponentsDesign/useAppTokens';
-
-// const SEVERITY_ICON = {
-//   warning: 'alert-triangle',
-//   error: 'alert-circle',
-//   success: 'check-circle',
-// };
-
-// const DashboardAlertsCard = ({alerts}) => {
-//   const T = useAppTokens();
-//   const styles = useMemo(() => createStyles(T), [T]);
-
-//   if (!alerts?.length) return null;
-
-//   return (
-//     <View style={styles.container}>
-//       {alerts.map(alert => (
-//         <View key={alert.id} style={[styles.row, styles[alert.severity]]}>
-//           <FeatherIcon
-//             name={SEVERITY_ICON[alert.severity]}
-//             size={18}
-//             color={styles[`${alert.severity}Icon`].color}
-//           />
-//           <View style={styles.textContainer}>
-//             <Text style={styles.title}>{alert.title}</Text>
-//             <Text style={styles.message}>{alert.message}</Text>
-//           </View>
-//         </View>
-//       ))}
-//     </View>
-//   );
-// };
-
-// const createStyles = T =>
-//   StyleSheet.create({
-//     container: {marginHorizontal: 16, marginTop: 8, gap: 8},
-//     row: {
-//       flexDirection: 'row',
-//       alignItems: 'flex-start',
-//       gap: 10,
-//       padding: 12,
-//       borderRadius: 10,
-//       borderWidth: 1,
-//     },
-//     textContainer: {flex: 1},
-//     title: {fontWeight: '700', fontSize: 13.5, color: T.titleText},
-//     message: {fontSize: 12.5, color: T.subtitleText, marginTop: 2},
-//     warning: {
-//       backgroundColor: T.yellowBg ?? '#FFF7E0',
-//       borderColor: T.yellowStrong ?? '#F0B429',
-//     },
-//     warningIcon: {color: T.yellowStrong ?? '#F0B429'},
-//     error: {backgroundColor: T.redBg, borderColor: T.red},
-//     errorIcon: {color: T.red},
-//     success: {backgroundColor: T.greenBg ?? '#E6F7EC', borderColor: T.green},
-//     successIcon: {color: T.green},
-//   });
-
-// export default DashboardAlertsCard;
-import React, {useMemo, useState, useCallback} from 'react';
+import React, {useMemo, useState} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
 import useAppTokens from '../AppComponentsDesign/useAppTokens';
@@ -136,31 +10,18 @@ const SEVERITY_ICON = {
 };
 
 // One shared panel, headed "Alerts", for every dashboard notice (attendance +
-// OPD claim alerts). Each row can be dismissed independently; dismissal is
-// in-memory only (a plain useState Set), so it resets on app restart — a
-// still-true condition (e.g. still haven't clocked in) will show again next
-// launch.
+// OPD claim alerts). The whole panel can be collapsed/expanded via the
+// Hide/Show toggle in the header. State is in-memory only, so the panel
+// starts expanded on every app launch.
 const DashboardAlertsCard = ({alerts}) => {
   const T = useAppTokens();
   const styles = useMemo(() => createStyles(T), [T]);
-  const [dismissedIds, setDismissedIds] = useState(() => new Set());
+  const [collapsed, setCollapsed] = useState(false);
 
-  const visibleAlerts = useMemo(
-    () => (alerts || []).filter(a => !dismissedIds.has(a.id)),
-    [alerts, dismissedIds],
-  );
+  const list = alerts || [];
+  if (!list.length) return null;
 
-  const dismiss = useCallback(id => {
-    setDismissedIds(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
-  if (!visibleAlerts.length) return null;
-
-  const hasUrgent = visibleAlerts.some(a => a.severity === 'error');
+  const hasUrgent = list.some(a => a.severity === 'error');
 
   return (
     <View style={styles.panel}>
@@ -180,36 +41,47 @@ const DashboardAlertsCard = ({alerts}) => {
           </View>
           <Text style={styles.headerTitle}>Alerts</Text>
         </View>
+
+        <TouchableOpacity
+          onPress={() => setCollapsed(prev => !prev)}
+          activeOpacity={0.65}
+          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+          style={styles.toggleBtn}>
+          <Text style={styles.toggleText}>{collapsed ? 'Show' : 'Hide'}</Text>
+          <FeatherIcon
+            name={collapsed ? 'chevron-down' : 'chevron-up'}
+            size={15}
+            color={T.blueStrong}
+          />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.headerDivider} />
+      {!collapsed && (
+        <>
+          <View style={styles.headerDivider} />
 
-      {/* ── Rows ── */}
-      {visibleAlerts.map((alert, index) => (
-        <View key={alert.id}>
-          <View style={styles.row}>
-            <View style={[styles.iconWrap, styles[`${alert.severity}IconBg`]]}>
-              <FeatherIcon
-                name={SEVERITY_ICON[alert.severity]}
-                size={16}
-                color={styles[`${alert.severity}Icon`].color}
-              />
+          {/* ── Rows ── */}
+          {list.map((alert, index) => (
+            <View key={alert.id}>
+              <View style={styles.row}>
+                <View
+                  style={[styles.iconWrap, styles[`${alert.severity}IconBg`]]}>
+                  <FeatherIcon
+                    name={SEVERITY_ICON[alert.severity]}
+                    size={16}
+                    color={styles[`${alert.severity}Icon`].color}
+                  />
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={styles.title}>{alert.title}</Text>
+                  <Text style={styles.message}>{alert.message}</Text>
+                </View>
+              </View>
+              {index < list.length - 1 && <View style={styles.divider} />}
             </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>{alert.title}</Text>
-              <Text style={styles.message}>{alert.message}</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => dismiss(alert.id)}
-              activeOpacity={0.65}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              style={styles.closeBtn}>
-              <FeatherIcon name="x" size={15} color={T.subtitleText} />
-            </TouchableOpacity>
-          </View>
-          {index < visibleAlerts.length - 1 && <View style={styles.divider} />}
-        </View>
-      ))}
+          ))}
+        </>
+      )}
     </View>
   );
 };
@@ -279,13 +151,15 @@ const createStyles = T =>
     textContainer: {flex: 1, paddingTop: 1},
     title: {fontWeight: '700', fontSize: 13.5, color: T.titleText},
     message: {fontSize: 12.5, color: T.subtitleText, marginTop: 2},
-    closeBtn: {
-      width: 26,
-      height: 26,
+    toggleBtn: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: 4,
-      marginTop: -2,
+      gap: 4,
+    },
+    toggleText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: T.blueStrong,
     },
     divider: {
       height: 1,

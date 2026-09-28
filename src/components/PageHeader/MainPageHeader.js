@@ -20,6 +20,7 @@ const MainPageHeader = ({
   onShowNotify,
   onCount,
   onHeaderMenuPress,
+  onLogoPress,
   isBack = false,
   headerBg = brand.surface,
   headerFg = brand.text,
@@ -41,10 +42,17 @@ const MainPageHeader = ({
           color={headerFg}
         />
       </TouchableOpacity>
-      <Text style={S.titleText}>
-        <Text style={{color: '#d7a118'}}>IDAP</Text>
-        <Text style={{color: headerFg}}>360</Text>
-      </Text>
+
+      {/* replace the old <Text style={S.titleText}> block with this */}
+      <TouchableOpacity
+        onPress={onLogoPress}
+        activeOpacity={0.72}
+        hitSlop={{top: 8, bottom: 8, left: 4, right: 8}}>
+        <Text style={S.titleText}>
+          <Text style={{color: '#d7a118'}}>IDAP</Text>
+          <Text style={{color: headerFg}}>360</Text>
+        </Text>
+      </TouchableOpacity>
     </View>
   ),
 
