@@ -56,7 +56,7 @@
 			<key>entitlements</key>
 			<dict>
 				<key>application-identifier</key>
-				<string>VQJ56CW334.com.danishbutt.dynaface</string>
+				<string>VQJ56CW334.com.danishbutt.dynafaceidap</string>
 				<key>aps-environment</key>
 				<string>production</string>
 				<key>beta-reports-active</key>
@@ -77,7 +77,7 @@
 				<key>dateExpires</key>
 				<string>09/10/2026</string>
 				<key>name</key>
-				<string>iOS Team Store Provisioning Profile: com.danishbutt.dynaface</string>
+				<string>iOS Team Store Provisioning Profile: com.danishbutt.dynafaceidap</string>
 			</dict>
 			<key>symbols</key>
 			<true/>
