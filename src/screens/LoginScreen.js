@@ -852,7 +852,7 @@ const LoginScreen = () => {
             {/* Tapping the logo 7 times opens the admin PIN prompt */}
             <Pressable onPress={handleLogoTap}>
               <Image
-                source={require('../assets/IDAPNewLogo.jpg')}
+                source={require('../assets/IDAPLOGO.jpeg')}
                 style={styles.mainLogo}
                 resizeMode="contain"
               />
