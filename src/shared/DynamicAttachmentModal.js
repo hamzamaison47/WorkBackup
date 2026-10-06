@@ -71,7 +71,7 @@ const DynamicAttachmentModal = ({
   showDetails = false,
   detailFields = [],
   detailData = {},
-  showTakePhoto: _showTakePhotoProp, // ignored on purpose — see below
+  showTakePhoto = true,
   showChooseFile = true,
   showDownload = true,
   showDelete = true,
@@ -82,7 +82,6 @@ const DynamicAttachmentModal = ({
   // Take Photo is disabled app-wide. Screens may still pass showTakePhoto
   // as a prop (harmless — it's captured above as _showTakePhotoProp and
   // deliberately not used), but this component always hides the button.
-  const showTakePhoto = false;
   const [attachments, setAttachments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [alertModal, setAlertModal] = useState(false);
@@ -208,9 +207,6 @@ const DynamicAttachmentModal = ({
   };
 
   const takePhoto = async () => {
-    // ── DEBUG ──
-    console.log('[ATTACH DEBUG] takePhoto called');
-
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) {
       setAlertMessage(
@@ -219,44 +215,48 @@ const DynamicAttachmentModal = ({
       setAlertModal(true);
       return;
     }
+
     try {
       const result = await launchCamera({
         mediaType: 'photo',
-        quality: 0.8,
+        quality: 0.7,
         maxWidth: 1024,
         maxHeight: 1024,
-        includeBase64: true,
+        includeBase64: false, // big memory spike on 108MP Samsung sensors
+        saveToPhotos: false,
+        cameraType: 'back',
       });
 
-      // ── DEBUG ──
-      console.log('[ATTACH DEBUG] launchCamera result:', {
-        didCancel: result.didCancel,
-        errorCode: result.errorCode,
-        errorMessage: result.errorMessage,
-        assetsCount: result.assets?.length,
-      });
+      if (result.didCancel) return;
 
-      if (result.assets && result.assets.length > 0) {
-        const asset = result.assets[0];
-        let base64 = asset.base64;
-        if (!base64 && asset.uri) {
-          base64 = await convertToBase64(asset.uri);
-        }
-
-        const timestamp = Date.now();
-        setAttachments(prev => [
-          ...prev,
-          {
-            id: `temp_${timestamp}`,
-            uri: asset.uri,
-            name: `attachment_${timestamp}.jpg`,
-            base64,
-            type: 'image/jpeg',
-            extension: 'jpg',
-            isNew: true,
-          },
-        ]);
+      if (result.errorCode) {
+        setAlertMessage(
+          `Camera error: ${result.errorMessage || result.errorCode}`,
+        );
+        setAlertModal(true);
+        return;
       }
+
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+
+      // Read base64 from the already-resized file instead of via the bridge
+      const path = asset.uri.replace('file://', '');
+      const base64 = await convertToBase64(path);
+
+      const timestamp = Date.now();
+      setAttachments(prev => [
+        ...prev,
+        {
+          id: `temp_${timestamp}`,
+          uri: asset.uri,
+          name: `attachment_${timestamp}.jpg`,
+          base64,
+          type: 'image/jpeg',
+          extension: 'jpg',
+          isNew: true,
+        },
+      ]);
     } catch (error) {
       console.error('Error taking photo:', error);
       setAlertMessage('Failed to take photo');

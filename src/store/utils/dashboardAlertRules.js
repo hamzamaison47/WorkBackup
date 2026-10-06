@@ -90,3 +90,36 @@ export const buildOpdClaimAlert = (expenseRecords = [], date = new Date()) => {
     message: `Your OPD medical expense ${draft.ExpenseNumber} for ${monthLabel} is still in Draft. Please submit it.`,
   };
 };
+
+// Status notices for the target month's claims. Complements buildOpdClaimAlert,
+// which returns null once a claim is submitted, so these fill that gap:
+//   In review -> "request is in review"
+//   Approved  -> "request is approved with total amount X"
+export const buildOpdClaimStatusAlerts = (
+  expenseRecords = [],
+  date = new Date(),
+) => {
+  const target = getOpdClaimTargetMonth(date);
+  const monthLabel = getOpdClaimTargetMonthLabel(date);
+
+  return (expenseRecords || [])
+    .filter(r => matchesTargetMonth(r, target))
+    .reduce((acc, r) => {
+      if (r.ApprovalStatus === 'In review') {
+        acc.push({
+          id: `opd-status-review-${r.HeaderRecId}`,
+          severity: 'warning',
+          title: `OPD medical claim ${r.ExpenseNumber}`,
+          message: `Your request for ${monthLabel} is in review. Total amount: ${r.Amount}`,
+        });
+      } else if (r.ApprovalStatus === 'Approved') {
+        acc.push({
+          id: `opd-status-approved-${r.HeaderRecId}`,
+          severity: 'success',
+          title: `OPD medical claim ${r.ExpenseNumber}`,
+          message: `Your request for ${monthLabel} is approved with total amount ${r.Amount}`,
+        });
+      }
+      return acc;
+    }, []);
+};

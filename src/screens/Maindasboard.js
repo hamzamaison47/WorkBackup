@@ -22,7 +22,10 @@ import CustomIndicator from '../components/CustomIndicator/CustomIndicator';
 import DashboardHeader from '../components/MainDashboard/DashboardHeader';
 import MenuGrid from '../components/MainDashboard/MenuGrid';
 import useTodayAttendance from '../hooks/Usetodayattendance';
-import {buildOpdClaimAlert} from '../store/utils/dashboardAlertRules';
+import {
+  buildOpdClaimAlert,
+  buildOpdClaimStatusAlerts,
+} from '../store/utils/dashboardAlertRules';
 import {GetAllExpenseManagementHeaders} from '../Customizations/IDAP/API/ExpenseManagement/Header/GetAllExpenseManagementHeaders';
 import QuickAccessSheet, {
   QuickAccessButton,
@@ -116,9 +119,39 @@ const MainDashboard = () => {
   }, [userData?.employeeId, refreshKey]);
 
   const alerts = useMemo(() => {
+    const attendance = (baseAlerts || []).map(a => ({
+      ...a,
+      screen: 'AttendanceManagement',
+    }));
+
+    const opdScreen = 'MedicalExpenseManagmentListPage';
     const opd = buildOpdClaimAlert(medicalHeaders);
-    return opd ? [opd, ...(baseAlerts || [])] : baseAlerts || [];
+    const opdStatus = buildOpdClaimStatusAlerts(medicalHeaders);
+
+    return [
+      ...(opd ? [{...opd, screen: opdScreen}] : []),
+      ...opdStatus.map(a => ({...a, screen: opdScreen})),
+      ...attendance,
+    ];
   }, [medicalHeaders, baseAlerts]);
+
+  const handleAlertPress = useCallback(
+    alert => {
+      if (!alert?.screen) return;
+
+      navigation.navigate(alert.screen, {
+        employeeId: userData?.employeeId,
+        employeeName: userData?.employeeName,
+        WorkerRecId: userData?.WorkerRecId,
+        userData,
+        cameFrom: 'MainDashboard',
+        selectedLegalEntity,
+        // AttendanceManagement only shows the tab bar when this is true
+        ...(alert.screen === 'AttendanceManagement' ? {fromTab: true} : {}),
+      });
+    },
+    [navigation, userData, selectedLegalEntity],
+  );
 
   const handleRefreshAll = useCallback(async () => {
     setRefreshKey(k => k + 1);
@@ -225,7 +258,10 @@ const MainDashboard = () => {
                 attendanceRecords={attendanceRecords}
               />
 
-              <DashboardAlertsCard alerts={alerts} />
+              <DashboardAlertsCard
+                alerts={alerts}
+                onAlertPress={handleAlertPress}
+              />
 
               <MenuGrid
                 dynamicMenus={dynamicMenus}

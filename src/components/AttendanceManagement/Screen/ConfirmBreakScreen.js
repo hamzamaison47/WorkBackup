@@ -39,22 +39,13 @@ import {
   validateQRCode,
   QR_STATUS,
 } from '../../../API/AttendanceManagement/ValidateQRCode';
-import {ACTION_TYPES} from './attendanceActionHelpers';
+import {ACTION_TYPES, getSpoofMessage} from './attendanceActionHelpers';
 import {runBiometricGate, BIOMETRIC_GATE_REASON} from './biometricGate';
 import useAttendanceTheme from '../useAttendanceTheme';
 
 const GENERATION_TYPE_MAP = {
   BREAK_START: 'StartBreak',
   BREAK_END: 'EndBreak',
-};
-
-const SPOOF_LABELS = {
-  mock_flag: 'Mock location app detected',
-  accuracy_too_perfect: 'Suspiciously perfect GPS accuracy',
-  impossible_speed: 'Impossible movement speed detected',
-  stale_fix: 'GPS fix is too old',
-  position_jump: 'Sudden location jump detected',
-  rooted_device: 'Device appears to be rooted or jailbroken',
 };
 
 const ConfirmBreakScreen = ({
@@ -79,6 +70,7 @@ const ConfirmBreakScreen = ({
   const {matchedFence, clockInFence, locationLoading, locationError} =
     useGeofence();
   const {spoofingDetected, spoofingReason} = useLocation();
+  const spoof = getSpoofMessage(spoofingReason);
   const {userData} = useSelector(s => s.user);
 
   const isBreakEnd = breakType === 'BREAK_END';
@@ -335,11 +327,8 @@ const ConfirmBreakScreen = ({
         {/* GPS spoofing warning */}
         {spoofingDetected && (
           <View style={S.spoofBanner}>
-            <Text style={S.spoofTitle}>GPS Integrity Warning</Text>
-            <Text style={S.spoofSub}>
-              {SPOOF_LABELS[spoofingReason] ??
-                'Suspicious GPS activity detected'}
-            </Text>
+            <Text style={S.spoofTitle}>{spoof.title}</Text>
+            <Text style={S.spoofSub}>{spoof.message}</Text>
           </View>
         )}
 

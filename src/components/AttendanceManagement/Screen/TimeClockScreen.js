@@ -42,6 +42,9 @@ import {useFocusEffect} from '@react-navigation/native';
 import NetInfo from '@react-native-community/netinfo';
 import {useGeofence} from '../GeofenceContext';
 import useLocation from '../../../hooks/useLocation';
+import useLocationPermission, {
+  LOCATION_PERMISSION,
+} from '../../../hooks/useLocationPermission';
 import LocationPickerModal from '../LocationPickerModal';
 import NavigationFAB from '../NavigationFAB';
 import ConfirmClockInScreen from './ConfirmClockInScreen';
@@ -55,6 +58,7 @@ import {
   getActionFence,
   ACTION_TYPES,
   prewarmToken,
+  getSpoofMessage,
 } from './attendanceActionHelpers';
 import {
   loadRecords,
@@ -606,30 +610,16 @@ const makeLS = DK =>
     arrow: {fontSize: 16},
   });
 
-// ─────────────────────────────────────────────
-// Spoofing banner
-// ─────────────────────────────────────────────
-const SPOOF_LABELS = {
-  mock_flag: 'Mock location app detected',
-  accuracy_too_perfect: 'Suspiciously perfect GPS accuracy',
-  impossible_speed: 'Impossible movement speed detected',
-  stale_fix: 'GPS fix is too old',
-  position_jump: 'Sudden location jump detected',
-  rooted_device: 'Device appears to be rooted or jailbroken',
-  emulator: 'Cannot run attendance from an emulator',
-};
-
 const SpoofingBanner = ({reason}) => {
   const {DK} = useAttendanceTheme();
   const SBN = useMemo(() => makeSBN(DK), [DK]);
+  const {title, message} = getSpoofMessage(reason);
   return (
     <View style={SBN.wrap}>
       <Text style={SBN.icon}>⚠️</Text>
       <View style={{flex: 1}}>
-        <Text style={SBN.title}>GPS Integrity Warning</Text>
-        <Text style={SBN.sub}>
-          {SPOOF_LABELS[reason] ?? 'Suspicious GPS activity detected'}
-        </Text>
+        <Text style={SBN.title}>{title}</Text>
+        <Text style={SBN.sub}>{message}</Text>
       </View>
     </View>
   );
@@ -674,6 +664,63 @@ const WifiRequiredBanner = ({networkName}) => {
     </View>
   );
 };
+
+const LocationPermissionBanner = ({blocked, asking, onPress}) => {
+  const {DK} = useAttendanceTheme();
+  const LP = useMemo(() => makeLP(DK), [DK]);
+  return (
+    <View style={LP.wrap}>
+      <Text style={LP.icon}>📍</Text>
+      <View style={{flex: 1}}>
+        <Text style={LP.title}>Location access needed</Text>
+        <Text style={LP.sub}>
+          {blocked
+            ? 'Location is turned off for this app. Open Settings and allow location to continue.'
+            : 'Allow location so we can confirm you are at an approved work location.'}
+        </Text>
+      </View>
+      <TouchableOpacity
+        style={LP.btn}
+        onPress={onPress}
+        disabled={asking}
+        activeOpacity={0.8}>
+        {asking ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Text style={LP.btnTxt}>{blocked ? 'Open Settings' : 'Allow'}</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const makeLP = DK =>
+  StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: 'rgba(220,38,38,0.06)',
+      borderWidth: 1,
+      borderColor: 'rgba(220,38,38,0.2)',
+    },
+    icon: {fontSize: 16},
+    title: {fontSize: 12, fontWeight: '700', color: DK.accentRed},
+    sub: {fontSize: 11, color: DK.accentRed, marginTop: 1, opacity: 0.85},
+    btn: {
+      backgroundColor: DK.accentRed,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      minWidth: 64,
+      alignItems: 'center',
+    },
+    btnTxt: {color: '#FFFFFF', fontSize: 12, fontWeight: '700'},
+  });
 
 // ─────────────────────────────────────────────
 // Today's attendance complete banner
@@ -935,7 +982,21 @@ const TimeClockScreen = ({onNavigate}) => {
     wifiInfo,
   } = useGeofence();
 
-  const {spoofingDetected, spoofingReason} = useLocation();
+  const locPerm = useLocationPermission();
+  const {spoofingDetected, spoofingReason, startWatching} = useLocation();
+
+  // When permission flips denied → granted, start this screen's GPS watch
+  // (skipped at mount) and have the geofence context re-read location.
+  const prevGrantedRef = useRef(null);
+  useEffect(() => {
+    if (locPerm.status === LOCATION_PERMISSION.UNKNOWN) return;
+    const granted = locPerm.status === LOCATION_PERMISSION.GRANTED;
+    if (granted && prevGrantedRef.current === false) {
+      startWatching();
+      Promise.resolve(refresh?.()).catch(() => {});
+    }
+    prevGrantedRef.current = granted;
+  }, [locPerm.status, startWatching, refresh]);
 
   // P4.1 — subscribe to live network changes for the Wi-Fi banner.
   useEffect(() => {
@@ -1175,12 +1236,13 @@ const TimeClockScreen = ({onNavigate}) => {
       showWarning('Location is still being verified. Try again in a moment.');
       return false;
     }
-    if (permissionStatus === 'denied') {
-      showWarning('Please enable location access in your device Settings.');
+    if (!locPerm.isGranted && locPerm.status !== LOCATION_PERMISSION.UNKNOWN) {
+      // Ask (or send to Settings) instead of only warning.
+      locPerm.ask();
       return false;
     }
     if (spoofingDetected) {
-      showError(SPOOF_LABELS[spoofingReason] ?? 'Suspicious GPS detected.');
+      showError(getSpoofMessage(spoofingReason).message);
       return false;
     }
     if (requireFence && !matchedFence) {
@@ -1286,11 +1348,14 @@ const TimeClockScreen = ({onNavigate}) => {
       clockInFence,
       refresh,
       spoofingDetected,
+      spoofingReason,
       locationLoading,
       permissionStatus,
       fenceRequiresWifi,
       isOnRequiredWifi,
       requiredNetworkName,
+      locPerm.status,
+      locPerm.ask,
     ],
   );
 
@@ -1619,6 +1684,15 @@ const TimeClockScreen = ({onNavigate}) => {
           )}
 
         {status === 'out' && todayComplete && <TodayCompleteBanner />}
+
+        {locPerm.status !== LOCATION_PERMISSION.UNKNOWN &&
+          !locPerm.isGranted && (
+            <LocationPermissionBanner
+              blocked={locPerm.needsSettings}
+              asking={locPerm.asking}
+              onPress={() => locPerm.ask()}
+            />
+          )}
 
         <LocationStrip
           matchedFence={matchedFence}

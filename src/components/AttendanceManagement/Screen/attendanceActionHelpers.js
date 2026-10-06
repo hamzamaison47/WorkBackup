@@ -34,6 +34,53 @@ export const ATTENDANCE_MODE = {
   OFFLINE: 'Offline',
 };
 
+// ── Friendly, honest messages for integrity failures ──
+// Only mock_flag names a cause, because it is direct evidence. The rest
+// describe what the check found, never accuse the user.
+const SPOOF_MESSAGES = {
+  mock_flag: {
+    title: 'Location Check Failed',
+    message:
+      'A fake-location app appears to be active on this phone. Turn it off, then try again.',
+  },
+  accuracy_too_perfect: {
+    title: 'Location Check Failed',
+    message:
+      "We couldn't verify your location. Move to an open area, wait a few seconds, and try again.",
+  },
+  impossible_speed: {
+    title: 'Location Check Failed',
+    message:
+      'Your location signal looks unreliable. Wait a few seconds for GPS to settle, then try again.',
+  },
+  position_jump: {
+    title: 'Location Check Failed',
+    message:
+      'Your location changed suddenly. Wait a few seconds for GPS to settle, then try again.',
+  },
+  rooted_device: {
+    title: 'Device Security Check',
+    message:
+      "Our security check flagged this device as modified, so attendance can't be recorded on it. If you think this is a mistake, please contact HR or IT.",
+  },
+  untrusted_device: {
+    title: 'Device Security Check',
+    message:
+      "This device didn't pass our security check. If you think this is a mistake, please contact HR or IT.",
+  },
+  emulator: {
+    title: 'Unsupported Device',
+    message: 'Attendance can only be recorded from a physical phone.',
+  },
+};
+
+export const getSpoofMessage = reason =>
+  SPOOF_MESSAGES[reason] ?? {
+    title: 'Location Check Failed',
+    message:
+      "We couldn't verify your location. Please check that GPS is on and try again.",
+  };
+
 // P1.1 — prewarmToken: call on screen mount so the token is fetched (or
 // served from cache) before the user presses an action button. Fire and
 // forget — errors are intentionally swallowed here; a real failure will

@@ -329,7 +329,7 @@ const PersonalEducationListPage = () => {
         customStyle: isRejected ? {backgroundColor: '#BDBDBD'} : {},
       },
       approval: {
-        show: true, // ← always visible
+        show: !isHCMRecord, // ← always visible
         position: 'bottom',
         style: 'approval_dropdown',
         text: 'Workflow',

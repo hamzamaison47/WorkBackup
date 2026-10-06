@@ -98,6 +98,7 @@ const MedicalExpenseLinesListPage = () => {
       subtitle: {key: 'Name', label: 'Patient'},
     },
     fields: [
+      {key: 'IsReceiptAttached', label: 'Receipts attached', type: 'boolean'},
       {key: 'Relation', label: 'Relation with Employee', type: 'text'},
       {key: 'TransDate', label: 'Transaction date', type: 'text'},
       {key: 'ReceiptNum', label: 'Receipt number', type: 'text'},
@@ -105,7 +106,6 @@ const MedicalExpenseLinesListPage = () => {
     ],
     expandableFields: [
       {key: 'TransAmount', label: 'Transaction amount', type: 'text'},
-      {key: 'IsReceiptAttached', label: 'Receipts attached', type: 'boolean'},
     ],
   };
 

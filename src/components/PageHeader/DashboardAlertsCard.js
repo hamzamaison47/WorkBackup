@@ -13,7 +13,7 @@ const SEVERITY_ICON = {
 // OPD claim alerts). The whole panel can be collapsed/expanded via the
 // Hide/Show toggle in the header. State is in-memory only, so the panel
 // starts expanded on every app launch.
-const DashboardAlertsCard = ({alerts}) => {
+const DashboardAlertsCard = ({alerts, onAlertPress}) => {
   const T = useAppTokens();
   const styles = useMemo(() => createStyles(T), [T]);
   const [collapsed, setCollapsed] = useState(false);
@@ -61,25 +61,44 @@ const DashboardAlertsCard = ({alerts}) => {
           <View style={styles.headerDivider} />
 
           {/* ── Rows ── */}
-          {list.map((alert, index) => (
-            <View key={alert.id}>
-              <View style={styles.row}>
-                <View
-                  style={[styles.iconWrap, styles[`${alert.severity}IconBg`]]}>
-                  <FeatherIcon
-                    name={SEVERITY_ICON[alert.severity]}
-                    size={16}
-                    color={styles[`${alert.severity}Icon`].color}
-                  />
-                </View>
-                <View style={styles.textContainer}>
-                  <Text style={styles.title}>{alert.title}</Text>
-                  <Text style={styles.message}>{alert.message}</Text>
-                </View>
+          {list.map((alert, index) => {
+            const pressable = !!alert.screen && !!onAlertPress;
+            const Row = pressable ? TouchableOpacity : View;
+            const rowProps = pressable
+              ? {activeOpacity: 0.7, onPress: () => onAlertPress(alert)}
+              : {};
+
+            return (
+              <View key={alert.id}>
+                <Row style={styles.row} {...rowProps}>
+                  <View
+                    style={[
+                      styles.iconWrap,
+                      styles[`${alert.severity}IconBg`],
+                    ]}>
+                    <FeatherIcon
+                      name={SEVERITY_ICON[alert.severity]}
+                      size={16}
+                      color={styles[`${alert.severity}Icon`].color}
+                    />
+                  </View>
+                  <View style={styles.textContainer}>
+                    <Text style={styles.title}>{alert.title}</Text>
+                    <Text style={styles.message}>{alert.message}</Text>
+                  </View>
+                  {pressable && (
+                    <FeatherIcon
+                      name="chevron-right"
+                      size={16}
+                      color={T.subtitleText}
+                      style={{alignSelf: 'center', marginLeft: 6}}
+                    />
+                  )}
+                </Row>
+                {index < list.length - 1 && <View style={styles.divider} />}
               </View>
-              {index < list.length - 1 && <View style={styles.divider} />}
-            </View>
-          ))}
+            );
+          })}
         </>
       )}
     </View>

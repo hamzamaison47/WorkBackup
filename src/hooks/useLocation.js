@@ -73,30 +73,89 @@ export const getFreshPositionWithTimeout = (options = {}) => {
 };
 
 // ── S1–S5: Multi-reason spoofing detection ────────────────
+// const checkSpoofing = (position, prevPosition) => {
+//   const {accuracy, speed, latitude, longitude} = position.coords;
+//   const ts = position.timestamp;
+
+//   if (accuracy !== null && accuracy < 1)
+//     return {detected: true, reason: 'accuracy_too_perfect'};
+//   if (speed !== null && speed > 55.6)
+//     return {detected: true, reason: 'impossible_speed'};
+//   if (ts && Date.now() - ts > 180_000)
+//     return {detected: true, reason: 'stale_fix'};
+
+//   try {
+//     if (JailMonkey.isJailBroken() || JailMonkey.trustFall())
+//       return {detected: true, reason: 'rooted_device'};
+//   } catch {}
+
+//   try {
+//     if (DeviceInfo.isEmulatorSync())
+//       return {detected: true, reason: 'emulator'};
+//   } catch {}
+
+//   if (prevPosition) {
+//     const prevTs = prevPosition.timestamp;
+//     const elapsedSec = (ts - prevTs) / 1000;
+//     if (elapsedSec > 0 && elapsedSec < 60) {
+//       const dist = haversineDistance(
+//         prevPosition.coords.latitude,
+//         prevPosition.coords.longitude,
+//         latitude,
+//         longitude,
+//       );
+//       if (dist / elapsedSec > 55.6)
+//         return {detected: true, reason: 'position_jump'};
+//     }
+//   }
+
+//   if (Platform.OS === 'android' && position.coords.isFromMockProvider === true)
+//     return {detected: true, reason: 'mock_flag'};
+
+//   return {detected: false, reason: null};
+// };
+// ── Periodic freshness refresh — independent of movement ──────────────────
+// distanceFilter:10 means watchPosition never fires while the device is
+// stationary, so coords and the spoof check would otherwise go quiet. This
+// forces a genuinely new read on a fixed cadence regardless of movement.
+// ── Multi-reason spoofing detection ───────────────────────
+// First match wins. Hard evidence is checked first so it is never masked
+// by a weaker signal.
 const checkSpoofing = (position, prevPosition) => {
   const {accuracy, speed, latitude, longitude} = position.coords;
   const ts = position.timestamp;
 
-  if (accuracy !== null && accuracy < 1)
-    return {detected: true, reason: 'accuracy_too_perfect'};
-  if (speed !== null && speed > 55.6)
-    return {detected: true, reason: 'impossible_speed'};
-  if (ts && Date.now() - ts > 180_000)
-    return {detected: true, reason: 'stale_fix'};
+  // 1. Direct evidence: Android reports the fix came from a mock provider
+  if (Platform.OS === 'android' && position.coords.isFromMockProvider === true)
+    return {detected: true, reason: 'mock_flag'};
 
+  // 2. Root / jailbreak: ONLY the specific check
   try {
-    if (JailMonkey.isJailBroken() || JailMonkey.trustFall())
+    if (JailMonkey.isJailBroken())
       return {detected: true, reason: 'rooted_device'};
   } catch {}
 
+  // 3. Broader device-trust check (hooks, external storage, etc.).
+  //    Separate reason so we never call a device "rooted" without proof.
+  try {
+    if (JailMonkey.trustFall())
+      return {detected: true, reason: 'untrusted_device'};
+  } catch {}
+
+  // 4. Emulator
   try {
     if (DeviceInfo.isEmulatorSync())
       return {detected: true, reason: 'emulator'};
   } catch {}
 
+  // 5. Heuristics (signals, not proof)
+  if (accuracy !== null && accuracy < 1)
+    return {detected: true, reason: 'accuracy_too_perfect'};
+  if (speed !== null && speed > 55.6)
+    return {detected: true, reason: 'impossible_speed'};
+
   if (prevPosition) {
-    const prevTs = prevPosition.timestamp;
-    const elapsedSec = (ts - prevTs) / 1000;
+    const elapsedSec = (ts - prevPosition.timestamp) / 1000;
     if (elapsedSec > 0 && elapsedSec < 60) {
       const dist = haversineDistance(
         prevPosition.coords.latitude,
@@ -108,9 +167,6 @@ const checkSpoofing = (position, prevPosition) => {
         return {detected: true, reason: 'position_jump'};
     }
   }
-
-  if (Platform.OS === 'android' && position.coords.isFromMockProvider === true)
-    return {detected: true, reason: 'mock_flag'};
 
   return {detected: false, reason: null};
 };
