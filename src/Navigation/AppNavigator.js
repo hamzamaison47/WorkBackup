@@ -17,7 +17,7 @@ import PurchaseOrderListPage from '../screens/PurchaseOrder/PurchaseOrderListPag
 import HRHelpDeskListScreen from '../screens/HRHelpDeskRequest/HRHelpDeskList_Screen';
 import HRHelpDeskSaveScreen from '../screens/HRHelpDeskRequest/HRHelpDeskSave_Screen';
 import TravelRequisitionSiteSurveyReport from '../Customizations/IDAP/screens/ExpenseManagement/Lines/TravelRequisitionSiteSurveyReport';
-
+import RequestForResignation from '../screens/RequestForRegistration/RequestForRegistration';
 import useSessionTimeout from '../hooks/useSessionTimeout';
 import AlertModal from '../components/Alert/AlertModal';
 import AttendanceManagement from '../screens/AttendanceManagement/AttendanceManagement';
@@ -77,6 +77,11 @@ const AppNavigator = () => {
         )}
       </Stack.Screen>
       */}
+      <Stack.Screen
+        name="RequestForResignation"
+        component={RequestForResignation}
+        options={{headerShown: false}}
+      />
       <Stack.Screen
         name="CreateAttendanceScreen"
         options={{

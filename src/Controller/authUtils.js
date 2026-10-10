@@ -165,6 +165,46 @@ export const handleLogin = async (
 };
 
 /**
+ * Acquires the signed-in account's email WITHOUT running a full login.
+ * Used by registration: the user has no Dynamics record yet, so a full
+ * handleLogin would fail with NOT_REGISTERED.
+ *
+ * Does NOT dispatch tokens or call clearSession(), so an already
+ * logged-in user is not signed out.
+ */
+export const acquireProviderEmail = async provider => {
+  const scan = await getActiveConfigData();
+  if (!scan || Object.keys(scan).length === 0) {
+    throw loginError(LOGIN_ERROR.NO_CONFIG);
+  }
+
+  const config =
+    provider === 'Azure'
+      ? await getAzureConfigurationV2()
+      : getGoogleConfiguration();
+
+  const result = await authorize(config);
+
+  if (!result) {
+    return null;
+  }
+
+  // Azure carries the address in `upn` on the access token,
+  // Google in `email` on the id token.
+  const tokenToRead =
+    provider === 'Azure' ? result.accessToken : result.idToken;
+
+  const decoded = jwtDecode(tokenToRead);
+  const email = provider === 'Azure' ? decoded.upn : decoded.email;
+
+  if (!email) {
+    throw loginError(LOGIN_ERROR.NO_EMAIL_CLAIM);
+  }
+
+  return email;
+};
+
+/**
  * NOTE: setDialogVisible / setDialogMessage / setOnDialogConfirm are no longer
  * used. They drove the "Would you like to create an account?" confirm dialog,
  * which navigated to the now-retired RequestForRegistration screen. Failures

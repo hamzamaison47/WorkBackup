@@ -613,6 +613,21 @@ const LoginScreen = () => {
     return () => backHandler.remove();
   }, [backPressedOnce, navigation]);
 
+  // ── Register link ──────────────────────────────────────────
+  const handleRegisterPress = async () => {
+    if (loading || attendanceLoading) return;
+
+    const activeConfig = await getActiveConfigData();
+    if (!activeConfig) {
+      showConfigRequired(
+        'Configuration Required\nNo environment configuration found. Please tap the QR icon and scan your setup QR code first.',
+      );
+      return;
+    }
+
+    navigation.navigate('RequestForResignation');
+  };
+
   // ── Standard provider login ────────────────────────────────
   const handleProviderLogin = async provider => {
     try {
@@ -881,7 +896,7 @@ const LoginScreen = () => {
               </Text>
             </TouchableOpacity>
 
-            {/* <TouchableOpacity
+            <TouchableOpacity
               activeOpacity={0.8}
               style={[styles.authButton, styles.shadow]}
               onPress={() => handleProviderLogin('Google')}
@@ -893,7 +908,7 @@ const LoginScreen = () => {
               <Text style={styles.authButtonText}>
                 {t('login.signInGoogle')}
               </Text>
-            </TouchableOpacity> */}
+            </TouchableOpacity>
 
             {/* Divider */}
             <View style={styles.dividerRow}>
@@ -921,6 +936,16 @@ const LoginScreen = () => {
 
           {/* ── Footer ── */}
           <View style={styles.footer}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleRegisterPress}
+              disabled={loading || attendanceLoading}>
+              <Text style={styles.registerPrompt}>
+                If not registered,{' '}
+                <Text style={styles.registerLink}>click here to Register</Text>
+              </Text>
+            </TouchableOpacity>
+
             <Text style={styles.footerText}>IDAP</Text>
           </View>
         </View>
@@ -1114,6 +1139,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
+  registerPrompt: {
+    fontSize: 13,
+    color: brand.secondary,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  registerLink: {color: brand.primaryStrong, fontWeight: '700'},
 
   // Loading state
   loadingContainer: {flex: 1, justifyContent: 'center', alignItems: 'center'},
