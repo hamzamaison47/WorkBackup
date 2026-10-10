@@ -1,4 +1,4 @@
-package com.dynaface365.attendance;
+package com.idap360.attendance;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -12,8 +12,8 @@ import android.os.IBinder;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-import com.dynaface365.app.MainActivity;
-import com.dynaface365.app.R;
+import com.idap360.app.MainActivity;
+import com.idap360.app.R;
 
 public class AttendanceForegroundService extends Service {
 

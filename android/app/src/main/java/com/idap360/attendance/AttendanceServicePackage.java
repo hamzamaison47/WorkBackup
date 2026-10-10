@@ -1,4 +1,4 @@
-package com.dynaface365.attendance;
+package com.idap360.attendance;
 
 import androidx.annotation.NonNull;
 

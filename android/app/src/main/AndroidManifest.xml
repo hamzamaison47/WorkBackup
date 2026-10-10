@@ -85,7 +85,7 @@
 
         <!-- Attendance foreground service — runs the persistent timer notification -->
         <service
-            android:name="com.dynaface365.attendance.AttendanceForegroundService"
+            android:name="com.idap360.attendance.AttendanceForegroundService"
             android:exported="false"
             android:foregroundServiceType="specialUse"
             android:stopWithTask="false">
@@ -97,7 +97,7 @@
         <!-- Headless task service — executes JS when the app is killed and a
              notification button is tapped -->
         <service
-            android:name="com.dynaface365.attendance.AttendanceHeadlessTaskService"
+            android:name="com.idap360.attendance.AttendanceHeadlessTaskService"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
     </application>

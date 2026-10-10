@@ -1,7 +1,7 @@
-package com.dynaface365.app
+package com.idap360.app
 
 import android.content.Intent
-import com.dynaface365.attendance.AttendanceIntentModule
+import com.idap360.attendance.AttendanceIntentModule
 import com.oblador.vectoricons.VectorIconsPackage
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

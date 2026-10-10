@@ -1,4 +1,4 @@
-package com.dynaface365.app;
+package com.idap360.app;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;

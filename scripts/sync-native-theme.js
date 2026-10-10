@@ -67,7 +67,7 @@ const MIRRORS = [
     ],
   },
   {
-    file: 'android/app/src/main/java/com/dynaface365/attendance/AttendanceForegroundService.java',
+    file: 'android/app/src/main/java/com/idap360/attendance/AttendanceForegroundService.java',
     edits: [
       {
         label: 'NotificationCompat setColor',

@@ -1,4 +1,4 @@
-package com.dynaface365.app;
+package com.idap360.app
  
 import android.app.Application
 import com.facebook.react.PackageList
@@ -19,7 +19,7 @@ class MainApplication : Application(), ReactApplication {
             PackageList(this).packages.apply {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
-              add(com.dynaface365.attendance.AttendanceServicePackage())
+              add(com.idap360.attendance.AttendanceServicePackage())
             }
  
         override fun getJSMainModuleName(): String = "index"

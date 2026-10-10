@@ -9,7 +9,7 @@
 //   • Passing taskData to AppRegistry.getRunnable('AttendanceAction')
 //   • Keeping a wake lock for the duration of the task
 // ─────────────────────────────────────────────────────────────────────────────
-package com.dynaface365.attendance;
+package com.idap360.attendance;
 
 import android.content.Intent;
 import android.os.Bundle;

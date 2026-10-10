@@ -8,7 +8,7 @@
 //
 // JS calls these via NativeModules.AttendanceService.*
 // ─────────────────────────────────────────────────────────────────────────────
-package com.dynaface365.attendance;
+package com.idap360.attendance;
 
 import android.content.Intent;
 import android.os.Build;

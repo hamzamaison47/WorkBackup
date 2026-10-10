@@ -76,14 +76,14 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
  
-    namespace "com.dynaface365.app"
+    namespace "com.idap360.app"
     defaultConfig {
-        applicationId "com.dynaface365.app"
+        applicationId "com.idap360.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "1.0.2"
-        manifestPlaceholders = [appAuthRedirectScheme: 'com.dynaface365.callback',
+        versionCode 1
+        versionName "1.0.0"
+        manifestPlaceholders = [appAuthRedirectScheme: 'com.idap360.callback',
                         appAuthRedirectScheme:'authentication']
         missingDimensionStrategy 'react-native-camera', 'general'
        //  manifestPlaceholders = [appAuthRedirectScheme: 'com.redirectScheme.comm']
@@ -112,7 +112,7 @@ android {
  
    buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
         }
