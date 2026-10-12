@@ -61,6 +61,10 @@ public class AttendanceServiceModule extends ReactContextBaseJavaModule {
      */
     @ReactMethod
     public void stopService() {
+        // Clear the persisted timer state first: the service keeps it across a
+        // system-initiated restart, so only an explicit clock-out may discard it.
+        AttendanceForegroundService.clearPersistedState(reactContext);
+
         Intent intent = new Intent(reactContext, AttendanceForegroundService.class);
         reactContext.stopService(intent);
     }

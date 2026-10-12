@@ -602,7 +602,7 @@ import {
 import Icon from 'react-native-vector-icons/Feather';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 import LinearGradient from 'react-native-linear-gradient';
 
 import {
@@ -783,22 +783,10 @@ const QRSetupScreen = () => {
 
   const handleScanFromGallery = async () => {
     try {
-      const permissionType =
-        Platform.OS === 'ios'
-          ? PERMISSIONS.IOS.PHOTO_LIBRARY
-          : Platform.Version >= 33
-          ? PERMISSIONS.ANDROID.READ_MEDIA_IMAGES
-          : PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE;
-
-      const permissionResult = await check(permissionType);
-      if (permissionResult === RESULTS.DENIED) {
-        const requestResult = await request(permissionType);
-        if (requestResult !== RESULTS.GRANTED) {
-          setAlertMessage(t('qrSetup.photoPermissionRequired'));
-          setAlertModal(true);
-          return;
-        }
-      }
+      // No runtime permission needed: launchImageLibrary uses the Android
+      // photo picker (PickVisualMedia / ACTION_PICK_IMAGES) and
+      // PHPickerViewController on iOS. Both hand back a URI the app may read
+      // without READ_MEDIA_IMAGES or READ_EXTERNAL_STORAGE.
 
       const result = await launchImageLibrary({
         mediaType: 'photo',
