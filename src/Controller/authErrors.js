@@ -281,22 +281,27 @@ const buildMessage = (kind, error, detail) => {
         'Please try signing in again. If this keeps happening, contact your administrator.'
       );
 
+    // Self-registration is the fix here, so the message points at the
+    // Register button handleLogin puts on the alert.
     case LOGIN_ERROR.NOT_REGISTERED:
       return (
         'Account Not Registered\n' +
         (detail
-          ? `The email ${detail} is not linked to an employee record in Dynamics.\n`
-          : 'Your email is not linked to an employee record in Dynamics.\n') +
-        CONTACT_ADMIN
+          ? `${detail} is not registered for IDAP360.\n`
+          : 'This account is not registered for IDAP360.\n') +
+        'Tap Register below to request access.'
       );
 
+    // Also offered registration, as a way to submit a request rather than a
+    // self-service fix: RegisterDevice cannot fill these fields in, so HR
+    // still has to complete the record. The message says so.
     case LOGIN_ERROR.INCOMPLETE_PROFILE:
       return (
         'Incomplete Employee Record\n' +
         'Your account exists in Dynamics, but required details are missing:\n' +
         (detail ? `${detail}\n` : '') +
         'Your employee setup must be completed before you can sign in.\n' +
-        CONTACT_ADMIN
+        'Tap Register below to submit a request, or contact your HR or system administrator.'
       );
 
     case LOGIN_ERROR.BIOMETRIC_STALE:
@@ -336,17 +341,76 @@ export const describeLoginError = error => {
   return {kind, message: buildMessage(kind, error, detail)};
 };
 
+// ── Employee identity ───────────────────────────────────────
+
+/**
+ * The three fields that make a Dynamics employee record usable as an identity.
+ *
+ * fetchUserInfo() maps the string columns through `?? ''`, so an absent value
+ * arrives as '' rather than null — and WorkerRecId comes through raw, which
+ * means it can be 0, '0', null or undefined. Both are treated as empty.
+ */
+const hasText = value =>
+  value !== null && value !== undefined && String(value).trim() !== '';
+
+const hasWorkerRecId = value => hasText(value) && Number(value) !== 0;
+
+const identityFlags = user => [
+  hasText(user?.EmployeeName),
+  hasText(user?.EmployeeId),
+  hasWorkerRecId(user?.WorkerRecId),
+];
+
+/**
+ * A record came back, but all three identity fields are empty — it carries no
+ * identity at all, so it is treated the same as no record: NOT_REGISTERED.
+ */
+export const hasNoEmployeeIdentity = user =>
+  identityFlags(user).every(present => !present);
+
+/**
+ * The genuine partial case: at least one identity field is populated and at
+ * least one is not. Only HR can finish the record — INCOMPLETE_PROFILE.
+ */
+export const hasPartialEmployeeIdentity = user => {
+  const flags = identityFlags(user);
+  return flags.some(Boolean) && !flags.every(Boolean);
+};
+
 /** Lists the employee fields Dynamics left empty, for INCOMPLETE_PROFILE. */
 export const describeMissingEmployeeFields = user => {
+  const [name, id, worker] = identityFlags(user);
   const missing = [];
-  if (!user?.EmployeeName) {
+  if (!name) {
     missing.push('• Employee name');
   }
-  if (!user?.EmployeeId) {
+  if (!id) {
     missing.push('• Employee ID');
   }
-  if (!user?.WorkerRecId || user.WorkerRecId === 0) {
+  if (!worker) {
     missing.push('• Worker record');
   }
   return missing.join('\n');
 };
+
+/**
+ * Failures that get a Register button on the alert, alongside OK.
+ *
+ * NOT_REGISTERED is the self-service case — registering really is the fix.
+ * INCOMPLETE_PROFILE is here so the user can submit a request instead of
+ * hitting a dead end; registering cannot fill in the missing fields, so its
+ * message also points at HR.
+ *
+ * Deliberately NOT here: BIOMETRIC_STALE, which is only ever raised on the
+ * biometric paths — those mount no Register button and tell the user to sign
+ * in with Microsoft or Google instead; and every transport/server/config
+ * failure (NETWORK, TIMEOUT, SERVER, …) plus NO_ACCESS, none of which
+ * registration has any bearing on.
+ */
+export const REGISTRATION_ERROR_KINDS = [
+  LOGIN_ERROR.NOT_REGISTERED,
+  LOGIN_ERROR.INCOMPLETE_PROFILE,
+];
+
+export const needsRegistration = kind =>
+  REGISTRATION_ERROR_KINDS.includes(kind);

@@ -50,6 +50,7 @@ import {
   loginError,
   describeLoginError,
   describeMissingEmployeeFields,
+  needsRegistration,
 } from '../Controller/authErrors';
 import {
   getActiveConfigData,
@@ -296,7 +297,9 @@ const LoginScreen = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [backPressedOnce, setBackPressedOnce] = useState(false);
-  const [onAlertConfirm, setOnAlertConfirm] = useState(null);
+  // The alert's optional second button: `{label, run}`, or null for a
+  // dismiss-only alert. Dismissing never runs `run`.
+  const [alertAction, setAlertAction] = useState(null);
   const [onDialogConfirm, setOnDialogConfirm] = useState(null);
 
   // ── Hidden config access (QR screen) ──────────────────────
@@ -331,9 +334,27 @@ const LoginScreen = () => {
       ToastAndroid.show(message, ToastAndroid.SHORT);
     } else {
       setAlertMessage(message);
+      setAlertAction(null);
       setAlertModal(true);
     }
   }, []);
+
+  // The alert action for a classified login failure: a Register button for the
+  // kinds registration can act on, null for everything else. Used by the
+  // biometric paths, which build their own alerts rather than going through
+  // handleLogin — without this, INCOMPLETE_PROFILE's message would tell the
+  // user to "tap Register" on an alert that had no Register button.
+  // BIOMETRIC_STALE, NO_ACCESS and every network/server failure return null.
+  const registrationActionFor = useCallback(
+    kind =>
+      needsRegistration(kind)
+        ? {
+            label: 'Register',
+            run: () => navigation.navigate('RequestForResignation'),
+          }
+        : null,
+    [navigation],
+  );
 
   // Missing/broken config: unlocked devices get routed to the QR screen,
   // everyone else is told to contact their administrator.
@@ -341,12 +362,13 @@ const LoginScreen = () => {
     unlockedMessage => {
       if (configAccessRef.current) {
         setAlertMessage(unlockedMessage);
-        setOnAlertConfirm(
-          () => () => navigation.navigate('ConfigSelectionScreen'),
-        );
+        setAlertAction({
+          label: 'Configure',
+          run: () => navigation.navigate('ConfigSelectionScreen'),
+        });
       } else {
         setAlertMessage(NOT_CONFIGURED_MESSAGE);
-        setOnAlertConfirm(null);
+        setAlertAction(null);
       }
       setAlertModal(true);
     },
@@ -528,6 +550,7 @@ const LoginScreen = () => {
                 ? 'Configuration Error\nYour saved configuration could not be loaded. Please select a valid configuration from the QR code screen.'
                 : NOT_CONFIGURED_MESSAGE,
             );
+            setAlertAction(null);
             setAlertModal(true);
           }
           return;
@@ -571,6 +594,7 @@ const LoginScreen = () => {
         if (kind === LOGIN_ERROR.CANCELLED) return;
 
         setAlertMessage(`${message}\n\nYou can also sign in manually.`);
+        setAlertAction(registrationActionFor(kind));
         setAlertModal(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -582,7 +606,7 @@ const LoginScreen = () => {
     return () => {
       cancelled = true;
     };
-  }, [navigation, loadUserDataFromBiometric]);
+  }, [navigation, loadUserDataFromBiometric, registrationActionFor]);
 
   // ── Hardware back handler ──────────────────────────────────
   useEffect(() => {
@@ -593,6 +617,7 @@ const LoginScreen = () => {
             ToastAndroid.show(t('login.pressAgainToExit'), ToastAndroid.SHORT);
           } else {
             setAlertMessage(t('login.pressAgainToExit'));
+            setAlertAction(null);
             setAlertModal(true);
           }
           setBackPressedOnce(true);
@@ -653,7 +678,7 @@ const LoginScreen = () => {
         list => dispatch(setLegalEntities(list)),
         menus => dispatch(setMenuItems(menus)),
         provider,
-        setOnAlertConfirm,
+        setAlertAction,
         setOnDialogConfirm,
       );
     } catch (error) {
@@ -663,6 +688,7 @@ const LoginScreen = () => {
       if (kind === LOGIN_ERROR.CANCELLED) return;
 
       setAlertMessage(message);
+      setAlertAction(null);
       setAlertModal(true);
     }
   };
@@ -675,6 +701,7 @@ const LoginScreen = () => {
         setAlertMessage(
           'Biometric login is not set up for any account.\nPlease:\n1. Login with Microsoft or Google\n2. Go to Profile > Biometric Settings\n3. Enable biometric authentication',
         );
+        setAlertAction(null);
         setAlertModal(true);
         return;
       }
@@ -692,6 +719,7 @@ const LoginScreen = () => {
         setAlertMessage(
           'Invalid Biometric Configuration\nYour biometric settings are corrupted or incomplete.\nPlease:\n1. Login manually with Microsoft or Google\n2. Re-enable biometric authentication in settings',
         );
+        setAlertAction(null);
         setAlertModal(true);
         return;
       }
@@ -701,6 +729,7 @@ const LoginScreen = () => {
         setAlertMessage(
           'Authentication Failed\nBiometric authentication was cancelled or failed.\nPlease try again or use password login.',
         );
+        setAlertAction(null);
         setAlertModal(true);
         return;
       }
@@ -732,6 +761,7 @@ const LoginScreen = () => {
       setAlertMessage(
         `${message}\n\nYou can also sign in with Microsoft or Google.`,
       );
+      setAlertAction(registrationActionFor(kind));
       setAlertModal(true);
     } finally {
       setLoading(false);
@@ -788,7 +818,7 @@ const LoginScreen = () => {
         list => dispatch(setLegalEntities(list)),
         menus => dispatch(setMenuItems(menus)),
         'Azure',
-        setOnAlertConfirm,
+        setAlertAction,
         setOnDialogConfirm,
       );
     } catch (error) {
@@ -799,18 +829,30 @@ const LoginScreen = () => {
       if (kind === LOGIN_ERROR.CANCELLED) return;
 
       setAlertMessage(message);
+      setAlertAction(null);
       setAlertModal(true);
     }
   };
 
   // ── Alert / Dialog handlers ────────────────────────────────
-  const handleAlertConfirm = useCallback(() => {
+
+  // Dismiss: close and stay on Login. Deliberately does NOT run
+  // alertAction.run — this is also what the overlay tap and the Android back
+  // button reach, and neither should navigate anywhere.
+  const handleAlertDismiss = useCallback(() => {
     setAlertModal(false);
-    if (onAlertConfirm) {
-      onAlertConfirm();
-      setOnAlertConfirm(null);
+    setAlertAction(null);
+  }, []);
+
+  // The second button — the only thing that navigates.
+  const handleAlertAction = useCallback(() => {
+    setAlertModal(false);
+    const run = alertAction?.run;
+    setAlertAction(null);
+    if (run) {
+      run();
     }
-  }, [onAlertConfirm]);
+  }, [alertAction]);
 
   const handleDialogConfirm = useCallback(() => {
     setDialogVisible(false);
@@ -1004,7 +1046,9 @@ const LoginScreen = () => {
         visible={alertModal}
         heading={t('common.dynaface')}
         text={alertMessage}
-        onPress={handleAlertConfirm}
+        onPress={handleAlertDismiss}
+        actionText={alertAction?.label}
+        onAction={alertAction ? handleAlertAction : undefined}
       />
     </SafeAreaView>
   );

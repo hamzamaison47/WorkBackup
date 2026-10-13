@@ -28,6 +28,9 @@ import {
   loginError,
   describeLoginError,
   describeMissingEmployeeFields,
+  needsRegistration,
+  hasNoEmployeeIdentity,
+  hasPartialEmployeeIdentity,
 } from './authErrors';
 
 // Polyfill at the top of your authUtils file
@@ -78,7 +81,10 @@ export const handleLogin = async (
   setLegalEntities,
   setMenuItems,
   provider,
-  setOnAlertConfirm,
+  // Sets the alert's optional SECOND button: `{label, run}` to offer one,
+  // `null` for a plain dismiss-only alert. Every exit path below sets it, so a
+  // button left over from a previous failure can never appear on a later one.
+  setAlertAction,
   setOnDialogConfirm,
 ) => {
   setLoading(true);
@@ -90,10 +96,11 @@ export const handleLogin = async (
         describeLoginError(loginError(LOGIN_ERROR.NO_CONFIG)).message,
       );
 
-      if (setOnAlertConfirm) {
-        setOnAlertConfirm(
-          () => () => navigation.navigate('ConfigSelectionScreen'),
-        );
+      if (setAlertAction) {
+        setAlertAction({
+          label: 'Configure',
+          run: () => navigation.navigate('ConfigSelectionScreen'),
+        });
       }
 
       setAlertModal(true);
@@ -146,16 +153,27 @@ export const handleLogin = async (
 
     const {kind, message} = describeLoginError(error);
 
-    // Backing out of the Microsoft/Google sheet is a deliberate user action,
-    // not a failure — returning to the login screen is feedback enough.
     if (kind === LOGIN_ERROR.CANCELLED) {
       return;
     }
 
-    // The login got far enough to write an identity into the store before it
-    // failed. Leaving that behind is how a half-session survives to the next
-    // attempt — and how the app's own state stops matching who is signed in.
     await clearSession();
+
+    // An unregistered account is a dead end on this screen, so the alert gets
+    // a second button into registration. Dismissing stays on Login. Set on
+    // EVERY failure, null included — otherwise a Register button from an
+    // earlier NOT_REGISTERED would still be sitting there on, say, the next
+    // network error.
+    if (setAlertAction) {
+      setAlertAction(
+        needsRegistration(kind)
+          ? {
+              label: 'Register',
+              run: () => navigation.navigate('RequestForResignation'),
+            }
+          : null,
+      );
+    }
 
     setAlertMessage(message);
     setAlertModal(true);
@@ -241,9 +259,18 @@ export const handleSuccessfulLogin = async (
 
     const user = userInfo[0];
 
-    // The record exists but Dynamics left required fields empty. Distinct from
-    // "not registered" — self-registration would not fix this, HR must.
-    if (!user.EmployeeName || !user.EmployeeId || user.WorkerRecId === 0) {
+    // A row came back, but EmployeeName, EmployeeId and WorkerRecId are ALL
+    // empty — it carries no identity, so it is no better than no row at all.
+    // Same treatment as an empty result: NOT_REGISTERED, with a Register
+    // button. Checked before the partial case below, which it would otherwise
+    // also satisfy.
+    if (hasNoEmployeeIdentity(user)) {
+      throw loginError(LOGIN_ERROR.NOT_REGISTERED, userEmailOrUPN);
+    }
+
+    // The genuine partial case: some identity fields are populated and some
+    // are not. Only HR can finish the record.
+    if (hasPartialEmployeeIdentity(user)) {
       throw loginError(
         LOGIN_ERROR.INCOMPLETE_PROFILE,
         describeMissingEmployeeFields(user),
@@ -405,8 +432,14 @@ export const fetchUserInfo = async email => {
       isDynamicsUser: item.isDynamicsUser?.toString() ?? '',
     }));
   } catch (error) {
+    // Re-thrown, never swallowed. Returning [] here is what made every
+    // network/server/config failure surface as NOT_REGISTERED — and now that
+    // NOT_REGISTERED carries a Register button, it would also push users with
+    // a perfectly good employee record into device registration. An empty
+    // array must mean exactly one thing: Dynamics has no record for this
+    // address. handleLogin's catch classifies whatever comes out of here.
     console.error('Error in fetchUserInfo:', error);
-    return [];
+    throw error;
   }
 };
 

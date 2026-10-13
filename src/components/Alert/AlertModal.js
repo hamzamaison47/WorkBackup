@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
   Animated,
+  StyleSheet,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -25,6 +26,13 @@ const AlertModal = ({
   type = 'info',
   iconName,
   buttonText = t('common.ok'),
+  // Optional SECOND button, for an alert that offers a way forward as well as
+  // a way out (e.g. "Register" on an unregistered-account failure). Set both
+  // to render it. `onPress` keeps its existing meaning — dismiss — and stays
+  // the only thing the overlay tap and the Android back button trigger, so a
+  // navigating action can never fire by accident.
+  actionText,
+  onAction,
 }) => {
   const translateYAnim = useRef(new Animated.Value(300)).current;
   const overlayOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -145,6 +153,12 @@ const AlertModal = ({
     onPress && onPress();
   };
 
+  const handleActionPress = () => {
+    onAction && onAction();
+  };
+
+  const hasAction = Boolean(actionText && onAction);
+
   return (
     <Modal
       animationType="none"
@@ -192,22 +206,49 @@ const AlertModal = ({
                 <Text style={styles.Alert_description}>{text}</Text>
               </View>
 
-              {/* Action Button */}
-              <TouchableOpacity
-                style={[
-                  styles.Alert_button,
-                  {backgroundColor: alertConfig.primaryColor},
-                ]}
-                onPress={handlePress}
-                activeOpacity={0.8}>
-                <Text
+              {/* Action Buttons. One button unless a secondary action was
+                  supplied, in which case dismiss sits on the left (outlined,
+                  quiet) and the action on the right (brand-coloured). */}
+              <View style={hasAction ? local.row : local.single}>
+                <TouchableOpacity
                   style={[
-                    styles.Alert_buttonText,
-                    {color: alertConfig.onPrimaryColor},
-                  ]}>
-                  {buttonText}
-                </Text>
-              </TouchableOpacity>
+                    styles.Alert_button,
+                    hasAction
+                      ? [local.rowButton, local.dismissButton]
+                      : {backgroundColor: alertConfig.primaryColor},
+                  ]}
+                  onPress={handlePress}
+                  activeOpacity={0.8}>
+                  <Text
+                    style={[
+                      styles.Alert_buttonText,
+                      hasAction
+                        ? local.dismissButtonText
+                        : {color: alertConfig.onPrimaryColor},
+                    ]}>
+                    {buttonText}
+                  </Text>
+                </TouchableOpacity>
+
+                {hasAction && (
+                  <TouchableOpacity
+                    style={[
+                      styles.Alert_button,
+                      local.rowButton,
+                      {backgroundColor: alertConfig.primaryColor},
+                    ]}
+                    onPress={handleActionPress}
+                    activeOpacity={0.8}>
+                    <Text
+                      style={[
+                        styles.Alert_buttonText,
+                        {color: alertConfig.onPrimaryColor},
+                      ]}>
+                      {actionText}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </Animated.View>
           </TouchableWithoutFeedback>
         </Animated.View>
@@ -215,5 +256,25 @@ const AlertModal = ({
     </Modal>
   );
 };
+
+// Two-button layout only. The single-button path keeps using the shared
+// Alert_button style untouched, so the other screens render exactly as before.
+const local = StyleSheet.create({
+  single: {width: '100%'},
+  row: {width: '100%', flexDirection: 'row'},
+  rowButton: {
+    flex: 1,
+    width: 'auto',
+    marginHorizontal: 4,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  dismissButton: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  dismissButtonText: {color: '#374151'},
+});
 
 export default AlertModal;
