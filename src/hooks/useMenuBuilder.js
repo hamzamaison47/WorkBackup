@@ -1,12 +1,11 @@
 /* eslint-disable curly */
 import {useSelector} from 'react-redux';
 import {screenMapping, iconMapping} from '../Controller/screenMapping';
+import {useApprovalCount} from '../hooks/ApprovalCountContext';
 
 export const useMenuBuilder = (userData, selectedLegalEntity, navigation) => {
   const {menuItems} = useSelector(state => state.menuItem);
-  const pendingWorkItemsCount = useSelector(
-    state => state.workItems?.pendingCount ?? 0,
-  ); // NEW
+  const {count: pendingWorkItemsCount} = useApprovalCount();
 
   const getNavigationParams = menuItem => {
     const baseParams = {

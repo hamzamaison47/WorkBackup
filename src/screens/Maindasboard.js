@@ -38,6 +38,7 @@ import {useDashboardDimensions} from '../hooks/useDashboardDimensions';
 import {useDashboardData} from '../hooks/useDashboardData';
 import {useMenuBuilder} from '../hooks/useMenuBuilder';
 import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
+import {useApprovalCount} from '../hooks/ApprovalCountContext';
 
 import styles from '../styles/styles';
 
@@ -96,6 +97,14 @@ const MainDashboard = () => {
   // it) to re-fetch, since MenuGrid's approvals list has its own fetch
   // effect that isn't otherwise triggered by pull-to-refresh.
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const {refresh: refreshApprovalCount} = useApprovalCount();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshApprovalCount();
+    }, [refreshApprovalCount]),
+  );
 
   const [medicalHeaders, setMedicalHeaders] = useState([]);
 

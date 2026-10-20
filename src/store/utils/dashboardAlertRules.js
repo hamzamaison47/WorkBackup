@@ -38,6 +38,10 @@ const matchesTargetMonth = (record, target) => {
   return y === target.getFullYear() && m === target.getMonth() + 1;
 };
 
+// The amount shown in status notices is the Submitted Amount.
+// NOTE: if the service returns it under a different field name, change it here only.
+const getSubmittedAmount = record => record?.SubmittedAmount ?? record?.Amount;
+
 // A record in one of these states means the claim for its month is handled.
 const COVERED_STATUSES = new Set([
   'Submitted',
@@ -65,7 +69,7 @@ export const buildOpdClaimAlert = (expenseRecords = [], date = new Date()) => {
     };
   }
 
-  // Already submitted/approved/paid -> nothing to show.
+  // Already submitted/approved/processed/paid -> nothing to show.
   if (monthRecords.some(r => COVERED_STATUSES.has(r.ApprovalStatus))) {
     return null;
   }
@@ -93,8 +97,10 @@ export const buildOpdClaimAlert = (expenseRecords = [], date = new Date()) => {
 
 // Status notices for the target month's claims. Complements buildOpdClaimAlert,
 // which returns null once a claim is submitted, so these fill that gap:
-//   In review -> "request is in review"
-//   Approved  -> "request is approved with total amount X"
+//   In review             -> "request is in review"                  (warning)
+//   Approved              -> "request is approved ..."               (green)
+//   Processed for payment -> "request is processed for payment ..."  (green)
+// In review / Approved show the Submitted Amount; Processed for payment shows the Approved Amount.
 export const buildOpdClaimStatusAlerts = (
   expenseRecords = [],
   date = new Date(),
@@ -105,19 +111,28 @@ export const buildOpdClaimStatusAlerts = (
   return (expenseRecords || [])
     .filter(r => matchesTargetMonth(r, target))
     .reduce((acc, r) => {
+      const amount = getSubmittedAmount(r);
+
       if (r.ApprovalStatus === 'In review') {
         acc.push({
           id: `opd-status-review-${r.HeaderRecId}`,
           severity: 'warning',
           title: `OPD medical claim ${r.ExpenseNumber}`,
-          message: `Your request for ${monthLabel} is in review. Total amount: ${r.Amount}`,
+          message: `Your request for ${monthLabel} is in review. Submitted amount: ${amount}`,
         });
       } else if (r.ApprovalStatus === 'Approved') {
         acc.push({
           id: `opd-status-approved-${r.HeaderRecId}`,
           severity: 'success',
           title: `OPD medical claim ${r.ExpenseNumber}`,
-          message: `Your request for ${monthLabel} is approved with total amount ${r.Amount}`,
+          message: `Your request for ${monthLabel} is approved. Submitted amount: ${amount}`,
+        });
+      } else if (r.ApprovalStatus === 'Processed for payment') {
+        acc.push({
+          id: `opd-status-processed-${r.HeaderRecId}`,
+          severity: 'success',
+          title: `OPD medical claim ${r.ExpenseNumber}`,
+          message: `Your request for ${monthLabel} is processed for payment. Approved amount: ${amount}`,
         });
       }
       return acc;

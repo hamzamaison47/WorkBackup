@@ -12,9 +12,7 @@ import useAppTokens from '../components/AppComponentsDesign/useAppTokens';
 import {AppTokens} from '../components/AppComponentsDesign/Tokens';
 import usePalette from '../hooks/usePalette';
 import {screenMapping} from './screenMapping';
-import {useDispatch} from 'react-redux';
-import {RetrieveByEmail} from '../API/WorkflowTrackingStatusTable/retrieveByEmail';
-import {setPendingWorkItemsCount} from '../store/slices/workItemsSlice';
+import {useApprovalCount} from '../hooks/ApprovalCountContext';
 
 export default function CustomTabBar(props) {
   // ✅ reactive theme tokens
@@ -30,9 +28,7 @@ export default function CustomTabBar(props) {
   const {menuItems} = useSelector(state => state.menuItem);
 
   // add:
-  const pendingWorkItemsCount = useSelector(
-    state => state.workItems?.pendingCount ?? 0,
-  );
+  const {count: pendingWorkItemsCount} = useApprovalCount();
 
   const footerTabs = menuItems.filter(
     item =>
@@ -40,44 +36,6 @@ export default function CustomTabBar(props) {
       item.DisplayOnFooter === 'Yes' &&
       screenMapping[item.MenuId],
   );
-  const dispatch = useDispatch();
-  const currentUserData = useSelector(state => state.user?.userData);
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchPendingCount = async () => {
-      console.log(
-        '[CustomTabBar] fetchPendingCount fired, email =',
-        currentUserData?.email,
-      );
-      if (!currentUserData?.email) {
-        console.log('[CustomTabBar] no email yet — skipping fetch');
-        return;
-      }
-      try {
-        const data = await RetrieveByEmail({email: currentUserData.email});
-        console.log(
-          '[CustomTabBar] RetrieveByEmail returned',
-          data?.length,
-          'items',
-        );
-        const pendingCount = (data || []).filter(
-          item => item.workflowWorkItemType === 'WorkItem',
-        ).length;
-        console.log('[CustomTabBar] computed pendingCount =', pendingCount);
-        if (!cancelled) dispatch(setPendingWorkItemsCount(pendingCount));
-      } catch (err) {
-        console.log(
-          '[CustomTabBar] RetrieveByEmail FAILED:',
-          err?.message || err,
-        );
-      }
-    };
-    fetchPendingCount();
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUserData?.email, dispatch]);
 
   const iconMap = {
     MainDashboard: {focused: 'home', unfocused: 'home-outline'},

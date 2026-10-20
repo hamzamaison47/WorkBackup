@@ -24,6 +24,7 @@ import {
 NetInfo.configure({
   shouldFetchWiFiSSID: true,
 });
+import {ApprovalCountProvider} from './src/hooks/ApprovalCountContext';
 
 // Disable font scaling globally
 if (Text.defaultProps == null) Text.defaultProps = {};
@@ -109,7 +110,9 @@ const AppContent = () => {
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.card}
       />
-      <AppNavigator />
+      <ApprovalCountProvider>
+        <AppNavigator />
+      </ApprovalCountProvider>
     </NavigationContainer>
   );
 };
