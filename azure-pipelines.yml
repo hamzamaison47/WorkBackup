@@ -46,6 +46,8 @@ steps:
   # 3. Verify build tools
   # --------------------------------------------------
   - bash: |
+      set -e
+
       echo "Node version:"
       node --version
 
@@ -65,7 +67,7 @@ steps:
     displayName: 'Install React Native Dependencies'
 
   # --------------------------------------------------
-  # 5. Configure Hermes
+  # 5. Configure AndroidX and Hermes
   # --------------------------------------------------
   - bash: |
       set -e
@@ -78,19 +80,26 @@ steps:
 
       existing = path.read_text() if path.exists() else ""
 
-      lines = [
-          line for line in existing.splitlines()
-          if not line.strip().startswith("hermesEnabled=")
-      ]
+      properties = {
+          "hermesEnabled": "true",
+          "android.useAndroidX": "true"
+      }
 
-      lines.append("hermesEnabled=true")
+      lines = existing.splitlines()
+
+      for key, value in properties.items():
+          lines = [
+              line for line in lines
+              if not line.strip().startswith(key + "=")
+          ]
+          lines.append(f"{key}={value}")
 
       path.write_text("\n".join(lines) + "\n")
 
-      print("Gradle properties configured:")
+      print("Updated android/gradle.properties:")
       print(path.read_text())
       PY
-    displayName: 'Configure Hermes'
+    displayName: 'Configure AndroidX and Hermes'
 
   # --------------------------------------------------
   # 6. Download Android release keystore
