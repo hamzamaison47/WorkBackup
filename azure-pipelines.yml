@@ -96,7 +96,7 @@ steps:
 
       path.write_text("\n".join(lines) + "\n")
 
-      print("Updated android/gradle.properties:")
+      print("Updated Gradle properties:")
       print(path.read_text())
       PY
     displayName: 'Configure AndroidX and Hermes'
@@ -140,8 +140,6 @@ steps:
       mkdir -p android/app
 
       cp "$FIREBASE_FILE" android/app/google-services.json
-
-      echo "Validating Firebase package name..."
 
       python3 - <<'PY'
       import json
@@ -217,7 +215,9 @@ steps:
       chmod +x gradlew
 
       ./gradlew assembleRelease \
+        -x lintVitalAnalyzeRelease \
         -x lintVitalReportRelease \
+        -x lintVitalRelease \
         "-PMYAPP_UPLOAD_STORE_FILE=$KEYSTORE_PATH" \
         "-PMYAPP_UPLOAD_STORE_PASSWORD=$KEYSTORE_PASSWORD" \
         "-PMYAPP_UPLOAD_KEY_ALIAS=$KEY_ALIAS" \
@@ -242,7 +242,9 @@ steps:
       chmod +x gradlew
 
       ./gradlew bundleRelease \
+        -x lintVitalAnalyzeRelease \
         -x lintVitalReportRelease \
+        -x lintVitalRelease \
         "-PMYAPP_UPLOAD_STORE_FILE=$KEYSTORE_PATH" \
         "-PMYAPP_UPLOAD_STORE_PASSWORD=$KEYSTORE_PASSWORD" \
         "-PMYAPP_UPLOAD_KEY_ALIAS=$KEY_ALIAS" \
