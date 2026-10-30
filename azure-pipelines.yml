@@ -10,6 +10,7 @@ pool:
 
 variables:
   - group: IDAP-Release-Signing
+
   - name: NODE_VERSION
     value: '18.x'
 
@@ -46,9 +47,11 @@ steps:
   # --------------------------------------------------
   - bash: |
       set -e
+
       node --version
       npm --version
       java -version
+
       echo "JAVA_HOME=$JAVA_HOME"
     displayName: 'Verify build tools'
 
@@ -57,34 +60,18 @@ steps:
   # --------------------------------------------------
   - bash: |
       set -e
+
       npm ci --legacy-peer-deps
     displayName: 'Install Node dependencies'
 
   # --------------------------------------------------
-  # 5. Decode IDAP release keystore
+  # 5. Download IDAP release keystore
   # --------------------------------------------------
-  - bash: |
-      set -e
-
-      if [ -z "$KEYSTORE_BASE64" ]; then
-        echo "##vso[task.logissue type=error]KEYSTORE_BASE64 is missing."
-        exit 1
-      fi
-
-      mkdir -p android/app
-
-      printf '%s' "$KEYSTORE_BASE64" | base64 --decode \
-        > android/app/IDAP-release-key.keystore
-
-      if [ ! -s android/app/IDAP-release-key.keystore ]; then
-        echo "##vso[task.logissue type=error]Invalid keystore file."
-        exit 1
-      fi
-
-      echo "IDAP release keystore created successfully."
-    displayName: 'Decode IDAP release keystore'
-    env:
-      KEYSTORE_BASE64: $(KEYSTORE_BASE64)
+  - task: DownloadSecureFile@1
+    name: idapKeystore
+    displayName: 'Download IDAP release keystore'
+    inputs:
+      secureFile: 'IDAP-release-key.keystore'
 
   # --------------------------------------------------
   # 6. Download Firebase configuration
@@ -100,6 +87,8 @@ steps:
   # --------------------------------------------------
   - bash: |
       set -e
+
+      mkdir -p "$(Build.SourcesDirectory)/android/app"
 
       cp "$(googleServices.secureFilePath)" \
         "$(Build.SourcesDirectory)/android/app/google-services.json"
@@ -135,7 +124,7 @@ steps:
     displayName: 'Copy and validate Firebase configuration'
 
   # --------------------------------------------------
-  # 8. Validate signing variables
+  # 8. Validate release signing configuration
   # --------------------------------------------------
   - bash: |
       set -e
@@ -155,14 +144,16 @@ steps:
         exit 1
       fi
 
-      if [ ! -f "android/app/IDAP-release-key.keystore" ]; then
-        echo "##vso[task.logissue type=error]IDAP keystore not found."
+      if [ ! -f "$IDAP_KEYSTORE_PATH" ]; then
+        echo "##vso[task.logissue type=error]IDAP release keystore not found."
         exit 1
       fi
 
-      echo "Release signing configuration validated."
+      echo "IDAP release keystore found."
+      echo "Release signing variables validated."
     displayName: 'Validate Android release signing'
     env:
+      IDAP_KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       MYAPP_UPLOAD_STORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
       MYAPP_UPLOAD_KEY_ALIAS: $(ANDROID_KEY_ALIAS)
       MYAPP_UPLOAD_KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
@@ -176,7 +167,7 @@ steps:
       chmod +x gradlew
 
       ./gradlew assembleRelease \
-        "-PMYAPP_UPLOAD_STORE_FILE=app/IDAP-release-key.keystore" \
+        "-PMYAPP_UPLOAD_STORE_FILE=$IDAP_KEYSTORE_PATH" \
         "-PMYAPP_UPLOAD_STORE_PASSWORD=$MYAPP_UPLOAD_STORE_PASSWORD" \
         "-PMYAPP_UPLOAD_KEY_ALIAS=$MYAPP_UPLOAD_KEY_ALIAS" \
         "-PMYAPP_UPLOAD_KEY_PASSWORD=$MYAPP_UPLOAD_KEY_PASSWORD" \
@@ -185,6 +176,7 @@ steps:
     workingDirectory: '$(Build.SourcesDirectory)/android'
     displayName: 'Build signed Android Release APK'
     env:
+      IDAP_KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       MYAPP_UPLOAD_STORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
       MYAPP_UPLOAD_KEY_ALIAS: $(ANDROID_KEY_ALIAS)
       MYAPP_UPLOAD_KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
@@ -196,7 +188,7 @@ steps:
       set -e
 
       ./gradlew bundleRelease \
-        "-PMYAPP_UPLOAD_STORE_FILE=app/IDAP-release-key.keystore" \
+        "-PMYAPP_UPLOAD_STORE_FILE=$IDAP_KEYSTORE_PATH" \
         "-PMYAPP_UPLOAD_STORE_PASSWORD=$MYAPP_UPLOAD_STORE_PASSWORD" \
         "-PMYAPP_UPLOAD_KEY_ALIAS=$MYAPP_UPLOAD_KEY_ALIAS" \
         "-PMYAPP_UPLOAD_KEY_PASSWORD=$MYAPP_UPLOAD_KEY_PASSWORD" \
@@ -205,6 +197,7 @@ steps:
     workingDirectory: '$(Build.SourcesDirectory)/android'
     displayName: 'Build signed Android Release AAB'
     env:
+      IDAP_KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       MYAPP_UPLOAD_STORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
       MYAPP_UPLOAD_KEY_ALIAS: $(ANDROID_KEY_ALIAS)
       MYAPP_UPLOAD_KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
