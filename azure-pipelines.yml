@@ -73,7 +73,7 @@ steps:
     displayName: 'Install React Native Dependencies'
 
   # --------------------------------------------------
-  # 5. Configure AndroidX, Hermes and Gradle memory
+  # 5. Configure AndroidX, Jetifier, Hermes and Gradle
   # --------------------------------------------------
   - bash: |
       set -e
@@ -89,6 +89,7 @@ steps:
       properties = {
           "hermesEnabled": "true",
           "android.useAndroidX": "true",
+          "android.enableJetifier": "true",
           "org.gradle.jvmargs": "-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
           "org.gradle.workers.max": "2",
           "org.gradle.parallel": "false",

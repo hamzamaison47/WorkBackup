@@ -70,6 +70,10 @@ def enableProguardInReleaseBuilds = false
  * this variant is about 6MiB larger per architecture than default.
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
+def hermesEnabledFlag = (project.findProperty("hermesEnabled") ?: "true").toString().toBoolean()
+
+// Make Hermes setting available to React Native Reanimated
+ext.hermesEnabled = hermesEnabledFlag
  
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -131,11 +135,11 @@ dependencies {
     implementation("com.facebook.react:react-android")
     implementation project(':react-native-splash-screen')
      implementation 'com.google.firebase:firebase-messaging:24.0.0' 
-    if (hermesEnabled.toBoolean()) {
-        implementation("com.facebook.react:hermes-android")
-    } else {
-        implementation jscFlavor
-    }
+   if (hermesEnabledFlag) {
+    implementation("com.facebook.react:hermes-android")
+} else {
+    implementation jscFlavor
+}
     implementation 'androidx.exifinterface:exifinterface:1.3.3'
 }
  
