@@ -24,17 +24,13 @@ variables:
     value: 'android/app/build/outputs/bundle/release'
 
 steps:
-  # --------------------------------------------------
   # 1. Install Node.js
-  # --------------------------------------------------
   - task: NodeTool@0
     displayName: 'Install Node.js'
     inputs:
       versionSpec: '$(NODE_VERSION)'
 
-  # --------------------------------------------------
   # 2. Install Java 17
-  # --------------------------------------------------
   - task: JavaToolInstaller@0
     displayName: 'Install Java 17'
     inputs:
@@ -42,9 +38,7 @@ steps:
       jdkArchitectureOption: 'x64'
       jdkSourceOption: 'PreInstalled'
 
-  # --------------------------------------------------
-  # 3. Verify build tools
-  # --------------------------------------------------
+  # 3. Check build tools
   - bash: |
       set -e
 
@@ -53,38 +47,30 @@ steps:
       java -version
 
       echo "JAVA_HOME=$JAVA_HOME"
-    displayName: 'Verify build tools'
+    displayName: 'Check build tools'
 
-  # --------------------------------------------------
-  # 4. Install Node dependencies
-  # --------------------------------------------------
+  # 4. Install dependencies
   - bash: |
       set -e
 
       npm ci --legacy-peer-deps
     displayName: 'Install Node dependencies'
 
-  # --------------------------------------------------
   # 5. Download IDAP release keystore
-  # --------------------------------------------------
   - task: DownloadSecureFile@1
     name: idapKeystore
     displayName: 'Download IDAP release keystore'
     inputs:
       secureFile: 'IDAP-release-key.keystore'
 
-  # --------------------------------------------------
   # 6. Download Firebase configuration
-  # --------------------------------------------------
   - task: DownloadSecureFile@1
     name: googleServices
     displayName: 'Download Firebase google-services.json'
     inputs:
       secureFile: 'google-services.json'
 
-  # --------------------------------------------------
   # 7. Copy and validate Firebase configuration
-  # --------------------------------------------------
   - bash: |
       set -e
 
@@ -97,35 +83,47 @@ steps:
       import json
       from pathlib import Path
 
-      config = json.loads(
-          Path("android/app/google-services.json").read_text()
-      )
+      config_path = Path("android/app/google-services.json")
+
+      try:
+          config = json.loads(
+              config_path.read_text(encoding="utf-8")
+          )
+      except Exception as exc:
+          raise SystemExit(
+              f"Invalid google-services.json: {exc}"
+          )
 
       expected_package = "com.idap360.app"
 
-      packages = [
-          client.get("client_info", {})
-                .get("android_client_info", {})
-                .get("package_name")
-          for client in config.get("client", [])
-      ]
+      packages = []
+
+      for client in config.get("client", []):
+          package_name = (
+              client.get("client_info", {})
+                    .get("android_client_info", {})
+                    .get("package_name")
+          )
+
+          if package_name:
+              packages.append(package_name)
 
       if expected_package not in packages:
           print(
               "##vso[task.logissue type=error]"
-              "Firebase package does not match com.idap360.app"
+              "Firebase configuration does not contain "
+              "com.idap360.app"
           )
+
           print("Firebase packages found:", packages)
           raise SystemExit(1)
 
-      print("Firebase package validation successful.")
+      print("Firebase configuration validated successfully.")
       print("Matching package:", expected_package)
       PY
     displayName: 'Copy and validate Firebase configuration'
 
-  # --------------------------------------------------
-  # 8. Validate release signing configuration
-  # --------------------------------------------------
+  # 8. Validate Android release signing configuration
   - bash: |
       set -e
 
@@ -145,22 +143,22 @@ steps:
       fi
 
       if [ ! -f "$IDAP_KEYSTORE_PATH" ]; then
-        echo "##vso[task.logissue type=error]IDAP release keystore not found."
+        echo "##vso[task.logissue type=error]Release keystore was not found."
         exit 1
       fi
 
       echo "IDAP release keystore found."
-      echo "Release signing variables validated."
+      echo "Signing configuration validated."
+
     displayName: 'Validate Android release signing'
+
     env:
       IDAP_KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       MYAPP_UPLOAD_STORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
       MYAPP_UPLOAD_KEY_ALIAS: $(ANDROID_KEY_ALIAS)
       MYAPP_UPLOAD_KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
 
-  # --------------------------------------------------
   # 9. Build signed Android Release APK
-  # --------------------------------------------------
   - bash: |
       set -e
 
@@ -173,17 +171,18 @@ steps:
         "-PMYAPP_UPLOAD_KEY_PASSWORD=$MYAPP_UPLOAD_KEY_PASSWORD" \
         --stacktrace \
         --no-daemon
+
     workingDirectory: '$(Build.SourcesDirectory)/android'
+
     displayName: 'Build signed Android Release APK'
+
     env:
       IDAP_KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       MYAPP_UPLOAD_STORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
       MYAPP_UPLOAD_KEY_ALIAS: $(ANDROID_KEY_ALIAS)
       MYAPP_UPLOAD_KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
 
-  # --------------------------------------------------
   # 10. Build signed Android Release AAB
-  # --------------------------------------------------
   - bash: |
       set -e
 
@@ -194,17 +193,18 @@ steps:
         "-PMYAPP_UPLOAD_KEY_PASSWORD=$MYAPP_UPLOAD_KEY_PASSWORD" \
         --stacktrace \
         --no-daemon
+
     workingDirectory: '$(Build.SourcesDirectory)/android'
+
     displayName: 'Build signed Android Release AAB'
+
     env:
       IDAP_KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       MYAPP_UPLOAD_STORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
       MYAPP_UPLOAD_KEY_ALIAS: $(ANDROID_KEY_ALIAS)
       MYAPP_UPLOAD_KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
 
-  # --------------------------------------------------
-  # 11. Collect Release APK
-  # --------------------------------------------------
+  # 11. Collect signed Release APK
   - bash: |
       set -e
 
@@ -222,16 +222,16 @@ steps:
         -exec cp {} "$OUTPUT/" \;
 
       if ! find "$OUTPUT" -type f -name '*.apk' -print -quit | grep -q .; then
-        echo "##vso[task.logissue type=error]APK was not generated."
+        echo "##vso[task.logissue type=error]Release APK was not generated."
         exit 1
       fi
 
+      echo "Release APK collected successfully."
       ls -lh "$OUTPUT"
-    displayName: 'Collect Android Release APK'
 
-  # --------------------------------------------------
-  # 12. Collect Release AAB
-  # --------------------------------------------------
+    displayName: 'Collect Release APK'
+
+  # 12. Collect signed Release AAB
   - bash: |
       set -e
 
@@ -249,28 +249,26 @@ steps:
         -exec cp {} "$OUTPUT/" \;
 
       if ! find "$OUTPUT" -type f -name '*.aab' -print -quit | grep -q .; then
-        echo "##vso[task.logissue type=error]AAB was not generated."
+        echo "##vso[task.logissue type=error]Release AAB was not generated."
         exit 1
       fi
 
+      echo "Release AAB collected successfully."
       ls -lh "$OUTPUT"
-    displayName: 'Collect Android Release AAB'
 
-  # --------------------------------------------------
-  # 13. Publish APK artifact
-  # --------------------------------------------------
+    displayName: 'Collect Release AAB'
+
+  # 13. Publish signed Release APK
   - task: PublishPipelineArtifact@1
-    displayName: 'Publish Android Release APK'
+    displayName: 'Publish Release APK'
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)/Android-Release-APK'
       artifact: 'Android-Release-APK'
       publishLocation: 'pipeline'
 
-  # --------------------------------------------------
-  # 14. Publish AAB artifact
-  # --------------------------------------------------
+  # 14. Publish signed Release AAB
   - task: PublishPipelineArtifact@1
-    displayName: 'Publish Android Release AAB'
+    displayName: 'Publish Release AAB'
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)/Android-Release-AAB'
       artifact: 'Android-Release-AAB'
