@@ -33,7 +33,7 @@ steps:
       versionSpec: '$(NODE_VERSION)'
 
   # --------------------------------------------------
-  # 2. Install Java
+  # 2. Install Java 17
   # --------------------------------------------------
   - task: JavaToolInstaller@0
     displayName: 'Install Java 17'
@@ -43,26 +43,33 @@ steps:
       jdkSourceOption: 'PreInstalled'
 
   # --------------------------------------------------
-  # 3. Verify installed tools
+  # 3. Verify build tools
   # --------------------------------------------------
   - bash: |
+      echo "Node version:"
       node --version
+
+      echo "NPM version:"
       npm --version
+
+      echo "Java version:"
       java -version
     displayName: 'Verify Build Tools'
 
   # --------------------------------------------------
-  # 4. Install npm dependencies
+  # 4. Install React Native dependencies
   # --------------------------------------------------
   - bash: |
+      set -e
       npm ci --legacy-peer-deps
     displayName: 'Install React Native Dependencies'
 
   # --------------------------------------------------
   # 5. Configure Hermes
-  # Create android/gradle.properties automatically
   # --------------------------------------------------
   - bash: |
+      set -e
+
       python3 - <<'PY'
       from pathlib import Path
 
@@ -70,15 +77,17 @@ steps:
       path.parent.mkdir(parents=True, exist_ok=True)
 
       existing = path.read_text() if path.exists() else ""
+
       lines = [
           line for line in existing.splitlines()
           if not line.strip().startswith("hermesEnabled=")
       ]
 
       lines.append("hermesEnabled=true")
+
       path.write_text("\n".join(lines) + "\n")
 
-      print("Updated android/gradle.properties:")
+      print("Gradle properties configured:")
       print(path.read_text())
       PY
     displayName: 'Configure Hermes'
@@ -102,25 +111,38 @@ steps:
       secureFile: 'google-services.json'
 
   # --------------------------------------------------
-  # 8. Configure Firebase
+  # 8. Configure and validate Firebase
   # --------------------------------------------------
   - bash: |
       set -e
 
-      mkdir -p android/app
-      cp "$(FIREBASE_FILE)" android/app/google-services.json
+      echo "Checking Firebase configuration..."
 
-      echo "Checking Firebase package name..."
+      if [ -z "$FIREBASE_FILE" ]; then
+        echo "ERROR: Firebase secure file path is empty."
+        exit 1
+      fi
+
+      if [ ! -f "$FIREBASE_FILE" ]; then
+        echo "ERROR: Firebase configuration file not found."
+        exit 1
+      fi
+
+      mkdir -p android/app
+
+      cp "$FIREBASE_FILE" android/app/google-services.json
+
+      echo "Validating Firebase package name..."
 
       python3 - <<'PY'
       import json
+      import sys
 
       path = "android/app/google-services.json"
+      expected = "com.idap360.app"
 
       with open(path, "r") as file:
           data = json.load(file)
-
-      expected = "com.idap360.app"
 
       packages = [
           client.get("client_info", {})
@@ -132,12 +154,12 @@ steps:
       print("Firebase packages:", packages)
 
       if expected not in packages:
-          raise SystemExit(
-              f"ERROR: Firebase package {expected} was not found."
-          )
+          print("ERROR: Expected package not found:", expected)
+          sys.exit(1)
 
       print("Firebase package validation successful.")
       PY
+
     displayName: 'Configure and Validate Firebase'
     env:
       FIREBASE_FILE: $(googleServices.secureFilePath)
@@ -168,7 +190,8 @@ steps:
         exit 1
       fi
 
-      echo "Signing configuration validation successful."
+      echo "Android signing configuration validated."
+
     displayName: 'Validate Android Signing Configuration'
     env:
       KEYSTORE_PATH: $(idapKeystore.secureFilePath)
@@ -178,7 +201,6 @@ steps:
 
   # --------------------------------------------------
   # 10. Build signed APK
-  # Skip the failing release lint report task temporarily
   # --------------------------------------------------
   - bash: |
       set -e
@@ -239,9 +261,12 @@ steps:
         -exec cp {} "$(Build.ArtifactStagingDirectory)/APK/" \;
 
       if ! ls "$(Build.ArtifactStagingDirectory)/APK/"*.apk >/dev/null 2>&1; then
-        echo "ERROR: APK file was not generated."
+        echo "ERROR: APK was not generated."
         exit 1
       fi
+
+      echo "APK collected successfully."
+
     displayName: 'Collect APK'
     env:
       APK_PATH: $(Build.SourcesDirectory)/$(APK_OUTPUT_PATH)
@@ -258,9 +283,12 @@ steps:
         -exec cp {} "$(Build.ArtifactStagingDirectory)/AAB/" \;
 
       if ! ls "$(Build.ArtifactStagingDirectory)/AAB/"*.aab >/dev/null 2>&1; then
-        echo "ERROR: AAB file was not generated."
+        echo "ERROR: AAB was not generated."
         exit 1
       fi
+
+      echo "AAB collected successfully."
+
     displayName: 'Collect AAB'
     env:
       AAB_PATH: $(Build.SourcesDirectory)/$(AAB_OUTPUT_PATH)
