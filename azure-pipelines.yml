@@ -6,7 +6,7 @@ trigger:
 pr: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: 'macos-latest'
 
 variables:
   - group: IDAP-Release-Signing
@@ -33,30 +33,36 @@ steps:
       versionSpec: '$(NODE_VERSION)'
 
   # --------------------------------------------------
-  # 2. Install Java 17
+  # 2. Configure Java 17
   # --------------------------------------------------
   - task: JavaToolInstaller@0
-    displayName: 'Install Java 17'
+    displayName: 'Configure Java 17'
     inputs:
       versionSpec: '$(JAVA_VERSION)'
       jdkArchitectureOption: 'x64'
       jdkSourceOption: 'PreInstalled'
 
   # --------------------------------------------------
-  # 3. Verify build tools
+  # 3. Verify tools and available disk space
   # --------------------------------------------------
   - bash: |
       set -e
 
-      echo "Node version:"
+      echo "Node:"
       node --version
 
-      echo "NPM version:"
+      echo "NPM:"
       npm --version
 
-      echo "Java version:"
+      echo "Java:"
       java -version
-    displayName: 'Verify Build Tools'
+
+      echo "Java Home:"
+      echo "$JAVA_HOME"
+
+      echo "Available disk space:"
+      df -h /
+    displayName: 'Verify Build Environment'
 
   # --------------------------------------------------
   # 4. Install React Native dependencies
@@ -67,7 +73,7 @@ steps:
     displayName: 'Install React Native Dependencies'
 
   # --------------------------------------------------
-  # 5. Configure AndroidX and Hermes
+  # 5. Configure AndroidX, Hermes and Gradle memory
   # --------------------------------------------------
   - bash: |
       set -e
@@ -78,11 +84,15 @@ steps:
       path = Path("android/gradle.properties")
       path.parent.mkdir(parents=True, exist_ok=True)
 
-      existing = path.read_text() if path.exists() else ""
+      existing = path.read_text(encoding="utf-8") if path.exists() else ""
 
       properties = {
           "hermesEnabled": "true",
-          "android.useAndroidX": "true"
+          "android.useAndroidX": "true",
+          "org.gradle.jvmargs": "-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+          "org.gradle.workers.max": "2",
+          "org.gradle.parallel": "false",
+          "kotlin.compiler.execution.strategy": "in-process"
       }
 
       lines = existing.splitlines()
@@ -94,12 +104,12 @@ steps:
           ]
           lines.append(f"{key}={value}")
 
-      path.write_text("\n".join(lines) + "\n")
+      path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-      print("Updated Gradle properties:")
-      print(path.read_text())
+      print("Gradle properties configured:")
+      print(path.read_text(encoding="utf-8"))
       PY
-    displayName: 'Configure AndroidX and Hermes'
+    displayName: 'Configure Android and Gradle Memory'
 
   # --------------------------------------------------
   # 6. Download Android release keystore
@@ -125,20 +135,12 @@ steps:
   - bash: |
       set -e
 
-      echo "Checking Firebase configuration..."
-
-      if [ -z "$FIREBASE_FILE" ]; then
-        echo "ERROR: Firebase secure file path is empty."
-        exit 1
-      fi
-
-      if [ ! -f "$FIREBASE_FILE" ]; then
-        echo "ERROR: Firebase configuration file not found."
+      if [ -z "$FIREBASE_FILE" ] || [ ! -f "$FIREBASE_FILE" ]; then
+        echo "##vso[task.logissue type=error]Firebase secure file not found."
         exit 1
       fi
 
       mkdir -p android/app
-
       cp "$FIREBASE_FILE" android/app/google-services.json
 
       python3 - <<'PY'
@@ -148,8 +150,12 @@ steps:
       path = "android/app/google-services.json"
       expected = "com.idap360.app"
 
-      with open(path, "r") as file:
-          data = json.load(file)
+      try:
+          with open(path, "r", encoding="utf-8") as file:
+              data = json.load(file)
+      except Exception as exc:
+          print(f"Invalid Firebase configuration: {exc}")
+          sys.exit(1)
 
       packages = [
           client.get("client_info", {})
@@ -161,44 +167,42 @@ steps:
       print("Firebase packages:", packages)
 
       if expected not in packages:
-          print("ERROR: Expected package not found:", expected)
+          print(f"ERROR: Expected package {expected} not found.")
           sys.exit(1)
 
-      print("Firebase package validation successful.")
+      print(f"Firebase configuration matches {expected}.")
       PY
-
     displayName: 'Configure and Validate Firebase'
     env:
       FIREBASE_FILE: $(googleServices.secureFilePath)
 
   # --------------------------------------------------
-  # 9. Validate signing configuration
+  # 9. Validate Android release signing configuration
   # --------------------------------------------------
   - bash: |
       set -e
 
       if [ -z "$KEYSTORE_PASSWORD" ]; then
-        echo "ERROR: ANDROID_KEYSTORE_PASSWORD is missing."
+        echo "##vso[task.logissue type=error]ANDROID_KEYSTORE_PASSWORD is missing."
         exit 1
       fi
 
       if [ -z "$KEY_ALIAS" ]; then
-        echo "ERROR: ANDROID_KEY_ALIAS is missing."
+        echo "##vso[task.logissue type=error]ANDROID_KEY_ALIAS is missing."
         exit 1
       fi
 
       if [ -z "$KEY_PASSWORD" ]; then
-        echo "ERROR: ANDROID_KEY_PASSWORD is missing."
+        echo "##vso[task.logissue type=error]ANDROID_KEY_PASSWORD is missing."
         exit 1
       fi
 
-      if [ ! -f "$KEYSTORE_PATH" ]; then
-        echo "ERROR: Keystore file not found."
+      if [ -z "$KEYSTORE_PATH" ] || [ ! -f "$KEYSTORE_PATH" ]; then
+        echo "##vso[task.logissue type=error]IDAP release keystore not found."
         exit 1
       fi
 
       echo "Android signing configuration validated."
-
     displayName: 'Validate Android Signing Configuration'
     env:
       KEYSTORE_PATH: $(idapKeystore.secureFilePath)
@@ -207,14 +211,17 @@ steps:
       KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
 
   # --------------------------------------------------
-  # 10. Build signed APK
+  # 10. Build signed APK and AAB in one Gradle run
   # --------------------------------------------------
   - bash: |
       set -e
 
       chmod +x gradlew
 
-      ./gradlew assembleRelease \
+      echo "Disk space before Android build:"
+      df -h /
+
+      ./gradlew assembleRelease bundleRelease \
         -x lintVitalAnalyzeRelease \
         -x lintVitalReportRelease \
         -x lintVitalRelease \
@@ -222,11 +229,14 @@ steps:
         "-PMYAPP_UPLOAD_STORE_PASSWORD=$KEYSTORE_PASSWORD" \
         "-PMYAPP_UPLOAD_KEY_ALIAS=$KEY_ALIAS" \
         "-PMYAPP_UPLOAD_KEY_PASSWORD=$KEY_PASSWORD" \
+        --max-workers=2 \
         --stacktrace \
         --no-daemon
 
+      echo "Disk space after Android build:"
+      df -h /
     workingDirectory: '$(Build.SourcesDirectory)/android'
-    displayName: 'Build Signed Android APK'
+    displayName: 'Build Signed Android APK and AAB'
     env:
       KEYSTORE_PATH: $(idapKeystore.secureFilePath)
       KEYSTORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
@@ -234,78 +244,63 @@ steps:
       KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
 
   # --------------------------------------------------
-  # 11. Build signed AAB
+  # 11. Collect signed APK
   # --------------------------------------------------
   - bash: |
       set -e
 
-      chmod +x gradlew
+      SOURCE="$(Build.SourcesDirectory)/$(APK_OUTPUT_PATH)"
+      OUTPUT="$(Build.ArtifactStagingDirectory)/APK"
 
-      ./gradlew bundleRelease \
-        -x lintVitalAnalyzeRelease \
-        -x lintVitalReportRelease \
-        -x lintVitalRelease \
-        "-PMYAPP_UPLOAD_STORE_FILE=$KEYSTORE_PATH" \
-        "-PMYAPP_UPLOAD_STORE_PASSWORD=$KEYSTORE_PASSWORD" \
-        "-PMYAPP_UPLOAD_KEY_ALIAS=$KEY_ALIAS" \
-        "-PMYAPP_UPLOAD_KEY_PASSWORD=$KEY_PASSWORD" \
-        --stacktrace \
-        --no-daemon
+      mkdir -p "$OUTPUT"
 
-    workingDirectory: '$(Build.SourcesDirectory)/android'
-    displayName: 'Build Signed Android AAB'
-    env:
-      KEYSTORE_PATH: $(idapKeystore.secureFilePath)
-      KEYSTORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
-      KEY_ALIAS: $(ANDROID_KEY_ALIAS)
-      KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
+      if [ ! -d "$SOURCE" ]; then
+        echo "##vso[task.logissue type=error]APK output directory not found."
+        exit 1
+      fi
 
-  # --------------------------------------------------
-  # 12. Collect APK
-  # --------------------------------------------------
-  - bash: |
-      set -e
+      find "$SOURCE" -maxdepth 1 -type f -name "*.apk" \
+        -exec cp {} "$OUTPUT/" \;
 
-      mkdir -p "$(Build.ArtifactStagingDirectory)/APK"
-
-      find "$(APK_PATH)" -maxdepth 1 -type f -name "*.apk" \
-        -exec cp {} "$(Build.ArtifactStagingDirectory)/APK/" \;
-
-      if ! ls "$(Build.ArtifactStagingDirectory)/APK/"*.apk >/dev/null 2>&1; then
-        echo "ERROR: APK was not generated."
+      if ! find "$OUTPUT" -maxdepth 1 -type f -name "*.apk" -print -quit | grep -q .; then
+        echo "##vso[task.logissue type=error]Release APK was not generated."
         exit 1
       fi
 
       echo "APK collected successfully."
-
-    displayName: 'Collect APK'
-    env:
-      APK_PATH: $(Build.SourcesDirectory)/$(APK_OUTPUT_PATH)
+      ls -lh "$OUTPUT"
+    displayName: 'Collect Release APK'
 
   # --------------------------------------------------
-  # 13. Collect AAB
+  # 12. Collect signed AAB
   # --------------------------------------------------
   - bash: |
       set -e
 
-      mkdir -p "$(Build.ArtifactStagingDirectory)/AAB"
+      SOURCE="$(Build.SourcesDirectory)/$(AAB_OUTPUT_PATH)"
+      OUTPUT="$(Build.ArtifactStagingDirectory)/AAB"
 
-      find "$(AAB_PATH)" -maxdepth 1 -type f -name "*.aab" \
-        -exec cp {} "$(Build.ArtifactStagingDirectory)/AAB/" \;
+      mkdir -p "$OUTPUT"
 
-      if ! ls "$(Build.ArtifactStagingDirectory)/AAB/"*.aab >/dev/null 2>&1; then
-        echo "ERROR: AAB was not generated."
+      if [ ! -d "$SOURCE" ]; then
+        echo "##vso[task.logissue type=error]AAB output directory not found."
+        exit 1
+      fi
+
+      find "$SOURCE" -maxdepth 1 -type f -name "*.aab" \
+        -exec cp {} "$OUTPUT/" \;
+
+      if ! find "$OUTPUT" -maxdepth 1 -type f -name "*.aab" -print -quit | grep -q .; then
+        echo "##vso[task.logissue type=error]Release AAB was not generated."
         exit 1
       fi
 
       echo "AAB collected successfully."
-
-    displayName: 'Collect AAB'
-    env:
-      AAB_PATH: $(Build.SourcesDirectory)/$(AAB_OUTPUT_PATH)
+      ls -lh "$OUTPUT"
+    displayName: 'Collect Release AAB'
 
   # --------------------------------------------------
-  # 14. Publish APK artifact
+  # 13. Publish APK artifact
   # --------------------------------------------------
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Android APK'
@@ -315,7 +310,7 @@ steps:
       publishLocation: 'Container'
 
   # --------------------------------------------------
-  # 15. Publish AAB artifact
+  # 14. Publish AAB artifact
   # --------------------------------------------------
   - task: PublishBuildArtifacts@1
     displayName: 'Publish Android AAB'
