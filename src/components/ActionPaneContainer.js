@@ -572,6 +572,7 @@ const ActionPaneContainer = ({
   showFloatingButton = false,
   isHeaderActive = true,
   showTabNavigator = true,
+  isBackButton,
   onFloatingButtonPress,
   onRefresh,
   onBackPress,
@@ -758,6 +759,18 @@ const ActionPaneContainer = ({
     navigation.navigate(tabName, {userData});
   };
 
+  // Explicit prop wins. Otherwise, any screen that supplies an onBackPress
+  // handler (the list pages) gets a back arrow instead of the hamburger.
+  const showBack = isBackButton ?? typeof onBackPress === 'function';
+
+  const handleHeaderBack = useCallback(() => {
+    if (typeof onBackPress === 'function') {
+      onBackPress();
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  }, [onBackPress, navigation]);
+
   useLayoutEffect(() => {
     if (isHeaderActive) {
       const headerOptions = MainPageHeader({
@@ -771,8 +784,8 @@ const ActionPaneContainer = ({
         chipBg: T.chipBg,
         dividerColor: T.cardDivider,
         onHeaderMenuPress: () => setHeaderMenuVisible(true),
-        isBack: false,
-        onBackPress: onBackPress,
+        isBack: showBack, // was: false
+        onBackPress: handleHeaderBack, // was: onBackPress
         topInset: insets.top,
         selectedDat:
           selectedLegalEntity ||
@@ -797,6 +810,8 @@ const ActionPaneContainer = ({
     onBackPress,
     totalUnreadCount,
     insets.top,
+    showBack,
+    handleHeaderBack,
   ]);
 
   const handleCompanySelect = async newLegalEntity => {

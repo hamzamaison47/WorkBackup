@@ -17,6 +17,7 @@ import brand from '../../theme/brand';
 // pass the theme-aware tokens; the defaults are the brand's light values.
 const MainPageHeader = ({
   onToggleDrawer,
+  onBackPress, // NEW
   onShowNotify,
   onCount,
   onHeaderMenuPress,
@@ -32,8 +33,9 @@ const MainPageHeader = ({
 
   headerLeft: () => (
     <View style={S.side}>
+      {/* Arrow / hamburger button */}
       <TouchableOpacity
-        onPress={onToggleDrawer}
+        onPress={isBack ? onBackPress : onToggleDrawer}
         style={[S.iconBtn, {backgroundColor: chipBg}]}
         activeOpacity={0.72}>
         <FeatherIcon
@@ -43,7 +45,7 @@ const MainPageHeader = ({
         />
       </TouchableOpacity>
 
-      {/* replace the old <Text style={S.titleText}> block with this */}
+      {/* Logo (original, unchanged) */}
       <TouchableOpacity
         onPress={onLogoPress}
         activeOpacity={0.72}

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "761454868818",
+    "project_id": "dynafacepushnotifications",
+    "storage_bucket": "dynafacepushnotifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761454868818:android:3612b03e475c2f3b2ae28b",
+        "android_client_info": {
+          "package_name": "com.authentication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMRf8TWl-y7RfemdRaX70RrpPi5aFtAZc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761454868818:android:d381468c59d397fa2ae28b",
+        "android_client_info": {
+          "package_name": "com.dynaface365.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMRf8TWl-y7RfemdRaX70RrpPi5aFtAZc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

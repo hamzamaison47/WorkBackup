@@ -1096,10 +1096,10 @@ const ExpenseManagementLineSaveRecord = () => {
               />
               {renderError('CostType')}
 
-              {/* Transaction date — editable except for Per Diem, where it's forced to today */}
-              <Text style={styles.DSR_Label}>Transaction date</Text>
-              {isTransactionEditable ? (
+              {/* Transaction date — hidden for Per Diem (forced to today internally) */}
+              {isTransactionEditable && (
                 <>
+                  <Text style={styles.DSR_Label}>Transaction date</Text>
                   <TouchableOpacity
                     style={styles.DSR_DateSelector}
                     onPress={() => setCalendarField('Transaction')}>
@@ -1114,12 +1114,6 @@ const ExpenseManagementLineSaveRecord = () => {
                   </TouchableOpacity>
                   {renderError('Transaction')}
                 </>
-              ) : (
-                <Text style={[styles.DSR_Input, styles.DSR_Disabled]}>
-                  {formData.Transaction
-                    ? formatDisplayDate(formData.Transaction)
-                    : formatDisplayDate(today)}
-                </Text>
               )}
 
               {/* Claimed Amount — editable only for the standard group;

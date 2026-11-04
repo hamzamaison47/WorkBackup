@@ -205,6 +205,7 @@ const ExpenseManagementHeaderListPage = () => {
   };
 
   const handleGoBack = useCallback(() => {
+    console.log('[LINES] handleGoBack called');
     let targetRoute = 'MainDashboard';
     switch (cameFrom) {
       case 'DisplayListPage':
