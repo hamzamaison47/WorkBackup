@@ -33,6 +33,7 @@ import {
 import {getStatusColors} from '../utils/statusColors';
 
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+const MODAL_HANDOFF_DELAY = 200;
 
 export const BUTTON_TYPES = {
   EDIT: 'edit',
@@ -417,7 +418,10 @@ const DynamicRequestCard = ({
         key={buttonType}
         onPress={() => {
           closeMenu();
-          onButtonPress(buttonType, data);
+          setTimeout(
+            () => onButtonPress(buttonType, data),
+            MODAL_HANDOFF_DELAY,
+          );
         }}
         disabled={isDisabled}
         activeOpacity={0.72}
@@ -546,7 +550,10 @@ const DynamicRequestCard = ({
                         ]}
                         onPress={() => {
                           closeApprovalDropdown();
-                          onButtonPress(action.key, data);
+                          setTimeout(
+                            () => onButtonPress(action.key, data),
+                            MODAL_HANDOFF_DELAY,
+                          );
                         }}
                         disabled={isActionProcessing}>
                         {action.icon && (

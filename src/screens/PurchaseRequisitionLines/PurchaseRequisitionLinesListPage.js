@@ -112,30 +112,6 @@ const PurchaseRequisitionLinesListPage = () => {
     }
   }, [PurchReqId]); // Add PurchReqId as dependency
 
-  useFocusEffect(
-    useCallback(() => {
-      console.log('PurchaseRequisitionLinesListPage focused');
-      fetchLines();
-
-      const onBackPress = () => {
-        console.log('⬅️ Hardware Back Pressed');
-        console.log('➡️ Calling handleGoBack()');
-        handleGoBack();
-        return true;
-      };
-
-      const subscription = BackHandler.addEventListener(
-        'hardwareBackPress',
-        onBackPress,
-      );
-
-      return () => {
-        console.log('Cleaning up BackHandler in LinesListPage');
-        subscription.remove();
-      };
-    }, [fetchLines, handleGoBack]),
-  );
-
   const handleGoBack = useCallback(() => {
     console.log('🔙 handleGoBack TRIGGERED');
 
@@ -170,6 +146,30 @@ const PurchaseRequisitionLinesListPage = () => {
     effectiveUserData,
     cameFrom,
   ]);
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('PurchaseRequisitionLinesListPage focused');
+      fetchLines();
+
+      const onBackPress = () => {
+        console.log('⬅️ Hardware Back Pressed');
+        console.log('➡️ Calling handleGoBack()');
+        handleGoBack();
+        return true;
+      };
+
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress,
+      );
+
+      return () => {
+        console.log('Cleaning up BackHandler in LinesListPage');
+        subscription.remove();
+      };
+    }, [fetchLines, handleGoBack]),
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);

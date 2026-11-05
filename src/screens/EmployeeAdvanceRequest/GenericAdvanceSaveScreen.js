@@ -50,6 +50,7 @@ const GenericAdvanceSaveScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const scrollViewRef = useRef(null);
+  const fetchInitialDataRef = useRef(null);
   const P = usePalette();
 
   const isRTL = useSelector(state => state.language.isRTL);
@@ -153,10 +154,10 @@ const GenericAdvanceSaveScreen = () => {
           setValidationErrors({});
           setDataInitialized(false);
 
-          fetchInitialData();
+          fetchInitialDataRef.current();
         }
       }
-    }, [mode, cameFrom, fetchInitialData]), // Add fetchInitialData to dependencies
+    }, [mode, cameFrom]),
   );
 
   useFocusEffect(
@@ -701,6 +702,7 @@ const GenericAdvanceSaveScreen = () => {
       setIsLoading(false);
     }
   };
+  fetchInitialDataRef.current = fetchInitialData;
 
   const formatNumber = value => {
     if (value === null || value === undefined || value === '') return '';

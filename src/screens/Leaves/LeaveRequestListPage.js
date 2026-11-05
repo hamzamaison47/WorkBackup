@@ -148,7 +148,7 @@ const LeaveRequestListPage = () => {
   );
 
   // Handle back navigation
-  const handleGoBack = () => {
+  function handleGoBack() {
     let targetRoute = 'MainDashboard'; // default
 
     switch (cameFrom) {
@@ -178,7 +178,7 @@ const LeaveRequestListPage = () => {
       index: 0,
       routes: [{name: targetRoute}],
     });
-  };
+  }
 
   // Handle refresh
   const handleRefresh = () => {

@@ -169,6 +169,22 @@ const ExpenseManagementHeaderListPage = () => {
     }
   }, [effectivePersonnelNumber]);
 
+  const handleGoBack = useCallback(() => {
+    console.log('[LINES] handleGoBack called');
+    let targetRoute = 'MainDashboard';
+    switch (cameFrom) {
+      case 'DisplayListPage':
+        targetRoute = 'DisplayListPage';
+        break;
+      case 'WorkerAssignedToMe':
+        targetRoute = 'WorkerAssignedToMe';
+        break;
+      default:
+        break;
+    }
+    navigation.reset({index: 0, routes: [{name: targetRoute}]});
+  }, [navigation, cameFrom]);
+
   useFocusEffect(
     useCallback(() => {
       setIsLoading(true);
@@ -203,22 +219,6 @@ const ExpenseManagementHeaderListPage = () => {
       showError('Failed to open attachments.');
     }
   };
-
-  const handleGoBack = useCallback(() => {
-    console.log('[LINES] handleGoBack called');
-    let targetRoute = 'MainDashboard';
-    switch (cameFrom) {
-      case 'DisplayListPage':
-        targetRoute = 'DisplayListPage';
-        break;
-      case 'WorkerAssignedToMe':
-        targetRoute = 'WorkerAssignedToMe';
-        break;
-      default:
-        break;
-    }
-    navigation.reset({index: 0, routes: [{name: targetRoute}]});
-  }, [navigation, cameFrom]);
 
   const handleCardPress = itemData => {
     const itemRecId = normalizeRecId(itemData);

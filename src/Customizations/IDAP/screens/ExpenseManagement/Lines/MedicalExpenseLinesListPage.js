@@ -12,6 +12,7 @@ import {
   Animated,
   TouchableOpacity,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import {useSelector} from 'react-redux';
@@ -21,6 +22,7 @@ import {
   useRoute,
 } from '@react-navigation/native';
 import RNFS from 'react-native-fs';
+import FileViewer from 'react-native-file-viewer';
 
 import {GetAllMedicalExpenseLines} from '../../../API/ExpenseManagement/Lines/GetAllMedicalExpenseLines';
 import {DeleteMedicalExpenseLines} from '../../../API/ExpenseManagement/Lines/DeleteMedicalExpenseLines';
@@ -405,23 +407,39 @@ const MedicalExpenseLinesListPage = () => {
         cleanBase64 += '='.repeat(4 - (cleanBase64.length % 4));
 
       const fileName = `SLD_MediClaimReport_${expenseReportNumber}.pdf`;
-      const filePath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+      const directory =
+        Platform.OS === 'ios'
+          ? RNFS.CachesDirectoryPath
+          : RNFS.DownloadDirectoryPath;
+      const filePath = `${directory}/${fileName}`;
       await RNFS.writeFile(filePath, cleanBase64, 'base64');
 
       const fileExists = await RNFS.exists(filePath);
       const fileInfo = await RNFS.stat(filePath);
 
       if (fileExists && fileInfo.size > 0) {
-        notificationService.showReceiptDownloadNotification(fileName, filePath);
-        showSuccess(`Claim report downloaded successfully: ${fileName}`);
+        if (Platform.OS === 'ios') {
+          await FileViewer.open(filePath, {
+            displayName: fileName,
+            mimeType: 'application/pdf',
+          });
+        } else {
+          notificationService.showReceiptDownloadNotification(
+            fileName,
+            filePath,
+          );
+          showSuccess(`Claim report downloaded successfully: ${fileName}`);
+        }
       } else {
         showWarning('File was created but appears to be empty');
       }
     } catch (error) {
       console.error('Error generating claim report:', error);
-      notificationService.showErrorNotification(
-        `Claim report failed: ${error.message}`,
-      );
+      if (Platform.OS !== 'ios') {
+        notificationService.showErrorNotification(
+          `Claim report failed: ${error.message}`,
+        );
+      }
       notifyError(`Claim report failed: ${error.message}`);
       showError(`Claim report failed: ${error.message}`);
     } finally {

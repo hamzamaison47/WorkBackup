@@ -169,7 +169,7 @@ const EmployeeEOSClearanceItemsListPage = () => {
   };
 
   // Handle back navigation
-  const handleGoBack = () => {
+  function handleGoBack() {
     let targetRoute = 'MainDashboard'; // default
 
     switch (cameFrom) {
@@ -213,7 +213,7 @@ const EmployeeEOSClearanceItemsListPage = () => {
       index: 0,
       routes: [{name: targetRoute}],
     });
-  };
+  }
 
   const getPageLabel = () => {
     const currentMenuItem = menuItems.find(

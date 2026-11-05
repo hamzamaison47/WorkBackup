@@ -113,7 +113,7 @@ const EmployeeEOSRequestListPage = () => {
   );
 
   // ── Navigation ─────────────────────────────────────────────────────────────
-  const handleGoBack = () => {
+  function handleGoBack() {
     let targetRoute = 'MainDashboard';
     switch (cameFrom) {
       case 'MainDashboard':
@@ -135,7 +135,7 @@ const EmployeeEOSRequestListPage = () => {
         return;
     }
     navigation.reset({index: 0, routes: [{name: targetRoute}]});
-  };
+  }
 
   const handleRefresh = () => fetchEmployeeEosRequest();
 

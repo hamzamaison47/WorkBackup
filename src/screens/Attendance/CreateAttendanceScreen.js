@@ -399,6 +399,110 @@ const CreateAttendanceScreen = () => {
     return clean;
   }, []);
 
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const toRad = d => (d * Math.PI) / 180;
+    const R = 6371e3;
+    const φ1 = toRad(lat1);
+    const φ2 = toRad(lat2);
+    const dφ = toRad(lat2 - lat1);
+    const dλ = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dφ / 2) * Math.sin(dφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) * Math.sin(dλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }, []);
+
+  const findMatchingGeofence = useCallback(
+    (userLat, userLon, accuracy, deviceIP, points) => {
+      if (!points || points.length === 0) return null;
+
+      let bestLocationMatch = null;
+      let ipMatchFound = false;
+      let ipMatchRecord = null;
+
+      for (const p of points) {
+        const lat1 = Number(p.latitude);
+        const lon1 = Number(p.longitude);
+        const radius = Number(p.radius);
+        const geofenceIP = p.machineIPAddress;
+
+        if (
+          !Number.isFinite(lat1) ||
+          !Number.isFinite(lon1) ||
+          !Number.isFinite(radius)
+        )
+          continue;
+
+        const distance = calculateDistance(userLat, userLon, lat1, lon1);
+        const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
+        const effectiveDistance = Math.max(0, distance - Math.min(acc, radius));
+        const isWithinRange = effectiveDistance <= radius;
+        const ipMatches = !geofenceIP || geofenceIP === deviceIP;
+
+        if (geofenceIP === deviceIP) {
+          ipMatchFound = true;
+          ipMatchRecord = p;
+        }
+
+        if (isWithinRange && ipMatches) {
+          return {
+            latitude: lat1,
+            longitude: lon1,
+            radius,
+            machineIPAddress: geofenceIP,
+            distance,
+            effectiveDistance,
+            matchedBy: 'both',
+          };
+        }
+
+        if (!bestLocationMatch || distance < bestLocationMatch.distance) {
+          bestLocationMatch = {
+            latitude: lat1,
+            longitude: lon1,
+            radius,
+            machineIPAddress: geofenceIP,
+            distance,
+            effectiveDistance,
+          };
+        }
+      }
+
+      if (ipMatchFound && ipMatchRecord) {
+        const distance = calculateDistance(
+          userLat,
+          userLon,
+          Number(ipMatchRecord.latitude),
+          Number(ipMatchRecord.longitude),
+        );
+        return {
+          ...bestLocationMatch,
+          failureReason: 'location',
+          ipMatchRecord,
+          distanceToIPMatch: distance,
+          matchedBy: 'ip_only',
+        };
+      } else if (
+        bestLocationMatch &&
+        bestLocationMatch.effectiveDistance <= bestLocationMatch.radius
+      ) {
+        return {
+          ...bestLocationMatch,
+          failureReason: 'ip',
+          matchedBy: 'location_only',
+        };
+      } else {
+        return {
+          ...bestLocationMatch,
+          failureReason: 'both',
+          matchedBy: 'none',
+        };
+      }
+    },
+    [calculateDistance],
+  );
+
   // ─── Validate attendance against geofences (reuses online validation logic) ───
   const validateAttendanceWithGeofences = useCallback(
     async (latitude, longitude, accuracy, deviceIP) => {
@@ -908,110 +1012,6 @@ const CreateAttendanceScreen = () => {
     lastCoordsRef.current = {...first, timestamp: Date.now()};
     return first;
   }, []);
-
-  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
-    const toRad = d => (d * Math.PI) / 180;
-    const R = 6371e3;
-    const φ1 = toRad(lat1);
-    const φ2 = toRad(lat2);
-    const dφ = toRad(lat2 - lat1);
-    const dλ = toRad(lon2 - lon1);
-    const a =
-      Math.sin(dφ / 2) * Math.sin(dφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) * Math.sin(dλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }, []);
-
-  const findMatchingGeofence = useCallback(
-    (userLat, userLon, accuracy, deviceIP, points) => {
-      if (!points || points.length === 0) return null;
-
-      let bestLocationMatch = null;
-      let ipMatchFound = false;
-      let ipMatchRecord = null;
-
-      for (const p of points) {
-        const lat1 = Number(p.latitude);
-        const lon1 = Number(p.longitude);
-        const radius = Number(p.radius);
-        const geofenceIP = p.machineIPAddress;
-
-        if (
-          !Number.isFinite(lat1) ||
-          !Number.isFinite(lon1) ||
-          !Number.isFinite(radius)
-        )
-          continue;
-
-        const distance = calculateDistance(userLat, userLon, lat1, lon1);
-        const acc = Number.isFinite(accuracy) ? Math.max(0, accuracy) : 0;
-        const effectiveDistance = Math.max(0, distance - Math.min(acc, radius));
-        const isWithinRange = effectiveDistance <= radius;
-        const ipMatches = !geofenceIP || geofenceIP === deviceIP;
-
-        if (geofenceIP === deviceIP) {
-          ipMatchFound = true;
-          ipMatchRecord = p;
-        }
-
-        if (isWithinRange && ipMatches) {
-          return {
-            latitude: lat1,
-            longitude: lon1,
-            radius,
-            machineIPAddress: geofenceIP,
-            distance,
-            effectiveDistance,
-            matchedBy: 'both',
-          };
-        }
-
-        if (!bestLocationMatch || distance < bestLocationMatch.distance) {
-          bestLocationMatch = {
-            latitude: lat1,
-            longitude: lon1,
-            radius,
-            machineIPAddress: geofenceIP,
-            distance,
-            effectiveDistance,
-          };
-        }
-      }
-
-      if (ipMatchFound && ipMatchRecord) {
-        const distance = calculateDistance(
-          userLat,
-          userLon,
-          Number(ipMatchRecord.latitude),
-          Number(ipMatchRecord.longitude),
-        );
-        return {
-          ...bestLocationMatch,
-          failureReason: 'location',
-          ipMatchRecord,
-          distanceToIPMatch: distance,
-          matchedBy: 'ip_only',
-        };
-      } else if (
-        bestLocationMatch &&
-        bestLocationMatch.effectiveDistance <= bestLocationMatch.radius
-      ) {
-        return {
-          ...bestLocationMatch,
-          failureReason: 'ip',
-          matchedBy: 'location_only',
-        };
-      } else {
-        return {
-          ...bestLocationMatch,
-          failureReason: 'both',
-          matchedBy: 'none',
-        };
-      }
-    },
-    [calculateDistance],
-  );
 
   const refreshAfterMark = useCallback(() => {
     try {

@@ -149,52 +149,6 @@ const PurchaseRequisitionLinesSaveRecord = () => {
 
   const [formData, setFormData] = useState(() => createInitialFormData());
 
-  const handleRefresh = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Reset ALL form states
-      setFormData(createInitialFormData());
-      setSelectedItem('');
-      setSelectedConfig(null);
-      setSelectedSize(null);
-      setSelectedColor(null);
-      setSelectedStyle(null);
-      setSelectedBatch(null);
-      setSelectedSerial(null);
-      setSelectedSite(null);
-      setSelectedLocation(null);
-      setQuantity('0.00');
-      setItemDetails({
-        ItemName: '',
-        PurchUnitofMeasureCode: '',
-        PurchPrice: '',
-      });
-
-      // Reset ALL dropdown lists
-      setConfigList([]);
-      setSizeList([]);
-      setColorList([]);
-      setStyleList([]);
-      setBatchList([]);
-      setSerialList([]);
-      setSiteList([]);
-      setLocationList([]);
-
-      // Refetch items
-      await fetchItems();
-    } catch (error) {
-      console.error('Error refreshing form:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    employeeId,
-    employeeName,
-    WorkerRecId,
-    purchaseRequisitiondata,
-    fetchItems,
-  ]);
-
   /** ✅ Fetch items */
   const fetchItems = useCallback(async () => {
     try {
@@ -236,6 +190,78 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       setItemList([]);
     }
   }, [selectedLegalEntity, purchaseRequisitiondata]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      setFormData(createInitialFormData());
+      setSelectedItem('');
+      setSelectedConfig(null);
+      setSelectedSize(null);
+      setSelectedColor(null);
+      setSelectedStyle(null);
+      setSelectedBatch(null);
+      setSelectedSerial(null);
+      setSelectedSite(null);
+      setSelectedLocation(null);
+      setQuantity('0.00');
+      setItemDetails({
+        ItemName: '',
+        PurchUnitofMeasureCode: '',
+        PurchPrice: '',
+      });
+
+      setConfigList([]);
+      setSizeList([]);
+      setColorList([]);
+      setStyleList([]);
+      setBatchList([]);
+      setSerialList([]);
+      setSiteList([]);
+      setLocationList([]);
+
+      await fetchItems();
+    } catch (error) {
+      console.error('Error refreshing form:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    employeeId,
+    employeeName,
+    WorkerRecId,
+    purchaseRequisitiondata,
+    fetchItems,
+  ]);
+
+  const goBack = useCallback(() => {
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: 'PurchaseRequisitionLinesListPage',
+          params: {
+            PurchReqId,
+            PurchReqName,
+            RequiredDate,
+            employeeId: effectiveEmployeeId,
+            employeeName: effectiveEmployeeName,
+            WorkerRecId: effectiveWorkerRecId,
+            userData: effectiveUserData,
+          },
+        },
+      ],
+    });
+  }, [
+    navigation,
+    PurchReqId,
+    PurchReqName,
+    RequiredDate,
+    effectiveEmployeeId,
+    effectiveEmployeeName,
+    effectiveWorkerRecId,
+    effectiveUserData,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -499,37 +525,6 @@ const PurchaseRequisitionLinesSaveRecord = () => {
       }
     }
   };
-
-  const goBack = useCallback(() => {
-    // ALWAYS go back to the Lines List page, no matter where we are in the stack
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: 'PurchaseRequisitionLinesListPage',
-          params: {
-            PurchReqId,
-            PurchReqName,
-            RequiredDate,
-            employeeId: effectiveEmployeeId,
-            employeeName: effectiveEmployeeName,
-            WorkerRecId: effectiveWorkerRecId,
-            userData: effectiveUserData,
-            // keep any other params you need
-          },
-        },
-      ],
-    });
-  }, [
-    navigation,
-    PurchReqId,
-    PurchReqName,
-    RequiredDate,
-    effectiveEmployeeId,
-    effectiveEmployeeName,
-    effectiveWorkerRecId,
-    effectiveUserData,
-  ]);
 
   const formatDropdown = (arr, type) => {
     if (!Array.isArray(arr)) return [];

@@ -298,6 +298,37 @@ const PurchaseRequisitionListPage = () => {
     setIsMultiSelectMode(false);
   }, []);
 
+  const fetchPurchaseRequisitionData = useCallback(async () => {
+    if (!effectiveEmployeeId) return;
+
+    setIsLoading(true);
+
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+
+    try {
+      const data = await retrievePurchaseRequisitionByMe({
+        employeeId: effectiveEmployeeId,
+      });
+      setPurchaseRequisitionData(data);
+      console.log('Here is req data', data);
+
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } catch (error) {
+      setAlertMessage('Failed to fetch data.');
+      setAlertModal(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [effectiveEmployeeId, fadeAnim]);
+
   const handleSelectAll = useCallback(() => {
     const allIds = f.filteredData.map(item => item.RecId);
     setSelectedIds(new Set(allIds));
@@ -368,37 +399,6 @@ const PurchaseRequisitionListPage = () => {
   }, [selectedIds]);
 
   // ────────────────────────────────────────────────────────────
-
-  const fetchPurchaseRequisitionData = useCallback(async () => {
-    if (!effectiveEmployeeId) return;
-
-    setIsLoading(true);
-
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start();
-
-    try {
-      const data = await retrievePurchaseRequisitionByMe({
-        employeeId: effectiveEmployeeId,
-      });
-      setPurchaseRequisitionData(data);
-      console.log('Here is req data', data);
-
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } catch (error) {
-      setAlertMessage('Failed to fetch data.');
-      setAlertModal(true);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [effectiveEmployeeId, fadeAnim]);
 
   useFocusEffect(
     useCallback(() => {
