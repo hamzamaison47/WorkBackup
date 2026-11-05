@@ -217,7 +217,7 @@ const RequestForRegistration = () => {
 
         <View style={styles.identitySection}>
           <Image
-            source={require('../../assets/IDAPLOGO.jpeg')}
+            source={require('../../assets/IDAPLOGO.png')}
             style={styles.mainLogo}
             resizeMode="contain"
           />

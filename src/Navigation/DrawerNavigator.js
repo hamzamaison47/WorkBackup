@@ -135,7 +135,7 @@ const DrawerHeader = ({userData, profilePictureUrl, onPressProfile}) => {
           paddingHorizontal: conditionalScale(20, 22, 24, 24),
         }}>
         <Image
-          source={require('../assets/IDAPLOGO.jpeg')}
+          source={require('../assets/IDAPLOGO.png')}
           style={{
             width: conditionalScale(32, 34, 36, 36),
             height: conditionalScale(32, 34, 36, 36),

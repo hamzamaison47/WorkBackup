@@ -1413,6 +1413,7 @@ const ExpenseManagementLineSaveRecord = () => {
         open={dateTimeField !== null}
         date={pickerInitialDate()}
         mode="datetime"
+        title="Select date/time"
         is24hourSource="locale"
         locale="en_GB"
         onConfirm={handleDateTimeConfirm}

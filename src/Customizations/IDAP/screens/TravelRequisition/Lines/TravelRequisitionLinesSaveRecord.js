@@ -1223,6 +1223,7 @@ const TravelRequisitionLinesSaveRecord = () => {
         open={dateTimeField !== null}
         date={dateTimePickerInitialDate()}
         mode="datetime"
+        title="Select date/time"
         is24hourSource="locale"
         locale="en-GB"
         onConfirm={handleDateTimeConfirm}

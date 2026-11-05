@@ -321,10 +321,11 @@ const DEFAULT_ENVIRONMENT = {
   client_id: '34fca2f9-63d8-4e78-8ef5-8b68ca2c0728',
   client_secret: 'MzQ8Q~lF~kybirwICApLVj8vQnyQ5aG83DDgWal~',
   grant_type: 'client_credentials',
-  resource: 'https://idap-d365-uat.sandbox.operations.dynamics.com/',
+  resource: 'https://idap.operations.dynamics.com/',
+  //resource: 'https://idap-d365-uat.sandbox.operations.dynamics.com/',
 };
 
-const DEFAULT_ENVIRONMENT_NAME = 'IDAP (Default)';
+const DEFAULT_ENVIRONMENT_NAME = 'IDAP (Live)';
 
 export async function seedDefaultEnvironmentIfNeeded() {
   try {

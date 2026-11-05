@@ -624,6 +624,7 @@ const TravelRequisitionSaveRecord = () => {
         open={dateTimeField !== null}
         date={pickerInitialDate()}
         mode="datetime"
+        title="Select date/time"
         is24hourSource="locale"
         locale="en-GB"
         minimumDate={pickerMinDate()}

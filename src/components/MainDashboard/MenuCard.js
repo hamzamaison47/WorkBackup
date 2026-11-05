@@ -40,6 +40,8 @@ const MenuCard = ({
           marginBottom: gridGap,
           backgroundColor: T.cardBg,
           shadowColor: T.shadowColor,
+          justifyContent: 'center', // keep icon + text grouped in the middle
+          alignItems: 'center',
         },
       ]}
       onPress={onPress}
@@ -52,7 +54,7 @@ const MenuCard = ({
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: AppTokens.blueBg,
-          marginBottom: 8,
+          marginBottom: 4, // was 8
         }}>
         {isLucideIcon ? (
           <card.icon size={renderedIconSize} color={P.primaryStrong} />
@@ -100,7 +102,7 @@ const MenuCard = ({
         )}
       </View>
       <Text
-        style={[styles.MainDash_CardTitle, {color: T.titleText}]}
+        style={[styles.MainDash_CardTitle, {color: T.titleText, marginTop: 0}]}
         numberOfLines={2}
         adjustsFontSizeToFit
         minimumFontScale={0.75}>
