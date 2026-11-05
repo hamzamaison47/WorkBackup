@@ -623,6 +623,10 @@ const DynamicRequestCard = ({
   };
 
   const headerButtons = getButtonsByPosition('header');
+  const attachmentBadgeEnabled =
+    buttons[BUTTON_TYPES.ATTACHMENT]?.show === true &&
+    buttons[BUTTON_TYPES.ATTACHMENT]?.badgeCount !== undefined;
+  const attachmentCount = buttons[BUTTON_TYPES.ATTACHMENT]?.badgeCount || 0;
   const bottomButtons = getButtonsByPosition('bottom').filter(
     bt => getMergedButtonConfig(bt).style !== 'approval_dropdown',
   );
@@ -726,6 +730,44 @@ const DynamicRequestCard = ({
                 />
               )}
             </View>
+
+            {attachmentBadgeEnabled && !isMultiSelectMode && (
+              <TouchableOpacity
+                onPress={() => onButtonPress(BUTTON_TYPES.ATTACHMENT, data)}
+                activeOpacity={0.72}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 3,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 99,
+                  backgroundColor:
+                    attachmentCount > 0 ? T.blueBg ?? '#E5EEFB' : T.surface,
+                }}>
+                <FeatherIcon
+                  name="paperclip"
+                  size={13}
+                  color={
+                    attachmentCount > 0
+                      ? T.blueStrong ?? '#2563EB'
+                      : T.subtitleText
+                  }
+                />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '700',
+                    color:
+                      attachmentCount > 0
+                        ? T.blueStrong ?? '#2563EB'
+                        : T.subtitleText,
+                  }}>
+                  {attachmentCount > 99 ? '99+' : attachmentCount}
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <View style={S.heroRight}>
               {statusValue && statusColors && (

@@ -27,6 +27,7 @@ import {
 
 import {FindExpenseManagementLines} from '../../../API/ExpenseManagement/Lines/FindExpenseManagementLines';
 import {DeleteExpenseManagementLines} from '../../../API/ExpenseManagement/Lines/DeleteExpenseManagementLines';
+import {RetrieveReceipts} from '../../../../../API/ExpenseManagment/Receipt/RetrieveReciepts';
 
 import AlertModal from '../../../../../components/Alert/AlertModal';
 import useAlertModal from '../../../../../hooks/useAlertModal';
@@ -107,6 +108,7 @@ const ExpenseManagementLinesListPage = () => {
   // null = not yet checked, true = survey record exists, false = confirmed missing
   const [siteSurveyExists, setSiteSurveyExists] = useState(null);
   const [checkingSiteSurvey, setCheckingSiteSurvey] = useState(true);
+  const [attachmentCounts, setAttachmentCounts] = useState({});
   // headerConfig stays the same across all categories — CostType is the card
   // title regardless, so it's not repeated inside fields/expandableFields.
   const getCardConfig = costType => {
@@ -280,6 +282,33 @@ const ExpenseManagementLinesListPage = () => {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
+  const loadAttachmentCounts = useCallback(async lines => {
+    const pending = lines.filter(l => l.LineRecId != null);
+    const BATCH = 5;
+
+    for (let i = 0; i < pending.length; i += BATCH) {
+      const chunk = pending.slice(i, i + BATCH);
+      const entries = await Promise.all(
+        chunk.map(async line => {
+          try {
+            const result = await RetrieveReceipts({
+              recordRefRecId: line.LineRecId,
+              tableName: 'TrvExpTrans',
+            });
+            const n =
+              result?.success && Array.isArray(result.attachments)
+                ? result.attachments.length
+                : 0;
+            return [line.LineRecId, n];
+          } catch (e) {
+            return [line.LineRecId, 0];
+          }
+        }),
+      );
+      setAttachmentCounts(prev => ({...prev, ...Object.fromEntries(entries)}));
+    }
+  }, []);
+
   const f = useListFilters({
     data: linesData,
     dateField: 'CreatedDateTime',
@@ -315,6 +344,7 @@ const ExpenseManagementLinesListPage = () => {
       });
 
       setLinesData(sortedLines);
+      loadAttachmentCounts(sortedLines);
 
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -673,6 +703,7 @@ const ExpenseManagementLinesListPage = () => {
         backgroundColor: P.primary,
         disabled: false,
         customStyle: {},
+        badgeCount: attachmentCounts[item.LineRecId] ?? 0,
       },
     };
 
@@ -855,6 +886,7 @@ const ExpenseManagementLinesListPage = () => {
         onClose={() => {
           setAttachmentModalVisible(false);
           setSelectedLineItem(null);
+          loadAttachmentCounts(linesData);
         }}
         onSave={() => {
           fetchLinesData();

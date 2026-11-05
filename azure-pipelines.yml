@@ -9,159 +9,313 @@ pool:
   vmImage: 'macos-latest'
 
 variables:
-  NODE_VERSION: '18.x'
-  APP_SCHEME: 'Authentication'
-  JAVA_VERSION: '17'
-  BUILD_VARIANT: 'assembleRelease'
-  APK_OUTPUT_PATH: 'android/app/build/outputs/apk/release'
+  - group: IDAP-Release-Signing
 
-stages:
+  - name: NODE_VERSION
+    value: '18.x'
 
-# ─────────────────────────────
-# INSTALL
-# ─────────────────────────────
-- stage: Install
-  jobs:
-    - job: setup
-      steps:
-        - task: NodeTool@0
-          inputs:
-            versionSpec: '$(NODE_VERSION)'
+  - name: JAVA_VERSION
+    value: '17'
 
-        - script: |
-            node -v
-            npm ci --legacy-peer-deps
-          displayName: Install dependencies
+  - name: APK_OUTPUT_PATH
+    value: 'android/app/build/outputs/apk/release'
 
-# ─────────────────────────────
-# ANDROID
-# ─────────────────────────────
-- stage: Android
-  dependsOn: Install
-  jobs:
-    - job: BuildAndroid
-      pool:
-        vmImage: 'ubuntu-latest'
-      steps:
+  - name: AAB_OUTPUT_PATH
+    value: 'android/app/build/outputs/bundle/release'
 
-        - task: NodeTool@0
-          inputs:
-            versionSpec: '$(NODE_VERSION)'
+steps:
+  # --------------------------------------------------
+  # 1. Install Node.js
+  # --------------------------------------------------
+  - task: NodeTool@0
+    displayName: 'Install Node.js'
+    inputs:
+      versionSpec: '$(NODE_VERSION)'
 
-        - script: npm install --legacy-peer-deps
-          displayName: Install JS deps
+  # --------------------------------------------------
+  # 2. Configure Java 17
+  # --------------------------------------------------
+  - task: JavaToolInstaller@0
+    displayName: 'Configure Java 17'
+    inputs:
+      versionSpec: '$(JAVA_VERSION)'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
 
-        # ✅ FIXED JAVA TOOL (THIS WAS YOUR ERROR)
-        - task: JavaToolInstaller@0
-          inputs:
-            versionSpec: '17'
-            jdkArchitectureOption: 'x64'
-            jdkSourceOption: 'PreInstalled'
+  # --------------------------------------------------
+  # 3. Verify tools and available disk space
+  # --------------------------------------------------
+  - bash: |
+      set -e
 
-        - script: |
-            echo "$(KEYSTORE_BASE64)" | base64 --decode > android/app/release.keystore
-          displayName: Decode keystore
+      echo "Node:"
+      node --version
 
-        - task: DownloadSecureFile@1
-          name: googleServices
-          inputs:
-            secureFile: google-services.json
+      echo "NPM:"
+      npm --version
 
-        - script: cp $(googleServices.secureFilePath) android/app/google-services.json
-          displayName: Copy google-services.json
+      echo "Java:"
+      java -version
 
-        - script: |
-            cd android
-            chmod +x gradlew
-            ./gradlew $(BUILD_VARIANT) --no-daemon --stacktrace
-          displayName: Build Android
+      echo "Java Home:"
+      echo "$JAVA_HOME"
 
-        - task: PublishBuildArtifacts@1
-          inputs:
-            pathToPublish: $(APK_OUTPUT_PATH)
-            artifactName: android-release
+      echo "Available disk space:"
+      df -h /
+    displayName: 'Verify Build Environment'
 
-# ─────────────────────────────
-# iOS (FULL FIXED)
-# ─────────────────────────────
-- stage: iOS
-  dependsOn: Install
-  jobs:
-    - job: BuildiOS
-      pool:
-        vmImage: 'macos-latest'
-      steps:
+  # --------------------------------------------------
+  # 4. Install React Native dependencies
+  # --------------------------------------------------
+  - bash: |
+      set -e
+      npm ci --legacy-peer-deps
+    displayName: 'Install React Native Dependencies'
 
-        - task: NodeTool@0
-          inputs:
-            versionSpec: '$(NODE_VERSION)'
+  # --------------------------------------------------
+  # 5. Configure AndroidX, Jetifier, Hermes and Gradle
+  # --------------------------------------------------
+  - bash: |
+      set -e
 
-        - script: npm ci --legacy-peer-deps
-          displayName: Install JS deps
+      python3 - <<'PY'
+      from pathlib import Path
 
-        # ─────────────────────────────
-        # POD INSTALL
-        # ─────────────────────────────
-        - script: |
-            set -e
-            cd ios
+      path = Path("android/gradle.properties")
+      path.parent.mkdir(parents=True, exist_ok=True)
 
-            rm -rf Pods Podfile.lock
+      existing = path.read_text(encoding="utf-8") if path.exists() else ""
 
-            pod install --repo-update || pod install --repo-update || pod install --repo-update
-          displayName: Install CocoaPods
+      properties = {
+          "hermesEnabled": "true",
+          "android.useAndroidX": "true",
+          "android.enableJetifier": "true",
+          "org.gradle.jvmargs": "-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8",
+          "org.gradle.workers.max": "2",
+          "org.gradle.parallel": "false",
+          "kotlin.compiler.execution.strategy": "in-process"
+      }
 
-        # ─────────────────────────────
-        # CLEAN
-        # ─────────────────────────────
-        - script: |
-            xcodebuild clean \
-              -workspace ios/Authentication.xcworkspace \
-              -scheme $(APP_SCHEME)
-          displayName: Clean Xcode
+      lines = existing.splitlines()
 
-        # ─────────────────────────────
-        # ARCHIVE (FIXED STABLE PATH)
-        # ─────────────────────────────
-        - script: |
-            set -e
+      for key, value in properties.items():
+          lines = [
+              line for line in lines
+              if not line.strip().startswith(key + "=")
+          ]
+          lines.append(f"{key}={value}")
 
-            mkdir -p $(Pipeline.Workspace)/ios-build
+      path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-            xcodebuild \
-              -workspace ios/Authentication.xcworkspace \
-              -scheme $(APP_SCHEME) \
-              -configuration Release \
-              -sdk iphoneos \
-              clean archive \
-              -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
-              -allowProvisioningUpdates
+      print("Gradle properties configured:")
+      print(path.read_text(encoding="utf-8"))
+      PY
+    displayName: 'Configure Android and Gradle Memory'
 
-            echo "Checking archive..."
-            ls -la $(Pipeline.Workspace)/ios-build
+  # --------------------------------------------------
+  # 6. Download Android release keystore
+  # --------------------------------------------------
+  - task: DownloadSecureFile@1
+    name: idapKeystore
+    displayName: 'Download IDAP Release Keystore'
+    inputs:
+      secureFile: 'IDAP-release-key.keystore'
 
-            if [ ! -d "$(Pipeline.Workspace)/ios-build/app.xcarchive" ]; then
-              echo "❌ Archive failed"
-              exit 1
-            fi
-          displayName: Build iOS Archive
+  # --------------------------------------------------
+  # 7. Download Firebase configuration
+  # --------------------------------------------------
+  - task: DownloadSecureFile@1
+    name: googleServices
+    displayName: 'Download Firebase Configuration'
+    inputs:
+      secureFile: 'google-services.json'
 
-        # ─────────────────────────────
-        # EXPORT IPA (FIXED)
-        # ─────────────────────────────
-        - script: |
-            set -e
+  # --------------------------------------------------
+  # 8. Configure and validate Firebase
+  # --------------------------------------------------
+  - bash: |
+      set -e
 
-            xcodebuild -exportArchive \
-              -archivePath $(Pipeline.Workspace)/ios-build/app.xcarchive \
-              -exportPath $(Build.ArtifactStagingDirectory)/ipa \
-              -exportOptionsPlist ios/exportOptions.plist
-          displayName: Export IPA
+      if [ -z "$FIREBASE_FILE" ] || [ ! -f "$FIREBASE_FILE" ]; then
+        echo "##vso[task.logissue type=error]Firebase secure file not found."
+        exit 1
+      fi
 
-        # ─────────────────────────────
-        # PUBLISH
-        # ─────────────────────────────
-        - task: PublishBuildArtifacts@1
-          inputs:
-            pathToPublish: $(Build.ArtifactStagingDirectory)
-            artifactName: ios-release
+      mkdir -p android/app
+      cp "$FIREBASE_FILE" android/app/google-services.json
+
+      python3 - <<'PY'
+      import json
+      import sys
+
+      path = "android/app/google-services.json"
+      expected = "com.idap360.app"
+
+      try:
+          with open(path, "r", encoding="utf-8") as file:
+              data = json.load(file)
+      except Exception as exc:
+          print(f"Invalid Firebase configuration: {exc}")
+          sys.exit(1)
+
+      packages = [
+          client.get("client_info", {})
+                .get("android_client_info", {})
+                .get("package_name")
+          for client in data.get("client", [])
+      ]
+
+      print("Firebase packages:", packages)
+
+      if expected not in packages:
+          print(f"ERROR: Expected package {expected} not found.")
+          sys.exit(1)
+
+      print(f"Firebase configuration matches {expected}.")
+      PY
+    displayName: 'Configure and Validate Firebase'
+    env:
+      FIREBASE_FILE: $(googleServices.secureFilePath)
+
+  # --------------------------------------------------
+  # 9. Validate Android release signing configuration
+  # --------------------------------------------------
+  - bash: |
+      set -e
+
+      if [ -z "$KEYSTORE_PASSWORD" ]; then
+        echo "##vso[task.logissue type=error]ANDROID_KEYSTORE_PASSWORD is missing."
+        exit 1
+      fi
+
+      if [ -z "$KEY_ALIAS" ]; then
+        echo "##vso[task.logissue type=error]ANDROID_KEY_ALIAS is missing."
+        exit 1
+      fi
+
+      if [ -z "$KEY_PASSWORD" ]; then
+        echo "##vso[task.logissue type=error]ANDROID_KEY_PASSWORD is missing."
+        exit 1
+      fi
+
+      if [ -z "$KEYSTORE_PATH" ] || [ ! -f "$KEYSTORE_PATH" ]; then
+        echo "##vso[task.logissue type=error]IDAP release keystore not found."
+        exit 1
+      fi
+
+      echo "Android signing configuration validated."
+    displayName: 'Validate Android Signing Configuration'
+    env:
+      KEYSTORE_PATH: $(idapKeystore.secureFilePath)
+      KEYSTORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
+      KEY_ALIAS: $(ANDROID_KEY_ALIAS)
+      KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
+
+  # --------------------------------------------------
+  # 10. Build signed APK and AAB in one Gradle run
+  # --------------------------------------------------
+  - bash: |
+      set -e
+
+      chmod +x gradlew
+
+      echo "Disk space before Android build:"
+      df -h /
+
+      ./gradlew assembleRelease bundleRelease \
+        -x lintVitalAnalyzeRelease \
+        -x lintVitalReportRelease \
+        -x lintVitalRelease \
+        "-PMYAPP_UPLOAD_STORE_FILE=$KEYSTORE_PATH" \
+        "-PMYAPP_UPLOAD_STORE_PASSWORD=$KEYSTORE_PASSWORD" \
+        "-PMYAPP_UPLOAD_KEY_ALIAS=$KEY_ALIAS" \
+        "-PMYAPP_UPLOAD_KEY_PASSWORD=$KEY_PASSWORD" \
+        --max-workers=2 \
+        --stacktrace \
+        --no-daemon
+
+      echo "Disk space after Android build:"
+      df -h /
+    workingDirectory: '$(Build.SourcesDirectory)/android'
+    displayName: 'Build Signed Android APK and AAB'
+    env:
+      KEYSTORE_PATH: $(idapKeystore.secureFilePath)
+      KEYSTORE_PASSWORD: $(ANDROID_KEYSTORE_PASSWORD)
+      KEY_ALIAS: $(ANDROID_KEY_ALIAS)
+      KEY_PASSWORD: $(ANDROID_KEY_PASSWORD)
+
+  # --------------------------------------------------
+  # 11. Collect signed APK
+  # --------------------------------------------------
+  - bash: |
+      set -e
+
+      SOURCE="$(Build.SourcesDirectory)/$(APK_OUTPUT_PATH)"
+      OUTPUT="$(Build.ArtifactStagingDirectory)/APK"
+
+      mkdir -p "$OUTPUT"
+
+      if [ ! -d "$SOURCE" ]; then
+        echo "##vso[task.logissue type=error]APK output directory not found."
+        exit 1
+      fi
+
+      find "$SOURCE" -maxdepth 1 -type f -name "*.apk" \
+        -exec cp {} "$OUTPUT/" \;
+
+      if ! find "$OUTPUT" -maxdepth 1 -type f -name "*.apk" -print -quit | grep -q .; then
+        echo "##vso[task.logissue type=error]Release APK was not generated."
+        exit 1
+      fi
+
+      echo "APK collected successfully."
+      ls -lh "$OUTPUT"
+    displayName: 'Collect Release APK'
+
+  # --------------------------------------------------
+  # 12. Collect signed AAB
+  # --------------------------------------------------
+  - bash: |
+      set -e
+
+      SOURCE="$(Build.SourcesDirectory)/$(AAB_OUTPUT_PATH)"
+      OUTPUT="$(Build.ArtifactStagingDirectory)/AAB"
+
+      mkdir -p "$OUTPUT"
+
+      if [ ! -d "$SOURCE" ]; then
+        echo "##vso[task.logissue type=error]AAB output directory not found."
+        exit 1
+      fi
+
+      find "$SOURCE" -maxdepth 1 -type f -name "*.aab" \
+        -exec cp {} "$OUTPUT/" \;
+
+      if ! find "$OUTPUT" -maxdepth 1 -type f -name "*.aab" -print -quit | grep -q .; then
+        echo "##vso[task.logissue type=error]Release AAB was not generated."
+        exit 1
+      fi
+
+      echo "AAB collected successfully."
+      ls -lh "$OUTPUT"
+    displayName: 'Collect Release AAB'
+
+  # --------------------------------------------------
+  # 13. Publish APK artifact
+  # --------------------------------------------------
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Android APK'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/APK'
+      ArtifactName: 'Android-Release-APK'
+      publishLocation: 'Container'
+
+  # --------------------------------------------------
+  # 14. Publish AAB artifact
+  # --------------------------------------------------
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Android AAB'
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/AAB'
+      ArtifactName: 'Android-Release-AAB'
+      publishLocation: 'Container'

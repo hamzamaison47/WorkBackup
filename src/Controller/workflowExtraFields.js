@@ -146,4 +146,11 @@ export const TABLE_EXTRA_FIELDS = {
       cardLabel: 'Requested By',
     },
   ],
+  SLD_MNTRequests: [
+    {
+      sourceLabel: 'Requested By Name',
+      targetKey: 'ExtraMaintenanceRequestedBy',
+      cardLabel: 'Employee Name',
+    },
+  ],
 };

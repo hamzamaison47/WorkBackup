@@ -47,8 +47,8 @@ const AttendanceManagement = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const isFromTab = route?.params?.fromTab === true;
   const fromLogin = route?.params?.fromLogin === true;
+  const isFromTab = route?.params?.fromTab ?? !fromLogin;
 
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 

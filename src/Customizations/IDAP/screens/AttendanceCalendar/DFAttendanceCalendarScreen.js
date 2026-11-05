@@ -521,7 +521,7 @@ const DFAttendanceCalendarScreen = () => {
         }}
         showsVerticalScrollIndicator={false}>
         {/* ── Pay period selector ── */}
-        <Text style={styles.DSR_Label}>Pay period</Text>
+        <Text style={styles.DSR_Label}>Month</Text>
         {isLoadingPeriods ? (
           <View
             style={[
