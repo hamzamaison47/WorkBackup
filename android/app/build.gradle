@@ -85,8 +85,8 @@ android {
         applicationId "com.idap360.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "1.0.0"
+        versionCode 6
+        versionName "1.0.6"
         manifestPlaceholders = [appAuthRedirectScheme: 'com.idap360.callback',
                         appAuthRedirectScheme:'authentication']
         missingDimensionStrategy 'react-native-camera', 'general'
